@@ -324,7 +324,7 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     const {island, stack} = setup();
     throws(() => stack.ask('q', 'Run?', []), 'ask needs options');
     const p = stack.ask('q', 'Run tests?', ['Deny', 'Allow'], {app: 'claude'});
-    eq(island.log.at(-1), 'show q alert', 'ask surfaces with an alert');
+    eq(island.log.at(-1), 'show q alert expand', 'ask surfaces with an alert, opened expanded');
     eq([stack.top.kind, stack.top.text, stack.top.actions.map(a => a.id)], ['ask', 'Run tests?', ['Deny', 'Allow']],
         'ask activity carries question and options');
     eq(stack.top.expanded, true, 'ask has an expanded presentation (all options as buttons)');
@@ -363,6 +363,7 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq([island.top.id, stack.light], ['call', 'waiting'], 'ask covered by a call → red light');
     stack.end('call');
     eq(stack.light, 'off', 'ask visible again → light off');
+    eq(island.log.at(-2), 'show q expand', 'an ask back on top opens expanded again (still unanswered)');
     eq(stack.dismiss('q'), true, 'dismiss an ask');
     eq([island.top, stack.light], [null, 'waiting'], 'dismissed ask leaves the pill, light red');
     stack.answer('q', 'Deny');

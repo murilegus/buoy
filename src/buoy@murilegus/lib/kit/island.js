@@ -15,7 +15,8 @@ const PAD = 14; // compact: content + 2·PAD = pill width (shapes.compact adds 2
  * ActivityStack hands it through show(activity, {alert, expand}) / clear(): presentation
  * data plus {sizeHint?, onPress?, onExpand?, onAction?, isStale}. Content actors come from
  * present.js, sizes from shapes.js. The stack may also call alert(activity) and
- * setLight('off'|'missed'|'waiting'); alert/expand/light are not rendered yet (M1 island item).
+ * setLight('off'|'missed'|'waiting'). `expand` opens expanded at once (transient, ask);
+ * alert (brief expand) and the light are not rendered yet (M1 island item).
  *
  * Structure: a fixed-size invisible container (so the chrome input region
  * covers the expanded pill), a background actor that morphs, and a content
@@ -110,7 +111,7 @@ export class Island {
 
     // --- API used by ActivityStack --------------------------------------
 
-    show(activity, _info = {}) {
+    show(activity, {expand = false} = {}) {
         const same = this._activity?.id === activity.id;
         if (same && this._expanded && planExpanded(activity)) {
             // an update while open: stay open, replace the content in place
@@ -124,6 +125,8 @@ export class Island {
         this._expandable = planExpanded(activity) !== null;
         this._setContent(this._buildCompact(), !same);
         this._morph(this._currentShape());
+        if (expand)
+            this._setExpanded(true); // transient / ask: open straight away (no-op if not expandable)
     }
 
     clear() {
