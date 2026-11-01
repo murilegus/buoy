@@ -11,11 +11,18 @@
  *             any region may carry `priority` (the highest one takes the free width)
  *   actions: [{id, label?, icon?}] — 1 shown in compact, 3 in expanded (APPLE.md B5.5)
  *
+ *   peek: {leading, text, trailing, transport?} — shown on hover (Buoy's own, no Apple
+ *         equivalent); transport: true adds up to 3 of the activity's actions as buttons
+ *
+ * The buoy light (SPEC §2a-i) is the pill's left edge slot: grey `off` only in idle,
+ * `missed` (amber) / `waiting` (red) in idle and compact, never in expanded.
+ *
  * Measurements from adapters (`size`, `width`, …) are ignored (ARCHITECTURE rule 11).
  * Text is never truncated here; the renderer ellipsizes.
  */
 
-export const MAX_ACTIONS = {compact: 1, expanded: 3};
+export const MAX_ACTIONS = {compact: 1, expanded: 3, peek: 3};
+const LIGHTS = new Set(['off', 'missed', 'waiting']);
 
 // INDICATORS.md: state colours belong to the light/dot slots, never to a keyline.
 const RESERVED = new Set(['#ef9f27', '#e24b4a', '#f0997b', '#5dcaa5', '#3a3a3a']);
@@ -98,10 +105,32 @@ function actions(list, max) {
 }
 
 /**
- * @param {object} p  presentation data (an activity)
- * @returns {object} {leading, text, trailing, action, keyline, stale}
+ * @param {*} light  the stack's light: 'off' | 'missed' | 'waiting'
+ * @param {object} opts
+ * @param {boolean} opts.idle  idle pill (grey `off` is drawn only there)
+ * @returns {?string} the light to draw, or null for no slot
  */
-export function planCompact(p) {
+export function lightSlot(light, {idle}) {
+    const l = LIGHTS.has(light) ? light : 'off';
+    return l === 'off' && !idle ? null : l;
+}
+
+/**
+ * @param {object} [opts]
+ * @param {string} [opts.light]
+ * @returns {object} {light} — idle-content `none`: the pill shows only the buoy light
+ */
+export function planIdle({light} = {}) {
+    return {light: lightSlot(light, {idle: true})};
+}
+
+/**
+ * @param {object} p  presentation data (an activity)
+ * @param {object} [opts]
+ * @param {string} [opts.light]  the stack's light
+ * @returns {object} {leading, text, trailing, action, keyline, stale, light}
+ */
+export function planCompact(p, {light} = {}) {
     return {
         leading: element(p.leading),
         text: str(p.text),
@@ -109,7 +138,32 @@ export function planCompact(p) {
         action: actions(p.actions, MAX_ACTIONS.compact)[0] ?? null,
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
+        light: lightSlot(light, {idle: false}),
     };
+}
+
+/**
+ * @param {object} p  presentation data (an activity)
+ * @param {object} [opts]
+ * @param {string} [opts.light]  the stack's light
+ * @returns {?object} {leading, text, trailing, actions, keyline, stale, light} or null
+ */
+export function planPeek(p, {light} = {}) {
+    if (!isPlain(p.peek))
+        return null;
+    const peek = p.peek;
+    const plan = {
+        leading: element(peek.leading),
+        text: str(peek.text),
+        trailing: element(peek.trailing),
+        actions: peek.transport === true ? actions(p.actions, MAX_ACTIONS.peek) : [],
+        keyline: keyline(p.keyline),
+        stale: p.isStale === true,
+        light: lightSlot(light, {idle: false}),
+    };
+    if (!plan.leading && !plan.text && !plan.trailing && !plan.actions.length)
+        return null;
+    return plan;
 }
 
 function region(r) {

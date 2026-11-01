@@ -133,6 +133,7 @@ D-Bus API ──────────────────────┘ 
   keyline:   null,                     // optional border tint
   onPress, onExpand, actions: [{id, label, icon}],  // ≤ 1 in compact, ≤ 3 expanded (HIG)
   onAction(id)                         // a button was pressed (ask: answers it)
+  peek: {leading, text, trailing, transport}  // hover content (Buoy's own); transport = ≤3 actions
 }
 ```
 

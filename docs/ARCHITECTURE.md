@@ -69,7 +69,7 @@ D-Bus callers send presentation data directly and skip the registry.
    `source.js` and `tab.js` may use Shell APIs.
 3. **Adapters return data, never actors.** Shape of the data is fixed by `presentation.js`:
    `{leading, text, trailing, expanded:{leading,trailing,center,bottom}, actions, ttl,
-   priority, keyline, style, sizeHint, onPress}`. An override returns the same shape.
+   priority, keyline, style, sizeHint, onPress, peek}`. An override returns the same shape.
 4. **Per-app overrides live under the module of the kind they override.** An app present
    in two kinds has two small files. No central `apps/<app>/` folder.
 5. **One slug per app** across every source (MPRIS bus name, desktop id, notification

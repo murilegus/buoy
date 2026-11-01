@@ -16,16 +16,19 @@ import {validate} from './activity.js';
  *   - staleAfter ms without update → `isStale`; update clears it
  *   - style 'transient' asks the island to open expanded and ends when it collapses
  *   - alert (on surface, or update(..., {alert: true})) is one-shot; a covered activity's
- *     alert goes to island.alert()
+ *     alert brings it up for ALERT_MS, then the real top returns
  *   - apps-hidden is a filter: hidden activities stay live but never reach the island
  *   - while unseen (fullscreen, away, DND) an ending activity goes to the missed history
  *     (last 5), except osd/copied (feedback for your own action) and ask (red light)
  *   - light: 'waiting' (an unanswered ask is not visible) › 'missed' › 'off'
  *
  * The island (renderer) receives show(activity, {alert, expand}), clear(), and optionally
- * alert(activity) and setLight(light). No Shell import: timers come from `clock`, so the
+ * setLight(light). No Shell import: timers come from `clock`, so the
  * whole thing runs under plain gjs in tests.
  */
+
+/** How long an alert keeps an activity up / expanded (SPEC §2c: ~2 s). */
+export const ALERT_MS = 2000;
 
 const MAX_DELAY = 2 ** 31 - 1;          // GLib timeouts are 32-bit ms; longer waits re-arm
 const MISSED_MAX = 5;
@@ -47,7 +50,7 @@ export const glibClock = {
 
 export class ActivityStack {
     /**
-     * @param {object} island  renderer: show(), clear(), optional alert(), setLight()
+     * @param {object} island  renderer: show(), clear(), optional setLight()
      * @param {object} [opts]
      * @param {object} [opts.clock]  {now, timeout, cancel}; glibClock by default
      * @param {string[]} [opts.hiddenApps]  initial `apps-hidden`
@@ -64,6 +67,7 @@ export class ActivityStack {
         this._missed = [];
         this._seq = 0;
         this._shown = null;           // id currently on the island
+        this._promoted = null;        // covered activity brought up by an alert
         this._light = 'off';
     }
 
@@ -251,9 +255,11 @@ export class ActivityStack {
     // Remove without rendering or history (replacement, end). Leaves _asks alone:
     // ask() registers the question before surface() replaces any old activity.
     _drop(id) {
-        for (const what of ['ttl', 'stale', 'ask'])
+        for (const what of ['ttl', 'stale', 'ask', 'promote'])
             this._disarm(id, what);
         this._items.delete(id);
+        if (this._promoted === id)
+            this._promoted = null;
     }
 
     _settle(id, value) {
@@ -320,6 +326,9 @@ export class ActivityStack {
     }
 
     _pickTop() {
+        const promoted = this._promoted && this._items.get(this._promoted);
+        if (promoted && this._visible(promoted))
+            return promoted;
         let top = null;
         for (const a of this._items.values()) {
             if (!this._visible(a))
@@ -332,6 +341,8 @@ export class ActivityStack {
     }
 
     _render({changed = null, alert = null} = {}) {
+        if (alert)
+            this._promote(alert);
         const top = this._pickTop();
         const prev = this._shown;
         this._shown = top?.id ?? null;
@@ -348,11 +359,22 @@ export class ActivityStack {
             });
         }
 
-        const alerted = alert && alert !== top?.id ? this._items.get(alert) : null;
-        if (alerted && this._visible(alerted))
-            this._island.alert?.(alerted);
-
         this._updateLight();
+    }
+
+    // An alert on a covered activity brings it up for ALERT_MS (one pill until the
+    // side-by-side item); a newer covered alert replaces it.
+    _promote(id) {
+        const a = this._items.get(id);
+        if (!a || !this._visible(a) || this._pickTop() === a)
+            return;
+        if (this._promoted)
+            this._disarm(this._promoted, 'promote');
+        this._promoted = id;
+        this._arm(id, 'promote', ALERT_MS, () => {
+            this._promoted = null;
+            this._render();
+        });
     }
 
     _updateLight() {
