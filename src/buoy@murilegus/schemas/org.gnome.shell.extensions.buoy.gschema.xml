@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.buoy" path="/org/gnome/shell/extensions/buoy/">
+    <key name="modules-media" type="b"><default>true</default></key>
+    <key name="modules-hud" type="b"><default>true</default></key>
+    <key name="modules-home" type="b"><default>true</default></key>
+    <key name="modules-progress" type="b"><default>true</default></key>
+    <key name="modules-copied" type="b"><default>true</default></key>
+    <key name="modules-layout" type="b"><default>true</default></key>
+    <key name="modules-ask" type="b"><default>true</default></key>
+    <key name="apps-hidden" type="as"><default>[]</default></key>
+    <key name="apps-plain" type="as"><default>[]</default></key>
+    <key name="idle-content" type="s"><default>"none"</default></key>
+    <key name="tabs-pinned" type="as"><default>[]</default></key>
+    <key name="tabs-slot" type="s"><default>""</default></key>
+    <key name="cluster-background" type="s"><default>"hover"</default></key>
+    <key name="cluster-contrast" type="s"><default>"auto"</default></key>
+    <key name="left-cluster-empty" type="s"><default>"workspace"</default></key>
+    <key name="expanded-size" type="(ii)"><default>(600, 300)</default></key>
+    <key name="dev-mode" type="b"><default>false</default></key>
+    <key name="keybind-focus" type="as"><default><![CDATA[['<Super>b']]]></default></key>
+  </schema>
+</schemalist>

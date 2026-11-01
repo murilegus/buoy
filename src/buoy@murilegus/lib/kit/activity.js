@@ -1,0 +1,33 @@
+/**
+ * Activity contract (docs/APPLE.md §B1). validate() fills defaults and throws
+ * on shape errors so a bad adapter fails loudly at the registry, not in the renderer.
+ */
+export const KINDS = ['media', 'notification', 'progress', 'osd', 'power', 'device',
+    'timer', 'ask', 'attention', 'copied', 'phone', 'calendar', 'privacy', 'call'];
+
+export const PRIORITY = {
+    media: 10, timer: 20, calendar: 25, progress: 30, device: 35, power: 40,
+    copied: 45, attention: 50, osd: 60, notification: 70, phone: 75, ask: 90, call: 95,
+};
+
+const EIGHT_HOURS = 8 * 60 * 60 * 1000;
+
+export function validate(a) {
+    if (!a?.id || !a.kind)
+        throw new Error('activity needs id and kind');
+    return {
+        app: 'system',
+        attributes: {},
+        state: {},
+        priority: PRIORITY[a.kind] ?? 0,
+        ttl: 0,
+        staleAfter: 0,
+        style: 'standard',
+        alert: false,
+        keyline: null,
+        actions: [],
+        sizeHint: 'normal',
+        ...a,
+        ttl: Math.min(a.ttl ?? 0, EIGHT_HOURS) || 0,
+    };
+}

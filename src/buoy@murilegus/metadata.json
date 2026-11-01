@@ -1,0 +1,10 @@
+{
+  "uuid": "buoy@murilegus",
+  "name": "Buoy",
+  "description": "A living pill for the top bar. It grows when music plays, a file copies, a charger connects or a coding agent asks for permission — and shrinks back the moment it is over. Click it for a single home panel. No daemon, no setup.",
+  "shell-version": [
+    "50"
+  ],
+  "version": 1,
+  "url": ""
+}

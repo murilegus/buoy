@@ -1,0 +1,104 @@
+# Buoy — instructions for Claude Code
+
+Buoy is a GNOME Shell 50 extension: a Dynamic-Island-style living pill in the top bar.
+Pure JS (GJS), no daemon, ships on extensions.gnome.org.
+
+## Read first, every session
+1. `docs/ARCHITECTURE.md` — layout and the 10 rules. Non-negotiable.
+2. `docs/SPEC.md` — product decisions (what the pill does, idle, tabs, clusters).
+3. `docs/FEATURES.md` — roadmap M0–M5 with status; tasks are referenced as "M1 item N".
+4. `docs/APPLE.md` §B — the activity/presentation contract adapters must return.
+
+## How we work
+- **Claude Code writes the code; Ethan reviews.** Work in units of one FEATURES.md item
+  (or one milestone when asked). Implement it fully — code, tests, docs status — then
+  stop and hand over for review. Do not start the next item until Ethan says so.
+- Before writing, re-read the item's row in FEATURES.md (module, source, settings,
+  "done when") and the SPEC/APPLE sections it references. If the item is ambiguous or
+  conflicts with a rule, ask one short question first; otherwise proceed without asking.
+- Every change must respect ARCHITECTURE rules 1–11 — especially: adapters/`apps/*.js`
+  have no `St`, `Main`, timers or measurements; modules import `kit/` only; no polling
+  while the island is closed; no blur; nothing animates while idle; no code loaded at
+  runtime (EGO).
+- Prefer GNOME Shell's own objects over new proxies (`ui/mpris.js`, `ui/calendar.js`,
+  `ui/weather.js`, `Main.osdWindowManager`, `Main.messageTray`).
+- When unsure about a Shell 50 API, read the source instead of guessing:
+  `git clone --depth 1 -b gnome-50 https://gitlab.gnome.org/GNOME/gnome-shell.git ../gnome-shell`
+  (js/ui/*.js). Say which file and function you relied on in the handover.
+- Keep diffs reviewable: one item per branch, small commits inside it are fine but the
+  handover describes the whole. Do not refactor neighbouring code unless the item needs it.
+- Vietnamese or English in chat, English in code, comments and docs.
+
+## Commands
+- `pnpm test` — gjs unit tests (adapters, contract). Run before saying something works.
+- `pnpm lint`
+- Module hot swap without restart: enable `dev-mode`, then in Looking Glass
+  `Main.extensionManager.lookup('buoy@murilegus').stateObj.reload('<id>')`.
+- Kit changes need a nested-shell restart: `pnpm dev`.
+- Logs: `journalctl -f -o cat /usr/bin/gnome-shell`
+
+## Testing — the agent tests before handing over, every time
+
+**Unit tests (`tests/*.test.js`, run with `pnpm test`)** — required for all pure logic:
+- Every adapter (`modules/*/adapter.js`, `apps/*.js`): default output, each override
+  branch, profile overrides, empty/missing fields, long text (no truncation in adapter).
+- `kit/activity.js`, `kit/stack.js`, `kit/registry.js`, `kit/shapes.js`: contract
+  defaults and validation errors; priority ordering and ties; ttl expiry and the 8 h cap;
+  stale; transient end; `apps-hidden`/`apps-plain`; slug normalisation; shape derivation
+  at 1366 / 1920 / 2560 / 3440 and the `expanded-size` override.
+- Write the tests **before or with** the code, not after. Cover the failure paths, not
+  only the happy one. One assertion message per check so a failure says what broke.
+- `gjs -m` has no test framework: use plain `throw new Error(...)`, keep tests
+  independent, and make `tests/run.sh` exit non-zero on the first failure.
+
+**Running in the Shell** — required for anything that touches `kit/island.js`,
+`present.js`, `home.js`, `panel.js`, a `source.js` or `tab.js`:
+- Start it yourself in the nested shell (`pnpm dev`) or hot-swap with
+  `reload('<id>')` when `dev-mode` is on. Watch `journalctl -f -o cat /usr/bin/gnome-shell`
+  for the whole session; any warning or error mentioning `buoy@murilegus` is a failure.
+- Exercise the actual path: surface the activity from Looking Glass or from the real
+  source (play a track, change volume, copy a file), hover, click, click outside, Esc,
+  enable → disable → enable the extension (nothing may leak or stay on screen).
+- Check the performance rules by observation: nothing animating at idle, no timers left
+  after `end()`/disable (grep your code for `timeout_add` and make sure each has a
+  matching `source_remove`).
+
+**Not acceptable:** "should work", "untested but straightforward", tests that only check
+the happy path, or marking `[x]` without having run it.
+
+## Definition of done for a task
+1. The "done when" column in FEATURES.md is true.
+2. `pnpm test` and `pnpm lint` pass; the Testing section above is satisfied.
+3. FEATURES.md checkbox set to `[x]` (or `[~]` with a note if partially blocked).
+4. Docs touched if a decision changed (SPEC/ARCHITECTURE/INDICATORS), with the date.
+5. The handover lists exactly what was tested, how, and what was not testable here.
+
+## Handover — always end a finished item with
+1. **Tested** — unit tests added (names), `pnpm test`/`lint` output summary, and the
+   manual Shell steps you ran with their result; anything you could not test and why.
+2. **What to check** — 3–6 bullet steps Ethan can do on his machine to see the feature
+   (what to hover/click/play, what should appear), plus one thing most likely to look
+   wrong and what to tweak if it does.
+3. **What I relied on** — Shell source files/functions consulted; any assumption.
+4. **Open questions** — only if any; otherwise "none".
+5. Branch/commit block below.
+
+## Branch / commit block
+```
+Branch:  <type>/<milestone>-<short-slug>        e.g. feat/m3-progress-launcherentry
+Commit:  <type>(<scope>): <summary>              e.g. feat(progress): surface LauncherEntry progress in the pill
+
+<body: what changed and why, 2–5 lines; reference SPEC/ARCHITECTURE section if a rule
+or decision was involved; note tests added>
+
+Refs: FEATURES.md M3 "progress"
+```
+Types: feat, fix, docs, refactor, test, chore. Scope = module id or `kit`, `panel`, `docs`.
+One item = one branch; squash on merge. Never commit directly to `main`. Create the
+branch yourself at the start of the item; leave the merge to Ethan after review.
+
+## Don't
+- Don't add dependencies, build steps, or bundlers.
+- Don't create a daemon, subprocess, or network call unless the roadmap item says so.
+- Don't restyle third-party tray icons or quick settings; don't move the pill off centre.
+- Don't rename files or restructure without updating ARCHITECTURE.md first.

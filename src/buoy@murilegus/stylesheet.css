@@ -1,0 +1,45 @@
+/* Panel becomes an invisible 40px strip; clusters float inside it. */
+#panel.buoy {
+    background-color: transparent;
+    height: 40px;
+}
+
+/* Clusters: bare by default, translucent background on hover (no blur). */
+#panel.buoy .buoy-cluster {
+    border-radius: 12px;
+    padding: 0 8px;
+    background-color: transparent;
+    transition-duration: 150ms;
+}
+#panel.buoy .buoy-cluster:hover,
+#panel.buoy.buoy-cluster-always .buoy-cluster {
+    background-color: rgba(0, 0, 0, 0.35);
+}
+#panel.buoy.buoy-cluster-never .buoy-cluster:hover {
+    background-color: transparent;
+}
+
+/* Light wallpaper under the clusters: flip text, keep the pill black. */
+#panel.buoy.buoy-light .buoy-cluster .panel-button,
+#panel.buoy.buoy-light .buoy-cluster StLabel,
+#panel.buoy.buoy-light .buoy-cluster StIcon {
+    color: #1a1a1a;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    icon-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+#panel.buoy:not(.buoy-light) .buoy-cluster .panel-button {
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+    icon-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* The island pill. Hover/press/expanded are shapes, not CSS states. */
+.buoy-island {
+    background-color: #000;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.buoy-content {
+    color: #fff;
+    font-size: 13px;
+}
+.buoy-content .dim { color: #b8b8b8; }

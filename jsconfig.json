@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "module": "ES2022",
+        "target": "ES2022",
+        "moduleResolution": "bundler",
+        "lib": ["ES2022"],
+        "checkJs": true,
+        "noEmit": true,
+        "strict": false,
+        "types": ["@girs/gjs", "@girs/gjs/dom", "@girs/gnome-shell"],
+    },
+    "include": ["src/**/*.js", "ambient.d.ts"],
+}

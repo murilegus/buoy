@@ -1,0 +1,84 @@
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+
+import {reworkPanel} from './panel.js';
+import {Island} from './lib/kit/island.js';
+import {ActivityStack} from './lib/kit/stack.js';
+import {Registry} from './lib/kit/registry.js';
+import {BuoyDBus} from './lib/kit/dbus.js';
+import {reloadModule} from './lib/kit/devtools.js';
+
+import media from './lib/modules/media/index.js';
+import hud from './lib/modules/hud/index.js';
+import home from './lib/modules/home/index.js';
+import progress from './lib/modules/progress/index.js';
+import copied from './lib/modules/copied/index.js';
+import layout from './lib/modules/layout/index.js';
+import ask from './lib/modules/ask/index.js';
+
+// Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
+const MODULES = [media, hud, home, progress, copied, layout, ask];
+
+export default class BuoyExtension extends Extension {
+    enable() {
+        this._settings = this.getSettings();
+        reworkPanel(true);
+
+        this._island = new Island();
+        Main.layoutManager.addTopChrome(this._island.actor, {trackFullscreen: true});
+        this._island.reposition();
+        this._monitorsId = Main.layoutManager.connect('monitors-changed',
+            () => this._island.reposition());
+
+        this._registry = new Registry();
+        this._stack = new ActivityStack(this._island);
+        this._dbus = new BuoyDBus(this._stack);
+        this._dbus.export();
+
+        this._active = [];
+        for (const m of MODULES) {
+            if (!this._settings.get_boolean(`modules-${m.id}`))
+                continue;
+            for (const kind of m.kinds)
+                this._registry.register(kind, m.adapter, m.apps ?? {});
+            if (m.source) {
+                const src = new m.source();
+                src.enable(this._stack, this._registry);
+                this._active.push({m, src});
+            }
+        }
+        this.stack = this._stack; // Looking Glass
+
+        // Dev: Main.extensionManager.lookup('buoy@murilegus').stateObj.reload('media')
+        if (this._settings.get_boolean('dev-mode'))
+            this.reload = id => reloadModule(this, id);
+    }
+
+    disable() {
+        for (const {m, src} of this._active ?? []) {
+            src.disable();
+            for (const kind of m.kinds)
+                this._registry.unregister(kind);
+        }
+        this._active = null;
+        this._dbus?.unexport();
+        this._dbus = null;
+        this._stack?.destroy();
+        this._stack = null;
+        this.stack = null;
+        this.reload = null;
+        this._registry = null;
+
+        if (this._monitorsId) {
+            Main.layoutManager.disconnect(this._monitorsId);
+            this._monitorsId = 0;
+        }
+        if (this._island) {
+            Main.layoutManager.removeChrome(this._island.actor);
+            this._island.destroy();
+            this._island = null;
+        }
+        reworkPanel(false);
+        this._settings = null;
+    }
+}
