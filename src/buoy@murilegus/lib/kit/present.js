@@ -5,7 +5,7 @@
 // This is the only file that turns content into actors. Adapters never do.
 /**
  * @param {object} _p  presentation data
- * @returns {?Clutter.Actor}
+ * @returns {?import('gi://Clutter').default.Actor}
  */
 export function buildCompact(_p) {
     return null;
@@ -13,7 +13,7 @@ export function buildCompact(_p) {
 
 /**
  * @param {object} _p  presentation data
- * @returns {?Clutter.Actor}
+ * @returns {?import('gi://Clutter').default.Actor}
  */
 export function buildExpanded(_p) {
     return null;

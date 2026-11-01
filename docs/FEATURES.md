@@ -10,9 +10,9 @@ Last updated: 2026-11-01
 
 ---
 
-## M0 — Foundation (docs, repo)  `[x]`
+## M0 — Foundation (docs, repo)  `[~]`
 
-- [x] Repo layout, pnpm, jsconfig, eslint, scripts (link/dev/pack)
+- [x] Repo layout, pnpm, jsconfig, eslint, scripts (link/dev/pack/verify)
 - [x] SPEC.md (what Buoy is/isn't, v0.1 decisions)
 - [x] ARCHITECTURE.md (module/feature layout B, rules, settings model)
 - [x] APPLE.md (ActivityKit/HIG → BuoyKit contract)
@@ -25,6 +25,10 @@ Last updated: 2026-11-01
   `--devkit` (Shell 49+) and no longer orphans the shell on restart; enable/disable ×3 clean
   in headless Shell 50.1 and in `pnpm dev`; shapes snap to even px; `expanded-width`
   replaces `expanded-size`. Reviewed 2026-11-01
+- [~] CI + pre-commit (2026-11-01): `pnpm verify` (lint, gjs tests, strict schema) runs in a
+  `.githooks/pre-commit` hook (set by `pnpm install`, no extra dependency) and in GitHub
+  Actions on ubuntu:26.04; `tests/metadata.test.js` guards metadata ↔ schema. `pnpm check`
+  (tsc) not gated yet: 12 existing type errors
 
 ## M1 — Kit (framework)  `[~]`
 
