@@ -19,7 +19,8 @@ src/buoy@murilegus/
     │   ├── activity.js     contract (APPLE.md §B1), validate + normalise
     │   ├── stack.js        surface / update / end / schedule / ask; priority across apps;
     │   │                   ttl, stale, transient, alert; apps.hidden filter; missed history
-    │   ├── present.js      presentation data → St actors. ONLY place content actors are made
+    │   ├── presentation.js presentation data → render plan; pure, unit-tested (2026-11-01)
+    │   ├── present.js      render plan → St actors. ONLY place content actors are made
     │   ├── island.js       pill(s): compact, side-by-side minimal, expanded; morph
     │   ├── home.js         Home screen + tab strip
     │   ├── registry.js     app-id normalisation table; adapter resolution
@@ -66,7 +67,7 @@ D-Bus callers send presentation data directly and skip the registry.
 2. **`kit/` may import `Main`/Shell. `adapter.js` and `apps/*.js` may not** — no `St`, no
    `Main`, no timers. They are pure functions `event → presentation data`, testable with `gjs`.
    `source.js` and `tab.js` may use Shell APIs.
-3. **Adapters return data, never actors.** Shape of the data is fixed by `present.js`:
+3. **Adapters return data, never actors.** Shape of the data is fixed by `presentation.js`:
    `{leading, text, trailing, expanded:{leading,trailing,center,bottom}, actions, ttl,
    priority, keyline, style, sizeHint, onPress}`. An override returns the same shape.
 4. **Per-app overrides live under the module of the kind they override.** An app present

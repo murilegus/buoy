@@ -131,7 +131,8 @@ D-Bus API ──────────────────────┘ 
   style:     'standard' | 'transient', // transient = opens expanded, ends on click-outside
   alert:     false,                    // true on update → expand briefly (Apple alert config)
   keyline:   null,                     // optional border tint
-  onPress, onExpand, actions: [{id, label, icon}]   // ≤ 1 primary action, like HIG
+  onPress, onExpand, actions: [{id, label, icon}],  // ≤ 1 in compact, ≤ 3 expanded (HIG)
+  onAction(id)                         // a button was pressed (ask: answers it)
 }
 ```
 
