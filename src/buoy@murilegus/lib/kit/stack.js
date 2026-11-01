@@ -22,8 +22,9 @@ import {validate} from './activity.js';
  *     (last 5), except osd/copied (feedback for your own action) and ask (red light)
  *   - light: 'waiting' (an unanswered ask is not visible) › 'missed' › 'off'
  *
- * The island (renderer) receives show(activity, {alert, expand}), clear(), and optionally
- * setLight(light). No Shell import: timers come from `clock`, so the
+ * The island (renderer) receives render(list, {alert, expand}) — every visible activity,
+ * centre pill first; it shows the first `island.capacity` (side-by-side, SPEC §2c) — and
+ * optionally setLight(light). alert/expand carry an activity id or null. No Shell import: timers come from `clock`, so the
  * whole thing runs under plain gjs in tests.
  */
 
@@ -50,7 +51,7 @@ export const glibClock = {
 
 export class ActivityStack {
     /**
-     * @param {object} island  renderer: show(), clear(), optional setLight()
+     * @param {object} island  renderer: render(list, info), capacity, optional setLight()
      * @param {object} [opts]
      * @param {object} [opts.clock]  {now, timeout, cancel}; glibClock by default
      * @param {string[]} [opts.hiddenApps]  initial `apps-hidden`
@@ -66,7 +67,9 @@ export class ActivityStack {
         this._unseen = false;
         this._missed = [];
         this._seq = 0;
-        this._shown = null;           // id currently on the island
+        this._shown = null;           // id of the centre pill
+        this._shownIds = [];          // ids of every pill the island shows
+        this._more = 0;               // visible activities beyond them (+N)
         this._promoted = null;        // covered activity brought up by an alert
         this._light = 'off';
     }
@@ -234,6 +237,11 @@ export class ActivityStack {
         return this._light;
     }
 
+    /** Re-render, e.g. when the island's capacity changed. */
+    refresh() {
+        this._render();
+    }
+
     get top() {
         return this._shown ? this._items.get(this._shown) : null;
     }
@@ -248,6 +256,8 @@ export class ActivityStack {
         this._items.clear();
         this._scheduled.clear();
         this._shown = null;
+        this._shownIds = [];
+        this._more = 0;
     }
 
     // --- internals ----------------------------------------------------------
@@ -325,48 +335,60 @@ export class ActivityStack {
         return !this._hidden.has(a.app) && !this._asks.get(a.id)?.dismissed;
     }
 
-    _pickTop() {
-        const promoted = this._promoted && this._items.get(this._promoted);
-        if (promoted && this._visible(promoted))
-            return promoted;
-        let top = null;
-        for (const a of this._items.values()) {
-            if (!this._visible(a))
-                continue;
-            if (!top || a.priority > top.priority ||
-                (a.priority === top.priority && a._seq > top._seq))
-                top = a;
-        }
-        return top;
+    // Every visible activity, highest priority first (ties → most recent); an alerted
+    // activity brought up by _promote() goes first.
+    _visibleList() {
+        const list = [...this._items.values()].filter(a => this._visible(a))
+            .sort((a, b) => b.priority - a.priority || b._seq - a._seq);
+        const promoted = list.find(a => a.id === this._promoted);
+        return promoted ? [promoted, ...list.filter(a => a !== promoted)] : list;
+    }
+
+    get _capacity() {
+        return Math.max(1, this._island.capacity ?? 1);
     }
 
     _render({changed = null, alert = null} = {}) {
         if (alert)
             this._promote(alert);
-        const top = this._pickTop();
-        const prev = this._shown;
-        this._shown = top?.id ?? null;
+        const list = this._visibleList();
+        const cap = this._capacity;
+        const shown = list.slice(0, cap).map(a => a.id);
+        const more = list.length - shown.length;
+        const prev = this._shownIds;
+        const prevMore = this._more;
+        this._shownIds = shown;
+        this._more = more;
+        const primary = shown[0] ?? null;
+        const prevPrimary = this._shown;
+        this._shown = primary;
 
-        if (!top) {
-            if (prev !== null)
-                this._island.clear();
-        } else if (top.id !== prev || top.id === changed || top.id === alert) {
-            this._island.show(top, {
-                alert: top.id === alert,
+        if (!list.length) {
+            if (prev.length)
+                this._island.render([], {});
+        } else if (shown.join('\n') !== prev.join('\n') || more !== prevMore ||
+                   shown.includes(changed) || shown.includes(alert)) {
+            const top = list[0];
+            this._island.render(list, {
+                alert: shown.includes(alert) ? alert : null,
                 // transient (APPLE.md A3) and ask (all options are only in expanded)
-                // open expanded when they reach the pill
-                expand: (top.style === 'transient' || top.kind === 'ask') && top.id !== prev,
+                // open expanded when they reach the centre pill
+                expand: (top.style === 'transient' || top.kind === 'ask') && top.id !== prevPrimary
+                    ? top.id : null,
             });
         }
 
         this._updateLight();
     }
 
-    // An alert on a covered activity brings it up for ALERT_MS (one pill until the
-    // side-by-side item); a newer covered alert replaces it.
+    // An alert on an activity the island is not showing brings it to the centre for
+    // ALERT_MS; a newer one replaces it. Shown pills alert in place (SPEC §2c).
     _promote(id) {
         const a = this._items.get(id);
-        if (!a || !this._visible(a) || this._pickTop() === a)
+        if (!a || !this._visible(a))
+            return;
+        const index = this._visibleList().filter(x => x.id !== this._promoted).indexOf(a);
+        if (index < this._capacity && this._promoted !== id)
             return;
         if (this._promoted)
             this._disarm(this._promoted, 'promote');
@@ -380,7 +402,7 @@ export class ActivityStack {
     _updateLight() {
         let light = this._missed.length ? 'missed' : 'off';
         for (const [id, ask] of this._asks) {
-            if (this._unseen || ask.dismissed || this._shown !== id) {
+            if (this._unseen || ask.dismissed || !this._shownIds.includes(id)) {
                 light = 'waiting';
                 break;
             }

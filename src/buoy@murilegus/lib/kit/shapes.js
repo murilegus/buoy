@@ -7,6 +7,7 @@
 
 export const GAP = 4;          // pill ↔ screen edge
 export const OVERSHOOT = 20;   // container margin so EASE_OUT_BACK never clips
+export const PILL_GAP = 8;     // between side-by-side pills (SPEC §2c)
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const even = v => 2 * Math.round(v / 2);
@@ -29,6 +30,12 @@ export function shapesFor(monitor, panelH, opts = {}) {
         : even(clamp(monitor.width * 0.28, 560, 760));             // 1920→560, 2560→716, 3440→760
     const expH = Math.round(expW / 2);
     const idleW = even(h * 3.75);                                  // ≈ iPhone compact ratio
+    const minimalMax = even(expW / 3);
+    // Centre pill + two side pills to its right, each ≤ minimalMax; never wider than the
+    // monitor (the island also stops adding side pills before the system cluster).
+    const minimalHalf = minimalMax / 2 + 2 * (PILL_GAP + minimalMax) + OVERSHOOT;
+    const containerW = Math.max(expW + 2 * OVERSHOOT,
+        Math.min(evenUp(2 * minimalHalf), evenDown(monitor.width)));
 
     return {
         idle: {w: idleW, h, r: radius(h)},
@@ -42,8 +49,12 @@ export function shapesFor(monitor, panelH, opts = {}) {
         }),
         // h is the cap: expanded fits its content up to this height (APPLE.md B5.4)
         expanded: {w: expW, h: expH, r: 28},
-        container: {w: expW + 2 * OVERSHOOT, h: expH + 2 * OVERSHOOT},
-        // side-by-side minimal: each pill gets at most this width
-        minimalMax: even(expW / 3),
+        container: {w: containerW, h: expH + 2 * OVERSHOOT},
+        // side-by-side minimal: each pill content-fit between idle and expanded/3
+        minimal: contentW => ({
+            w: clamp(evenUp(Math.ceil(contentW) + 28), idleW, minimalMax),
+            h, r: radius(h),
+        }),
+        minimalMax,
     };
 }

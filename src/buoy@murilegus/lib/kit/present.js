@@ -135,7 +135,7 @@ function lightDot(light) {
 }
 
 function compactBox(p, activity, maxWidth, buttons) {
-    if (!p.leading && !p.text && !p.trailing && !buttons.length)
+    if (!p.leading && !p.text && !p.trailing && !buttons.length && !p.badge)
         return null;
     const box = new St.BoxLayout({style_class: 'buoy-compact', y_align: Clutter.ActorAlign.CENTER});
     if (maxWidth > 0)
@@ -146,6 +146,7 @@ function compactBox(p, activity, maxWidth, buttons) {
         p.text ? label(p.text, 'buoy-text', true) : null,
         makeElement(p.trailing, 'compact'),
         ...buttons.map(a => actionButton(a, activity)),
+        p.badge ? label(p.badge, 'buoy-badge') : null, // +N on the last pill (SPEC §2c)
     ]);
     if (p.stale)
         box.add_style_class_name('buoy-stale');
@@ -157,10 +158,11 @@ function compactBox(p, activity, maxWidth, buttons) {
  * @param {object} [opts]
  * @param {number} [opts.maxWidth]  content width cap; the text ellipsizes to fit
  * @param {string} [opts.light]  the stack's buoy light
+ * @param {number} [opts.more]  activities beyond the shown pills → +N badge
  * @returns {?Clutter.Actor} null when there is nothing to show
  */
-export function buildCompact(activity, {maxWidth = 0, light} = {}) {
-    const p = planCompact(activity, {light});
+export function buildCompact(activity, {maxWidth = 0, light, more} = {}) {
+    const p = planCompact(activity, {light, more});
     return compactBox(p, activity, maxWidth, p.action ? [p.action] : []);
 }
 

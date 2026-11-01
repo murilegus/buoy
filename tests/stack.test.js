@@ -67,22 +67,34 @@ class FakeClock {
     }
 }
 
+// Renderer contract: render(list, {alert, expand}) with every visible activity in order;
+// the island shows the first `capacity` (1 = a single pill, as before minimal mode).
 class FakeIsland {
-    constructor() {
+    constructor(capacity = 1) {
+        this.capacity = capacity;
         this.log = [];
         this.top = null;
+        this.list = [];
         this.light = 'off';
     }
 
-    show(a, info) {
-        this.log.push(`show ${a.id}${info?.alert ? ' alert' : ''}${info?.expand ? ' expand' : ''}`);
-        this.top = a;
+    render(list, info = {}) {
+        this.list = list;
+        this.top = list[0] ?? null;
         this.info = info;
-    }
-
-    clear() {
-        this.log.push('clear');
-        this.top = null;
+        if (!list.length) {
+            this.log.push('clear');
+            return;
+        }
+        if (this.capacity === 1) {
+            const a = list[0];
+            this.log.push(`show ${a.id}${info.alert === a.id ? ' alert' : ''}${info.expand === a.id ? ' expand' : ''}`);
+            return;
+        }
+        const shown = list.slice(0, this.capacity).map(a => a.id).join('|');
+        const more = list.length - Math.min(list.length, this.capacity);
+        this.log.push(`show ${shown}${more ? ` +${more}` : ''}` +
+            `${info.alert ? ` alert:${info.alert}` : ''}${info.expand ? ` expand:${info.expand}` : ''}`);
     }
 
     setLight(l) {
@@ -91,9 +103,11 @@ class FakeIsland {
     }
 }
 
-function setup(opts = {}) {
+const lastRender = island => island.log.filter(l => !l.startsWith('light')).at(-1);
+
+function setup(opts = {}, capacity = 1) {
     const clock = new FakeClock();
-    const island = new FakeIsland();
+    const island = new FakeIsland(capacity);
     const stack = new ActivityStack(island, {clock, ...opts});
     return {clock, island, stack};
 }
@@ -455,6 +469,51 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     stack.end('p');
     stack.answer('q', 'ok');
     eq([await q, clock.pending], ['ok', 0], 'and cancelled cleanly');
+}
+
+// --- side-by-side minimal (SPEC §2c): the island shows `capacity` pills -----------
+{
+    const {clock, island, stack} = setup({}, 3);
+    stack.surface(media('m'));
+    stack.surface({id: 'p', kind: 'progress'});
+    stack.surface({id: 'n', kind: 'notification'});
+    eq(island.log.at(-1), 'show n|p|m', 'three pills, highest priority first (centre)');
+    eq(stack.top.id, 'n', 'top is the centre pill');
+    stack.surface({id: 't', kind: 'timer'});
+    eq(island.log.at(-1), 'show n|p|t +1', 'a fourth below the shown three → +1');
+    island.log = [];
+    stack.update('m', {text: 'hidden change'});
+    eq(island.log, [], 'update beyond the shown pills does not re-render');
+    stack.update('p', {text: 'x'});
+    eq(island.log, ['show n|p|t +1'], 'update of a side pill re-renders');
+    stack.end('n');
+    eq(island.log.at(-1), 'show p|t|m', 'centre ends: the rest move up, +N gone');
+
+    stack.update('m', {}, {alert: true});
+    eq([island.log.at(-1), clock.pending], ['show p|t|m alert:m', 0], 'alert on a shown side pill: no promotion');
+    stack.surface({id: 'z', kind: 'media', priority: 1});
+    stack.update('z', {}, {alert: true});
+    eq([island.log.at(-1), clock.pending], ['show z|p|t +1 alert:z', 1], 'alert beyond the shown pills is brought to the centre');
+    clock.advance(ALERT_MS);
+    eq([island.log.at(-1), clock.pending], ['show p|t|m +1', 0], 'then the order returns');
+}
+{
+    const {island, stack} = setup({}, 2);
+    stack.surface({id: 'call', kind: 'call'});
+    stack.ask('q', 'Allow?', ['Deny', 'Allow']);
+    eq([lastRender(island), stack.light], ['show call|q alert:q', 'off'], 'an ask in a side pill alerts in place, visible: no red light');
+    eq(island.info.expand, null, 'an ask in a side pill does not auto-open (only the centre does)');
+    stack.surface(media('m', {priority: 92}));
+    eq([lastRender(island), stack.light], ['show call|m +1', 'waiting'], 'pushed out of the shown pills → red light');
+    stack.end('call');
+    eq(lastRender(island), 'show m|q', 'ask back in a side pill');
+    stack.end('m');
+    eq(lastRender(island), 'show q expand:q', 'ask reaching the centre opens');
+
+    island.capacity = 1;
+    stack.surface({id: 'call2', kind: 'call'});
+    stack.refresh();
+    eq([lastRender(island), stack.light], ['show call2', 'waiting'], 'capacity drops: refresh() recomputes the light');
 }
 
 // --- destroy ----------------------------------------------------------------

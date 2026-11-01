@@ -21,7 +21,8 @@ src/buoy@murilegus/
     │   │                   ttl, stale, transient, alert; apps.hidden filter; missed history
     │   ├── presentation.js presentation data → render plan; pure, unit-tested (2026-11-01)
     │   ├── present.js      render plan → St actors. ONLY place content actors are made
-    │   ├── island.js       pill(s): compact, side-by-side minimal, expanded; morph
+    │   ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
+    │   ├── pill.js         one pill: content, sizing, hover/peek, morph (2026-11-01)
     │   ├── home.js         Home screen + tab strip
     │   ├── registry.js     app-id normalisation table; adapter resolution
     │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy

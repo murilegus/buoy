@@ -34,6 +34,8 @@ export default class BuoyExtension extends Extension {
         this._stack = new ActivityStack(this._island, {
             hiddenApps: this._settings.get_strv('apps-hidden'),
         });
+        // the island fits 2 or 3 pills before the system cluster; the stack re-renders
+        this._island.onCapacityChanged = () => this._stack?.refresh();
         this._hiddenId = this._settings.connect('changed::apps-hidden',
             () => this._stack.setHiddenApps(this._settings.get_strv('apps-hidden')));
         this._dbus = new BuoyDBus(this._stack);
