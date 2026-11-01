@@ -443,6 +443,10 @@ export class Island {
             // actor, as in ui/grabHelper.js. Automatic opens leave the keyboard alone and
             // watch clicks on the stage.
             if (how === 'user') {
+                // Clutter skips non-reactive actors when it emits events, so the grab
+                // actor must be reactive or its captured-event never sees Esc. Only
+                // while modal: at rest the transparent container must not eat clicks.
+                this.actor.reactive = true;
                 this._grab = Main.pushModal(this.actor, {actionMode: Shell.ActionMode.POPUP});
                 this._bg.grab_key_focus(); // popModal restores the previous focus
             }
@@ -458,6 +462,7 @@ export class Island {
             if (this._grab) {
                 Main.popModal(this._grab);
                 this._grab = null;
+                this.actor.reactive = false;
             }
         }
 
