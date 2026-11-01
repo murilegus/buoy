@@ -72,6 +72,13 @@
 .buoy-action:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
 .buoy-compact .buoy-action { padding: 2px 8px; }
 
+/* The buoy light: left edge slot, static (INDICATORS.md — one colour, one meaning). */
+.buoy-light { width: 7px; height: 7px; border-radius: 4px; }
+.buoy-light-off { background-color: #3a3a3a; }
+.buoy-light-missed { background-color: #EF9F27; }
+.buoy-light-waiting { background-color: #E24B4A; }
+.buoy-idle { padding-left: 2px; }
+
 /* staleAfter passed without an update (APPLE.md B1): dimmed */
 .buoy-stale,
 .buoy-stale StLabel,

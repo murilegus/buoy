@@ -1,5 +1,5 @@
 // Run: gjs -m tests/stack.test.js   (no Shell; fake clock + fake island)
-import {ActivityStack} from '../src/buoy@murilegus/lib/kit/stack.js';
+import {ActivityStack, ALERT_MS} from '../src/buoy@murilegus/lib/kit/stack.js';
 import {PRIORITY} from '../src/buoy@murilegus/lib/kit/activity.js';
 
 const HOUR = 60 * 60 * 1000;
@@ -72,7 +72,6 @@ class FakeIsland {
         this.log = [];
         this.top = null;
         this.light = 'off';
-        this.alerts = [];
     }
 
     show(a, info) {
@@ -89,10 +88,6 @@ class FakeIsland {
     setLight(l) {
         this.log.push(`light ${l}`);
         this.light = l;
-    }
-
-    alert(a) {
-        this.alerts.push(a.id);
     }
 }
 
@@ -185,9 +180,37 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(island.log.at(-1), 'show m', 'alert is one-shot');
     stack.surface({id: 'n', kind: 'notification', alert: true});
     eq(island.log.at(-1), 'show n alert', 'surface with alert: true');
+}
+
+// --- alert on a covered activity: shown for ALERT_MS, then the top returns -----------
+{
+    const {clock, island, stack} = setup();
+    eq(ALERT_MS, 2000, 'alert lasts ~2 s (SPEC §2c)');
+    stack.surface(media('m'));
+    stack.surface({id: 'n', kind: 'notification'});
     stack.update('m', {text: 'under'}, {alert: true});
-    eq(island.alerts, ['m'], 'alert on a covered activity goes to island.alert()');
-    eq(island.top.id, 'n', 'covered alert does not change the top');
+    eq([island.top.id, island.log.at(-1)], ['m', 'show m alert'], 'covered alert brings it up with an alert');
+    eq(stack.top.id, 'm', 'top reports the alerted activity while it is up');
+    clock.advance(ALERT_MS - 1);
+    eq(island.top.id, 'm', 'still up just before ALERT_MS');
+    clock.advance(1);
+    eq([island.top.id, island.log.at(-1), clock.pending], ['n', 'show n', 0], 'top returns, no timer left');
+
+    stack.update('m', {}, {alert: true});
+    stack.end('m');
+    eq([island.top.id, clock.pending], ['n', 0], 'ending the alerted activity returns at once, timer gone');
+
+    stack.surface(media('a'));
+    stack.surface(media('b', {priority: 1}));
+    stack.surface({id: 'top', kind: 'call'});
+    stack.update('a', {}, {alert: true});
+    stack.update('b', {}, {alert: true});
+    eq([island.top.id, clock.pending], ['b', 1], 'a second covered alert replaces the first');
+    clock.advance(ALERT_MS);
+    eq([island.top.id, clock.pending], ['top', 0], 'then the real top returns');
+
+    stack.update('top', {}, {alert: true});
+    eq([island.log.at(-1), clock.pending], ['show top alert', 0], 'alert on the top itself arms nothing');
 }
 
 // --- ttl --------------------------------------------------------------------
@@ -273,13 +296,13 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
 
 // --- apps-hidden ------------------------------------------------------------
 {
-    const {island, stack} = setup({hiddenApps: ['spotify']});
+    const {clock, island, stack} = setup({hiddenApps: ['spotify']});
     stack.surface(media());
     eq([island.top, island.log], [null, []], 'hidden app never reaches the island');
     stack.surface({id: 'f', kind: 'media', app: 'firefox'});
     eq(island.top.id, 'f', 'other apps unaffected');
     stack.update('media:spotify', {text: 'x'}, {alert: true});
-    eq(island.alerts, [], 'hidden app cannot alert');
+    eq([island.top.id, clock.pending], ['f', 0], 'hidden app cannot alert');
     stack.setHiddenApps([]);
     eq(island.top.id, 'f', 'unhiding keeps priority/recency rules (firefox surfaced later)');
     stack.end('f');

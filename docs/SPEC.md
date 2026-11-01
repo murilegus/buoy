@@ -76,9 +76,9 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 | State | When | Shape | Interaction |
 |---|---|---|---|
 | **Idle** | no activity | `IDLE` 120×32 r16; content per `idle-content` (§2a) | hover → +12px; press → +20px pulse; **click → open Home** |
-| **Compact** | one activity | `activity.shape`, content-fit | hover → `hoverShape` (peek, e.g. media transport); **click → open that activity's tab** |
+| **Compact** | one activity | `activity.shape`, content-fit | hover → `hoverShape`; after 300 ms the activity's `peek` if it has one (e.g. media transport); **click → open that activity's tab** |
 | **Minimal** | two+ activities | **side-by-side compact pills** (iPhone 18 Pro / iOS 27 model): highest priority at screen centre, others to the right in priority order, each ≥120 px, same shape and zones as a single compact | each pill clicks into its own tab |
-| **Expanded** | opened from idle or compact | `EXPANDED` (see §4) | click outside / Esc → collapse |
+| **Expanded** | opened from idle or compact; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open); clicks inside do nothing, buttons run their action (decided 2026-11-01) |
 
 Rules:
 - Pill closed = live activities only, no UI chrome. Expanded = Notchy-style panel.
@@ -86,6 +86,11 @@ Rules:
 - A tab strip exists only inside Expanded (Home · Media · Timer · …). Pill never shows tabs.
 - Activity ends → removed immediately. `ttl` for transient ones (OSD, notifications).
 - Highest priority shows; ties → most recent. Transient interrupts, then previous returns.
+- Alert (2026-11-01): the shown activity opens expanded for ~2 s (stays while hovered),
+  or pulses if it has no expanded; an alert on a covered activity brings it up for ~2 s,
+  then the top returns (until side-by-side minimal mode gives it its own pill).
+- A click-open takes the keyboard (modal, so Esc works); automatic opens (alert, ask,
+  transient) never do, so typing elsewhere is not interrupted.
 
 ### 2a. Idle content (decided 2026-10-30)
 

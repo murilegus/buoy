@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {planCompact, planExpanded} from './presentation.js';
+import {planCompact, planExpanded, planIdle, planPeek} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
@@ -126,27 +126,69 @@ function addAll(box, actors) {
     }
 }
 
-/**
- * @param {object} activity  presentation data (+ onAction)
- * @param {object} [opts]
- * @param {number} [opts.maxWidth]  content width cap; the text ellipsizes to fit
- * @returns {?Clutter.Actor} null when there is nothing to show
- */
-export function buildCompact(activity, {maxWidth = 0} = {}) {
-    const p = planCompact(activity);
-    if (!p.leading && !p.text && !p.trailing && !p.action)
+// The buoy light (INDICATORS.md): the pill's left edge slot. Static, never blinks.
+function lightDot(light) {
+    return light ? new St.Widget({
+        style_class: `buoy-light buoy-light-${light}`,
+        y_align: Clutter.ActorAlign.CENTER,
+    }) : null;
+}
+
+function compactBox(p, activity, maxWidth, buttons) {
+    if (!p.leading && !p.text && !p.trailing && !buttons.length)
         return null;
     const box = new St.BoxLayout({style_class: 'buoy-compact', y_align: Clutter.ActorAlign.CENTER});
     if (maxWidth > 0)
         box.set_style(`max-width: ${maxWidth}px;`);
     addAll(box, [
+        lightDot(p.light),           // edge slot first: the zones nudge inward (SPEC §2a)
         makeElement(p.leading, 'compact'),
         p.text ? label(p.text, 'buoy-text', true) : null,
         makeElement(p.trailing, 'compact'),
-        p.action ? actionButton(p.action, activity) : null,
+        ...buttons.map(a => actionButton(a, activity)),
     ]);
     if (p.stale)
         box.add_style_class_name('buoy-stale');
+    return box;
+}
+
+/**
+ * @param {object} activity  presentation data (+ onAction)
+ * @param {object} [opts]
+ * @param {number} [opts.maxWidth]  content width cap; the text ellipsizes to fit
+ * @param {string} [opts.light]  the stack's buoy light
+ * @returns {?Clutter.Actor} null when there is nothing to show
+ */
+export function buildCompact(activity, {maxWidth = 0, light} = {}) {
+    const p = planCompact(activity, {light});
+    return compactBox(p, activity, maxWidth, p.action ? [p.action] : []);
+}
+
+/**
+ * Hover peek: the activity's `peek` zones (+ transport buttons) in place of compact.
+ *
+ * @param {object} activity  presentation data (+ onAction)
+ * @param {object} [opts]
+ * @param {number} [opts.maxWidth]
+ * @param {string} [opts.light]
+ * @returns {?Clutter.Actor} null when the activity has no peek
+ */
+export function buildPeek(activity, {maxWidth = 0, light} = {}) {
+    const p = planPeek(activity, {light});
+    return p ? compactBox(p, activity, maxWidth, p.actions) : null;
+}
+
+/**
+ * idle-content `none` (SPEC §2a): an empty pill with the buoy light at its leading edge.
+ *
+ * @param {object} opts
+ * @param {number} opts.width  inner width of the idle pill
+ * @param {string} [opts.light]
+ * @returns {Clutter.Actor}
+ */
+export function buildIdle({width, light}) {
+    const box = new St.BoxLayout({style_class: 'buoy-idle', width, y_align: Clutter.ActorAlign.CENTER});
+    addAll(box, [lightDot(planIdle({light}).light)]);
     return box;
 }
 

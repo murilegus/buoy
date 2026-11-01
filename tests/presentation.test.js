@@ -1,5 +1,5 @@
 // Run: gjs -m tests/presentation.test.js   (pure: presentation data → render plan)
-import {element, planCompact, planExpanded, keyline, MAX_ACTIONS} from
+import {element, planCompact, planExpanded, planIdle, planPeek, lightSlot, keyline, MAX_ACTIONS} from
     '../src/buoy@murilegus/lib/kit/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
@@ -11,7 +11,7 @@ function eq(actual, expected, msg) {
         throw new Error(`${msg}: expected ${e}, got ${a}`);
 }
 
-eq(MAX_ACTIONS, {compact: 1, expanded: 3}, 'HIG action limits (APPLE.md B5.5)');
+eq(MAX_ACTIONS, {compact: 1, expanded: 3, peek: 3}, 'HIG action limits (APPLE.md B5.5) + peek transport');
 
 // --- element ------------------------------------------------------------------
 for (const empty of [null, undefined, '', '  ', false, 0, {}, {icon: ''}, {art: null}, {text: ''}])
@@ -85,7 +85,7 @@ const track = {
     eq(planCompact({text: long}).text, long, 'long text is not truncated (the renderer ellipsizes)');
     eq(planCompact({text: '  padded  '}).text, 'padded', 'text trimmed');
     eq(planCompact({text: '   '}).text, null, 'blank text → null');
-    eq(planCompact({}), {leading: null, text: null, trailing: null, action: null, keyline: null, stale: false},
+    eq(planCompact({}), {leading: null, text: null, trailing: null, action: null, keyline: null, stale: false, light: null},
         'empty presentation');
     eq(planCompact({isStale: true, keyline: '#1DB954'}).stale, true, 'isStale → stale');
     eq(planCompact({keyline: '#1DB954'}).keyline, '#1db954', 'keyline carried');
@@ -153,6 +153,38 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     const e = planExpanded(ask);
     eq([e.center?.title, e.bottom, e.actions.map(a => a.id)], ['Allow edit?', {type: 'actions'}, ['Deny', 'Allow']],
         'ask expanded: question + every option');
+}
+
+// --- buoy light slot (SPEC §2a-i, INDICATORS.md) ------------------------------------
+eq(lightSlot('off', {idle: true}), 'off', 'grey off light only in idle');
+eq(lightSlot('off', {idle: false}), null, 'no slot in compact when off');
+for (const l of ['missed', 'waiting']) {
+    eq(lightSlot(l, {idle: true}), l, `${l} in idle`);
+    eq(lightSlot(l, {idle: false}), l, `${l} in compact`);
+}
+eq(lightSlot('bogus', {idle: true}), 'off', 'unknown light in idle → off');
+eq(lightSlot(undefined, {idle: false}), null, 'no light in compact');
+eq(planIdle({light: 'missed'}), {light: 'missed'}, 'idle plan carries the light');
+eq(planIdle({}), {light: 'off'}, 'idle none: grey light');
+eq(planCompact({text: 't'}, {light: 'waiting'}).light, 'waiting', 'compact carries a red light');
+eq(planCompact({text: 't'}, {light: 'off'}).light, null, 'compact drops the off light');
+
+// --- peek (hover, Buoy's own; no Apple equivalent) -----------------------------------
+eq(planPeek({text: 't'}), null, 'no peek field → no peek');
+eq(planPeek({text: 't', peek: true}), null, 'peek must be an object');
+eq(planPeek({peek: {}}), null, 'empty peek → no peek');
+{
+    const acts = [{id: 'prev', icon: 'p-symbolic'}, {id: 'pp', icon: 'q-symbolic'},
+        {id: 'next', icon: 'n-symbolic'}, {id: 'x', label: 'X'}];
+    const p = planPeek({
+        keyline: '#1DB954', isStale: true, actions: acts,
+        peek: {leading: 'a-symbolic', text: 'Song', transport: true},
+    }, {light: 'missed'});
+    eq([p.leading, p.text, p.trailing], [{type: 'icon', icon: 'a-symbolic'}, 'Song', null], 'peek zones');
+    eq(p.actions.map(a => a.id), ['prev', 'pp', 'next'], 'transport → up to 3 activity actions');
+    eq([p.keyline, p.stale, p.light], ['#1db954', true, 'missed'], 'peek inherits keyline, stale, light');
+    eq(planPeek({actions: acts, peek: {text: 'x'}}).actions, [], 'no transport → no buttons');
+    eq(planPeek({peek: {transport: true}}), null, 'transport without actions or content → no peek');
 }
 
 console.log('presentation: ok');
