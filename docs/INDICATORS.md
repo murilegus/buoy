@@ -21,7 +21,7 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 | Colour | Token | Meaning | Set by | Cleared by | Shown in |
 |---|---|---|---|---|---|
 | grey `#3a3a3a` | `light-off` | nothing | — | — | idle `none` only |
-| amber `#EF9F27` | `light-missed` | ≥1 activity ended while you were away (idle > N min), the island was hidden (fullscreen), or DND suppressed it; missed history has entries | `stack` on end-while-hidden | hover-peek closed, Home opened, or history emptied | idle, compact |
+| amber `#EF9F27` | `light-missed` | ≥1 activity ended while you were away (idle > N min), the island was hidden (fullscreen), or DND suppressed it; missed history has entries. Not counted (2026-11-01): `osd`, `copied` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) | hover-peek closed, Home opened, or history emptied | idle, compact |
 | red `#E24B4A` | `light-waiting` | an `ask` activity exists that could not surface (DND, fullscreen, user dismissed) and still has no answer | `stack` when an `ask` is queued but not shown | the ask is answered, times out (→ deny), or is ended by the caller | idle, compact |
 
 Precedence: red › amber › off. Only one light is drawn.

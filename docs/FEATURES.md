@@ -38,6 +38,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 |---|---|---|---|
 | [x] | Activity contract + `validate()` + cross-app `PRIORITY` | `kit/activity.js` | bad adapter output throws at registry |
 | [~] | Stack: `surface/update/end/schedule/ask`, ttl ≤ 8 h, stale, transient, alert, `apps-hidden` filter, missed history (last 5) | `kit/stack.js` | unit-testable with `gjs`, no Shell import |
+| | ↳ 2026-11-01 implemented, `tests/stack.test.js`; injected clock, `answer`/`dismiss`, `setUnseen`, light off/missed/waiting; `apps-hidden` live from GSettings. Island does not yet render `alert`, `expand`, `isStale` or the light; `setUnseen` has no caller until the fullscreen item. Awaiting review | | |
 | [ ] | Presentation → actors: leading/text/trailing; expanded regions leading/trailing/center/bottom with `priority`; actions; keyline tint | `kit/present.js` | only file that creates content actors |
 | [~] | Island: idle (none + buoy light), compact content-fit, hover grow/peek, press pulse, expanded morph, click-outside, Esc | `kit/island.js` | morph never moves text |
 | | ↳ 2026-11-01 run in Shell 50.1: idle pill 120×32 centred, hover → 132×34, press → 139×36 and back, 0 repaints at idle, enable/disable clean. Not yet: buoy light, compact content (needs `present.js`), peek, expanded, click-outside, Esc (no key handling yet) | | |

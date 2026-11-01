@@ -137,7 +137,10 @@ D-Bus API ──────────────────────┘ 
 
 Lifecycle API (internal and D-Bus): `surface(activity)` · `update(id, patch, {alert})` ·
 `end(id, {dismissal: 'immediate' | ms})` · `schedule(activity, startAt)` ·
-`ask(id, question, options) → choice` (no Apple equivalent; Buoy's extra).
+`ask(id, question, options, {timeoutMs, fallback}) → choice` (no Apple equivalent; Buoy's
+extra) answered by `answer(id, choice)`; `dismiss(id)` hides an ask but keeps it pending
+(red light), any other activity just ends. `ttl: 0` lives until ended; the 8 h cap
+applies to a set `ttl` (`kit/stack.js`, 2026-11-01).
 
 Apple rules kept as code: 8 h cap, end removes from the pill immediately, relevance decides
 which shows, stale state renders dimmed, alert = brief expanded, transient ends on outside click.

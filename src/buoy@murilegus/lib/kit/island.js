@@ -6,8 +6,10 @@ import {shapesFor, GAP} from './shapes.js';
 
 /**
  * The pill. Knows nothing about activities except the small contract
- * ActivityStack hands it through show()/clear():
- *   {content?, expanded?, sizeHint?, onPress?, onExpand?}  — sizes come from shapes.js
+ * ActivityStack hands it through show(activity, {alert, expand}) / clear():
+ *   {content?, expanded?, sizeHint?, onPress?, onExpand?, isStale}  — sizes come from shapes.js
+ * The stack may also call alert(activity) and setLight('off'|'missed'|'waiting');
+ * alert/expand/light are not rendered yet (M1 island item).
  *
  * Structure: a fixed-size invisible container (so the chrome input region
  * covers the expanded pill), a background actor that morphs, and a content
