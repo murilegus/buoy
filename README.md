@@ -12,12 +12,14 @@ happening underneath.
 
 Pure GNOME Shell extension (GNOME 50, Ubuntu 26.04). No daemon, no binaries.
 Inspired by Dynamic Island, Notchy and Islet; see `docs/SPEC.md` for what it is and
-is not, and `docs/NOTCHY.md` for the feature audit.
+is not.
 
 ```
 buoy/
 ├── package.json / jsconfig.json / eslint.config.js   pnpm, types, lint — nothing is bundled
-├── scripts/  link.sh · dev.sh · pack.sh
+├── scripts/  link.sh · dev.sh · pack.sh · verify.sh
+├── tests/    gjs unit tests (*.test.js), run by tests/run.sh
+├── .githooks/pre-commit · .github/workflows/ci.yml   both run `pnpm verify`
 ├── docs/
 │   ├── SPEC.md           what Buoy is and is not; v0.1 decisions
 │   ├── ARCHITECTURE.md   module/feature layout, rules, settings model
@@ -35,7 +37,7 @@ Needs GNOME Shell 50, `gjs`, pnpm (fetches its own Node, see `devEngines` in
 package.json) and, for `pnpm dev`: `sudo apt install mutter-dev-bin inotify-tools`.
 
 ```bash
-pnpm install
+pnpm install     # also enables the pre-commit hook (core.hooksPath = .githooks)
 pnpm link        # symlink into GNOME + compile the schema
 pnpm dev         # nested shell (mutter devkit) with auto-restart
 pnpm lint
@@ -47,7 +49,8 @@ pnpm run pack    # zip for EGO (`pnpm pack` is pnpm's own tarball command)
 Fast loop: adapters/stack → `pnpm test` (ms) → module edits → `stateObj.reload('<id>')`
 in Looking Glass with `dev-mode` on (no restart) → kit edits → nested shell restart.
 
-Poke it from Looking Glass (`Alt+F2` → `lg`):
+Poke it from Looking Glass (`Alt+F2` → `lg`). Until `kit/present.js` lands (M1) the
+pill keeps its idle size and shows no text; a click opens an empty expanded panel.
 
 ```js
 s = Main.extensionManager.lookup('buoy@murilegus').stateObj.stack

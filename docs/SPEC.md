@@ -246,7 +246,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 9. **minimal mode** — side-by-side compact pills for two or three activities (§2c).
 10. **clipboard** — optional module, off by default.
 
-Roadmap: FEATURES.md (milestones M0–M5 with status). Status marks: INDICATORS.md. Research: APPLE.md (ActivityKit/HIG → BuoyKit), NOTCHY.md (74-feature audit), ISLE.md, ISLET.md, BEHAVIOUR.md.
+Roadmap: FEATURES.md (milestones M0–M5 with status). Status marks: INDICATORS.md. Research: APPLE.md (ActivityKit/HIG → BuoyKit). Competitor notes (Notchy audit, Isle, Islet, BEHAVIOUR) are kept locally in `docs/notes/` and not committed.
 
 ## 7. BuoyKit (decided 2026-10-30)
 
