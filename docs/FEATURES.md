@@ -16,7 +16,7 @@ Last updated: 2026-11-01
 - [x] SPEC.md (what Buoy is/isn't, v0.1 decisions)
 - [x] ARCHITECTURE.md (module/feature layout B, rules, settings model)
 - [x] APPLE.md (ActivityKit/HIG → BuoyKit contract)
-- [x] Competitor notes: NOTCHY, ISLE, ISLET; BEHAVIOUR (iOS rules + Islet benchmark)
+- [x] Competitor notes: NOTCHY, ISLE, ISLET; BEHAVIOUR (iOS rules + Islet benchmark) — local only, `docs/notes/` is not committed
 - [x] Name: Buoy, uuid `buoy@murilegus`
 - [x] src tree restructured into `kit/` + `modules/`
 - [x] Smoke (2026-11-01): eslint-config-gnome pinned to Shell 50's commit + eslint 9.38.0,
