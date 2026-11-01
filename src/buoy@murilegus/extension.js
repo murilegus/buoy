@@ -31,7 +31,11 @@ export default class BuoyExtension extends Extension {
             () => this._island.reposition());
 
         this._registry = new Registry();
-        this._stack = new ActivityStack(this._island);
+        this._stack = new ActivityStack(this._island, {
+            hiddenApps: this._settings.get_strv('apps-hidden'),
+        });
+        this._hiddenId = this._settings.connect('changed::apps-hidden',
+            () => this._stack.setHiddenApps(this._settings.get_strv('apps-hidden')));
         this._dbus = new BuoyDBus(this._stack);
         this._dbus.export();
 
@@ -63,6 +67,10 @@ export default class BuoyExtension extends Extension {
         this._active = null;
         this._dbus?.unexport();
         this._dbus = null;
+        if (this._hiddenId) {
+            this._settings.disconnect(this._hiddenId);
+            this._hiddenId = 0;
+        }
         this._stack?.destroy();
         this._stack = null;
         this.stack = null;

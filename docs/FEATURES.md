@@ -38,6 +38,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 |---|---|---|---|
 | [x] | Activity contract + `validate()` + cross-app `PRIORITY` | `kit/activity.js` | bad adapter output throws at registry |
 | [~] | Stack: `surface/update/end/schedule/ask`, ttl ≤ 8 h, stale, transient, alert, `apps-hidden` filter, missed history (last 5) | `kit/stack.js` | unit-testable with `gjs`, no Shell import |
+| | ↳ 2026-11-01 implemented, `tests/stack.test.js`; injected clock, `answer`/`dismiss`, `setUnseen`, light off/missed/waiting; `apps-hidden` live from GSettings. Island does not yet render `alert`, `expand`, `isStale` or the light; `setUnseen` has no caller until the fullscreen item. Missed excludes osd/copied/ask/hidden apps (agreed 2026-11-01). Awaiting review | | |
 | [ ] | Presentation → actors: leading/text/trailing; expanded regions leading/trailing/center/bottom with `priority`; actions; keyline tint | `kit/present.js` | only file that creates content actors |
 | [~] | Island: idle (none + buoy light), compact content-fit, hover grow/peek, press pulse, expanded morph, click-outside, Esc | `kit/island.js` | morph never moves text |
 | | ↳ 2026-11-01 run in Shell 50.1: idle pill 120×32 centred, hover → 132×34, press → 139×36 and back, 0 repaints at idle, enable/disable clean. Not yet: buoy light, compact content (needs `present.js`), peek, expanded, click-outside, Esc (no key handling yet) | | |
@@ -46,7 +47,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | Registry: slug table, resolve user-JSON → `apps/<slug>.js` → `adapter.js`, `apps-plain` | `kit/registry.js` | |
 | [ ] | D-Bus `org.gnome.Shell.Extensions.Buoy`: Surface/Update/End/Schedule/Ask | `kit/dbus.js` | `gdbus call` from a shell script works |
 | [ ] | Keyboard: `Super+B` focus, ←/→ between pills, Enter/Esc, A/D for ask | `kit/island.js` | |
-| [ ] | Fullscreen: hide island, show missed light on exit | `kit/stack.js` | |
+| [ ] | Fullscreen: hide island, show missed light on exit | `kit/stack.js` | fullscreen drives `stack.setUnseen()`; fullscreen only (away/DND → M4 Buoy light, decided 2026-11-01) |
 | [ ] | GSettings schema + `prefs.js` (Adw, one page per module from `index.js#schema`, test/preview mode key) | `schemas/`, `prefs.js` | |
 
 ## M2 — Panel (cosmetic, independent of M1)  `[~]`
@@ -81,7 +82,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | Phone via GSConnect: Grab/Be ride, OTP (30 s), Zalo/Messenger message with avatar, incoming call Mute/Reply SMS | phone | GSConnect notifications (app-id), telephony | adapters `modules/phone/apps/{grab,be,zalo}.js` | 18 |
 | [ ] | Attention on another workspace, jump | attention | Mutter `demands-attention`/`urgent` | click switches workspace + focuses | 18 |
 | [ ] | Headphones / display plugged → choose on pill | device | Gvc port change, `monitors-changed` | replaces GNOME jack dialog when enabled | 12 |
-| [ ] | Buoy light (amber missed / red waiting) + last-5 history on hover | core | internal | SPEC §2a-i | 12 |
+| [ ] | Buoy light (amber missed / red waiting) + last-5 history on hover; away (idle > N min) and DND also call `stack.setUnseen()` | core | internal; idle monitor, notification DND setting | SPEC §2a-i, INDICATORS | 12 |
 | [ ] | Notifications peek with the notification's own actions; DND | notification | MessageTray | Reply/Mark read/Open; bodies hidden while screen sharing | 8 |
 | [ ] | Power: charging/full/low; "18 W — slow"; "full in 42 min" | power | UPower `energy-rate`, `time-to-full` | | 12 |
 | [ ] | BT device connected with battery | device | GnomeBluetooth + UPower | | 12 |
