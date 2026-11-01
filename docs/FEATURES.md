@@ -50,7 +50,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | Registry: slug table, resolve user-JSON → `apps/<slug>.js` → `adapter.js`, `apps-plain` | `kit/registry.js` | |
 | [ ] | D-Bus `org.gnome.Shell.Extensions.Buoy`: Surface/Update/End/Schedule/Ask | `kit/dbus.js` | `gdbus call` from a shell script works |
 | [ ] | Keyboard: `Super+B` focus, ←/→ between pills, Enter/Esc, A/D for ask | `kit/island.js` | |
-| [ ] | Fullscreen: hide island, show missed light on exit | `kit/stack.js` | fullscreen drives `stack.setUnseen()`; fullscreen only (away/DND → M4 Buoy light, decided 2026-11-01) |
+| [ ] | Fullscreen: hide island, show missed light on exit | `kit/stack.js` | fullscreen drives `stack.setUnseen()`; fullscreen only (away/DND → M4 Buoy light, decided 2026-11-01). While unseen the stack sends no `expand`/`alert` (an ask must not open in a hidden pill, where any click in the fullscreen app would collapse it) — only the red light; on `setUnseen(false)` a pending ask on top is re-shown with `expand` (found 2026-11-01) |
 | [ ] | GSettings schema + `prefs.js` (Adw, one page per module from `index.js#schema`, test/preview mode key) | `schemas/`, `prefs.js` | |
 
 ## M2 — Panel (cosmetic, independent of M1)  `[~]`
