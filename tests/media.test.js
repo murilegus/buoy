@@ -21,4 +21,18 @@ const r = adapter.media(track, {title: 'custom'});
 if (r.text !== 'custom')
     throw new Error('profile title override');
 
+// ARCHITECTURE rule 11: no measurements anywhere in adapter output
+const MEASURES = new Set(['size', 'width', 'height', 'x', 'y', 'px']);
+function noMeasures(v, path) {
+    if (v === null || typeof v !== 'object')
+        return;
+    for (const [k, child] of Object.entries(v)) {
+        if (MEASURES.has(k))
+            throw new Error(`${path}.${k}: adapters must not send measurements`);
+        noMeasures(child, `${path}.${k}`);
+    }
+}
+noMeasures(p, 'media');
+noMeasures(q, 'spotify ad');
+
 console.log('media adapter: ok');

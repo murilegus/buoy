@@ -324,11 +324,14 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     const {island, stack} = setup();
     throws(() => stack.ask('q', 'Run?', []), 'ask needs options');
     const p = stack.ask('q', 'Run tests?', ['Deny', 'Allow'], {app: 'claude'});
-    eq(island.log.at(-1), 'show q alert', 'ask surfaces with an alert');
+    eq(island.log.at(-1), 'show q alert expand', 'ask surfaces with an alert, opened expanded');
     eq([stack.top.kind, stack.top.text, stack.top.actions.map(a => a.id)], ['ask', 'Run tests?', ['Deny', 'Allow']],
         'ask activity carries question and options');
+    eq(stack.top.expanded, true, 'ask has an expanded presentation (all options as buttons)');
     eq(stack.light, 'off', 'a visible ask is not "waiting"');
     eq(stack.answer('q', 'Maybe'), false, 'answer outside the options is refused');
+    island.top.onAction('Maybe');
+    eq(stack.top?.id, 'q', 'a button with an unknown id does not settle the ask');
     eq(stack.answer('q', 'Allow'), true, 'answer accepted');
     eq(await p, 'Allow', 'ask resolves with the answer');
     eq([stack.top, stack.answer('q', 'Allow')], [null, false], 'answered ask ends; second answer refused');
@@ -343,6 +346,10 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     stack.end('r');
     eq([await r, clock.pending], [null, 0], 'caller end resolves null and cancels the timeout');
 
+    const b = stack.ask('b', 'Allow?', ['Deny', 'Allow']);
+    stack.top.onAction('Allow');
+    eq([await b, stack.top?.id ?? null], ['Allow', null], 'pressing an action button answers the ask');
+
     const s1 = stack.ask('s', 'one?', ['a']);
     const s2 = stack.ask('s', 'two?', ['b']);
     eq(await s1, null, 're-asking the same id settles the old ask with null');
@@ -356,6 +363,7 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq([island.top.id, stack.light], ['call', 'waiting'], 'ask covered by a call → red light');
     stack.end('call');
     eq(stack.light, 'off', 'ask visible again → light off');
+    eq(island.log.at(-2), 'show q expand', 'an ask back on top opens expanded again (still unanswered)');
     eq(stack.dismiss('q'), true, 'dismiss an ask');
     eq([island.top, stack.light], [null, 'waiting'], 'dismissed ask leaves the pill, light red');
     stack.answer('q', 'Deny');

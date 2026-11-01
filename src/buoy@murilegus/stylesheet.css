@@ -38,8 +38,44 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+/* Content built by kit/present.js. Text 13–14 px, medium or heavier (APPLE.md B5.3);
+   colour lives in content, the pill stays black. Nothing here animates. */
 .buoy-content {
     color: #fff;
     font-size: 13px;
+    font-weight: 500;
 }
 .buoy-content .dim { color: #b8b8b8; }
+
+.buoy-compact { spacing: 8px; }
+.buoy-text { font-weight: 600; }
+.buoy-label { color: #d0d0d0; font-feature-settings: "tnum"; }
+.buoy-icon, .buoy-ring, .buoy-bar { color: #fff; }
+.buoy-art { border-radius: 4px; }
+.buoy-eq { spacing: 2px; }
+.buoy-eq-bar { width: 3px; border-radius: 1px; background-color: #fff; }
+
+.buoy-expanded { padding: 14px; spacing: 12px; }
+.buoy-expanded-top { spacing: 14px; }
+.buoy-block { spacing: 2px; }
+.buoy-title { font-size: 14px; font-weight: 600; }
+.buoy-subtitle { color: #b8b8b8; }
+.buoy-actions { spacing: 8px; }
+
+.buoy-action {
+    padding: 4px 12px;
+    border-radius: 999px;
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.12);
+}
+.buoy-action:hover { background-color: rgba(255, 255, 255, 0.2); }
+.buoy-action:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-compact .buoy-action { padding: 2px 8px; }
+
+/* staleAfter passed without an update (APPLE.md B1): dimmed */
+.buoy-stale,
+.buoy-stale StLabel,
+.buoy-stale .buoy-icon,
+.buoy-stale .buoy-ring,
+.buoy-stale .buoy-bar { color: #8a8a8a; }
+.buoy-stale .buoy-eq-bar { background-color: #8a8a8a; }

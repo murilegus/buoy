@@ -8,7 +8,7 @@ export default {
             text: profile?.title ?? `${ev.title} · ${ev.artist}`,
             trailing: {icon: ev.status === 'Playing' ? 'eq' : 'media-playback-pause-symbolic'},
             expanded: {
-                leading: {art: ev.art, size: 56},
+                leading: {art: ev.art},
                 center: {title: ev.title, subtitle: ev.artist, progress: true},
                 bottom: {transport: true},
             },

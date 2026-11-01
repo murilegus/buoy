@@ -174,8 +174,9 @@ export class ActivityStack {
         return new Promise(resolve => {
             this._asks.set(id, {resolve, options, dismissed: false});
             this.surface({
-                id, kind: 'ask', app, text: question, alert: true,
+                id, kind: 'ask', app, text: question, alert: true, expanded: true,
                 actions: options.map(o => ({id: o, label: o})),
+                onAction: choice => this.answer(id, choice), // present.js buttons
             });
             if (timeoutMs > 0)
                 this._arm(id, 'ask', timeoutMs, () => this._settle(id, fallback));
@@ -341,7 +342,9 @@ export class ActivityStack {
         } else if (top.id !== prev || top.id === changed || top.id === alert) {
             this._island.show(top, {
                 alert: top.id === alert,
-                expand: top.style === 'transient' && top.id !== prev,
+                // transient (APPLE.md A3) and ask (all options are only in expanded)
+                // open expanded when they reach the pill
+                expand: (top.style === 'transient' || top.kind === 'ask') && top.id !== prev,
             });
         }
 
