@@ -5,6 +5,7 @@
   "shell-version": [
     "50"
   ],
+  "settings-schema": "org.gnome.shell.extensions.buoy",
   "version": 1,
   "url": ""
 }

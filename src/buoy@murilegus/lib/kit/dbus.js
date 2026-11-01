@@ -3,7 +3,6 @@
 //          Schedule(a{sv}, t startAt) · Ask(s id, s question, as options) → s choice
 // Callers send presentation data directly; no adapter lookup.
 export class BuoyDBus {
-    constructor(_stack) {}
     export() {}
     unexport() {}
 }

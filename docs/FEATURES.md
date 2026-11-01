@@ -6,7 +6,7 @@ otherwise; the agent sets `[~]` when starting and `[x]` only after Ethan's revie
 (each 1–3; see bottom). Every item names its module, source signal, settings keys and what
 "done" means. Update this file in the same PR as the feature.
 
-Last updated: 2026-10-30
+Last updated: 2026-11-01
 
 ---
 
@@ -19,6 +19,12 @@ Last updated: 2026-10-30
 - [x] Competitor notes: NOTCHY, ISLE, ISLET; BEHAVIOUR (iOS rules + Islet benchmark)
 - [x] Name: Buoy, uuid `buoy@murilegus`
 - [x] src tree restructured into `kit/` + `modules/`
+- [x] Smoke (2026-11-01): eslint-config-gnome pinned to Shell 50's commit + eslint 9.38.0,
+  Node via pnpm `devEngines.runtime`; `pnpm lint`/`test` green; `shapes.test.js`;
+  `metadata.json` gets `settings-schema` (enable() threw without it); `pnpm dev` moved to
+  `--devkit` (Shell 49+) and no longer orphans the shell on restart; enable/disable ×3 clean
+  in headless Shell 50.1 and in `pnpm dev`; shapes snap to even px; `expanded-width`
+  replaces `expanded-size`. Reviewed 2026-11-01
 
 ## M1 — Kit (framework)  `[~]`
 
@@ -30,6 +36,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [~] | Stack: `surface/update/end/schedule/ask`, ttl ≤ 8 h, stale, transient, alert, `apps-hidden` filter, missed history (last 5) | `kit/stack.js` | unit-testable with `gjs`, no Shell import |
 | [ ] | Presentation → actors: leading/text/trailing; expanded regions leading/trailing/center/bottom with `priority`; actions; keyline tint | `kit/present.js` | only file that creates content actors |
 | [~] | Island: idle (none + buoy light), compact content-fit, hover grow/peek, press pulse, expanded morph, click-outside, Esc | `kit/island.js` | morph never moves text |
+| | ↳ 2026-11-01 run in Shell 50.1: idle pill 120×32 centred, hover → 132×34, press → 139×36 and back, 0 repaints at idle, enable/disable clean. Not yet: buoy light, compact content (needs `present.js`), peek, expanded, click-outside, Esc (no key handling yet) | | |
 | [ ] | Side-by-side minimal: ≤3 pills, centre = highest priority, slide-to-fill, merge on open, `+N` badge, per-pill hover/click, alert-brief on one pill | `kit/island.js` | SPEC §2c all true |
 | [ ] | Home + tab strip: `[Home][kind tabs][slot ▾][⋯]`, context-opens-tab rule, no last-tab memory | `kit/home.js` | SPEC §2b, §3 |
 | [ ] | Registry: slug table, resolve user-JSON → `apps/<slug>.js` → `adapter.js`, `apps-plain` | `kit/registry.js` | |

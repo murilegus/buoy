@@ -149,7 +149,7 @@ which shows, stale state renders dimmed, alert = brief expanded, transient ends 
 | compact leading + trailing | one pill, three zones: **leading** (icon/art) · **text** · **trailing** (status glyph/progress); content-fit width, h 32 |
 | compact reduced width (two activities, iPhone 18 Pro) | **two compact pills side by side**, each squeezed to a 28 px circle leading glyph + short trailing — Buoy's "minimal mode", modelled on the 18 Pro, not the detached bubble |
 | minimal detached (up to 3) | fallback when width is tight: attached pill + detached circle(s) |
-| expanded | 600×300 (tunable); regions **leading / trailing / center / bottom** with `priority`; opened by click; alerts open it briefly; transient activities start here |
+| expanded | width per screen (560–760, `expanded-width` overrides) × height fitting content up to width/2 — as iOS: fixed width, dynamic height; regions **leading / trailing / center / bottom** with `priority`; opened by click; alerts open it briefly; transient activities start here |
 | Lock Screen / banner | n/a (GNOME lock screen out of scope) |
 | Mac menu bar | *we are the menu bar* |
 | hover (no Apple equivalent) | +12 px growth; for media shows transport (Islet peek) |

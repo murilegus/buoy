@@ -45,7 +45,7 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
 - `kit/activity.js`, `kit/stack.js`, `kit/registry.js`, `kit/shapes.js`: contract
   defaults and validation errors; priority ordering and ties; ttl expiry and the 8 h cap;
   stale; transient end; `apps-hidden`/`apps-plain`; slug normalisation; shape derivation
-  at 1366 / 1920 / 2560 / 3440 and the `expanded-size` override.
+  at 1366 / 1920 / 2560 / 3440 and the `expanded-width` override.
 - Write the tests **before or with** the code, not after. Cover the failure paths, not
   only the happy one. One assertion message per check so a failure says what broke.
 - `gjs -m` has no test framework: use plain `throw new Error(...)`, keep tests

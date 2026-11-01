@@ -190,16 +190,21 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
 
 All sizes are logical px; HiDPI is handled by St/Clutter. `kit/shapes.js#shapesFor()`
 derives everything from two inputs — the monitor's logical width `W` and the panel
-height — and is recomputed on `monitors-changed` or when `expanded-size` changes.
+height — and is recomputed on `monitors-changed` or when `expanded-width` changes.
 A function, not breakpoints: no jumps when moving between monitors.
+Every width is snapped to an even whole px (2026-11-01), so a shape centred in the even-wide
+container sits on whole pixels — no half-pixel edges; radius = ⌊h/2⌋.
+Expanded follows iOS (2026-11-01): width is fixed per screen (derived, or the user's
+`expanded-width`), height is not a setting — it fits the content up to width/2. The input
+container is sized to that cap.
 
 | Thing | Rule | 1920 | 2560 | 3440 |
 |---|---|---|---|---|
 | pill height `h` | panel 40 − 2×4 | 32 | 32 | 32 |
 | idle | `h × 3.75` wide, r = h/2 | 120×32 | 120×32 | 120×32 |
-| hover / press | +10 % / +16 % width, +2 / +4 height | | | |
-| compact | content + 28, clamped to [idle, 0.6×expanded] (`'wide'` hint → 0.8) | | | |
-| expanded | `clamp(0.28 × W, 560, 760)`, height = width/2, r 28; `expanded-size` overrides | 560×280 | 717×358 | 760×380 |
+| hover / press | +10 % / +16 % width, +2 / +4 height | 132×34 / 140×36 from idle | | |
+| compact | content + 28 (rounded up), clamped to [idle, 0.6×expanded] (`'wide'` hint → 0.8) | ≤ 336 | ≤ 430 | ≤ 456 |
+| expanded | width `clamp(0.28 × W, 560, 760)` or `expanded-width` (≤ W − 40); height fits content, at most width/2; r 28 | 560 × ≤280 | 716 × ≤358 | 760 × ≤380 |
 | container | expanded + 20 px each side (overshoot room) | | | |
 | minimal pills | ≤ expanded/3 each, max 3 | | | |
 

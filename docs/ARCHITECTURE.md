@@ -101,7 +101,7 @@ D-Bus callers send presentation data directly and skip the registry.
 | `cluster-contrast` | s | auto \| light \| dark |
 | `left-cluster-empty` | s | workspace \| hidden |
 | `idle-clock-style`, `idle-weather-refresh` | — | declared by those modules |
-| `expanded-size` | (ii) | expanded width/height |
+| `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
 | `keybind-focus` | as | focus the pill (default Super+B) |
 | per-module keys | — | declared by the module |
 

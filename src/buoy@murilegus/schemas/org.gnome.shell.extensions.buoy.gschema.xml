@@ -16,7 +16,11 @@
     <key name="cluster-background" type="s"><default>"hover"</default></key>
     <key name="cluster-contrast" type="s"><default>"auto"</default></key>
     <key name="left-cluster-empty" type="s"><default>"workspace"</default></key>
-    <key name="expanded-size" type="(ii)"><default>(600, 300)</default></key>
+    <key name="expanded-width" type="i">
+      <default>0</default>
+      <summary>Expanded island width in logical px</summary>
+      <description>0 derives it from the monitor (560–760 px). Height is not a setting: the expanded island fits its content, up to half its width.</description>
+    </key>
     <key name="dev-mode" type="b"><default>false</default></key>
     <key name="keybind-focus" type="as"><default><![CDATA[['<Super>b']]]></default></key>
   </schema>

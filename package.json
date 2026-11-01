@@ -7,7 +7,7 @@
     "check": "tsc -p jsconfig.json",
     "dev": "scripts/dev.sh",
     "link": "scripts/link.sh",
-    "lint": "eslint src",
+    "lint": "eslint src tests eslint.config.js",
     "pack": "scripts/pack.sh",
     "test": "tests/run.sh"
   },
@@ -27,15 +27,20 @@
       "name": "pnpm",
       "version": "12.16.1",
       "onFail": "download"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "24.22.2",
+      "onFail": "download"
     }
   },
   "packageManager": "pnpm@12.16.1",
   "type": "module",
   "devDependencies": {
-    "@eslint/config-helpers": "^0.7.0",
+    "@eslint/config-helpers": "0.4.1",
     "@girs/gjs": "^5.6.0",
     "@girs/gnome-shell": "^50.0.4",
-    "eslint": "^9.39.5",
+    "eslint": "9.38.0",
     "eslint-config-gnome": "git+https://gitlab.gnome.org/World/javascript/eslint-config-gnome.git#c479d059e8d9ea99c3b53c2ea43abf7fdb05eb51",
     "typescript": "^5.9.0"
   }

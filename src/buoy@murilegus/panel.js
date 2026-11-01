@@ -2,8 +2,12 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const GAP = 4;
 
-// SPEC §1: transparent panel; left cluster = focused app (TODO); right = tray + clock;
-// quick settings hidden (indicators move into the pill — TODO).
+/**
+ * SPEC §1: transparent panel; left cluster = focused app (TODO); right = tray + clock;
+ * quick settings hidden (indicators move into the pill — TODO).
+ *
+ * @param {boolean} on  apply (enable) or revert (disable)
+ */
 export function reworkPanel(on) {
     const panel = Main.panel;
     const {activities, dateMenu} = panel.statusArea;
@@ -22,6 +26,9 @@ export function reworkPanel(on) {
     for (const box of [panel._leftBox, panel._rightBox]) {
         box.margin_top = on ? GAP : 0;
         box.margin_bottom = on ? GAP : 0;
-        if (on) box.add_style_class_name('buoy-cluster'); else box.remove_style_class_name('buoy-cluster');
+        if (on)
+            box.add_style_class_name('buoy-cluster');
+        else
+            box.remove_style_class_name('buoy-cluster');
     }
 }

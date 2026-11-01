@@ -59,7 +59,7 @@ export class Island {
     }
 
     // Recompute derived sizes for the current monitor and re-centre. Called on enable,
-    // monitors-changed and when `expanded-size` changes.
+    // monitors-changed and when `expanded-width` changes.
     reposition(opts = {}) {
         const m = Main.layoutManager.primaryMonitor;
         if (!m)

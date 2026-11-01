@@ -3,6 +3,10 @@
  * `index.js?t=<now>` yields a fresh instance (relative imports inside it are
  * re-resolved too). Old instances stay in memory — fine while developing.
  * Gated by the `dev-mode` setting; never on by default.
+ *
+ * @param {object} ext  the enabled BuoyExtension instance
+ * @param {string} id   module id, e.g. 'media'
+ * @returns {Promise<string>} id of the reloaded module
  */
 export async function reloadModule(ext, id) {
     const old = ext._active.find(a => a.m.id === id);

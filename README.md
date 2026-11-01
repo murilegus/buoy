@@ -23,9 +23,7 @@ buoy/
 │   ├── ARCHITECTURE.md   module/feature layout, rules, settings model
 │   ├── FEATURES.md       roadmap M0–M5 with status + scores
 │   ├── INDICATORS.md     buoy light + privacy dot: colours, meanings, positions
-│   ├── APPLE.md          ActivityKit + HIG research → BuoyKit contract
-│   ├── BEHAVIOUR.md      iOS rules + visual benchmark
-│   └── NOTCHY.md · ISLE.md · ISLET.md   competitor research
+│   └── APPLE.md          ActivityKit + HIG research → BuoyKit contract
 └── src/buoy@murilegus/   the extension — see docs/ARCHITECTURE.md for the tree
 ```
 
@@ -33,13 +31,16 @@ Data flow: `module/source` → `registry.build(kind, app, ev)` → `stack.surfac
 
 ## Setup
 
+Needs GNOME Shell 50, `gjs`, pnpm (fetches its own Node, see `devEngines` in
+package.json) and, for `pnpm dev`: `sudo apt install mutter-dev-bin inotify-tools`.
+
 ```bash
 pnpm install
-pnpm link        # symlink into GNOME
-pnpm dev         # nested shell with auto-restart
+pnpm link        # symlink into GNOME + compile the schema
+pnpm dev         # nested shell (mutter devkit) with auto-restart
 pnpm lint
 pnpm test         # gjs unit tests for adapters and the contract — no Shell needed
-pnpm pack
+pnpm run pack    # zip for EGO (`pnpm pack` is pnpm's own tarball command)
 ```
 
 Fast loop: adapters/stack → `pnpm test` (ms) → module edits → `stateObj.reload('<id>')`

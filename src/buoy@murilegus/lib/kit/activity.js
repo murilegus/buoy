@@ -12,6 +12,10 @@ export const PRIORITY = {
 
 const EIGHT_HOURS = 8 * 60 * 60 * 1000;
 
+/**
+ * @param {object} a  activity as built by an adapter (needs `id` and `kind`)
+ * @returns {object} the activity with contract defaults filled in, ttl capped at 8 h
+ */
 export function validate(a) {
     if (!a?.id || !a.kind)
         throw new Error('activity needs id and kind');
@@ -20,7 +24,6 @@ export function validate(a) {
         attributes: {},
         state: {},
         priority: PRIORITY[a.kind] ?? 0,
-        ttl: 0,
         staleAfter: 0,
         style: 'standard',
         alert: false,

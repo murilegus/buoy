@@ -1,11 +1,37 @@
-import { defineConfig } from "@eslint/config-helpers";
+// Mirrors gnome-shell (gnome-50) tools/eslint.config.js: same eslint-config-gnome
+// commit, same rule overrides. Keep the two in step when bumping Shell.
+import {defineConfig} from '@eslint/config-helpers';
 import gnome from 'eslint-config-gnome';
 
 export default defineConfig([
     gnome.configs.recommended,
     gnome.configs.jsdoc,
     {
-        files: ['src/**/*.js', 'tests/**/*.js'],
+        rules: {
+            camelcase: ['error', {
+                properties: 'never',
+            }],
+            'consistent-return': 'error',
+            'eqeqeq': ['error', 'smart'],
+            'key-spacing': ['error', {
+                mode: 'minimum',
+                beforeColon: false,
+                afterColon: true,
+            }],
+            'prefer-arrow-callback': 'error',
+            'prefer-const': ['error', {
+                destructuring: 'all',
+            }],
+            'jsdoc/require-param-description': 'off',
+            'jsdoc/require-jsdoc': ['error', {
+                exemptEmptyFunctions: true,
+                publicOnly: {
+                    esm: true,
+                },
+            }],
+        },
+    }, {
+        files: ['src/**'],
         languageOptions: {
             globals: {
                 global: 'readonly',
@@ -15,22 +41,10 @@ export default defineConfig([
                 ngettext: 'readonly',
             },
         },
+    }, {
+        files: ['tests/**'],
         rules: {
-            // same overrides GNOME Shell itself uses
-            'camelcase': ['error', {properties: 'never'}],
-            'consistent-return': 'error',
-            'eqeqeq': ['error', 'smart'],
-            'prefer-arrow-callback': 'error',
-            'prefer-const': ['error', {destructuring: 'all'}],
-            'jsdoc/require-param-description': 'off',
-            'jsdoc/require-jsdoc': ['error', {
-                exemptEmptyFunctions: true,
-                publicOnly: {esm: true},
-            }],
-        }
-    }, 
-    {
-        files: ['tests/**/*.js'],
-        rules: {'jsdoc/require-jsdoc': 'off'},
+            'jsdoc/require-jsdoc': 'off',
+        },
     },
-])
+]);

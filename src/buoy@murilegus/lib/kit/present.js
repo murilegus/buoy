@@ -3,5 +3,18 @@
 //   leading/trailing: {icon?: Gio.Icon|string, text?: string, progress?: 0..1, art?: path}
 // Output: {compact: Clutter.Actor, expanded?: Clutter.Actor}
 // This is the only file that turns content into actors. Adapters never do.
-export function buildCompact(_p) { return null; }
-export function buildExpanded(_p) { return null; }
+/**
+ * @param {object} _p  presentation data
+ * @returns {?Clutter.Actor}
+ */
+export function buildCompact(_p) {
+    return null;
+}
+
+/**
+ * @param {object} _p  presentation data
+ * @returns {?Clutter.Actor}
+ */
+export function buildExpanded(_p) {
+    return null;
+}

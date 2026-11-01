@@ -10,6 +10,10 @@ const SLUGS = {
     'telegram desktop': 'telegram',
 };
 
+/**
+ * @param {string} appId  MPRIS bus name, desktop id or notification app name
+ * @returns {string} the app's one slug across every source
+ */
 export function slugOf(appId = '') {
     const key = appId.replace(/\.instance\d+$/, '');
     return SLUGS[key] ?? SLUGS[key.toLowerCase()] ??
