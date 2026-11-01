@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Enabled by `pnpm install` (package.json "prepare" sets core.hooksPath to .githooks).
+# Checks the working tree, not only the staged files — it takes a few seconds.
+# Skip once with `git commit --no-verify`.
+exec "$(git rev-parse --show-toplevel)/scripts/verify.sh"

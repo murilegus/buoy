@@ -9,7 +9,9 @@
     "link": "scripts/link.sh",
     "lint": "eslint src tests eslint.config.js",
     "pack": "scripts/pack.sh",
-    "test": "tests/run.sh"
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "test": "tests/run.sh",
+    "verify": "scripts/verify.sh"
   },
   "keywords": [
     "gnome-shell-extension",

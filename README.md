@@ -40,6 +40,7 @@ pnpm link        # symlink into GNOME + compile the schema
 pnpm dev         # nested shell (mutter devkit) with auto-restart
 pnpm lint
 pnpm test         # gjs unit tests for adapters and the contract — no Shell needed
+pnpm verify       # lint + test + schema: what the pre-commit hook and CI run
 pnpm run pack    # zip for EGO (`pnpm pack` is pnpm's own tarball command)
 ```
 
