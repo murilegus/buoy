@@ -16,6 +16,11 @@
     <key name="apps-plain" type="as"><default>[]</default></key>
     <key name="idle-content" type="s"><default>"none"</default></key>
     <key name="tabs-pinned" type="as"><default>[]</default></key>
+    <key name="tabs-slot" type="s">
+      <default>""</default>
+      <summary>Standalone tab in the strip's slot</summary>
+      <description>Set by choosing a tab from ⋯. Empty or not enabled: the first enabled standalone tab.</description>
+    </key>
     <key name="cluster-background" type="s"><default>"hover"</default></key>
     <key name="cluster-contrast" type="s"><default>"auto"</default></key>
     <key name="left-cluster-empty" type="s"><default>"workspace"</default></key>

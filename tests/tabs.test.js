@@ -61,18 +61,22 @@ eq(ids(planStrip([], [act('d', 'deploy')])), [HOME], 'unclaimed kind without exp
 eq(ids(planStrip([hud], [act('x', 'osd', {expanded: true})])), [HOME, 'hud'],
     'a claimed kind uses its module tab, never a kind: tab');
 
-// --- standalone tabs (⋯ pins, 2026-11-02) ---------------------------------------
+// --- standalone tabs: the slot (2026-11-02) ----------------------------------------
 let s = planStrip([media, clip, launcher, home], []);
-eq(ids(s), [HOME, 'media'], 'standalone tabs are not in the strip unless pinned');
-eq(s.more.map(t => [t.id, t.pinned]), [['clipboard', false], ['launcher', false]],
-    '⋯ lists every enabled standalone tab, never Home, with its pin state');
+eq(ids(s), [HOME, 'media'], 'standalone tabs are not fixed tabs unless pinned in settings');
+eq(s.slot?.id, 'clipboard', 'nothing chosen yet: the slot shows the first enabled standalone tab');
+eq(s.slot.type, 'standalone', 'slot tab type');
+eq(s.more.map(t => t.id), ['clipboard', 'launcher'], '⋯ lists every enabled standalone tab, never Home');
+eq(planStrip([media], []).slot, null, 'no standalone tab: no slot');
 eq(planStrip([media], []).more, [], 'no standalone tab: no ⋯');
-eq('slot' in s, false, 'no slot any more: choosing from ⋯ pins');
-s = planStrip([media, clip, launcher], [act('m', 'media', {expanded: true})], {pinned: ['launcher', 'clipboard']});
-eq(ids(s), [HOME, 'media', 'clipboard', 'launcher'], 'pinned standalone tabs follow the kind tabs, in module order');
-eq(s.tabs[2].type, 'standalone', 'pinned tab type');
-eq(s.more.map(t => [t.id, t.pinned]), [['clipboard', true], ['launcher', true]], '⋯ still lists pinned ones, marked');
-eq(ids(planStrip([clip], [], {pinned: ['launcher']})), [HOME], 'pinning a disabled standalone tab adds nothing');
+eq(planStrip([clip, launcher], [], {slot: 'launcher'}).slot?.id, 'launcher', 'the slot shows the one chosen from ⋯');
+eq(planStrip([clip], [], {slot: 'launcher'}).slot?.id, 'clipboard', 'a slot naming a disabled tab falls back to the first');
+eq(planStrip([launcher], [], {slot: 'clipboard'}).slot?.id, 'launcher', 'the first enabled one, whichever it is');
+s = planStrip([media, clip, launcher], [act('m', 'media', {expanded: true})], {pinned: ['clipboard'], slot: 'clipboard'});
+eq(ids(s), [HOME, 'media', 'clipboard'], 'pinned (settings) standalone tabs follow the kind tabs');
+eq(s.slot?.id, 'launcher', 'a pinned tab is never also in the slot: the first free one is');
+eq(s.more.map(t => t.id), ['clipboard', 'launcher'], '⋯ still lists pinned ones');
+eq(planStrip([clip], [], {pinned: ['clipboard']}).slot, null, 'every standalone tab pinned: no slot');
 eq(ids(planStrip([media], [], {pinned: ['media', 'nope']})), [HOME, 'media'], 'pinning a kind module or unknown id adds nothing');
 
 // --- where an open starts ---------------------------------------------------------
@@ -90,15 +94,15 @@ eq(tabFor(act('m', 'media', {expanded: true}), s), tabFor(act('m', 'media', {exp
 
 // --- a kind tab's activities --------------------------------------------------------
 const list = [act('a', 'media', {expanded: true}), act('b', 'osd'), act('c', 'media'), act('d', 'media', {expanded: true})];
-eq(planStrip([clip], [], {pinned: ['clipboard']}).tabs[1].icon, 'view-app-grid-symbolic', 'pinned standalone tab has an icon');
+eq(planStrip([clip], []).slot.icon, 'view-app-grid-symbolic', 'slot tab has an icon');
 eq(tabActivities(planStrip([media], list).tabs[1], list).map(a => a.id), ['a', 'd'],
     'kind tab shows its activities with an expanded presentation, in stack order');
 eq(tabActivities({kinds: ['progress']}, list), [], 'none of its kind: the tab stays empty');
 
 // --- findTab ----------------------------------------------------------------------------
-s = planStrip([media, clip, launcher], [act('m', 'media', {expanded: true})], {pinned: ['launcher']});
+s = planStrip([media, clip, launcher], [act('m', 'media', {expanded: true})], {slot: 'launcher'});
 eq(findTab(s, 'media')?.id, 'media', 'find a strip tab');
-eq(findTab(s, 'launcher')?.id, 'launcher', 'find a pinned standalone tab');
+eq(findTab(s, 'launcher')?.id, 'launcher', 'find the slot tab');
 eq(findTab(s, 'clipboard')?.id, 'clipboard', 'find a ⋯ tab');
 eq(findTab(s, 'nope'), null, 'unknown id');
 

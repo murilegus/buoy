@@ -106,7 +106,8 @@ D-Bus callers send presentation data directly and skip the registry.
 | `apps.hidden` | as | slugs whose activities never surface |
 | `apps.plain` | as | slugs that use the default adapter instead of their override |
 | `idle-content` | s | `none` \| any module's idle plan id |
-| `tabs-pinned` | as | standalone tab ids pinned to the strip; choosing one from ⋯ pins it (2026-11-02, `tabs-slot` removed) |
+| `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only) |
+| `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |
 | `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
 | `cluster-background` | s | hover \| always \| never |
 | `cluster-contrast` | s | auto \| light \| dark |

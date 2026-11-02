@@ -63,11 +63,11 @@ export default class BuoyExtension extends Extension {
         // the tab strip (SPEC §2b): read per open, so nothing needs a settings signal
         this._island.tabs = {
             modules: enabled,
-            settings: () => ({pinned: this._settings.get_strv('tabs-pinned')}),
-            onPin: (id, on) => {
-                const pinned = this._settings.get_strv('tabs-pinned').filter(p => p !== id);
-                this._settings.set_strv('tabs-pinned', on ? [...pinned, id] : pinned);
-            },
+            settings: () => ({
+                slot: this._settings.get_string('tabs-slot'),
+                pinned: this._settings.get_strv('tabs-pinned'),
+            }),
+            onSlot: id => this._settings.set_string('tabs-slot', id),
         };
         this.stack = this._stack; // Looking Glass
 

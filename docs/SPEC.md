@@ -199,16 +199,18 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   and `kinds: []`. No source, no activity, no idle plan; it lives only inside expanded.
   This is where tool-like pages go (Clipboard, Launcher, Files, Notes…) without touching
   the pill.
-  - Strip layout: `[Home] [kind tabs of enabled modules] [pinned standalone tabs] [⋯]`.
-    ⋯ lists every enabled standalone tab; **choosing one pins it** to the strip
-    (`tabs-pinned`) and opens it; a pinned row in ⋯ has a button to unpin it (2026-11-02:
-    replaces the single "slot ▾" cell). ⋯ shows only when a standalone tab is enabled.
-  - Reachable only via ⋯ / its pinned tab / keybind — never opened by an event.
+  - Strip layout: `[Home] [kind tabs of enabled modules] [slot ▾] [⋯]`. The **slot** is the
+    last cell: it shows the standalone tab last chosen from ⋯ (`tabs-slot`) and stays until
+    changed; until something is chosen it shows the **first enabled standalone tab**
+    (2026-11-02). ⋯ lists every enabled standalone tab and marks the one in the slot.
+    Settings can pin some as fixed tabs (`tabs-pinned`), before the slot; a pinned tab is
+    never also in the slot.
+  - Reachable only via slot / ⋯ / keybind — never opened by an event.
   - Actor built on first selection, destroyed when expanded closes (optional cache setting);
     closed = zero cost regardless of how many are enabled.
-  - Standalone tabs are **unpinned by default**: a fresh install shows Home + kind tabs and
-    ⋯. Clipboard is the first, on by default (`modules-clipboard`) but only in ⋯ until
-    pinned, its body empty until the M5 item (2026-11-02; was "off by default").
+  - Standalone tabs are **not pinned by default**: a fresh install shows Home + kind tabs,
+    the slot and ⋯. Clipboard is the first, on by default (`modules-clipboard`), so it sits in the slot
+    until another is chosen, its body empty until the M5 item (2026-11-02; was "off by default").
   - May use Shell APIs in `tab.js`; still no polling while closed.
   - Likely first ones: Clipboard, Launcher. Not planned: Calculator, Emoji (GNOME search has them).
 
@@ -242,7 +244,7 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
 │  S  M  T  W  T  F  S         │ ▌Gym 5:30 PM · 45 min                  │
 │  …  calendar grid …          │                                        │
 └──────────────────────────────┴────────────────────────────────────────┘
-  strip: Home · kind tabs of enabled modules · pinned standalone tabs · ⋯ menu · ⚙ prefs
+  strip: Home · kind tabs of enabled modules · one slot for a standalone tab · ⋯ menu · ⚙ prefs
   no system indicators here — they live in the right-hand system cluster (§1)
 ```
 

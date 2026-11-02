@@ -17,7 +17,7 @@ const STRIP_H = 60; // first guess for the strip + panel padding; measured once 
  *   Home        every visible activity as a row (the full list, also behind +N); a row
  *               opens that activity's tab. Modules add their Home blocks in M3.
  *   kind tab    the module's tab.js, or the expanded views of its activities
- *   standalone  a module's tab.js, built on first selection (⋯ or its pinned tab)
+ *   standalone  a module's tab.js, built on first selection (slot / ⋯ / pinned)
  *
  * A tab.js export is a class: `new Tab()` → {actor, destroy()}.
  */
@@ -28,15 +28,14 @@ export class Home {
      * @param {object[]} opts.list  visible activities (stack order)
      * @param {string} opts.tab  the tab to start on (tabs.js tabFor)
      * @param {number} opts.maxHeight  the expanded height cap
-     * @param {{pinned: string[]}} [opts.settings]  `tabs-pinned`
-     * @param {function(string, boolean):void} [opts.onPin]  a standalone tab was pinned
-     *   (chosen from ⋯) or unpinned
+     * @param {{slot: string, pinned: string[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`
+     * @param {function(string):void} [opts.onSlot]  a standalone tab was chosen from ⋯
      */
-    constructor({modules, list, tab, maxHeight, settings = {}, onPin = null}) {
+    constructor({modules, list, tab, maxHeight, settings = {}, onSlot = null}) {
         this._modules = modules;
         this._list = list;
         this._settings = settings;
-        this._onPin = onPin;
+        this._onSlot = onSlot;
         this._tabs = new Map();      // module id → tab.js instance, built on first selection
         this._strip = null;
         this._current = null;
@@ -123,9 +122,11 @@ export class Home {
 
     _renderStrip() {
         this._stripBox.destroy_all_children();
-        const {tabs, more} = this._strip;
+        const {tabs, slot, more} = this._strip;
         for (const t of tabs)
             this._stripBox.add_child(this._tabButton(t, t.id));
+        if (slot)
+            this._stripBox.add_child(this._tabButton(slot, slot.id, true));
         if (more.length) {
             const button = this._button({icon: 'view-more-horizontal-symbolic', label: null}, 'More tabs');
             button.checked = this._showingMore;
@@ -136,65 +137,54 @@ export class Home {
 
     // Like Notchy: the active tab shows its icon and title, the others only their icon
     // (the title stays their accessible name).
-    _tabButton(tab, id) {
+    // The slot carries a ▾: ⋯ changes what sits in it.
+    _tabButton(tab, id, isSlot = false) {
         const active = id === this._current && !this._showingMore;
-        const button = this._button({icon: tab.icon, label: active ? tab.label : null}, tab.label);
+        const button = this._button({icon: tab.icon, label: active ? tab.label : null}, tab.label, isSlot);
         button.checked = active;
         button.connect('clicked', () => this.select(id));
         return button;
     }
 
-    _button({icon, label}, accessibleName) {
+    _button({icon, label}, accessibleName, isSlot = false) {
         const box = new St.BoxLayout({style_class: 'buoy-tab-box'});
         if (icon)
             box.add_child(new St.Icon({icon_name: icon, icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
         if (label)
             box.add_child(new St.Label({text: label, y_align: Clutter.ActorAlign.CENTER}));
+        if (isSlot)
+            box.add_child(new St.Icon({icon_name: 'pan-down-symbolic', icon_size: 12, y_align: Clutter.ActorAlign.CENTER}));
         return new St.Button({
             style_class: 'buoy-tab', child: box, can_focus: true, toggle_mode: false,
             accessible_name: accessibleName,
         });
     }
 
-    // ⋯: every enabled standalone tab. Choosing one pins it to the strip (`tabs-pinned`)
-    // and opens it; a pinned row has a button to unpin it (2026-11-02).
+    // ⋯: every enabled standalone tab; choosing one puts it in the slot (`tabs-slot`)
+    // and opens it. The one in the slot now is marked.
     _showMore() {
         this._showingMore = true;
         this._renderStrip();
         const box = new St.BoxLayout({style_class: 'buoy-home-list', orientation: Clutter.Orientation.VERTICAL});
         for (const t of this._strip.more) {
-            const line = new St.BoxLayout({x_expand: true});
             const row = this._button(t, t.label);
             row.add_style_class_name('buoy-home-row');
-            row.x_expand = row.child.x_expand = true;
+            row.child.x_expand = true;
+            if (t.id === this._strip.slot?.id) {
+                row.child.add_child(new St.Icon({
+                    icon_name: 'object-select-symbolic', icon_size: 14,
+                    x_expand: true, x_align: Clutter.ActorAlign.END,
+                }));
+            }
             row.connect('clicked', () => {
-                if (!t.pinned)
-                    this._pin(t.id, true);
+                this._onSlot?.(t.id);
+                this._settings = {...this._settings, slot: t.id};
+                this._plan();
                 this.select(t.id);
             });
-            line.add_child(row);
-            if (t.pinned) {
-                const unpin = new St.Button({
-                    style_class: 'buoy-tab buoy-unpin', can_focus: true,
-                    accessible_name: `Unpin ${t.label}`,
-                    child: new St.Icon({icon_name: 'view-pin-symbolic', icon_size: 14}),
-                });
-                unpin.connect('clicked', () => {
-                    this._pin(t.id, false);
-                    this._showMore();
-                });
-                line.add_child(unpin);
-            }
-            box.add_child(line);
+            box.add_child(row);
         }
         this._setBody(box);
-    }
-
-    _pin(id, on) {
-        this._onPin?.(id, on);
-        const pinned = (this._settings.pinned ?? []).filter(p => p !== id);
-        this._settings = {...this._settings, pinned: on ? [...pinned, id] : pinned};
-        this._plan();
     }
 
     // --- body ---------------------------------------------------------------------------

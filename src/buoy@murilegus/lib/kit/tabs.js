@@ -3,7 +3,7 @@
  * starts on. Pure (no St, no Main), so it runs under plain gjs; kit/home.js builds the
  * actors.
  *
- *   [Home] [kind tabs] [pinned standalone tabs] [⋯]
+ *   [Home] [kind tabs] [pinned standalone tabs] [slot ▾] [⋯]
  *
  * - Home is always first.
  * - A kind tab per enabled module with kinds, in module order (SPEC §6), always shown,
@@ -12,9 +12,10 @@
  *   action (osd, copied: SPEC §2b) have no tab, unless one of their activities brings an
  *   expanded presentation. Kinds no module claims (D-Bus callers) get a tab while one of
  *   their activities has an expanded presentation, after the module tabs.
- * - Standalone tabs (`tab.js`, `kinds: []`): ⋯ lists all of them; choosing one pins it
- *   (`tabs-pinned`), and pinned ones sit in the strip after the kind tabs (2026-11-02,
- *   replaces the single slot). None exist yet.
+ * - Standalone tabs (`tab.js`, `kinds: []`): the last cell, the slot, shows the one
+ *   chosen from ⋯ (`tabs-slot`), or the first enabled one until something is chosen
+ *   (2026-11-02); ⋯ lists all of them. Ones pinned in settings (`tabs-pinned`) are fixed
+ *   tabs before the slot and never in it.
  * - Where you open from decides the tab (tabFor); nothing remembers the last tab.
  */
 
@@ -36,12 +37,13 @@ const hasExpanded = a => planExpanded(a) !== null;
  * @param {object[]} modules  enabled modules, in order: {id, kinds, tab?, title?, icon?}
  * @param {object[]} list  visible activities (stack order)
  * @param {object} [opts]
+ * @param {string} [opts.slot]  `tabs-slot`
  * @param {string[]} [opts.pinned]  `tabs-pinned`
- * @returns {object} {tabs, more}: tabs = [{id, type, label, icon, kinds}] (icon always
- *   set: module `icon`, else a generic one), type 'home' | 'kind' | 'standalone';
- *   more = every standalone tab for ⋯, each with `pinned` (empty: no ⋯)
+ * @returns {object} {tabs, slot, more}: tabs = [{id, type, label, icon, kinds}] (icon
+ *   always set: module `icon`, else a generic one), type 'home' | 'kind' | 'standalone';
+ *   slot = the slot's tab or null; more = every standalone tab for ⋯ (empty: no ⋯)
  */
-export function planStrip(modules, list, {pinned = []} = {}) {
+export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
     const tabs = [{id: HOME, type: 'home', label: 'Home', icon: 'go-home-symbolic', kinds: []}];
     const shown = kinds => list.some(a => kinds.includes(a.kind) && hasExpanded(a));
     const claimed = new Set();
@@ -68,12 +70,11 @@ export function planStrip(modules, list, {pinned = []} = {}) {
 
     const standalone = modules
         .filter(m => m.tab && !m.kinds?.length && m.id !== HOME)
-        .map(m => ({
-            id: m.id, type: 'standalone', label: m.title ?? title(m.id),
-            icon: m.icon ?? GENERIC_ICON, kinds: [], pinned: pinned.includes(m.id),
-        }));
-    tabs.push(...standalone.filter(t => t.pinned));
-    return {tabs, more: standalone};
+        .map(m => ({id: m.id, type: 'standalone', label: m.title ?? title(m.id), icon: m.icon ?? GENERIC_ICON, kinds: []}));
+    tabs.push(...standalone.filter(t => pinned.includes(t.id)));
+    const free = standalone.filter(t => !pinned.includes(t.id));
+    const slotTab = free.find(t => t.id === slot) ?? free[0] ?? null;
+    return {tabs, slot: slotTab, more: standalone};
 }
 
 /**
@@ -101,8 +102,9 @@ export function tabActivities(tab, list) {
 /**
  * @param {object} strip  planStrip() result
  * @param {string} id
- * @returns {?object} the tab with this id, in the strip or the ⋯ list
+ * @returns {?object} the tab with this id: in the strip, the slot or the ⋯ list
  */
 export function findTab(strip, id) {
-    return strip.tabs.find(t => t.id === id) ?? strip.more.find(t => t.id === id) ?? null;
+    return strip.tabs.find(t => t.id === id) ??
+        (strip.slot?.id === id ? strip.slot : strip.more.find(t => t.id === id)) ?? null;
 }
