@@ -64,12 +64,52 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 - **Right side** (decided 2026-10-30, after the Notchy bar): two different things.
   - **Third-party tray icons** (AppIndicator, input method, screen-record…): bare on the
     wallpaper, each standing alone, GNOME's own order. No cluster background.
-  - **System cluster**: GNOME's **quick settings indicators** (network, volume, battery…)
-    together with the **clock** (`dateMenu`, moved from centre), as one cluster with the
-    shared hover background. Clicking an indicator opens the stock quick-settings menu;
-    clicking the clock opens the stock calendar/notifications popover. Nothing is re-anchored.
+  - **System cluster** (revised 2026-11-02): GNOME's **quick settings indicators**
+    (network, volume, battery…) together with the **clock** (`dateMenu`, moved from
+    centre), as **one button** with the shared hover background. A click anywhere in the
+    cluster, clock included, opens the stock quick-settings menu; the clock has no click,
+    hover or focus of its own (`dateMenu` stays in place, non-reactive, restored on
+    disable). Its unread dot (`MessagesIndicator`) is hidden — the buoy light (§2a) says
+    "missed". Nothing is re-anchored.
+  - The stock calendar/notifications popover is no longer reachable by mouse; Super+V /
+    Super+M (`toggle-message-tray`) still open it under the clock. Its contents move to
+    Buoy: notification history → the notifications tab (§6b), calendar and weather →
+    Home (§3) and idle plans, DND → the stock quick toggle (`status/doNotDisturb.js`).
+    World clocks: placement later (Home or elsewhere), not in v0.1.
 - The island holds **activities only**; persistent system status stays in the system
   cluster. (This supersedes the earlier "indicators in the pill" decision.)
+
+### 1a. Maximized windows: rounded top corners (decided 2026-11-02)
+
+Floating windows already have round corners (Adwaita `--window-radius`, 15 px in
+libadwaita 1.9 on Ubuntu 26.04), but Adwaita sets it to 0 when maximized or tiled.
+With a transparent panel the maximized window's square top edge meets the wallpaper and looks
+cut off. Buoy rounds the **top-left and top-right corners only** of maximized windows,
+so the top edge reads as a continuation of the floating windows; the bottom corners stay
+square against the screen edge or dock.
+
+- **On by default.** `window-corners` (b, default `true`), `window-corners-radius`
+  (i, default `15` = Adwaita's window radius, range 0–32). Both live on their own prefs
+  page (**Windows**), not under a module; changes apply live.
+- **Which windows**: maximized in both directions (`maximized_horizontally &&
+  maximized_vertically`), normal window types, any toolkit (GTK, Qt, Electron, Xwayland).
+  Not fullscreen, not half-tiled (Super+←/→) for now — tiled is an open question.
+- **How** (`corners.js`, next to `panel.js`): a `Shell.GLSLEffect` on the window's
+  `Meta.WindowActor` that discards the pixels outside the two top arcs — the pattern
+  `ui/lightbox.js` (RadialShaderEffect) uses. Whatever is behind shows through the
+  corner: the wallpaper under the panel, another window, the Overview. Added on
+  maximize, removed on unmaximize, fullscreen, `window-corners = false`, window close and
+  disable. Signals only (`window-created`, `notify::maximized-*`, `notify::fullscreen`);
+  no polling, nothing animates.
+- **Cost, accepted**: an effect makes Clutter paint that window through an offscreen
+  buffer, and Mutter stops culling windows behind it (`meta-cullable.c`
+  `has_active_effects`), so windows under a maximized one are painted again inside the
+  damaged area. Only maximized windows carry the effect; with the setting off nothing is
+  attached. Measure frame time with ~5 windows behind a maximized one before shipping.
+- **Rejected**: two corner caps in top chrome painting a clone of the wallpaper — no
+  offscreen and no culling loss, but wrong whenever another window sits behind or is
+  raised over the corner, and it would have to hide during every move/maximize
+  animation and in the Overview.
 
 ## 2. Island states
 
@@ -248,7 +288,11 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 ## 6b. Roadmap after v0.1 (all pure JS)
 
 1. **notifications** — peek in the pill with the notification's own actions
-   (Reply / Mark as read / Open); DND toggle.
+   (Reply / Mark as read / Open); DND toggle. A **notifications tab** lists the history
+   (2026-11-02, replaces the clock popover's list): read from `Main.messageTray`
+   (`getSources()` + `source-added`, each source's `notifications` +
+   `notification-added`), the same data the stock message list uses — no store of our
+   own; dismissing in either place removes it from both.
 2. **dbus** — `org.gnome.Shell.Extensions.Buoy` iface: `Show/Update/End` activity,
    `Ask(question, options) → answer`. Hook scripts call it with `gdbus call`.
 3. **agents** — Claude Code / Codex approvals as a two-button activity in the pill

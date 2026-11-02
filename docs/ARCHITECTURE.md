@@ -13,6 +13,8 @@ src/buoy@murilegus/
 ├── stylesheet.css
 ├── extension.js            enable(): panel → kit → load enabled modules
 ├── panel.js                top bar rework: left cluster (app/workspace), bare tray, system cluster (QS + clock)
+├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
+├── prefs.js                Adw prefs: one page per module + Panel and Windows pages
 ├── schemas/                GSettings: modules.<id>, apps.hidden, sizes, keybinds
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
@@ -82,6 +84,8 @@ D-Bus callers send presentation data directly and skip the registry.
 8. **No polling while closed; no blur; nothing animating while idle.** A source that must
    poll (progress bar position) polls only while its activity is visible.
 9. Every module declares its GSettings keys in `index.js#schema`; prefs.js renders them.
+   Shell-level keys that belong to no module (panel clusters, window corners) get their
+   own prefs pages; their code lives next to `panel.js`, not under `modules/`.
 10. Standalone tabs are off by default and build their actor on first selection.
 11. **Adapters never return measurements.** No `width`, `height`, `x`, px, or monitor
     queries — only content plus discrete hints (`size: 'wide'`, region `priority`). Sizes
@@ -102,6 +106,8 @@ D-Bus callers send presentation data directly and skip the registry.
 | `cluster-background` | s | hover \| always \| never |
 | `cluster-contrast` | s | auto \| light \| dark |
 | `left-cluster-empty` | s | workspace \| hidden |
+| `window-corners` | b | round the top corners of maximized windows; default `true` (2026-11-02) |
+| `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
 | `idle-clock-style`, `idle-weather-refresh` | — | declared by those modules |
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
 | `keybind-focus` | as | focus the pill (default Super+B) |
