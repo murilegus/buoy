@@ -128,9 +128,10 @@ export function planIdle({light} = {}) {
  * @param {object} p  presentation data (an activity)
  * @param {object} [opts]
  * @param {string} [opts.light]  the stack's light
- * @returns {object} {leading, text, trailing, action, keyline, stale, light}
+ * @param {number} [opts.more]  activities beyond the shown pills (last pill only)
+ * @returns {object} {leading, text, trailing, action, keyline, stale, light, badge}
  */
-export function planCompact(p, {light} = {}) {
+export function planCompact(p, {light, more} = {}) {
     return {
         leading: element(p.leading),
         text: str(p.text),
@@ -139,6 +140,7 @@ export function planCompact(p, {light} = {}) {
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
         light: lightSlot(light, {idle: false}),
+        badge: Number.isInteger(more) && more > 0 ? `+${more}` : null,
     };
 }
 

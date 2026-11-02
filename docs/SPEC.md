@@ -77,7 +77,7 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 |---|---|---|---|
 | **Idle** | no activity | `IDLE` 120×32 r16; content per `idle-content` (§2a) | hover → +12px; press → +20px pulse; **click → open Home** |
 | **Compact** | one activity | `activity.shape`, content-fit | hover → `hoverShape`; after 300 ms the activity's `peek` if it has one (e.g. media transport); **click → open that activity's tab** |
-| **Minimal** | two+ activities | **side-by-side compact pills** (iPhone 18 Pro / iOS 27 model): highest priority at screen centre, others to the right in priority order, each ≥120 px, same shape and zones as a single compact | each pill clicks into its own tab |
+| **Minimal** | two+ activities | **side-by-side compact pills** (iPhone 18 Pro / iOS 27 model): highest priority at screen centre, others to the right in priority order, each 120 px … expanded/3, same zones as a single compact (text ellipsizes); fewer pills when three would reach the system cluster (2026-11-01) | each pill clicks into its own tab |
 | **Expanded** | opened from idle or compact; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open); clicks inside do nothing, buttons run their action (decided 2026-11-01) |
 
 Rules:
@@ -162,7 +162,11 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   grows into the expanded panel, the others slide in and fade (300 ms). Close = split again.
 - An `alert: true` update briefly expands **only that pill** (~2 s, no tab strip).
 - Max 3 pills. Further activities don't show; the last pill carries a `+N` badge; clicking
-  it opens Home with the full list.
+  it opens Home with the full list (until Home exists it opens that pill, 2026-11-01).
+- Space (2026-11-01): pills stop before the system cluster (12 px margin). On 1366 px all
+  three fit at ~124 px each; if two side pills of 120 px don't fit, only two pills show
+  (or one), and the rest count in `+N`. Re-measured whenever the right cluster resizes.
+- An alert on an activity beyond the shown pills brings it to the centre for ~2 s.
 - Order: highest priority at screen centre, then to the right. When one ends, the rest
   slide to fill (eased x), never jump.
 - Keyboard: `Super+B` focuses the primary; ←/→ moves between pills; Enter opens; Esc closes.
@@ -224,7 +228,15 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 - Background actor eases `x / width / height`; content fades (100 ms out, 200 ms in).
 - `EASE_OUT_BACK`, 380 ms shape · 200 ms hover · 120/250 ms press.
 - Border radius snaps at transition start.
-- Content never moves during a morph.
+- Content never moves or scales during a morph. On expand (and any morph that grows the
+  pill by more than 25%) it sits at its final place and the background **uncovers** it:
+  the content is clipped to the background on every frame of the background's own
+  transition, so it shows exactly as fast as the pill opens, and its opacity follows the
+  same progress (0 → full from halfway), so a word the edge still cuts stays faint; on
+  collapse the same clip
+  keeps it inside through the undershoot. A slide (slide-to-fill, merge) moves the
+  content with its background on the same curve (2026-11-02: before, the expanded text
+  showed at full width while the background was still compact).
 
 ## 6. Modules for v0.1
 

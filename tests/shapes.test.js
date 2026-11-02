@@ -1,5 +1,5 @@
 // Run: gjs -m tests/shapes.test.js   (pure; no Shell needed)
-import {shapesFor, GAP, OVERSHOOT} from '../src/buoy@murilegus/lib/kit/shapes.js';
+import {shapesFor, GAP, OVERSHOOT, PILL_GAP} from '../src/buoy@murilegus/lib/kit/shapes.js';
 
 const PANEL_H = 40; // Buoy's panel height (stylesheet.css)
 
@@ -9,16 +9,17 @@ function eq(actual, expected, msg) {
         throw new Error(`${msg}: expected ${e}, got ${a}`);
 }
 
-eq([GAP, OVERSHOOT], [4, 20], 'constants');
+eq([GAP, OVERSHOOT, PILL_GAP], [4, 20, 8], 'constants');
 
 // --- derivation per monitor width ------------------------------------------
 // expanded width = 28 % of the monitor, clamped to [560, 760], snapped to even px;
 // height = w / 2.
 const CASES = [
-    {width: 1366, expW: 560, expH: 280, minimalMax: 186, compactMax: 336, wideMax: 448},
-    {width: 1920, expW: 560, expH: 280, minimalMax: 186, compactMax: 336, wideMax: 448},
-    {width: 2560, expW: 716, expH: 358, minimalMax: 238, compactMax: 430, wideMax: 572},
-    {width: 3440, expW: 760, expH: 380, minimalMax: 254, compactMax: 456, wideMax: 608},
+    // container: wide enough for the centre pill + two side pills of minimalMax (SPEC §2c)
+    {width: 1366, expW: 560, expH: 280, minimalMax: 186, compactMax: 336, wideMax: 448, containerW: 1002},
+    {width: 1920, expW: 560, expH: 280, minimalMax: 186, compactMax: 336, wideMax: 448, containerW: 1002},
+    {width: 2560, expW: 716, expH: 358, minimalMax: 238, compactMax: 430, wideMax: 572, containerW: 1262},
+    {width: 3440, expW: 760, expH: 380, minimalMax: 254, compactMax: 456, wideMax: 608, containerW: 1342},
 ];
 
 for (const c of CASES) {
@@ -28,7 +29,17 @@ for (const c of CASES) {
     // idle does not depend on the monitor: pill height = panel − 2·GAP
     eq(s.idle, {w: 120, h: 32, r: 16}, `${at} idle`);
     eq(s.expanded, {w: c.expW, h: c.expH, r: 28}, `${at} expanded`);
-    eq(s.container, {w: c.expW + 2 * OVERSHOOT, h: c.expH + 2 * OVERSHOOT}, `${at} container`);
+    eq(s.container, {w: c.containerW, h: c.expH + 2 * OVERSHOOT}, `${at} container`);
+    if (s.container.w > c.width)
+        throw new Error(`${at} container wider than the monitor`);
+
+    // minimal (side-by-side) pills: content + 28, between idle and minimalMax
+    eq(s.minimal(0), s.idle, `${at} minimal(0) is idle`);
+    eq(s.minimal(100.2).w, 130, `${at} minimal content-fit, even`);
+    eq(s.minimal(5000).w, c.minimalMax, `${at} minimal capped at expanded/3`);
+    eq([s.minimal(150).h, s.minimal(150).r], [32, 16], `${at} minimal keeps pill height`);
+    if (c.minimalMax / 2 + 2 * (PILL_GAP + c.minimalMax) > s.container.w / 2)
+        throw new Error(`${at} three minimal pills do not fit the container`);
     eq(s.minimalMax, c.minimalMax, `${at} minimalMax`);
 
     // hover / press grow from whatever base they get
@@ -57,7 +68,7 @@ for (const c of CASES) {
     for (const w of [0, 1, 37.5, 99, 100.2, 211, 333.3, 420, 5000]) {
         for (const hint of ['normal', 'wide']) {
             const base = s.compact(w, hint);
-            shapes.push(base, s.hover(base), s.press(base));
+            shapes.push(base, s.hover(base), s.press(base), s.minimal(w), s.hover(s.minimal(w)));
         }
     }
     for (const sh of shapes) {
@@ -84,7 +95,7 @@ eq(shapesFor({width: 800}, PANEL_H).expanded.w, 560, 'small monitor never goes b
 {
     const s = shapesFor({width: 1920}, PANEL_H, {expandedWidth: 600});
     eq(s.expanded, {w: 600, h: 300, r: 28}, 'override expanded (h is the content cap)');
-    eq(s.container, {w: 640, h: 340}, 'override container');
+    eq(s.container, {w: 1072, h: 340}, 'override container (three 200 px pills)');
     eq(s.minimalMax, 200, 'override minimalMax');
     eq(s.compact(5000).w, 360, 'override caps compact at 60 %');
     eq(s.idle, {w: 120, h: 32, r: 16}, 'override leaves idle alone');

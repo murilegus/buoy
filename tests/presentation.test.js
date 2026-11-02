@@ -85,7 +85,7 @@ const track = {
     eq(planCompact({text: long}).text, long, 'long text is not truncated (the renderer ellipsizes)');
     eq(planCompact({text: '  padded  '}).text, 'padded', 'text trimmed');
     eq(planCompact({text: '   '}).text, null, 'blank text → null');
-    eq(planCompact({}), {leading: null, text: null, trailing: null, action: null, keyline: null, stale: false, light: null},
+    eq(planCompact({}), {leading: null, text: null, trailing: null, action: null, keyline: null, stale: false, light: null, badge: null},
         'empty presentation');
     eq(planCompact({isStale: true, keyline: '#1DB954'}).stale, true, 'isStale → stale');
     eq(planCompact({keyline: '#1DB954'}).keyline, '#1db954', 'keyline carried');
@@ -186,5 +186,11 @@ eq(planPeek({peek: {}}), null, 'empty peek → no peek');
     eq(planPeek({actions: acts, peek: {text: 'x'}}).actions, [], 'no transport → no buttons');
     eq(planPeek({peek: {transport: true}}), null, 'transport without actions or content → no peek');
 }
+
+// --- +N badge (SPEC §2c: the last pill carries it) ----------------------------------
+eq(planCompact({text: 't'}, {more: 2}).badge, '+2', '+N badge');
+for (const none of [0, -1, undefined, NaN, '3'])
+    eq(planCompact({text: 't'}, {more: none}).badge, null, `no badge for ${none}`);
+eq(planCompact({}, {more: 4}).badge, '+4', 'badge alone still counts as content');
 
 console.log('presentation: ok');
