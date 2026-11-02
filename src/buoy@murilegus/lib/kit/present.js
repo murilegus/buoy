@@ -126,6 +126,13 @@ function addAll(box, actors) {
     }
 }
 
+// +N: reactive so a click on it is told apart from one on the pill (it opens Home)
+function badge(text) {
+    const l = label(text, 'buoy-badge');
+    l.reactive = true;
+    return l;
+}
+
 // The buoy light (INDICATORS.md): the pill's left edge slot. Static, never blinks.
 function lightDot(light) {
     return light ? new St.Widget({
@@ -146,7 +153,7 @@ function compactBox(p, activity, maxWidth, buttons) {
         p.text ? label(p.text, 'buoy-text', true) : null,
         makeElement(p.trailing, 'compact'),
         ...buttons.map(a => actionButton(a, activity)),
-        p.badge ? label(p.badge, 'buoy-badge') : null, // +N on the last pill (SPEC §2c)
+        p.badge ? badge(p.badge) : null, // +N on the last pill (SPEC §2c)
     ]);
     if (p.stale)
         box.add_style_class_name('buoy-stale');

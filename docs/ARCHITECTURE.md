@@ -14,7 +14,7 @@ src/buoy@murilegus/
 ├── extension.js            enable(): panel → kit → load enabled modules
 ├── panel.js                top bar rework: left cluster (app/workspace), bare tray, system cluster (QS + clock)
 ├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
-├── prefs.js                Adw prefs: one page per module + Panel and Windows pages
+├── prefs.js                Adw prefs: one page per module + Panel and Windows pages (placeholder, 2026-11-02)
 ├── schemas/                GSettings: modules.<id>, apps.hidden, sizes, keybinds
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
@@ -25,16 +25,20 @@ src/buoy@murilegus/
     │   ├── present.js      render plan → St actors. ONLY place content actors are made
     │   ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
     │   ├── pill.js         one pill: content, sizing, hover/peek, morph (2026-11-01)
-    │   ├── home.js         Home screen + tab strip
+    │   ├── home.js         the panel a click opens: tab strip + tab body (Home, kind, standalone)
+    │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
     │   ├── registry.js     app-id normalisation table; adapter resolution
     │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
     │   └── shapes.js
     └── modules/            FEATURES — one self-contained folder each
         └── <id>/
-            ├── index.js    export default {id, kinds, source, adapter, tab?, schema?}
+            ├── index.js    export default {id, kinds, source, adapter, tab?, schema?,
+            │               title?, icon?}   title/icon: its tab in the strip
             ├── source.js   watches a system facility, calls stack.surface/update/end
             ├── adapter.js  default presentation for this module's kinds
-            ├── tab.js      content for its tab in expanded (optional)
+            ├── tab.js      content for its tab in expanded (optional): export a class,
+            │               `new Tab()` → {actor, destroy()}; built on first selection,
+            │               destroyed when expanded closes
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar)
             └── apps/       per-app overrides, <slug>.js, same method names as adapter.js
 ```
@@ -50,8 +54,10 @@ src/buoy@murilegus/
 One module may combine the first two (calendar: next-event activity + idle plan + tab).
 A standalone tab never surfaces activities; if it needs to, it becomes a source module.
 
-v0.1 modules: `media`, `hud`, `home`, `progress`, `copied`, `layout`, `ask`;
-idle plans `clock`, `weather`, `calendar`; standalone tabs none yet.
+v0.1 modules: `media`, `hud`, `home`, `progress`, `copied`, `layout`, `ask`; `notification`,
+`timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
+roadmap items, so their tabs show from v0.1 (2026-11-02);
+idle plans `clock`, `weather`, `calendar`; standalone tabs `calendar`, `clipboard` (stub `tab.js`, in that order, 2026-11-02).
 
 ## Data flow
 
@@ -100,8 +106,8 @@ D-Bus callers send presentation data directly and skip the registry.
 | `apps.hidden` | as | slugs whose activities never surface |
 | `apps.plain` | as | slugs that use the default adapter instead of their override |
 | `idle-content` | s | `none` \| any module's idle plan id |
-| `tabs-pinned` | as | standalone tab ids shown as fixed tabs |
-| `tabs-slot` | s | standalone tab currently in the slot |
+| `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only) |
+| `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |
 | `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
 | `cluster-background` | s | hover \| always \| never |
 | `cluster-contrast` | s | auto \| light \| dark |

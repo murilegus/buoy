@@ -36,6 +36,7 @@ export class Pill {
         this.minimal = false;
         this.maxW = 0;               // 0 = no cap beyond shapes
         this.expanded = false;
+        this._panel = null;          // Home's panel while a click has it open (kit/home.js)
         this.fresh = true;           // not placed yet: first layout puts it there, then fades in
         this._peeking = false;
         this._contentW = 0;          // resting content size, measured in _applyContentSize()
@@ -102,7 +103,7 @@ export class Pill {
         this.activity = activity;
         Object.assign(this, {role, light, more, minimal, maxW});
         if (this.expanded) {
-            if (activity)
+            if (activity && !this._panel)  // the panel updates itself (Home.update)
                 this._setContent(buildExpanded(activity), false);
             return;
         }
@@ -294,16 +295,22 @@ export class Pill {
 
     // --- expanded (Island decides when) ---------------------------------------------
 
-    expand() {
+    /**
+     * @param {?Clutter.Actor} [panel]  Home's panel (a click-open); without it the
+     *   activity's own expanded presentation (alert, ask, transient)
+     */
+    expand(panel = null) {
         this.expanded = true;
+        this._panel = panel;
         this._stopPeek();
-        this._setContent(buildExpanded(this.activity), false);
+        this._setContent(panel ?? buildExpanded(this.activity), false);
         this._layoutContent();
         this._morph(this.currentShape(), 380); // fades the content in with the reveal
     }
 
     collapse() {
         this.expanded = false;
+        this._panel = null;
         // Under the modal grab the pointer left without a leave event, and Clutter still
         // reports the actor it pressed on; sync_hover() would read that stale actor.
         // Clear it; the next real enter sets it again.
@@ -407,7 +414,7 @@ export class Pill {
             }
         }
         this._layoutContent();
-        if (this.activity)
+        if (this.activity || this.expanded) // the idle pill opens on Home's panel too
             this._morph(this.currentShape(), 200);
     }
 

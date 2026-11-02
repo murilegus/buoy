@@ -9,15 +9,20 @@ import {BuoyDBus} from './lib/kit/dbus.js';
 import {reloadModule} from './lib/kit/devtools.js';
 
 import media from './lib/modules/media/index.js';
+import notification from './lib/modules/notification/index.js';
 import hud from './lib/modules/hud/index.js';
 import home from './lib/modules/home/index.js';
 import progress from './lib/modules/progress/index.js';
+import timer from './lib/modules/timer/index.js';
+import calendar from './lib/modules/calendar/index.js';
 import copied from './lib/modules/copied/index.js';
 import layout from './lib/modules/layout/index.js';
 import ask from './lib/modules/ask/index.js';
+import clipboard from './lib/modules/clipboard/index.js';
 
 // Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
-const MODULES = [media, hud, home, progress, copied, layout, ask];
+// Order is also the tab strip's order (SPEC §2b).
+const MODULES = [media, notification, progress, timer, hud, home, copied, layout, ask, calendar, clipboard];
 
 export default class BuoyExtension extends Extension {
     enable() {
@@ -42,9 +47,11 @@ export default class BuoyExtension extends Extension {
         this._dbus.export();
 
         this._active = [];
+        const enabled = [];
         for (const m of MODULES) {
             if (!this._settings.get_boolean(`modules-${m.id}`))
                 continue;
+            enabled.push(m);
             for (const kind of m.kinds)
                 this._registry.register(kind, m.adapter, m.apps ?? {});
             if (m.source) {
@@ -53,6 +60,16 @@ export default class BuoyExtension extends Extension {
                 this._active.push({m, src});
             }
         }
+        // the tab strip (SPEC §2b): read per open, so nothing needs a settings signal
+        this._island.tabs = {
+            modules: enabled,
+            settings: () => ({
+                slot: this._settings.get_string('tabs-slot'),
+                pinned: this._settings.get_strv('tabs-pinned'),
+            }),
+            onSlot: id => this._settings.set_string('tabs-slot', id),
+            onPrefs: () => this.openPreferences(),
+        };
         this.stack = this._stack; // Looking Glass
 
         // Dev: Main.extensionManager.lookup('buoy@murilegus').stateObj.reload('media')

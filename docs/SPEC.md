@@ -176,22 +176,46 @@ setting `privacy-dot = pill | system | both`, default `pill`.
 
 ### 2b. Tabs (decided 2026-10-30)
 
-- The tab strip exists only inside expanded. Tabs = modules that ship `tab.js`; Home is
-  always first; order follows §6.
-- Where you open from decides the tab: idle → Home; a compact pill → the tab of its kind
-  (`kind → module → tab`); kinds without a tab (osd, copied) → Home. Tabs can be switched
-  inside expanded, but the next open follows context again — the last tab is not remembered.
+- The tab strip exists only inside expanded, and only when a click opened it; the stack's
+  own opens (alert, ask, transient) show the activity's expanded view without a strip.
+  Tabs = modules that ship `tab.js`; Home is always first; order follows §6.
+- **Kind tabs** (decided 2026-11-02): every enabled module with kinds has its tab, always
+  shown, running or not (default strip: Home · Media · Notifications · Transfers · Timer ·
+  [Calendar] · ⋯; Notifications, Transfers and Timer are stub modules until their
+  roadmap items); until it ships `tab.js` the tab shows its activities' expanded
+  views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied)
+  have none. Kinds no module claims (D-Bus callers) get a tab while one of their
+  activities has an expanded presentation, after the module tabs.
+- **Strip look** (2026-11-02, after Notchy): one rounded group hugging its tabs; the
+  active tab shows icon + title on a lighter pill, the others only their icon (the title
+  is their accessible name). Every tab has an icon: the module's `icon`, for an unclaimed
+  kind its activity's icon, else a generic one.
+- Where you open from decides the tab: idle → Home; the `+N` badge → Home; a compact pill
+  → the tab of its kind (`kind → module → tab`); kinds without a tab (osd, copied) → the
+  activity's `onPress` if it has one (e.g. raise the player), else Home. Tabs can be
+  switched inside expanded, but the next open follows context again — the last tab is not
+  remembered. While open the strip follows the stack: a tab whose last activity ends
+  goes back to Home.
 - **Standalone tabs** (decided 2026-10-30, after Notchy's ⋯ menu): a module with `tab.js`
   and `kinds: []`. No source, no activity, no idle plan; it lives only inside expanded.
   This is where tool-like pages go (Clipboard, Launcher, Files, Notes…) without touching
   the pill.
-  - Strip layout: `[Home] [kind tabs of enabled modules] [slot ▾] [⋯]`. The **slot** is one
-    cell showing the standalone tab last chosen from ⋯; it stays until changed. ⋯ lists every
-    enabled standalone tab. Settings can pin some as fixed tabs.
+  - Strip layout: `[Home] [kind tabs of enabled modules] [slot] [⋯]`. The **slot** is the
+    last cell, drawn like any other tab (no ▾, 2026-11-02): it shows the standalone tab
+    last chosen from ⋯ (`tabs-slot`) and stays until changed; until something is chosen it shows the **first enabled standalone tab**
+    (2026-11-02). ⋯ opens a **menu floating over the tab** (raised: its own background and
+    border, no blur), dropping from ⋯ with its right edge on ⋯'s (not from the left like
+    Notchy); it lists every enabled standalone tab and marks the one in the slot. A press
+    beside it, ⋯ included, only closes it.
+    Settings can pin some as fixed tabs (`tabs-pinned`), before the slot; a pinned tab is
+    never also in the slot.
   - Reachable only via slot / ⋯ / keybind — never opened by an event.
   - Actor built on first selection, destroyed when expanded closes (optional cache setting);
     closed = zero cost regardless of how many are enabled.
-  - All standalone tabs are **off by default**; a fresh install shows Home + kind tabs only.
+  - Standalone tabs are **not pinned by default**: a fresh install shows Home + kind tabs,
+    the slot and ⋯. Calendar is the first (2026-11-02; its next-event activity in M4 may make it a kind
+    tab), then Clipboard; both on by default, so Calendar sits in the slot until another is
+    chosen, their bodies empty until the M5 item (2026-11-02; was "off by default").
   - May use Shell APIs in `tab.js`; still no polling while closed.
   - Likely first ones: Clipboard, Launcher. Not planned: Calculator, Emoji (GNOME search has them).
 
@@ -202,7 +226,7 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   grows into the expanded panel, the others slide in and fade (300 ms). Close = split again.
 - An `alert: true` update briefly expands **only that pill** (~2 s, no tab strip).
 - Max 3 pills. Further activities don't show; the last pill carries a `+N` badge; clicking
-  it opens Home with the full list (until Home exists it opens that pill, 2026-11-01).
+  the badge opens Home with the full list, the rest of that pill its own tab (2026-11-02).
 - Space (2026-11-01): pills stop before the system cluster (12 px margin). On 1366 px all
   three fit at ~124 px each; if two side pills of 120 px don't fit, only two pills show
   (or one), and the rest count in `+N`. Re-measured whenever the right cluster resizes.
@@ -216,7 +240,7 @@ setting `privacy-dot = pill | system | both`, default `pill`.
 Single screen, no sub-navigation. Four blocks, each a module that can be off:
 
 ```
-┌ ⌂ Home · ♪ Media · ⏱ Timer · [ ▣ Clipboard ▾ ] · ⋯ ──────────────── ⚙ ┐
+┌ ⌂ Home · ♪ Media · ⏱ Timer · [ ▣ Clipboard ] · ⋯ ────────────────── ⚙ ┐
 │ [art] title           ⟲ ≡    │ ☁ Weather          ⏱ Timer            │
 │       artist                 │   31° Partly cloudy   --:--            │
 │   ◀◀  ▶  ▶▶                  │   HCMC · H34 L26                       │
@@ -226,9 +250,15 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
 │  …  calendar grid …          │                                        │
 └──────────────────────────────┴────────────────────────────────────────┘
   strip: Home · kind tabs of enabled modules · one slot for a standalone tab · ⋯ menu · ⚙ prefs
+  ⚙ sits alone at the right of the strip row (a round button); it closes the island, then
+  opens the extension's prefs window (2026-11-02)
   no system indicators here — they live in the right-hand system cluster (§1)
 ```
 
+- **Until the M3 blocks** (2026-11-02): Home lists every visible activity (the full list,
+  also behind `+N`), each row its compact view; a row opens that activity's tab. Nothing
+  running → "Nothing going on". The panel's height fits its content up to the expanded cap;
+  beyond that the tab body scrolls (no blur, scrollbar only when needed).
 - Now playing (compact) — MPRIS. Hidden when nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu).
 - Weather — reuse `ui/weather.js` (same GWeather location as dateMenu).

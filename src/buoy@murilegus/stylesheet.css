@@ -93,3 +93,49 @@
 .buoy-stale .buoy-ring,
 .buoy-stale .buoy-bar { color: #8a8a8a; }
 .buoy-stale .buoy-eq-bar { background-color: #8a8a8a; }
+
+/* Home's panel (kit/home.js): the tab strip and the selected tab, only inside expanded. */
+.buoy-panel { padding: 10px 12px 12px; spacing: 8px; }
+.buoy-tabs {
+    spacing: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.11);
+}
+/* inactive: icon only, round; active (:checked): icon + title on a lighter pill */
+.buoy-tab {
+    padding: 6px 9px;
+    border-radius: 999px;
+    color: #b8b8b8;
+    font-size: 13px;
+    font-weight: 600;
+}
+.buoy-tab-box { spacing: 7px; }
+.buoy-tab:hover { color: #fff; background-color: rgba(255, 255, 255, 0.08); }
+.buoy-tab:checked { padding: 6px 14px; color: #fff; background-color: rgba(255, 255, 255, 0.2); }
+.buoy-tab:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-tab.buoy-more:checked { padding: 6px 9px; } /* the menu hangs from its edge */
+.buoy-home-list { spacing: 2px; }
+.buoy-home-row { padding: 6px 8px; border-radius: 12px; }
+.buoy-home-row:hover { background-color: rgba(255, 255, 255, 0.08); }
+.buoy-home-row:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-home-empty { color: #8a8a8a; padding: 8px; }
+.buoy-kind-tab { spacing: 4px; }
+.buoy-kind-tab .buoy-expanded { padding: 4px 2px; }
+
+/* ⋯ menu: floats over the tab, raised (no blur, no shadow blur) */
+.buoy-menu {
+    min-width: 200px;
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: #242424;
+}
+.buoy-menu-row { padding: 7px 10px; border-radius: 9px; color: #fff; font-weight: 500; }
+.buoy-menu-row:hover { background-color: rgba(255, 255, 255, 0.1); }
+.buoy-menu-row:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-menu-row-box { spacing: 10px; }
+/* ⚙ at the right of the strip row: a round button in the strip's own grey */
+.buoy-panel-header { spacing: 8px; }
+.buoy-tab.buoy-gear { padding: 9px; background-color: rgba(255, 255, 255, 0.11); }
+.buoy-tab.buoy-gear:hover { color: #fff; background-color: rgba(255, 255, 255, 0.2); }
