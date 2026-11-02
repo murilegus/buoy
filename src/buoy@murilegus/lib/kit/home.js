@@ -6,6 +6,7 @@ import St from 'gi://St';
 import {buildCompact, buildExpanded} from './present.js';
 import {planStrip, tabActivities, findTab, HOME} from './tabs.js';
 
+const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edge
 const STRIP_H = 60; // first guess for the strip + panel padding; measured once laid out
 
 /**
@@ -47,8 +48,11 @@ export class Home {
 
         // The ⋯ menu floats over the tab (Notchy): a BinLayout stacks it on the column.
         this.actor = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true});
+        // y_expand: BinLayout centres a child that does not expand, so when the menu is
+        // taller than the tab (an empty tab) the strip would slide down under it
         this._column = new St.BoxLayout({
-            style_class: 'buoy-panel', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
+            style_class: 'buoy-panel', orientation: Clutter.Orientation.VERTICAL,
+            x_expand: true, y_expand: true,
         });
         this.actor.add_child(this._column);
         // one rounded group that hugs its tabs (Notchy's strip)
@@ -185,11 +189,12 @@ export class Home {
         // reactive: a press beside the menu (⋯ included) lands on it and only closes the
         // menu, like a popover; the tab below never sees it (St.Button clicks are gestures,
         // so stopping the event further up would not keep them from firing).
-        const [ax, ay] = this.actor.get_transformed_position();
-        const [bx] = this._moreButton.get_transformed_position();
-        const [, sy] = this._stripBox.get_transformed_position();
-        const right = Math.max(0, Math.round(ax + this.actor.width - (bx + this._moreButton.width)));
-        const top = Math.round(sy - ay + this._stripBox.height + 6);
+        // Allocation boxes (each relative to its parent), not screen positions: those can
+        // still be mid-way through a morph's slide.
+        const strip = this._stripBox.get_allocation_box();
+        const more = this._moreButton.get_allocation_box();
+        const right = Math.max(0, Math.round(this.actor.width - (this._column.x + strip.x1 + more.x2)));
+        const top = Math.round(this._column.y + strip.y2 + 6);
         const layer = new St.BoxLayout({x_expand: true, y_expand: true, reactive: true});
         for (const signal of ['button-press-event', 'touch-event']) {
             layer.connect(signal, (_a, ev) => {
@@ -200,7 +205,8 @@ export class Home {
                 return Clutter.EVENT_STOP;
             });
         }
-        layer.set_style(`padding-right: ${right}px; padding-top: ${top}px;`);
+        // padding-bottom: room under the menu when it makes the panel taller
+        layer.set_style(`padding-right: ${right}px; padding-top: ${top}px; padding-bottom: ${MENU_BOTTOM}px;`);
         layer.add_child(new St.Widget({x_expand: true}));
         layer.add_child(menu);
         for (const t of this._strip.more) {
