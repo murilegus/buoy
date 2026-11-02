@@ -6,11 +6,12 @@
  *   [Home] [kind tabs] [pinned standalone tabs] [slot ▾] [⋯]
  *
  * - Home is always first.
- * - A kind tab per enabled module with kinds, in module order (SPEC §6), when the module
- *   ships `tab.js`, or when a visible activity of its kinds has an expanded presentation:
- *   that tab then shows the activities' own expanded views (decided 2026-11-02, while no
- *   module ships `tab.js` yet). Kinds no module claims (D-Bus callers) get a tab of their
- *   own the same way, after the module tabs.
+ * - A kind tab per enabled module with kinds, in module order (SPEC §6), always shown,
+ *   running or not (2026-11-02). Until the module ships `tab.js` it shows its activities'
+ *   own expanded views, or nothing. Modules whose kinds are all feedback for your own
+ *   action (osd, copied: SPEC §2b) have no tab, unless one of their activities brings an
+ *   expanded presentation. Kinds no module claims (D-Bus callers) get a tab while one of
+ *   their activities has an expanded presentation, after the module tabs.
  * - Standalone tabs (`tab.js`, `kinds: []`): pinned ones are fixed tabs; the slot shows
  *   the one last chosen from ⋯ (`tabs-slot`); ⋯ lists all of them. None exist yet.
  * - Where you open from decides the tab (tabFor); nothing remembers the last tab.
@@ -20,7 +21,14 @@ import {planExpanded} from './presentation.js';
 
 export const HOME = 'home';
 
+// SPEC §2b: kinds without a tab; an open from them goes to onPress or Home
+const FEEDBACK = new Set(['osd', 'copied']);
+
+// Inactive tabs show only their icon (Notchy's strip, 2026-11-02), so every tab has one.
+const GENERIC_ICON = 'view-app-grid-symbolic';
+
 const title = id => id.charAt(0).toUpperCase() + id.slice(1);
+const iconName = v => typeof v === 'string' && v.trim() ? v.trim() : null;
 const hasExpanded = a => planExpanded(a) !== null;
 
 /**
@@ -29,7 +37,8 @@ const hasExpanded = a => planExpanded(a) !== null;
  * @param {object} [opts]
  * @param {string} [opts.slot]  `tabs-slot`
  * @param {string[]} [opts.pinned]  `tabs-pinned`
- * @returns {object} {tabs, slot, more}: tabs = [{id, type, label, icon, kinds}], type
+ * @returns {object} {tabs, slot, more}: tabs = [{id, type, label, icon, kinds}] (icon
+ *   always set: module `icon`, else a generic one), type
  *   'home' | 'kind' | 'standalone'; slot = the slot tab or null; more = standalone tabs
  *   for ⋯ (empty: no ⋯)
  */
@@ -42,22 +51,25 @@ export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
         if (!m.kinds?.length)
             continue;
         m.kinds.forEach(k => claimed.add(k));
-        if (m.tab || shown(m.kinds)) {
+        if (m.tab || m.kinds.some(k => !FEEDBACK.has(k)) || shown(m.kinds)) {
             tabs.push({
                 id: m.id, type: 'kind', label: m.title ?? title(m.id),
-                icon: m.icon ?? null, kinds: [...m.kinds],
+                icon: m.icon ?? GENERIC_ICON, kinds: [...m.kinds],
             });
         }
     }
     for (const a of list) {
         const id = `kind:${a.kind}`;
-        if (!claimed.has(a.kind) && hasExpanded(a) && !tabs.some(t => t.id === id))
-            tabs.push({id, type: 'kind', label: title(a.kind), icon: null, kinds: [a.kind]});
+        if (!claimed.has(a.kind) && hasExpanded(a) && !tabs.some(t => t.id === id)) {
+            // no module to ask: the first activity's own icon (`leading` or `leading.icon`)
+            const icon = iconName(a.leading) ?? iconName(a.leading?.icon) ?? GENERIC_ICON;
+            tabs.push({id, type: 'kind', label: title(a.kind), icon, kinds: [a.kind]});
+        }
     }
 
     const standalone = modules
         .filter(m => m.tab && !m.kinds?.length && m.id !== HOME)
-        .map(m => ({id: m.id, type: 'standalone', label: m.title ?? title(m.id), icon: m.icon ?? null, kinds: []}));
+        .map(m => ({id: m.id, type: 'standalone', label: m.title ?? title(m.id), icon: m.icon ?? GENERIC_ICON, kinds: []}));
     for (const t of standalone) {
         if (pinned.includes(t.id))
             tabs.push(t);

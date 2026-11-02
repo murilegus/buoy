@@ -32,7 +32,8 @@ src/buoy@murilegus/
     │   └── shapes.js
     └── modules/            FEATURES — one self-contained folder each
         └── <id>/
-            ├── index.js    export default {id, kinds, source, adapter, tab?, schema?}
+            ├── index.js    export default {id, kinds, source, adapter, tab?, schema?,
+            │               title?, icon?}   title/icon: its tab in the strip
             ├── source.js   watches a system facility, calls stack.surface/update/end
             ├── adapter.js  default presentation for this module's kinds
             ├── tab.js      content for its tab in expanded (optional): export a class,

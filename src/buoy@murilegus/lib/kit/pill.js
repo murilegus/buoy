@@ -414,7 +414,7 @@ export class Pill {
             }
         }
         this._layoutContent();
-        if (this.activity)
+        if (this.activity || this.expanded) // the idle pill opens on Home's panel too
             this._morph(this.currentShape(), 200);
     }
 

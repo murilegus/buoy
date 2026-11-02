@@ -46,7 +46,8 @@ export class Home {
         this.actor = new St.BoxLayout({
             style_class: 'buoy-panel', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
         });
-        this._stripBox = new St.BoxLayout({style_class: 'buoy-tabs', x_expand: true});
+        // one rounded group that hugs its tabs (Notchy's strip)
+        this._stripBox = new St.BoxLayout({style_class: 'buoy-tabs', x_align: Clutter.ActorAlign.START});
         this._body = new St.ScrollView({
             style_class: 'buoy-panel-body', x_expand: true,
             hscrollbar_policy: St.PolicyType.NEVER, vscrollbar_policy: St.PolicyType.AUTOMATIC,
@@ -134,9 +135,12 @@ export class Home {
         }
     }
 
+    // Like Notchy: the active tab shows its icon and title, the others only their icon
+    // (the title stays their accessible name).
     _tabButton(tab, id, isSlot = false) {
-        const button = this._button(tab, tab.label, isSlot);
-        button.checked = id === this._current && !this._showingMore;
+        const active = id === this._current && !this._showingMore;
+        const button = this._button({icon: tab.icon, label: active ? tab.label : null}, tab.label, isSlot);
+        button.checked = active;
         button.connect('clicked', () => this.select(id));
         return button;
     }
@@ -144,7 +148,7 @@ export class Home {
     _button({icon, label}, accessibleName, isSlot = false) {
         const box = new St.BoxLayout({style_class: 'buoy-tab-box'});
         if (icon)
-            box.add_child(new St.Icon({icon_name: icon, icon_size: 14, y_align: Clutter.ActorAlign.CENTER}));
+            box.add_child(new St.Icon({icon_name: icon, icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
         if (label)
             box.add_child(new St.Label({text: label, y_align: Clutter.ActorAlign.CENTER}));
         if (isSlot)

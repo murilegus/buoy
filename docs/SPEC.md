@@ -179,10 +179,15 @@ setting `privacy-dot = pill | system | both`, default `pill`.
 - The tab strip exists only inside expanded, and only when a click opened it; the stack's
   own opens (alert, ask, transient) show the activity's expanded view without a strip.
   Tabs = modules that ship `tab.js`; Home is always first; order follows §6.
-- **Kind tabs without `tab.js`** (decided 2026-11-02): a kind also gets a tab while one of
-  its visible activities has an expanded presentation; that tab shows those activities'
-  expanded views, top first. Kinds no module claims (D-Bus callers) get a tab the same
-  way, after the module tabs. A module's `tab.js` replaces this view when it ships one.
+- **Kind tabs** (decided 2026-11-02): every enabled module with kinds has its tab, always
+  shown, running or not; until it ships `tab.js` the tab shows its activities' expanded
+  views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied)
+  have none. Kinds no module claims (D-Bus callers) get a tab while one of their
+  activities has an expanded presentation, after the module tabs.
+- **Strip look** (2026-11-02, after Notchy): one rounded group hugging its tabs; the
+  active tab shows icon + title on a lighter pill, the others only their icon (the title
+  is their accessible name). Every tab has an icon: the module's `icon`, for an unclaimed
+  kind its activity's icon, else a generic one.
 - Where you open from decides the tab: idle → Home; the `+N` badge → Home; a compact pill
   → the tab of its kind (`kind → module → tab`); kinds without a tab (osd, copied) → the
   activity's `onPress` if it has one (e.g. raise the player), else Home. Tabs can be

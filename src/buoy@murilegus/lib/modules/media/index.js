@@ -4,6 +4,8 @@ import spotify from './apps/spotify.js';
 
 export default {
     id: 'media',
+    title: 'Media',
+    icon: 'audio-x-generic-symbolic',
     kinds: ['media'],
     source: MprisSource,
     adapter,
