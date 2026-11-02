@@ -3,7 +3,7 @@
  * starts on. Pure (no St, no Main), so it runs under plain gjs; kit/home.js builds the
  * actors.
  *
- *   [Home] [kind tabs] [pinned standalone tabs] [slot ▾] [⋯]
+ *   [Home] [kind tabs] [pinned standalone tabs] [slot] [⋯]
  *
  * - Home is always first.
  * - A kind tab per enabled module with kinds, in module order (SPEC §6), always shown,

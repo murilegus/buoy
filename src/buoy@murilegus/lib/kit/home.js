@@ -131,7 +131,7 @@ export class Home {
         for (const t of tabs)
             this._stripBox.add_child(this._tabButton(t, t.id));
         if (slot)
-            this._stripBox.add_child(this._tabButton(slot, slot.id, true));
+            this._stripBox.add_child(this._tabButton(slot, slot.id));
         if (more.length) {
             const button = this._button({icon: 'view-more-horizontal-symbolic', label: null}, 'More tabs');
             button.checked = this._menu !== null;
@@ -149,23 +149,21 @@ export class Home {
 
     // Like Notchy: the active tab shows its icon and title, the others only their icon
     // (the title stays their accessible name).
-    // The slot carries a ▾: ⋯ changes what sits in it.
-    _tabButton(tab, id, isSlot = false) {
+    // The slot looks like any other tab (no ▾, 2026-11-02); ⋯ changes what sits in it.
+    _tabButton(tab, id) {
         const active = id === this._current;
-        const button = this._button({icon: tab.icon, label: active ? tab.label : null}, tab.label, isSlot);
+        const button = this._button({icon: tab.icon, label: active ? tab.label : null}, tab.label);
         button.checked = active;
         button.connect('clicked', () => this.select(id));
         return button;
     }
 
-    _button({icon, label}, accessibleName, isSlot = false) {
+    _button({icon, label}, accessibleName) {
         const box = new St.BoxLayout({style_class: 'buoy-tab-box'});
         if (icon)
             box.add_child(new St.Icon({icon_name: icon, icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
         if (label)
             box.add_child(new St.Label({text: label, y_align: Clutter.ActorAlign.CENTER}));
-        if (isSlot)
-            box.add_child(new St.Icon({icon_name: 'pan-down-symbolic', icon_size: 12, y_align: Clutter.ActorAlign.CENTER}));
         return new St.Button({
             style_class: 'buoy-tab', child: box, can_focus: true, toggle_mode: false,
             accessible_name: accessibleName,

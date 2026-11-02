@@ -181,7 +181,7 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   Tabs = modules that ship `tab.js`; Home is always first; order follows §6.
 - **Kind tabs** (decided 2026-11-02): every enabled module with kinds has its tab, always
   shown, running or not (default strip: Home · Media · Notifications · Transfers · Timer ·
-  [Calendar ▾] · ⋯; Notifications, Transfers and Timer are stub modules until their
+  [Calendar] · ⋯; Notifications, Transfers and Timer are stub modules until their
   roadmap items); until it ships `tab.js` the tab shows its activities' expanded
   views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied)
   have none. Kinds no module claims (D-Bus callers) get a tab while one of their
@@ -200,9 +200,9 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   and `kinds: []`. No source, no activity, no idle plan; it lives only inside expanded.
   This is where tool-like pages go (Clipboard, Launcher, Files, Notes…) without touching
   the pill.
-  - Strip layout: `[Home] [kind tabs of enabled modules] [slot ▾] [⋯]`. The **slot** is the
-    last cell: it shows the standalone tab last chosen from ⋯ (`tabs-slot`) and stays until
-    changed; until something is chosen it shows the **first enabled standalone tab**
+  - Strip layout: `[Home] [kind tabs of enabled modules] [slot] [⋯]`. The **slot** is the
+    last cell, drawn like any other tab (no ▾, 2026-11-02): it shows the standalone tab
+    last chosen from ⋯ (`tabs-slot`) and stays until changed; until something is chosen it shows the **first enabled standalone tab**
     (2026-11-02). ⋯ opens a **menu floating over the tab** (raised: its own background and
     border, no blur), dropping from ⋯ with its right edge on ⋯'s (not from the left like
     Notchy); it lists every enabled standalone tab and marks the one in the slot. A press
@@ -240,7 +240,7 @@ setting `privacy-dot = pill | system | both`, default `pill`.
 Single screen, no sub-navigation. Four blocks, each a module that can be off:
 
 ```
-┌ ⌂ Home · ♪ Media · ⏱ Timer · [ ▣ Clipboard ▾ ] · ⋯ ──────────────── ⚙ ┐
+┌ ⌂ Home · ♪ Media · ⏱ Timer · [ ▣ Clipboard ] · ⋯ ────────────────── ⚙ ┐
 │ [art] title           ⟲ ≡    │ ☁ Weather          ⏱ Timer            │
 │       artist                 │   31° Partly cloudy   --:--            │
 │   ◀◀  ▶  ▶▶                  │   HCMC · H34 L26                       │
