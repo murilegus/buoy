@@ -42,9 +42,11 @@ export default class BuoyExtension extends Extension {
         this._dbus.export();
 
         this._active = [];
+        const enabled = [];
         for (const m of MODULES) {
             if (!this._settings.get_boolean(`modules-${m.id}`))
                 continue;
+            enabled.push(m);
             for (const kind of m.kinds)
                 this._registry.register(kind, m.adapter, m.apps ?? {});
             if (m.source) {
@@ -53,6 +55,15 @@ export default class BuoyExtension extends Extension {
                 this._active.push({m, src});
             }
         }
+        // the tab strip (SPEC §2b): read per open, so nothing needs a settings signal
+        this._island.tabs = {
+            modules: enabled,
+            settings: () => ({
+                slot: this._settings.get_string('tabs-slot'),
+                pinned: this._settings.get_strv('tabs-pinned'),
+            }),
+            onSlot: id => this._settings.set_string('tabs-slot', id),
+        };
         this.stack = this._stack; // Looking Glass
 
         // Dev: Main.extensionManager.lookup('buoy@murilegus').stateObj.reload('media')

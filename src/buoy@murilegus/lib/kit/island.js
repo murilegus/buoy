@@ -7,7 +7,9 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {shapesFor, GAP, PILL_GAP} from './shapes.js';
 import {Pill} from './pill.js';
+import {Home} from './home.js';
 import {ALERT_MS} from './stack.js';
+import {planStrip, tabFor, HOME} from './tabs.js';
 
 const MAX_PILLS = 3;       // SPEC §2c
 const CLUSTER_MARGIN = 12; // keep side pills this far from the system cluster
@@ -23,12 +25,14 @@ const ALERT_HOVER = 1000;  // an alert still hovered at its end stays open this 
  *                 `none` when there is nothing to show
  *   side pills    to the right, each ≤ expanded/3, content-fit; when one ends the others
  *                 slide to fill (pills follow their activity, so they slide, never jump)
- *   open          a click on any expandable pill (or `expand` from the stack for the
- *                 centre: transient, ask; or an alert for ALERT_MS) grows that pill into
- *                 the expanded panel at the centre; the others slide in and fade (merge);
- *                 closing splits them again. Only a click outside closes it, or Esc after
- *                 a click-open, which takes a modal grab like ui/grabHelper.js; clicks
- *                 inside do nothing and buttons keep working.
+ *   open          a click grows that pill into the expanded panel at the centre; the
+ *                 others slide in and fade (merge); closing splits them again. A click
+ *                 opens Home's panel (kit/home.js: tab strip + tab) on the tab its context
+ *                 picks (SPEC §2b: idle and +N → Home, a pill → its kind's tab). The stack
+ *                 opens the centre pill's own expanded view without a strip (`expand`:
+ *                 transient, ask; an alert for ALERT_MS). Only a click outside closes it,
+ *                 or Esc after a click-open, which takes a modal grab like
+ *                 ui/grabHelper.js; clicks inside do nothing and buttons keep working.
  *
  * Structure: a fixed-size invisible container (wide enough for three pills, tall enough
  * for the expanded one) holding each pill's background and content (see pill.js).
@@ -47,6 +51,7 @@ export class Island {
         this._sideMax = this._s.minimalMax;
         this._open = null;          // the expanded pill
         this._openedBy = null;      // 'user' | 'auto' | 'alert'
+        this._home = null;          // Home's panel while a click has the island open
         this._alertId = 0;
         this._capturedId = 0;
         this._capturedOn = null;
@@ -54,6 +59,8 @@ export class Island {
         this._layoutLater = 0;
         this._destroyed = false;
         this.onCapacityChanged = null; // set by the extension → stack.refresh()
+        // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice
+        this.tabs = {modules: [], settings: () => ({}), onSlot: null};
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
             () => this._queueLayout());
@@ -93,6 +100,15 @@ export class Island {
 
     render(list, {alert = null, expand = null} = {}) {
         this._list = list;
+        if (this._home) {
+            // the panel stays while a click has it open: it lists whatever is running,
+            // even after the pill it grew from ended; alerts wait until it closes
+            const a = list.find(x => x.id === this._open.id);
+            if (a)
+                this._open.configure(a, {...this._roleOf(this._open)});
+            this._home.update(list);
+            return;
+        }
         if (this._open) {
             const a = list.find(x => x.id === this._open.id);
             if (a) {
@@ -248,18 +264,30 @@ export class Island {
         return false;
     }
 
+    _onBadge(ev) {
+        return global.stage.get_event_actor(ev)?.has_style_class_name?.('buoy-badge') ?? false;
+    }
+
+    // SPEC §2b: idle and the +N badge open Home; a pill opens its kind's tab; a pill
+    // whose kind has no tab runs its own onPress if it has one, else opens Home.
     _onPillPress(pill, ev) {
         if (this._fromButton(ev))
             return Clutter.EVENT_PROPAGATE;
         if (this._open)
             return Clutter.EVENT_STOP;         // inside an open pill: only buttons act
-        if (pill.expandable) {
-            this._openPill(pill, 'user');      // +N: like a click on that pill (Home later)
-        } else {
-            pill.activity?.onPress?.();
+        const a = pill.activity;
+        const tab = a && !this._onBadge(ev) ? tabFor(a, this._strip()) : HOME;
+        if (tab === HOME && a?.onPress && !this._onBadge(ev)) {
+            a.onPress();
             pill.pulse();
+        } else {
+            this._openPill(pill, 'user', tab);
         }
         return Clutter.EVENT_STOP;
+    }
+
+    _strip() {
+        return planStrip(this.tabs.modules, this._list, this.tabs.settings());
     }
 
     _onPillRelease(_pill, ev) {
@@ -268,8 +296,10 @@ export class Island {
 
     // Merge (SPEC §2c): the opened pill grows into the expanded panel at the centre, the
     // others slide in and fade.
-    _openPill(pill, how) {
-        if (this._open || !pill.expandable)
+    // tab: a click-open, into Home's panel on that tab; without it the activity's own
+    // expanded view
+    _openPill(pill, how, tab = null) {
+        if (this._open || (!tab && !pill.expandable))
             return;
         this._open = pill;
         this._openedBy = how;
@@ -281,7 +311,14 @@ export class Island {
             }
         }
         pill.setCx(cw / 2, true);
-        pill.expand();
+        if (tab) {
+            this._home = new Home({
+                modules: this.tabs.modules, list: this._list, tab,
+                maxHeight: this._s.expanded.h, settings: this.tabs.settings(),
+                onSlot: id => this.tabs.onSlot?.(id),
+            });
+        }
+        pill.expand(this._home?.actor ?? null);
         this.actor.set_child_above_sibling(pill.bg, null);
         this.actor.set_child_above_sibling(pill.content, null);
 
@@ -298,7 +335,7 @@ export class Island {
         }
         this._capturedOn = this._grab ? this.actor : global.stage;
         this._capturedId = this._capturedOn.connect('captured-event', (_a, ev) => this._onCaptured(ev));
-        pill.activity.onExpand?.(true);
+        pill.activity?.onExpand?.(true);
     }
 
     // Split again: the open pill shrinks back, the others fade in and slide to their slots.
@@ -308,6 +345,7 @@ export class Island {
             return;
         this._open = null;
         this._openedBy = null;
+        this._home = null;          // its actor is the pill's content: collapse destroys it
         this._disarmAlert();
         if (this._capturedId) {
             this._capturedOn.disconnect(this._capturedId);

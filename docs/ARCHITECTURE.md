@@ -25,7 +25,8 @@ src/buoy@murilegus/
     │   ├── present.js      render plan → St actors. ONLY place content actors are made
     │   ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
     │   ├── pill.js         one pill: content, sizing, hover/peek, morph (2026-11-01)
-    │   ├── home.js         Home screen + tab strip
+    │   ├── home.js         the panel a click opens: tab strip + tab body (Home, kind, standalone)
+    │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
     │   ├── registry.js     app-id normalisation table; adapter resolution
     │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
     │   └── shapes.js
@@ -34,7 +35,9 @@ src/buoy@murilegus/
             ├── index.js    export default {id, kinds, source, adapter, tab?, schema?}
             ├── source.js   watches a system facility, calls stack.surface/update/end
             ├── adapter.js  default presentation for this module's kinds
-            ├── tab.js      content for its tab in expanded (optional)
+            ├── tab.js      content for its tab in expanded (optional): export a class,
+            │               `new Tab()` → {actor, destroy()}; built on first selection,
+            │               destroyed when expanded closes
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar)
             └── apps/       per-app overrides, <slug>.js, same method names as adapter.js
 ```

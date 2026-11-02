@@ -176,11 +176,19 @@ setting `privacy-dot = pill | system | both`, default `pill`.
 
 ### 2b. Tabs (decided 2026-10-30)
 
-- The tab strip exists only inside expanded. Tabs = modules that ship `tab.js`; Home is
-  always first; order follows §6.
-- Where you open from decides the tab: idle → Home; a compact pill → the tab of its kind
-  (`kind → module → tab`); kinds without a tab (osd, copied) → Home. Tabs can be switched
-  inside expanded, but the next open follows context again — the last tab is not remembered.
+- The tab strip exists only inside expanded, and only when a click opened it; the stack's
+  own opens (alert, ask, transient) show the activity's expanded view without a strip.
+  Tabs = modules that ship `tab.js`; Home is always first; order follows §6.
+- **Kind tabs without `tab.js`** (decided 2026-11-02): a kind also gets a tab while one of
+  its visible activities has an expanded presentation; that tab shows those activities'
+  expanded views, top first. Kinds no module claims (D-Bus callers) get a tab the same
+  way, after the module tabs. A module's `tab.js` replaces this view when it ships one.
+- Where you open from decides the tab: idle → Home; the `+N` badge → Home; a compact pill
+  → the tab of its kind (`kind → module → tab`); kinds without a tab (osd, copied) → the
+  activity's `onPress` if it has one (e.g. raise the player), else Home. Tabs can be
+  switched inside expanded, but the next open follows context again — the last tab is not
+  remembered. While open the strip follows the stack: a tab whose last activity ends
+  goes back to Home.
 - **Standalone tabs** (decided 2026-10-30, after Notchy's ⋯ menu): a module with `tab.js`
   and `kinds: []`. No source, no activity, no idle plan; it lives only inside expanded.
   This is where tool-like pages go (Clipboard, Launcher, Files, Notes…) without touching
@@ -202,7 +210,7 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   grows into the expanded panel, the others slide in and fade (300 ms). Close = split again.
 - An `alert: true` update briefly expands **only that pill** (~2 s, no tab strip).
 - Max 3 pills. Further activities don't show; the last pill carries a `+N` badge; clicking
-  it opens Home with the full list (until Home exists it opens that pill, 2026-11-01).
+  the badge opens Home with the full list, the rest of that pill its own tab (2026-11-02).
 - Space (2026-11-01): pills stop before the system cluster (12 px margin). On 1366 px all
   three fit at ~124 px each; if two side pills of 120 px don't fit, only two pills show
   (or one), and the rest count in `+N`. Re-measured whenever the right cluster resizes.
@@ -229,6 +237,10 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
   no system indicators here — they live in the right-hand system cluster (§1)
 ```
 
+- **Until the M3 blocks** (2026-11-02): Home lists every visible activity (the full list,
+  also behind `+N`), each row its compact view; a row opens that activity's tab. Nothing
+  running → "Nothing going on". The panel's height fits its content up to the expanded cap;
+  beyond that the tab body scrolls (no blur, scrollbar only when needed).
 - Now playing (compact) — MPRIS. Hidden when nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu).
 - Weather — reuse `ui/weather.js` (same GWeather location as dateMenu).

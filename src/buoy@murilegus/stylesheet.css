@@ -93,3 +93,25 @@
 .buoy-stale .buoy-ring,
 .buoy-stale .buoy-bar { color: #8a8a8a; }
 .buoy-stale .buoy-eq-bar { background-color: #8a8a8a; }
+
+/* Home's panel (kit/home.js): the tab strip and the selected tab, only inside expanded. */
+.buoy-panel { padding: 10px 12px 12px; spacing: 8px; }
+.buoy-tabs { spacing: 4px; }
+.buoy-tab {
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: #b8b8b8;
+    font-size: 12px;
+    font-weight: 600;
+}
+.buoy-tab-box { spacing: 6px; }
+.buoy-tab:hover { color: #fff; background-color: rgba(255, 255, 255, 0.08); }
+.buoy-tab:checked { color: #fff; background-color: rgba(255, 255, 255, 0.16); }
+.buoy-tab:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-home-list { spacing: 2px; }
+.buoy-home-row { padding: 6px 8px; border-radius: 12px; }
+.buoy-home-row:hover { background-color: rgba(255, 255, 255, 0.08); }
+.buoy-home-row:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-home-empty { color: #8a8a8a; padding: 8px; }
+.buoy-kind-tab { spacing: 4px; }
+.buoy-kind-tab .buoy-expanded { padding: 4px 2px; }
