@@ -6,7 +6,7 @@ otherwise; the agent sets `[~]` when starting and `[x]` only after Ethan's revie
 (each 1–3; see bottom). Every item names its module, source signal, settings keys and what
 "done" means. Update this file in the same PR as the feature.
 
-Last updated: 2026-11-01
+Last updated: 2026-11-02
 
 ---
 
@@ -51,7 +51,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | D-Bus `org.gnome.Shell.Extensions.Buoy`: Surface/Update/End/Schedule/Ask | `kit/dbus.js` | `gdbus call` from a shell script works |
 | [ ] | Keyboard: `Super+B` focus, ←/→ between pills, Enter/Esc, A/D for ask | `kit/island.js` | |
 | [ ] | Fullscreen: hide island, show missed light on exit | `kit/stack.js` | fullscreen drives `stack.setUnseen()`; fullscreen only (away/DND → M4 Buoy light, decided 2026-11-01). While unseen the stack sends no `expand`/`alert` (an ask must not open in a hidden pill, where any click in the fullscreen app would collapse it) — only the red light; on `setUnseen(false)` a pending ask on top is re-shown with `expand` (found 2026-11-01) |
-| [ ] | GSettings schema + `prefs.js` (Adw, one page per module from `index.js#schema`, test/preview mode key) | `schemas/`, `prefs.js` | |
+| [ ] | GSettings schema + `prefs.js` (Adw, one page per module from `index.js#schema`, test/preview mode key; plus own pages for non-module keys: **Panel** for `cluster-*`/`left-cluster-empty`, **Windows** for `window-corners*`) | `schemas/`, `prefs.js` | |
 
 ## M2 — Panel (cosmetic, independent of M1)  `[~]`
 
@@ -62,6 +62,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | Right: third-party tray bare and separate; system cluster = QS indicators + clock in one `St.BoxLayout` | |
 | [ ] | `cluster-background = hover|always|never` (classes `buoy-cluster-always/never`) | |
 | [ ] | `cluster-contrast = auto|light|dark`: wallpaper luminance on `picture-uri` change → `buoy-light` | one decode per wallpaper change |
+| [ ] | Rounded top corners on maximized windows (`corners.js`): `Shell.GLSLEffect` on the `Meta.WindowActor` of maximized windows only, top-left + top-right; `window-corners` (default on) and `window-corners-radius` (default 15 = Adwaita) on the prefs **Windows** page (added 2026-11-02) | SPEC §1a; maximized GTK4, GTK3, Electron and Xwayland windows show round top corners with the wallpaper behind, bottom square; unmaximize/fullscreen/off/disable remove the effect from every window; toggle and radius apply live; no square flash during the maximize animation or in the Overview; frame time with ~5 windows behind a maximized one noted in the handover |
 
 ## M3 — v0.1 modules (first release on EGO)  `[ ]`
 
