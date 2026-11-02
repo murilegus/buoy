@@ -14,7 +14,7 @@ src/buoy@murilegus/
 ├── extension.js            enable(): panel → kit → load enabled modules
 ├── panel.js                top bar rework: left cluster (app/workspace), bare tray, system cluster (QS + clock)
 ├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
-├── prefs.js                Adw prefs: one page per module + Panel and Windows pages
+├── prefs.js                Adw prefs: one page per module + Panel and Windows pages (placeholder, 2026-11-02)
 ├── schemas/                GSettings: modules.<id>, apps.hidden, sizes, keybinds
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import

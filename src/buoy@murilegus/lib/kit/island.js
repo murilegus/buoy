@@ -59,8 +59,8 @@ export class Island {
         this._layoutLater = 0;
         this._destroyed = false;
         this.onCapacityChanged = null; // set by the extension → stack.refresh()
-        // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice
-        this.tabs = {modules: [], settings: () => ({}), onSlot: null};
+        // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice, ⚙
+        this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
             () => this._queueLayout());
@@ -316,6 +316,11 @@ export class Island {
                 modules: this.tabs.modules, list: this._list, tab,
                 maxHeight: this._s.expanded.h, settings: this.tabs.settings(),
                 onSlot: id => this.tabs.onSlot?.(id),
+                // close first: the prefs window must get the keyboard the grab holds
+                onPrefs: () => {
+                    this._close();
+                    this.tabs.onPrefs?.();
+                },
             });
         }
         pill.expand(this._home?.actor ?? null);

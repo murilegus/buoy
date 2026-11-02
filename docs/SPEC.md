@@ -250,6 +250,8 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
 │  …  calendar grid …          │                                        │
 └──────────────────────────────┴────────────────────────────────────────┘
   strip: Home · kind tabs of enabled modules · one slot for a standalone tab · ⋯ menu · ⚙ prefs
+  ⚙ sits alone at the right of the strip row (a round button); it closes the island, then
+  opens the extension's prefs window (2026-11-02)
   no system indicators here — they live in the right-hand system cluster (§1)
 ```
 

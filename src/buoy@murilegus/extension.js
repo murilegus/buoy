@@ -68,6 +68,7 @@ export default class BuoyExtension extends Extension {
                 pinned: this._settings.get_strv('tabs-pinned'),
             }),
             onSlot: id => this._settings.set_string('tabs-slot', id),
+            onPrefs: () => this.openPreferences(),
         };
         this.stack = this._stack; // Looking Glass
 

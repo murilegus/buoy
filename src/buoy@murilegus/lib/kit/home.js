@@ -31,12 +31,14 @@ export class Home {
      * @param {number} opts.maxHeight  the expanded height cap
      * @param {{slot: string, pinned: string[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`
      * @param {function(string):void} [opts.onSlot]  a standalone tab was chosen from ⋯
+     * @param {function():void} [opts.onPrefs]  ⚙ was clicked
      */
-    constructor({modules, list, tab, maxHeight, settings = {}, onSlot = null}) {
+    constructor({modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null}) {
         this._modules = modules;
         this._list = list;
         this._settings = settings;
         this._onSlot = onSlot;
+        this._onPrefs = onPrefs;
         this._tabs = new Map();      // module id → tab.js instance, built on first selection
         this._strip = null;
         this._current = null;
@@ -65,7 +67,18 @@ export class Home {
         // the scrolled child must be St.Scrollable; tab bodies of any kind go inside it
         this._view = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
         this._body.set_child(this._view);
-        this._column.add_child(this._stripBox);
+        // the strip on the left, ⚙ (prefs, SPEC §3) on the right of the same row
+        this._header = new St.BoxLayout({style_class: 'buoy-panel-header', x_expand: true});
+        this._header.add_child(this._stripBox);
+        this._header.add_child(new St.Widget({x_expand: true}));
+        const prefs = new St.Button({
+            style_class: 'buoy-tab buoy-gear', can_focus: true, accessible_name: 'Settings',
+            child: new St.Icon({icon_name: 'emblem-system-symbolic', icon_size: 16}),
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        prefs.connect('clicked', () => this._onPrefs?.());
+        this._header.add_child(prefs);
+        this._column.add_child(this._header);
         this._column.add_child(this._body);
         this.actor.connect('destroy', () => this._destroyTabs());
         // The body takes what the cap leaves after the strip and padding (font scaling
@@ -191,10 +204,12 @@ export class Home {
         // so stopping the event further up would not keep them from firing).
         // Allocation boxes (each relative to its parent), not screen positions: those can
         // still be mid-way through a morph's slide.
+        const header = this._header.get_allocation_box();
         const strip = this._stripBox.get_allocation_box();
         const more = this._moreButton.get_allocation_box();
-        const right = Math.max(0, Math.round(this.actor.width - (this._column.x + strip.x1 + more.x2)));
-        const top = Math.round(this._column.y + strip.y2 + 6);
+        const left = this._column.x + header.x1 + strip.x1;
+        const right = Math.max(0, Math.round(this.actor.width - (left + more.x2)));
+        const top = Math.round(this._column.y + header.y1 + strip.y2 + 6);
         const layer = new St.BoxLayout({x_expand: true, y_expand: true, reactive: true});
         for (const signal of ['button-press-event', 'touch-event']) {
             layer.connect(signal, (_a, ev) => {
