@@ -59,7 +59,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 |---|---|---|
 | [x] | Transparent 40 px panel, Activities hidden, clock moved | |
 | [ ] | Left cluster: focused app icon+name; hover "· ⊞ N"; no-app → "Workspace N"; click Overview; right-click app menu; scroll switches workspace; `left-cluster-empty` | SPEC §1 |
-| [ ] | Right: third-party tray bare and separate; system cluster = QS indicators + clock in one `St.BoxLayout` | |
+| [ ] | Right: third-party tray bare and separate; system cluster = QS indicators + clock in one `St.BoxLayout`, one click target → quick settings; clock non-reactive, unread dot hidden (SPEC §1, 2026-11-02) | click on the clock opens quick settings; Super+V still opens the calendar popover; disable restores the stock clock |
 | [ ] | `cluster-background = hover|always|never` (classes `buoy-cluster-always/never`) | |
 | [ ] | `cluster-contrast = auto|light|dark`: wallpaper luminance on `picture-uri` change → `buoy-light` | one decode per wallpaper change |
 | [ ] | Rounded top corners on maximized windows (`corners.js`): `Shell.GLSLEffect` on the `Meta.WindowActor` of maximized windows only, top-left + top-right; `window-corners` (default on) and `window-corners-radius` (default 15 = Adwaita) on the prefs **Windows** page (added 2026-11-02) | SPEC §1a; maximized GTK4, GTK3, Electron and Xwayland windows show round top corners with the wallpaper behind, bottom square; unmaximize/fullscreen/off/disable remove the effect from every window; toggle and radius apply live; no square flash during the maximize animation or in the Overview; frame time with ~5 windows behind a maximized one noted in the handover |
@@ -87,7 +87,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | Attention on another workspace, jump | attention | Mutter `demands-attention`/`urgent` | click switches workspace + focuses | 18 |
 | [ ] | Headphones / display plugged → choose on pill | device | Gvc port change, `monitors-changed` | replaces GNOME jack dialog when enabled | 12 |
 | [ ] | Buoy light (amber missed / red waiting) + last-5 history on hover; away (idle > N min) and DND also call `stack.setUnseen()` | core | internal; idle monitor, notification DND setting | SPEC §2a-i, INDICATORS | 12 |
-| [ ] | Notifications peek with the notification's own actions; DND | notification | MessageTray | Reply/Mark read/Open; bodies hidden while screen sharing | 8 |
+| [ ] | Notifications peek with the notification's own actions; DND; notifications tab with history (SPEC §6b) | notification | MessageTray (`getSources`, `source-added`, `notification-added`) | Reply/Mark read/Open; bodies hidden while screen sharing; tab lists the same notifications as the stock message list, dismiss syncs both ways | 8 |
 | [ ] | Power: charging/full/low; "18 W — slow"; "full in 42 min" | power | UPower `energy-rate`, `time-to-full` | | 12 |
 | [ ] | BT device connected with battery | device | GnomeBluetooth + UPower | | 12 |
 | [ ] | Download finished | notification | `Gio.FileMonitor` ~/Downloads | | 12 |
@@ -122,6 +122,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | Scheduled activities persisted across Shell restarts | needs on-disk state |
 | Window snapping by dragging to the pill | Mutter tiling API limited |
 | Satellite extensions over D-Bus | once contract is stable and there's a community |
+| World clocks (lost with the clock popover, SPEC §1) | placement undecided: Home or elsewhere; still reachable via Super+V meanwhile |
 
 ## Out of scope by design (SPEC §0)
 

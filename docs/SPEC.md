@@ -64,10 +64,18 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 - **Right side** (decided 2026-10-30, after the Notchy bar): two different things.
   - **Third-party tray icons** (AppIndicator, input method, screen-record…): bare on the
     wallpaper, each standing alone, GNOME's own order. No cluster background.
-  - **System cluster**: GNOME's **quick settings indicators** (network, volume, battery…)
-    together with the **clock** (`dateMenu`, moved from centre), as one cluster with the
-    shared hover background. Clicking an indicator opens the stock quick-settings menu;
-    clicking the clock opens the stock calendar/notifications popover. Nothing is re-anchored.
+  - **System cluster** (revised 2026-11-02): GNOME's **quick settings indicators**
+    (network, volume, battery…) together with the **clock** (`dateMenu`, moved from
+    centre), as **one button** with the shared hover background. A click anywhere in the
+    cluster, clock included, opens the stock quick-settings menu; the clock has no click,
+    hover or focus of its own (`dateMenu` stays in place, non-reactive, restored on
+    disable). Its unread dot (`MessagesIndicator`) is hidden — the buoy light (§2a) says
+    "missed". Nothing is re-anchored.
+  - The stock calendar/notifications popover is no longer reachable by mouse; Super+V /
+    Super+M (`toggle-message-tray`) still open it under the clock. Its contents move to
+    Buoy: notification history → the notifications tab (§6b), calendar and weather →
+    Home (§3) and idle plans, DND → the stock quick toggle (`status/doNotDisturb.js`).
+    World clocks: placement later (Home or elsewhere), not in v0.1.
 - The island holds **activities only**; persistent system status stays in the system
   cluster. (This supersedes the earlier "indicators in the pill" decision.)
 
@@ -268,7 +276,11 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 ## 6b. Roadmap after v0.1 (all pure JS)
 
 1. **notifications** — peek in the pill with the notification's own actions
-   (Reply / Mark as read / Open); DND toggle.
+   (Reply / Mark as read / Open); DND toggle. A **notifications tab** lists the history
+   (2026-11-02, replaces the clock popover's list): read from `Main.messageTray`
+   (`getSources()` + `source-added`, each source's `notifications` +
+   `notification-added`), the same data the stock message list uses — no store of our
+   own; dismissing in either place removes it from both.
 2. **dbus** — `org.gnome.Shell.Extensions.Buoy` iface: `Show/Update/End` activity,
    `Ask(question, options) → answer`. Hook scripts call it with `gdbus call`.
 3. **agents** — Claude Code / Codex approvals as a two-button activity in the pill
