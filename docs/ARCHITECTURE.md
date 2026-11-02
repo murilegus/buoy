@@ -54,8 +54,9 @@ src/buoy@murilegus/
 One module may combine the first two (calendar: next-event activity + idle plan + tab).
 A standalone tab never surfaces activities; if it needs to, it becomes a source module.
 
-v0.1 modules: `media`, `hud`, `home`, `progress`, `copied`, `layout`, `ask`; `notification`
-is imported as a stub (no source until M4) so its tab shows from v0.1 (2026-11-02);
+v0.1 modules: `media`, `hud`, `home`, `progress`, `copied`, `layout`, `ask`; `notification`,
+`timer`, `calendar` (and `progress`, kinds `progress`) are imported as stubs without a source
+until their roadmap items, so their tabs show from v0.1 (2026-11-02);
 idle plans `clock`, `weather`, `calendar`; standalone tabs none yet.
 
 ## Data flow
@@ -105,8 +106,7 @@ D-Bus callers send presentation data directly and skip the registry.
 | `apps.hidden` | as | slugs whose activities never surface |
 | `apps.plain` | as | slugs that use the default adapter instead of their override |
 | `idle-content` | s | `none` \| any module's idle plan id |
-| `tabs-pinned` | as | standalone tab ids shown as fixed tabs |
-| `tabs-slot` | s | standalone tab currently in the slot |
+| `tabs-pinned` | as | standalone tab ids pinned to the strip; choosing one from ⋯ pins it (2026-11-02, `tabs-slot` removed) |
 | `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
 | `cluster-background` | s | hover \| always \| never |
 | `cluster-contrast` | s | auto \| light \| dark |

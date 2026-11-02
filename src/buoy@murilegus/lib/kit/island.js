@@ -59,8 +59,8 @@ export class Island {
         this._layoutLater = 0;
         this._destroyed = false;
         this.onCapacityChanged = null; // set by the extension → stack.refresh()
-        // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice
-        this.tabs = {modules: [], settings: () => ({}), onSlot: null};
+        // set by the extension: enabled modules (tab strip), `tabs-pinned`, pin from ⋯
+        this.tabs = {modules: [], settings: () => ({}), onPin: null};
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
             () => this._queueLayout());
@@ -315,7 +315,7 @@ export class Island {
             this._home = new Home({
                 modules: this.tabs.modules, list: this._list, tab,
                 maxHeight: this._s.expanded.h, settings: this.tabs.settings(),
-                onSlot: id => this.tabs.onSlot?.(id),
+                onPin: (id, on) => this.tabs.onPin?.(id, on),
             });
         }
         pill.expand(this._home?.actor ?? null);

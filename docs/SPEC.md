@@ -180,7 +180,8 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   own opens (alert, ask, transient) show the activity's expanded view without a strip.
   Tabs = modules that ship `tab.js`; Home is always first; order follows §6.
 - **Kind tabs** (decided 2026-11-02): every enabled module with kinds has its tab, always
-  shown, running or not; until it ships `tab.js` the tab shows its activities' expanded
+  shown, running or not (default strip: Home · Media · Notifications · Transfers · Timer ·
+  Calendar; the last four are stub modules until their roadmap items); until it ships `tab.js` the tab shows its activities' expanded
   views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied)
   have none. Kinds no module claims (D-Bus callers) get a tab while one of their
   activities has an expanded presentation, after the module tabs.
@@ -198,10 +199,11 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   and `kinds: []`. No source, no activity, no idle plan; it lives only inside expanded.
   This is where tool-like pages go (Clipboard, Launcher, Files, Notes…) without touching
   the pill.
-  - Strip layout: `[Home] [kind tabs of enabled modules] [slot ▾] [⋯]`. The **slot** is one
-    cell showing the standalone tab last chosen from ⋯; it stays until changed. ⋯ lists every
-    enabled standalone tab. Settings can pin some as fixed tabs.
-  - Reachable only via slot / ⋯ / keybind — never opened by an event.
+  - Strip layout: `[Home] [kind tabs of enabled modules] [pinned standalone tabs] [⋯]`.
+    ⋯ lists every enabled standalone tab; **choosing one pins it** to the strip
+    (`tabs-pinned`) and opens it; a pinned row in ⋯ has a button to unpin it (2026-11-02:
+    replaces the single "slot ▾" cell). ⋯ shows only when a standalone tab is enabled.
+  - Reachable only via ⋯ / its pinned tab / keybind — never opened by an event.
   - Actor built on first selection, destroyed when expanded closes (optional cache setting);
     closed = zero cost regardless of how many are enabled.
   - All standalone tabs are **off by default**; a fresh install shows Home + kind tabs only.
@@ -238,7 +240,7 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
 │  S  M  T  W  T  F  S         │ ▌Gym 5:30 PM · 45 min                  │
 │  …  calendar grid …          │                                        │
 └──────────────────────────────┴────────────────────────────────────────┘
-  strip: Home · kind tabs of enabled modules · one slot for a standalone tab · ⋯ menu · ⚙ prefs
+  strip: Home · kind tabs of enabled modules · pinned standalone tabs · ⋯ menu · ⚙ prefs
   no system indicators here — they live in the right-hand system cluster (§1)
 ```
 

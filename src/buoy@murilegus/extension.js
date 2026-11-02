@@ -13,13 +13,15 @@ import notification from './lib/modules/notification/index.js';
 import hud from './lib/modules/hud/index.js';
 import home from './lib/modules/home/index.js';
 import progress from './lib/modules/progress/index.js';
+import timer from './lib/modules/timer/index.js';
+import calendar from './lib/modules/calendar/index.js';
 import copied from './lib/modules/copied/index.js';
 import layout from './lib/modules/layout/index.js';
 import ask from './lib/modules/ask/index.js';
 
 // Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
 // Order is also the tab strip's order (SPEC §2b).
-const MODULES = [media, notification, hud, home, progress, copied, layout, ask];
+const MODULES = [media, notification, progress, timer, calendar, hud, home, copied, layout, ask];
 
 export default class BuoyExtension extends Extension {
     enable() {
@@ -60,11 +62,11 @@ export default class BuoyExtension extends Extension {
         // the tab strip (SPEC §2b): read per open, so nothing needs a settings signal
         this._island.tabs = {
             modules: enabled,
-            settings: () => ({
-                slot: this._settings.get_string('tabs-slot'),
-                pinned: this._settings.get_strv('tabs-pinned'),
-            }),
-            onSlot: id => this._settings.set_string('tabs-slot', id),
+            settings: () => ({pinned: this._settings.get_strv('tabs-pinned')}),
+            onPin: (id, on) => {
+                const pinned = this._settings.get_strv('tabs-pinned').filter(p => p !== id);
+                this._settings.set_strv('tabs-pinned', on ? [...pinned, id] : pinned);
+            },
         };
         this.stack = this._stack; // Looking Glass
 
