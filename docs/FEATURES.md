@@ -89,7 +89,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | Attention on another workspace, jump | attention | Mutter `demands-attention`/`urgent` | click switches workspace + focuses | 18 |
 | [ ] | Headphones / display plugged → choose on pill | device | Gvc port change, `monitors-changed` | replaces GNOME jack dialog when enabled | 12 |
 | [ ] | Buoy light (amber missed / red waiting) + last-5 history on hover; away (idle > N min) and DND also call `stack.setUnseen()` | core | internal; idle monitor, notification DND setting | SPEC §2a-i, INDICATORS | 12 |
-| [ ] | Notifications peek with the notification's own actions; DND; notifications tab with history (SPEC §6b) | notification | MessageTray (`getSources`, `source-added`, `notification-added`) | Reply/Mark read/Open; bodies hidden while screen sharing; tab lists the same notifications as the stock message list, dismiss syncs both ways | 8 |
+| [ ] | Notifications peek with the notification's own actions; DND; notifications tab with history (SPEC §6b; the tab already shows from a stub module, 2026-11-02) | notification | MessageTray (`getSources`, `source-added`, `notification-added`) | Reply/Mark read/Open; bodies hidden while screen sharing; tab lists the same notifications as the stock message list, dismiss syncs both ways | 8 |
 | [ ] | Power: charging/full/low; "18 W — slow"; "full in 42 min" | power | UPower `energy-rate`, `time-to-full` | | 12 |
 | [ ] | BT device connected with battery | device | GnomeBluetooth + UPower | | 12 |
 | [ ] | Download finished | notification | `Gio.FileMonitor` ~/Downloads | | 12 |
