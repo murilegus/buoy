@@ -9,6 +9,8 @@ import {planExpanded, keyline} from './presentation.js';
 const PAD = 14;          // content + 2·PAD = pill width (shapes add 28)
 const PEEK_DELAY = 300;  // ms of hover before the peek replaces compact
 const MERGE_MS = 300;    // side pills sliding into / out of an expanded one (SPEC §2c)
+const MORPH_MODE = Clutter.AnimationMode.EASE_OUT_BACK;
+const REVEAL_FROM = 0.8; // the bg grows by more than this ratio: it uncovers the content
 
 /**
  * One pill on the island: a background that morphs and a content actor on top, bound
@@ -41,6 +43,9 @@ export class Pill {
         this._resizeLater = 0;
         this._hoverLater = 0;
         this._peekId = 0;
+        this._morphTo = null;        // target of the running bg transition
+        this._collapsing = false;    // until the collapse morph lands: bg clips the content
+        this._follow = null;         // {t, id}: bg transition the content clip follows
         this._destroyed = false;
 
         this.bg = new St.Widget({style_class: 'buoy-island', reactive: true, track_hover: true});
@@ -108,13 +113,11 @@ export class Pill {
     setCx(cx, animate) {
         this.cx = cx;
         const shape = this.currentShape();
-        if (animate) {
+        this._layoutContent();
+        if (animate)
             this._morph(shape, MERGE_MS);
-            this.content.ease({x: this._contentX(), duration: MERGE_MS, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
-        } else {
+        else
             this.applyShape(shape);
-            this._layoutContent();
-        }
     }
 
     // Shown (side pills fade out while another pill is open, SPEC §2c merge).
@@ -167,12 +170,15 @@ export class Pill {
     }
 
     applyShape(shape) {
+        this._morphTo = null;
+        this._collapsing = false;
         this.bg.remove_transition('x');
         this.bg.remove_transition('width');
         this.bg.remove_transition('height');
         this.bg.set_size(shape.w, shape.h);
         this.bg.set_position(this.cx - shape.w / 2, 0);
         this.bg.set_style(this._bgStyle(shape));
+        this._resetContentTransform();
     }
 
     morph(shape = this.currentShape(), duration = 380) {
@@ -187,13 +193,83 @@ export class Pill {
         const t = this.bg.get_transition('width') || this.bg.get_transition('x');
         if (!t && this.bg.x === x && this.bg.width === shape.w && this.bg.height === shape.h)
             return; // already there: start no transition (nothing animates at rest)
+        const to = this._morphTo;
+        if (t && to?.x === x && to.w === shape.w && to.h === shape.h)
+            return; // already heading there: restarting would hold the morph at its start
+        this._morphTo = {x, w: shape.w, h: shape.h};
+        const from = {cx: this.bg.x + this.bg.width / 2, w: this.bg.width, h: this.bg.height};
         this.bg.remove_transition('x');
         this.bg.remove_transition('width');
         this.bg.remove_transition('height');
         this.bg.ease({
-            x, width: shape.w, height: shape.h, duration,
-            mode: Clutter.AnimationMode.EASE_OUT_BACK,
+            x, width: shape.w, height: shape.h, duration, mode: MORPH_MODE,
+            onStopped: finished => {
+                if (finished)
+                    this._collapsing = false;
+            },
         });
+        this._followBg(from, shape, duration);
+    }
+
+    // The content sits at its final place at once and never scales (SPEC §5). While the
+    // bg grows into it (expand, a much longer text) or shrinks past it (collapse, the
+    // EASE_OUT_BACK undershoot), the content is clipped to the bg every frame of the bg's
+    // own transition, so it is uncovered exactly as fast as the pill opens. A plain slide
+    // (slide-to-fill, merge) moves it with the bg on the same curve instead.
+    _followBg(from, to, duration) {
+        this._resetContentTransform();
+        const grow = Math.min(from.w / to.w, from.h / to.h);
+        if (grow < REVEAL_FROM || this._collapsing) {
+            const t = ['width', 'height', 'x'].map(p => this.bg.get_transition(p)).find(Boolean);
+            if (t)
+                this._clipToBg(t, from, to, !this._collapsing);
+            return;
+        }
+        const dx = from.cx - this.cx;
+        if (Math.abs(dx) < 0.5)
+            return;
+        this.content.translation_x = dx;
+        this.content.ease({translation_x: 0, duration, mode: MORPH_MODE});
+    }
+
+    // fade: opening; the content also fades in with the same progress, so a word the
+    // bg's edge is still cutting through stays faint (full from halfway through the morph)
+    _clipToBg(t, from, to, fade) {
+        const c = this.content;
+        // the clip is a rectangle; keep it off the pill's round ends
+        const inset = Math.ceil(to.r * 0.15);
+        const x0 = from.cx - from.w / 2, x1 = this.cx - to.w / 2;
+        const clip = e => {
+            const w = from.w + (to.w - from.w) * e;
+            const h = from.h + (to.h - from.h) * e;
+            const x = x0 + (x1 - x0) * e;
+            c.set_clip(x + inset - c.x, -c.y, Math.max(0, w - 2 * inset), Math.max(0, h));
+            if (fade)
+                c.opacity = Math.round(255 * Math.min(1, Math.max(0, 2 * e - 1)));
+        };
+        clip(0);
+        // new-frame runs as the timeline advances, before layout: no allocation is touched
+        const id = t.connect('new-frame', () => clip(t.get_progress()));
+        t.connect('stopped', () => {
+            if (!this._destroyed && this._follow?.t === t)
+                this._resetContentTransform();
+        });
+        this._follow = {t, id, fade};
+    }
+
+    _resetContentTransform() {
+        const c = this.content;
+        const f = this._follow;
+        if (f) {
+            f.t.disconnect(f.id);
+            this._follow = null;
+            // retargeted mid-reveal: finish the fade instead of leaving it part-way
+            if (f.fade && c.opacity < 255)
+                c.ease({opacity: 255, duration: 100, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+        }
+        c.remove_clip();
+        c.remove_transition('translation-x');
+        c.translation_x = 0;
     }
 
     // Press feedback for the idle pill and activities without an expanded presentation;
@@ -203,6 +279,7 @@ export class Pill {
             return;
         const rest = this.currentShape();
         const press = this._s.press(this.restShape());
+        this._morphTo = null;
         this.bg.remove_all_transitions();
         this.bg.set_style(this._bgStyle(press));
         this.bg.ease({
@@ -222,7 +299,7 @@ export class Pill {
         this._stopPeek();
         this._setContent(buildExpanded(this.activity), false);
         this._layoutContent();
-        this._morph(this.currentShape(), 380);
+        this._morph(this.currentShape(), 380); // fades the content in with the reveal
     }
 
     collapse() {
@@ -234,7 +311,16 @@ export class Pill {
         this.content.hover = false;
         this._setContent(this._restingContent(), false);
         this._layoutContent();
+        this._collapsing = true;
         this._morph(this.currentShape(), 380);
+        this._fadeContent();
+    }
+
+    // Soften the swap between compact and expanded content (the bg uncovers it).
+    _fadeContent() {
+        this.content.remove_transition('opacity');
+        this.content.opacity = 0;
+        this.content.ease({opacity: 255, duration: 150, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
     }
 
     // --- content ------------------------------------------------------------------
@@ -340,7 +426,6 @@ export class Pill {
         if (this.content.natural_width_set)
             this.content.set_width(-1); // back to natural width after expanded
         // stored sizes only: this also runs right after a new child was set
-        this.content.remove_transition('x');
         this.content.set_position(this._contentX(),
             Math.max(0, Math.round((this._s.idle.h - this._contentH) / 2)));
     }

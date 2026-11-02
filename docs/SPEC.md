@@ -228,7 +228,15 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 - Background actor eases `x / width / height`; content fades (100 ms out, 200 ms in).
 - `EASE_OUT_BACK`, 380 ms shape · 200 ms hover · 120/250 ms press.
 - Border radius snaps at transition start.
-- Content never moves during a morph.
+- Content never moves or scales during a morph. On expand (and any morph that grows the
+  pill by more than 25%) it sits at its final place and the background **uncovers** it:
+  the content is clipped to the background on every frame of the background's own
+  transition, so it shows exactly as fast as the pill opens, and its opacity follows the
+  same progress (0 → full from halfway), so a word the edge still cuts stays faint; on
+  collapse the same clip
+  keeps it inside through the undershoot. A slide (slide-to-fill, merge) moves the
+  content with its background on the same curve (2026-11-02: before, the expanded text
+  showed at full width while the background was still compact).
 
 ## 6. Modules for v0.1
 
