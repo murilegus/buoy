@@ -9,6 +9,7 @@ import {BuoyDBus} from './lib/kit/dbus.js';
 import {reloadModule} from './lib/kit/devtools.js';
 
 import media from './lib/modules/media/index.js';
+import notification from './lib/modules/notification/index.js';
 import hud from './lib/modules/hud/index.js';
 import home from './lib/modules/home/index.js';
 import progress from './lib/modules/progress/index.js';
@@ -17,7 +18,8 @@ import layout from './lib/modules/layout/index.js';
 import ask from './lib/modules/ask/index.js';
 
 // Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
-const MODULES = [media, hud, home, progress, copied, layout, ask];
+// Order is also the tab strip's order (SPEC §2b).
+const MODULES = [media, notification, hud, home, progress, copied, layout, ask];
 
 export default class BuoyExtension extends Extension {
     enable() {

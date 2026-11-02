@@ -54,7 +54,8 @@ src/buoy@murilegus/
 One module may combine the first two (calendar: next-event activity + idle plan + tab).
 A standalone tab never surfaces activities; if it needs to, it becomes a source module.
 
-v0.1 modules: `media`, `hud`, `home`, `progress`, `copied`, `layout`, `ask`;
+v0.1 modules: `media`, `hud`, `home`, `progress`, `copied`, `layout`, `ask`; `notification`
+is imported as a stub (no source until M4) so its tab shows from v0.1 (2026-11-02);
 idle plans `clock`, `weather`, `calendar`; standalone tabs none yet.
 
 ## Data flow

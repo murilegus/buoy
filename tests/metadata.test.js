@@ -31,4 +31,11 @@ const path = xml.match(/<schema\s+id="[^"]+"\s+path="([^"]+)"/)?.[1];
 if (path !== `/${meta['settings-schema'].replaceAll('.', '/')}/`)
     throw new Error(`schema path ${path} does not follow the id`);
 
+// enable() reads `modules-<id>` for every module it imports; a missing key throws there.
+const ext = read(`${EXT}/extension.js`);
+for (const [, dir] of ext.matchAll(/from '\.\/lib\/modules\/([\w-]+)\/index\.js'/g)) {
+    if (!xml.includes(`<key name="modules-${dir}" type="b">`))
+        throw new Error(`module ${dir} is imported by extension.js but has no modules-${dir} key`);
+}
+
 console.log('metadata/schema: ok');

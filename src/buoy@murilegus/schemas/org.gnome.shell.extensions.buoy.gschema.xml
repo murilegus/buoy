@@ -2,6 +2,7 @@
 <schemalist>
   <schema id="org.gnome.shell.extensions.buoy" path="/org/gnome/shell/extensions/buoy/">
     <key name="modules-media" type="b"><default>true</default></key>
+    <key name="modules-notification" type="b"><default>true</default></key>
     <key name="modules-hud" type="b"><default>true</default></key>
     <key name="modules-home" type="b"><default>true</default></key>
     <key name="modules-progress" type="b"><default>true</default></key>
