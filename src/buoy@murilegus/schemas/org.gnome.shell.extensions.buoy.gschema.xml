@@ -11,6 +11,7 @@
     <key name="modules-copied" type="b"><default>true</default></key>
     <key name="modules-layout" type="b"><default>true</default></key>
     <key name="modules-ask" type="b"><default>true</default></key>
+    <key name="modules-clipboard" type="b"><default>true</default></key>
     <key name="apps-hidden" type="as"><default>[]</default></key>
     <key name="apps-plain" type="as"><default>[]</default></key>
     <key name="idle-content" type="s"><default>"none"</default></key>

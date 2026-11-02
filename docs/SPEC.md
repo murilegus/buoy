@@ -206,7 +206,9 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   - Reachable only via ⋯ / its pinned tab / keybind — never opened by an event.
   - Actor built on first selection, destroyed when expanded closes (optional cache setting);
     closed = zero cost regardless of how many are enabled.
-  - All standalone tabs are **off by default**; a fresh install shows Home + kind tabs only.
+  - Standalone tabs are **unpinned by default**: a fresh install shows Home + kind tabs and
+    ⋯. Clipboard is the first, on by default (`modules-clipboard`) but only in ⋯ until
+    pinned, its body empty until the M5 item (2026-11-02; was "off by default").
   - May use Shell APIs in `tab.js`; still no polling while closed.
   - Likely first ones: Clipboard, Launcher. Not planned: Calculator, Emoji (GNOME search has them).
 

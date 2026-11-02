@@ -57,7 +57,7 @@ A standalone tab never surfaces activities; if it needs to, it becomes a source 
 v0.1 modules: `media`, `hud`, `home`, `progress`, `copied`, `layout`, `ask`; `notification`,
 `timer`, `calendar` (and `progress`, kinds `progress`) are imported as stubs without a source
 until their roadmap items, so their tabs show from v0.1 (2026-11-02);
-idle plans `clock`, `weather`, `calendar`; standalone tabs none yet.
+idle plans `clock`, `weather`, `calendar`; standalone tab `clipboard` (stub `tab.js`, 2026-11-02).
 
 ## Data flow
 
