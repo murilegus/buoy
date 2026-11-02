@@ -73,6 +73,32 @@ source.js ──ev──► registry.build(kind, app, ev) ──activity──�
 D-Bus callers send presentation data directly and skip the registry.
 ```
 
+### App profiles (`~/.config/buoy/apps/<app>.json`, 2026-11-02)
+
+Data only (rule 7); read on enable and reloaded when a file there changes (a file
+monitor, no polling); a bad file is skipped with a warning naming it. The file name is
+slugged, so `com.spotify.Client.json` and `spotify.json` are the same app. Every key is
+optional; an unknown key is an error, so a typo is not silently ignored.
+
+```json
+{
+  "icon": "audio-x-generic-symbolic",
+  "title": "{artist} — {title}",
+  "hideBody": true,
+  "priority": 40,
+  "ttl": 5000,
+  "replace": [{"field": "title", "pattern": "\\s*\\(Official Video\\)", "with": "", "flags": "i"}],
+  "skip": {"field": "title", "pattern": "^Advertisement$"}
+}
+```
+
+`icon` replaces the leading element; `title` is a template over the event's fields (an
+unknown field is empty); `hideBody` keeps the event's `body` from the adapter; `priority`
+0–100 and `ttl` (ms, still capped at 8 h) replace the defaults; `replace` rules run in
+order on string fields before the adapter; `skip` drops matching events. Flags: i, m, s.
+The registry applies all of it, for every adapter, so adapters never handle these keys.
+A profile still applies to an app listed in `apps-plain` (that only skips its override).
+
 ## Rules
 
 1. **Modules import `kit/` only.** Never another module. Modules talk through activities.
@@ -108,8 +134,8 @@ D-Bus callers send presentation data directly and skip the registry.
 | Key | Type | Effect |
 |---|---|---|
 | `modules.<id>` | bool | import the module or not |
-| `apps.hidden` | as | slugs whose activities never surface |
-| `apps.plain` | as | slugs that use the default adapter instead of their override |
+| `apps.hidden` | as | apps whose activities never surface; any app id, slugged (2026-11-02) |
+| `apps.plain` | as | apps that use the default adapter instead of their override; any app id, slugged |
 | `idle-content` | s | `auto` (default, 2026-11-03) \| `none` \| any module's idle plan id |
 | `idle-auto-plans` | as | plans `auto` may show, in tie-break order; default every enabled plan |
 | `idle-auto-interval` | i | minutes between `auto` re-ranks while idle; default `5`, 2–30 |
