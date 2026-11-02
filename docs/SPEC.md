@@ -181,7 +181,8 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   Tabs = modules that ship `tab.js`; Home is always first; order follows §6.
 - **Kind tabs** (decided 2026-11-02): every enabled module with kinds has its tab, always
   shown, running or not (default strip: Home · Media · Notifications · Transfers · Timer ·
-  Calendar; the last four are stub modules until their roadmap items); until it ships `tab.js` the tab shows its activities' expanded
+  [Calendar ▾] · ⋯; Notifications, Transfers and Timer are stub modules until their
+  roadmap items); until it ships `tab.js` the tab shows its activities' expanded
   views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied)
   have none. Kinds no module claims (D-Bus callers) get a tab while one of their
   activities has an expanded presentation, after the module tabs.
@@ -202,15 +203,19 @@ setting `privacy-dot = pill | system | both`, default `pill`.
   - Strip layout: `[Home] [kind tabs of enabled modules] [slot ▾] [⋯]`. The **slot** is the
     last cell: it shows the standalone tab last chosen from ⋯ (`tabs-slot`) and stays until
     changed; until something is chosen it shows the **first enabled standalone tab**
-    (2026-11-02). ⋯ lists every enabled standalone tab and marks the one in the slot.
+    (2026-11-02). ⋯ opens a **menu floating over the tab** (raised: its own background and
+    border, no blur), dropping from ⋯ with its right edge on ⋯'s (not from the left like
+    Notchy); it lists every enabled standalone tab and marks the one in the slot. A press
+    beside it, ⋯ included, only closes it.
     Settings can pin some as fixed tabs (`tabs-pinned`), before the slot; a pinned tab is
     never also in the slot.
   - Reachable only via slot / ⋯ / keybind — never opened by an event.
   - Actor built on first selection, destroyed when expanded closes (optional cache setting);
     closed = zero cost regardless of how many are enabled.
   - Standalone tabs are **not pinned by default**: a fresh install shows Home + kind tabs,
-    the slot and ⋯. Clipboard is the first, on by default (`modules-clipboard`), so it sits in the slot
-    until another is chosen, its body empty until the M5 item (2026-11-02; was "off by default").
+    the slot and ⋯. Calendar is the first (2026-11-02; its next-event activity in M4 may make it a kind
+    tab), then Clipboard; both on by default, so Calendar sits in the slot until another is
+    chosen, their bodies empty until the M5 item (2026-11-02; was "off by default").
   - May use Shell APIs in `tab.js`; still no polling while closed.
   - Likely first ones: Clipboard, Launcher. Not planned: Calculator, Emoji (GNOME search has them).
 

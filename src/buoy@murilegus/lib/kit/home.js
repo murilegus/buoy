@@ -39,13 +39,18 @@ export class Home {
         this._tabs = new Map();      // module id → tab.js instance, built on first selection
         this._strip = null;
         this._current = null;
-        this._showingMore = false;
+        this._menu = null;           // ⋯ menu while it is open, on _menuLayer
+        this._menuLayer = null;
+        this._moreButton = null;
         this._maxHeight = maxHeight;
         this._fitLater = 0;
 
-        this.actor = new St.BoxLayout({
+        // The ⋯ menu floats over the tab (Notchy): a BinLayout stacks it on the column.
+        this.actor = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true});
+        this._column = new St.BoxLayout({
             style_class: 'buoy-panel', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
         });
+        this.actor.add_child(this._column);
         // one rounded group that hugs its tabs (Notchy's strip)
         this._stripBox = new St.BoxLayout({style_class: 'buoy-tabs', x_align: Clutter.ActorAlign.START});
         this._body = new St.ScrollView({
@@ -56,8 +61,8 @@ export class Home {
         // the scrolled child must be St.Scrollable; tab bodies of any kind go inside it
         this._view = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
         this._body.set_child(this._view);
-        this.actor.add_child(this._stripBox);
-        this.actor.add_child(this._body);
+        this._column.add_child(this._stripBox);
+        this._column.add_child(this._body);
         this.actor.connect('destroy', () => this._destroyTabs());
         // The body takes what the cap leaves after the strip and padding (font scaling
         // changes them). notify::allocation fires inside Clutter's allocation: measure
@@ -66,7 +71,7 @@ export class Home {
             this.actor.disconnect(allocId);
             this._fitLater = global.compositor.get_laters().add(Meta.LaterType.BEFORE_REDRAW, () => {
                 this._fitLater = 0;
-                const chrome = Math.ceil(this.actor.height - this._body.height);
+                const chrome = Math.ceil(this._column.height - this._body.height);
                 this._body.set_style(`max-height: ${Math.max(0, this._maxHeight - chrome)}px;`);
                 return GLib.SOURCE_REMOVE;
             });
@@ -89,17 +94,17 @@ export class Home {
         this._list = list;
         const before = this._strip.tabs.map(t => t.id).join();
         this._plan();
-        if (this._showingMore)
-            this._renderStrip();
-        else if (!findTab(this._strip, this._current))
+        if (this._menu)
+            return;                  // the menu lists standalone tabs: the list changes nothing
+        if (!findTab(this._strip, this._current))
             this.select(HOME);       // its last activity ended
         else if (before !== this._strip.tabs.map(t => t.id).join() || this._isLive(this._current))
             this.select(this._current);
     }
 
     select(id) {
+        this._closeMenu(false);
         this._current = id;
-        this._showingMore = false;
         this._renderStrip();
         this._setBody(this._buildBody(findTab(this._strip, id)));
     }
@@ -129,8 +134,15 @@ export class Home {
             this._stripBox.add_child(this._tabButton(slot, slot.id, true));
         if (more.length) {
             const button = this._button({icon: 'view-more-horizontal-symbolic', label: null}, 'More tabs');
-            button.checked = this._showingMore;
-            button.connect('clicked', () => this._showMore());
+            button.checked = this._menu !== null;
+            button.connect('clicked', () => {
+                if (this._menu)
+                    this._closeMenu();
+                else
+                    this._openMenu();
+            });
+            button.add_style_class_name('buoy-more'); // keeps its size when checked
+            this._moreButton = button;
             this._stripBox.add_child(button);
         }
     }
@@ -139,7 +151,7 @@ export class Home {
     // (the title stays their accessible name).
     // The slot carries a ▾: ⋯ changes what sits in it.
     _tabButton(tab, id, isSlot = false) {
-        const active = id === this._current && !this._showingMore;
+        const active = id === this._current;
         const button = this._button({icon: tab.icon, label: active ? tab.label : null}, tab.label, isSlot);
         button.checked = active;
         button.connect('clicked', () => this.select(id));
@@ -160,31 +172,67 @@ export class Home {
         });
     }
 
-    // ⋯: every enabled standalone tab; choosing one puts it in the slot (`tabs-slot`)
-    // and opens it. The one in the slot now is marked.
-    _showMore() {
-        this._showingMore = true;
-        this._renderStrip();
-        const box = new St.BoxLayout({style_class: 'buoy-home-list', orientation: Clutter.Orientation.VERTICAL});
+    // ⋯: a menu floating over the tab, dropping from ⋯ with its right edge on ⋯'s (unlike
+    // Notchy, which drops it from the left), listing every enabled standalone
+    // tab; choosing one puts it in the slot (`tabs-slot`) and opens it. The tab below
+    // stays as it was; the one in the slot now is marked.
+    _openMenu() {
+        const menu = new St.BoxLayout({
+            style_class: 'buoy-menu', orientation: Clutter.Orientation.VERTICAL,
+            y_align: Clutter.ActorAlign.START,
+        });
+        // Laid out by now (⋯ was just clicked): right under the strip, right edge on ⋯'s.
+        // A see-through layer over the whole panel places it with padding (St resets an
+        // actor's margins from CSS, and BinLayout centres its children). The layer is
+        // reactive: a press beside the menu (⋯ included) lands on it and only closes the
+        // menu, like a popover; the tab below never sees it (St.Button clicks are gestures,
+        // so stopping the event further up would not keep them from firing).
+        const [ax, ay] = this.actor.get_transformed_position();
+        const [bx] = this._moreButton.get_transformed_position();
+        const [, sy] = this._stripBox.get_transformed_position();
+        const right = Math.max(0, Math.round(ax + this.actor.width - (bx + this._moreButton.width)));
+        const top = Math.round(sy - ay + this._stripBox.height + 6);
+        const layer = new St.BoxLayout({x_expand: true, y_expand: true, reactive: true});
+        for (const signal of ['button-press-event', 'touch-event']) {
+            layer.connect(signal, (_a, ev) => {
+                if (this._menu?.contains(global.stage.get_event_actor(ev)))
+                    return Clutter.EVENT_PROPAGATE; // a row's press bubbling up: let it act
+                if (ev.type() === Clutter.EventType.BUTTON_PRESS || ev.type() === Clutter.EventType.TOUCH_BEGIN)
+                    this._closeMenu();
+                return Clutter.EVENT_STOP;
+            });
+        }
+        layer.set_style(`padding-right: ${right}px; padding-top: ${top}px;`);
+        layer.add_child(new St.Widget({x_expand: true}));
+        layer.add_child(menu);
         for (const t of this._strip.more) {
-            const row = this._button(t, t.label);
-            row.add_style_class_name('buoy-home-row');
-            row.child.x_expand = true;
-            if (t.id === this._strip.slot?.id) {
-                row.child.add_child(new St.Icon({
-                    icon_name: 'object-select-symbolic', icon_size: 14,
-                    x_expand: true, x_align: Clutter.ActorAlign.END,
-                }));
-            }
+            const box = new St.BoxLayout({style_class: 'buoy-menu-row-box', x_expand: true});
+            box.add_child(new St.Icon({icon_name: t.icon, icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
+            box.add_child(new St.Label({text: t.label, y_align: Clutter.ActorAlign.CENTER, x_expand: true}));
+            if (t.id === this._strip.slot?.id)
+                box.add_child(new St.Icon({icon_name: 'object-select-symbolic', icon_size: 14, y_align: Clutter.ActorAlign.CENTER}));
+            const row = new St.Button({style_class: 'buoy-menu-row', child: box, can_focus: true, accessible_name: t.label});
             row.connect('clicked', () => {
                 this._onSlot?.(t.id);
                 this._settings = {...this._settings, slot: t.id};
                 this._plan();
                 this.select(t.id);
             });
-            box.add_child(row);
+            menu.add_child(row);
         }
-        this._setBody(box);
+        this._menu = menu;
+        this._menuLayer = layer;
+        this.actor.add_child(layer);
+        this._renderStrip();
+    }
+
+    _closeMenu(render = true) {
+        if (!this._menu)
+            return;
+        this._menuLayer.destroy();
+        this._menu = this._menuLayer = null;
+        if (render)
+            this._renderStrip();
     }
 
     // --- body ---------------------------------------------------------------------------

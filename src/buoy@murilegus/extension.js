@@ -22,7 +22,7 @@ import clipboard from './lib/modules/clipboard/index.js';
 
 // Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
 // Order is also the tab strip's order (SPEC §2b).
-const MODULES = [media, notification, progress, timer, calendar, hud, home, copied, layout, ask, clipboard];
+const MODULES = [media, notification, progress, timer, hud, home, copied, layout, ask, calendar, clipboard];
 
 export default class BuoyExtension extends Extension {
     enable() {
