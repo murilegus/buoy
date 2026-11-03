@@ -73,6 +73,8 @@ replacement for the light in every state.
   `kit/mascot.js`, so the doc stays the source of truth.
 - The SVGs in `docs/mascot/` are previews for review and the README, made from the same
   grids; they are not loaded at runtime.
+  `hello.svg` (README, 2026-11-03) waves `wave.1`/`wave.2` for 3 s at 500 ms, then
+  rests on `idle` (CSS, once per page load; `prefers-reduced-motion` shows `idle` only).
 - Contract: an adapter (or a D-Bus caller) sets `leading: {mascot: '<pose>', icon?}`
   (APPLE §B3). Data only — no actor, no timer, no size (rules 2, 3, 11).
 
