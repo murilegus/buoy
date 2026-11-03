@@ -1,0 +1,5 @@
+{
+  "icon": "video-x-generic-symbolic",
+  "ttl": 600000,
+  "skip": {"field": "title", "pattern": "^(sample|test)[-_]", "flags": "i"}
+}

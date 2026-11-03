@@ -17,9 +17,10 @@ if (q.text !== 'Ad')
 if (q.trailing.countdown !== 30)
     throw new Error('ad countdown');
 
+// a profile's title template is the registry's job (tests/registry.test.js), not the adapter's
 const r = adapter.media(track, {title: 'custom'});
-if (r.text !== 'custom')
-    throw new Error('profile title override');
+if (r.text !== 'Monument Valley · Lumen Coast')
+    throw new Error(`adapter must not apply the profile title itself: ${r.text}`);
 
 // ARCHITECTURE rule 11: no measurements anywhere in adapter output
 const MEASURES = new Set(['size', 'width', 'height', 'x', 'y', 'px']);

@@ -4,7 +4,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import {reworkPanel} from './panel.js';
 import {Island} from './lib/kit/island.js';
 import {ActivityStack} from './lib/kit/stack.js';
-import {Registry} from './lib/kit/registry.js';
+import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
 import {BuoyDBus} from './lib/kit/dbus.js';
 import {reloadModule} from './lib/kit/devtools.js';
 
@@ -35,14 +35,21 @@ export default class BuoyExtension extends Extension {
         this._monitorsId = Main.layoutManager.connect('monitors-changed',
             () => this._island.reposition());
 
+        // apps-hidden / apps-plain may name an app any way a source does: slug them
+        const slugs = key => this._settings.get_strv(key).map(slugOf);
         this._registry = new Registry();
-        this._stack = new ActivityStack(this._island, {
-            hiddenApps: this._settings.get_strv('apps-hidden'),
+        this._registry.setPlain(slugs('apps-plain'));
+        this._registry.watch(profileDir(), errors => {
+            for (const {file, message} of errors)
+                console.warn(`Buoy: ignoring app profile ${file}: ${message}`);
         });
+        this._plainId = this._settings.connect('changed::apps-plain',
+            () => this._registry.setPlain(slugs('apps-plain')));
+        this._stack = new ActivityStack(this._island, {hiddenApps: slugs('apps-hidden')});
         // the island fits 2 or 3 pills before the system cluster; the stack re-renders
         this._island.onCapacityChanged = () => this._stack?.refresh();
         this._hiddenId = this._settings.connect('changed::apps-hidden',
-            () => this._stack.setHiddenApps(this._settings.get_strv('apps-hidden')));
+            () => this._stack.setHiddenApps(slugs('apps-hidden')));
         this._dbus = new BuoyDBus(this._stack);
         this._dbus.export();
 
@@ -86,14 +93,16 @@ export default class BuoyExtension extends Extension {
         this._active = null;
         this._dbus?.unexport();
         this._dbus = null;
-        if (this._hiddenId) {
-            this._settings.disconnect(this._hiddenId);
-            this._hiddenId = 0;
+        for (const id of [this._hiddenId, this._plainId]) {
+            if (id)
+                this._settings.disconnect(id);
         }
+        this._hiddenId = this._plainId = 0;
         this._stack?.destroy();
         this._stack = null;
         this.stack = null;
         this.reload = null;
+        this._registry?.destroy();
         this._registry = null;
 
         if (this._monitorsId) {

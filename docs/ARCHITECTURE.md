@@ -73,6 +73,13 @@ source.js ──ev──► registry.build(kind, app, ev) ──activity──�
 D-Bus callers send presentation data directly and skip the registry.
 ```
 
+### App profiles (2026-11-02)
+
+`~/.config/buoy/apps/<app>.json`: per-user, data only (rule 7): icon, title template,
+hideBody, priority, ttl, regex replace/skip. The registry applies them for every adapter
+and reloads them when a file changes; adapters never handle these keys. Format, event
+fields and order: [PROFILES.md](PROFILES.md).
+
 ## Rules
 
 1. **Modules import `kit/` only.** Never another module. Modules talk through activities.
@@ -108,8 +115,8 @@ D-Bus callers send presentation data directly and skip the registry.
 | Key | Type | Effect |
 |---|---|---|
 | `modules.<id>` | bool | import the module or not |
-| `apps.hidden` | as | slugs whose activities never surface |
-| `apps.plain` | as | slugs that use the default adapter instead of their override |
+| `apps.hidden` | as | apps whose activities never surface; any app id, slugged (2026-11-02) |
+| `apps.plain` | as | apps that use the default adapter instead of their override; any app id, slugged |
 | `idle-content` | s | `auto` (default, 2026-11-03) \| `none` \| any module's idle plan id |
 | `idle-auto-plans` | as | plans `auto` may show, in tie-break order; default every enabled plan |
 | `idle-auto-interval` | i | minutes between `auto` re-ranks while idle; default `5`, 2–30 |
