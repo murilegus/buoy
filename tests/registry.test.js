@@ -184,6 +184,27 @@ r.setProfiles(new Map([['vlc', parseProfile({title: 'T: {title}'})]]));
 r.setPlain(['vlc']);
 eq(r.build('media', 'vlc', track).text, 'T: Song', 'apps-plain does not turn off the user profile');
 
+// --- present(): callers that send their own pill (D-Bus) ---------------------------
+r = new Registry();
+eq(r.present({app: 'com.example.Deploy', text: 'x'}), {app: 'deploy', text: 'x'}, 'no profile: only the app is slugged');
+eq(r.present({text: 'x'}).app, 'system', 'no app: system');
+r.setProfiles(new Map([['deploy', parseProfile({
+    title: '{branch} deployed', icon: 'emblem-ok-symbolic', priority: 70, ttl: 3000,
+    hideBody: true, replace: [{field: 'branch', pattern: '^refs/heads/', with: ''}],
+    skip: {field: 'branch', pattern: '^wip/'},
+})]]));
+const sent = {
+    app: 'Deploy', text: 'theirs', leading: 'x-symbolic', priority: 5,
+    attributes: {branch: 'refs/heads/main', body: 'log…'},
+};
+a = r.present(sent);
+eq([a.app, a.text, a.leading, a.priority, a.ttl], ['deploy', 'main deployed', {icon: 'emblem-ok-symbolic'}, 70, 3000],
+    'the profile goes on top of what the caller sent, title from the attributes after replace');
+eq(a.attributes, {branch: 'main'}, 'hideBody and replace work on the attributes');
+eq(sent.attributes.branch, 'refs/heads/main', 'the caller\'s data is not mutated');
+eq(r.present({app: 'deploy', attributes: {branch: 'wip/try'}}), null, 'skip on an attribute');
+eq(r.present({app: 'deploy', text: 'no attrs'}).text, ' deployed', 'no attributes: the template fields are empty');
+
 // --- loading ~/.config/buoy/apps/*.json -------------------------------------------------
 const dir = GLib.dir_make_tmp('buoy-profiles-XXXXXX');
 const write = (name, text) => GLib.file_set_contents(`${dir}/${name}`, text);

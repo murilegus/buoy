@@ -189,6 +189,11 @@ export function profileDir() {
     return GLib.build_filenamev([GLib.get_user_config_dir(), 'buoy', 'apps']);
 }
 
+const skipped = (profile, ev) => {
+    const s = profile?.skip;
+    return !!s && typeof ev[s.field] === 'string' && s.re.test(ev[s.field]);
+};
+
 // Copy of the event as the adapter sees it: body hidden, replace rules applied.
 function prepare(ev, profile) {
     const e = {...ev};
@@ -282,8 +287,7 @@ export class Registry {
             return null;
         const slug = slugOf(appId);
         const profile = this._profiles.get(slug) ?? null;
-        const s = profile?.skip;
-        if (s && typeof ev[s.field] === 'string' && s.re.test(ev[s.field]))
+        if (skipped(profile, ev))
             return null;
         const e = profile ? prepare(ev, profile) : ev;
         const own = this._plain.has(slug) ? null : entry.apps.get(slug)?.[kind];
@@ -295,6 +299,28 @@ export class Registry {
             id: `${kind}:${slug}:${ev.id ?? ''}`, kind, app: slug,
             ...data, ...profile ? overrides(profile, e) : {},
         });
+    }
+
+    /**
+     * For callers that send their pill themselves (D-Bus, PROFILES.md "How it combines"):
+     * no adapter; the app is slugged and its profile applied with `attributes` as the
+     * event — skip, hideBody and replace work on the attributes, title fills from them,
+     * icon / priority / ttl go on top of what the caller sent.
+     *
+     * @param {object} data  presentation data with `app` as the caller names it
+     * @returns {?object} the data with `app` slugged and the profile applied (not yet
+     *   validated), or null when the profile skips it
+     */
+    present(data) {
+        const slug = slugOf(data.app);
+        const profile = this._profiles.get(slug) ?? null;
+        const attrs = data.attributes ?? {};
+        if (!profile)
+            return {...data, app: slug};
+        if (skipped(profile, attrs))
+            return null;
+        const e = prepare(attrs, profile);
+        return {...data, app: slug, attributes: e, ...overrides(profile, e)};
     }
 
     destroy() {
