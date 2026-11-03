@@ -78,13 +78,14 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | **progress** | progress | `com.canonical.Unity.LauncherEntry` D-Bus signal | — | Nautilus copy / Firefox / Chrome / Transmission show ring + %; "Done" then end | **27** |
 | [ ] | **copied** | copied | `Meta.Selection` `owner-changed` + `St.Clipboard` | `copied-show-preview` | 1 s flash with snippet / image thumb; never stores | 18 |
 | [ ] | **layout** | hud | keyboard status `changed` | — | "VI"/"EN" flash on switch | 18 |
-| [ ] | **ask** | ask | D-Bus `Ask()`; hooks for Claude Code / Codex | `ask-timeout` (10 min = deny) | buttons return answer to caller; agent approvals Deny·Allow·Always; silent while agent terminal focused; hooks installed/removed from prefs | 18 / 12 |
+| [ ] | **ask** | ask | D-Bus `Ask()`; hooks for Claude Code / Codex | `ask-timeout` (10 min = deny) | buttons return answer to caller; agent approvals Deny·Allow·Always; silent while agent terminal focused; hooks installed/removed from prefs; leading is Bu (`ask`, MASCOT.md, 2026-11-03) | 18 / 12 |
 | [ ] | **daypart** (`kit/daypart.js`, added 2026-11-03) | — | pure, no timer | `daypart-starts` | `dawn…night` from the hour; boundaries, wrap past midnight and bad settings covered in `tests/daypart.test.js`; used by clock, greeting, `auto` | — |
 | [ ] | **clock** (idle plan) | — | 1 min tick while idle | `idle-clock-style` | icon by time of day (`kit/daypart.js`) + time; variants | — |
 | [ ] | **weather** (idle plan) | — | `ui/weather.js` client | `idle-weather-refresh` | icon + temp; hover peek wind/humidity/feels-like | — |
 | [ ] | **idle `auto`** — smart stack (`kit/smartstack.js`, SPEC §2a-iii, added 2026-11-03) | — | each `idle.js#relevance(ctx)`; plans' `changed`; one kit timer while idle | `idle-content` default `auto` (schema default changes from `none`), `idle-auto-plans`, `idle-auto-interval` | highest score shows, ties take turns in `idle-auto-plans` order, ≥ 80 holds; scroll flips; one transition per switch, nothing between; timer exists only while idle with `auto` (gone on surface/expand/disable); ranking, ties, hold and `null` plans unit-tested | — |
-| [ ] | **greeting** (SPEC §2d, added 2026-11-03) | greeting | first enable of a local day; `misc/weather.js` `WeatherClient` | `greeting-style` (expanded), `greeting-name`, `greeting-last-day` | once a day at login/first unlock: expanded 3 lines (greeting by daypart + name, long date, place · °C · condition · wind words) ~8 s, hover holds; no weather → 2 lines, filled in place if it arrives; not over fullscreen; second unlock same day shows nothing; adapter tests per daypart, no weather, long name | 18 |
-| [ ] | Release: pack, EGO submission, README GIF (file copy progress) | | | | | |
+| [ ] | **greeting** (SPEC §2d, added 2026-11-03) | greeting | first enable of a local day; `misc/weather.js` `WeatherClient` | `greeting-style` (expanded), `greeting-name`, `greeting-last-day` | once a day at login/first unlock: expanded 3 lines (greeting by daypart + name, long date, place · °C · condition · wind words) ~8 s, hover holds; no weather → 2 lines, filled in place if it arrives; not over fullscreen; second unlock same day shows nothing; adapter tests per daypart, no weather, long name; Bu waves in the leading | 18 |
+| [ ] | **Bu** (`kit/mascot.js`, `MASCOT.md`, added 2026-11-03) | — | grids from `MASCOT.md` | — | 13 poses; `{mascot}` leading in `presentation.js` (unknown → `icon`/`idle`) and `present.js` (one `St.DrawingArea`, theme foreground); lamp replaces the edge light, stack amber/red win; `busy`/`think` loop and `wave`/`party` once, 2 frames per 500 ms, timer only while a moving pose is mapped (gone on pose change/destroy/disable), still while away or with animations off; `tests/mascot.test.js` checks the grids against `MASCOT.md`, the fallback and the lamp rule | 18 |
+| [ ] | Release: pack, EGO submission, README GIF (file copy progress); Bu as icon and in the README (`docs/mascot/`) | | | | | |
 
 ## M4 — "Wow" pack (v0.2)  `[ ]`
 
@@ -102,6 +103,8 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | Privacy dot at pill trailing (orange mic / green cam+screen), hides GNOME's; recording timer; "in call" when cam+mic | privacy/call | `Shell.CameraMonitor`, Gvc, screencast | SPEC §2a-ii; auto-DND in call | 8 |
 | [ ] | Meeting in 5 min · Join | calendar | `ui/calendar.js` + link regex | | 8 |
 | [ ] | Timer / pomodoro ring, keep-awake | timer | GLib, SessionManager Inhibit | tab Timer | 6 |
+| [ ] | Agent activity with Bu: one per Claude Code / Codex session, pose from hook events (MASCOT.md § Agents, 2026-11-03) | agent | hooks → D-Bus `Surface/Update/End` | adapter maps every event to its pose (unit-tested); name leads the text, elapsed trailing; `done` alert, `party` after > 10 min; stale dims | 18 |
+| [ ] | Idle plan `mascot`: Bu's eyes (MASCOT.md § Eyes) | — | stack light, `kit/daypart.js`, idle monitor | four static modes; `idle-content = mascot`; in `auto` scores 10 when listed; module off by default | 8 |
 | [ ] | Screenshot taken → thumb, Copy/Open/Delete | notification | `screenshotUI` signal | | 8 |
 | [ ] | Print job progress | progress | CUPS `org.cups.cupsd.Notifier` | | 9 |
 | [ ] | Terminal command finished in unfocused tab | notification (adapter) | Ptyxis / GNOME Terminal notifications | "exit 0 · 48 s", jump | 12 |
@@ -131,7 +134,6 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | Scheduled activities persisted across Shell restarts | needs on-disk state |
 | Window snapping by dragging to the pill | Mutter tiling API limited |
 | Satellite extensions over D-Bus | once contract is stable and there's a community |
-| Mascot (discussed 2026-11-03) — the face of the buoy light: static poses per state (asleep at night/idle, looking when something was missed, hand up for an `ask`), motion only with an activity (waves with the greeting, busy while a timer/transfer/agent runs) | needs artwork; rule 8 forbids idle motion; decide once there are drawings |
 | World clocks (lost with the clock popover, SPEC §1) | placement undecided: Home or elsewhere; still reachable via Super+V meanwhile |
 
 ## Out of scope by design (SPEC §0)

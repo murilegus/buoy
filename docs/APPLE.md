@@ -177,6 +177,20 @@ power(a), timer(a), ask(a) …
 export default { media(a) { ...detect 'Advertisement' → text 'Ad', trailing countdown } }
 ```
 
+Leading/trailing values an adapter may return (normalised by `kit/presentation.js#element`):
+`'icon-name'` or a `Gio.Icon` (icon) · `'eq'` (a named glyph) · `{art, icon}` (artwork with
+an icon fallback) · `{progress}` (ring) · `{bar}` · `{countdown}` / `{text}` (text) ·
+**`{mascot: '<pose>', icon?}`** (Bu, added 2026-11-03): one of the 13 poses in
+`MASCOT.md`; an unknown pose falls back to `icon`, else `idle`. When a pill's leading is
+Bu, Bu's lamp is the buoy light: the left edge slot is not drawn, and the lamp shows the
+stack's `missed`/`waiting` colour if there is one, else the pose's (SPEC §2a-i). The pose
+is data; frames, the swap timer and colours are the kit's.
+
+```js
+agent(a) → { leading: {mascot: pose(a.state.event)}, text: `${a.attributes.agent} · ${a.state.label}`,
+             trailing: {countdown: a.state.elapsed} }   // pose(): MASCOT.md § Agents
+```
+
 Resolution: `apps/<normalised app>.js[kind]` → `apps/default.js[kind]`. An app that speaks
 the D-Bus API can send its own presentation data and bypass adapters entirely (that is the
 "app adopts ActivityKit" path).
@@ -208,6 +222,8 @@ Selection → copied · GSConnect notifications → phone · D-Bus API → anyth
 - Adapters for apps that never adopted anything (Apple has none).
 - Priority across apps (Apple only ranks within one app; the system decides across apps).
 - Missed-activity light + short history.
+- Bu, a mascot whose lamp is that light (`MASCOT.md`): one pose set for agents, the
+  greeting and the brand, data-only in the contract.
 
 ### B7. What Apple has that Buoy skips
 

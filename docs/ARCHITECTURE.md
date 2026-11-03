@@ -29,6 +29,7 @@ src/buoy@murilegus/
     │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
     │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
+    │   ├── mascot.js       Bu: 13 pose grids + eyes as data, pure; MASCOT.md is the source (2026-11-03)
     │   ├── registry.js     app-id normalisation table; adapter resolution
     │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
     │   └── shapes.js
@@ -51,7 +52,7 @@ src/buoy@murilegus/
 | Type | Has | Example |
 |---|---|---|
 | **source module** | `kinds` + `source.js` + `adapter.js`, optionally `tab.js`, `apps/` | media, hud, progress, ask |
-| **idle plan** | `idle.js` (optionally also a source module) | clock, weather, calendar |
+| **idle plan** | `idle.js` (optionally also a source module) | clock, weather, calendar, mascot |
 | **standalone tab** | `tab.js` only, `kinds: []` | clipboard, launcher |
 
 One module may combine the first two (calendar: next-event activity + idle plan + tab).

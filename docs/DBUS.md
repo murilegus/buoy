@@ -39,7 +39,7 @@ carry. `kind` is required; everything else is optional. An unknown key is an err
 | `kind` | s | `progress`, `media`, `deploy`… any name; `ask` is `Ask()`'s. Picks the tab (SPEC §2b) |
 | `app` | s | any id the app goes by; slugged (`com.example.Deploy` → `deploy`) |
 | `text` | s | the pill's text; ellipsized, never cut by Buoy |
-| `leading`, `trailing` | s or a{sv} | icon name, or `{'icon'}`, `{'art'}`, `{'progress': 0..1}`, `{'bar'}`, `{'countdown': s}`, `{'text'}` |
+| `leading`, `trailing` | s or a{sv} | icon name, or `{'icon'}`, `{'art'}`, `{'progress': 0..1}`, `{'bar'}`, `{'countdown': s}`, `{'text'}`, `{'mascot': s}` (a Bu pose, leading only, MASCOT.md; drawn once M3 Bu lands, 2026-11-03) |
 | `expanded` | b or a{sv} | `true` = enlarged compact; or regions `leading`, `center` (`{'title', 'subtitle', 'progress'}`), `trailing`, `bottom` (`{'transport': true}`) |
 | `actions` | aa{sv} | `[{'id', 'label'?, 'icon'?}]`: 1 shown in compact, 3 in expanded; pressed → `Action` |
 | `peek` | a{sv} | what hover shows: `{'leading', 'text', 'trailing', 'transport'}` |
