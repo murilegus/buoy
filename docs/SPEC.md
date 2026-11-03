@@ -56,7 +56,7 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 - **Left cluster** (decided 2026-10-30): two layers of information in one place.
   - Normal: icon + name of the focused app (`Shell.WindowTracker`, `notify::focus-app`). The
     icon is the app's own; if the theme has none, its monochrome `<icon>-symbolic`, then a
-    generic app icon (Ethan, 2026-11-04).
+    plain window (`window-symbolic`, else `focus-windows-symbolic`) (Ethan, 2026-11-04).
   - Hover: the cluster widens and appends the workspace as a secondary item: grid icon +
     number ("Firefox · ⊞ 2"), or the workspace name if the user set one ("Firefox · ⊞ Work").
     No "WS" abbreviation; the icon carries the meaning.

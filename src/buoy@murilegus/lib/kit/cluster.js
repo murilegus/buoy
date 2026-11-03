@@ -7,23 +7,25 @@
  *   …with left-cluster-empty = hidden: nothing
  */
 
-// Last resort when an app has neither its own icon nor a monochrome one.
-export const GENERIC_APP_ICON = 'application-x-executable-symbolic';
+// Last resort when an app has neither its own icon nor a monochrome one: a plain window
+// (Yaru has it, Adwaita does not), else two windows (both themes). Not the executable's
+// gears, which read as Settings at 16 px (Ethan 2026-11-04).
+export const GENERIC_APP_ICONS = ['window-symbolic', 'focus-windows-symbolic'];
 
 /**
  * The icons to fall back on when the app's own icon is missing, best first (Ethan
  * 2026-11-04: the app's own icon first; then its monochrome `<icon>-symbolic`, which GNOME
- * apps and many others ship in hicolor/symbolic/apps; then a generic one).
+ * apps and many others ship in hicolor/symbolic/apps; then GENERIC_APP_ICONS).
  *
  * @param {string|null} icon  the app's themed icon name (desktop file `Icon=`), null for a file icon
  * @param {string|null} id  the app id (`org.gnome.Calculator.desktop`)
- * @returns {string[]} names, no duplicates, always ending with GENERIC_APP_ICON
+ * @returns {string[]} names, no duplicates, always ending with GENERIC_APP_ICONS
  */
 export function fallbackIcons(icon, id) {
     const bases = [icon, id?.replace(/\.desktop$/, '')]
         .filter(b => b && !b.includes('/'))
         .map(b => b.replace(/-symbolic$/, ''));
-    return [...new Set([...bases.map(b => `${b}-symbolic`), GENERIC_APP_ICON])];
+    return [...new Set([...bases.map(b => `${b}-symbolic`), ...GENERIC_APP_ICONS])];
 }
 
 /**

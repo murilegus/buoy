@@ -127,7 +127,7 @@ function unfollowEmpty(box, state) {
     state.children = null;
 }
 
-// The app's own icon; if the theme has none, its monochrome one, then a generic one
+// The app's own icon; if the theme has none, its monochrome one, then a plain window
 // (Ethan 2026-11-04). St.Icon tries `fallback_gicon` when `gicon` fails, and a ThemedIcon
 // tries its names in order: the theme decides, no lookups here. A window with no app info
 // gets Shell's own texture (its window icon).
