@@ -135,6 +135,7 @@ fields and order: [PROFILES.md](PROFILES.md).
 | `idle-clock-style`, `idle-weather-refresh` | — | declared by those modules |
 | `greeting-style`, `greeting-name`, `greeting-last-day` | — | declared by `greeting` (SPEC §2d) |
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
+| `transfers-folders` | as | M4: folders watched for finished downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03) |
 | `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc (default Super+B, SPEC §2c) |
 | per-module keys | — | declared by the module |
 

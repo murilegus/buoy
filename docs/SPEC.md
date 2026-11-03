@@ -436,11 +436,43 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 5. **power / bluetooth** — charging, low battery, device connected with its battery.
 6. **calendar** — Up next in Home; alert 5 min before with Join when the event has
    a meeting link.
-7. **downloads / eject** — Downloads folder monitor; mount-added with one-tap eject.
+7. **downloads / eject** — finished downloads named in the Transfers tab (§6c);
+   mount-added with one-tap eject.
 8. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
 9. **minimal mode** — side-by-side compact pills for two or three activities (§2c).
 10. **clipboard** — optional module, off by default.
+
+## 6c. Transfers tab (decided 2026-11-03)
+
+What the tab can show is bounded by its sources, so it grows in two steps.
+
+- **M3, `progress`.** The source is `com.canonical.Unity.LauncherEntry`, which says only
+  *which app* is busy: progress 0–1, a count, urgent. No file names, no source or
+  destination. The pill: ring, app name, count, % (one pill per app). The tab:
+  - **Running** — one row per app: icon, name, "copying 3 items" (from the count), %,
+    a thin bar.
+  - **Done** — a row stays a little after the app's progress ends (pill gone), with the
+    time, then leaves.
+  - A click focuses that app's window (`Shell.AppSystem.lookup_app(id).activate()`);
+    there is nothing more to open — for Firefox it is the window, not its downloads list.
+- **M4, `downloads`.** A **Downloaded** group: one row per finished file — file type icon,
+  file name, folder · app · time. A click opens the file; two **icon-only** buttons
+  (accessible name and tooltip "Open", "Show in Files"): `document-open-symbolic` opens
+  it, `folder-open-symbolic` shows it selected in Files. A browser's Running row turns
+  into its file once the file appears (`.part` / `.crdownload` renamed).
+  Where files are caught:
+  1. the user's Downloads folder, `GLib.get_user_special_dir(DIRECTORY_DOWNLOAD)` (not a
+     hard-coded `~/Downloads`), always;
+  2. up to 10 more folders in prefs (`transfers-folders`), each one non-recursive
+     `Gio.FileMonitor` (one inotify watch per folder, hence the cap);
+  3. to try first in M4: Recent files (`recently-used.xbel`, one monitor) as the
+     catch-all for a file saved anywhere — filtered to browsers and to entries added
+     just now, since it also lists every file opened elsewhere. If Firefox and Chrome
+     both write there, it becomes the main source and 1–2 the fallback; not verified yet.
+- **Not planned:** "source → destination" for a Files copy — Nautilus exposes no names
+  over D-Bus (`org.gnome.Nautilus.FileOperations2` starts operations, it does not report
+  them), and a guess could be wrong.
 
 Roadmap: FEATURES.md (milestones M0–M5 with status). Status marks: INDICATORS.md. Research: APPLE.md (ActivityKit/HIG → BuoyKit). Mascot: MASCOT.md (Bu). Competitor notes (Notchy audit, Isle, Islet, BEHAVIOUR) are kept locally in `docs/notes/` and not committed.
 
