@@ -53,6 +53,12 @@ export default class BuoyExtension extends Extension {
         this._island.onCapacityChanged = () => this._stack?.refresh();
         this._hiddenId = this._settings.connect('changed::apps-hidden',
             () => this._stack.setHiddenApps(slugs('apps-hidden')));
+        // Fullscreen (FEATURES M1): Shell hides top chrome on a monitor with a fullscreen
+        // window (trackFullscreen, ui/layout.js _updateActorVisibility; shown again in the
+        // Overview). Hidden is "unseen": endings count as missed, nothing opens.
+        const seen = () => this._stack.setUnseen(!this._island.actor.visible);
+        this._visibleId = this._island.actor.connect('notify::visible', seen);
+        seen();
         this._dbus = new BuoyDBus(this._stack, {registry: this._registry});
         this._dbus.export();
 
@@ -79,6 +85,12 @@ export default class BuoyExtension extends Extension {
             }),
             onSlot: id => this._settings.set_string('tabs-slot', id),
             onPrefs: () => this.openPreferences(),
+        };
+        this._island.missed = {
+            list: () => this._stack?.missed ?? [],
+            seen: () => this._stack?.seeMissed(),
+            open: (id, at) => this._stack?.openMissed(id, at),
+            clear: () => this._stack?.clearMissed(),
         };
         this.stack = this._stack; // Looking Glass
 
@@ -108,6 +120,10 @@ export default class BuoyExtension extends Extension {
                 this._settings.disconnect(id);
         }
         this._hiddenId = this._plainId = 0;
+        if (this._visibleId) {
+            this._island.actor.disconnect(this._visibleId);
+            this._visibleId = 0;
+        }
         this._stack?.destroy();
         this._stack = null;
         this.stack = null;

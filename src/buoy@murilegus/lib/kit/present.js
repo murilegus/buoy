@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {planCompact, planExpanded, planIdle, planPeek} from './presentation.js';
+import {planCompact, planExpanded, planIdle, planPeek, lightSlot} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
@@ -213,6 +213,19 @@ export function buildCompact(activity, {maxWidth = 0, light, more} = {}) {
 export function buildPeek(activity, {maxWidth = 0, light} = {}) {
     const p = planPeek(activity, {light});
     return p ? compactBox(p, activity, maxWidth, p.actions) : null;
+}
+
+/**
+ * The amber light's hover line (`2 missed · Copy done · Tea 4:00`), on the light.
+ *
+ * @param {string} line  presentation.js missedLine()
+ * @param {object} [opts]
+ * @param {number} [opts.maxWidth]
+ * @param {string} [opts.light]
+ * @returns {Clutter.Actor}
+ */
+export function buildMissedPeek(line, {maxWidth = 0, light} = {}) {
+    return compactBox({text: line, light: lightSlot(light, {idle: false})}, {}, maxWidth, []);
 }
 
 /**

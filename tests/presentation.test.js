@@ -1,5 +1,5 @@
 // Run: gjs -m tests/presentation.test.js   (pure: presentation data → render plan)
-import {element, planCompact, planExpanded, planIdle, planPeek, lightSlot, keyline, MAX_ACTIONS} from
+import {element, planCompact, planExpanded, planIdle, planPeek, lightSlot, keyline, missedLine, clockTime, MAX_ACTIONS} from
     '../src/buoy@murilegus/lib/kit/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
@@ -160,6 +160,19 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     eq(keyed.actions.map(a => a.key), ['d', '2', '3'], 'ask expanded: each action carries its key (kit/keys.js)');
     eq(planCompact({...ask, kind: 'ask'}).action, {id: 'Deny', label: 'Deny', icon: null}, 'compact ask action has no key');
 }
+
+// --- missed history (2026-11-03): the hover line and row times ------------------------
+eq(missedLine([]), null, 'nothing missed: no line');
+eq(missedLine([{text: 'Copy done'}]), '1 missed · Copy done', 'one');
+eq(missedLine([{text: 'Copy done'}, {text: 'Tea 4:00'}]), '2 missed · Copy done · Tea 4:00', 'newest first, as given');
+eq(missedLine([{text: ''}, {kind: 'timer'}, {text: null, kind: 'progress'}]), '3 missed · timer · progress',
+    'empty text falls back to the kind; an entry with neither is left out of the line but counted');
+eq(missedLine(Array.from({length: 5}, (_, i) => ({text: `t${i}`}))), '5 missed · t0 · t1 · t2 · t3 · t4',
+    'all five named: the renderer ellipsizes, never cut here');
+const local = (h, m) => new Date(2026, 10, 3, h, m).getTime();
+eq(clockTime(local(14, 2)), '14:02', '24 h clock, zero-padded minutes');
+eq(clockTime(local(9, 5)), '09:05', 'zero-padded hours');
+eq(clockTime(NaN), '', 'no time: empty');
 
 // --- buoy light slot (SPEC §2a-i, INDICATORS.md) ------------------------------------
 eq(lightSlot('off', {idle: true}), 'off', 'grey off light only in idle');

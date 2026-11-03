@@ -131,6 +131,11 @@ Rules:
   then the top returns (until side-by-side minimal mode gives it its own pill).
 - A click-open takes the keyboard (modal, so Esc works); automatic opens (alert, ask,
   transient) never do, so typing elsewhere is not interrupted.
+- Fullscreen (2026-11-03): the island hides with the top bar on a monitor showing a
+  fullscreen window (Shell's `trackFullscreen`; it shows again in the Overview), and an
+  open island closes. While hidden nothing opens or alerts; activities that end count as
+  missed (amber light on return), an unanswered ask lights red. Back on screen, an ask or
+  transient on top opens as if it had just arrived. Super+B does nothing while hidden.
 
 ### 2a. Idle content (decided 2026-10-30)
 
@@ -164,7 +169,7 @@ idle `none` keeps the full 120 px.
 ### 2a-i. The buoy light (left edge slot, idle and compact)
 
 Static, never blinking. Off (faint grey, idle `none` only) · **amber** = something ended while you were
-away / fullscreen (missed history, hover to peek, clears after peek) · **red** = something
+away / fullscreen (missed history: hover names it, opening Home turns it off — 2026-11-03) · **red** = something
 is waiting for your answer (an `ask` while DND). Red › amber. Shown in idle **and**
 compact — it is a separate slot, so it never competes with the app icon; `present.js`
 nudges the leading zone inward when the light is on. Hidden only while expanded, where
@@ -355,6 +360,15 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
   no system indicators here — they live in the right-hand system cluster (§1)
 ```
 
+- **Missed** (2026-11-03): while the missed history has entries, Home starts with a
+  "Missed · N" section — the last 5, newest first, each row the kind's icon, its text, the
+  tab's name and the time it ended; a row opens that kind's tab and leaves the list, as an
+  activated system notification does; "× Clear" empties it.
+  Showing Home turns the amber light off; the list stays until cleared or pushed out by
+  newer ones. The running activities follow under "Now". In M4 the notifications tab
+  carries the same group ("Missed while away") above the system's own list; a missed
+  notification there points to the real one, never a copy, and Buoy posts no
+  notifications of its own.
 - **Until the M3 blocks** (2026-11-02): Home lists every visible activity (the full list,
   also behind `+N`), each row its compact view; a row opens that activity's tab. Nothing
   running → "Nothing going on" with Bu (`idle`, or `missed` while history has entries). The panel's height fits its content up to the expanded cap;

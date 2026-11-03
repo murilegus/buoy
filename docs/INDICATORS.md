@@ -21,7 +21,7 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 | Colour | Token | Meaning | Set by | Cleared by | Shown in |
 |---|---|---|---|---|---|
 | grey `#3a3a3a` | `light-off` | nothing | — | — | idle `none` only |
-| amber `#EF9F27` | `light-missed` | ≥1 activity ended while you were away (idle > N min), the island was hidden (fullscreen), or DND suppressed it; missed history has entries. Not counted (2026-11-01): `osd`, `copied` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) | hover-peek closed, Home opened, or history emptied | idle, compact |
+| amber `#EF9F27` | `light-missed` | ≥1 activity ended while you were away (idle > N min), the island was hidden (fullscreen), or DND suppressed it; missed history has entries. Not counted (2026-11-01): `osd`, `copied` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, compact |
 | red `#E24B4A` | `light-waiting` | an `ask` activity exists that could not surface (DND, fullscreen, user dismissed) and still has no answer | `stack` when an `ask` is queued but not shown | the ask is answered, times out (→ deny), or is ended by the caller | idle, compact |
 
 Precedence: red › amber › off. Only one light is drawn.
@@ -47,8 +47,10 @@ blinking; never another colour from this file, except amber for `missed` and red
 | `#5F5E5A` | error |
 | `#B5D4F4` | compact |
 
-Hover on the pill while the light is amber/red opens the peek listing the last 5 missed /
-waiting items (`Copy done 14:02 · Battery full 13:50 · Slack ⊞ 3`). Click → Home.
+Hover on the centre pill while the light is amber peeks one line naming what was missed
+(`2 missed · Copy done · Tea 4:00`, newest first, ellipsized); hover clears nothing. Click →
+Home, whose Missed section lists them with their times and turns the light off (SPEC §3,
+2026-11-03). Red (waiting) has no peek line yet: M4 Buoy light.
 
 ## Privacy dot (right edge)
 

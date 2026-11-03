@@ -4,6 +4,7 @@ import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 import {buildCompact, buildExpanded} from './present.js';
+import {clockTime} from './presentation.js';
 import {planStrip, stripOrder, tabActivities, findTab, HOME} from './tabs.js';
 import {step} from './keys.js';
 
@@ -33,10 +34,21 @@ export class Home {
      * @param {{slot: string, pinned: string[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`
      * @param {function(string):void} [opts.onSlot]  a standalone tab was chosen from ⋯
      * @param {function():void} [opts.onPrefs]  ⚙ was clicked
+     * @param {object[]} [opts.missed]  stack.missed, newest first: Home's Missed section
+     * @param {function():void} [opts.onMissedSeen]  Home was shown with that section
+     * @param {function(object):void} [opts.onMissedOpen]  one of its rows was opened
+     * @param {function():void} [opts.onMissedClear]  its × was clicked
      */
-    constructor({modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null}) {
+    constructor({
+        modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null,
+        missed = [], onMissedSeen = null, onMissedOpen = null, onMissedClear = null,
+    }) {
         this._modules = modules;
         this._list = list;
+        this._missed = missed;
+        this._onMissedSeen = onMissedSeen;
+        this._onMissedOpen = onMissedOpen;
+        this._onMissedClear = onMissedClear;
         this._settings = settings;
         this._onSlot = onSlot;
         this._onPrefs = onPrefs;
@@ -125,6 +137,8 @@ export class Home {
         this._current = id;
         this._renderStrip();
         this._setBody(this._buildBody(findTab(this._strip, id)));
+        if (id === HOME && this._missed.length)
+            this._onMissedSeen?.();  // the amber light goes off; the list stays (stack)
     }
 
     /**
@@ -308,8 +322,14 @@ export class Home {
 
     _homeBody() {
         const box = new St.BoxLayout({style_class: 'buoy-home-list', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        if (this._missed.length) {
+            this._missedSection(box);
+            if (this._list.length)
+                box.add_child(this._sectionHeader('Now'));
+        }
         if (!this._list.length) {
-            box.add_child(new St.Label({text: 'Nothing going on', style_class: 'buoy-home-empty'}));
+            if (!this._missed.length)
+                box.add_child(new St.Label({text: 'Nothing going on', style_class: 'buoy-home-empty'}));
             return box;
         }
         for (const a of this._list) {
@@ -332,6 +352,56 @@ export class Home {
             box.add_child(row);
         }
         return box;
+    }
+
+    // What ended while the island was hidden (2026-11-03): newest first, at most 5 (the
+    // stack keeps 5), each row its kind's icon, text, tab name and time; a row opens its
+    // kind's tab and leaves the list (as an activated notification does), × empties it.
+    // Until the M4 notifications tab carries it.
+    _missedSection(box) {
+        const header = this._sectionHeader(`Missed · ${this._missed.length}`, true);
+        const clear = new St.Button({style_class: 'buoy-home-clear', can_focus: true, accessible_name: 'Clear missed'});
+        const face = new St.BoxLayout({style_class: 'buoy-home-clear-box'});
+        face.add_child(new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}));
+        face.add_child(new St.Label({text: 'Clear', y_align: Clutter.ActorAlign.CENTER}));
+        clear.set_child(face);
+        clear.connect('clicked', () => {
+            this._missed = [];
+            this._onMissedClear?.();
+            this.select(HOME);
+        });
+        header.add_child(new St.Widget({x_expand: true}));
+        header.add_child(clear);
+        box.add_child(header);
+
+        for (const m of this._missed) {
+            const tab = this._strip.tabs.find(t => t.type === 'kind' && t.kinds.includes(m.kind));
+            const content = new St.BoxLayout({style_class: 'buoy-missed-row', x_expand: true});
+            content.add_child(new St.Icon({icon_name: tab?.icon ?? 'view-app-grid-symbolic', icon_size: 16}));
+            content.add_child(new St.Label({text: m.text ?? m.kind, style_class: 'buoy-text', y_align: Clutter.ActorAlign.CENTER}));
+            if (tab)
+                content.add_child(new St.Label({text: tab.label, style_class: 'buoy-missed-source', y_align: Clutter.ActorAlign.CENTER}));
+            content.add_child(new St.Widget({x_expand: true}));
+            content.add_child(new St.Label({text: clockTime(m.at), style_class: 'buoy-missed-time', y_align: Clutter.ActorAlign.CENTER}));
+            const row = new St.Button({
+                style_class: 'buoy-home-row', child: content, x_expand: true,
+                can_focus: true, reactive: !!tab, x_align: Clutter.ActorAlign.FILL,
+            });
+            row.connect('clicked', () => {
+                this._missed = this._missed.filter(x => x !== m);
+                this._onMissedOpen?.(m);
+                this.select(tab.id);
+            });
+            box.add_child(row);
+        }
+    }
+
+    _sectionHeader(text, lit = false) {
+        const header = new St.BoxLayout({style_class: 'buoy-home-section', x_expand: true});
+        if (lit)
+            header.add_child(new St.Widget({style_class: 'buoy-light buoy-light-missed', y_align: Clutter.ActorAlign.CENTER}));
+        header.add_child(new St.Label({text, y_align: Clutter.ActorAlign.CENTER}));
+        return header;
     }
 
     _destroyTabs() {

@@ -9,7 +9,7 @@ import {shapesFor, GAP, PILL_GAP} from './shapes.js';
 import {Pill} from './pill.js';
 import {Home} from './home.js';
 import {showKeys} from './present.js';
-import {planExpanded} from './presentation.js';
+import {planExpanded, missedLine} from './presentation.js';
 import {ALERT_MS} from './stack.js';
 import {planStrip, tabFor, HOME} from './tabs.js';
 import {actionForKey, step} from './keys.js';
@@ -71,9 +71,19 @@ export class Island {
         this.onCapacityChanged = null; // set by the extension → stack.refresh()
         // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice, ⚙
         this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
+        // set by the extension: the stack's missed history, and telling it it was seen
+        this.missed = {list: () => [], seen: null, open: null, clear: null};
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
             () => this._queueLayout());
+        // Hidden by a fullscreen window (Shell's trackFullscreen): close, let go of the
+        // keyboard. The stack re-opens a pending ask once it is seen again.
+        this.actor.connect('notify::visible', () => {
+            if (!this.actor.visible) {
+                this._close();
+                this._letGo();
+            }
+        });
 
         this._apply(false);
     }
@@ -303,6 +313,11 @@ export class Island {
         }
     }
 
+    /** The amber light's hover line (pill.js peeks it on the centre pill). */
+    missedLine() {
+        return missedLine(this.missed.list());
+    }
+
     _strip() {
         return planStrip(this.tabs.modules, this._list, this.tabs.settings());
     }
@@ -339,6 +354,10 @@ export class Island {
                     this._close();
                     this.tabs.onPrefs?.();
                 },
+                missed: this.missed.list(),
+                onMissedSeen: () => this.missed.seen?.(),
+                onMissedOpen: m => this.missed.open?.(m.id, m.at),
+                onMissedClear: () => this.missed.clear?.(),
             });
         }
         pill.expand(this._home?.actor ?? null);
@@ -362,7 +381,9 @@ export class Island {
 
     /** `keybind-focus` (Super+B): take the keyboard, or let it go. */
     toggleKeyboard() {
-        if (this._destroyed || Main.modalCount > (this._grab ? 1 : 0))
+        if (this._destroyed || !this.actor.visible)
+            return;                 // hidden by a fullscreen window
+        if (Main.modalCount > (this._grab ? 1 : 0))
             return;                 // someone else's popup has the keyboard
         if (this._grab) {
             if (this._open)

@@ -229,3 +229,29 @@ export function planExpanded(p) {
 
     return {...plan, grow, actions: acts, keyline: c.keyline, stale: c.stale};
 }
+
+/**
+ * The hover line of the amber light (INDICATORS.md: the state in words, not only a
+ * colour): `2 missed · Copy done · Tea 4:00`, newest first. Not cut here.
+ *
+ * @param {object[]} missed  stack.missed: {text, kind, at}
+ * @returns {?string} null when nothing was missed
+ */
+export function missedLine(missed) {
+    if (!missed?.length)
+        return null;
+    const names = missed.map(m => str(m.text) ?? str(m.kind)).filter(Boolean);
+    return [`${missed.length} missed`, ...names].join(' · ');
+}
+
+/**
+ * @param {number} ms  since the epoch
+ * @returns {string} local `HH:MM`, '' without a time
+ */
+export function clockTime(ms) {
+    const d = new Date(ms);
+    if (Number.isNaN(d.getTime()))
+        return '';
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

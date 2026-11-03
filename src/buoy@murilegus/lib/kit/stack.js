@@ -7,7 +7,8 @@ import {validate} from './activity.js';
  *
  *   surface(activity) → id · update(id, patch, {alert}) · end(id, {dismissal})
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
- *   answer(id, choice) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool) · clearMissed()
+ *   answer(id, choice) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool)
+ *   seeMissed() · openMissed(id, at) · clearMissed()
  *   has(id) · get(id)
  *
  * Rules:
@@ -21,7 +22,11 @@ import {validate} from './activity.js';
  *   - apps-hidden is a filter: hidden activities stay live but never reach the island
  *   - while unseen (fullscreen, away, DND) an ending activity goes to the missed history
  *     (last 5), except osd/copied (feedback for your own action) and ask (red light)
- *   - light: 'waiting' (an unanswered ask is not visible) › 'missed' › 'off'
+ *   - while unseen the island gets no alert and no expand: an ask must not open in a
+ *     hidden pill, where any click in the fullscreen app would collapse it; only the red
+ *     light. Seen again, an ask or transient on top opens as if it had just arrived
+ *   - light: 'waiting' (an unanswered ask is not visible) › 'missed' › 'off'; 'missed'
+ *     lasts until the history is seen (Home shows it) or cleared, not as long as it exists
  *
  * The island (renderer) receives render(list, {alert, expand}) — every visible activity,
  * centre pill first; it shows the first `island.capacity` (side-by-side, SPEC §2c) — and
@@ -67,6 +72,7 @@ export class ActivityStack {
         this._hidden = new Set(hiddenApps);
         this._unseen = false;
         this._missed = [];
+        this._missedNew = false;     // something was missed since the history was last seen
         this._seq = 0;
         this._shown = null;           // id of the centre pill
         this._shownIds = [];          // ids of every pill the island shows
@@ -221,12 +227,43 @@ export class ActivityStack {
 
     /** @param {boolean} unseen  fullscreen, away or DND: endings now count as missed */
     setUnseen(unseen) {
+        const back = this._unseen && !unseen;
         this._unseen = !!unseen;
+        const top = back ? this._visibleList()[0] : null;
+        if (top && (top.kind === 'ask' || top.style === 'transient'))
+            this._island.render(this._visibleList(), {alert: null, expand: top.id});
         this._updateLight();
     }
 
+    /** Home showed the missed history: the light goes off, the list stays. */
+    seeMissed() {
+        this._missedNew = false;
+        this._updateLight();
+    }
+
+    /**
+     * A missed row was opened (Home → its tab): it leaves the history, as an activated
+     * system notification does (2026-11-03).
+     *
+     * @param {string} id
+     * @param {number} at  when it ended (an id can be missed more than once)
+     * @returns {boolean} found
+     */
+    openMissed(id, at) {
+        const i = this._missed.findIndex(m => m.id === id && m.at === at);
+        if (i < 0)
+            return false;
+        this._missed.splice(i, 1);
+        if (!this._missed.length)
+            this._missedNew = false;
+        this._updateLight();
+        return true;
+    }
+
+    /** The user cleared the history (× in Home). */
     clearMissed() {
         this._missed = [];
+        this._missedNew = false;
         this._updateLight();
     }
 
@@ -346,6 +383,7 @@ export class ActivityStack {
             at: this._clock.now(),
         });
         this._missed.length = Math.min(this._missed.length, MISSED_MAX);
+        this._missedNew = true;
     }
 
     _visible(a) {
@@ -366,6 +404,8 @@ export class ActivityStack {
     }
 
     _render({changed = null, alert = null} = {}) {
+        if (this._unseen)
+            alert = null;            // the island is hidden: nothing to draw attention to
         if (alert)
             this._promote(alert);
         const list = this._visibleList();
@@ -390,8 +430,8 @@ export class ActivityStack {
                 alert: shown.includes(alert) ? alert : null,
                 // transient (APPLE.md A3) and ask (all options are only in expanded)
                 // open expanded when they reach the centre pill
-                expand: (top.style === 'transient' || top.kind === 'ask') && top.id !== prevPrimary
-                    ? top.id : null,
+                expand: (top.style === 'transient' || top.kind === 'ask') && top.id !== prevPrimary &&
+                    !this._unseen ? top.id : null,
             });
         }
 
@@ -417,7 +457,7 @@ export class ActivityStack {
     }
 
     _updateLight() {
-        let light = this._missed.length ? 'missed' : 'off';
+        let light = this._missedNew ? 'missed' : 'off';
         for (const [id, ask] of this._asks) {
             if (this._unseen || ask.dismissed || !this._shownIds.includes(id)) {
                 light = 'waiting';

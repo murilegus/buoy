@@ -460,6 +460,112 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.missed.map(m => m.id), ['ttl'], 'ttl expiry while unseen is missed; hidden apps are not');
 }
 
+// --- missed: seen (light off, list kept) vs cleared (2026-11-03) ----------------------
+{
+    const {clock, island, stack} = setup();
+    stack.setUnseen(true);
+    stack.surface({id: 'copy', kind: 'progress', text: 'Copy done'});
+    clock.advance(60_000);
+    stack.surface({id: 'tea', kind: 'timer', text: 'Tea 4:00'});
+    const t = clock.now();
+    stack.end('copy');
+    stack.end('tea');
+    stack.setUnseen(false);
+    eq(stack.missed.map(m => [m.id, m.at]), [['tea', t], ['copy', t]], 'missed keeps when each ended, newest first');
+    eq(stack.light, 'missed', 'amber after fullscreen');
+    stack.seeMissed();
+    eq([stack.light, island.light, stack.missed.length], ['off', 'off', 2], 'seen: light off, the list stays');
+    stack.seeMissed();
+    eq(island.log.filter(l => l === 'light off').length, 1, 'seeing twice tells the island once');
+    stack.setUnseen(true);
+    stack.surface({id: 'dl', kind: 'progress', text: 'dl'});
+    stack.end('dl');
+    eq([stack.light, stack.missed.map(m => m.id)], ['missed', ['dl', 'tea', 'copy']], 'a new miss lights it again');
+    const [dl] = stack.missed;
+    eq(stack.openMissed(dl.id, dl.at), true, 'opening a missed row removes it (like a system notification)');
+    eq([stack.missed.map(m => m.id), stack.light], [['tea', 'copy'], 'missed'], 'the others stay; the light is Home\'s to turn off');
+    eq(stack.openMissed(dl.id, dl.at), false, 'opening it again: already gone');
+    stack.setUnseen(true);
+    stack.surface({id: 'tea', kind: 'timer', text: 'Tea again'});
+    clock.advance(1000);
+    stack.end('tea');
+    stack.setUnseen(false);
+    const [again, oldTea] = stack.missed;
+    eq(stack.openMissed(oldTea.id, oldTea.at), true, 'the same id missed twice: only the row opened goes');
+    eq(stack.missed.map(m => m.text), [again.text, 'Copy done'], 'the newer one with that id stays');
+    stack.clearMissed();
+    eq([stack.light, stack.missed], ['off', []], 'cleared: light off, list empty');
+    stack.seeMissed();
+    eq(stack.light, 'off', 'seeMissed with nothing missed is harmless');
+    stack.setUnseen(false);
+}
+{
+    const {stack} = setup();
+    const q = stack.ask('q', '?', ['ok']);
+    stack.setUnseen(true);
+    stack.surface({id: 'x', kind: 'progress'});
+    stack.end('x');
+    stack.seeMissed();
+    eq(stack.light, 'waiting', 'seeing missed does not hide a waiting ask (red stays)');
+    stack.answer('q', 'ok');
+    await q;
+    eq(stack.light, 'off', 'answered, missed already seen: off');
+}
+
+// --- fullscreen: unseen sends no alert or expand (FEATURES M1 "Fullscreen") ----------
+{
+    const {island, stack} = setup();
+    stack.setUnseen(true);
+    stack.surface({id: 'copy', kind: 'progress', alert: true});
+    eq(lastRender(island), 'show copy', 'unseen: a new activity renders, without its alert');
+    stack.update('copy', {text: '50 %'}, {alert: true});
+    eq(lastRender(island), 'show copy', 'unseen: an alerting update renders, without the alert');
+    const p = stack.ask('q', 'Run?', ['Deny', 'Allow']);
+    eq(lastRender(island), 'show q', 'unseen: an ask reaches the hidden pill closed (a click would collapse it)');
+    eq(stack.light, 'waiting', 'unseen ask: red light');
+    const before = island.log.length;
+    stack.setUnseen(true);
+    eq(island.log.length, before, 'setUnseen(true) twice: nothing re-rendered');
+
+    stack.setUnseen(false);
+    eq(lastRender(island), 'show q expand', 'back from fullscreen: the pending ask on top is opened');
+    eq(stack.light, 'off', 'the ask is visible again: light off');
+    const n = island.log.length;
+    stack.setUnseen(false);
+    eq(island.log.length, n, 'setUnseen(false) while seen: no second expand');
+    stack.answer('q', 'Allow');
+    eq(await p, 'Allow', 'the re-shown ask is answered as usual');
+    eq(lastRender(island), 'show copy', 'answered: back to the activity under it');
+}
+{
+    const {island, stack} = setup();
+    stack.surface({id: 'copy', kind: 'progress'});
+    stack.setUnseen(true);
+    stack.setUnseen(false);
+    eq(lastRender(island), 'show copy', 'back from fullscreen with no ask on top: no expand');
+
+    stack.setUnseen(true);
+    stack.surface({id: 'hello', kind: 'greeting', style: 'transient', priority: 99});
+    eq(lastRender(island), 'show hello', 'unseen: a transient is not opened');
+    stack.setUnseen(false);
+    eq(lastRender(island), 'show hello expand', 'back: a transient on top opens, so it can end on close');
+}
+{
+    const {island, stack} = setup({}, 3);
+    stack.surface({id: 'top', kind: 'notification', priority: 80});
+    stack.surface({id: 'a', kind: 'progress'});
+    stack.surface({id: 'b', kind: 'timer'});
+    stack.surface({id: 'c', kind: 'media'});
+    stack.setUnseen(true);
+    stack.update('c', {text: 'next'}, {alert: true});
+    eq(lastRender(island), 'show top|a|b +1', 'unseen: an alert on a covered activity does not promote it');
+    const q = stack.ask('q', '?', ['ok']);
+    stack.setUnseen(false);
+    eq(lastRender(island), 'show q|top|a +2 expand:q', 'back: the whole list with the ask opened');
+    stack.answer('q', 'ok');
+    await q;
+}
+
 // --- long timers stay within GLib's 32-bit interval ----------------------------
 {
     const {clock, stack} = setup();
