@@ -10,5 +10,4 @@ export default {
     source: MprisSource,
     adapter,
     apps: {spotify},
-    schema: {'media-peek-on-hover': {type: 'b', default: true}},
 };

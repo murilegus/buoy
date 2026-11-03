@@ -34,9 +34,12 @@ export default class BuoyExtension extends Extension {
 
         this._island = new Island();
         Main.layoutManager.addTopChrome(this._island.actor, {trackFullscreen: true});
-        this._island.reposition();
-        this._monitorsId = Main.layoutManager.connect('monitors-changed',
-            () => this._island.reposition());
+        const reposition = () => this._island.reposition({
+            expandedWidth: this._settings.get_int('expanded-width'),
+        });
+        reposition();
+        this._monitorsId = Main.layoutManager.connect('monitors-changed', reposition);
+        this._widthId = this._settings.connect('changed::expanded-width', reposition);
 
         // apps-hidden / apps-plain may name an app any way a source does: slug them
         const slugs = key => this._settings.get_strv(key).map(slugOf);
@@ -62,23 +65,9 @@ export default class BuoyExtension extends Extension {
         this._dbus = new BuoyDBus(this._stack, {registry: this._registry});
         this._dbus.export();
 
-        this._active = [];
-        const enabled = [];
-        for (const m of MODULES) {
-            if (!this._settings.get_boolean(`modules-${m.id}`))
-                continue;
-            enabled.push(m);
-            for (const kind of m.kinds)
-                this._registry.register(kind, m.adapter, m.apps ?? {});
-            if (m.source) {
-                const src = new m.source();
-                src.enable(this._stack, this._registry);
-                this._active.push({m, src});
-            }
-        }
         // the tab strip (SPEC §2b): read per open, so nothing needs a settings signal
         this._island.tabs = {
-            modules: enabled,
+            modules: [],
             settings: () => ({
                 slot: this._settings.get_string('tabs-slot'),
                 pinned: this._settings.get_strv('tabs-pinned'),
@@ -94,6 +83,15 @@ export default class BuoyExtension extends Extension {
         };
         this.stack = this._stack; // Looking Glass
 
+        // modules-<id> applies at once (prefs, gsettings): start or stop that module only,
+        // so the other modules' and D-Bus callers' activities stay
+        this._active = [];
+        this._syncModules();
+        this._modulesId = this._settings.connect('changed', (_s, key) => {
+            if (key.startsWith('modules-'))
+                this._syncModules();
+        });
+
         // Super+B (SPEC §2c). POPUP too, like Shell's own toggles (ui/windowManager.js
         // toggle-quick-settings), so the same key lets go while the island holds it.
         Main.wm.addKeybinding('keybind-focus', this._settings, Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
@@ -101,25 +99,59 @@ export default class BuoyExtension extends Extension {
             () => this._island.toggleKeyboard());
 
         // Dev: Main.extensionManager.lookup('buoy@murilegus').stateObj.reload('media')
-        if (this._settings.get_boolean('dev-mode'))
-            this.reload = id => reloadModule(this, id);
+        const devMode = () => {
+            this.reload = this._settings.get_boolean('dev-mode') ? id => reloadModule(this, id) : null;
+        };
+        devMode();
+        this._devId = this._settings.connect('changed::dev-mode', devMode);
+    }
+
+    // _active: every running module, {m, src} (src null without a source); devtools.js
+    // reloadModule() swaps one entry
+    _syncModules() {
+        for (const m of MODULES) {
+            const on = this._settings.get_boolean(`modules-${m.id}`);
+            const running = this._active.find(a => a.m.id === m.id);
+            if (on && !running)
+                this._startModule(m);
+            else if (!on && running)
+                this._stopModule(running);
+        }
+        const ids = new Set(this._active.map(a => a.m.id));
+        this._island.tabs.modules = MODULES.filter(m => ids.has(m.id));
+    }
+
+    _startModule(m) {
+        for (const kind of m.kinds)
+            this._registry.register(kind, m.adapter, m.apps ?? {});
+        let src = null;
+        if (m.source) {
+            src = new m.source();
+            src.enable(this._stack, this._registry);
+        }
+        this._active.push({m, src});
+    }
+
+    // A source ends what it surfaced in disable() (kit/source.js).
+    _stopModule(entry) {
+        entry.src?.disable();
+        for (const kind of entry.m.kinds)
+            this._registry.unregister(kind);
+        this._active = this._active.filter(a => a !== entry);
     }
 
     disable() {
         Main.wm.removeKeybinding('keybind-focus');
-        for (const {m, src} of this._active ?? []) {
-            src.disable();
-            for (const kind of m.kinds)
-                this._registry.unregister(kind);
-        }
+        for (const entry of [...this._active ?? []])
+            this._stopModule(entry);
         this._active = null;
         this._dbus?.unexport();
         this._dbus = null;
-        for (const id of [this._hiddenId, this._plainId]) {
+        for (const id of [this._hiddenId, this._plainId, this._modulesId, this._widthId, this._devId]) {
             if (id)
                 this._settings.disconnect(id);
         }
-        this._hiddenId = this._plainId = 0;
+        this._hiddenId = this._plainId = this._modulesId = this._widthId = this._devId = 0;
         if (this._visibleId) {
             this._island.actor.disconnect(this._visibleId);
             this._visibleId = 0;
