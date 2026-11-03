@@ -516,6 +516,20 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq([lastRender(island), stack.light], ['show call2', 'waiting'], 'capacity drops: refresh() recomputes the light');
 }
 
+// --- has / get (the D-Bus layer reads its own activities back) ---------------------
+{
+    const {stack, clock} = setup();
+    eq([stack.has('x'), stack.get('x')], [false, null], 'unknown id');
+    stack.surface({id: 'x', kind: 'progress', text: 'one'});
+    eq([stack.has('x'), stack.get('x')?.text], [true, 'one'], 'live activity');
+    stack.schedule({id: 'later', kind: 'calendar', text: 'meeting'}, clock.now() + 60_000);
+    eq([stack.has('later'), stack.get('later')], [true, null], 'scheduled: has, but nothing live to get');
+    stack.end('x');
+    eq(stack.has('x'), false, 'ended');
+    clock.advance(60_000);
+    eq(stack.get('later')?.text, 'meeting', 'scheduled one is live once it starts');
+}
+
 // --- destroy ----------------------------------------------------------------
 {
     const {clock, island, stack} = setup();
