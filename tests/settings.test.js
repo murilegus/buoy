@@ -49,6 +49,7 @@ const plan = planPrefs(order.map(name => ({name})));
 eq(plan.general, ['expanded-width', 'keybind-focus'], 'General: the island\'s own keys, in schema order');
 eq(plan.apps, ['apps-hidden', 'apps-plain'], 'Apps page');
 eq(plan.developer, ['dev-mode'], 'Developer group');
+eq(plan.panel, ['cluster-background'], 'Panel page: the top bar\'s own keys');
 eq(plan.modules.map(m => m.id), ['media', 'notification', 'progress', 'timer', 'calendar', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet');
 eq(plan.modules.find(m => m.id === 'calendar'), {
@@ -72,8 +73,14 @@ const fake = [{name: 'modules-media'}, {name: 'media-peek-on-hover'}, {name: 'mo
 const p2 = planPrefs(fake);
 eq(p2.modules.map(m => [m.id, m.keys]), [['media', ['media-peek-on-hover']]],
     'a module\'s own key lives in its row; a hidden module\'s key is hidden with it');
-throws(() => planPrefs([{name: 'cluster-background'}]), 'a key nobody placed fails loudly');
+throws(() => planPrefs([{name: 'cluster-contrast'}]), 'a key nobody placed fails loudly');
 throws(() => planPrefs([{name: 'mediaish'}]), 'a prefix match needs the dash');
+
+// --- choice keys: prefs offers exactly the schema's choices, in order ------------------
+const [kind, choices] = schema.get_key('cluster-background').get_range().recursiveUnpack();
+eq([kind, choices], ['enum', ['hover', 'always', 'never']], 'cluster-background: hover, always, never');
+eq(schema.get_key('cluster-background').get_default_value().unpack(), 'hover',
+    'cluster-background defaults to hover (SPEC §1: bare until the pointer is over a cluster)');
 
 // --- samples go through the real D-Bus check ------------------------------------------
 for (const id of Object.keys(SAMPLES)) {

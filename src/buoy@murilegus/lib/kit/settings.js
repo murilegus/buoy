@@ -8,6 +8,7 @@
  *   Modules     one row per module (its `modules-<id>` switch), the module's own keys
  *               (`<id>-…`) inside it, a sample button, a pin switch for standalone tabs
  *   Apps        `apps-hidden`, `apps-plain`, the profiles folder
+ *   Panel       the top bar's clusters (M2)
  *   Developer   `dev-mode`
  *
  * A key enters the schema with the item that implements it (2026-11-03): nothing in prefs
@@ -16,7 +17,7 @@
 
 import GLib from 'gi://GLib';
 
-export const PAGES = ['general', 'modules', 'apps'];
+export const PAGES = ['general', 'modules', 'apps', 'panel'];
 
 // Shell-level keys, by group. Every schema key is placed here or is a module key; the
 // test fails on a key nobody placed.
@@ -26,6 +27,7 @@ export const PLACES = {
     'apps-hidden': 'apps',
     'apps-plain': 'apps',
     'dev-mode': 'developer',
+    'cluster-background': 'panel',
     'tabs-pinned': 'modules',   // the pin switch on standalone modules' rows
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
 };
@@ -38,13 +40,13 @@ export const STANDALONE = new Set(['calendar', 'clipboard']);
 
 /**
  * @param {Array<{name: string}>} keys  schema keys, in schema order
- * @returns {object} {general, apps, developer: key names; modules: [{id, enableKey, keys}]}
+ * @returns {object} {general, apps, panel, developer: key names; modules: [{id, enableKey, keys}]}
  * @throws {Error} a key that is neither placed nor a module's
  */
 export function planPrefs(keys) {
     const names = keys.map(k => k.name);
     const ids = names.filter(n => n.startsWith('modules-')).map(n => n.slice('modules-'.length));
-    const plan = {general: [], apps: [], developer: [], modules: []};
+    const plan = {general: [], apps: [], panel: [], developer: [], modules: []};
     for (const id of ids) {
         if (HIDDEN_MODULES.has(id))
             continue;

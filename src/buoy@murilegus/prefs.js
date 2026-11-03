@@ -19,6 +19,7 @@ const IFACE = 'org.gnome.Shell.Extensions.Buoy';
  *   Modules   one expander per module: its switch, its own keys, a pin for standalone
  *             tabs, "Show a sample" (Surface over D-Bus, like any script)
  *   Apps      hidden and plain apps (slugged as the registry does), the profiles folder
+ *   Panel     the top bar's clusters (M2)
  */
 export default class BuoyPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -42,6 +43,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         window.add(this._generalPage(plan, key));
         window.add(this._modulesPage(plan, key));
         window.add(this._appsPage(plan, key));
+        window.add(this._panelPage(plan, key));
     }
 
     // Keys in the order the XML lists them (list_keys() sorts by name).
@@ -112,7 +114,32 @@ export default class BuoyPreferences extends ExtensionPreferences {
             }
             return row;
         }
+        if (type === 's' && k.get_range().recursiveUnpack()[0] === 'enum')
+            return this._choiceRow(k);
         throw new Error(`prefs.js has no row for ${name} (${type})`);
+    }
+
+    // A string key with <choices>: one drop-down entry per choice, in schema order.
+    _choiceRow(k) {
+        const name = k.get_name();
+        const [, choices] = k.get_range().recursiveUnpack();
+        const row = new Adw.ComboRow({
+            title: k.get_summary(), subtitle: k.get_description(),
+            model: Gtk.StringList.new(choices.map(c => c[0].toUpperCase() + c.slice(1))),
+        });
+        const sync = () => {
+            const i = choices.indexOf(this._settings.get_string(name));
+            if (i >= 0 && row.selected !== i)
+                row.selected = i;
+        };
+        sync();
+        row.connect('notify::selected', () => {
+            const value = choices[row.selected];
+            if (value && this._settings.get_string(name) !== value)
+                this._settings.set_string(name, value);
+        });
+        this._ids.push(this._settings.connect(`changed::${name}`, sync));
+        return row;
     }
 
     // Super+B: shows the accelerator; click to record a new one (Esc cancels, Backspace
@@ -240,6 +267,20 @@ export default class BuoyPreferences extends ExtensionPreferences {
     }
 
     // --- Apps ---------------------------------------------------------------------------
+
+    // --- Panel --------------------------------------------------------------------------
+
+    _panelPage(plan, key) {
+        const page = new Adw.PreferencesPage({title: 'Panel', icon_name: 'preferences-desktop-display-symbolic'});
+        const clusters = new Adw.PreferencesGroup({
+            title: 'Clusters',
+            description: 'The app on the left, the system indicators and clock on the right.',
+        });
+        for (const name of plan.panel)
+            clusters.add(this._row(key(name)));
+        page.add(clusters);
+        return page;
+    }
 
     _appsPage(plan, key) {
         const page = new Adw.PreferencesPage({title: 'Apps', icon_name: 'application-x-executable-symbolic'});

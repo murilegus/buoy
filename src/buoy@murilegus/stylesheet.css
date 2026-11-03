@@ -6,6 +6,9 @@
 
 /* Clusters: bare by default, translucent background on hover (no blur). */
 #panel.buoy .buoy-cluster {
+    /* St applies CSS margins over the actor's own, so the gap lives here; all four
+       sides keep the background off the screen edge (either one, RTL too). */
+    margin: 4px;
     border-radius: 12px;
     padding: 0 8px;
     background-color: transparent;

@@ -97,5 +97,15 @@
       <summary>Focus the island</summary>
       <description>Takes the keyboard: ←/→ between pills, Enter opens, Esc or this key again lets go; an open ask answers to the key printed on its buttons.</description>
     </key>
+    <key name="cluster-background" type="s">
+      <choices>
+        <choice value="hover"/>
+        <choice value="always"/>
+        <choice value="never"/>
+      </choices>
+      <default>'hover'</default>
+      <summary>Cluster background</summary>
+      <description>The dark rounded background behind the left and right clusters: only while the pointer is over one, always, or never.</description>
+    </key>
   </schema>
 </schemalist>
