@@ -8,11 +8,11 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {AppMenu} from 'resource:///org/gnome/shell/ui/appMenu.js';
 
-import {leftCluster, symbolicNames} from './lib/kit/cluster.js';
+import {fallbackIcons, leftCluster} from './lib/kit/cluster.js';
 
 // cluster-background, -radius, -opacity (SPEC §1). St has no CSS variables, so the
 // background is the box's inline style, repainted when the look or its hover changes.
-let look = {mode: 'never', radius: 12, opacity: 35};
+let look = {mode: 'hover', radius: 16, opacity: 20};
 
 // What reworkPanel(true) changed on each cluster box, to put back on disable.
 let saved = null;
@@ -127,19 +127,18 @@ function unfollowEmpty(box, state) {
     state.children = null;
 }
 
-// The app's monochrome icon when it ships one, tinted like the indicators; its own
-// coloured icon otherwise (St.Icon's fallback_gicon: the theme decides, no lookups here).
+// The app's own icon; if the theme has none, its monochrome one, then a generic one
+// (Ethan 2026-11-04). St.Icon tries `fallback_gicon` when `gicon` fails, and a ThemedIcon
+// tries its names in order: the theme decides, no lookups here. A window with no app info
+// gets Shell's own texture (its window icon).
 function appIcon(app) {
     const info = app.get_app_info();
-    const own = info?.get_icon();
-    const names = symbolicNames(own instanceof Gio.ThemedIcon ? own.get_names()[0] : null, app.get_id());
-    if (!names.length)
+    if (!info)
         return app.create_icon_texture(16);
-    return new St.Icon({
-        gicon: Gio.ThemedIcon.new_from_names(names),
-        fallback_gicon: own ?? null,
-        style_class: 'buoy-app-icon',
-    });
+    const own = info.get_icon();
+    const fallback = Gio.ThemedIcon.new_from_names(
+        fallbackIcons(own instanceof Gio.ThemedIcon ? own.get_names()[0] : null, app.get_id()));
+    return new St.Icon({gicon: own ?? fallback, fallback_gicon: fallback, style_class: 'buoy-app-icon'});
 }
 
 // [▣ app · ⊞ 2] or [⊞ Workspace 2] (kit/cluster.js decides). Click toggles the Overview,

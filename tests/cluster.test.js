@@ -1,5 +1,5 @@
 // Run: gjs -m tests/cluster.test.js   (pure: what the left cluster shows, SPEC §1)
-import {leftCluster, symbolicNames, workspaceName} from '../src/buoy@murilegus/lib/kit/cluster.js';
+import {GENERIC_APP_ICON, fallbackIcons, leftCluster, workspaceName} from '../src/buoy@murilegus/lib/kit/cluster.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -38,15 +38,17 @@ eq(show({app: null, empty: 'hidden'}), {visible: false, icon: null, text: '', ex
 eq(show({overview: true, empty: 'hidden'}).visible, false, 'hidden in the Overview too');
 eq(show({empty: 'hidden'}).visible, true, 'hidden only applies without an app');
 
-// --- symbolic app icons ---------------------------------------------------------------
-eq(symbolicNames('org.gnome.Calculator', 'org.gnome.Calculator.desktop'), ['org.gnome.Calculator-symbolic'],
-    'icon and id agree: one name');
-eq(symbolicNames('firefox', 'firefox_firefox.desktop'), ['firefox-symbolic', 'firefox_firefox-symbolic'],
+// --- fallback icons: the app's -symbolic, then a generic one --------------------------
+const G = GENERIC_APP_ICON;
+eq(fallbackIcons('org.gnome.Calculator', 'org.gnome.Calculator.desktop'), ['org.gnome.Calculator-symbolic', G],
+    'icon and id agree: one symbolic name, then the generic icon');
+eq(fallbackIcons('firefox', 'firefox_firefox.desktop'), ['firefox-symbolic', 'firefox_firefox-symbolic', G],
     'icon name first, then the id (snaps name them apart)');
-eq(symbolicNames('utilities-terminal-symbolic', 'x.desktop'), ['utilities-terminal-symbolic', 'x-symbolic'],
+eq(fallbackIcons('utilities-terminal-symbolic', 'x.desktop'), ['utilities-terminal-symbolic', 'x-symbolic', G],
     'an icon that is already symbolic is not doubled');
-eq(symbolicNames(null, 'org.example.App.desktop'), ['org.example.App-symbolic'], 'a file icon: only the id');
-eq(symbolicNames('/opt/app/icon.png', null), [], 'a path is not an icon name');
-eq(symbolicNames(null, null), [], 'a window with no app info: nothing to try');
+eq(fallbackIcons(null, 'org.example.App.desktop'), ['org.example.App-symbolic', G], 'a file icon: only the id');
+eq(fallbackIcons('/opt/app/icon.png', null), [G], 'a path is not an icon name: the generic icon only');
+eq(fallbackIcons(null, null), [G], 'nothing known: the generic icon');
+eq(fallbackIcons('application-x-executable', null), [G], 'the generic icon is not listed twice');
 
 console.log('cluster: ok');

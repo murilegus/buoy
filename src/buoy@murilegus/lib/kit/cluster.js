@@ -7,20 +7,23 @@
  *   …with left-cluster-empty = hidden: nothing
  */
 
+// Last resort when an app has neither its own icon nor a monochrome one.
+export const GENERIC_APP_ICON = 'application-x-executable-symbolic';
+
 /**
- * The monochrome icon names to try for an app, best first (Ethan 2026-11-04: they match the
- * system indicators; the app's own coloured icon is the fallback). GNOME apps and many
- * others ship `<icon>-symbolic` in hicolor/symbolic/apps.
+ * The icons to fall back on when the app's own icon is missing, best first (Ethan
+ * 2026-11-04: the app's own icon first; then its monochrome `<icon>-symbolic`, which GNOME
+ * apps and many others ship in hicolor/symbolic/apps; then a generic one).
  *
  * @param {string|null} icon  the app's themed icon name (desktop file `Icon=`), null for a file icon
  * @param {string|null} id  the app id (`org.gnome.Calculator.desktop`)
- * @returns {string[]} names, no duplicates; empty when there is nothing to try
+ * @returns {string[]} names, no duplicates, always ending with GENERIC_APP_ICON
  */
-export function symbolicNames(icon, id) {
+export function fallbackIcons(icon, id) {
     const bases = [icon, id?.replace(/\.desktop$/, '')]
         .filter(b => b && !b.includes('/'))
         .map(b => b.replace(/-symbolic$/, ''));
-    return [...new Set(bases)].map(b => `${b}-symbolic`);
+    return [...new Set([...bases.map(b => `${b}-symbolic`), GENERIC_APP_ICON])];
 }
 
 /**

@@ -71,8 +71,8 @@ for (const n of Object.keys(SLIDERS)) {
 }
 eq(schema.get_key('cluster-radius').get_range().recursiveUnpack(), ['range', [0, 16]],
     'radius stops at 16: half the 32 px cluster, a pill');
-eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [12, 35],
-    'radius 12 and opacity 35 % are the old stylesheet values');
+eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [16, 20],
+    'radius 16 (a pill, like the island) and opacity 20 % by default (2026-11-04)');
 eq(plan.modules.map(m => m.id), ['media', 'notification', 'progress', 'timer', 'calendar', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet');
 eq(plan.modules.find(m => m.id === 'calendar'), {
@@ -102,8 +102,8 @@ throws(() => planPrefs([{name: 'mediaish'}]), 'a prefix match needs the dash');
 // --- choice keys: prefs offers exactly the schema's choices, in order ------------------
 const [kind, choices] = schema.get_key('cluster-background').get_range().recursiveUnpack();
 eq([kind, choices], ['enum', ['never', 'hover', 'always']], 'cluster-background: never, hover, always');
-eq(schema.get_key('cluster-background').get_default_value().unpack(), 'never',
-    'cluster-background defaults to never (SPEC §1, 2026-11-04: bare on the wallpaper)');
+eq(schema.get_key('cluster-background').get_default_value().unpack(), 'hover',
+    'cluster-background defaults to hover (SPEC §1, 2026-11-04)');
 
 // --- samples go through the real D-Bus check ------------------------------------------
 for (const id of Object.keys(SAMPLES)) {
