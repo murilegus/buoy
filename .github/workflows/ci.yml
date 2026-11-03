@@ -23,6 +23,16 @@ jobs:
 
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
-      - run: pnpm install --frozen-lockfile
+      # eslint-config-gnome is a git dependency on gitlab.gnome.org; with the store cached
+      # by lockfile, an outage there no longer fails CI (only a lockfile change fetches).
+      # The store lives in the workspace: pnpm cannot hard-link from setup-pnpm's.
+      - name: Cache the pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .pnpm-store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile --store-dir .pnpm-store
 
       - run: pnpm verify
