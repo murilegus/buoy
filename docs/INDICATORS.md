@@ -32,6 +32,8 @@ When a pill's leading is Bu (`MASCOT.md`), Bu's lamp **is** the light and the ed
 not drawn. Amber/red keep exactly the meanings above and win over the pose. Otherwise the
 lamp shows its pose's colour — chosen by the kit, never by a module; static, never
 blinking; never another colour from this file, except amber for `missed` and red for `ask`.
+This rule is the lamp's: the rest of Bu (body, stripe, water…) is MASCOT.md's fixed
+palette, none of which is a state colour here (2026-11-03).
 
 | Colour | Poses |
 |---|---|

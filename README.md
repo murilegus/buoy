@@ -1,6 +1,17 @@
-# Buoy
+<p align="center">
+  <img src="docs/mascot/hello.svg" width="120" height="120" alt="Bu, the Buoy mascot, waving hello">
+</p>
 
-**A living pill for the GNOME top bar.**
+<h1 align="center">Buoy</h1>
+
+<p align="center"><strong>A living pill for the GNOME top bar.</strong></p>
+
+<p align="center">
+  <a href="https://github.com/murilegus/buoy/actions/workflows/ci.yml"><img src="https://github.com/murilegus/buoy/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/GNOME_Shell-50-4a86cf?logo=gnome&logoColor=white" alt="GNOME Shell 50">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--2.0-blue" alt="License: GPL-2.0"></a>
+  <img src="https://img.shields.io/badge/status-pre--release-orange" alt="Status: pre-release">
+</p>
 
 Islands sit still and wait for you to visit. A buoy floats, stays quiet, and lights
 up only when something is happening on the water. Buoy turns the centre of your top
@@ -25,7 +36,8 @@ buoy/
 │   ├── ARCHITECTURE.md   module/feature layout, rules, settings model
 │   ├── FEATURES.md       roadmap M0–M5 with status + scores
 │   ├── INDICATORS.md     buoy light + privacy dot: colours, meanings, positions
-│   └── APPLE.md          ActivityKit + HIG research → BuoyKit contract
+│   ├── APPLE.md          ActivityKit + HIG research → BuoyKit contract
+│   └── MASCOT.md         Bu, the mascot: grids, poses, motion (previews in mascot/)
 └── src/buoy@murilegus/   the extension — see docs/ARCHITECTURE.md for the tree
 ```
 
