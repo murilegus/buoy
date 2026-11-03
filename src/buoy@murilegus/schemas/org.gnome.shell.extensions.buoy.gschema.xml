@@ -107,6 +107,15 @@
       <summary>Cluster background</summary>
       <description>The dark rounded background behind the left and right clusters: never, only while the pointer is over one, or always.</description>
     </key>
+    <key name="left-cluster-empty" type="s">
+      <choices>
+        <choice value="workspace"/>
+        <choice value="hidden"/>
+      </choices>
+      <default>'workspace'</default>
+      <summary>Left cluster without an app</summary>
+      <description>On an empty desktop or in the Overview: show the workspace, or nothing.</description>
+    </key>
     <key name="cluster-radius" type="i">
       <range min="0" max="16"/>
       <default>12</default>

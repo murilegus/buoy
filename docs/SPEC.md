@@ -54,7 +54,9 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   `cluster-contrast = auto | light | dark`, default `auto`. The pill is always black and
   unaffected.
 - **Left cluster** (decided 2026-10-30): two layers of information in one place.
-  - Normal: icon + name of the focused app (`Shell.WindowTracker`, `notify::focus-window`).
+  - Normal: icon + name of the focused app (`Shell.WindowTracker`, `notify::focus-app`). The
+    icon is the app's monochrome `<icon>-symbolic` when it ships one, so it matches the
+    system indicators; otherwise its own coloured icon (2026-11-04).
   - Hover: the cluster widens and appends the workspace as a secondary item: grid icon +
     number ("Firefox · ⊞ 2"), or the workspace name if the user set one ("Firefox · ⊞ Work").
     No "WS" abbreviation; the icon carries the meaning.

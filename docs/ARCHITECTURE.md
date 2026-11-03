@@ -30,6 +30,7 @@ src/buoy@murilegus/
     │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
     │   ├── keys.js         keyboard: an ask's keys, ←/→ steps; pure, unit-tested (2026-11-03)
     │   ├── settings.js     prefs: which page each schema key goes to, samples; pure (2026-11-03)
+    │   ├── cluster.js      what the left cluster shows (app / workspace / hover); pure (2026-11-04)
     │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
     │   ├── mascot.js       Bu: 13 pose grids + eyes as data, pure; MASCOT.md is the source (2026-11-03)

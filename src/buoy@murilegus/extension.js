@@ -4,7 +4,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {reworkPanel, setClusterBackground} from './panel.js';
+import {reworkPanel, setClusterBackground, setLeftEmpty} from './panel.js';
 import {Island} from './lib/kit/island.js';
 import {ActivityStack} from './lib/kit/stack.js';
 import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
@@ -37,9 +37,13 @@ export default class BuoyExtension extends Extension {
             opacity: this._settings.get_int('cluster-opacity'),
         });
         background();
+        const leftEmpty = () => setLeftEmpty(this._settings.get_string('left-cluster-empty'));
+        leftEmpty();
         this._backgroundId = this._settings.connect('changed', (_s, key) => {
             if (key.startsWith('cluster-'))
                 background();
+            else if (key === 'left-cluster-empty')
+                leftEmpty();
         });
 
         this._island = new Island();
