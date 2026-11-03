@@ -171,18 +171,28 @@ export default class BuoyPreferences extends ExtensionPreferences {
         this._ids.push(this._settings.connect(`changed::${name}`, sync));
     }
 
-    // An integer key with a <range> as a slider, its value printed with the unit.
+    // An integer key with a <range> as a slider, its value printed with the unit. The
+    // slider and the value have fixed widths, so sliders on neighbouring rows line up
+    // whatever their subtitles and values are.
     _sliderRow(k, unit) {
         const [, [lo, hi]] = k.get_range().recursiveUnpack();
         const row = new Adw.ActionRow({title: k.get_summary(), subtitle: k.get_description()});
+        const value = new Gtk.Label({
+            width_chars: 6, xalign: 1, valign: Gtk.Align.CENTER, css_classes: ['dim-label', 'numeric'],
+        });
         const scale = new Gtk.Scale({
             adjustment: new Gtk.Adjustment({lower: lo, upper: hi, step_increment: 1, page_increment: 5}),
-            digits: 0, round_digits: 0, draw_value: true, value_pos: Gtk.PositionType.LEFT,
-            hexpand: true, width_request: 200, valign: Gtk.Align.CENTER,
+            digits: 0, round_digits: 0, draw_value: false,
+            width_request: 180, valign: Gtk.Align.CENTER,
         });
-        scale.set_format_value_func((_s, v) => `${Math.round(v)} ${unit}`);
         scale.update_property([Gtk.AccessibleProperty.LABEL], [k.get_summary()]);
         this._settings.bind(k.get_name(), scale.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT);
+        const show = () => {
+            value.label = `${Math.round(scale.adjustment.value)} ${unit}`;
+        };
+        scale.adjustment.connect('value-changed', show);
+        show();
+        row.add_suffix(value);
         row.add_suffix(scale);
         return row;
     }
