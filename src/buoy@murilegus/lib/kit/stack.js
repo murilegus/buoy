@@ -21,6 +21,9 @@ import {validate} from './activity.js';
  *   - apps-hidden is a filter: hidden activities stay live but never reach the island
  *   - while unseen (fullscreen, away, DND) an ending activity goes to the missed history
  *     (last 5), except osd/copied (feedback for your own action) and ask (red light)
+ *   - while unseen the island gets no alert and no expand: an ask must not open in a
+ *     hidden pill, where any click in the fullscreen app would collapse it; only the red
+ *     light. Seen again, an ask or transient on top opens as if it had just arrived
  *   - light: 'waiting' (an unanswered ask is not visible) › 'missed' › 'off'
  *
  * The island (renderer) receives render(list, {alert, expand}) — every visible activity,
@@ -221,7 +224,11 @@ export class ActivityStack {
 
     /** @param {boolean} unseen  fullscreen, away or DND: endings now count as missed */
     setUnseen(unseen) {
+        const back = this._unseen && !unseen;
         this._unseen = !!unseen;
+        const top = back ? this._visibleList()[0] : null;
+        if (top && (top.kind === 'ask' || top.style === 'transient'))
+            this._island.render(this._visibleList(), {alert: null, expand: top.id});
         this._updateLight();
     }
 
@@ -366,6 +373,8 @@ export class ActivityStack {
     }
 
     _render({changed = null, alert = null} = {}) {
+        if (this._unseen)
+            alert = null;            // the island is hidden: nothing to draw attention to
         if (alert)
             this._promote(alert);
         const list = this._visibleList();
@@ -390,8 +399,8 @@ export class ActivityStack {
                 alert: shown.includes(alert) ? alert : null,
                 // transient (APPLE.md A3) and ask (all options are only in expanded)
                 // open expanded when they reach the centre pill
-                expand: (top.style === 'transient' || top.kind === 'ask') && top.id !== prevPrimary
-                    ? top.id : null,
+                expand: (top.style === 'transient' || top.kind === 'ask') && top.id !== prevPrimary &&
+                    !this._unseen ? top.id : null,
             });
         }
 

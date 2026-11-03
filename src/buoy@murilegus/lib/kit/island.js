@@ -74,6 +74,14 @@ export class Island {
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
             () => this._queueLayout());
+        // Hidden by a fullscreen window (Shell's trackFullscreen): close, let go of the
+        // keyboard. The stack re-opens a pending ask once it is seen again.
+        this.actor.connect('notify::visible', () => {
+            if (!this.actor.visible) {
+                this._close();
+                this._letGo();
+            }
+        });
 
         this._apply(false);
     }
@@ -362,7 +370,9 @@ export class Island {
 
     /** `keybind-focus` (Super+B): take the keyboard, or let it go. */
     toggleKeyboard() {
-        if (this._destroyed || Main.modalCount > (this._grab ? 1 : 0))
+        if (this._destroyed || !this.actor.visible)
+            return;                 // hidden by a fullscreen window
+        if (Main.modalCount > (this._grab ? 1 : 0))
             return;                 // someone else's popup has the keyboard
         if (this._grab) {
             if (this._open)

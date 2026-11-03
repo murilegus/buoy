@@ -131,6 +131,11 @@ Rules:
   then the top returns (until side-by-side minimal mode gives it its own pill).
 - A click-open takes the keyboard (modal, so Esc works); automatic opens (alert, ask,
   transient) never do, so typing elsewhere is not interrupted.
+- Fullscreen (2026-11-03): the island hides with the top bar on a monitor showing a
+  fullscreen window (Shell's `trackFullscreen`; it shows again in the Overview), and an
+  open island closes. While hidden nothing opens or alerts; activities that end count as
+  missed (amber light on return), an unanswered ask lights red. Back on screen, an ask or
+  transient on top opens as if it had just arrived. Super+B does nothing while hidden.
 
 ### 2a. Idle content (decided 2026-10-30)
 

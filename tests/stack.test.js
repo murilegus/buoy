@@ -460,6 +460,60 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.missed.map(m => m.id), ['ttl'], 'ttl expiry while unseen is missed; hidden apps are not');
 }
 
+// --- fullscreen: unseen sends no alert or expand (FEATURES M1 "Fullscreen") ----------
+{
+    const {island, stack} = setup();
+    stack.setUnseen(true);
+    stack.surface({id: 'copy', kind: 'progress', alert: true});
+    eq(lastRender(island), 'show copy', 'unseen: a new activity renders, without its alert');
+    stack.update('copy', {text: '50 %'}, {alert: true});
+    eq(lastRender(island), 'show copy', 'unseen: an alerting update renders, without the alert');
+    const p = stack.ask('q', 'Run?', ['Deny', 'Allow']);
+    eq(lastRender(island), 'show q', 'unseen: an ask reaches the hidden pill closed (a click would collapse it)');
+    eq(stack.light, 'waiting', 'unseen ask: red light');
+    const before = island.log.length;
+    stack.setUnseen(true);
+    eq(island.log.length, before, 'setUnseen(true) twice: nothing re-rendered');
+
+    stack.setUnseen(false);
+    eq(lastRender(island), 'show q expand', 'back from fullscreen: the pending ask on top is opened');
+    eq(stack.light, 'off', 'the ask is visible again: light off');
+    const n = island.log.length;
+    stack.setUnseen(false);
+    eq(island.log.length, n, 'setUnseen(false) while seen: no second expand');
+    stack.answer('q', 'Allow');
+    eq(await p, 'Allow', 'the re-shown ask is answered as usual');
+    eq(lastRender(island), 'show copy', 'answered: back to the activity under it');
+}
+{
+    const {island, stack} = setup();
+    stack.surface({id: 'copy', kind: 'progress'});
+    stack.setUnseen(true);
+    stack.setUnseen(false);
+    eq(lastRender(island), 'show copy', 'back from fullscreen with no ask on top: no expand');
+
+    stack.setUnseen(true);
+    stack.surface({id: 'hello', kind: 'greeting', style: 'transient', priority: 99});
+    eq(lastRender(island), 'show hello', 'unseen: a transient is not opened');
+    stack.setUnseen(false);
+    eq(lastRender(island), 'show hello expand', 'back: a transient on top opens, so it can end on close');
+}
+{
+    const {island, stack} = setup({}, 3);
+    stack.surface({id: 'top', kind: 'notification', priority: 80});
+    stack.surface({id: 'a', kind: 'progress'});
+    stack.surface({id: 'b', kind: 'timer'});
+    stack.surface({id: 'c', kind: 'media'});
+    stack.setUnseen(true);
+    stack.update('c', {text: 'next'}, {alert: true});
+    eq(lastRender(island), 'show top|a|b +1', 'unseen: an alert on a covered activity does not promote it');
+    const q = stack.ask('q', '?', ['ok']);
+    stack.setUnseen(false);
+    eq(lastRender(island), 'show q|top|a +2 expand:q', 'back: the whole list with the ask opened');
+    stack.answer('q', 'ok');
+    await q;
+}
+
 // --- long timers stay within GLib's 32-bit interval ----------------------------
 {
     const {clock, stack} = setup();
