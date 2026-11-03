@@ -26,6 +26,27 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 
 Precedence: red › amber › off. Only one light is drawn.
 
+### Bu's lamp (2026-11-03)
+
+When a pill's leading is Bu (`MASCOT.md`), Bu's lamp **is** the light and the edge slot is
+not drawn. Amber/red keep exactly the meanings above and win over the pose. Otherwise the
+lamp shows its pose's colour — chosen by the kit, never by a module; static, never
+blinking; never another colour from this file, except amber for `missed` and red for `ask`.
+
+| Colour | Poses |
+|---|---|
+| `#B4B2A9` | idle |
+| `#444441` | sleep, stale |
+| amber `#EF9F27` | missed |
+| red `#E24B4A` | ask |
+| `#97C459` | done, party |
+| `#85B7EB` | busy |
+| `#FAC775` | wave |
+| `#AFA9EC` | think |
+| foreground | turn |
+| `#5F5E5A` | error |
+| `#B5D4F4` | compact |
+
 Hover on the pill while the light is amber/red opens the peek listing the last 5 missed /
 waiting items (`Copy done 14:02 · Battery full 13:50 · Slack ⊞ 3`). Click → Home.
 

@@ -145,6 +145,7 @@ and shrinks when they are off; `auto` and `none` are the kit's own.
 | `clock` | a *second* clock, styled unlike the one in the right cluster: time + time-of-day icon (dawn / morning / noon / afternoon / evening / night, from `kit/daypart.js`, §2d); variants via `idle-clock-style` (icon+time, time only, icon only, with seconds) | `clock` | 1 min tick, only while idle |
 | `weather` | condition icon + temperature; hover peek adds wind direction/speed, humidity, feels-like; expanded shows the day | `weather` | GNOME's own `ui/weather.js` client (same location as dateMenu); `idle-weather-refresh` 30 min / 1 h |
 | `next-event` | next calendar event: title · time, Join glyph when it has a link | `calendar` | EDS signals |
+| `mascot` | Bu's eyes in the pill, four static modes — idle · sleep · missed · waiting (`MASCOT.md` § Eyes, 2026-11-03) | `mascot` (off by default) | light changes, daypart, away/back |
 
 Rules: an idle plan is presentation only (same data shape as an adapter); it never
 surfaces an activity; it is replaced the instant any activity surfaces; nothing animates
@@ -168,6 +169,11 @@ is waiting for your answer (an `ask` while DND). Red › amber. Shown in idle **
 compact — it is a separate slot, so it never competes with the app icon; `present.js`
 nudges the leading zone inward when the light is on. Hidden only while expanded, where
 Home already lists what was missed.
+
+**Bu carries the light** (2026-11-03): when a pill's leading is Bu (`{mascot}`, agent
+activities and the greeting), the edge slot is not drawn — Bu's lamp is the light. It
+shows the stack's amber/red when there is one, otherwise the pose's own colour
+(INDICATORS § Bu's lamp). One light per pill, never two.
 
 ### 2a-ii. Privacy dot (right edge slot, idle and compact)
 
@@ -195,6 +201,7 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   | news (later, M5) | 40; 55 for an item newer than 1 h from a followed source |
   | exchange rate / stocks (later, M5) | 30; 70 on a move past the user's threshold |
   | `clock` | 10 — the floor, always available |
+  | `mascot` | 10, like `clock` (ties take turns), only when listed in `idle-auto-plans` |
 
 - **Choice.** Highest score shows. Ties → the plan in `idle-auto-plans` order that was
   shown longest ago, so equal plans take turns. A plan scoring ≥ 80 **holds** the pill
@@ -316,6 +323,8 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   afternoon → "Good afternoon", evening → "Good evening", night → "Still up" (vi
   "Khuya rồi").
 - The adapter builds all text from `{daypart, name, date, weather?}`; pure, no truncation.
+- **Bu waves** (2026-11-03): the expanded greeting's leading is `{mascot: 'wave'}` — two
+  frames for ~2 s, then `idle` (`MASCOT.md`).
 
 ## 3. Expanded: Home
 
@@ -339,7 +348,7 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
 
 - **Until the M3 blocks** (2026-11-02): Home lists every visible activity (the full list,
   also behind `+N`), each row its compact view; a row opens that activity's tab. Nothing
-  running → "Nothing going on". The panel's height fits its content up to the expanded cap;
+  running → "Nothing going on" with Bu (`idle`, or `missed` while history has entries). The panel's height fits its content up to the expanded cap;
   beyond that the tab body scrolls (no blur, scrollbar only when needed).
 - Now playing (compact) — MPRIS. Hidden when nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu).
@@ -410,7 +419,10 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 2. **dbus** — `org.gnome.Shell.Extensions.Buoy` iface: `Show/Update/End` activity,
    `Ask(question, options) → answer`. Hook scripts call it with `gdbus call`.
 3. **agents** — Claude Code / Codex approvals as a two-button activity in the pill
-   (Deny · Allow · Always), done-alerts; hooks installed/removed from prefs.
+   (Deny · Allow · Always), done-alerts; hooks installed/removed from prefs. One `agent`
+   activity per session with **Bu** as its leading: the pose follows the hook events
+   (think · busy · ask · turn · error · compact · done · party, `MASCOT.md` § Agents);
+   the agent's name leads the text (2026-11-03).
 4. **timer** — pomodoro + stopwatch, keep-awake, ring in the compact pill.
 5. **power / bluetooth** — charging, low battery, device connected with its battery.
 6. **calendar** — Up next in Home; alert 5 min before with Join when the event has
@@ -421,7 +433,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 9. **minimal mode** — side-by-side compact pills for two or three activities (§2c).
 10. **clipboard** — optional module, off by default.
 
-Roadmap: FEATURES.md (milestones M0–M5 with status). Status marks: INDICATORS.md. Research: APPLE.md (ActivityKit/HIG → BuoyKit). Competitor notes (Notchy audit, Isle, Islet, BEHAVIOUR) are kept locally in `docs/notes/` and not committed.
+Roadmap: FEATURES.md (milestones M0–M5 with status). Status marks: INDICATORS.md. Research: APPLE.md (ActivityKit/HIG → BuoyKit). Mascot: MASCOT.md (Bu). Competitor notes (Notchy audit, Isle, Islet, BEHAVIOUR) are kept locally in `docs/notes/` and not committed.
 
 ## 7. BuoyKit (decided 2026-10-30)
 
