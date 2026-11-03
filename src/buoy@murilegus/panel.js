@@ -1,6 +1,5 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
@@ -10,6 +9,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {AppMenu} from 'resource:///org/gnome/shell/ui/appMenu.js';
 
 import {fallbackIcons, leftCluster} from './lib/kit/cluster.js';
+import {GNOME_CLOCK, clockDefaults} from './lib/kit/settings.js';
 
 // cluster-background, -radius, -opacity (SPEC §1). St has no CSS variables, so the
 // background is the box's inline style, repainted when the look or its hover changes.
@@ -85,10 +85,31 @@ export function setClusterBackground(next) {
 }
 
 /**
- * @param {string} mode  `clock-display`: time | system
+ * Once per install: GNOME's clock gets Buoy's defaults (the time alone, 24-hour) on the
+ * keys the user never set (kit/settings.js clockDefaults, Ethan 2026-11-04). The values
+ * are GNOME's own, shared with Settings → Date & Time; nothing is reverted on disable
+ * (the lock screen disables Buoy too).
+ *
+ * @param {Gio.Settings} settings  Buoy's
  */
-export function setClockDisplay(mode) {
-    system?.setClock(mode);
+export function applyClockDefaults(settings) {
+    if (settings.get_boolean('clock-defaults-applied'))
+        return;
+    const source = Gio.SettingsSchemaSource.get_default();
+    const entries = GNOME_CLOCK.filter(e => source?.lookup(e.schema, true)?.has_key(e.key));
+    const open = new Map();
+    const of = schema => {
+        if (!open.has(schema))
+            open.set(schema, new Gio.Settings({schema_id: schema}));
+        return open.get(schema);
+    };
+    for (const {schema, key, value} of clockDefaults(entries, e => of(e.schema).get_user_value(e.key) !== null)) {
+        if (typeof value === 'boolean')
+            of(schema).set_boolean(key, value);
+        else
+            of(schema).set_string(key, value);
+    }
+    settings.set_boolean('clock-defaults-applied', true);
 }
 
 /**
@@ -162,31 +183,6 @@ class SystemCluster {
         ];
     }
 
-    // `time`: our own label, HH:MM, fed by the clock's own WallClock (it ticks once a
-    // minute, on the minute, and on a timezone change), so there is no timer here.
-    // `system`: Shell's label, formatted by GNOME's clock settings.
-    setClock(mode) {
-        const own = mode === 'time';
-        const stock = this._clock._clockDisplay;
-        if (own && !this._time) {
-            this._time = new St.Label({style_class: 'clock', y_align: Clutter.ActorAlign.CENTER});
-            this._time.clutter_text.y_align = Clutter.ActorAlign.CENTER;
-            stock.get_parent().insert_child_above(this._time, stock);
-            const tick = () => {
-                this._time.text = GLib.DateTime.new_now_local().format('%H:%M');
-            };
-            this._tickId = this._clock._clock.connect('notify::clock', tick);
-            tick();
-        } else if (!own && this._time) {
-            this._clock._clock.disconnect(this._tickId);
-            this._tickId = 0;
-            this._time.destroy();
-            this._time = null;
-        }
-        stock.visible = !own;
-        this._clock.label_actor = own ? this._time : stock;
-    }
-
     get open() {
         return this._qs.menu.isOpen || this._clock.menu.isOpen;
     }
@@ -208,7 +204,6 @@ class SystemCluster {
         for (const [obj, id] of this._ids)
             obj.disconnect(id);
         this._ids = [];
-        this.setClock('system');
         this.actor.remove_action(this._gesture);
         const clock = this._clock;
         clock._clickGesture?.set_enabled(this._clockWas.gesture);

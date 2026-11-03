@@ -8,7 +8,7 @@
  *   Modules     one row per module (its `modules-<id>` switch), the module's own keys
  *               (`<id>-…`) inside it, a sample button, a pin switch for standalone tabs
  *   Apps        `apps-hidden`, `apps-plain`, the profiles folder
- *   Panel       the top bar's clusters (M2)
+ *   Panel       the top bar's clusters (M2); the clock's GNOME keys (GNOME_CLOCK)
  *   Developer   `dev-mode`
  *
  * A key enters the schema with the item that implements it (2026-11-03): nothing in prefs
@@ -31,9 +31,9 @@ export const PLACES = {
     'cluster-radius': 'panel',
     'cluster-opacity': 'panel',
     'left-cluster-empty': 'panel',
-    'clock-display': 'panel',
     'tabs-pinned': 'modules',   // the pin switch on standalone modules' rows
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
+    'clock-defaults-applied': null, // bookkeeping: GNOME_CLOCK defaults written once
 };
 
 // Keys shown inside another key's row (an expander under it), and the parent's value
@@ -42,6 +42,56 @@ export const NESTED = {
     'cluster-radius': {parent: 'cluster-background', idleWhen: 'never'},
     'cluster-opacity': {parent: 'cluster-background', idleWhen: 'never'},
 };
+
+// The clock's switches on the Panel page are GNOME's own keys, not copies (Ethan
+// 2026-11-04): Settings → Date & Time and Buoy's prefs change the same values, and Shell's
+// clock follows them. A key with on/off is a string shown as a switch. `buoy` is Buoy's
+// default — the time alone, 24-hour — written once (see clockDefaults).
+const IFACE = 'org.gnome.desktop.interface';
+export const GNOME_CLOCK = [
+    {schema: IFACE, key: 'clock-show-weekday', title: 'Week Day', buoy: false},
+    {schema: IFACE, key: 'clock-show-date', title: 'Date', buoy: false},
+    {schema: IFACE, key: 'clock-show-seconds', title: 'Seconds', buoy: false},
+    {schema: IFACE, key: 'clock-format', title: '24-Hour Time', on: '24h', off: '12h', buoy: '24h'},
+    {
+        schema: 'org.gnome.desktop.calendar', key: 'show-weekdate', title: 'Week Numbers',
+        subtitle: 'Shown in the calendar under the clock',
+    },
+];
+
+/**
+ * Buoy's clock defaults, for the first enable only (`clock-defaults-applied`): each key the
+ * user never set gets Buoy's value; a key they did set keeps theirs. After that Buoy never
+ * writes them again, so a change in either place stays.
+ *
+ * @param {object[]} entries  GNOME_CLOCK (or the installed part of it)
+ * @param {function(object): boolean} userSet  whether the user has set that entry's key
+ * @returns {Array<{schema: string, key: string, value: (boolean|string)}>} what to write
+ */
+export function clockDefaults(entries, userSet) {
+    return entries.filter(e => 'buoy' in e && !userSet(e))
+        .map(({schema, key, buoy}) => ({schema, key, value: buoy}));
+}
+
+/**
+ * @param {object} entry  one of GNOME_CLOCK
+ * @param {boolean|string} value  the key's value
+ * @returns {boolean} the switch's state
+ */
+export function clockSwitchOn(entry, value) {
+    return entry.on ? value === entry.on : Boolean(value);
+}
+
+/**
+ * @param {object} entry  one of GNOME_CLOCK
+ * @param {boolean} active  the switch's state
+ * @returns {boolean|string} the value to write
+ */
+export function clockValue(entry, active) {
+    if (!entry.on)
+        return active;
+    return active ? entry.on : entry.off;
+}
 
 // Integer keys drawn as a slider instead of a spin button, with their unit.
 export const SLIDERS = {

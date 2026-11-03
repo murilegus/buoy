@@ -82,10 +82,13 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
     (`MessagesIndicator`) leaves the layout — the buoy light (§2a) says "missed". The
     pieces drop their own highlight and padding: the cluster background is the hover (and
     stays while either menu is open), and the clock sits 12 px from the last indicator,
-    the same gap the indicators keep (2026-11-04). The clock shows the time alone, 24-hour
-    (`14:05`), by default; `clock-display = time | system` (system = GNOME's own format:
-    date, weekday, 12/24 h), fed by the clock's own `WallClock`, no timer of Buoy's
-    (Ethan, 2026-11-04). Nothing is re-anchored.
+    the same gap the indicators keep (2026-11-04). The clock's format is GNOME's own
+    (`org.gnome.desktop.interface` clock-show-weekday/-date/-seconds, clock-format;
+    `org.gnome.desktop.calendar` show-weekdate): Buoy's Panel page shows those same keys,
+    so it and Settings → Date & Time stay in sync, and Shell's clock follows them. Buoy's
+    default is the time alone, 24-hour (`14:05`): written once, on the first enable, to
+    the keys the user never set (`clock-defaults-applied`), never reverted (Ethan,
+    2026-11-04). Nothing is re-anchored.
   - The stock calendar/notifications popover is no longer reachable by mouse; Super+V /
     Super+M (`toggle-message-tray`) still open it under the clock. Its contents move to
     Buoy: notification history → the notifications tab (§6b), calendar and weather →

@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, NESTED, SLIDERS} from './lib/kit/settings.js';
+import {planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, clockSwitchOn, clockValue, GNOME_CLOCK, NESTED, SLIDERS} from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {PATH} from './lib/kit/dbus.js';
 
@@ -324,7 +324,52 @@ export default class BuoyPreferences extends ExtensionPreferences {
         for (const name of plan.panel)
             clusters.add(this._row(key(name)));
         page.add(clusters);
+        const clock = this._clockGroup();
+        if (clock)
+            page.add(clock);
         return page;
+    }
+
+    // GNOME's own clock keys (kit/settings.js GNOME_CLOCK): one set of values for this
+    // page and Settings → Date & Time, each side follows the other's changes.
+    _clockGroup() {
+        const source = Gio.SettingsSchemaSource.get_default();
+        const entries = GNOME_CLOCK.filter(e => source?.lookup(e.schema, true)?.has_key(e.key));
+        if (!entries.length)
+            return null;
+        const group = new Adw.PreferencesGroup({
+            title: 'Clock',
+            description: 'The same settings as GNOME\'s Date &amp; Time: changing one changes the other.',
+        });
+        const schemas = new Map();
+        for (const e of entries) {
+            if (!schemas.has(e.schema))
+                schemas.set(e.schema, new Gio.Settings({schema_id: e.schema}));
+            const gs = schemas.get(e.schema);
+            const row = new Adw.SwitchRow({title: e.title, subtitle: e.subtitle ?? ''});
+            if (!e.on) {
+                gs.bind(e.key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
+            } else {
+                const sync = () => {
+                    const on = clockSwitchOn(e, gs.get_string(e.key));
+                    if (row.active !== on)
+                        row.active = on;
+                };
+                sync();
+                row.connect('notify::active', () => {
+                    const value = clockValue(e, row.active);
+                    if (gs.get_string(e.key) !== value)
+                        gs.set_string(e.key, value);
+                });
+                const id = gs.connect(`changed::${e.key}`, sync);
+                this._window.connect('close-request', () => {
+                    gs.disconnect(id);
+                    return false;
+                });
+            }
+            group.add(row);
+        }
+        return group;
     }
 
     _appsPage(plan, key) {
