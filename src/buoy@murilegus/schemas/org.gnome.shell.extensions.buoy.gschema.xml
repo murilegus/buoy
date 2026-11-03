@@ -105,7 +105,7 @@
       </choices>
       <default>'hover'</default>
       <summary>Cluster background</summary>
-      <description>The dark rounded background behind the left and right clusters: never, only while the pointer is over one, or always.</description>
+      <description>Behind the left and right clusters.</description>
     </key>
     <key name="left-cluster-empty" type="s">
       <choices>
@@ -113,8 +113,8 @@
         <choice value="hidden"/>
       </choices>
       <default>'workspace'</default>
-      <summary>Left cluster without an app</summary>
-      <description>On an empty desktop or in the Overview: show the workspace, or nothing.</description>
+      <summary>With no app open</summary>
+      <description>Left cluster, on the desktop and in the Overview.</description>
     </key>
     <key name="clock-defaults-applied" type="b">
       <default>false</default>
@@ -125,13 +125,13 @@
       <range min="0" max="16"/>
       <default>16</default>
       <summary>Corner radius</summary>
-      <description>Of the cluster background, in logical px; 16 is a pill like the island.</description>
+      <description>16 is a pill, like the island.</description>
     </key>
     <key name="cluster-opacity" type="i">
       <range min="5" max="100"/>
       <default>20</default>
       <summary>Opacity</summary>
-      <description>Of the cluster background, in percent.</description>
+      <description>How dark the background is.</description>
     </key>
   </schema>
 </schemalist>
