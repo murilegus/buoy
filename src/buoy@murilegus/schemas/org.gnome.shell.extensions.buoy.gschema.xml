@@ -97,5 +97,27 @@
       <summary>Focus the island</summary>
       <description>Takes the keyboard: ←/→ between pills, Enter opens, Esc or this key again lets go; an open ask answers to the key printed on its buttons.</description>
     </key>
+    <key name="cluster-background" type="s">
+      <choices>
+        <choice value="never"/>
+        <choice value="hover"/>
+        <choice value="always"/>
+      </choices>
+      <default>'never'</default>
+      <summary>Cluster background</summary>
+      <description>The dark rounded background behind the left and right clusters: never, only while the pointer is over one, or always.</description>
+    </key>
+    <key name="cluster-radius" type="i">
+      <range min="0" max="16"/>
+      <default>12</default>
+      <summary>Corner radius</summary>
+      <description>Of the cluster background, in logical px; 16 is a pill like the island.</description>
+    </key>
+    <key name="cluster-opacity" type="i">
+      <range min="5" max="100"/>
+      <default>35</default>
+      <summary>Opacity</summary>
+      <description>Of the cluster background, in percent.</description>
+    </key>
   </schema>
 </schemalist>

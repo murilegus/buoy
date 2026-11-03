@@ -4,7 +4,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {reworkPanel} from './panel.js';
+import {reworkPanel, setClusterBackground} from './panel.js';
 import {Island} from './lib/kit/island.js';
 import {ActivityStack} from './lib/kit/stack.js';
 import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
@@ -31,6 +31,16 @@ export default class BuoyExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
         reworkPanel(true);
+        const background = () => setClusterBackground({
+            mode: this._settings.get_string('cluster-background'),
+            radius: this._settings.get_int('cluster-radius'),
+            opacity: this._settings.get_int('cluster-opacity'),
+        });
+        background();
+        this._backgroundId = this._settings.connect('changed', (_s, key) => {
+            if (key.startsWith('cluster-'))
+                background();
+        });
 
         this._island = new Island();
         Main.layoutManager.addTopChrome(this._island.actor, {trackFullscreen: true});
@@ -147,11 +157,11 @@ export default class BuoyExtension extends Extension {
         this._active = null;
         this._dbus?.unexport();
         this._dbus = null;
-        for (const id of [this._hiddenId, this._plainId, this._modulesId, this._widthId, this._devId]) {
+        for (const id of [this._hiddenId, this._plainId, this._modulesId, this._widthId, this._devId, this._backgroundId]) {
             if (id)
                 this._settings.disconnect(id);
         }
-        this._hiddenId = this._plainId = this._modulesId = this._widthId = this._devId = 0;
+        this._hiddenId = this._plainId = this._modulesId = this._widthId = this._devId = this._backgroundId = 0;
         if (this._visibleId) {
             this._island.actor.disconnect(this._visibleId);
             this._visibleId = 0;

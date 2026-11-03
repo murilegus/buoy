@@ -14,8 +14,8 @@ src/buoy@murilegus/
 ├── extension.js            enable(): panel → kit → load enabled modules
 ├── panel.js                top bar rework: left cluster (app/workspace), bare tray, system cluster (QS + clock)
 ├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
-├── prefs.js                Adw prefs: General, Modules (one row per module), Apps; Panel and Windows
-│                           pages arrive with their M2 items (2026-11-03)
+├── prefs.js                Adw prefs: General, Modules (one row per module), Apps, Panel (clusters,
+│                           2026-11-04); the Windows page arrives with corners (M2)
 ├── schemas/                GSettings: the one source of every key, its summary and range
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
@@ -143,7 +143,9 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only) |
 | `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |
 | `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
-| `cluster-background` | s | hover \| always \| never |
+| `cluster-background` | s | never \| hover \| always; default `never` (2026-11-04) |
+| `cluster-radius` | i | that background's corner radius, 0–16 px; default `12` |
+| `cluster-opacity` | i | that background's opacity, 5–100 %; default `35` |
 | `cluster-contrast` | s | auto \| light \| dark |
 | `left-cluster-empty` | s | workspace \| hidden |
 | `window-corners` | b | round the top corners of maximized windows; default `true` (2026-11-02) |

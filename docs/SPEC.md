@@ -42,7 +42,11 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 - **Cluster background** (decided 2026-10-30): **none by default** — icons and text sit
   bare on the wallpaper like the iPhone status bar; only the pill is a black block. On
   hover a translucent rounded background (`rgba(0,0,0,0.35)`, radius 12, no blur) wraps
-  the whole cluster. Setting `cluster-background = hover | always | never`, default `hover`.
+  the whole cluster. Setting `cluster-background = never | hover | always`, default
+  **`never`** (2026-11-04, Ethan: bare on the wallpaper unless asked for), with
+  `cluster-radius` (0–16 px, default 12; 16 = a pill like the island) and `cluster-opacity`
+  (5–100 %, default 35) under it in prefs. A cluster with nothing to show has no
+  background at all (no empty stub), and the background stays 4 px off the screen edges.
 - **Contrast on light wallpapers**: like iPhone, the text flips, not the background. On
   `picture-uri` change (signal, no polling) decode the wallpaper once, downscaled, measure
   mean luminance of the top 40 px under each cluster, and toggle class `buoy-light` → dark
