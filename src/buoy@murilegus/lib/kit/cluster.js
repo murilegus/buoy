@@ -3,7 +3,7 @@
  * focused app, the workspace and the hover, and draws the result.
  *
  *   focused app              [▣ Firefox]          hover: [▣ Firefox · ⊞ 2]
- *   no app, or the Overview  [⊞ Workspace 2]      or the name the user gave it
+ *   no app, or the Overview  [⊞ 2]                or the name the user gave it
  *   …with left-cluster-empty = hidden: nothing
  */
 
@@ -55,5 +55,5 @@ export function leftCluster({app, index, names, hover, overview, empty}) {
         return {visible: true, icon: 'app', text: app, extra: hover ? name ?? `${index + 1}` : null};
     if (empty === 'hidden')
         return {visible: false, icon: null, text: '', extra: null};
-    return {visible: true, icon: 'grid', text: name ?? `Workspace ${index + 1}`, extra: null};
+    return {visible: true, icon: 'grid', text: name ?? `${index + 1}`, extra: null};
 }

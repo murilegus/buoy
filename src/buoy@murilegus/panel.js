@@ -289,7 +289,7 @@ function appIcon(app) {
     return new St.Icon({gicon: own ?? fallback, fallback_gicon: fallback, style_class: 'buoy-app-icon'});
 }
 
-// [▣ app · ⊞ 2] or [⊞ Workspace 2] (kit/cluster.js decides). Click toggles the Overview,
+// [▣ app · ⊞ 2] or [⊞ 2] (kit/cluster.js decides). Click toggles the Overview,
 // right-click opens the app's menu (Shell's own AppMenu, as on a dash icon), scroll
 // switches workspace (Main.wm.handleWorkspaceScroll, the Overview's own limiter). Every
 // update comes from a signal: focus, workspace, names, Overview, the cluster's hover.
@@ -368,7 +368,11 @@ class LeftCluster {
         this._text.text = plan.text;
         this._extra.visible = plan.extra !== null;
         this._extraText.text = plan.extra ?? '';
-        this.actor.accessible_name = plan.extra ? `${plan.text}, workspace ${plan.extra}` : plan.text;
+        // the word the label leaves out (SPEC §1), for screen readers
+        if (plan.icon === 'grid')
+            this.actor.accessible_name = `Workspace ${plan.text}`;
+        else
+            this.actor.accessible_name = plan.extra ? `${plan.text}, workspace ${plan.extra}` : plan.text;
     }
 
     _clicked(button) {

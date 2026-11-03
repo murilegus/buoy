@@ -35,7 +35,7 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 │                                                alone)                           │
 └──────────────────────────────────────────────────────────────────────────────┘
   hover left:  [▣ Firefox · ⊞ 2]        hover pill: ( ● 31° · feels 35° / wind, humidity )
-  no app:      [⊞ Workspace 2]          click pill: Home · click left: Overview
+  no app:      [⊞ 2]                    click pill: Home · click left: Overview
 ```
 
 - Panel: transparent, 40px. Two clusters plus the island.
@@ -60,8 +60,9 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   - Hover: the cluster widens and appends the workspace as a secondary item: grid icon +
     number ("Firefox · ⊞ 2"), or the workspace name if the user set one ("Firefox · ⊞ Work").
     No "WS" abbreviation; the icon carries the meaning.
-  - No focused window (empty desktop, Overview): the workspace is the main content, in
-    full words — grid icon + "Workspace 2", or its name. Setting
+  - No focused window (empty desktop, Overview): the workspace is the main content — grid
+    icon + its number ("⊞ 2", as on hover; 2026-11-04, Ethan: no "Workspace" word), or
+    its name. Screen readers still hear "Workspace 2". Setting
     `left-cluster-empty = workspace | hidden`.
   - Click → Overview (replaces the hidden Activities button; same corner people already
     aim for). Right-click → app menu (New window, Quit, Details). Scroll → switch workspace.
