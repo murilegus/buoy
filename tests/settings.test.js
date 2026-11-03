@@ -2,7 +2,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {planPrefs, setPinned, addApp, sampleFor, packDict, toVariant, SAMPLES, HIDDEN_MODULES, STANDALONE} from
+import {planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -49,7 +49,27 @@ const plan = planPrefs(order.map(name => ({name})));
 eq(plan.general, ['expanded-width', 'keybind-focus'], 'General: the island\'s own keys, in schema order');
 eq(plan.apps, ['apps-hidden', 'apps-plain'], 'Apps page');
 eq(plan.developer, ['dev-mode'], 'Developer group');
-eq(plan.panel, ['cluster-background'], 'Panel page: the top bar\'s own keys');
+eq(plan.panel, ['cluster-background'], 'Panel page: the top bar\'s own keys, nested ones under their parent');
+eq(nestedIn('cluster-background'), ['cluster-radius', 'cluster-opacity'], 'radius and opacity sit inside the background row');
+eq(nestedIn('dev-mode'), [], 'a key without nested keys has none');
+for (const [n, {parent, idleWhen}] of Object.entries(NESTED)) {
+    if (!order.includes(n) || !order.includes(parent))
+        throw new Error(`NESTED "${n}" → "${parent}": both must be schema keys`);
+    if (!Object.values(plan).flat().includes(parent))
+        throw new Error(`NESTED "${n}": its parent "${parent}" has no row`);
+    const [kind, values] = schema.get_key(parent).get_range().recursiveUnpack();
+    if (kind !== 'enum' || !values.includes(idleWhen))
+        throw new Error(`NESTED "${n}": "${idleWhen}" is not a choice of "${parent}"`);
+}
+for (const n of Object.keys(SLIDERS)) {
+    const [kind] = schema.get_key(n).get_range().recursiveUnpack();
+    if (kind !== 'range')
+        throw new Error(`SLIDERS "${n}" needs a <range> (the slider's ends)`);
+}
+eq(schema.get_key('cluster-radius').get_range().recursiveUnpack(), ['range', [0, 16]],
+    'radius stops at 16: half the 32 px cluster, a pill');
+eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [12, 35],
+    'radius 12 and opacity 35 % are the old stylesheet values');
 eq(plan.modules.map(m => m.id), ['media', 'notification', 'progress', 'timer', 'calendar', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet');
 eq(plan.modules.find(m => m.id === 'calendar'), {
@@ -78,9 +98,9 @@ throws(() => planPrefs([{name: 'mediaish'}]), 'a prefix match needs the dash');
 
 // --- choice keys: prefs offers exactly the schema's choices, in order ------------------
 const [kind, choices] = schema.get_key('cluster-background').get_range().recursiveUnpack();
-eq([kind, choices], ['enum', ['hover', 'always', 'never']], 'cluster-background: hover, always, never');
-eq(schema.get_key('cluster-background').get_default_value().unpack(), 'hover',
-    'cluster-background defaults to hover (SPEC §1: bare until the pointer is over a cluster)');
+eq([kind, choices], ['enum', ['never', 'hover', 'always']], 'cluster-background: never, hover, always');
+eq(schema.get_key('cluster-background').get_default_value().unpack(), 'never',
+    'cluster-background defaults to never (SPEC §1, 2026-11-04: bare on the wallpaper)');
 
 // --- samples go through the real D-Bus check ------------------------------------------
 for (const id of Object.keys(SAMPLES)) {

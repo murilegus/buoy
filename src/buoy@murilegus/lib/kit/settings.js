@@ -28,8 +28,23 @@ export const PLACES = {
     'apps-plain': 'apps',
     'dev-mode': 'developer',
     'cluster-background': 'panel',
+    'cluster-radius': 'panel',
+    'cluster-opacity': 'panel',
     'tabs-pinned': 'modules',   // the pin switch on standalone modules' rows
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
+};
+
+// Keys shown inside another key's row (an expander under it), and the parent's value
+// that leaves them without effect (their rows go insensitive).
+export const NESTED = {
+    'cluster-radius': {parent: 'cluster-background', idleWhen: 'never'},
+    'cluster-opacity': {parent: 'cluster-background', idleWhen: 'never'},
+};
+
+// Integer keys drawn as a slider instead of a spin button, with their unit.
+export const SLIDERS = {
+    'cluster-radius': 'px',
+    'cluster-opacity': '%',
 };
 
 // Modules that ship nothing a user can see yet (no source, no tab): no row until they do.
@@ -67,10 +82,18 @@ export function planPrefs(keys) {
         if (!(n in PLACES))
             throw new Error(`schema key "${n}" has no place in prefs (kit/settings.js PLACES)`);
         const place = PLACES[n];
-        if (place && place !== 'modules')
+        if (place && place !== 'modules' && !(n in NESTED))
             plan[place].push(n);
     }
     return plan;
+}
+
+/**
+ * @param {string} parent  a key with nested keys
+ * @returns {string[]} the keys shown inside its row, in NESTED order
+ */
+export function nestedIn(parent) {
+    return Object.keys(NESTED).filter(n => NESTED[n].parent === parent);
 }
 
 /**

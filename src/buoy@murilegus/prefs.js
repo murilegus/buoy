@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {planPrefs, setPinned, addApp, sampleFor, packDict} from './lib/kit/settings.js';
+import {planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, NESTED, SLIDERS} from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {PATH} from './lib/kit/dbus.js';
 
@@ -95,6 +95,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
             this._settings.bind(name, row, 'active', Gio.SettingsBindFlags.DEFAULT);
             return row;
         }
+        if (type === 'i' && name in SLIDERS)
+            return this._sliderRow(k, SLIDERS[name]);
         if (type === 'i') {
             const [kind, range] = k.get_range().recursiveUnpack();
             const [lo, hi] = kind === 'range' ? range : [0, 10000];
@@ -119,26 +121,69 @@ export default class BuoyPreferences extends ExtensionPreferences {
         throw new Error(`prefs.js has no row for ${name} (${type})`);
     }
 
-    // A string key with <choices>: one drop-down entry per choice, in schema order.
+    // A string key with <choices>: one drop-down entry per choice, in schema order. With
+    // nested keys (settings.js NESTED) it is an expander: the drop-down in its header, the
+    // nested rows inside, insensitive while the choice leaves them without effect.
     _choiceRow(k) {
         const name = k.get_name();
-        const [, choices] = k.get_range().recursiveUnpack();
-        const row = new Adw.ComboRow({
-            title: k.get_summary(), subtitle: k.get_description(),
-            model: Gtk.StringList.new(choices.map(c => c[0].toUpperCase() + c.slice(1))),
+        const nested = nestedIn(name);
+        if (!nested.length) {
+            const row = new Adw.ComboRow({title: k.get_summary(), subtitle: k.get_description()});
+            this._bindChoice(name, k, row);
+            return row;
+        }
+        const row = new Adw.ExpanderRow({title: k.get_summary(), subtitle: k.get_description()});
+        const drop = new Gtk.DropDown({valign: Gtk.Align.CENTER});
+        drop.update_property([Gtk.AccessibleProperty.LABEL], [k.get_summary()]);
+        this._bindChoice(name, k, drop);
+        row.add_suffix(drop);
+        const schema = this._settings.settings_schema;
+        const children = nested.map(n => {
+            const child = this._row(schema.get_key(n));
+            row.add_row(child);
+            return [n, child];
         });
         const sync = () => {
+            const value = this._settings.get_string(name);
+            for (const [n, child] of children)
+                child.sensitive = value !== NESTED[n].idleWhen;
+        };
+        this._ids.push(this._settings.connect(`changed::${name}`, sync));
+        sync();
+        return row;
+    }
+
+    // `widget` is an Adw.ComboRow or a Gtk.DropDown: both have `model` and `selected`.
+    _bindChoice(name, k, widget) {
+        const [, choices] = k.get_range().recursiveUnpack();
+        widget.model = Gtk.StringList.new(choices.map(c => c[0].toUpperCase() + c.slice(1)));
+        const sync = () => {
             const i = choices.indexOf(this._settings.get_string(name));
-            if (i >= 0 && row.selected !== i)
-                row.selected = i;
+            if (i >= 0 && widget.selected !== i)
+                widget.selected = i;
         };
         sync();
-        row.connect('notify::selected', () => {
-            const value = choices[row.selected];
+        widget.connect('notify::selected', () => {
+            const value = choices[widget.selected];
             if (value && this._settings.get_string(name) !== value)
                 this._settings.set_string(name, value);
         });
         this._ids.push(this._settings.connect(`changed::${name}`, sync));
+    }
+
+    // An integer key with a <range> as a slider, its value printed with the unit.
+    _sliderRow(k, unit) {
+        const [, [lo, hi]] = k.get_range().recursiveUnpack();
+        const row = new Adw.ActionRow({title: k.get_summary(), subtitle: k.get_description()});
+        const scale = new Gtk.Scale({
+            adjustment: new Gtk.Adjustment({lower: lo, upper: hi, step_increment: 1, page_increment: 5}),
+            digits: 0, round_digits: 0, draw_value: true, value_pos: Gtk.PositionType.LEFT,
+            hexpand: true, width_request: 200, valign: Gtk.Align.CENTER,
+        });
+        scale.set_format_value_func((_s, v) => `${Math.round(v)} ${unit}`);
+        scale.update_property([Gtk.AccessibleProperty.LABEL], [k.get_summary()]);
+        this._settings.bind(k.get_name(), scale.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT);
+        row.add_suffix(scale);
         return row;
     }
 

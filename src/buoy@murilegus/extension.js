@@ -31,9 +31,16 @@ export default class BuoyExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
         reworkPanel(true);
-        const background = () => setClusterBackground(this._settings.get_string('cluster-background'));
+        const background = () => setClusterBackground({
+            mode: this._settings.get_string('cluster-background'),
+            radius: this._settings.get_int('cluster-radius'),
+            opacity: this._settings.get_int('cluster-opacity'),
+        });
         background();
-        this._backgroundId = this._settings.connect('changed::cluster-background', background);
+        this._backgroundId = this._settings.connect('changed', (_s, key) => {
+            if (key.startsWith('cluster-'))
+                background();
+        });
 
         this._island = new Island();
         Main.layoutManager.addTopChrome(this._island.actor, {trackFullscreen: true});

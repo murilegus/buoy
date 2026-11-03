@@ -4,22 +4,14 @@
     height: 40px;
 }
 
-/* Clusters: bare by default, translucent background on hover (no blur). */
+/* Clusters: bare by default; a translucent background per cluster-background (no blur). */
 #panel.buoy .buoy-cluster {
     /* St applies CSS margins over the actor's own, so the gap lives here; all four
        sides keep the background off the screen edge (either one, RTL too). */
     margin: 4px;
-    border-radius: 12px;
     padding: 0 8px;
-    background-color: transparent;
     transition-duration: 150ms;
-}
-#panel.buoy .buoy-cluster:hover,
-#panel.buoy.buoy-cluster-always .buoy-cluster {
-    background-color: rgba(0, 0, 0, 0.35);
-}
-#panel.buoy.buoy-cluster-never .buoy-cluster:hover {
-    background-color: transparent;
+    /* border-radius and background-color: panel.js, from cluster-radius/-opacity */
 }
 
 /* Light wallpaper under the clusters: flip text, keep the pill black. */
