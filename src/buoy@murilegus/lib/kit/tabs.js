@@ -108,3 +108,14 @@ export function findTab(strip, id) {
     return strip.tabs.find(t => t.id === id) ??
         (strip.slot?.id === id ? strip.slot : strip.more.find(t => t.id === id)) ?? null;
 }
+
+/**
+ * The strip's tabs in the order they are drawn (←/→ walks it): Home and the kind tabs,
+ * then the slot; ⋯ is a menu, not a tab.
+ *
+ * @param {object} strip  planStrip()
+ * @returns {string[]} tab ids
+ */
+export function stripOrder(strip) {
+    return [...strip.tabs.map(t => t.id), ...strip.slot ? [strip.slot.id] : []];
+}

@@ -4,7 +4,8 @@ import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 import {buildCompact, buildExpanded} from './present.js';
-import {planStrip, tabActivities, findTab, HOME} from './tabs.js';
+import {planStrip, stripOrder, tabActivities, findTab, HOME} from './tabs.js';
+import {step} from './keys.js';
 
 const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edge
 const STRIP_H = 60; // first guess for the strip + panel padding; measured once laid out
@@ -124,6 +125,19 @@ export class Home {
         this._current = id;
         this._renderStrip();
         this._setBody(this._buildBody(findTab(this._strip, id)));
+    }
+
+    /**
+     * ←/→ while the island holds the keyboard: the next tab in the strip, stopping at
+     * the ends.
+     *
+     * @param {number} delta  -1 or +1
+     */
+    stepTab(delta) {
+        const ids = stripOrder(this._strip);
+        const next = ids[step(ids.indexOf(this._current), delta, ids.length)];
+        if (next && next !== this._current)
+            this.select(next);
     }
 
     _plan() {

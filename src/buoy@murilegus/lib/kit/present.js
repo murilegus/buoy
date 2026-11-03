@@ -110,13 +110,41 @@ function makeElement(e, mode) {
 }
 
 function actionButton(a, activity) {
+    const face = a.label ? {label: a.label} : {child: new St.Icon({icon_name: a.icon, icon_size: 16})};
     const button = new St.Button({
         style_class: 'buoy-action', can_focus: true,
         accessible_name: a.label ?? a.id,
-        ...a.label ? {label: a.label} : {child: new St.Icon({icon_name: a.icon, icon_size: 16})},
+        ...a.key ? {child: keyedFace(face, a.key)} : face,
     });
     button.connect('clicked', () => activity.onAction?.(a.id));
     return button;
+}
+
+// An ask's button: its key after the label, shown only while the island holds the
+// keyboard (showKeys); hidden, it takes no room.
+function keyedFace(face, key) {
+    const box = new St.BoxLayout({style_class: 'buoy-action-face'});
+    box.add_child(face.child ?? new St.Label({text: face.label, y_align: Clutter.ActorAlign.CENTER}));
+    box.add_child(new St.Label({
+        style_class: 'buoy-key', text: key.toUpperCase(), visible: false,
+        y_align: Clutter.ActorAlign.CENTER,
+    }));
+    return box;
+}
+
+/**
+ * Show or hide the keys printed on an ask's buttons (kit/keys.js).
+ *
+ * @param {?Clutter.Actor} actor  content built here
+ * @param {boolean} shown
+ */
+export function showKeys(actor, shown) {
+    if (!actor)
+        return;
+    if (actor.has_style_class_name?.('buoy-key'))
+        actor.visible = shown;
+    for (const child of actor.get_children())
+        showKeys(child, shown);
 }
 
 function addAll(box, actors) {

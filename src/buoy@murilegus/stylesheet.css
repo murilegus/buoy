@@ -71,6 +71,19 @@
 .buoy-action:hover { background-color: rgba(255, 255, 255, 0.2); }
 .buoy-action:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
 .buoy-compact .buoy-action { padding: 2px 8px; }
+/* An ask's key (kit/keys.js), shown only while the island holds the keyboard. */
+.buoy-action-face { spacing: 6px; }
+.buoy-key {
+    font-size: 11px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.55);
+    padding: 0 4px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* Super+B (SPEC §2c): the pill the keyboard is on. No blur: a flat inset ring. */
+.buoy-island.buoy-focused { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55); }
 
 /* The buoy light: left edge slot, static (INDICATORS.md — one colour, one meaning). */
 .buoy-light { width: 7px; height: 7px; border-radius: 4px; }

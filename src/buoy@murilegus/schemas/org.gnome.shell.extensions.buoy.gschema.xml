@@ -30,6 +30,10 @@
       <description>0 derives it from the monitor (560–760 px). Height is not a setting: the expanded island fits its content, up to half its width.</description>
     </key>
     <key name="dev-mode" type="b"><default>false</default></key>
-    <key name="keybind-focus" type="as"><default><![CDATA[['<Super>b']]]></default></key>
+    <key name="keybind-focus" type="as">
+      <default><![CDATA[['<Super>b']]]></default>
+      <summary>Focus the island</summary>
+      <description>Takes the keyboard: ←/→ between pills, Enter opens, Esc or this key again lets go; an open ask answers to the key printed on its buttons.</description>
+    </key>
   </schema>
 </schemalist>
