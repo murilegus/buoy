@@ -78,7 +78,9 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
     cluster, clock included, opens the stock quick-settings menu; the clock has no click,
     hover or focus of its own (restored on disable). It stays *reactive* — only its click
     gesture is off — because `Panel.toggleCalendar` (Super+V) does nothing on a
-    non-reactive button (`ui/panel.js` `_toggleMenu`, 2026-11-04). Its unread dot
+    non-reactive button (`ui/panel.js` `_toggleMenu`, 2026-11-04). With a panel menu
+    open, hovering the clock does not slide to the calendar either (the panel's menu
+    manager leaves it out of hover/focus switching, 2026-11-04). Its unread dot
     (`MessagesIndicator`) leaves the layout — the buoy light (§2a) says "missed". The
     pieces drop their own highlight and padding: the cluster background is the hover (and
     stays while either menu is open), and the clock sits 12 px from the last indicator,

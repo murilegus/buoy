@@ -133,8 +133,11 @@ function paint(box) {
 // (SPEC §1, 2026-11-02): a press anywhere opens quick settings. The clock keeps its menu
 // for Super+V / Super+M (Panel.toggleCalendar needs it reactive, ui/panel.js _toggleMenu),
 // so instead of going non-reactive it loses its own click gesture, hover and focus, and a
-// press on it reaches this box. Its unread dot leaves the layout: the buoy light says
-// "missed" (§2a). Everything goes back on destroy().
+// press on it reaches this box. With a panel menu open, hovering (or focusing) another
+// button switches to that button's menu (PopupMenuManager _onCapturedEvent / key focus →
+// _findMenuForSource): the clock is left out of that, so the calendar opens from Super+V
+// only. Its unread dot leaves the layout: the buoy light says "missed" (§2a). Everything
+// goes back on destroy().
 class SystemCluster {
     constructor(panel) {
         const {quickSettings, dateMenu} = panel.statusArea;
@@ -166,6 +169,17 @@ class SystemCluster {
             this._dot.box.remove_child(this._dot.pad);
             this._dot.box.remove_child(this._dot.dot);
         }
+
+        // the panel's menu manager: hover/focus never lands on the calendar
+        const manager = panel.menuManager;
+        this._manager = manager;
+        // another extension may have wrapped it on the instance already: keep theirs
+        this._ownFind = Object.hasOwn(manager, '_findMenuForSource') ? manager._findMenuForSource : null;
+        const find = manager._findMenuForSource;
+        manager._findMenuForSource = function (source) {
+            const menu = find.call(this, source);
+            return menu === dateMenu.menu ? null : menu;
+        };
 
         this._gesture = new Clutter.ClickGesture();
         this._gesture.set_recognize_on_press(true);
@@ -204,6 +218,10 @@ class SystemCluster {
         for (const [obj, id] of this._ids)
             obj.disconnect(id);
         this._ids = [];
+        if (this._ownFind)
+            this._manager._findMenuForSource = this._ownFind;
+        else
+            delete this._manager._findMenuForSource; // the prototype's again
         this.actor.remove_action(this._gesture);
         const clock = this._clock;
         clock._clickGesture?.set_enabled(this._clockWas.gesture);
