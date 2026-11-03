@@ -86,6 +86,11 @@ export default class BuoyExtension extends Extension {
             onSlot: id => this._settings.set_string('tabs-slot', id),
             onPrefs: () => this.openPreferences(),
         };
+        this._island.missed = {
+            list: () => this._stack?.missed ?? [],
+            seen: () => this._stack?.seeMissed(),
+            clear: () => this._stack?.clearMissed(),
+        };
         this.stack = this._stack; // Looking Glass
 
         // Super+B (SPEC §2c). POPUP too, like Shell's own toggles (ui/windowManager.js

@@ -460,6 +460,46 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.missed.map(m => m.id), ['ttl'], 'ttl expiry while unseen is missed; hidden apps are not');
 }
 
+// --- missed: seen (light off, list kept) vs cleared (2026-11-03) ----------------------
+{
+    const {clock, island, stack} = setup();
+    stack.setUnseen(true);
+    stack.surface({id: 'copy', kind: 'progress', text: 'Copy done'});
+    clock.advance(60_000);
+    stack.surface({id: 'tea', kind: 'timer', text: 'Tea 4:00'});
+    const t = clock.now();
+    stack.end('copy');
+    stack.end('tea');
+    stack.setUnseen(false);
+    eq(stack.missed.map(m => [m.id, m.at]), [['tea', t], ['copy', t]], 'missed keeps when each ended, newest first');
+    eq(stack.light, 'missed', 'amber after fullscreen');
+    stack.seeMissed();
+    eq([stack.light, island.light, stack.missed.length], ['off', 'off', 2], 'seen: light off, the list stays');
+    stack.seeMissed();
+    eq(island.log.filter(l => l === 'light off').length, 1, 'seeing twice tells the island once');
+    stack.setUnseen(true);
+    stack.surface({id: 'dl', kind: 'progress', text: 'dl'});
+    stack.end('dl');
+    eq([stack.light, stack.missed.map(m => m.id)], ['missed', ['dl', 'tea', 'copy']], 'a new miss lights it again');
+    stack.clearMissed();
+    eq([stack.light, stack.missed], ['off', []], 'cleared: light off, list empty');
+    stack.seeMissed();
+    eq(stack.light, 'off', 'seeMissed with nothing missed is harmless');
+    stack.setUnseen(false);
+}
+{
+    const {stack} = setup();
+    const q = stack.ask('q', '?', ['ok']);
+    stack.setUnseen(true);
+    stack.surface({id: 'x', kind: 'progress'});
+    stack.end('x');
+    stack.seeMissed();
+    eq(stack.light, 'waiting', 'seeing missed does not hide a waiting ask (red stays)');
+    stack.answer('q', 'ok');
+    await q;
+    eq(stack.light, 'off', 'answered, missed already seen: off');
+}
+
 // --- fullscreen: unseen sends no alert or expand (FEATURES M1 "Fullscreen") ----------
 {
     const {island, stack} = setup();

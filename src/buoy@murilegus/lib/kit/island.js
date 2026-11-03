@@ -9,7 +9,7 @@ import {shapesFor, GAP, PILL_GAP} from './shapes.js';
 import {Pill} from './pill.js';
 import {Home} from './home.js';
 import {showKeys} from './present.js';
-import {planExpanded} from './presentation.js';
+import {planExpanded, missedLine} from './presentation.js';
 import {ALERT_MS} from './stack.js';
 import {planStrip, tabFor, HOME} from './tabs.js';
 import {actionForKey, step} from './keys.js';
@@ -71,6 +71,8 @@ export class Island {
         this.onCapacityChanged = null; // set by the extension → stack.refresh()
         // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice, ⚙
         this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
+        // set by the extension: the stack's missed history, and telling it it was seen
+        this.missed = {list: () => [], seen: null, clear: null};
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
             () => this._queueLayout());
@@ -311,6 +313,11 @@ export class Island {
         }
     }
 
+    /** The amber light's hover line (pill.js peeks it on the centre pill). */
+    missedLine() {
+        return missedLine(this.missed.list());
+    }
+
     _strip() {
         return planStrip(this.tabs.modules, this._list, this.tabs.settings());
     }
@@ -347,6 +354,9 @@ export class Island {
                     this._close();
                     this.tabs.onPrefs?.();
                 },
+                missed: this.missed.list(),
+                onMissedSeen: () => this.missed.seen?.(),
+                onMissedClear: () => this.missed.clear?.(),
             });
         }
         pill.expand(this._home?.actor ?? null);

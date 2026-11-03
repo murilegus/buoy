@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {buildCompact, buildExpanded, buildIdle, buildPeek} from './present.js';
+import {buildCompact, buildExpanded, buildIdle, buildMissedPeek, buildPeek} from './present.js';
 import {planExpanded, keyline} from './presentation.js';
 
 const PAD = 14;          // content + 2·PAD = pill width (shapes add 28)
@@ -152,8 +152,8 @@ export class Pill {
     // --- shapes -------------------------------------------------------------------
 
     restShape() {
-        if (!this.activity)
-            return this._s.idle;
+        if (!this.activity)  // the idle pill fits the missed line while it peeks
+            return this._peeking ? this._s.compact(this._contentW) : this._s.idle;
         const shape = this.minimal
             ? this._s.minimal(this._contentW)
             : this._s.compact(this._contentW, this.activity.sizeHint);
@@ -343,6 +343,11 @@ export class Pill {
 
     _restingContent() {
         const light = this.role === 'centre' ? this.light : null;
+        const missed = this._peeking ? this._missedLine() : null;
+        if (missed) {
+            const capW = this.maxW || this._s.compact(Infinity, this.activity?.sizeHint).w;
+            return buildMissedPeek(missed, {maxWidth: capW - 2 * PAD, light});
+        }
         if (!this.activity)
             return buildIdle({width: this._s.idle.w - 2 * PAD, light});
         const capW = this.maxW || (this.minimal
@@ -464,7 +469,7 @@ export class Pill {
         if (this.expanded)
             return;
         if (this.hovered) {
-            if (!this._peeking && !this._peekId && this.activity?.peek) {
+            if (!this._peeking && !this._peekId && (this.activity?.peek || this._missedLine())) {
                 this._peekId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, PEEK_DELAY, () => {
                     this._peekId = 0;
                     this._peeking = true;
@@ -476,6 +481,12 @@ export class Pill {
             this._stopPeek();
         }
         this._morph(this.currentShape(), 200);
+    }
+
+    // The amber light names what was missed on hover (INDICATORS.md); it peeks over the
+    // activity's own peek. Hover only shows it: Home is where it is seen.
+    _missedLine() {
+        return this.role === 'centre' && this.light === 'missed' ? this._island.missedLine() : null;
     }
 
     _stopPeek() {

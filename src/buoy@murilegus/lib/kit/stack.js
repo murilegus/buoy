@@ -7,7 +7,8 @@ import {validate} from './activity.js';
  *
  *   surface(activity) → id · update(id, patch, {alert}) · end(id, {dismissal})
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
- *   answer(id, choice) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool) · clearMissed()
+ *   answer(id, choice) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool)
+ *   seeMissed() · clearMissed()
  *   has(id) · get(id)
  *
  * Rules:
@@ -24,7 +25,8 @@ import {validate} from './activity.js';
  *   - while unseen the island gets no alert and no expand: an ask must not open in a
  *     hidden pill, where any click in the fullscreen app would collapse it; only the red
  *     light. Seen again, an ask or transient on top opens as if it had just arrived
- *   - light: 'waiting' (an unanswered ask is not visible) › 'missed' › 'off'
+ *   - light: 'waiting' (an unanswered ask is not visible) › 'missed' › 'off'; 'missed'
+ *     lasts until the history is seen (Home shows it) or cleared, not as long as it exists
  *
  * The island (renderer) receives render(list, {alert, expand}) — every visible activity,
  * centre pill first; it shows the first `island.capacity` (side-by-side, SPEC §2c) — and
@@ -70,6 +72,7 @@ export class ActivityStack {
         this._hidden = new Set(hiddenApps);
         this._unseen = false;
         this._missed = [];
+        this._missedNew = false;     // something was missed since the history was last seen
         this._seq = 0;
         this._shown = null;           // id of the centre pill
         this._shownIds = [];          // ids of every pill the island shows
@@ -232,8 +235,16 @@ export class ActivityStack {
         this._updateLight();
     }
 
+    /** Home showed the missed history: the light goes off, the list stays. */
+    seeMissed() {
+        this._missedNew = false;
+        this._updateLight();
+    }
+
+    /** The user cleared the history (× in Home). */
     clearMissed() {
         this._missed = [];
+        this._missedNew = false;
         this._updateLight();
     }
 
@@ -353,6 +364,7 @@ export class ActivityStack {
             at: this._clock.now(),
         });
         this._missed.length = Math.min(this._missed.length, MISSED_MAX);
+        this._missedNew = true;
     }
 
     _visible(a) {
@@ -426,7 +438,7 @@ export class ActivityStack {
     }
 
     _updateLight() {
-        let light = this._missed.length ? 'missed' : 'off';
+        let light = this._missedNew ? 'missed' : 'off';
         for (const [id, ask] of this._asks) {
             if (this._unseen || ask.dismissed || !this._shownIds.includes(id)) {
                 light = 'waiting';
