@@ -27,12 +27,12 @@ const long = 'A very long application name that goes on and on';
 eq(show({app: long}).text, long, 'long names are not cut here (the label ellipsizes)');
 
 // --- no app / Overview ----------------------------------------------------------------
-eq(show({app: null}), {visible: true, icon: 'grid', text: 'Workspace 2', extra: null},
-    'no focused app: the workspace in full words');
-eq(show({app: ''}).text, 'Workspace 2', 'an app with no name counts as none');
-eq(show({overview: true}).text, 'Workspace 2', 'the Overview has no focused window');
+eq(show({app: null}), {visible: true, icon: 'grid', text: '2', extra: null},
+    'no focused app: the grid icon and the number, as on hover (Ethan 2026-11-04)');
+eq(show({app: ''}).text, '2', 'an app with no name counts as none');
+eq(show({overview: true}).text, '2', 'the Overview has no focused window');
 eq(show({app: null, hover: true}).extra, null, 'hover adds nothing when the workspace is already the content');
-eq(show({app: null, names: ['', 'Work']}).text, 'Work', 'its name instead of "Workspace N"');
+eq(show({app: null, names: ['', 'Work']}).text, 'Work', 'its name instead of the number');
 eq(show({app: null, empty: 'hidden'}), {visible: false, icon: null, text: '', extra: null},
     'left-cluster-empty = hidden: nothing');
 eq(show({overview: true, empty: 'hidden'}).visible, false, 'hidden in the Overview too');

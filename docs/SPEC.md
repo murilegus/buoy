@@ -35,7 +35,7 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 │                                                alone)                           │
 └──────────────────────────────────────────────────────────────────────────────┘
   hover left:  [▣ Firefox · ⊞ 2]        hover pill: ( ● 31° · feels 35° / wind, humidity )
-  no app:      [⊞ Workspace 2]          click pill: Home · click left: Overview
+  no app:      [⊞ 2]                    click pill: Home · click left: Overview
 ```
 
 - Panel: transparent, 40px. Two clusters plus the island.
@@ -60,13 +60,16 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   - Hover: the cluster widens and appends the workspace as a secondary item: grid icon +
     number ("Firefox · ⊞ 2"), or the workspace name if the user set one ("Firefox · ⊞ Work").
     No "WS" abbreviation; the icon carries the meaning.
-  - No focused window (empty desktop, Overview): the workspace is the main content, in
-    full words — grid icon + "Workspace 2", or its name. Setting
+  - No focused window (empty desktop, Overview): the workspace is the main content — grid
+    icon + its number ("⊞ 2", as on hover; 2026-11-04, Ethan: no "Workspace" word), or
+    its name. Screen readers still hear "Workspace 2". Setting
     `left-cluster-empty = workspace | hidden`.
   - Click → Overview (replaces the hidden Activities button; same corner people already
     aim for). Right-click → app menu (New window, Quit, Details). Scroll → switch workspace.
-- **Third-party tray icons** keep GNOME's own per-item hover highlight; Buoy never wraps
-  or restyles them.
+- **Third-party tray icons** keep GNOME's own per-item hover highlight and colours; Buoy
+  never wraps them. Only their size is made the same (2026-11-04, Ethan): every tray
+  button is a 32 px square (16 px of content), so each highlight is one 26 px circle,
+  the input-method label ("vi", "en") centred in it too.
 - **Right side** (decided 2026-10-30, after the Notchy bar): two different things.
   - **Third-party tray icons** (AppIndicator, input method, screen-record…): bare on the
     wallpaper, each standing alone, GNOME's own order. No cluster background.
@@ -74,9 +77,21 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
     (network, volume, battery…) together with the **clock** (`dateMenu`, moved from
     centre), as **one button** with the shared hover background. A click anywhere in the
     cluster, clock included, opens the stock quick-settings menu; the clock has no click,
-    hover or focus of its own (`dateMenu` stays in place, non-reactive, restored on
-    disable). Its unread dot (`MessagesIndicator`) is hidden — the buoy light (§2a) says
-    "missed". Nothing is re-anchored.
+    hover or focus of its own (restored on disable). It stays *reactive* — only its click
+    gesture is off — because `Panel.toggleCalendar` (Super+V) does nothing on a
+    non-reactive button (`ui/panel.js` `_toggleMenu`, 2026-11-04). With a panel menu
+    open, hovering the clock does not slide to the calendar either (the panel's menu
+    manager leaves it out of hover/focus switching, 2026-11-04). Its unread dot
+    (`MessagesIndicator`) leaves the layout — the buoy light (§2a) says "missed". The
+    pieces drop their own highlight and padding: the cluster background is the hover (and
+    stays while either menu is open), and the clock sits 12 px from the last indicator,
+    the same gap the indicators keep (2026-11-04). The clock's format is GNOME's own
+    (`org.gnome.desktop.interface` clock-show-weekday/-date/-seconds, clock-format;
+    `org.gnome.desktop.calendar` show-weekdate): Buoy's Panel page shows those same keys,
+    so it and Settings → Date & Time stay in sync, and Shell's clock follows them. Buoy's
+    default is the time alone, 24-hour (`14:05`): written once, on the first enable, to
+    the keys the user never set (`clock-defaults-applied`), never reverted (Ethan,
+    2026-11-04). Nothing is re-anchored.
   - The stock calendar/notifications popover is no longer reachable by mouse; Super+V /
     Super+M (`toggle-message-tray`) still open it under the clock. Its contents move to
     Buoy: notification history → the notifications tab (§6b), calendar and weather →

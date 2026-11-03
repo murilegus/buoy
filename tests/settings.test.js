@@ -2,7 +2,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS} from
+import {GNOME_CLOCK, clockDefaults, clockSwitchOn, clockValue, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -104,6 +104,44 @@ const [kind, choices] = schema.get_key('cluster-background').get_range().recursi
 eq([kind, choices], ['enum', ['never', 'hover', 'always']], 'cluster-background: never, hover, always');
 eq(schema.get_key('cluster-background').get_default_value().unpack(), 'hover',
     'cluster-background defaults to hover (SPEC §1, 2026-11-04)');
+
+// --- the clock switches are GNOME's own keys ------------------------------------------
+const fmt = GNOME_CLOCK.find(e => e.key === 'clock-format');
+const date = GNOME_CLOCK.find(e => e.key === 'clock-show-date');
+eq([clockSwitchOn(fmt, '24h'), clockSwitchOn(fmt, '12h')], [true, false], '24-Hour Time reads clock-format');
+eq([clockValue(fmt, true), clockValue(fmt, false)], ['24h', '12h'], 'and writes it back as a string');
+eq([clockSwitchOn(date, true), clockSwitchOn(date, false), clockValue(date, true)], [true, false, true],
+    'a boolean key passes straight through');
+eq(clockDefaults(GNOME_CLOCK, () => false).map(d => [d.key, d.value]),
+    [['clock-show-weekday', false], ['clock-show-date', false], ['clock-show-seconds', false], ['clock-format', '24h']],
+    'first enable: the time alone, 24-hour; week numbers untouched');
+eq(clockDefaults(GNOME_CLOCK, e => e.key === 'clock-format').map(d => d.key),
+    ['clock-show-weekday', 'clock-show-date', 'clock-show-seconds'], 'a key the user set keeps their value');
+eq(clockDefaults(GNOME_CLOCK, () => true), [], 'all set by the user: nothing written');
+eq(clockDefaults([], () => false), [], 'no GNOME schemas installed: nothing written');
+for (const e of GNOME_CLOCK.filter(c => 'buoy' in c)) {
+    if (clockValue(e, clockSwitchOn(e, e.buoy)) !== e.buoy)
+        throw new Error(`GNOME_CLOCK ${e.key}: the default ${e.buoy} must be one of the switch's values`);
+}
+const system = Gio.SettingsSchemaSource.get_default();
+for (const e of GNOME_CLOCK) {
+    const s = system?.lookup(e.schema, true);
+    if (!s) {
+        console.log(`settings: ${e.schema} is not installed here, ${e.key} not checked`);
+        continue;
+    }
+    if (!s.has_key(e.key))
+        throw new Error(`GNOME_CLOCK: ${e.schema} has no key ${e.key}`);
+    const k = s.get_key(e.key);
+    const type = k.get_value_type().dup_string();
+    if (e.on) {
+        const [rangeKind, values] = k.get_range().recursiveUnpack();
+        if (type !== 's' || rangeKind !== 'enum' || !values.includes(e.on) || !values.includes(e.off))
+            throw new Error(`GNOME_CLOCK: ${e.key} must be a choice of "${e.on}" and "${e.off}"`);
+    } else if (type !== 'b') {
+        throw new Error(`GNOME_CLOCK: ${e.key} must be a boolean, is ${type}`);
+    }
+}
 
 // --- samples go through the real D-Bus check ------------------------------------------
 for (const id of Object.keys(SAMPLES)) {
