@@ -362,7 +362,8 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
 
 - **Missed** (2026-11-03): while the missed history has entries, Home starts with a
   "Missed · N" section — the last 5, newest first, each row the kind's icon, its text, the
-  tab's name and the time it ended; a row opens that kind's tab; "× Clear" empties it.
+  tab's name and the time it ended; a row opens that kind's tab and leaves the list, as an
+  activated system notification does; "× Clear" empties it.
   Showing Home turns the amber light off; the list stays until cleared or pushed out by
   newer ones. The running activities follow under "Now". In M4 the notifications tab
   carries the same group ("Missed while away") above the system's own list; a missed

@@ -481,6 +481,18 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     stack.surface({id: 'dl', kind: 'progress', text: 'dl'});
     stack.end('dl');
     eq([stack.light, stack.missed.map(m => m.id)], ['missed', ['dl', 'tea', 'copy']], 'a new miss lights it again');
+    const [dl] = stack.missed;
+    eq(stack.openMissed(dl.id, dl.at), true, 'opening a missed row removes it (like a system notification)');
+    eq([stack.missed.map(m => m.id), stack.light], [['tea', 'copy'], 'missed'], 'the others stay; the light is Home\'s to turn off');
+    eq(stack.openMissed(dl.id, dl.at), false, 'opening it again: already gone');
+    stack.setUnseen(true);
+    stack.surface({id: 'tea', kind: 'timer', text: 'Tea again'});
+    clock.advance(1000);
+    stack.end('tea');
+    stack.setUnseen(false);
+    const [again, oldTea] = stack.missed;
+    eq(stack.openMissed(oldTea.id, oldTea.at), true, 'the same id missed twice: only the row opened goes');
+    eq(stack.missed.map(m => m.text), [again.text, 'Copy done'], 'the newer one with that id stays');
     stack.clearMissed();
     eq([stack.light, stack.missed], ['off', []], 'cleared: light off, list empty');
     stack.seeMissed();

@@ -36,16 +36,18 @@ export class Home {
      * @param {function():void} [opts.onPrefs]  ⚙ was clicked
      * @param {object[]} [opts.missed]  stack.missed, newest first: Home's Missed section
      * @param {function():void} [opts.onMissedSeen]  Home was shown with that section
+     * @param {function(object):void} [opts.onMissedOpen]  one of its rows was opened
      * @param {function():void} [opts.onMissedClear]  its × was clicked
      */
     constructor({
         modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null,
-        missed = [], onMissedSeen = null, onMissedClear = null,
+        missed = [], onMissedSeen = null, onMissedOpen = null, onMissedClear = null,
     }) {
         this._modules = modules;
         this._list = list;
         this._missed = missed;
         this._onMissedSeen = onMissedSeen;
+        this._onMissedOpen = onMissedOpen;
         this._onMissedClear = onMissedClear;
         this._settings = settings;
         this._onSlot = onSlot;
@@ -354,7 +356,8 @@ export class Home {
 
     // What ended while the island was hidden (2026-11-03): newest first, at most 5 (the
     // stack keeps 5), each row its kind's icon, text, tab name and time; a row opens its
-    // kind's tab, × empties the history. Until the M4 notifications tab carries it.
+    // kind's tab and leaves the list (as an activated notification does), × empties it.
+    // Until the M4 notifications tab carries it.
     _missedSection(box) {
         const header = this._sectionHeader(`Missed · ${this._missed.length}`, true);
         const clear = new St.Button({style_class: 'buoy-home-clear', can_focus: true, accessible_name: 'Clear missed'});
@@ -384,7 +387,11 @@ export class Home {
                 style_class: 'buoy-home-row', child: content, x_expand: true,
                 can_focus: true, reactive: !!tab, x_align: Clutter.ActorAlign.FILL,
             });
-            row.connect('clicked', () => this.select(tab.id));
+            row.connect('clicked', () => {
+                this._missed = this._missed.filter(x => x !== m);
+                this._onMissedOpen?.(m);
+                this.select(tab.id);
+            });
             box.add_child(row);
         }
     }

@@ -8,7 +8,7 @@ import {validate} from './activity.js';
  *   surface(activity) → id · update(id, patch, {alert}) · end(id, {dismissal})
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
  *   answer(id, choice) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool)
- *   seeMissed() · clearMissed()
+ *   seeMissed() · openMissed(id, at) · clearMissed()
  *   has(id) · get(id)
  *
  * Rules:
@@ -239,6 +239,25 @@ export class ActivityStack {
     seeMissed() {
         this._missedNew = false;
         this._updateLight();
+    }
+
+    /**
+     * A missed row was opened (Home → its tab): it leaves the history, as an activated
+     * system notification does (2026-11-03).
+     *
+     * @param {string} id
+     * @param {number} at  when it ended (an id can be missed more than once)
+     * @returns {boolean} found
+     */
+    openMissed(id, at) {
+        const i = this._missed.findIndex(m => m.id === id && m.at === at);
+        if (i < 0)
+            return false;
+        this._missed.splice(i, 1);
+        if (!this._missed.length)
+            this._missedNew = false;
+        this._updateLight();
+        return true;
     }
 
     /** The user cleared the history (× in Home). */

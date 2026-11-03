@@ -473,7 +473,7 @@ export class Pill {
                 this._peekId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, PEEK_DELAY, () => {
                     this._peekId = 0;
                     this._peeking = true;
-                    this._setContent(this._restingContent(), false);
+                    this._swapResting();
                     return GLib.SOURCE_REMOVE;
                 });
             }
@@ -497,8 +497,16 @@ export class Pill {
         if (this._peeking) {
             this._peeking = false;
             if (!this.expanded)
-                this._setContent(this._restingContent(), false);
+                this._swapResting();
         }
+    }
+
+    // Peek in or out: a content of another width. Measure and place it now, before this
+    // frame paints; waiting for notify::width (next frame) showed the new text for one
+    // frame at the old place, unclipped, before the bg started to uncover it.
+    _swapResting() {
+        this._setContent(this._restingContent(), false);
+        this._applyContentSize();
     }
 
     // --- leaving ------------------------------------------------------------------------

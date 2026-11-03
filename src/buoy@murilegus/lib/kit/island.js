@@ -72,7 +72,7 @@ export class Island {
         // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice, ⚙
         this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
         // set by the extension: the stack's missed history, and telling it it was seen
-        this.missed = {list: () => [], seen: null, clear: null};
+        this.missed = {list: () => [], seen: null, open: null, clear: null};
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
             () => this._queueLayout());
@@ -356,6 +356,7 @@ export class Island {
                 },
                 missed: this.missed.list(),
                 onMissedSeen: () => this.missed.seen?.(),
+                onMissedOpen: m => this.missed.open?.(m.id, m.at),
                 onMissedClear: () => this.missed.clear?.(),
             });
         }

@@ -89,6 +89,7 @@ export default class BuoyExtension extends Extension {
         this._island.missed = {
             list: () => this._stack?.missed ?? [],
             seen: () => this._stack?.seeMissed(),
+            open: (id, at) => this._stack?.openMissed(id, at),
             clear: () => this._stack?.clearMissed(),
         };
         this.stack = this._stack; // Looking Glass
