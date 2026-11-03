@@ -33,20 +33,23 @@ replacement for the light in every state.
 - **Grid 10 × 10.** Sizes are multiples of 10 so every cell is whole logical px: **20 px**
   in compact (cell 2, APPLE §B5.3 leading ≤ 20), **50 px** in expanded headers (≤ 56),
   40 px in Home and prefs. HiDPI multiplies whole px; nothing blurs.
-- **Monochrome, theme-coloured.** Everything except the lamp is the actor's foreground
-  colour (CSS `color`): near-white inside the always-black pill, the theme's text colour
-  in prefs, Home cards and README. Cell letters:
+- **A fixed palette, always on dark** (corrected 2026-11-03 to match the reviewed design:
+  this table had said "foreground at 35 / 55 / 70 %", which drew grey water and a faded
+  stripe). Every cell is a solid colour, no partial opacity, so the edges stay crisp at
+  20 px. Bu sits only on black: inside the always-black pill, and elsewhere (prefs, Home
+  cards, README, EGO) on its own `#0b0b0b` tile — never on a light background. Cell
+  letters:
 
   | Cell | Meaning | Colour |
   |---|---|---|
   | `.` | empty | transparent |
-  | `B` `A` | body, arm | foreground |
-  | `S` | stripe | foreground 55 % |
-  | `D` | dots, bubble, sparkles | foreground 70 % |
-  | `Z` | sleep "z" | foreground 55 % |
-  | `W` | water | foreground 35 % |
-  | `E` | eye — a hole, the background shows through | transparent |
-  | `L` | lamp | the pose's lamp colour (INDICATORS § Bu's lamp) |
+  | `B` `A` | body, arm | `#F1EFE8` |
+  | `S` | stripe | `#888780` |
+  | `D` | dots, bubble, sparkles | `#D3D1C7` |
+  | `Z` | sleep "z" | `#444441` |
+  | `W` | water | `#185FA5` |
+  | `E` | eye — a hole, the black shows through | transparent |
+  | `L` | lamp | the pose's lamp colour (INDICATORS § Bu's lamp); `foreground` = the body colour |
 
 - **The lamp is the light.** When a pill's leading is Bu, the left edge slot is not drawn.
   If the stack's light is `missed` or `waiting`, the lamp shows that colour whatever the
@@ -66,13 +69,15 @@ replacement for the light in every state.
 
 - `kit/mascot.js` holds the grids below as data: pure, no `St`, unit-tested. Pose names
   are a closed set; an unknown pose falls back to the element's `icon`, or `idle`.
-- `present.js` paints a grid with one `St.DrawingArea` (cairo rectangles) in the actor's
-  foreground colour. No image files ship in the extension, so theme colour and HiDPI come
-  free and there is nothing to keep in sync but this file.
+- `present.js` paints a grid with one `St.DrawingArea` (cairo rectangles) in the palette
+  above. No image files ship in the extension, so HiDPI comes free and there is nothing to
+  keep in sync but this file.
 - `tests/mascot.test.js` parses the grid blocks of **this file** and compares them with
   `kit/mascot.js`, so the doc stays the source of truth.
 - The SVGs in `docs/mascot/` are previews for review and the README, made from the same
-  grids; they are not loaded at runtime.
+  grids and the palette above (regenerated 2026-11-03 when the palette was corrected);
+  they are not loaded at runtime. The `stale` preview is dimmed to 40 %, as the renderer
+  dims a stale activity.
   `hello.svg` (README, 2026-11-03) waves `wave.1`/`wave.2` for 3 s at 500 ms, then
   rests on `idle` (CSS, once per page load; `prefers-reduced-motion` shows `idle` only).
 - Contract: an adapter (or a D-Bus caller) sets `leading: {mascot: '<pose>', icon?}`
