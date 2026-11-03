@@ -27,6 +27,8 @@ src/buoy@murilegus/
     │   ├── pill.js         one pill: content, sizing, hover/peek, morph (2026-11-01)
     │   ├── home.js         the panel a click opens: tab strip + tab body (Home, kind, standalone)
     │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
+    │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
+    │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
     │   ├── registry.js     app-id normalisation table; adapter resolution
     │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
     │   └── shapes.js
@@ -39,7 +41,8 @@ src/buoy@murilegus/
             ├── tab.js      content for its tab in expanded (optional): export a class,
             │               `new Tab()` → {actor, destroy()}; built on first selection,
             │               destroyed when expanded closes
-            ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar)
+            ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
+            │               also exports `relevance(ctx)` for `auto` (SPEC §2a-iii)
             └── apps/       per-app overrides, <slug>.js, same method names as adapter.js
 ```
 
@@ -57,7 +60,7 @@ A standalone tab never surfaces activities; if it needs to, it becomes a source 
 v0.1 modules: `media`, `hud`, `home`, `progress`, `copied`, `layout`, `ask`; `notification`,
 `timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
 roadmap items, so their tabs show from v0.1 (2026-11-02);
-idle plans `clock`, `weather`, `calendar`; standalone tabs `calendar`, `clipboard` (stub `tab.js`, in that order, 2026-11-02).
+`greeting` (2026-11-03); idle plans `clock`, `weather`, `calendar`; standalone tabs `calendar`, `clipboard` (stub `tab.js`, in that order, 2026-11-02).
 
 ## Data flow
 
@@ -88,7 +91,9 @@ D-Bus callers send presentation data directly and skip the registry.
 7. **No code loaded at runtime** (EGO rule). User customisation is JSON profiles only:
    icon, title template, hide body, priority, ttl, simple regex. Logic needs a PR.
 8. **No polling while closed; no blur; nothing animating while idle.** A source that must
-   poll (progress bar position) polls only while its activity is visible.
+   poll (progress bar position) polls only while its activity is visible. "Animating"
+   means looping or continuous motion: a change of idle content (clock minute, `auto`
+   switching plans) is one transition, then stillness (clarified 2026-11-03).
 9. Every module declares its GSettings keys in `index.js#schema`; prefs.js renders them.
    Shell-level keys that belong to no module (panel clusters, window corners) get their
    own prefs pages; their code lives next to `panel.js`, not under `modules/`.
@@ -105,7 +110,10 @@ D-Bus callers send presentation data directly and skip the registry.
 | `modules.<id>` | bool | import the module or not |
 | `apps.hidden` | as | slugs whose activities never surface |
 | `apps.plain` | as | slugs that use the default adapter instead of their override |
-| `idle-content` | s | `none` \| any module's idle plan id |
+| `idle-content` | s | `auto` (default, 2026-11-03) \| `none` \| any module's idle plan id |
+| `idle-auto-plans` | as | plans `auto` may show, in tie-break order; default every enabled plan |
+| `idle-auto-interval` | i | minutes between `auto` re-ranks while idle; default `5`, 2–30 |
+| `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]` |
 | `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only) |
 | `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |
 | `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
@@ -115,6 +123,7 @@ D-Bus callers send presentation data directly and skip the registry.
 | `window-corners` | b | round the top corners of maximized windows; default `true` (2026-11-02) |
 | `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
 | `idle-clock-style`, `idle-weather-refresh` | — | declared by those modules |
+| `greeting-style`, `greeting-name`, `greeting-last-day` | — | declared by `greeting` (SPEC §2d) |
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
 | `keybind-focus` | as | focus the pill (default Super+B) |
 | per-module keys | — | declared by the module |

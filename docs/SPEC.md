@@ -134,19 +134,23 @@ Rules:
 
 ### 2a. Idle content (decided 2026-10-30)
 
-Setting `idle-content`, default `none`. Each value is an **idle plan** provided by a module
-(`modules/<id>/idle.js`), so the list grows with modules and shrinks when they are off.
+Setting `idle-content`, default `auto` (changed from `none` 2026-11-03). Each value is an
+**idle plan** provided by a module (`modules/<id>/idle.js`), so the list grows with modules
+and shrinks when they are off; `auto` and `none` are the kit's own.
 
 | value | what the pill shows | module | refresh |
 |---|---|---|---|
+| `auto` | the idle plan that matters right now, chosen and rotated by context (§2a-iii) — a smart stack, not a random carousel | core | plan signals + one re-rank timer while idle |
 | `none` | black pill + the **buoy light**: a small amber dot at the leading edge. Off normally; lit when something was missed (§6 missed history) | core | event |
-| `clock` | a *second* clock, styled unlike the one in the right cluster: time + time-of-day icon (dawn / morning / noon / afternoon / evening / night); variants via `idle-clock-style` (icon+time, time only, icon only, with seconds) | `clock` | 1 min tick, only while idle |
+| `clock` | a *second* clock, styled unlike the one in the right cluster: time + time-of-day icon (dawn / morning / noon / afternoon / evening / night, from `kit/daypart.js`, §2d); variants via `idle-clock-style` (icon+time, time only, icon only, with seconds) | `clock` | 1 min tick, only while idle |
 | `weather` | condition icon + temperature; hover peek adds wind direction/speed, humidity, feels-like; expanded shows the day | `weather` | GNOME's own `ui/weather.js` client (same location as dateMenu); `idle-weather-refresh` 30 min / 1 h |
 | `next-event` | next calendar event: title · time, Join glyph when it has a link | `calendar` | EDS signals |
 
 Rules: an idle plan is presentation only (same data shape as an adapter); it never
 surfaces an activity; it is replaced the instant any activity surfaces; nothing animates
-while idle. Each plan has its own settings page.
+while idle — no looping or continuous motion; a change of idle content (the clock's
+minute, `auto` switching plans) is one transition (§5), then stillness (clarified
+2026-11-03). Each plan has its own settings page.
 
 Pill structure is the same in every state: `[light] leading · text · trailing [dot]`.
 The two edge slots are Buoy's own status layers; the three zones between them belong to
@@ -173,6 +177,43 @@ pill is idle or showing an activity. `present.js` inserts it last and nudges the
 trailing zone inward; adapters never know. Click → expanded Home with "in use by Zoom".
 GNOME's own indicator in the system cluster is hidden while the `privacy` module is on;
 setting `privacy-dot = pill | system | both`, default `pill`.
+
+### 2a-iii. `auto`: a smart stack of idle plans (decided 2026-11-03)
+
+Like the iOS Smart Stack or the Windows widgets board: the user does not pick a plan,
+the pill shows what is useful *next* — what to prepare for, what is happening outside.
+
+- **Relevance, predefined.** Every `idle.js` also exports `relevance(ctx)` →
+  `{score: 0–100}` or `null` when it has nothing to show. Cheap and synchronous: it reads
+  the state the plan already holds; no timers, no I/O (those stay in the plan's source).
+  `ctx` = `{now, daypart}`. Default scores, fixed in code, not user formulas:
+
+  | plan | score |
+  |---|---|
+  | `next-event` | starts in ≤ 30 min **90** (holds, see below) · running now 80 · within 2 h 50 · later today 25 · none → `null` |
+  | `weather` | first hour of `morning` 70 · a change in the next hour (rain starts, ≥ 5 °C swing) 75 · otherwise 35 · no location/offline → `null` |
+  | news (later, M5) | 40; 55 for an item newer than 1 h from a followed source |
+  | exchange rate / stocks (later, M5) | 30; 70 on a move past the user's threshold |
+  | `clock` | 10 — the floor, always available |
+
+- **Choice.** Highest score shows. Ties → the plan in `idle-auto-plans` order that was
+  shown longest ago, so equal plans take turns. A plan scoring ≥ 80 **holds** the pill
+  until its score drops (never rotate away from a meeting in 10 minutes).
+- **When it re-ranks.** On a plan's `changed` signal (event added, weather update, a
+  daypart boundary) and on one kit timer, `idle-auto-interval` (default 5 min, 2–30),
+  that exists only while the pill is idle with `auto` — removed the moment an activity
+  surfaces, on expand, and on disable. A re-rank that picks the same plan changes nothing.
+- **Interests** (Windows' word): `idle-auto-plans` (as) — which plans the stack may use,
+  in tie-break order; default every enabled plan. Prefs page **Idle**: a reorderable
+  list with switches. A plan whose module is off does not exist (ARCHITECTURE rule 6).
+- **Interaction.** Hover → the shown plan's peek; scroll on the idle pill → next /
+  previous plan in the stack (held for one interval, like swiping the Smart Stack);
+  click → Home, as in every idle state.
+- **Motion.** A switch is one content transition (fade out 100 ms / in 200 ms, plus the
+  width morph if the plan is wider), then nothing until the next switch.
+- **Later plans** (news, exchange rate, stocks): each its own module, off by default,
+  fetching through Soup at most every 30 min and only while it is in `idle-auto-plans`;
+  they are why `auto` is a ranked stack rather than a fixed rotation.
 
 ### 2b. Tabs (decided 2026-10-30)
 
@@ -234,6 +275,47 @@ setting `privacy-dot = pill | system | both`, default `pill`.
 - Order: highest priority at screen centre, then to the right. When one ends, the rest
   slide to fill (eased x), never jump.
 - Keyboard: `Super+B` focuses the primary; ←/→ moves between pills; Enter opens; Esc closes.
+
+### 2d. Greeting (decided 2026-11-03)
+
+Once a day, the first time the island appears, it opens expanded and says hello.
+
+- **When.** On the first enable of a local day: login, or the first unlock/resume on a
+  new day (Shell disables extensions on lock and re-enables them on unlock — Buoy has no
+  `session-modes`, so it runs only in `user`, `ui/extensionSystem.js`). State:
+  `greeting-last-day` (s, `YYYY-MM-DD`), written only once the greeting has really shown.
+  Not shown while a fullscreen window has focus; then the next enable that day tries
+  again.
+- **What.** A transient activity, kind `greeting`, from the `greeting` module. It opens
+  expanded like any stack open (no keyboard grab, §2), stays ~8 s (held while hovered),
+  click outside closes it early, then it ends and the idle content takes over. Any real
+  activity that surfaces meanwhile interrupts it (transient rules); the day still counts.
+  `greeting-style = expanded | compact | off`, default `expanded`; `compact` shows only the
+  first line in the pill for 4 s.
+- **Expanded content**, three lines, the greeting large:
+  ```
+  Good morning, Ethan.
+  Today is Tuesday, 3 November 2026.
+  Ho Chi Minh City: 32 °C, cloudy, light breeze.
+  ```
+  (vi: "Chào buổi sáng, Ethan. Hôm nay thứ Ba, ngày 3/11/2026. Nhiệt độ ở TP.HCM hiện tại
+  là 32 °C, có mây, gió nhẹ.") Date in the locale's long form; weather = location name,
+  current temperature, condition, wind in words (calm · light breeze · breezy · strong
+  wind, by Beaufort). Strings go through gettext with the localisation item (M5).
+- **Weather source.** GNOME's own client (`misc/weather.js` `WeatherClient`, the location
+  the clock popover uses), created by the greeting's `source.js` — not the `weather`
+  module (rule 1). At login it waits up to ~3 s for the first update; without one the
+  weather line is left out, and filled in place if data arrives while open. No location or
+  offline → two lines.
+- **Name.** `greeting-name` (s); empty = `GLib.get_real_name()`, falling back to the user
+  name. Prefs shows it prefilled so a short name is one edit away.
+- **Dayparts** — `kit/daypart.js`, shared with the clock plan's icons and `auto`'s
+  `ctx.daypart`: `dawn · morning · noon · afternoon · evening · night`, starts from
+  `daypart-starts` (ai, hours, default `[5, 7, 11, 13, 18, 22]`, wrapping past midnight).
+  Greetings: dawn and morning → "Good morning", noon → "Good day" (vi "Chào buổi trưa"),
+  afternoon → "Good afternoon", evening → "Good evening", night → "Still up" (vi
+  "Khuya rồi").
+- The adapter builds all text from `{daypart, name, date, weather?}`; pure, no truncation.
 
 ## 3. Expanded: Home
 
@@ -314,6 +396,8 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 2. **hud** — volume / brightness / caps lock replace the stock OSD.
 3. **home** — the expanded Home above.
 4. **appname** — left cluster.
+5. **greeting** — once a day, expanded hello with date and weather (§2d).
+6. **idle `auto`** — the smart stack over the `clock`, `weather`, `next-event` plans (§2a-iii).
 
 ## 6b. Roadmap after v0.1 (all pure JS)
 
@@ -359,4 +443,5 @@ Buoy is a framework first, features second — see `APPLE.md` part B for the ful
 ## 8. Non-negotiables
 
 No polling while closed; no blur; no shadows with blur; actors reused not recreated;
-nothing animating while idle; a module switched off costs zero.
+nothing animating while idle (a content change is one transition, §2a); a module switched
+off costs zero.

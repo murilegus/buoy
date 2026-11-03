@@ -6,7 +6,7 @@ otherwise; the agent sets `[~]` when starting and `[x]` only after Ethan's revie
 (each 1–3; see bottom). Every item names its module, source signal, settings keys and what
 "done" means. Update this file in the same PR as the feature.
 
-Last updated: 2026-11-02
+Last updated: 2026-11-03
 
 ---
 
@@ -77,8 +77,11 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | **copied** | copied | `Meta.Selection` `owner-changed` + `St.Clipboard` | `copied-show-preview` | 1 s flash with snippet / image thumb; never stores | 18 |
 | [ ] | **layout** | hud | keyboard status `changed` | — | "VI"/"EN" flash on switch | 18 |
 | [ ] | **ask** | ask | D-Bus `Ask()`; hooks for Claude Code / Codex | `ask-timeout` (10 min = deny) | buttons return answer to caller; agent approvals Deny·Allow·Always; silent while agent terminal focused; hooks installed/removed from prefs | 18 / 12 |
-| [ ] | **clock** (idle plan) | — | 1 min tick while idle | `idle-clock-style` | icon by time of day + time; variants | — |
+| [ ] | **daypart** (`kit/daypart.js`, added 2026-11-03) | — | pure, no timer | `daypart-starts` | `dawn…night` from the hour; boundaries, wrap past midnight and bad settings covered in `tests/daypart.test.js`; used by clock, greeting, `auto` | — |
+| [ ] | **clock** (idle plan) | — | 1 min tick while idle | `idle-clock-style` | icon by time of day (`kit/daypart.js`) + time; variants | — |
 | [ ] | **weather** (idle plan) | — | `ui/weather.js` client | `idle-weather-refresh` | icon + temp; hover peek wind/humidity/feels-like | — |
+| [ ] | **idle `auto`** — smart stack (`kit/smartstack.js`, SPEC §2a-iii, added 2026-11-03) | — | each `idle.js#relevance(ctx)`; plans' `changed`; one kit timer while idle | `idle-content` default `auto` (schema default changes from `none`), `idle-auto-plans`, `idle-auto-interval` | highest score shows, ties take turns in `idle-auto-plans` order, ≥ 80 holds; scroll flips; one transition per switch, nothing between; timer exists only while idle with `auto` (gone on surface/expand/disable); ranking, ties, hold and `null` plans unit-tested | — |
+| [ ] | **greeting** (SPEC §2d, added 2026-11-03) | greeting | first enable of a local day; `misc/weather.js` `WeatherClient` | `greeting-style` (expanded), `greeting-name`, `greeting-last-day` | once a day at login/first unlock: expanded 3 lines (greeting by daypart + name, long date, place · °C · condition · wind words) ~8 s, hover holds; no weather → 2 lines, filled in place if it arrives; not over fullscreen; second unlock same day shows nothing; adapter tests per daypart, no weather, long name | 18 |
 | [ ] | Release: pack, EGO submission, README GIF (file copy progress) | | | | | |
 
 ## M4 — "Wow" pack (v0.2)  `[ ]`
@@ -113,7 +116,9 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | Docker events (exit/OOM/health) | notification | `docker events` via `Gio.Subprocess` | one idle pipe |
 | [ ] | Shell activity (zsh preexec/precmd → gdbus) | notification | D-Bus | shell snippet in docs |
 | [ ] | Multi-monitor: pill follows pointer / per monitor | core | `monitors-changed` | setting |
-| [ ] | Localisation en + vi | — | gettext | |
+| [ ] | News idle plan (an interest for `auto`) | idle plan | Soup, RSS/Atom feeds chosen in prefs | network: ≤ 1 fetch / 30 min, only while in `idle-auto-plans`; headline · source; click opens the link (SPEC §2a-iii, 2026-11-03) |
+| [ ] | Exchange rate / stocks idle plan (watchlist) | idle plan | Soup, quote API to choose | same fetch rule; "USD/VND 25 410 ▲0.2 %"; relevance 70 past the user's threshold |
+| [ ] | Localisation en + vi | — | gettext | greeting strings (SPEC §2d) included |
 
 ## Deferred (fits, needs real work)
 
@@ -124,6 +129,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | Scheduled activities persisted across Shell restarts | needs on-disk state |
 | Window snapping by dragging to the pill | Mutter tiling API limited |
 | Satellite extensions over D-Bus | once contract is stable and there's a community |
+| Mascot (discussed 2026-11-03) — the face of the buoy light: static poses per state (asleep at night/idle, looking when something was missed, hand up for an `ask`), motion only with an activity (waves with the greeting, busy while a timer/transfer/agent runs) | needs artwork; rule 8 forbids idle motion; decide once there are drawings |
 | World clocks (lost with the clock popover, SPEC §1) | placement undecided: Home or elsewhere; still reachable via Super+V meanwhile |
 
 ## Out of scope by design (SPEC §0)
