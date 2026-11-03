@@ -121,6 +121,15 @@ export class Pill {
             this.applyShape(shape);
     }
 
+    // The keyboard ring (SPEC §2c): Super+B is on this pill. A style class, so nothing
+    // relayouts or animates.
+    setFocused(focused) {
+        if (focused)
+            this.bg.add_style_class_name('buoy-focused');
+        else
+            this.bg.remove_style_class_name('buoy-focused');
+    }
+
     // Shown (side pills fade out while another pill is open, SPEC §2c merge).
     setShown(shown, animate) {
         for (const a of [this.bg, this.content]) {

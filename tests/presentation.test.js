@@ -153,6 +153,12 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     const e = planExpanded(ask);
     eq([e.center?.title, e.bottom, e.actions.map(a => a.id)], ['Allow edit?', {type: 'actions'}, ['Deny', 'Allow']],
         'ask expanded: question + every option');
+    eq(e.actions.some(a => 'key' in a), false,
+        'no keys without kind ask (only asks are answered from the keyboard)');
+    const three = [{id: 'Deny', label: 'Deny'}, {id: 'Allow', label: 'Allow'}, {id: 'Always', label: 'Always'}];
+    const keyed = planExpanded({...ask, kind: 'ask', actions: three});
+    eq(keyed.actions.map(a => a.key), ['d', '2', '3'], 'ask expanded: each action carries its key (kit/keys.js)');
+    eq(planCompact({...ask, kind: 'ask'}).action, {id: 'Deny', label: 'Deny', icon: null}, 'compact ask action has no key');
 }
 
 // --- buoy light slot (SPEC §2a-i, INDICATORS.md) ------------------------------------

@@ -8,8 +8,11 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {shapesFor, GAP, PILL_GAP} from './shapes.js';
 import {Pill} from './pill.js';
 import {Home} from './home.js';
+import {showKeys} from './present.js';
+import {planExpanded} from './presentation.js';
 import {ALERT_MS} from './stack.js';
 import {planStrip, tabFor, HOME} from './tabs.js';
+import {actionForKey, step} from './keys.js';
 
 const MAX_PILLS = 3;       // SPEC §2c
 const CLUSTER_MARGIN = 12; // keep side pills this far from the system cluster
@@ -33,6 +36,11 @@ const ALERT_HOVER = 1000;  // an alert still hovered at its end stays open this 
  *                 transient, ask; an alert for ALERT_MS). Only a click outside closes it,
  *                 or Esc after a click-open, which takes a modal grab like
  *                 ui/grabHelper.js; clicks inside do nothing and buttons keep working.
+ *   keyboard      (SPEC §2c) `keybind-focus` (Super+B) takes the keyboard: a ring on the
+ *                 centre pill, ←/→ move it, Enter opens that pill as a click would, Esc
+ *                 or Super+B again lets go. Open: ←/→ walk the tabs, an ask's buttons
+ *                 answer to their key (kit/keys.js, printed on them), Esc closes. On a
+ *                 pill the stack opened (ask, alert) Super+B takes the keyboard for it.
  *
  * Structure: a fixed-size invisible container (wide enough for three pills, tall enough
  * for the expanded one) holding each pill's background and content (see pill.js).
@@ -56,6 +64,8 @@ export class Island {
         this._capturedId = 0;
         this._capturedOn = null;
         this._grab = null;
+        this._focusId = undefined;  // keyboard on the closed island: the ringed pill's id
+        this._focusIndex = 0;       //   (null = idle pill); undefined = no keyboard focus
         this._layoutLater = 0;
         this._destroyed = false;
         this.onCapacityChanged = null; // set by the extension → stack.refresh()
@@ -114,6 +124,7 @@ export class Island {
             if (a) {
                 // an update while open: stay open, replace the content in place
                 this._open.configure(a, {...this._roleOf(this._open)});
+                this._syncKeys();
                 this._open.morph();
                 if (alert === a.id)
                     this._armAlert();
@@ -187,6 +198,7 @@ export class Island {
         this._pills = next;
         next.forEach((pill, i) => pill.configure(wanted[i], this._roleOf(pill)));
         this._layout(animate);
+        this._syncFocus();
     }
 
     // Centre pill at the container centre; side pills to its right from their resting
@@ -275,15 +287,20 @@ export class Island {
             return Clutter.EVENT_PROPAGATE;
         if (this._open)
             return Clutter.EVENT_STOP;         // inside an open pill: only buttons act
+        this._activate(pill, this._onBadge(ev));
+        return Clutter.EVENT_STOP;
+    }
+
+    // A click on the pill, or Enter on the ringed one.
+    _activate(pill, badge = false) {
         const a = pill.activity;
-        const tab = a && !this._onBadge(ev) ? tabFor(a, this._strip()) : HOME;
-        if (tab === HOME && a?.onPress && !this._onBadge(ev)) {
+        const tab = a && !badge ? tabFor(a, this._strip()) : HOME;
+        if (tab === HOME && a?.onPress && !badge) {
             a.onPress();
             pill.pulse();
         } else {
             this._openPill(pill, 'user', tab);
         }
-        return Clutter.EVENT_STOP;
     }
 
     _strip() {
@@ -301,6 +318,7 @@ export class Island {
     _openPill(pill, how, tab = null) {
         if (this._open || (!tab && !pill.expandable))
             return;
+        this._setFocus(undefined);  // the ring goes; a grab already held stays for the panel
         this._open = pill;
         this._openedBy = how;
         const cw = this._s.container.w;
@@ -333,14 +351,140 @@ export class Island {
         // as in ui/grabHelper.js. Clutter skips non-reactive actors when it emits events,
         // so the container is reactive while modal (at rest it must not eat clicks).
         // Automatic opens leave the keyboard alone and watch clicks on the stage.
-        if (how === 'user') {
-            this.actor.reactive = true;
-            this._grab = Main.pushModal(this.actor, {actionMode: Shell.ActionMode.POPUP});
-            pill.bg.grab_key_focus(); // popModal restores the previous focus
+        if (how === 'user')
+            this._takeKeyboard(pill);
+        this._listen();
+        this._syncKeys();
+        pill.activity?.onExpand?.(true);
+    }
+
+    // --- keyboard (SPEC §2c) ---------------------------------------------------------
+
+    /** `keybind-focus` (Super+B): take the keyboard, or let it go. */
+    toggleKeyboard() {
+        if (this._destroyed || Main.modalCount > (this._grab ? 1 : 0))
+            return;                 // someone else's popup has the keyboard
+        if (this._grab) {
+            if (this._open)
+                this._close();
+            else
+                this._letGo();
+            return;
         }
+        this._takeKeyboard(this._open ?? this._pills[0]);
+        if (!this._grab)
+            return;
+        if (this._open) {
+            // a pill the stack opened (ask, alert): now it is the user's, so it stays
+            this._openedBy = 'user';
+            this._disarmAlert();
+            this._listen();
+            this._syncKeys();
+        } else {
+            this._listen();
+            this._setFocus(this._pills[0]?.id ?? null, 0);
+        }
+    }
+
+    // A modal grab like ui/grabHelper.js: every click and key reaches this.actor, which
+    // must be reactive for Clutter to emit them (at rest it must not eat clicks).
+    _takeKeyboard(pill) {
+        if (this._grab)
+            return;
+        this.actor.reactive = true;
+        this._grab = Main.pushModal(this.actor, {actionMode: Shell.ActionMode.POPUP});
+        pill?.bg.grab_key_focus();  // popModal restores the previous focus
+    }
+
+    _letGo() {
+        this._setFocus(undefined);
+        this._unlisten();
+        if (this._grab) {
+            Main.popModal(this._grab);
+            this._grab = null;
+            this.actor.reactive = false;
+        }
+    }
+
+    // Watch clicks and keys: on the grab actor with the keyboard, else on the stage
+    // (automatic opens leave the keyboard alone).
+    _listen() {
+        this._unlisten();
         this._capturedOn = this._grab ? this.actor : global.stage;
         this._capturedId = this._capturedOn.connect('captured-event', (_a, ev) => this._onCaptured(ev));
-        pill.activity?.onExpand?.(true);
+    }
+
+    _unlisten() {
+        if (this._capturedId) {
+            this._capturedOn.disconnect(this._capturedId);
+            this._capturedId = 0;
+            this._capturedOn = null;
+        }
+    }
+
+    // The ring on the closed island follows its activity when the pills re-order;
+    // when that activity is gone it stays at the same place (clamped).
+    _setFocus(id, index = this._focusIndex) {
+        this._focusId = id;
+        this._focusIndex = index;
+        this._syncFocus();
+    }
+
+    _syncFocus() {
+        const on = this._focusId !== undefined && !this._open;
+        if (on) {
+            const i = this._pills.findIndex(p => p.id === this._focusId);
+            this._focusIndex = i >= 0 ? i : step(this._focusIndex, 0, this._pills.length);
+            this._focusId = this._pills[this._focusIndex]?.id ?? null;
+        }
+        this._pills.forEach((p, i) => p.setFocused(on && i === this._focusIndex));
+    }
+
+    // An ask open with the keyboard held: its buttons show their keys.
+    _syncKeys() {
+        const pill = this._open;
+        if (pill && !this._home && pill.activity?.kind === 'ask')
+            showKeys(pill.content.child, this._grab !== null);
+    }
+
+    _onKey(ev) {
+        const sym = ev.get_key_symbol();
+        if (sym === Clutter.KEY_Escape) {
+            if (this._open)
+                this._close();
+            else
+                this._letGo();
+            return Clutter.EVENT_STOP;
+        }
+        let delta = 0;
+        if (sym === Clutter.KEY_Left || sym === Clutter.KEY_KP_Left)
+            delta = -1;
+        else if (sym === Clutter.KEY_Right || sym === Clutter.KEY_KP_Right)
+            delta = 1;
+        if (!this._open) {
+            if (delta) {
+                const i = step(this._focusIndex, delta, this._pills.length);
+                this._setFocus(this._pills[i]?.id ?? null, i);
+            } else if ([Clutter.KEY_Return, Clutter.KEY_KP_Enter, Clutter.KEY_ISO_Enter, Clutter.KEY_space].includes(sym)) {
+                const pill = this._pills[this._focusIndex];
+                if (pill)
+                    this._activate(pill);
+            }
+            return Clutter.EVENT_STOP;
+        }
+        if (this._home && delta) {
+            this._home.stepTab(delta);
+            return Clutter.EVENT_STOP;
+        }
+        const a = this._open.activity;
+        if (!this._home && a?.kind === 'ask') {
+            const id = actionForKey(planExpanded(a)?.actions ?? [], ev.get_key_unicode());
+            if (id) {
+                a.onAction?.(id);
+                return Clutter.EVENT_STOP;
+            }
+        }
+        return Clutter.EVENT_PROPAGATE;   // Tab/Space on a focused button: St handles it
     }
 
     // Split again: the open pill shrinks back, the others fade in and slide to their slots.
@@ -352,16 +496,7 @@ export class Island {
         this._openedBy = null;
         this._home = null;          // its actor is the pill's content: collapse destroys it
         this._disarmAlert();
-        if (this._capturedId) {
-            this._capturedOn.disconnect(this._capturedId);
-            this._capturedId = 0;
-            this._capturedOn = null;
-        }
-        if (this._grab) {
-            Main.popModal(this._grab);
-            this._grab = null;
-            this.actor.reactive = false;
-        }
+        this._letGo();
         pill.collapse();
         this._apply(true);
         pill.activity?.onExpand?.(false); // last: a transient ends here and re-renders
@@ -369,13 +504,19 @@ export class Island {
 
     _onCaptured(ev) {
         const t = ev.type();
-        if (t === Clutter.EventType.KEY_PRESS && ev.get_key_symbol() === Clutter.KEY_Escape && this._grab) {
-            this._close();
-            return Clutter.EVENT_STOP;
-        }
+        if (t === Clutter.EventType.KEY_PRESS && this._grab)
+            return this._onKey(ev);
         if (t !== Clutter.EventType.BUTTON_PRESS && t !== Clutter.EventType.TOUCH_BEGIN)
             return Clutter.EVENT_PROPAGATE;
-        if (this._contains(...ev.get_coords()))
+        const [x, y] = ev.get_coords();
+        if (!this._open) {
+            // the ring is up: a click on a pill acts as usual, a click elsewhere lets go
+            if (this._pills.some(p => this._contains(p, x, y)))
+                return Clutter.EVENT_PROPAGATE;
+            this._letGo();
+            return Clutter.EVENT_STOP;
+        }
+        if (this._contains(this._open, x, y))
             return Clutter.EVENT_PROPAGATE;   // inside: buttons act, nothing closes
         const modal = this._grab !== null;
         this._close();
@@ -383,8 +524,8 @@ export class Island {
         return modal ? Clutter.EVENT_STOP : Clutter.EVENT_PROPAGATE;
     }
 
-    _contains(x, y) {
-        const bg = this._open.bg;
+    _contains(pill, x, y) {
+        const bg = pill.bg;
         const [ax, ay] = bg.get_transformed_position();
         return x >= ax && x <= ax + bg.width && y >= ay && y <= ay + bg.height;
     }
@@ -423,6 +564,7 @@ export class Island {
         for (const p of this._pills)
             p.activity = null; // no onExpand while tearing down
         this._close();
+        this._letGo();
         for (const p of [...this._pills, ...this._leaving])
             p.destroy();
         this._pills = [];

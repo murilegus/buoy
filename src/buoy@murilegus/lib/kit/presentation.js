@@ -21,6 +21,8 @@
  * Text is never truncated here; the renderer ellipsizes.
  */
 
+import {mnemonics} from './keys.js';
+
 export const MAX_ACTIONS = {compact: 1, expanded: 3, peek: 3};
 const LIGHTS = new Set(['off', 'missed', 'waiting']);
 
@@ -185,7 +187,7 @@ function region(r) {
  *
  * @param {object} p  presentation data (an activity)
  * @returns {?object} {leading, center, trailing, bottom, grow, actions, keyline, stale}
- *   or null when the activity has no expanded presentation
+ *   or null; an ask's actions carry `key` when the activity has no expanded presentation
  */
 export function planExpanded(p) {
     const ex = p.expanded === true ? {} : p.expanded;
@@ -193,7 +195,13 @@ export function planExpanded(p) {
         return null;
 
     const c = planCompact(p);
-    const acts = actions(p.actions, MAX_ACTIONS.expanded);
+    let acts = actions(p.actions, MAX_ACTIONS.expanded);
+    if (p.kind === 'ask') {
+        // answered from the keyboard too: the key is printed on the button while the
+        // island holds the keyboard (kit/keys.js)
+        const keys = mnemonics(acts.map(a => a.label ?? a.id));
+        acts = acts.map((a, i) => ({...a, key: keys[i]}));
+    }
     const fallback = {
         leading: c.leading,
         center: c.text ? {type: 'block', title: c.text, subtitle: null, bar: null} : null,

@@ -27,6 +27,7 @@ src/buoy@murilegus/
     │   ├── pill.js         one pill: content, sizing, hover/peek, morph (2026-11-01)
     │   ├── home.js         the panel a click opens: tab strip + tab body (Home, kind, standalone)
     │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
+    │   ├── keys.js         keyboard: an ask's keys, ←/→ steps; pure, unit-tested (2026-11-03)
     │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
     │   ├── mascot.js       Bu: 13 pose grids + eyes as data, pure; MASCOT.md is the source (2026-11-03)
@@ -134,7 +135,7 @@ fields and order: [PROFILES.md](PROFILES.md).
 | `idle-clock-style`, `idle-weather-refresh` | — | declared by those modules |
 | `greeting-style`, `greeting-name`, `greeting-last-day` | — | declared by `greeting` (SPEC §2d) |
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
-| `keybind-focus` | as | focus the pill (default Super+B) |
+| `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc (default Super+B, SPEC §2c) |
 | per-module keys | — | declared by the module |
 
 ## Open for later

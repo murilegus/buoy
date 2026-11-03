@@ -1,3 +1,6 @@
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
+
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -79,12 +82,19 @@ export default class BuoyExtension extends Extension {
         };
         this.stack = this._stack; // Looking Glass
 
+        // Super+B (SPEC §2c). POPUP too, like Shell's own toggles (ui/windowManager.js
+        // toggle-quick-settings), so the same key lets go while the island holds it.
+        Main.wm.addKeybinding('keybind-focus', this._settings, Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
+            Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW | Shell.ActionMode.POPUP,
+            () => this._island.toggleKeyboard());
+
         // Dev: Main.extensionManager.lookup('buoy@murilegus').stateObj.reload('media')
         if (this._settings.get_boolean('dev-mode'))
             this.reload = id => reloadModule(this, id);
     }
 
     disable() {
+        Main.wm.removeKeybinding('keybind-focus');
         for (const {m, src} of this._active ?? []) {
             src.disable();
             for (const kind of m.kinds)

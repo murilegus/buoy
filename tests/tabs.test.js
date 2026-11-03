@@ -1,5 +1,5 @@
 // Run: gjs -m tests/tabs.test.js   (pure: which tabs the strip shows, where an open starts)
-import {planStrip, tabFor, tabActivities, findTab, HOME} from '../src/buoy@murilegus/lib/kit/tabs.js';
+import {planStrip, stripOrder, tabFor, tabActivities, findTab, HOME} from '../src/buoy@murilegus/lib/kit/tabs.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -105,5 +105,10 @@ eq(findTab(s, 'media')?.id, 'media', 'find a strip tab');
 eq(findTab(s, 'launcher')?.id, 'launcher', 'find the slot tab');
 eq(findTab(s, 'clipboard')?.id, 'clipboard', 'find a ⋯ tab');
 eq(findTab(s, 'nope'), null, 'unknown id');
+
+// --- stripOrder: what ←/→ walks ------------------------------------------------------
+eq(stripOrder({tabs: [{id: HOME}, {id: 'media'}], slot: {id: 'calendar'}, more: [{id: 'calendar'}, {id: 'clipboard'}]}),
+    [HOME, 'media', 'calendar'], 'tabs then the slot; ⋯ is not walked');
+eq(stripOrder({tabs: [{id: HOME}], slot: null, more: []}), [HOME], 'no slot: Home alone');
 
 print('tabs: ok');

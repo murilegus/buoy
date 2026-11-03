@@ -281,7 +281,16 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
 - An alert on an activity beyond the shown pills brings it to the centre for ~2 s.
 - Order: highest priority at screen centre, then to the right. When one ends, the rest
   slide to fill (eased x), never jump.
-- Keyboard: `Super+B` focuses the primary; ←/→ moves between pills; Enter opens; Esc closes.
+- Keyboard (decided 2026-11-03): `Super+B` (`keybind-focus`) takes the keyboard like a
+  menu (modal) and rings the centre pill; ←/→ move the ring (no wrap); Enter or Space
+  opens the ringed pill as a click would (its tab, or Home); Esc or `Super+B` again lets
+  go, and so does a click outside the pills. Open: ←/→ walk the tab strip, Esc closes.
+  An open the stack made (ask, alert) takes no keyboard (§2); `Super+B` takes it for that
+  pill, which then stays open like a click-open. With the keyboard, an ask's buttons
+  answer to a key printed on them: the first letter of the label (Allow → A, Deny → D,
+  diacritics folded, Đồng ý → D); labels sharing a letter, or not starting with one, take
+  their position 1–9 (Deny · Allow · Always → D · 2 · 3). Ignored while another popup
+  holds the keyboard.
 
 ### 2d. Greeting (decided 2026-11-03)
 
