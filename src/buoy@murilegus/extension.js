@@ -4,7 +4,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {reworkPanel, setClusterBackground, setLeftEmpty} from './panel.js';
+import {reworkPanel, setClockDisplay, setClusterBackground, setLeftEmpty} from './panel.js';
 import {Island} from './lib/kit/island.js';
 import {ActivityStack} from './lib/kit/stack.js';
 import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
@@ -39,11 +39,15 @@ export default class BuoyExtension extends Extension {
         background();
         const leftEmpty = () => setLeftEmpty(this._settings.get_string('left-cluster-empty'));
         leftEmpty();
+        const clock = () => setClockDisplay(this._settings.get_string('clock-display'));
+        clock();
         this._backgroundId = this._settings.connect('changed', (_s, key) => {
             if (key.startsWith('cluster-'))
                 background();
             else if (key === 'left-cluster-empty')
                 leftEmpty();
+            else if (key === 'clock-display')
+                clock();
         });
 
         this._island = new Island();

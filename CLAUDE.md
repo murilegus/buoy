@@ -103,5 +103,8 @@ branch yourself at the start of the item; leave the merge to Ethan after review.
 ## Don't
 - Don't add dependencies, build steps, or bundlers.
 - Don't create a daemon, subprocess, or network call unless the roadmap item says so.
-- Don't restyle third-party tray icons or quick settings; don't move the pill off centre.
+- Don't restyle third-party tray icons or quick settings — colours, icons and menus stay
+  GNOME's. The one exception is geometry (2026-11-04): every tray button is the same
+  32 px square, and the system cluster's pieces drop their own highlight and padding for
+  the shared cluster background (SPEC §1). Don't move the pill off centre.
 - Don't rename files or restructure without updating ARCHITECTURE.md first.

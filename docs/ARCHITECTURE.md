@@ -149,6 +149,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `cluster-opacity` | i | that background's opacity, 5–100 %; default `20` |
 | `cluster-contrast` | s | auto \| light \| dark |
 | `left-cluster-empty` | s | workspace \| hidden |
+| `clock-display` | s | time (HH:MM, 24 h) \| system (GNOME's format); default `time` (2026-11-04) |
 | `window-corners` | b | round the top corners of maximized windows; default `true` (2026-11-02) |
 | `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
 | `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules |

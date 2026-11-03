@@ -116,6 +116,15 @@
       <summary>Left cluster without an app</summary>
       <description>On an empty desktop or in the Overview: show the workspace, or nothing.</description>
     </key>
+    <key name="clock-display" type="s">
+      <choices>
+        <choice value="time"/>
+        <choice value="system"/>
+      </choices>
+      <default>'time'</default>
+      <summary>Clock</summary>
+      <description>The time alone, 24-hour (14:05), or the clock as GNOME's Settings format it (date, weekday, 12/24 h).</description>
+    </key>
     <key name="cluster-radius" type="i">
       <range min="0" max="16"/>
       <default>16</default>

@@ -49,10 +49,12 @@ const plan = planPrefs(order.map(name => ({name})));
 eq(plan.general, ['expanded-width', 'keybind-focus'], 'General: the island\'s own keys, in schema order');
 eq(plan.apps, ['apps-hidden', 'apps-plain'], 'Apps page');
 eq(plan.developer, ['dev-mode'], 'Developer group');
-eq(plan.panel, ['cluster-background', 'left-cluster-empty'], 'Panel page: the top bar\'s own keys, nested ones under their parent');
+eq(plan.panel, ['cluster-background', 'left-cluster-empty', 'clock-display'], 'Panel page: the top bar\'s own keys, nested ones under their parent');
 eq(schema.get_key('left-cluster-empty').get_range().recursiveUnpack(), ['enum', ['workspace', 'hidden']],
     'left-cluster-empty: workspace or hidden');
 eq(schema.get_key('left-cluster-empty').get_default_value().unpack(), 'workspace', 'the workspace shows by default (SPEC §1)');
+eq(schema.get_key('clock-display').get_range().recursiveUnpack(), ['enum', ['time', 'system']], 'clock-display: time or system');
+eq(schema.get_key('clock-display').get_default_value().unpack(), 'time', 'the clock shows the time alone by default (Ethan 2026-11-04)');
 eq(nestedIn('cluster-background'), ['cluster-radius', 'cluster-opacity'], 'radius and opacity sit inside the background row');
 eq(nestedIn('dev-mode'), [], 'a key without nested keys has none');
 for (const [n, {parent, idleWhen}] of Object.entries(NESTED)) {

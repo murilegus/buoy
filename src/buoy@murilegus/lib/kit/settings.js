@@ -31,6 +31,7 @@ export const PLACES = {
     'cluster-radius': 'panel',
     'cluster-opacity': 'panel',
     'left-cluster-empty': 'panel',
+    'clock-display': 'panel',
     'tabs-pinned': 'modules',   // the pin switch on standalone modules' rows
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
 };
