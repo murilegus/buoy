@@ -30,6 +30,7 @@ src/buoy@murilegus/
     │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
     │   ├── keys.js         keyboard: an ask's keys, ←/→ steps; pure, unit-tested (2026-11-03)
     │   ├── settings.js     prefs: which page each schema key goes to, samples; pure (2026-11-03)
+    │   ├── cluster.js      what the left cluster shows (app / workspace / hover); pure (2026-11-04)
     │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
     │   ├── mascot.js       Bu: 13 pose grids + eyes as data, pure; MASCOT.md is the source (2026-11-03)
@@ -143,9 +144,9 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only) |
 | `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |
 | `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
-| `cluster-background` | s | never \| hover \| always; default `never` (2026-11-04) |
-| `cluster-radius` | i | that background's corner radius, 0–16 px; default `12` |
-| `cluster-opacity` | i | that background's opacity, 5–100 %; default `35` |
+| `cluster-background` | s | never \| hover \| always; default `hover` (2026-11-04) |
+| `cluster-radius` | i | that background's corner radius, 0–16 px; default `16` |
+| `cluster-opacity` | i | that background's opacity, 5–100 %; default `20` |
 | `cluster-contrast` | s | auto \| light \| dark |
 | `left-cluster-empty` | s | workspace \| hidden |
 | `window-corners` | b | round the top corners of maximized windows; default `true` (2026-11-02) |

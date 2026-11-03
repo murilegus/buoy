@@ -43,9 +43,9 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   bare on the wallpaper like the iPhone status bar; only the pill is a black block. On
   hover a translucent rounded background (`rgba(0,0,0,0.35)`, radius 12, no blur) wraps
   the whole cluster. Setting `cluster-background = never | hover | always`, default
-  **`never`** (2026-11-04, Ethan: bare on the wallpaper unless asked for), with
-  `cluster-radius` (0–16 px, default 12; 16 = a pill like the island) and `cluster-opacity`
-  (5–100 %, default 35) under it in prefs. A cluster with nothing to show has no
+  **`hover`**, with `cluster-radius` (0–16 px, default **16** = a pill like the island) and
+  `cluster-opacity` (5–100 %, default **20**) under it in prefs (Ethan, 2026-11-04; briefly
+  `never` / 12 / 35 earlier the same day). A cluster with nothing to show has no
   background at all (no empty stub), and the background stays 4 px off the screen edges.
 - **Contrast on light wallpapers**: like iPhone, the text flips, not the background. On
   `picture-uri` change (signal, no polling) decode the wallpaper once, downscaled, measure
@@ -54,7 +54,9 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   `cluster-contrast = auto | light | dark`, default `auto`. The pill is always black and
   unaffected.
 - **Left cluster** (decided 2026-10-30): two layers of information in one place.
-  - Normal: icon + name of the focused app (`Shell.WindowTracker`, `notify::focus-window`).
+  - Normal: icon + name of the focused app (`Shell.WindowTracker`, `notify::focus-app`). The
+    icon is the app's own; if the theme has none, its monochrome `<icon>-symbolic`, then a
+    plain window (`window-symbolic`, else `focus-windows-symbolic`) (Ethan, 2026-11-04).
   - Hover: the cluster widens and appends the workspace as a secondary item: grid icon +
     number ("Firefox · ⊞ 2"), or the workspace name if the user set one ("Firefox · ⊞ Work").
     No "WS" abbreviation; the icon carries the meaning.

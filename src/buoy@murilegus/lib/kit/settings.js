@@ -30,6 +30,7 @@ export const PLACES = {
     'cluster-background': 'panel',
     'cluster-radius': 'panel',
     'cluster-opacity': 'panel',
+    'left-cluster-empty': 'panel',
     'tabs-pinned': 'modules',   // the pin switch on standalone modules' rows
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
 };

@@ -1,15 +1,28 @@
+import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import Pango from 'gi://Pango';
+import Shell from 'gi://Shell';
+import St from 'gi://St';
+
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import {AppMenu} from 'resource:///org/gnome/shell/ui/appMenu.js';
+
+import {fallbackIcons, leftCluster} from './lib/kit/cluster.js';
 
 // cluster-background, -radius, -opacity (SPEC §1). St has no CSS variables, so the
 // background is the box's inline style, repainted when the look or its hover changes.
-let look = {mode: 'never', radius: 12, opacity: 35};
+let look = {mode: 'hover', radius: 16, opacity: 20};
 
 // What reworkPanel(true) changed on each cluster box, to put back on disable.
 let saved = null;
 
+// The left cluster's own content (SPEC §1), first in _leftBox while enabled.
+let left = null;
+
 /**
- * SPEC §1: transparent panel; left cluster = focused app (TODO); right = tray + clock;
- * quick settings hidden (indicators move into the pill — TODO).
+ * SPEC §1: transparent panel; left cluster = focused app or workspace (LeftCluster);
+ * right = tray + clock (system cluster — TODO).
  *
  * @param {boolean} on  apply (enable) or revert (disable)
  */
@@ -26,7 +39,11 @@ export function reworkPanel(on) {
         saved = boxes.map(box => ({
             reactive: box.reactive, track_hover: box.track_hover, visible: box.visible, style: box.get_style(),
         }));
+        left = new LeftCluster(panel._leftBox);
+        panel._leftBox.insert_child_at_index(left.actor, 0);
     } else {
+        left.destroy();
+        left = null;
         panel._rightBox.remove_child(dateMenu.container);
         panel._centerBox.add_child(dateMenu.container);
         activities.container.show();
@@ -66,6 +83,13 @@ export function setClusterBackground(next) {
         [Main.panel._leftBox, Main.panel._rightBox].forEach(paint);
 }
 
+/**
+ * @param {string} mode  `left-cluster-empty`: workspace | hidden
+ */
+export function setLeftEmpty(mode) {
+    left?.setEmpty(mode);
+}
+
 // The stylesheet's transition-duration fades the change in both directions.
 function paint(box) {
     const shown = look.mode === 'always' || (look.mode === 'hover' && box.hover);
@@ -101,4 +125,128 @@ function unfollowEmpty(box, state) {
     for (const [child, id] of state.children)
         child.disconnect(id);
     state.children = null;
+}
+
+// The app's own icon; if the theme has none, its monochrome one, then a plain window
+// (Ethan 2026-11-04). St.Icon tries `fallback_gicon` when `gicon` fails, and a ThemedIcon
+// tries its names in order: the theme decides, no lookups here. A window with no app info
+// gets Shell's own texture (its window icon).
+function appIcon(app) {
+    const info = app.get_app_info();
+    if (!info)
+        return app.create_icon_texture(16);
+    const own = info.get_icon();
+    const fallback = Gio.ThemedIcon.new_from_names(
+        fallbackIcons(own instanceof Gio.ThemedIcon ? own.get_names()[0] : null, app.get_id()));
+    return new St.Icon({gicon: own ?? fallback, fallback_gicon: fallback, style_class: 'buoy-app-icon'});
+}
+
+// [▣ app · ⊞ 2] or [⊞ Workspace 2] (kit/cluster.js decides). Click toggles the Overview,
+// right-click opens the app's menu (Shell's own AppMenu, as on a dash icon), scroll
+// switches workspace (Main.wm.handleWorkspaceScroll, the Overview's own limiter). Every
+// update comes from a signal: focus, workspace, names, Overview, the cluster's hover.
+class LeftCluster {
+    constructor(box) {
+        this._box = box;
+        this._empty = 'workspace';
+        this.actor = new St.Button({
+            style_class: 'buoy-app', reactive: true, can_focus: true, track_hover: true,
+            button_mask: St.ButtonMask.ONE | St.ButtonMask.THREE, y_align: Clutter.ActorAlign.CENTER,
+        });
+        const row = new St.BoxLayout({style_class: 'buoy-app-row', y_align: Clutter.ActorAlign.CENTER});
+        this._icon = new St.Bin({y_align: Clutter.ActorAlign.CENTER});
+        this._text = new St.Label({style_class: 'buoy-app-name', y_align: Clutter.ActorAlign.CENTER});
+        this._text.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+        this._extra = new St.BoxLayout({style_class: 'buoy-app-extra', y_align: Clutter.ActorAlign.CENTER});
+        this._extra.add_child(new St.Label({text: '·', y_align: Clutter.ActorAlign.CENTER}));
+        this._extra.add_child(new St.Icon({icon_name: 'view-grid-symbolic', style_class: 'buoy-app-grid'}));
+        this._extraText = new St.Label({y_align: Clutter.ActorAlign.CENTER});
+        this._extra.add_child(this._extraText);
+        row.add_child(this._icon);
+        row.add_child(this._text);
+        row.add_child(this._extra);
+        this.actor.set_child(row);
+
+        this._tracker = Shell.WindowTracker.get_default();
+        this._wmPrefs = new Gio.Settings({schema_id: 'org.gnome.desktop.wm.preferences'});
+        this._menuManager = new PopupMenu.PopupMenuManager(this.actor);
+        this._menu = null;
+        this._shownApp = undefined;
+
+        const sync = () => this._sync();
+        this._ids = [
+            [this._tracker, this._tracker.connect('notify::focus-app', sync)],
+            [global.workspace_manager, global.workspace_manager.connect('active-workspace-changed', sync)],
+            [this._wmPrefs, this._wmPrefs.connect('changed::workspace-names', sync)],
+            [Main.overview, Main.overview.connect('showing', sync)],
+            [Main.overview, Main.overview.connect('hidden', sync)],
+            [box, box.connect('notify::hover', sync)],
+        ];
+        this.actor.connect('clicked', (_b, button) => this._clicked(button));
+        this.actor.connect('scroll-event', (_a, event) => Main.wm.handleWorkspaceScroll(event));
+        this._sync();
+    }
+
+    setEmpty(mode) {
+        this._empty = mode;
+        this._sync();
+    }
+
+    _app() {
+        return Main.overview.visible ? null : this._tracker.focus_app;
+    }
+
+    _sync() {
+        const app = this._app();
+        const plan = leftCluster({
+            app: app?.get_name() ?? null,
+            index: global.workspace_manager.get_active_workspace_index(),
+            names: this._wmPrefs.get_strv('workspace-names'),
+            hover: this._box.hover,
+            overview: Main.overview.visible,
+            empty: this._empty,
+        });
+        this.actor.visible = plan.visible;
+        if (!plan.visible)
+            return;
+        // the icon only when it changes: an app's texture is not free to make
+        const iconKey = plan.icon === 'app' ? app : 'grid';
+        if (iconKey !== this._shownApp) {
+            this._shownApp = iconKey;
+            this._icon.child = plan.icon === 'app'
+                ? appIcon(app)
+                : new St.Icon({icon_name: 'view-grid-symbolic', style_class: 'buoy-app-grid'});
+        }
+        this._text.text = plan.text;
+        this._extra.visible = plan.extra !== null;
+        this._extraText.text = plan.extra ?? '';
+        this.actor.accessible_name = plan.extra ? `${plan.text}, workspace ${plan.extra}` : plan.text;
+    }
+
+    _clicked(button) {
+        if (button !== Clutter.BUTTON_SECONDARY) {
+            Main.overview.toggle();
+            return;
+        }
+        const app = this._app();
+        if (!app)
+            return;
+        if (!this._menu) {
+            this._menu = new AppMenu(this.actor, St.Side.TOP);
+            Main.uiGroup.add_child(this._menu.actor);
+            this._menuManager.addMenu(this._menu);
+        }
+        this._menu.setApp(app);
+        this._menu.open(true);
+    }
+
+    destroy() {
+        for (const [obj, id] of this._ids)
+            obj.disconnect(id);
+        this._ids = [];
+        this._menu?.destroy();
+        this._menu = null;
+        this._wmPrefs = null;
+        this.actor.destroy();
+    }
 }
