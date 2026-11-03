@@ -103,7 +103,10 @@ fields and order: [PROFILES.md](PROFILES.md).
 8. **No polling while closed; no blur; nothing animating while idle.** A source that must
    poll (progress bar position) polls only while its activity is visible. "Animating"
    means looping or continuous motion: a change of idle content (clock minute, `auto`
-   switching plans) is one transition, then stillness (clarified 2026-11-03).
+   switching plans) is one transition, then stillness (clarified 2026-11-03). Bu's eyes
+   stroll by the same rule: a scripted beat every few seconds, each a few single frames
+   (stepped, never eased), only while visible and in use; asleep and still after 60 s
+   without input, in power-saver and with animations off (`MASCOT.md` § Eyes, 2026-11-03).
 9. Every module declares its GSettings keys in `index.js#schema`; prefs.js renders them.
    Shell-level keys that belong to no module (panel clusters, window corners) get their
    own prefs pages; their code lives next to `panel.js`, not under `modules/`.
@@ -132,7 +135,7 @@ fields and order: [PROFILES.md](PROFILES.md).
 | `left-cluster-empty` | s | workspace \| hidden |
 | `window-corners` | b | round the top corners of maximized windows; default `true` (2026-11-02) |
 | `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
-| `idle-clock-style`, `idle-weather-refresh` | — | declared by those modules |
+| `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules |
 | `greeting-style`, `greeting-name`, `greeting-last-day` | — | declared by `greeting` (SPEC §2d) |
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
 | `transfers-folders` | as | M4: folders watched for finished downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03) |

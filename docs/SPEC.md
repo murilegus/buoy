@@ -150,7 +150,7 @@ and shrinks when they are off; `auto` and `none` are the kit's own.
 | `clock` | a *second* clock, styled unlike the one in the right cluster: time + time-of-day icon (dawn / morning / noon / afternoon / evening / night, from `kit/daypart.js`, §2d); variants via `idle-clock-style` (icon+time, time only, icon only, with seconds) | `clock` | 1 min tick, only while idle |
 | `weather` | condition icon + temperature; hover peek adds wind direction/speed, humidity, feels-like; expanded shows the day | `weather` | GNOME's own `ui/weather.js` client (same location as dateMenu); `idle-weather-refresh` 30 min / 1 h |
 | `next-event` | next calendar event: title · time, Join glyph when it has a link | `calendar` | EDS signals |
-| `mascot` | Bu's eyes in the pill, four static modes — idle · sleep · missed · waiting (`MASCOT.md` § Eyes, 2026-11-03) | `mascot` (off by default) | light changes, daypart, away/back |
+| `mascot` | Bu's eyes in the pill, four modes — idle · sleep · missed · waiting; in `idle` the eyes stroll in pixel steps: look, walk, blink, smile, one beat every few seconds (`idle-mascot-stroll`); asleep after 60 s without input, in power-saver and with animations off (`MASCOT.md` § Eyes, 2026-11-03) | `mascot` (off by default) | light changes, daypart, idle monitor, power profile; one beat timer only while strolling |
 
 Rules: an idle plan is presentation only (same data shape as an adapter); it never
 surfaces an activity; it is replaced the instant any activity surfaces; nothing animates
