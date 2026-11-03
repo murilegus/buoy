@@ -203,4 +203,26 @@ for (const name of ['vlc.json', 'Spotify.json', 'broken.json', 'bad.json', 'note
     GLib.unlink(`${dir}/${name}`);
 GLib.rmdir(dir);
 
+// --- docs/examples/apps: every example loads and does what docs/PROFILES.md says ----------
+const ROOT = GLib.path_get_dirname(GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]));
+({profiles, errors} = loadProfiles(`${ROOT}/docs/examples/apps`));
+eq(errors, [], 'every example profile is valid (README.md is not a profile)');
+eq([...profiles.keys()].sort(), ['firefox', 'spotify', 'telegram', 'vlc'], 'the examples, by slug');
+r = new Registry();
+r.register('media', base);
+r.register('notification', {notification: ev => ({text: ev.title, expanded: {center: {title: ev.title, subtitle: ev.body ?? null}}})});
+r.setProfiles(profiles);
+const song = {id: 'e', title: 'Monument Valley', artist: 'Lumen Coast'};
+a = r.build('media', 'com.spotify.Client', song);
+eq([a.text, a.priority], ['Lumen Coast — Monument Valley', 15], 'spotify example: artist first, above other players');
+eq(r.build('media', 'firefox', {...song, title: 'Monument Valley (Official Music Video) - YouTube'}).text,
+    'Monument Valley · Lumen Coast', 'firefox example: YouTube suffix and video tags removed');
+eq(r.build('media', 'firefox', {...song, title: 'Monument Valley [Lyrics]'}).text, 'Monument Valley · Lumen Coast',
+    'firefox example: [Lyrics] too');
+a = r.build('media', 'org.videolan.VLC', song);
+eq([a.leading, a.ttl], [{icon: 'video-x-generic-symbolic'}, 600000], 'vlc example: icon and 10 min ttl');
+eq(r.build('media', 'vlc', {...song, title: 'sample-clip.mp4'}), null, 'vlc example: sample files skipped');
+a = r.build('notification', 'Telegram Desktop', {id: 'm', title: 'Lan', body: 'see you at 8'});
+eq([a.expanded.center.subtitle, a.priority], [null, 65], 'telegram example: body hidden, below other notifications');
+
 print('registry: ok');

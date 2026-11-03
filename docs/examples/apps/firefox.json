@@ -1,0 +1,6 @@
+{
+  "replace": [
+    {"field": "title", "pattern": "\\s*-\\s*YouTube$", "with": ""},
+    {"field": "title", "pattern": "\\s*[\\(\\[](official (music )?video|lyrics?|4k)[\\)\\]]", "with": "", "flags": "i"}
+  ]
+}

@@ -73,31 +73,12 @@ source.js ──ev──► registry.build(kind, app, ev) ──activity──�
 D-Bus callers send presentation data directly and skip the registry.
 ```
 
-### App profiles (`~/.config/buoy/apps/<app>.json`, 2026-11-02)
+### App profiles (2026-11-02)
 
-Data only (rule 7); read on enable and reloaded when a file there changes (a file
-monitor, no polling); a bad file is skipped with a warning naming it. The file name is
-slugged, so `com.spotify.Client.json` and `spotify.json` are the same app. Every key is
-optional; an unknown key is an error, so a typo is not silently ignored.
-
-```json
-{
-  "icon": "audio-x-generic-symbolic",
-  "title": "{artist} — {title}",
-  "hideBody": true,
-  "priority": 40,
-  "ttl": 5000,
-  "replace": [{"field": "title", "pattern": "\\s*\\(Official Video\\)", "with": "", "flags": "i"}],
-  "skip": {"field": "title", "pattern": "^Advertisement$"}
-}
-```
-
-`icon` replaces the leading element; `title` is a template over the event's fields (an
-unknown field is empty); `hideBody` keeps the event's `body` from the adapter; `priority`
-0–100 and `ttl` (ms, still capped at 8 h) replace the defaults; `replace` rules run in
-order on string fields before the adapter; `skip` drops matching events. Flags: i, m, s.
-The registry applies all of it, for every adapter, so adapters never handle these keys.
-A profile still applies to an app listed in `apps-plain` (that only skips its override).
+`~/.config/buoy/apps/<app>.json`: per-user, data only (rule 7): icon, title template,
+hideBody, priority, ttl, regex replace/skip. The registry applies them for every adapter
+and reloads them when a file changes; adapters never handle these keys. Format, event
+fields and order: [PROFILES.md](PROFILES.md).
 
 ## Rules
 
