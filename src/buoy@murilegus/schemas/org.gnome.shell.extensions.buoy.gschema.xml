@@ -1,35 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The one source of Buoy's settings: prefs.js reads summaries, descriptions and ranges
+  from here (lib/kit/settings.js places each key). A module's own keys are named
+  `<module id>-…`. A key enters this file with the item that implements it.
+-->
 <schemalist>
   <schema id="org.gnome.shell.extensions.buoy" path="/org/gnome/shell/extensions/buoy/">
-    <key name="modules-media" type="b"><default>true</default></key>
-    <key name="modules-notification" type="b"><default>true</default></key>
-    <key name="modules-hud" type="b"><default>true</default></key>
-    <key name="modules-home" type="b"><default>true</default></key>
-    <key name="modules-progress" type="b"><default>true</default></key>
-    <key name="modules-timer" type="b"><default>true</default></key>
-    <key name="modules-calendar" type="b"><default>true</default></key>
-    <key name="modules-copied" type="b"><default>true</default></key>
-    <key name="modules-layout" type="b"><default>true</default></key>
-    <key name="modules-ask" type="b"><default>true</default></key>
-    <key name="modules-clipboard" type="b"><default>true</default></key>
-    <key name="apps-hidden" type="as"><default>[]</default></key>
-    <key name="apps-plain" type="as"><default>[]</default></key>
-    <key name="idle-content" type="s"><default>"none"</default></key>
-    <key name="tabs-pinned" type="as"><default>[]</default></key>
+    <key name="modules-media" type="b">
+      <default>true</default>
+      <summary>Media</summary>
+      <description>What is playing, from any MPRIS player, with its tab.</description>
+    </key>
+    <key name="modules-notification" type="b">
+      <default>true</default>
+      <summary>Notifications</summary>
+      <description>The Notifications tab (notifications in the pill come later).</description>
+    </key>
+    <key name="modules-hud" type="b">
+      <default>true</default>
+      <summary>Volume and brightness</summary>
+      <description>Shows the volume, brightness and caps lock changes in the pill instead of the stock popup.</description>
+    </key>
+    <key name="modules-home" type="b">
+      <default>true</default>
+      <summary>Home</summary>
+      <description>The blocks of the Home tab.</description>
+    </key>
+    <key name="modules-progress" type="b">
+      <default>true</default>
+      <summary>Transfers</summary>
+      <description>File copies and downloads, with the Transfers tab.</description>
+    </key>
+    <key name="modules-timer" type="b">
+      <default>true</default>
+      <summary>Timer</summary>
+      <description>Timers in the pill, with the Timer tab.</description>
+    </key>
+    <key name="modules-calendar" type="b">
+      <default>true</default>
+      <summary>Calendar</summary>
+      <description>The Calendar tab, in the strip's slot unless another is chosen.</description>
+    </key>
+    <key name="modules-copied" type="b">
+      <default>true</default>
+      <summary>Copied</summary>
+      <description>A short flash when something is copied.</description>
+    </key>
+    <key name="modules-layout" type="b">
+      <default>true</default>
+      <summary>Keyboard layout</summary>
+      <description>A short flash when the input source changes.</description>
+    </key>
+    <key name="modules-ask" type="b">
+      <default>true</default>
+      <summary>Questions</summary>
+      <description>Questions from scripts and coding agents, answered in the pill.</description>
+    </key>
+    <key name="modules-clipboard" type="b">
+      <default>true</default>
+      <summary>Clipboard</summary>
+      <description>The Clipboard tab.</description>
+    </key>
+    <key name="apps-hidden" type="as">
+      <default>[]</default>
+      <summary>Hidden apps</summary>
+      <description>Apps whose activities never show. Any id an app goes by; it is slugged.</description>
+    </key>
+    <key name="apps-plain" type="as">
+      <default>[]</default>
+      <summary>Plain apps</summary>
+      <description>Apps drawn by the default adapter instead of their own.</description>
+    </key>
+    <key name="tabs-pinned" type="as">
+      <default>[]</default>
+      <summary>Pinned tabs</summary>
+      <description>Standalone tabs shown in the strip all the time, besides the slot.</description>
+    </key>
     <key name="tabs-slot" type="s">
       <default>""</default>
       <summary>Standalone tab in the strip's slot</summary>
       <description>Set by choosing a tab from ⋯. Empty or not enabled: the first enabled standalone tab.</description>
     </key>
-    <key name="cluster-background" type="s"><default>"hover"</default></key>
-    <key name="cluster-contrast" type="s"><default>"auto"</default></key>
-    <key name="left-cluster-empty" type="s"><default>"workspace"</default></key>
     <key name="expanded-width" type="i">
+      <range min="0" max="1200"/>
       <default>0</default>
-      <summary>Expanded island width in logical px</summary>
-      <description>0 derives it from the monitor (560–760 px). Height is not a setting: the expanded island fits its content, up to half its width.</description>
+      <summary>Expanded width</summary>
+      <description>In logical px; 0 derives it from the monitor (560–760 px). Height follows the content, up to half the width.</description>
     </key>
-    <key name="dev-mode" type="b"><default>false</default></key>
+    <key name="dev-mode" type="b">
+      <default>false</default>
+      <summary>Developer mode</summary>
+      <description>Lets Looking Glass reload one module without restarting the Shell.</description>
+    </key>
     <key name="keybind-focus" type="as">
       <default><![CDATA[['<Super>b']]]></default>
       <summary>Focus the island</summary>
