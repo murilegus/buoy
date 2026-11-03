@@ -50,7 +50,7 @@ export default class BuoyExtension extends Extension {
         this._island.onCapacityChanged = () => this._stack?.refresh();
         this._hiddenId = this._settings.connect('changed::apps-hidden',
             () => this._stack.setHiddenApps(slugs('apps-hidden')));
-        this._dbus = new BuoyDBus(this._stack);
+        this._dbus = new BuoyDBus(this._stack, {registry: this._registry});
         this._dbus.export();
 
         this._active = [];

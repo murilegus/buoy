@@ -8,6 +8,7 @@ import {validate} from './activity.js';
  *   surface(activity) → id · update(id, patch, {alert}) · end(id, {dismissal})
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
  *   answer(id, choice) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool) · clearMissed()
+ *   has(id) · get(id)
  *
  * Rules:
  *   - every activity goes through validate(); priority defaults from activity.js PRIORITY
@@ -227,6 +228,22 @@ export class ActivityStack {
     clearMissed() {
         this._missed = [];
         this._updateLight();
+    }
+
+    /**
+     * @param {string} id
+     * @returns {boolean} live or scheduled
+     */
+    has(id) {
+        return this._items.has(id) || this._scheduled.has(id);
+    }
+
+    /**
+     * @param {string} id
+     * @returns {?object} the live activity (read only), or null
+     */
+    get(id) {
+        return this._items.get(id) ?? null;
     }
 
     get missed() {

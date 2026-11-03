@@ -41,6 +41,7 @@ are JavaScript regular expressions, written as JSON strings (so `\s` is `"\\s"`)
 |---|---|---|
 | `media` | `title`, `artist`, `art`, `status`, `length` | MPRIS (M3) |
 | `notification` | `title`, `body`, … | Message tray (M4) |
+| any, over D-Bus | the caller's `attributes` | [DBUS.md](DBUS.md) |
 
 ## How it combines
 
@@ -50,5 +51,5 @@ are JavaScript regular expressions, written as JSON strings (so `\s` is `"\\s"`)
 3. The profile's `title`, `icon`, `priority`, `ttl` go on top.
 
 A profile still applies to an app in `apps-plain`; `apps-hidden` hides the app whatever
-its profile says. D-Bus callers send their pill directly and do not go through profiles
-(yet: see the D-Bus item in FEATURES.md).
+its profile says. D-Bus callers send their pill directly (no adapter); their profile
+treats `attributes` as the event, through updates too (2026-11-03, [DBUS.md](DBUS.md)).

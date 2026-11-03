@@ -71,7 +71,8 @@ source.js ──ev──► registry.build(kind, app, ev) ──activity──�
                       ├─ ~/.config/buoy/apps/<slug>.json   (user, data only)
                       ├─ modules/<m>/apps/<slug>.js[kind]   (repo, code)
                       └─ modules/<m>/adapter.js[kind]        (default)
-D-Bus callers send presentation data directly and skip the registry.
+D-Bus callers send presentation data directly: no adapter, but the registry slugs the app
+and applies the user's profile (Registry.present). API: DBUS.md.
 ```
 
 ### App profiles (2026-11-02)
