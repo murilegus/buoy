@@ -375,14 +375,72 @@ no activity, so the moving and activity poses (`busy`, `think`, `done`, `party`,
 
 | Mode | When | Eyes (in the 120 × 32 pill) |
 |---|---|---|
-| `idle` | nothing to say | two bars 4.5 × 10, r 2.2, at x 49 and 66 |
-| `sleep` | daypart `night`, or the user is away | two lines 9 × 2.4 at y 16 |
-| `missed` | light amber | the bars shifted 6 px toward the light |
 | `waiting` | light red (an `ask` waiting under DND) | two bars 6 × 15, r 3 |
+| `missed` | light amber | the bars shifted 6 px toward the light |
+| `sleep` | daypart `night`; 60 s without input; power profile `power-saver`; `enable-animations` off | two lines 9 × 2.4 at y 16 |
+| `idle` | otherwise | two bars 4.5 × 10, r 2.2, at x 49 and 66; strolls (below) |
 
-Static: a mode changes only on an event (light change, daypart boundary, away/back);
-never a blink. `idle-content = mascot` picks it; in `auto` it scores 10 like `clock`
-(ties take turns) when it is in `idle-auto-plans`.
+- The first row that holds wins: a light always shows through (`waiting`, `missed`), so
+  coming back to the desk finds the eyes looking at what was missed, not asleep.
+- `sleep` replaces open eyes wherever Bu must hold still — nobody at the desk, power
+  saving, animations off — so stillness reads as Bu resting, not as a frozen pill
+  (Ethan, 2026-11-03). `idle-mascot-stroll = false` is the one case of open eyes that
+  never move.
+- A mode changes only on an event (light change, daypart boundary, no input / input
+  again, power profile change, `enable-animations` change), in one frame.
+  `idle-content = mascot` picks the plan; in `auto` it scores 10 like `clock` (ties take
+  turns) when it is in `idle-auto-plans`.
+- **60 s without input** means no keyboard, mouse, touchpad, touch or tablet event (and
+  no lid open, power plug change or resume): the core idle monitor,
+  `global.backend.get_core_idle_monitor()`, the one `ui/messageTray.js` and
+  `ui/screenShield.js` use. The watch is
+  `add_idle_watch_full(60000, cb, Meta.IdleMonitorWatchFlags.UNINHIBITABLE)`: a default
+  watch never fires while an app inhibits idle, so a windowed video would keep Bu
+  strolling all evening (mutter `src/backends/meta-idle-monitor.c`,
+  `update_inhibited_watch`; resets in `src/core/events.c`,
+  `handle_idletime_for_event`). `add_user_active_watch()` brings `idle` back. Both
+  watches exist only while the plan is shown and are removed with it.
+- The power profile is read from the Shell's own toggle (`ui/status/powerProfiles.js`,
+  `PowerProfilesToggle._proxy.ActiveProfile`, and its `g-properties-changed`); no new
+  proxy, no daemon = not saving. `_proxy` is private Shell state: check it on every
+  Shell release.
+
+### The stroll (decided 2026-11-03)
+
+In mode `idle` only, the eyes follow a fixed script so the pill feels alive. Motion is
+**stepped**, like the pixel Bu: each change is one or a few single frames, never an
+eased slide, so the cost does not grow with the refresh rate. Each beat is one content
+change, then stillness until the next — not a loop (ARCHITECTURE rule 8).
+
+| # | Beat | Eyes | Frames | Hold |
+|---|---|---|---|---|
+| 1 | rest | bars, centred | — | 4.5 s |
+| 2 | look left | bars to dx −9 px | 3 steps of 3 px, 90 ms apart | 1.25 s |
+| 3 | stroll right | bars to dx +9 px | 6 steps of 3 px, 90 ms apart | 1.5 s |
+| 4 | back | bars to dx 0 | 3 steps | 2.5 s |
+| 5 | blink | bars at 12 % height for 110 ms, then open | 2 | 3 s |
+| 6 | smile | `^ ^`: two arcs, stroke 2.4, round caps, (46.5, 18)–(56, 18) and (63.5, 18)–(73, 18), control y 11.5 | 1 | 1.25 s |
+| 7 | long rest | bars, centred | 1 | 7 s |
+
+- Then beat 1 again. Each hold is jittered uniformly by ±25 %, so it reads as alive but
+  stays predictable and testable. Holds are 2× faster than the first demo (Ethan,
+  2026-11-03).
+- Cost: 16 frames per ~21 s cycle, under 1 frame/s at any refresh rate, each a
+  ~30 × 16 px redraw (an eased 600 ms slide would be ~7 frames/s at 60 Hz, ~16 at
+  144 Hz). For comparison a blinking GTK cursor is ~2 frames/s.
+- The script never uses `missed`, `waiting` or `sleep`: those eyes say something real.
+- It runs only while the mode is `idle`, the pill is idle and mapped, and
+  `idle-mascot-stroll` is true (default). Anything else — a mode change, an activity
+  surfacing, the plan replaced, destroy, disable — removes the beat timer and the
+  pending steps at once; back in `idle`, the script restarts at beat 1.
+- Code: `kit/mascot.js` exports `STROLL` (the beats above as data: `{eyes, dx, steps,
+  hold}`), a pure `nextBeat(i, rand) → {beat, next, holdMs}` and a pure
+  `eyesMode({light, daypart, idleInput, powerSaver, animations})`. `present.js` owns the
+  single `GLib.timeout_add` (steps and beats share it; removed on every stop above) and
+  the two idle-monitor watches, and moves the two eye actors without easing.
+  `tests/mascot.test.js`: script order and wrap-around, hold bounds with `rand` 0 and 1,
+  no `missed`/`waiting`/`sleep` beat, step counts, and every `eyesMode` row including
+  precedence (amber beats 60 s idle, red beats amber).
 
 ## Name
 

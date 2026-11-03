@@ -106,7 +106,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | Meeting in 5 min · Join | calendar | `ui/calendar.js` + link regex | | 8 |
 | [ ] | Timer / pomodoro ring, keep-awake | timer | GLib, SessionManager Inhibit | tab Timer | 6 |
 | [ ] | Agent activity with Bu: one per Claude Code / Codex session, pose from hook events (MASCOT.md § Agents, 2026-11-03) | agent | hooks → D-Bus `Surface/Update/End` | adapter maps every event to its pose (unit-tested); name leads the text, elapsed trailing; `done` alert, `party` after > 10 min; stale dims | 18 |
-| [ ] | Idle plan `mascot`: Bu's eyes (MASCOT.md § Eyes) | — | stack light, `kit/daypart.js`, idle monitor | four static modes; `idle-content = mascot`; in `auto` scores 10 when listed; module off by default | 8 |
+| [ ] | Idle plan `mascot`: Bu's eyes (MASCOT.md § Eyes) | — | stack light, `kit/daypart.js`, core idle monitor, Shell power-profile toggle | four modes with precedence waiting > missed > sleep > idle (`eyesMode()` unit-tested); `sleep` after 60 s without input (uninhibitable watch), in power-saver, with animations off; the stroll in `idle`: 7 beats, stepped (16 frames per ~21 s cycle), ±25 % holds, one timer, gone on every stop; `idle-mascot-stroll` b, default true (2026-11-03); `idle-content = mascot`; in `auto` scores 10 when listed; module off by default; `powertop` on real hardware: wakeups with `mascot` close to `clock` | 8 |
 | [ ] | Screenshot taken → thumb, Copy/Open/Delete | notification | `screenshotUI` signal | | 8 |
 | [ ] | Print job progress | progress | CUPS `org.cups.cupsd.Notifier` | | 9 |
 | [ ] | Terminal command finished in unfocused tab | notification (adapter) | Ptyxis / GNOME Terminal notifications | "exit 0 · 48 s", jump | 12 |
