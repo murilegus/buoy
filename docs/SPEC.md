@@ -445,22 +445,50 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 
 ## 6c. Transfers tab (decided 2026-11-03)
 
-What the tab can show is bounded by its sources, so it grows in two steps.
+What the tab can show is bounded by its sources, so it grows in two steps. Checked
+2026-11-03 against Nautilus upstream, Ubuntu's packaging and the installed binaries:
+`com.canonical.Unity.LauncherEntry` comes from **Files on Ubuntu only** (Ubuntu's
+`12_unity_launcher_support.patch` via `libunity`; upstream Nautilus sends none) and from
+**Chrome** (`libunity.so.9`); **Firefox sends none** (only `_NET_WM_XAPP_PROGRESS`, an X11
+window hint). Transmission not checked yet.
 
-- **M3, `progress`.** The source is `com.canonical.Unity.LauncherEntry`, which says only
-  *which app* is busy: progress 0–1, a count, urgent. No file names, no source or
-  destination. The pill: ring, app name, count, % (one pill per app). The tab:
-  - **Running** — one row per app: icon, name, "copying 3 items" (from the count), %,
+**Ring only when the source gives a fraction.** No total, no percentage — Buoy never
+invents one:
+
+| Known | Leading | Text | e.g. |
+|---|---|---|---|
+| a fraction (LauncherEntry) | determinate ring | % | `◔ Chrome · 2 downloads  72 %` |
+| only a growing file (`.part`, `.crdownload`) | static download icon, no ring | name · size · speed | `⤓ report.pdf · 12 MB · 2.1 MB/s` |
+| finished (renamed) | file type icon | name · folder | `report.pdf → Downloads` |
+
+No spinner and no endless ring: that would animate for the whole transfer and suggest
+progress there is none of; the growing size already says it is moving. Speed comes from
+the size between two `Gio.FileMonitor` `changed` events (rate-limited by GFileMonitor,
+about one a second): no timer of our own. One exception: when an app's LauncherEntry
+covers exactly **one** growing file (Chrome, one download), its fraction is that file's,
+and the file row gets the ring; with two or more it cannot be split, so the app row keeps
+the % and the file rows show size only.
+
+- **M3, `progress`.** LauncherEntry says only *which app* is busy: progress 0–1, maybe a
+  count, urgent. One pill and one row per app, the fraction summed over everything the
+  app is doing: two copies in Files are one "Files 55 %" (Ubuntu's patch sends the
+  combined ratio and no count, so not even "2 operations"). The tab:
+  - **Running** — one row per app: icon, name, the count when sent ("2 downloads"), %,
     a thin bar.
   - **Done** — a row stays a little after the app's progress ends (pill gone), with the
     time, then leaves.
   - A click focuses that app's window (`Shell.AppSystem.lookup_app(id).activate()`);
-    there is nothing more to open — for Firefox it is the window, not its downloads list.
-- **M4, `downloads`.** A **Downloaded** group: one row per finished file — file type icon,
-  file name, folder · app · time. A click opens the file; two **icon-only** buttons
-  (accessible name and tooltip "Open", "Show in Files"): `document-open-symbolic` opens
-  it, `folder-open-symbolic` shows it selected in Files. A browser's Running row turns
-  into its file once the file appears (`.part` / `.crdownload` renamed).
+    there is nothing more to open.
+  - Not in M3: Firefox (no signal), Files outside Ubuntu (it only posts the notification
+    "N file operations active" while its window is closed —
+    `nautilus-progress-persistence-handler.c`; that reaches Buoy with M4 notifications).
+- **M4, `downloads`.** Each `.part` / `.crdownload` in a watched folder is its own
+  **Running** row from the moment it appears (name, size, speed; the ring only per the
+  exception above) — this is how Firefox shows up at all. Renamed to its final name, it
+  moves to a **Downloaded** group: file type icon, file name, folder · app · time. A
+  click opens the file; two **icon-only** buttons (accessible name and tooltip "Open",
+  "Show in Files"): `document-open-symbolic` opens it, `folder-open-symbolic` shows it
+  selected in Files.
   Where files are caught:
   1. the user's Downloads folder, `GLib.get_user_special_dir(DIRECTORY_DOWNLOAD)` (not a
      hard-coded `~/Downloads`), always;
@@ -469,7 +497,9 @@ What the tab can show is bounded by its sources, so it grows in two steps.
   3. to try first in M4: Recent files (`recently-used.xbel`, one monitor) as the
      catch-all for a file saved anywhere — filtered to browsers and to entries added
      just now, since it also lists every file opened elsewhere. If Firefox and Chrome
-     both write there, it becomes the main source and 1–2 the fallback; not verified yet.
+     both write there, it becomes the main source for finished files and 1–2 the
+     fallback; not verified yet. Recent files only see a file once it is finished, so
+     Running rows still need 1–2.
 - **Not planned:** "source → destination" for a Files copy — Nautilus exposes no names
   over D-Bus (`org.gnome.Nautilus.FileOperations2` starts operations, it does not report
   them), and a guess could be wrong.
