@@ -1,4 +1,4 @@
-// TODO M4 "Notifications peek" (source: Main.messageTray). Until then only its tab, empty.
+// TODO M4 "Notifications compact" (source: Main.messageTray). Until then only its tab, empty.
 export default {
     id: 'notification',
     title: 'Notifications',

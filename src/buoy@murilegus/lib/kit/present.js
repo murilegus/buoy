@@ -7,18 +7,18 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
-import {planCompact, planExpanded, planIdle, planPeek, lightSlot} from './presentation.js';
+import {planCompact, planExpanded, planIdle, planMinimal, lightSlot} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
  * (what to show, limits, fallbacks) comes from presentation.js, which is unit-tested.
- * Sizes here are the renderer's (APPLE.md B5.3: leading ≤ 20 px compact, 56 expanded);
+ * Sizes here are the renderer's (APPLE.md B5.3: leading ≤ 20 px minimal, 56 expanded);
  * adapters never send any.
  */
 
 const SIZE = {
     // mascot: a multiple of Bu's 10 cells, so each cell is whole px (MASCOT.md)
-    compact: {icon: 16, art: 20, ring: 18, bar: 40, mascot: 20},
+    minimal: {icon: 16, art: 20, ring: 18, bar: 40, mascot: 20},
     expanded: {icon: 32, art: 56, ring: 32, bar: 0, mascot: 50}, // bar: 0 = fill the width
 };
 
@@ -176,7 +176,7 @@ export function setMascotRest(seconds) {
 }
 
 // When each Bu was first shown, per activity surface and pose: content is rebuilt on
-// every update, light change and peek, and a rebuilt Bu carries on (a once pose does not
+// every update, light change and hover, and a rebuilt Bu carries on (a once pose does not
 // replay). A short list: an entry outlives its activity only until 32 newer ones.
 const STARTS = new Map();
 const STARTS_MAX = 32;
@@ -377,17 +377,19 @@ function lightDot(light) {
     }) : null;
 }
 
-function compactBox(p, activity, maxWidth, buttons) {
+// One line in the pill: minimal, and for now the hover compact too (same sizes until
+// FEATURES M3 "Compact tier" gives it its own shape).
+function pillBox(p, activity, maxWidth, buttons) {
     if (!p.leading && !p.text && !p.trailing && !buttons.length && !p.badge)
         return null;
-    const box = new St.BoxLayout({style_class: 'buoy-compact', y_align: Clutter.ActorAlign.CENTER});
+    const box = new St.BoxLayout({style_class: 'buoy-minimal', y_align: Clutter.ActorAlign.CENTER});
     if (maxWidth > 0)
         box.set_style(`max-width: ${maxWidth}px;`);
     addAll(box, [
         lightDot(p.light),           // edge slot first: the zones nudge inward (SPEC §2a)
-        makeElement(p.leading, 'compact', activity),
+        makeElement(p.leading, 'minimal', activity),
         p.text ? label(p.text, 'buoy-text', true) : null,
-        makeElement(p.trailing, 'compact'),
+        makeElement(p.trailing, 'minimal'),
         ...buttons.map(a => actionButton(a, activity)),
         p.badge ? badge(p.badge) : null, // +N on the last pill (SPEC §2c)
     ]);
@@ -404,23 +406,23 @@ function compactBox(p, activity, maxWidth, buttons) {
  * @param {number} [opts.more]  activities beyond the shown pills → +N badge
  * @returns {?Clutter.Actor} null when there is nothing to show
  */
-export function buildCompact(activity, {maxWidth = 0, light, more} = {}) {
-    const p = planCompact(activity, {light, more});
-    return compactBox(p, activity, maxWidth, p.action ? [p.action] : []);
+export function buildMinimal(activity, {maxWidth = 0, light, more} = {}) {
+    const p = planMinimal(activity, {light, more});
+    return pillBox(p, activity, maxWidth, p.action ? [p.action] : []);
 }
 
 /**
- * Hover peek: the activity's `peek` zones (+ transport buttons) in place of compact.
+ * The hover tier: the activity's `compact` zones (+ transport buttons) in place of minimal.
  *
  * @param {object} activity  presentation data (+ onAction)
  * @param {object} [opts]
  * @param {number} [opts.maxWidth]
  * @param {string} [opts.light]
- * @returns {?Clutter.Actor} null when the activity has no peek
+ * @returns {?Clutter.Actor} null when the activity has no compact
  */
-export function buildPeek(activity, {maxWidth = 0, light} = {}) {
-    const p = planPeek(activity, {light});
-    return p ? compactBox(p, activity, maxWidth, p.actions) : null;
+export function buildCompact(activity, {maxWidth = 0, light} = {}) {
+    const p = planCompact(activity, {light});
+    return p ? pillBox(p, activity, maxWidth, p.actions) : null;
 }
 
 /**
@@ -432,14 +434,14 @@ export function buildPeek(activity, {maxWidth = 0, light} = {}) {
  * @param {string} [opts.light]
  * @returns {Clutter.Actor}
  */
-export function buildMissedPeek(line, {maxWidth = 0, light} = {}) {
-    return compactBox({text: line, light: lightSlot(light, {idle: false})}, {}, maxWidth, []);
+export function buildMissedCompact(line, {maxWidth = 0, light} = {}) {
+    return pillBox({text: line, light: lightSlot(light, {idle: false})}, {}, maxWidth, []);
 }
 
 /**
  * The idle pill (SPEC §2a). `none`: empty, with the buoy light at its leading edge. An
  * idle plan (clock…): its zones centred in the pill, the light (amber/red only) at the
- * edge as in compact.
+ * edge as in minimal.
  *
  * @param {object} opts
  * @param {number} opts.width  inner width of the idle pill
@@ -459,9 +461,9 @@ export function buildIdle({width, light, plan = null}) {
         x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER,
     });
     addAll(zones, [
-        makeElement(p.leading, 'compact'),
+        makeElement(p.leading, 'minimal'),
         p.text ? label(p.text, 'buoy-text buoy-idle-text') : null,
-        makeElement(p.trailing, 'compact'),
+        makeElement(p.trailing, 'minimal'),
     ]);
     addAll(box, [lightDot(p.light), zones]);
     // an icon alone says nothing to a screen reader: name the part of the day

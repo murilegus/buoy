@@ -1,5 +1,5 @@
 // Run: gjs -m tests/presentation.test.js   (pure: presentation data → render plan)
-import {element, planCompact, planExpanded, planIdle, planPeek, lightSlot, keyline, missedLine, clockTime, MAX_ACTIONS} from
+import {element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, missedLine, clockTime, MAX_ACTIONS} from
     '../src/buoy@murilegus/lib/kit/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
@@ -11,7 +11,7 @@ function eq(actual, expected, msg) {
         throw new Error(`${msg}: expected ${e}, got ${a}`);
 }
 
-eq(MAX_ACTIONS, {compact: 1, expanded: 3, peek: 3}, 'HIG action limits (APPLE.md B5.5) + peek transport');
+eq(MAX_ACTIONS, {minimal: 1, compact: 3, expanded: 3}, 'HIG action limits (APPLE.md B5.5) + compact transport');
 
 // --- element ------------------------------------------------------------------
 for (const empty of [null, undefined, '', '  ', false, 0, {}, {icon: ''}, {art: null}, {text: ''}])
@@ -57,46 +57,46 @@ for (const bad of ['#EF9F27', '#e24b4a', '#F0997B', '#5DCAA5', '#3A3A3A'])
 for (const bad of [null, undefined, 'red', '#12345', 'rgb(1,2,3)', 42, ''])
     eq(keyline(bad), null, `invalid keyline ${bad}`);
 
-// --- compact --------------------------------------------------------------------
+// --- minimal --------------------------------------------------------------------
 const track = {
     id: 'x', title: 'Monument Valley', artist: 'Lumen Coast', status: 'Playing',
     art: 'file:///tmp/cover.png', length: 30,
 };
 {
-    const c = planCompact(media.media(track, null));
+    const c = planMinimal(media.media(track, null));
     eq(c.leading, {type: 'art', src: 'file:///tmp/cover.png', fallback: 'audio-x-generic-symbolic'},
-        'media compact leading = art');
-    eq(c.text, 'Monument Valley · Lumen Coast', 'media compact text');
-    eq(c.trailing, {type: 'glyph', name: 'eq'}, 'media compact trailing = eq glyph');
-    eq(c.action, {id: 'playpause', label: null, icon: 'media-playback-start-symbolic'}, 'one compact action');
+        'media minimal leading = art');
+    eq(c.text, 'Monument Valley · Lumen Coast', 'media minimal text');
+    eq(c.trailing, {type: 'glyph', name: 'eq'}, 'media minimal trailing = eq glyph');
+    eq(c.action, {id: 'playpause', label: null, icon: 'media-playback-start-symbolic'}, 'one minimal action');
     eq([c.keyline, c.stale], [null, false], 'no keyline, not stale');
 }
 {
-    const c = planCompact(spotify.media({...track, title: 'Advertisement'}, null));
+    const c = planMinimal(spotify.media({...track, title: 'Advertisement'}, null));
     eq([c.text, c.trailing], ['Ad', {type: 'text', text: '0:30'}], 'spotify ad: countdown trailing');
 }
 {
-    const c = planCompact(hud.osd({icon: 'audio-volume-high-symbolic', level: 0.4}));
+    const c = planMinimal(hud.osd({icon: 'audio-volume-high-symbolic', level: 0.4}));
     eq([c.leading, c.text, c.trailing], [{type: 'icon', icon: 'audio-volume-high-symbolic'}, null,
         {type: 'bar', value: 0.4}], 'hud: icon + bar, no text');
 }
 {
     const long = 'x'.repeat(500);
-    eq(planCompact({text: long}).text, long, 'long text is not truncated (the renderer ellipsizes)');
-    eq(planCompact({text: '  padded  '}).text, 'padded', 'text trimmed');
-    eq(planCompact({text: '   '}).text, null, 'blank text → null');
-    eq(planCompact({}), {leading: null, text: null, trailing: null, action: null, keyline: null, stale: false, light: null, badge: null},
+    eq(planMinimal({text: long}).text, long, 'long text is not truncated (the renderer ellipsizes)');
+    eq(planMinimal({text: '  padded  '}).text, 'padded', 'text trimmed');
+    eq(planMinimal({text: '   '}).text, null, 'blank text → null');
+    eq(planMinimal({}), {leading: null, text: null, trailing: null, action: null, keyline: null, stale: false, light: null, badge: null},
         'empty presentation');
-    eq(planCompact({isStale: true, keyline: '#1DB954'}).stale, true, 'isStale → stale');
-    eq(planCompact({keyline: '#1DB954'}).keyline, '#1db954', 'keyline carried');
+    eq(planMinimal({isStale: true, keyline: '#1DB954'}).stale, true, 'isStale → stale');
+    eq(planMinimal({keyline: '#1DB954'}).keyline, '#1db954', 'keyline carried');
 }
 {
     const actions = [{label: 'no id'}, {id: 'bare'}, {id: 'a', label: 'A'}, {id: 'b', icon: 'b-symbolic'},
         {id: 'c', label: 'C'}, {id: 'd', label: 'D'}, {id: 'e', label: 'E'}, null, 'str'];
-    eq(planCompact({actions}).action, {id: 'a', label: 'A', icon: null},
-        'compact keeps the first valid action (no id / no label+icon dropped)');
+    eq(planMinimal({actions}).action, {id: 'a', label: 'A', icon: null},
+        'minimal keeps the first valid action (no id / no label+icon dropped)');
     eq(planExpanded({actions, expanded: true}).actions.map(a => a.id), ['a', 'b', 'c'], 'expanded keeps 3');
-    eq(planCompact({actions: 'nope'}).action, null, 'non-array actions ignored');
+    eq(planMinimal({actions: 'nope'}).action, null, 'non-array actions ignored');
 }
 
 // --- expanded -------------------------------------------------------------------
@@ -109,7 +109,7 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
         'expanded leading from the adapter (size ignored)');
     eq(e.center, {type: 'block', title: 'Monument Valley', subtitle: 'Lumen Coast', bar: null},
         'center block; progress: true is source-driven, not static');
-    eq(e.trailing, {type: 'glyph', name: 'eq'}, 'trailing falls back to the compact one');
+    eq(e.trailing, {type: 'glyph', name: 'eq'}, 'trailing falls back to the minimal one');
     eq(e.bottom, {type: 'actions'}, 'transport → actions row');
     eq(e.actions.map(a => a.id), ['playpause'], 'expanded actions');
     eq(e.grow, 'center', 'center takes the free width by default');
@@ -122,7 +122,7 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     eq([e.leading, e.center, e.trailing, e.bottom],
         [{type: 'icon', icon: 'a-symbolic'}, {type: 'block', title: 'Copying 3 files', subtitle: null, bar: null},
             {type: 'ring', value: 0.4}, {type: 'actions'}],
-        'expanded: true = enlarged compact, same elements and order (APPLE.md B2)');
+        'expanded: true = enlarged minimal, same elements and order (APPLE.md B2)');
 }
 {
     const e = planExpanded({
@@ -131,7 +131,7 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     });
     eq(e.leading, null, 'explicit null region stays empty');
     eq(e.center, {type: 'block', title: 'T', subtitle: null, bar: 0.5}, 'numeric progress → bar under the text');
-    eq(e.trailing, {type: 'icon', icon: 'c-symbolic'}, 'explicit region wins over compact');
+    eq(e.trailing, {type: 'icon', icon: 'c-symbolic'}, 'explicit region wins over minimal');
     eq(e.grow, 'trailing', 'highest priority region takes the free width');
     eq(e.bottom, null, 'no actions → no bottom row');
 }
@@ -143,13 +143,13 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     eq(e.grow, 'center', 'priority tie keeps center');
 }
 
-// ask (kit/stack.js shape): question + one button in compact, every option in expanded
+// ask (kit/stack.js shape): question + one button in minimal, every option in expanded
 {
     const ask = {
         text: 'Allow edit?', expanded: true,
         actions: [{id: 'Deny', label: 'Deny'}, {id: 'Allow', label: 'Allow'}],
     };
-    eq(planCompact(ask).action?.id, 'Deny', 'ask compact shows one button');
+    eq(planMinimal(ask).action?.id, 'Deny', 'ask minimal shows one button');
     const e = planExpanded(ask);
     eq([e.center?.title, e.bottom, e.actions.map(a => a.id)], ['Allow edit?', {type: 'actions'}, ['Deny', 'Allow']],
         'ask expanded: question + every option');
@@ -158,7 +158,7 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     const three = [{id: 'Deny', label: 'Deny'}, {id: 'Allow', label: 'Allow'}, {id: 'Always', label: 'Always'}];
     const keyed = planExpanded({...ask, kind: 'ask', actions: three});
     eq(keyed.actions.map(a => a.key), ['d', '2', '3'], 'ask expanded: each action carries its key (kit/keys.js)');
-    eq(planCompact({...ask, kind: 'ask'}).action, {id: 'Deny', label: 'Deny', icon: null}, 'compact ask action has no key');
+    eq(planMinimal({...ask, kind: 'ask'}).action, {id: 'Deny', label: 'Deny', icon: null}, 'minimal ask action has no key');
 }
 
 // --- missed history (2026-11-03): the hover line and row times ------------------------
@@ -176,40 +176,40 @@ eq(clockTime(NaN), '', 'no time: empty');
 
 // --- buoy light slot (SPEC §2a-i, INDICATORS.md) ------------------------------------
 eq(lightSlot('off', {idle: true}), 'off', 'grey off light only in idle');
-eq(lightSlot('off', {idle: false}), null, 'no slot in compact when off');
+eq(lightSlot('off', {idle: false}), null, 'no slot in minimal when off');
 for (const l of ['missed', 'waiting']) {
     eq(lightSlot(l, {idle: true}), l, `${l} in idle`);
-    eq(lightSlot(l, {idle: false}), l, `${l} in compact`);
+    eq(lightSlot(l, {idle: false}), l, `${l} in minimal`);
 }
 eq(lightSlot('bogus', {idle: true}), 'off', 'unknown light in idle → off');
-eq(lightSlot(undefined, {idle: false}), null, 'no light in compact');
+eq(lightSlot(undefined, {idle: false}), null, 'no light in minimal');
 eq(planIdle({light: 'missed'}), {light: 'missed', leading: null, text: null, trailing: null}, 'idle none carries the light');
 eq(planIdle({}), {light: 'off', leading: null, text: null, trailing: null}, 'idle none: grey light');
-eq(planCompact({text: 't'}, {light: 'waiting'}).light, 'waiting', 'compact carries a red light');
-eq(planCompact({text: 't'}, {light: 'off'}).light, null, 'compact drops the off light');
+eq(planMinimal({text: 't'}, {light: 'waiting'}).light, 'waiting', 'minimal carries a red light');
+eq(planMinimal({text: 't'}, {light: 'off'}).light, null, 'minimal drops the off light');
 
-// --- peek (hover, Buoy's own; no Apple equivalent) -----------------------------------
-eq(planPeek({text: 't'}), null, 'no peek field → no peek');
-eq(planPeek({text: 't', peek: true}), null, 'peek must be an object');
-eq(planPeek({peek: {}}), null, 'empty peek → no peek');
+// --- compact (the hover tier, Buoy's own; no Apple equivalent) ------------------
+eq(planCompact({text: 't'}), null, 'no compact field → no compact');
+eq(planCompact({text: 't', compact: true}), null, 'compact must be an object');
+eq(planCompact({compact: {}}), null, 'empty compact → no compact');
 {
     const acts = [{id: 'prev', icon: 'p-symbolic'}, {id: 'pp', icon: 'q-symbolic'},
         {id: 'next', icon: 'n-symbolic'}, {id: 'x', label: 'X'}];
-    const p = planPeek({
+    const p = planCompact({
         keyline: '#1DB954', isStale: true, actions: acts,
-        peek: {leading: 'a-symbolic', text: 'Song', transport: true},
+        compact: {leading: 'a-symbolic', text: 'Song', transport: true},
     }, {light: 'missed'});
-    eq([p.leading, p.text, p.trailing], [{type: 'icon', icon: 'a-symbolic'}, 'Song', null], 'peek zones');
+    eq([p.leading, p.text, p.trailing], [{type: 'icon', icon: 'a-symbolic'}, 'Song', null], 'compact zones');
     eq(p.actions.map(a => a.id), ['prev', 'pp', 'next'], 'transport → up to 3 activity actions');
-    eq([p.keyline, p.stale, p.light], ['#1db954', true, 'missed'], 'peek inherits keyline, stale, light');
-    eq(planPeek({actions: acts, peek: {text: 'x'}}).actions, [], 'no transport → no buttons');
-    eq(planPeek({peek: {transport: true}}), null, 'transport without actions or content → no peek');
+    eq([p.keyline, p.stale, p.light], ['#1db954', true, 'missed'], 'compact inherits keyline, stale, light');
+    eq(planCompact({actions: acts, compact: {text: 'x'}}).actions, [], 'no transport → no buttons');
+    eq(planCompact({compact: {transport: true}}), null, 'transport without actions or content → no compact');
 }
 
 // --- +N badge (SPEC §2c: the last pill carries it) ----------------------------------
-eq(planCompact({text: 't'}, {more: 2}).badge, '+2', '+N badge');
+eq(planMinimal({text: 't'}, {more: 2}).badge, '+2', '+N badge');
 for (const none of [0, -1, undefined, NaN, '3'])
-    eq(planCompact({text: 't'}, {more: none}).badge, null, `no badge for ${none}`);
-eq(planCompact({}, {more: 4}).badge, '+4', 'badge alone still counts as content');
+    eq(planMinimal({text: 't'}, {more: none}).badge, null, `no badge for ${none}`);
+eq(planMinimal({}, {more: 4}).badge, '+4', 'badge alone still counts as content');
 
 console.log('presentation: ok');

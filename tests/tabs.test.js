@@ -82,7 +82,7 @@ eq(ids(planStrip([media], [], {pinned: ['media', 'nope']})), [HOME, 'media'], 'p
 // --- where an open starts ---------------------------------------------------------
 s = planStrip([media, hud, timer], [act('m', 'media', {expanded: true}), act('v', 'osd')]);
 eq(tabFor(null, s), HOME, 'idle pill → Home');
-eq(tabFor(act('m', 'media', {expanded: true}), s), 'media', 'compact pill → the tab of its kind');
+eq(tabFor(act('m', 'media', {expanded: true}), s), 'media', 'a pill → the tab of its kind');
 eq(tabFor(act('v', 'osd'), s), HOME, 'kind without a tab → Home');
 eq(tabFor(act('t', 'timer'), s), 'timer', 'a module tab.js covers activities without expanded');
 eq(tabFor(act('m2', 'media'), s), 'media', 'a media pill without expanded opens the (empty) Media tab');
@@ -96,7 +96,7 @@ eq(tabFor(act('m', 'media', {expanded: true}), s), tabFor(act('m', 'media', {exp
 const playing = act('m', 'media', {expanded: true});
 const osd = Object.assign(act('v', 'osd'), {onPress: () => {}});
 eq(pressTarget(null, s), {tab: HOME, press: false}, 'idle pill → Home');
-eq(pressTarget(playing, s), {tab: 'media', press: false}, 'compact pill → its kind tab');
+eq(pressTarget(playing, s), {tab: 'media', press: false}, 'a pill → its kind tab');
 eq(pressTarget(playing, s, {missed: true}), {tab: HOME, press: false},
     'pill showing the amber missed line → Home, not its kind tab');
 eq(pressTarget(playing, s, {badge: true}), {tab: HOME, press: false}, '+N badge → Home');

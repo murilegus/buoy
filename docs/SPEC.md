@@ -231,9 +231,9 @@ Three tiers (decided 2026-11-05, Ethan), named by size: **minimal** < **compact*
 - **expanded** — on click, or opened by the stack: the panel with tabs; it carries what
   compact has no room for (media: player choice, the app's volume, shuffle/repeat).
 
-Until the rename item (FEATURES M3 "Three tiers: names in code") lands, code and the older
-notes in FEATURES still say compact for minimal, peek for compact and minimal mode for
-several pills.
+The code uses these names since FEATURES M3 "Three tiers: names in code" (2026-11-05); the
+older notes in FEATURES still say compact for minimal, peek for compact and minimal mode
+for several pills.
 
 | State | When | Shape | Interaction |
 |---|---|---|---|

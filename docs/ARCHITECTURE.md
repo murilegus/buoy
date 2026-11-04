@@ -28,7 +28,7 @@ src/buoy@murilegus/
     │   ├── presentation.js presentation data → render plan; pure, unit-tested (2026-11-01)
     │   ├── present.js      render plan → St actors. ONLY place content actors are made
     │   ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
-    │   ├── pill.js         one pill: content, sizing, hover/peek, morph (2026-11-01)
+    │   ├── pill.js         one pill: content, sizing, hover → compact, morph (2026-11-01; tier names 2026-11-05)
     │   ├── home.js         the panel a click opens: tab strip + tab body (Home, kind, standalone)
     │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
     │   ├── keys.js         keyboard: an ask's keys, ←/→ steps; pure, unit-tested (2026-11-03)
@@ -102,7 +102,10 @@ fields and order: [PROFILES.md](PROFILES.md).
    `source.js` and `tab.js` may use Shell APIs.
 3. **Adapters return data, never actors.** Shape of the data is fixed by `presentation.js`:
    `{leading, text, trailing, expanded:{leading,trailing,center,bottom}, actions, ttl,
-   priority, keyline, style, sizeHint, onPress, peek}`. An override returns the same shape.
+   priority, keyline, style, sizeHint, onPress, compact}` (`compact` = the hover tier, was
+   `peek` until 2026-11-05; SPEC §2). An override returns the same shape. Names in code
+   follow the tiers: `shapes.minimal` / `planMinimal` / `buildMinimal` for the pill in the
+   bar, `planCompact` / `buildCompact` for the hover tier, `shared` for pills sharing the bar.
 4. **Per-app overrides live under the module of the kind they override.** An app present
    in two kinds has two small files. No central `apps/<app>/` folder.
 5. **One slug per app** across every source (MPRIS bus name, desktop id, notification

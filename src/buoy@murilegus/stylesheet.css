@@ -154,7 +154,7 @@
 }
 .buoy-content .dim { color: #b8b8b8; }
 
-.buoy-compact { spacing: 8px; }
+.buoy-minimal { spacing: 8px; }
 .buoy-text { font-weight: 600; }
 .buoy-label { color: #d0d0d0; font-feature-settings: "tnum"; }
 .buoy-icon, .buoy-ring, .buoy-bar { color: #fff; }
@@ -177,7 +177,7 @@
 }
 .buoy-action:hover { background-color: rgba(255, 255, 255, 0.2); }
 .buoy-action:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
-.buoy-compact .buoy-action { padding: 2px 8px; }
+.buoy-minimal .buoy-action { padding: 2px 8px; }
 /* An ask's key (kit/keys.js), shown only while the island holds the keyboard. */
 .buoy-action-face { spacing: 6px; }
 .buoy-key {

@@ -68,7 +68,7 @@ class FakeClock {
 }
 
 // Renderer contract: render(list, {alert, expand}) with every visible activity in order;
-// the island shows the first `capacity` (1 = a single pill, as before minimal mode).
+// the island shows the first `capacity` (1 = a single pill, as before several pills shared the bar).
 class FakeIsland {
     constructor(capacity = 1) {
         this.capacity = capacity;
@@ -438,7 +438,7 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.missed.length, 5, 'missed getter returns a copy');
 
     stack.setUnseen(false);
-    eq(stack.light, 'missed', 'coming back keeps the light until peeked');
+    eq(stack.light, 'missed', 'coming back keeps the light until Home is shown');
     const p = stack.ask('q', '?', ['ok']);
     stack.setUnseen(true);
     eq(stack.light, 'waiting', 'red › amber');
@@ -577,7 +577,7 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq([await q, clock.pending], ['ok', 0], 'and cancelled cleanly');
 }
 
-// --- side-by-side minimal (SPEC §2c): the island shows `capacity` pills -----------
+// --- several pills (SPEC §2c): the island shows `capacity` pills -----------
 {
     const {clock, island, stack} = setup({}, 3);
     stack.surface(media('m'));

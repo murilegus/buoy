@@ -101,7 +101,7 @@ export function tabFor(activity, strip) {
  * @param {object} strip  planStrip() result
  * @param {object} [opts]
  * @param {boolean} [opts.badge]  the press was on the +N badge
- * @param {boolean} [opts.missed]  the pill is peeking the missed line
+ * @param {boolean} [opts.missed]  the pill's compact is showing the missed line
  * @returns {{tab: string, press: boolean}} press: run activity.onPress instead of opening
  */
 export function pressTarget(activity, strip, {badge = false, missed = false} = {}) {
