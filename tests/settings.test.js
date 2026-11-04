@@ -46,7 +46,7 @@ for (const name of order) {
 
 // --- every key has a place --------------------------------------------------------------
 const plan = planPrefs(order.map(name => ({name})));
-eq(plan.general, ['expanded-width', 'keybind-focus', 'mascot-rest-after'], 'General: the island\'s own keys, in schema order');
+eq(plan.general, ['expanded-width', 'keybind-focus', 'mascot-rest-after'], 'Island page, Pill group: the pill\'s own keys, in schema order');
 eq(plan.apps, ['apps-hidden', 'apps-plain'], 'Apps page');
 eq(plan.developer, ['dev-mode'], 'Developer group');
 eq(plan.windows, ['window-corners', 'window-corners-radius'], 'Windows page: the corners switch, then its radius (SPEC §1a)');
@@ -88,8 +88,34 @@ eq(schema.get_key('cluster-radius').get_range().recursiveUnpack(), ['range', [0,
     'radius stops at 16: half the 32 px cluster, a pill');
 eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [16, 17],
     'radius 16 (a pill, like the island) and opacity 17 % by default, a panel button\'s hover (2026-11-04)');
-eq(plan.modules.map(m => m.id), ['media', 'notification', 'progress', 'timer', 'calendar', 'clipboard'],
+eq(plan.modules.map(m => m.id), ['media', 'notification', 'progress', 'timer', 'calendar', 'clipboard', 'clock'],
     'Modules: schema order, without the modules that ship nothing yet');
+eq(plan.modules.find(m => m.id === 'clock').keys, [], 'clock: a switch-only row on Modules (rule 9)');
+eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
+    'clock-defaults-applied stays hidden: placed by name, not taken by the clock module\'s prefix');
+
+// --- Island page (ARCHITECTURE rule 9, 2026-11-04) ------------------------------------------
+eq(plan.idle, ['idle-content'], 'When idle: idle-content');
+eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['none', 'clock']],
+    'idle-content: none or a plan (auto comes with the smart stack)');
+eq(schema.get_key('idle-content').get_default_value().unpack(), 'clock', 'the clock until auto lands (Ethan)');
+eq(plan.plans, [{id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style']}],
+    'Plans: the clock with its own key');
+eq(schema.get_key('idle-clock-style').get_range().recursiveUnpack(), ['enum', ['icon-time', 'time', 'icon', 'seconds']],
+    'clock styles, SPEC §2a');
+for (const name of order.filter(n => n.startsWith('idle-') && n !== 'idle-content')) {
+    const under = plan.plans.filter(p => p.keys.includes(name));
+    eq(under.length, 1, `${name}: under exactly one plan on the Island page`);
+    eq(name.startsWith(`idle-${under[0].id}-`), true, `${name}: under its own plan`);
+    eq([...Object.values(plan).flat()].includes(name), false, `${name}: nowhere else`);
+}
+let threw = '';
+try {
+    planPrefs([{name: 'idle-nope-style'}]);
+} catch (e) {
+    threw = e.message;
+}
+eq(threw.includes('idle key of no plan'), true, 'an idle-* key of no plan fails the test');
 eq(plan.modules.find(m => m.id === 'calendar'), {
     id: 'calendar', enableKey: 'modules-calendar', keys: [], standalone: true, sample: null,
 }, 'a standalone module: its switch, pin, no sample');

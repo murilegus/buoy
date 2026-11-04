@@ -73,6 +73,11 @@ export class Island {
         this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
         // set by the extension: the stack's missed history, and telling it it was seen
         this.missed = {list: () => [], seen: null, open: null, clear: null};
+        // the idle plan's presentation data (kit/idle.js), null = `none`; and told when
+        // the idle pill starts or stops being on screen, so its clock runs only then
+        this.idle = null;
+        this.onIdleShown = null;
+        this._idleShown = false;
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
             () => this._queueLayout());
@@ -83,6 +88,7 @@ export class Island {
                 this._close();
                 this._letGo();
             }
+            this._syncIdleShown();
         });
 
         this._apply(false);
@@ -154,6 +160,33 @@ export class Island {
             alerted?.pulse();
     }
 
+    /**
+     * The idle plan's presentation data (kit/idle.js); null = idle-content `none`. The
+     * idle pill shows it at once, without a fade (one change, SPEC §2a).
+     *
+     * @param {?object} data
+     */
+    setIdle(data) {
+        this.idle = data;
+        const pill = this._pills[0];
+        if (pill && pill.id === null && !this._open && !this._destroyed)
+            pill.configure(null, this._roleOf(pill));
+    }
+
+    /** The idle pill is on screen: no activity, not expanded, the island not hidden. */
+    get idleShown() {
+        return this._idleShown;
+    }
+
+    _syncIdleShown() {
+        const shown = !this._destroyed && this.actor.visible && !this._open &&
+            this._pills[0]?.id === null;
+        if (shown === this._idleShown)
+            return;
+        this._idleShown = shown;
+        this.onIdleShown?.(shown);
+    }
+
     setLight(light) {
         if (light === this._light)
             return;
@@ -209,6 +242,7 @@ export class Island {
         next.forEach((pill, i) => pill.configure(wanted[i], this._roleOf(pill)));
         this._layout(animate);
         this._syncFocus();
+        this._syncIdleShown();
     }
 
     // Centre pill at the container centre; side pills to its right from their resting
@@ -373,6 +407,7 @@ export class Island {
             this._takeKeyboard(pill);
         this._listen();
         this._syncKeys();
+        this._syncIdleShown();
         pill.activity?.onExpand?.(true);
     }
 
@@ -575,6 +610,8 @@ export class Island {
 
     destroy() {
         this._destroyed = true;
+        this._syncIdleShown();      // tells the idle plan to stop its clock
+        this.onIdleShown = null;
         if (this._layoutLater) {
             global.compositor.get_laters().remove(this._layoutLater);
             this._layoutLater = 0;

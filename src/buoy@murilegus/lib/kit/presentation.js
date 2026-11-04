@@ -141,12 +141,19 @@ function leadingAndLight(v, light) {
 }
 
 /**
+ * The idle pill (SPEC §2a): with `none` (no plan) only the buoy light, grey when off;
+ * with a plan its zones, and the light only when it says something (no grey).
+ *
  * @param {object} [opts]
  * @param {string} [opts.light]
- * @returns {object} {light} — idle-content `none`: the pill shows only the buoy light
+ * @param {?object} [opts.plan]  the idle plan's presentation data {leading, text, trailing}
+ * @returns {object} {light, leading, text, trailing}
  */
-export function planIdle({light} = {}) {
-    return {light: lightSlot(light, {idle: true})};
+export function planIdle({light, plan = null} = {}) {
+    if (!isPlain(plan))
+        return {light: lightSlot(light, {idle: true}), leading: null, text: null, trailing: null};
+    const lead = leadingAndLight(plan.leading, light);
+    return {leading: lead.leading, text: str(plan.text), trailing: element(plan.trailing), light: lead.light};
 }
 
 /**

@@ -61,6 +61,31 @@
       <summary>Clipboard</summary>
       <description>The Clipboard tab.</description>
     </key>
+    <key name="modules-clock" type="b">
+      <default>true</default>
+      <summary>Clock</summary>
+      <description>A second clock in the idle pill, with the part of the day. Options on the Island page.</description>
+    </key>
+    <key name="idle-content" type="s">
+      <choices>
+        <choice value="none"/>
+        <choice value="clock"/>
+      </choices>
+      <default>'clock'</default>
+      <summary>Show</summary>
+      <description>Nothing keeps only the light.</description>
+    </key>
+    <key name="idle-clock-style" type="s">
+      <choices>
+        <choice value="icon-time"/>
+        <choice value="time"/>
+        <choice value="icon"/>
+        <choice value="seconds"/>
+      </choices>
+      <default>'icon-time'</default>
+      <summary>Style</summary>
+      <description>The time follows Date &amp; Time.</description>
+    </key>
     <key name="apps-hidden" type="as">
       <default>[]</default>
       <summary>Hidden apps</summary>
@@ -85,7 +110,7 @@
       <range min="0" max="1200"/>
       <default>0</default>
       <summary>Expanded width</summary>
-      <description>In logical px; 0 derives it from the monitor (560–760 px). Height follows the content, up to half the width.</description>
+      <description>0 fits it to the monitor.</description>
     </key>
     <key name="dev-mode" type="b">
       <default>false</default>
@@ -95,7 +120,7 @@
     <key name="keybind-focus" type="as">
       <default><![CDATA[['<Super>b']]]></default>
       <summary>Focus the island</summary>
-      <description>Takes the keyboard: ←/→ between pills, Enter opens, Esc or this key again lets go; an open ask answers to the key printed on its buttons.</description>
+      <description>←/→ move · Enter opens · Esc lets go</description>
     </key>
     <key name="daypart-starts" type="ai">
       <default>[5, 7, 11, 13, 18, 22]</default>
@@ -106,7 +131,7 @@
       <range min="10" max="600"/>
       <default>60</default>
       <summary>Bu rests after</summary>
-      <description>Seconds without keyboard or pointer input before a moving Bu holds still. With animations off it is always still.</description>
+      <description>Seconds without input before Bu holds still.</description>
     </key>
     <key name="cluster-background" type="s">
       <choices>

@@ -18,7 +18,8 @@ const IFACE = 'org.gnome.Shell.Extensions.Buoy';
  * Buoy's prefs (FEATURES M1 "GSettings schema + prefs.js", 2026-11-03). The schema XML is
  * the source of every key's title and text; lib/kit/settings.js says where it goes.
  *
- *   General   the island (expanded width, Super+B, when Bu rests), developer mode, version
+ *   Island    when idle (idle-content), each idle plan's keys, the pill (expanded width,
+ *             Super+B, when Bu rests), developer mode, version (was General, 2026-11-04)
  *   Modules   one expander per module: its switch, its own keys, a pin for standalone
  *             tabs, "Show a sample" (Surface over D-Bus, like any script)
  *   Apps      hidden and plain apps (slugged as the registry does), the profiles folder
@@ -43,7 +44,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
 
         window.set_default_size(620, 640);
         window.search_enabled = true;
-        window.add(this._generalPage(plan, key));
+        window.add(this._islandPage(plan, key));
         window.add(this._modulesPage(plan, key));
         window.add(this._appsPage(plan, key));
         window.add(this._panelPage(plan, key));
@@ -62,11 +63,29 @@ export default class BuoyPreferences extends ExtensionPreferences {
         }
     }
 
-    // --- General ------------------------------------------------------------------------
+    // --- Island -------------------------------------------------------------------------
 
-    _generalPage(plan, key) {
-        const page = new Adw.PreferencesPage({title: 'General', icon_name: 'preferences-system-symbolic'});
-        const island = new Adw.PreferencesGroup({title: 'Island'});
+    // Island (ARCHITECTURE rule 9, SPEC §2a-iii; was General until 2026-11-04): what the
+    // idle pill shows and each idle plan's own keys under it, then the pill's size and
+    // shortcut. #101 adds Automatic and the plans' order; Developer and About move to
+    // their own page with #102.
+    _islandPage(plan, key) {
+        const page = new Adw.PreferencesPage({title: 'Island', icon_name: 'focus-top-bar-symbolic'});
+
+        const idle = new Adw.PreferencesGroup({title: 'When Idle'});
+        for (const name of plan.idle)
+            idle.add(this._row(key(name)));
+        page.add(idle);
+
+        const plans = plan.plans.filter(p => p.keys.length || p.enableKey);
+        if (plans.length) {
+            const group = new Adw.PreferencesGroup({title: 'Plans'});
+            for (const p of plans)
+                group.add(this._planRow(p, key));
+            page.add(group);
+        }
+
+        const island = new Adw.PreferencesGroup({title: 'Pill'});
         for (const name of plan.general)
             island.add(this._row(key(name)));
         page.add(island);
@@ -266,6 +285,27 @@ export default class BuoyPreferences extends ExtensionPreferences {
             group.add(this._moduleRow(m, key));
         page.add(group);
         return page;
+    }
+
+    // One idle plan: its own keys inside. Its module's switch stays on Modules; while the
+    // module is off the plan does not exist (rule 6), so the row says where to turn it on.
+    _planRow(p, key) {
+        const title = p.enableKey ? key(p.enableKey).get_summary() : p.id;
+        const row = new Adw.ExpanderRow({title});
+        for (const name of p.keys)
+            row.add_row(this._row(key(name)));
+        if (p.enableKey) {
+            const sync = () => {
+                const on = this._settings.get_boolean(p.enableKey);
+                row.sensitive = on;
+                row.subtitle = on ? '' : 'Turn on in Modules';
+                if (!on)
+                    row.expanded = false;
+            };
+            this._ids.push(this._settings.connect(`changed::${p.enableKey}`, sync));
+            sync();
+        }
+        return row;
     }
 
     _moduleRow(m, key) {

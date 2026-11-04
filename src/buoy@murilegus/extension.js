@@ -8,6 +8,7 @@ import {WindowCorners} from './corners.js';
 import {applyGnomeDefaults, reworkPanel, setClusterBackground, setContrast, setLeftEmpty} from './panel.js';
 import {GNOME_CLOCK, GNOME_DOCK} from './lib/kit/settings.js';
 import {Island} from './lib/kit/island.js';
+import {IdleContent} from './lib/kit/idle.js';
 import {setMascotRest} from './lib/kit/present.js';
 import {ActivityStack} from './lib/kit/stack.js';
 import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
@@ -25,10 +26,11 @@ import copied from './lib/modules/copied/index.js';
 import layout from './lib/modules/layout/index.js';
 import ask from './lib/modules/ask/index.js';
 import clipboard from './lib/modules/clipboard/index.js';
+import clock from './lib/modules/clock/index.js';
 
 // Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
 // Order is also the tab strip's order (SPEC §2b).
-const MODULES = [media, notification, progress, timer, hud, home, copied, layout, ask, calendar, clipboard];
+const MODULES = [media, notification, progress, timer, hud, home, copied, layout, ask, calendar, clipboard, clock];
 
 export default class BuoyExtension extends Extension {
     enable() {
@@ -115,7 +117,11 @@ export default class BuoyExtension extends Extension {
         // modules-<id> applies at once (prefs, gsettings): start or stop that module only,
         // so the other modules' and D-Bus callers' activities stay
         this._active = [];
+        this._idle = null;
         this._syncModules();
+        // idle-content (SPEC §2a): the running modules' idle plans
+        this._idle = new IdleContent(this._island, this._settings,
+            () => (this._active ?? []).map(a => a.m).filter(m => m.idle));
         this._modulesId = this._settings.connect('changed', (_s, key) => {
             if (key.startsWith('modules-'))
                 this._syncModules();
@@ -148,6 +154,7 @@ export default class BuoyExtension extends Extension {
         }
         const ids = new Set(this._active.map(a => a.m.id));
         this._island.tabs.modules = MODULES.filter(m => ids.has(m.id));
+        this._idle?.sync();   // a plan's module turned on or off
     }
 
     _startModule(m) {
@@ -196,6 +203,8 @@ export default class BuoyExtension extends Extension {
             Main.layoutManager.disconnect(this._monitorsId);
             this._monitorsId = 0;
         }
+        this._idle?.destroy();
+        this._idle = null;
         if (this._island) {
             Main.layoutManager.removeChrome(this._island.actor);
             this._island.destroy();

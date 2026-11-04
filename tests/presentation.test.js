@@ -183,8 +183,8 @@ for (const l of ['missed', 'waiting']) {
 }
 eq(lightSlot('bogus', {idle: true}), 'off', 'unknown light in idle → off');
 eq(lightSlot(undefined, {idle: false}), null, 'no light in compact');
-eq(planIdle({light: 'missed'}), {light: 'missed'}, 'idle plan carries the light');
-eq(planIdle({}), {light: 'off'}, 'idle none: grey light');
+eq(planIdle({light: 'missed'}), {light: 'missed', leading: null, text: null, trailing: null}, 'idle none carries the light');
+eq(planIdle({}), {light: 'off', leading: null, text: null, trailing: null}, 'idle none: grey light');
 eq(planCompact({text: 't'}, {light: 'waiting'}).light, 'waiting', 'compact carries a red light');
 eq(planCompact({text: 't'}, {light: 'off'}).light, null, 'compact drops the off light');
 

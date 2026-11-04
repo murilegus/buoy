@@ -22,6 +22,7 @@ export const PAGES = ['general', 'modules', 'apps', 'panel'];
 // Shell-level keys, by group. Every schema key is placed here or is a module key; the
 // test fails on a key nobody placed.
 export const PLACES = {
+    'idle-content': 'idle',     // Island page, "When idle"
     'expanded-width': 'general',
     'keybind-focus': 'general',
     'mascot-rest-after': 'general', // Bu is the kit's, not a module's (MASCOT.md)
@@ -191,6 +192,10 @@ export function switchValue(entry, active) {
 // choice shows as its value with a capital.
 export const CHOICE_LABELS = {
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
+    'idle-content': {'none': 'Nothing', 'clock': 'Clock'},
+    'idle-clock-style': {
+        'icon-time': 'Icon & time', 'time': 'Time', 'icon': 'Icon', 'seconds': 'With seconds',
+    },
 };
 
 /**
@@ -212,25 +217,40 @@ export const SLIDERS = {
 // Modules that ship nothing a user can see yet (no source, no tab): no row until they do.
 export const HIDDEN_MODULES = new Set(['hud', 'home', 'copied', 'layout', 'ask']);
 
+// Idle plans, in the Island page's order (ARCHITECTURE rule 9): each one's
+// `idle-<id>-…` keys sit under it there, never on Modules. Prefs cannot import a module,
+// so the list is here.
+export const IDLE_PLANS = ['clock'];
+
 // Modules whose tab is standalone (SPEC §2b): their row has "Pin to the strip".
 export const STANDALONE = new Set(['calendar', 'clipboard']);
 
 /**
  * @param {Array<{name: string}>} keys  schema keys, in schema order
- * @returns {object} {general, apps, panel, windows, developer: key names; modules: [{id, enableKey, keys}]}
- * @throws {Error} a key that is neither placed nor a module's
+ * @returns {object} {general, idle, apps, panel, windows, developer: key names;
+ *   modules: [{id, enableKey, keys}]; plans: [{id, enableKey, keys}] (Island page)}
+ * @throws {Error} a key that is neither placed nor a module's, or an `idle-…` key of no plan
  */
 export function planPrefs(keys) {
     const names = keys.map(k => k.name);
     const ids = names.filter(n => n.startsWith('modules-')).map(n => n.slice('modules-'.length));
-    const plan = {general: [], apps: [], panel: [], windows: [], developer: [], modules: []};
+    const plan = {general: [], idle: [], apps: [], panel: [], windows: [], developer: [], modules: [], plans: []};
+    for (const id of IDLE_PLANS) {
+        plan.plans.push({
+            id,
+            enableKey: names.includes(`modules-${id}`) ? `modules-${id}` : null,
+            keys: names.filter(n => n.startsWith(`idle-${id}-`)),
+        });
+    }
     for (const id of ids) {
         if (HIDDEN_MODULES.has(id))
             continue;
         plan.modules.push({
             id,
             enableKey: `modules-${id}`,
-            keys: names.filter(n => n.startsWith(`${id}-`)),
+            // a key placed by name wins over the prefix (clock-defaults-applied is not
+            // the clock module's)
+            keys: names.filter(n => n.startsWith(`${id}-`) && !(n in PLACES)),
             standalone: STANDALONE.has(id),
             sample: SAMPLES[id] ?? null,
         });
@@ -238,7 +258,11 @@ export function planPrefs(keys) {
     for (const n of names) {
         if (n.startsWith('modules-'))
             continue;
-        const owner = ids.find(id => n.startsWith(`${id}-`));
+        if (IDLE_PLANS.some(id => n.startsWith(`idle-${id}-`)))
+            continue;                 // shown under its plan on the Island page
+        if (n.startsWith('idle-') && !(n in PLACES))
+            throw new Error(`schema key "${n}" is an idle key of no plan (kit/settings.js IDLE_PLANS)`);
+        const owner = !(n in PLACES) && ids.find(id => n.startsWith(`${id}-`));
         if (owner)
             continue;                 // shown inside its module's row (or hidden with it)
         if (!(n in PLACES))

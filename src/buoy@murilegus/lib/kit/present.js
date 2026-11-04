@@ -437,16 +437,36 @@ export function buildMissedPeek(line, {maxWidth = 0, light} = {}) {
 }
 
 /**
- * idle-content `none` (SPEC §2a): an empty pill with the buoy light at its leading edge.
+ * The idle pill (SPEC §2a). `none`: empty, with the buoy light at its leading edge. An
+ * idle plan (clock…): its zones centred in the pill, the light (amber/red only) at the
+ * edge as in compact.
  *
  * @param {object} opts
  * @param {number} opts.width  inner width of the idle pill
  * @param {string} [opts.light]
+ * @param {?object} [opts.plan]  the idle plan's presentation data
  * @returns {Clutter.Actor}
  */
-export function buildIdle({width, light}) {
+export function buildIdle({width, light, plan = null}) {
+    const p = planIdle({light, plan});
     const box = new St.BoxLayout({style_class: 'buoy-idle', width, y_align: Clutter.ActorAlign.CENTER});
-    addAll(box, [lightDot(planIdle({light}).light)]);
+    if (!plan) {
+        addAll(box, [lightDot(p.light)]);
+        return box;
+    }
+    const zones = new St.BoxLayout({
+        style_class: 'buoy-idle-zones', x_expand: true,
+        x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER,
+    });
+    addAll(zones, [
+        makeElement(p.leading, 'compact'),
+        p.text ? label(p.text, 'buoy-text buoy-idle-text') : null,
+        makeElement(p.trailing, 'compact'),
+    ]);
+    addAll(box, [lightDot(p.light), zones]);
+    // an icon alone says nothing to a screen reader: name the part of the day
+    if (typeof plan.daypart === 'string')
+        box.accessible_name = p.text ? `${plan.daypart}, ${p.text}` : plan.daypart;
     return box;
 }
 
