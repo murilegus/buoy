@@ -46,7 +46,7 @@ for (const name of order) {
 
 // --- every key has a place --------------------------------------------------------------
 const plan = planPrefs(order.map(name => ({name})));
-eq(plan.general, ['expanded-width', 'keybind-focus'], 'General: the island\'s own keys, in schema order');
+eq(plan.general, ['expanded-width', 'keybind-focus', 'mascot-rest-after'], 'General: the island\'s own keys, in schema order');
 eq(plan.apps, ['apps-hidden', 'apps-plain'], 'Apps page');
 eq(plan.developer, ['dev-mode'], 'Developer group');
 eq(plan.windows, ['window-corners', 'window-corners-radius'], 'Windows page: the corners switch, then its radius (SPEC §1a)');

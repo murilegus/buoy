@@ -62,8 +62,20 @@ replacement for the light in every state.
   a moving pose is mapped, and is removed on pose change, destroy and disable; the frame
   holds still while the user is away (Mutter idle monitor, a signal) and when
   `org.gnome.desktop.interface enable-animations` is off. The lamp never blinks.
-- **Stale** is drawn by the renderer as for any stale activity (dimmed, APPLE §B1); the
-  `stale` pose is what Bu looks like while dimmed.
+  - **Away** (2026-11-04) is the same as for the eyes (§ Eyes): no input for
+    `mascot-rest-after` seconds (10–600, default 60; General page, Ethan) on the core
+    idle monitor, an UNINHIBITABLE watch, back on the user-active watch. The watches and
+    the settings signal exist only while a moving Bu is mapped; a new value applies at
+    once.
+  - **Held still**, a loop shows its first frame; a once pose shows its first frame and
+    still settles on time (one change, no swaps).
+  - **Rebuilt content carries on** (2026-11-04): a pill's content is rebuilt on every
+    update, light change and peek, so `present.js` keeps when each pose was first shown
+    per activity surface (id + surface, last 32). An update mid-wave continues the wave; a
+    new `Surface` with the same id starts it again.
+- **Stale** is drawn by the renderer as for any stale activity (dimmed, APPLE §B1): the
+  text greys in CSS and Bu, whose palette is fixed, is drawn at 40 % opacity, as the
+  `stale` preview; the `stale` pose is what Bu looks like while dimmed.
 
 ## Rendering (decided 2026-11-03)
 
@@ -73,7 +85,10 @@ replacement for the light in every state.
   above. No image files ship in the extension, so HiDPI comes free and there is nothing to
   keep in sync but this file.
 - `tests/mascot.test.js` parses the grid blocks of **this file** and compares them with
-  `kit/mascot.js`, so the doc stays the source of truth.
+  `kit/mascot.js`, so the doc stays the source of truth. It also checks the Poses table
+  (every pose, its motion), the lamp rule and the frame timing (`frameAt`).
+- Sizes (2026-11-04): 20 px in compact (and Home's rows, which are compact views), 50 px
+  in the expanded leading; the cells are painted without antialiasing.
 - The SVGs in `docs/mascot/` are previews for review and the README, made from the same
   grids and the palette above (regenerated 2026-11-03 when the palette was corrected);
   they are not loaded at runtime. The `stale` preview is dimmed to 40 %, as the renderer

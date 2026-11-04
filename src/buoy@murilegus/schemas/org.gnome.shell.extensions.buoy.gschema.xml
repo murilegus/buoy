@@ -97,6 +97,12 @@
       <summary>Focus the island</summary>
       <description>Takes the keyboard: ←/→ between pills, Enter opens, Esc or this key again lets go; an open ask answers to the key printed on its buttons.</description>
     </key>
+    <key name="mascot-rest-after" type="i">
+      <range min="10" max="600"/>
+      <default>60</default>
+      <summary>Bu rests after</summary>
+      <description>Seconds without keyboard or pointer input before a moving Bu holds still. With animations off it is always still.</description>
+    </key>
     <key name="cluster-background" type="s">
       <choices>
         <choice value="never"/>
