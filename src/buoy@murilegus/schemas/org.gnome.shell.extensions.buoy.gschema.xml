@@ -97,6 +97,11 @@
       <summary>Focus the island</summary>
       <description>Takes the keyboard: ←/→ between pills, Enter opens, Esc or this key again lets go; an open ask answers to the key printed on its buttons.</description>
     </key>
+    <key name="daypart-starts" type="ai">
+      <default>[5, 7, 11, 13, 18, 22]</default>
+      <summary>Parts of the day</summary>
+      <description>Start hours of dawn, morning, noon, afternoon, evening and night, 0–23, in that order; one part wraps past midnight. Anything else uses the defaults.</description>
+    </key>
     <key name="mascot-rest-after" type="i">
       <range min="10" max="600"/>
       <default>60</default>

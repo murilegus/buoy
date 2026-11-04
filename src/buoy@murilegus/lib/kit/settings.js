@@ -37,6 +37,7 @@ export const PLACES = {
     'window-corners-radius': 'windows',
     'tabs-pinned': 'modules',   // the pin switch on standalone modules' rows
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
+    'daypart-starts': null,     // kit/daypart.js; on the Island page once a plan reads it (rule 9)
     'clock-defaults-applied': null, // bookkeeping: GNOME_CLOCK defaults written once
     'dock-defaults-applied': null,  // bookkeeping: GNOME_DOCK defaults written once
 };
