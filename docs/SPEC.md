@@ -49,7 +49,11 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   clips reach out over every strut by `strut × (1 − state)`: exactly GNOME's with the
   Overview shown (pixel-identical), the whole monitor at the desktop, the same curve in
   between. The text under the bar follows what is there: the wallpaper's contrast below
-  state 0.5, the Overview's (light text) from 0.5.
+  state 0.5, the Overview's (light text) from 0.5. `state` is how far the Overview is
+  open — its controls' adjustment, 0 hidden, 1 window picker, 2 app grid
+  (`overviewControls.js`), clamped to 1 — not the background's own state, which Shell
+  sets back to 0 in the app grid (`workspacesView.js`): that kept the wallpaper's dark
+  text over the app grid's dark backdrop (Ethan 2026-11-04).
 - **Cluster background** (decided 2026-10-30): **none by default** — icons and text sit
   bare on the wallpaper like the iPhone status bar; only the pill is a black block. On
   hover a translucent rounded background (no blur) wraps the whole cluster. Setting
