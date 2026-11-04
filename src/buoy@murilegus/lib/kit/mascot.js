@@ -32,7 +32,7 @@ export const ONCE_FRAMES = 4;
 export const FRAMES = Object.freeze({
     'idle': [
         '....LL....',
-        '....BB....',
+        '....LL....',
         '..BBBBBB..',
         '.BBEBBEBB.',
         '.BBBBBBBB.',
@@ -44,7 +44,7 @@ export const FRAMES = Object.freeze({
     ],
     'sleep': [
         '....LL..Z.',
-        '....BB.Z..',
+        '....LL.Z..',
         '..BBBBBB..',
         '.BBBBBBBB.',
         '.BEEBBEEB.',
@@ -56,7 +56,7 @@ export const FRAMES = Object.freeze({
     ],
     'missed': [
         '....LL....',
-        '....BB....',
+        '....LL....',
         '..BBBBBB..',
         '.BBBEBBEB.',
         '.BBBBBBBB.',
@@ -68,7 +68,7 @@ export const FRAMES = Object.freeze({
     ],
     'ask': [
         '....LL..A.',
-        '....BB..A.',
+        '....LL..A.',
         '..BBBBBBA.',
         '.BBEBBEBB.',
         '.BBEBBEBB.',
@@ -80,7 +80,7 @@ export const FRAMES = Object.freeze({
     ],
     'done': [
         '....LL....',
-        '....BB....',
+        '....LL....',
         '..BBBBBB..',
         '.BBEBBEBB.',
         '.BBBEEBBB.',
@@ -92,7 +92,7 @@ export const FRAMES = Object.freeze({
     ],
     'busy.1': [
         '....LL....',
-        '....BB....',
+        '....LL....',
         '..BBBBBB..',
         '.BEBBEBBB.',
         '.BBBBBBBB.',
@@ -105,7 +105,7 @@ export const FRAMES = Object.freeze({
     'busy.2': [
         '..........',
         '....LL....',
-        '....BB....',
+        '....LL....',
         '..BBBBBB..',
         '.BEBBEBBB.',
         '.BBBBBBBB.',
@@ -116,7 +116,7 @@ export const FRAMES = Object.freeze({
     ],
     'wave.1': [
         '.A..LL....',
-        '.A..BB....',
+        '.A..LL....',
         '.ABBBBBB..',
         '.BBEBBEBB.',
         '.BBBEEBBB.',
@@ -128,7 +128,7 @@ export const FRAMES = Object.freeze({
     ],
     'wave.2': [
         'A...LL....',
-        '.A..BB....',
+        '.A..LL....',
         '..BBBBBB..',
         '.BBEBBEBB.',
         '.BBBEEBBB.',
@@ -140,7 +140,7 @@ export const FRAMES = Object.freeze({
     ],
     'think.1': [
         '....LL.D.D',
-        '....BB.D..',
+        '....LL.D..',
         '..BEBBEB..',
         '.BBBBBBBB.',
         '.BBBBBBBB.',
@@ -152,7 +152,7 @@ export const FRAMES = Object.freeze({
     ],
     'think.2': [
         '....LL.D..',
-        '....BB.D..',
+        '....LL.D..',
         '..BEBBEB..',
         '.BBBBBBBB.',
         '.BBBBBBBB.',
@@ -164,7 +164,7 @@ export const FRAMES = Object.freeze({
     ],
     'turn': [
         '....LL.DDD',
-        '....BB.D..',
+        '....LL.D..',
         '..BBBBBB..',
         '.BBBBBBBB.',
         '.BBEBBEBB.',
@@ -177,7 +177,7 @@ export const FRAMES = Object.freeze({
     'error': [
         '..........',
         '....LL....',
-        '....BB....',
+        '....LL....',
         '..BBBBBB..',
         '.BEBBBEBB.',
         '.BBEBBBEB.',
@@ -189,7 +189,7 @@ export const FRAMES = Object.freeze({
     'compact': [
         '..........',
         '....LL....',
-        '....BB....',
+        '....LL....',
         'BBBBBBBBBB',
         'BEEBBBBEEB',
         'SSSSSSSSSS',
@@ -200,7 +200,7 @@ export const FRAMES = Object.freeze({
     ],
     'stale': [
         '....LL....',
-        '....BB....',
+        '....LL....',
         '..BBBBBB..',
         '.BBBBBBBB.',
         '.BEEBBEEB.',
@@ -212,7 +212,7 @@ export const FRAMES = Object.freeze({
     ],
     'party.1': [
         'D...LL...D',
-        '....BB....',
+        '....LL....',
         '..BBBBBB..',
         '.BBEBBEBB.',
         '.BBBEEBBB.',
@@ -224,7 +224,7 @@ export const FRAMES = Object.freeze({
     ],
     'party.2': [
         '....LL....',
-        '....BB....',
+        '....LL....',
         '..BBBBBB..',
         '.BBEBBEBB.',
         '.BBBEEBBB.',

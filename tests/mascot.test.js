@@ -58,7 +58,10 @@ for (const [name, rows] of Object.entries(FRAMES)) {
         eq(r.length, SIZE, `${name}: rows of ${SIZE} cells`);
         ok([...r].every(c => c === 'L' || c in PALETTE), `${name}: only palette letters in "${r}"`);
     }
-    eq(rows.join('').split('L').length - 1, 2, `${name}: a lamp of two cells`);
+    const lamp = rows.flatMap((r, y) => [...r].map((c, x) => c === 'L' ? [x, y] : null)).filter(Boolean);
+    const [lx, ly] = lamp[0];
+    eq(lamp, [[lx, ly], [lx + 1, ly], [lx, ly + 1], [lx + 1, ly + 1]], `${name}: a lamp of 2 × 2 cells`);
+    eq(lx, 4, `${name}: the lamp is centred (columns 4–5)`);
     ok(rows.join('').includes('B'), `${name}: has a body`);
 }
 for (const [pose, p] of Object.entries(POSES)) {
@@ -68,6 +71,24 @@ for (const [pose, p] of Object.entries(POSES)) {
     } else {
         ok(pose in FRAMES, `${pose}: a still pose has one frame named after it`);
     }
+}
+
+// --- the previews in docs/mascot/ follow the grids ---------------------------------------
+const RECT = /<rect x="(\d+)" y="(\d+)" width="(\d+)" height="\3" fill="(#[0-9A-Fa-f]{6})"\/>/g;
+for (const pose of Object.keys(POSES)) {
+    const svgPath = GLib.build_filenamev([GLib.path_get_dirname(docPath), 'mascot', `${pose}.svg`]);
+    const svg = new TextDecoder().decode(GLib.file_get_contents(svgPath)[1]);
+    const rects = [...svg.matchAll(RECT)].map(m => ({
+        x: Number(m[1]), y: Number(m[2]), size: Number(m[3]), fill: m[4].toUpperCase(),
+    }));
+    const size = rects[0].size, x0 = Math.min(...rects.map(r => r.x)), y0 = Math.max(...rects.map(r => r.y)) - 9 * size;
+    const got = Array.from({length: SIZE}, () => Array(SIZE).fill('.'));
+    for (const r of rects)
+        got[(r.y - y0) / size][(r.x - x0) / size] = r.fill;
+    const frame = POSES[pose].frames?.[0] ?? pose;
+    const lamp = POSES[pose].lamp === 'foreground' ? FOREGROUND : POSES[pose].lamp;
+    const want = FRAMES[frame].map(row => [...row].map(c => c === 'L' ? lamp.toUpperCase() : PALETTE[c] ?? '.'));
+    eq(got, want, `docs/mascot/${pose}.svg draws ${frame} as in MASCOT.md`);
 }
 
 // --- names, motion --------------------------------------------------------------------
@@ -118,7 +139,8 @@ eq(frameAt('nope', 0).nextIn, null, 'unknown pose: no timer');
 
 // --- cells ----------------------------------------------------------------------------
 const idleCells = cells('idle', '#123456');
-eq(idleCells[0], {x: 4, y: 0, w: 2, colour: '#123456'}, 'the lamp: two cells in the lamp colour');
+eq(idleCells.slice(0, 2), [{x: 4, y: 0, w: 2, colour: '#123456'}, {x: 4, y: 1, w: 2, colour: '#123456'}],
+    'the lamp: 2 × 2 cells in the lamp colour');
 eq(idleCells.filter(c => c.y === 3), [{x: 1, y: 3, w: 2, colour: '#F1EFE8'}, {x: 4, y: 3, w: 2, colour: '#F1EFE8'},
     {x: 7, y: 3, w: 2, colour: '#F1EFE8'}], 'eyes are holes: the body runs stop at E');
 const count = (frame, letter) => FRAMES[frame].join('').split(letter).length - 1;
