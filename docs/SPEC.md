@@ -265,7 +265,8 @@ Rules: an idle plan is presentation only (same data shape as an adapter); it nev
 surfaces an activity; it is replaced the instant any activity surfaces; nothing animates
 while idle — no looping or continuous motion; a change of idle content (the clock's
 minute, `auto` switching plans) is one transition (§5), then stillness (clarified
-2026-11-03). Each plan has its own settings page.
+2026-11-03). Each plan's own settings sit under it on the prefs **Island** page (2026-11-04,
+ARCHITECTURE rule 9).
 
 Pill structure is the same in every state: `[light] leading · text · trailing [dot]`.
 The two edge slots are Buoy's own status layers; the three zones between them belong to
@@ -325,8 +326,10 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   that exists only while the pill is idle with `auto` — removed the moment an activity
   surfaces, on expand, and on disable. A re-rank that picks the same plan changes nothing.
 - **Interests** (Windows' word): `idle-auto-plans` (as) — which plans the stack may use,
-  in tie-break order; default every enabled plan. Prefs page **Idle**: a reorderable
-  list with switches. A plan whose module is off does not exist (ARCHITECTURE rule 6).
+  in tie-break order; default every enabled plan. Prefs page **Island** (2026-11-04, was
+  "Idle"): a reorderable list with switches, one row per plan, its own keys under it; a
+  plan whose module is off is greyed ("Turn on in Modules"). The Modules switch turns the
+  whole module on or off; the Island switch only puts its plan in the stack. A plan whose module is off does not exist (ARCHITECTURE rule 6).
 - **Interaction.** Hover → the shown plan's peek; scroll on the idle pill → next /
   previous plan in the stack (held for one interval, like swiping the Smart Stack);
   click → Home, as in every idle state.
