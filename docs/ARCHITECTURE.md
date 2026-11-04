@@ -134,7 +134,7 @@ fields and order: [PROFILES.md](PROFILES.md).
 Planned keys are listed here too; the schema holds only the ones whose item has landed
 (2026-11-04: `modules-*`, `apps-hidden`, `apps-plain`, `tabs-pinned`, `tabs-slot`,
 `expanded-width`, `dev-mode`, `keybind-focus`, `cluster-background`, `cluster-radius`,
-`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`). Every key applies at once — prefs and
+`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`, `dock-defaults-applied`). Every key applies at once — prefs and
 `gsettings` alike; `modules-<id>` starts or stops only that module.
 
 | Key | Type | Effect |
@@ -155,6 +155,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `cluster-contrast` | s | auto \| dark-text \| light-text; default `auto` (2026-11-04: values name the text, not GNOME's light/dark) |
 | `left-cluster-empty` | s | workspace \| hidden |
 | `clock-defaults-applied` | b | bookkeeping: the first enable gave GNOME's clock keys Buoy's defaults (time alone, 24 h) where the user had not set them; the clock switches in prefs are GNOME's own keys (2026-11-04) |
+| `dock-defaults-applied` | b | bookkeeping: the first enable gave Ubuntu Dock's keys (`dash-to-dock`) Buoy's defaults — bottom, auto-hide, not edge to edge, 32 px, primary display, no trash or volumes — where the user had not set them; the Dock rows in prefs are the dock's own keys (2026-11-04) |
 | `window-corners` | b | round the top corners of maximized windows; default `true` (2026-11-02) |
 | `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
 | `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules |

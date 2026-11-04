@@ -35,6 +35,7 @@ export const PLACES = {
     'tabs-pinned': 'modules',   // the pin switch on standalone modules' rows
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
     'clock-defaults-applied': null, // bookkeeping: GNOME_CLOCK defaults written once
+    'dock-defaults-applied': null,  // bookkeeping: GNOME_DOCK defaults written once
 };
 
 // Keys shown inside another key's row (an expander under it), and the parent's value
@@ -47,7 +48,7 @@ export const NESTED = {
 // The clock's switches on the Panel page are GNOME's own keys, not copies (Ethan
 // 2026-11-04): Settings → Date & Time and Buoy's prefs change the same values, and Shell's
 // clock follows them. A key with on/off is a string shown as a switch. `buoy` is Buoy's
-// default — the time alone, 24-hour — written once (see clockDefaults).
+// default — the time alone, 24-hour — written once (see gnomeDefaults).
 const IFACE = 'org.gnome.desktop.interface';
 export const GNOME_CLOCK = [
     {schema: IFACE, key: 'clock-show-weekday', title: 'Week Day', buoy: false},
@@ -60,38 +61,126 @@ export const GNOME_CLOCK = [
     },
 ];
 
+// Ubuntu Dock's own keys (`dash-to-dock`, from gnome-shell-ubuntu-extensions), the rows of
+// Settings → Ubuntu Desktop → Dock in its order (CcUbuntuPanel): Buoy's Dock group and
+// that page change the same values (Ethan 2026-11-04). `invert`: the switch shows the
+// opposite (Auto-hide = not `dock-fixed`); `min`/`max`: a slider; `choices`: a drop-down;
+// `row: 'monitor'`: the two keys behind "Show on" (dockMonitor). `buoy`: Buoy's default —
+// at the bottom, hiding, 32 px, primary display only, no trash or volumes — written once
+// like the clock's (`dock-defaults-applied`); Ubuntu's own are left, fixed, edge to edge
+// (10_ubuntu-dock.gschema.override).
+const DOCK = 'org.gnome.shell.extensions.dash-to-dock';
+export const GNOME_DOCK = [
+    {
+        schema: DOCK, key: 'dock-fixed', title: 'Auto-hide the Dock',
+        subtitle: 'Hides when a window overlaps it', invert: true, buoy: false,
+    },
+    {schema: DOCK, key: 'extend-height', title: 'Panel Mode', subtitle: 'Reaches the screen edges', buoy: false},
+    {schema: DOCK, key: 'dash-max-icon-size', title: 'Icon Size', min: 16, max: 64, unit: 'px', buoy: 32},
+    {schema: DOCK, key: 'multi-monitor', row: 'monitor', buoy: false},
+    {schema: DOCK, key: 'preferred-monitor-by-connector', row: 'monitor', buoy: 'primary'},
+    {
+        schema: DOCK, key: 'dock-position', title: 'Position on Screen',
+        choices: {LEFT: 'Left', BOTTOM: 'Bottom', RIGHT: 'Right'}, buoy: 'BOTTOM',
+    },
+    {schema: DOCK, key: 'show-trash', title: 'Show Trash', buoy: false},
+    {schema: DOCK, key: 'show-mounts', title: 'Show Volumes and Devices', buoy: false},
+];
+
 /**
- * Buoy's clock defaults, for the first enable only (`clock-defaults-applied`): each key the
- * user never set gets Buoy's value; a key they did set keeps theirs. After that Buoy never
- * writes them again, so a change in either place stays.
+ * Buoy's defaults for GNOME's own keys (GNOME_CLOCK, GNOME_DOCK), for the first enable
+ * only (`clock-defaults-applied`, `dock-defaults-applied`): each key the user never set
+ * gets Buoy's value; a key they did set keeps theirs. After that Buoy never writes them
+ * again, so a change in either place stays.
  *
- * @param {object[]} entries  GNOME_CLOCK (or the installed part of it)
+ * @param {object[]} entries  GNOME_CLOCK or GNOME_DOCK (or the installed part of it)
  * @param {function(object): boolean} userSet  whether the user has set that entry's key
- * @returns {Array<{schema: string, key: string, value: (boolean|string)}>} what to write
+ * @returns {Array<{schema: string, key: string, value: (boolean|string|number)}>} what to write
  */
-export function clockDefaults(entries, userSet) {
+export function gnomeDefaults(entries, userSet) {
     return entries.filter(e => 'buoy' in e && !userSet(e))
         .map(({schema, key, buoy}) => ({schema, key, value: buoy}));
 }
 
 /**
- * @param {object} entry  one of GNOME_CLOCK
- * @param {boolean|string} value  the key's value
- * @returns {boolean} the switch's state
+ * "Show on" is two dock keys: `multi-monitor` (every display) and, without it,
+ * `preferred-monitor-by-connector` (`primary` or a connector such as `eDP-1`).
+ *
+ * @param {boolean} multi  multi-monitor
+ * @param {string} connector  preferred-monitor-by-connector
+ * @returns {string} the drop-down's value: `all`, `primary` or a connector
  */
-export function clockSwitchOn(entry, value) {
-    return entry.on ? value === entry.on : Boolean(value);
+export function dockMonitor(multi, connector) {
+    return multi ? 'all' : connector || 'primary';
 }
 
 /**
- * @param {object} entry  one of GNOME_CLOCK
+ * The displays as Mutter describes them (org.gnome.Mutter.DisplayConfig GetCurrentState,
+ * unpacked) — where Settings takes its names from.
+ *
+ * @param {Array} monitors  [[connector, vendor, product, serial], modes, props]…
+ * @param {Array} logical  [x, y, scale, transform, primary, [[connector, …]…], props]…
+ * @returns {Array<{connector: string, name: string, builtin: boolean, primary: boolean}>}
+ */
+export function displaysFromState(monitors, logical) {
+    const primary = new Set(logical.filter(l => l[4]).flatMap(l => l[5].map(spec => spec[0])));
+    return monitors.map(([[connector], , props]) => ({
+        connector,
+        name: props?.['display-name'] || connector,
+        builtin: Boolean(props?.['is-builtin']),
+        primary: primary.has(connector),
+    }));
+}
+
+/**
+ * Labelled as Settings → Ubuntu Desktop → Dock labels them: "All displays",
+ * "Primary Display (1)", "1. Built-in display" — numbered built-in first, then in
+ * Mutter's order (as Settings numbers them on a single laptop; assumed for more).
+ *
+ * @param {Array<{connector: string, name: string, builtin: boolean, primary: boolean}>} displays
+ *   displaysFromState(), or connectors alone ({connector, name: connector}) until it answers
+ * @param {string} current  dockMonitor() of the keys
+ * @returns {Array<[string, string]>} [value, label]: all, primary, each display; the
+ *   current one kept even when unplugged, so opening prefs never changes it
+ */
+export function dockMonitorChoices(displays, current) {
+    const sorted = [...displays.filter(d => d.builtin), ...displays.filter(d => !d.builtin)];
+    const p = sorted.findIndex(d => d.primary);
+    const list = [['all', 'All displays'], ['primary', p < 0 ? 'Primary Display' : `Primary Display (${p + 1})`]];
+    sorted.forEach((d, i) => list.push([d.connector, `${i + 1}. ${d.name}`]));
+    if (!list.some(([v]) => v === current))
+        list.push([current, current]);
+    return list;
+}
+
+/**
+ * @param {string} choice  a dockMonitorChoices() value
+ * @returns {{multi: boolean, connector: ?string}} what to write; connector null = keep it
+ */
+export function dockMonitorValue(choice) {
+    return choice === 'all' ? {multi: true, connector: null} : {multi: false, connector: choice};
+}
+
+/**
+ * @param {object} entry  one of GNOME_CLOCK or GNOME_DOCK shown as a switch
+ * @param {boolean|string} value  the key's value
+ * @returns {boolean} the switch's state
+ */
+export function switchOn(entry, value) {
+    if (entry.on)
+        return value === entry.on;
+    return entry.invert ? !value : Boolean(value);
+}
+
+/**
+ * @param {object} entry  one of GNOME_CLOCK or GNOME_DOCK shown as a switch
  * @param {boolean} active  the switch's state
  * @returns {boolean|string} the value to write
  */
-export function clockValue(entry, active) {
-    if (!entry.on)
-        return active;
-    return active ? entry.on : entry.off;
+export function switchValue(entry, active) {
+    if (entry.on)
+        return active ? entry.on : entry.off;
+    return entry.invert ? !active : active;
 }
 
 // Drop-down labels where the value itself would read badly ("Dark-text"); any other
