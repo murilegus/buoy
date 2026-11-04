@@ -1,5 +1,5 @@
 // Run: gjs -m tests/tabs.test.js   (pure: which tabs the strip shows, where an open starts)
-import {planStrip, stripOrder, tabFor, tabActivities, findTab, HOME} from '../src/buoy@murilegus/lib/kit/tabs.js';
+import {planStrip, stripOrder, tabFor, pressTarget, tabActivities, findTab, HOME} from '../src/buoy@murilegus/lib/kit/tabs.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -91,6 +91,24 @@ const strip2 = planStrip([media], [act('d', 'deploy', {expanded: true})]);
 eq(tabFor(act('d', 'deploy', {expanded: true}), strip2), 'kind:deploy', 'unclaimed kind → its kind: tab');
 eq(tabFor(act('m', 'media', {expanded: true}), s), tabFor(act('m', 'media', {expanded: true}), s),
     'no memory: the same context always gives the same tab');
+
+// --- what a click does -------------------------------------------------------------
+const playing = act('m', 'media', {expanded: true});
+const osd = Object.assign(act('v', 'osd'), {onPress: () => {}});
+eq(pressTarget(null, s), {tab: HOME, press: false}, 'idle pill → Home');
+eq(pressTarget(playing, s), {tab: 'media', press: false}, 'compact pill → its kind tab');
+eq(pressTarget(playing, s, {missed: true}), {tab: HOME, press: false},
+    'pill showing the amber missed line → Home, not its kind tab');
+eq(pressTarget(playing, s, {badge: true}), {tab: HOME, press: false}, '+N badge → Home');
+eq(pressTarget(osd, s), {tab: HOME, press: true}, 'no tab and onPress → run onPress');
+eq(pressTarget(osd, s, {missed: true}), {tab: HOME, press: false},
+    'missed line wins over onPress: Home opens, onPress does not run');
+eq(pressTarget(osd, s, {badge: true}), {tab: HOME, press: false}, 'badge wins over onPress');
+eq(pressTarget(act('w', 'osd'), s), {tab: HOME, press: false}, 'no tab and no onPress → Home');
+eq(pressTarget(Object.assign(act('x', 'osd'), {onPress: 'nope'}), s), {tab: HOME, press: false},
+    'a non-function onPress is ignored');
+eq(pressTarget(Object.assign(act('t', 'timer'), {onPress: () => {}}), s), {tab: 'timer', press: false},
+    'a kind with a tab opens it even with onPress');
 
 // --- a kind tab's activities --------------------------------------------------------
 const list = [act('a', 'media', {expanded: true}), act('b', 'osd'), act('c', 'media'), act('d', 'media', {expanded: true})];

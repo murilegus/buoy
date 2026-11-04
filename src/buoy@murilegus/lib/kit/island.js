@@ -11,7 +11,7 @@ import {Home} from './home.js';
 import {showKeys} from './present.js';
 import {planExpanded, missedLine} from './presentation.js';
 import {ALERT_MS} from './stack.js';
-import {planStrip, tabFor, HOME} from './tabs.js';
+import {planStrip, pressTarget} from './tabs.js';
 import {actionForKey, step} from './keys.js';
 
 const MAX_PILLS = 3;       // SPEC §2c
@@ -290,8 +290,7 @@ export class Island {
         return global.stage.get_event_actor(ev)?.has_style_class_name?.('buoy-badge') ?? false;
     }
 
-    // SPEC §2b: idle and the +N badge open Home; a pill opens its kind's tab; a pill
-    // whose kind has no tab runs its own onPress if it has one, else opens Home.
+    // SPEC §2b, INDICATORS.md: tabs.js pressTarget decides
     _onPillPress(pill, ev) {
         if (this._fromButton(ev))
             return Clutter.EVENT_PROPAGATE;
@@ -304,8 +303,8 @@ export class Island {
     // A click on the pill, or Enter on the ringed one.
     _activate(pill, badge = false) {
         const a = pill.activity;
-        const tab = a && !badge ? tabFor(a, this._strip()) : HOME;
-        if (tab === HOME && a?.onPress && !badge) {
+        const {tab, press} = pressTarget(a, this._strip(), {badge, missed: pill.showingMissed});
+        if (press) {
             a.onPress();
             pill.pulse();
         } else {

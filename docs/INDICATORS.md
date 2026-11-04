@@ -52,7 +52,10 @@ palette, none of which is a state colour here (2026-11-03).
 Hover on the centre pill while the light is amber peeks one line naming what was missed
 (`2 missed · Copy done · Tea 4:00`, newest first, ellipsized); hover clears nothing. Click →
 Home, whose Missed section lists them with their times and turns the light off (SPEC §3,
-2026-11-03). Red (waiting) has no peek line yet: M4 Buoy light.
+2026-11-03). With an activity running, the line takes the place of the activity's own peek
+(media's transport comes back once Home has been shown), and a click while the line shows
+opens Home, not the activity's tab; a click before it shows (the first 300 ms) opens the
+tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Red (waiting) has no peek line yet: M4 Buoy light.
 
 ## Privacy dot (right edge)
 

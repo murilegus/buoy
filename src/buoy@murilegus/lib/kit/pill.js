@@ -67,6 +67,11 @@ export class Pill {
         return this._island.shapes;
     }
 
+    /** The pill is showing the amber missed line, not its activity (a click opens Home). */
+    get showingMissed() {
+        return this._peeking && this._missedLine() !== null;
+    }
+
     get expandable() {
         return this.activity !== null && planExpanded(this.activity) !== null;
     }
@@ -488,7 +493,8 @@ export class Pill {
     }
 
     // The amber light names what was missed on hover (INDICATORS.md); it peeks over the
-    // activity's own peek. Hover only shows it: Home is where it is seen.
+    // activity's own peek. Hover only shows it: Home is where it is seen, and a click
+    // while it shows opens Home (island.js _activate, tabs.js pressTarget).
     _missedLine() {
         return this.role === 'centre' && this.light === 'missed' ? this._island.missedLine() : null;
     }

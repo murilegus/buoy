@@ -225,7 +225,7 @@ square against the screen edge or dock.
 | State | When | Shape | Interaction |
 |---|---|---|---|
 | **Idle** | no activity | `IDLE` 120×32 r16; content per `idle-content` (§2a) | hover → +12px; press → +20px pulse; **click → open Home** |
-| **Compact** | one activity | `activity.shape`, content-fit | hover → `hoverShape`; after 300 ms the activity's `peek` if it has one (e.g. media transport); **click → open that activity's tab** |
+| **Compact** | one activity | `activity.shape`, content-fit | hover → `hoverShape`; after 300 ms the activity's `peek` if it has one (e.g. media transport), or the amber missed line instead (INDICATORS.md); **click → open that activity's tab**, Home while the missed line shows (2026-11-04) |
 | **Minimal** | two+ activities | **side-by-side compact pills** (iPhone 18 Pro / iOS 27 model): highest priority at screen centre, others to the right in priority order, each 120 px … expanded/3, same zones as a single compact (text ellipsizes); fewer pills when three would reach the system cluster (2026-11-01) | each pill clicks into its own tab |
 | **Expanded** | opened from idle or compact; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open); clicks inside do nothing, buttons run their action (decided 2026-11-01) |
 

@@ -91,6 +91,27 @@ export function tabFor(activity, strip) {
 }
 
 /**
+ * What a click on a pill (or Enter on the ringed one) does (SPEC §2b, INDICATORS.md):
+ * idle, the +N badge and the amber missed line open Home; a pill opens the tab of its
+ * kind; a pill whose kind has no tab runs its own onPress if it has one, else opens Home.
+ * The missed line wins because it is what the pill shows: Home is where it is seen
+ * (2026-11-04).
+ *
+ * @param {?object} activity  null = the idle pill
+ * @param {object} strip  planStrip() result
+ * @param {object} [opts]
+ * @param {boolean} [opts.badge]  the press was on the +N badge
+ * @param {boolean} [opts.missed]  the pill is peeking the missed line
+ * @returns {{tab: string, press: boolean}} press: run activity.onPress instead of opening
+ */
+export function pressTarget(activity, strip, {badge = false, missed = false} = {}) {
+    if (!activity || badge || missed)
+        return {tab: HOME, press: false};
+    const tab = tabFor(activity, strip);
+    return {tab, press: tab === HOME && typeof activity.onPress === 'function'};
+}
+
+/**
  * @param {object} tab  a kind tab
  * @param {object[]} list  visible activities (stack order)
  * @returns {object[]} the tab's activities with an expanded presentation, in stack order
