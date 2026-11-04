@@ -64,7 +64,8 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   background at all (no empty stub), and the background stays 4 px off the screen edges.
 - **Contrast on light wallpapers**: like iPhone, the text flips, not the background.
   Setting `cluster-contrast = auto | dark-text | light-text`, default `auto` (prefs:
-  Text colour — Automatic / Dark / Light). The values name the text, not the wallpaper,
+  Icons and text — Automatic / Dark / Light; it recolours icons, tray glyphs and the tray's
+  hover too, so not "Text colour", 2026-11-04). The values name the text, not the wallpaper,
   so they are not taken for GNOME's light/dark style, which is another thing: it styles
   Shell's menus and picks `picture-uri-dark`, and whether it recolours the panel depends
   on the theme (Adwaita does, Yaru keeps `#f2f2f2` on a `#131313` bar); on Buoy's

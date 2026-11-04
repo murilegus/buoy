@@ -114,7 +114,7 @@
         <choice value="light-text"/>
       </choices>
       <default>'auto'</default>
-      <summary>Text colour</summary>
+      <summary>Icons and text</summary>
       <description>Automatic follows the wallpaper, not the style.</description>
     </key>
     <key name="left-cluster-empty" type="s">
