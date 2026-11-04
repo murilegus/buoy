@@ -8,12 +8,13 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {AppMenu} from 'resource:///org/gnome/shell/ui/appMenu.js';
 
-import {fallbackIcons, leftCluster} from './lib/kit/cluster.js';
+import {clusterFill, fallbackIcons, leftCluster} from './lib/kit/cluster.js';
 import {GNOME_CLOCK, clockDefaults} from './lib/kit/settings.js';
 
 // cluster-background, -radius, -opacity (SPEC §1). St has no CSS variables, so the
-// background is the box's inline style, repainted when the look or its hover changes.
-let look = {mode: 'hover', radius: 16, opacity: 20};
+// background is the box's inline style, repainted when the look, its hover or the
+// panel's foreground changes.
+let look = {mode: 'hover', radius: 16, opacity: 17};
 
 // What reworkPanel(true) changed on the left box, to put back on disable.
 let saved = null;
@@ -42,7 +43,7 @@ export function reworkPanel(on) {
         panel.add_style_class_name('buoy');
         panel._rightBox.add_style_class_name('buoy-tray');
         activities.container.hide();
-        saved = {reactive: box.reactive, track_hover: box.track_hover, visible: box.visible, style: box.get_style()};
+        saved = {reactive: box.reactive, track_hover: box.track_hover, visible: box.visible, inline: box.get_style()};
         left = new LeftCluster(box);
         box.insert_child_at_index(left.actor, 0);
         // St only sets :hover on a widget that tracks it, and only a reactive actor gets
@@ -52,9 +53,12 @@ export function reworkPanel(on) {
         followEmpty(box, saved);
         saved.hover = box.connect('notify::hover', paint);
         system = new SystemCluster(panel);
-        for (const c of clusters())
-            paint(c);
+        // a theme or colour-scheme change, or Buoy's light text, recolours the buttons
+        const qs = panel.statusArea.quickSettings;
+        saved.styleChanged = [qs, qs.connect('style-changed', repaintAll)];
+        repaintAll();
     } else {
+        saved.styleChanged[0].disconnect(saved.styleChanged[1]);
         system.destroy();
         system = null;
         left.destroy();
@@ -62,7 +66,7 @@ export function reworkPanel(on) {
         box.disconnect(saved.hover);
         unfollowEmpty(box, saved);
         box.remove_style_class_name('buoy-cluster');
-        box.set_style(saved.style);
+        box.set_style(saved.inline);
         box.reactive = saved.reactive;
         box.track_hover = saved.track_hover;
         box.visible = saved.visible;
@@ -81,6 +85,10 @@ export function reworkPanel(on) {
  */
 export function setClusterBackground(next) {
     look = next;
+    repaintAll();
+}
+
+function repaintAll() {
     clusters().forEach(paint);
 }
 
@@ -120,13 +128,17 @@ export function setLeftEmpty(mode) {
 }
 
 // The stylesheet's transition-duration fades the change in both directions.
-// The system cluster also keeps it while its menu is open, as a panel button stays
-// highlighted (its own highlight is off, see the stylesheet).
+// Filled as GNOME fills a panel button, so it reads like a tray button's hover: the
+// button's foreground ($panel_fg_color, Buoy's dark text on a light wallpaper) at
+// kit/cluster.js clusterFill's alpha. The system cluster keeps it, a step up, while its
+// menu is open, as a panel button stays :checked (its own highlight is off, see the
+// stylesheet).
 function paint(box) {
-    const active = box.hover || (box === system?.actor && system.open);
-    const shown = look.mode === 'always' || (look.mode === 'hover' && active);
-    const alpha = shown ? look.opacity / 100 : 0;
-    box.set_style(`border-radius: ${look.radius}px; background-color: rgba(0, 0, 0, ${alpha});`);
+    const open = box === system?.actor && system.open;
+    const alpha = clusterFill(look, {hover: box.hover, open});
+    const fg = Main.panel.statusArea.quickSettings.peek_theme_node()?.get_foreground_color();
+    const [r, g, b] = fg ? [fg.red, fg.green, fg.blue] : [255, 255, 255];
+    box.set_style(`border-radius: ${look.radius}px; background-color: rgba(${r}, ${g}, ${b}, ${alpha});`);
 }
 
 // [ᯤ ⌁ ▮  Fri 2:13] — Shell's quick settings indicators and the clock as one button

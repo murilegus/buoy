@@ -128,8 +128,9 @@ fields and order: [PROFILES.md](PROFILES.md).
 ## Settings model
 
 Planned keys are listed here too; the schema holds only the ones whose item has landed
-(2026-11-03: `modules-*`, `apps-hidden`, `apps-plain`, `tabs-pinned`, `tabs-slot`,
-`expanded-width`, `dev-mode`, `keybind-focus`). Every key applies at once — prefs and
+(2026-11-04: `modules-*`, `apps-hidden`, `apps-plain`, `tabs-pinned`, `tabs-slot`,
+`expanded-width`, `dev-mode`, `keybind-focus`, `cluster-background`, `cluster-radius`,
+`cluster-opacity`, `left-cluster-empty`, `clock-defaults-applied`). Every key applies at once — prefs and
 `gsettings` alike; `modules-<id>` starts or stops only that module.
 
 | Key | Type | Effect |
@@ -146,7 +147,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
 | `cluster-background` | s | never \| hover \| always; default `hover` (2026-11-04) |
 | `cluster-radius` | i | that background's corner radius, 0–16 px; default `16` |
-| `cluster-opacity` | i | that background's opacity, 5–100 %; default `20` |
+| `cluster-opacity` | i | that background's opacity, 5–100 %, in the panel foreground colour like a panel button's hover; default `17` (2026-11-04) |
 | `cluster-contrast` | s | auto \| light \| dark |
 | `left-cluster-empty` | s | workspace \| hidden |
 | `clock-defaults-applied` | b | bookkeeping: the first enable gave GNOME's clock keys Buoy's defaults (time alone, 24 h) where the user had not set them; the clock switches in prefs are GNOME's own keys (2026-11-04) |

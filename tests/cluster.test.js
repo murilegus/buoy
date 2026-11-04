@@ -1,5 +1,5 @@
 // Run: gjs -m tests/cluster.test.js   (pure: what the left cluster shows, SPEC §1)
-import {GENERIC_APP_ICONS, fallbackIcons, leftCluster, workspaceName} from '../src/buoy@murilegus/lib/kit/cluster.js';
+import {GENERIC_APP_ICONS, OPEN_HOVER_STEP, OPEN_STEP, clusterFill, fallbackIcons, leftCluster, workspaceName} from '../src/buoy@murilegus/lib/kit/cluster.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -53,3 +53,17 @@ eq(fallbackIcons('window', null), G, 'a generic icon is not listed twice');
 eq(G, ['window-symbolic', 'focus-windows-symbolic'], 'a plain window, then two windows (not the gears)');
 
 console.log('cluster: ok');
+
+// --- background fill (GNOME's panel button steps, 2026-11-04) -------------------------
+const fill = (mode, opacity, hover, open) => clusterFill({mode, opacity}, {hover, open});
+eq([OPEN_STEP, OPEN_HOVER_STEP], [11, 15], 'steps of Shell 50 panel_button: .17 → .28 open, .32 open + hover');
+eq(fill('hover', 17, true, false), 0.17, 'hover at the default 17: a stock button\'s hover');
+eq(fill('hover', 17, false, true), 0.28, 'open at 17: a stock button\'s :checked');
+eq(fill('hover', 17, true, true), 0.32, 'open and hovered at 17: a stock button\'s :checked:hover');
+eq(fill('hover', 17, false, false), 0, 'hover mode, at rest: nothing');
+eq(fill('never', 17, true, true), 0, 'never: nothing, not even open');
+eq(fill('always', 30, false, false), 0.3, 'always at rest: the opacity');
+eq(fill('always', 30, true, false), 0.3, 'always, hovered: unchanged (no extra step)');
+eq(fill('always', 30, false, true), 0.41, 'always, open: one step up');
+eq(fill('hover', 95, true, true), 1, 'clamped at 100 %');
+eq(fill('hover', 5, true, false), 0.05, 'the minimum 5 % is kept');

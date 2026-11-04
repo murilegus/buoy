@@ -41,11 +41,16 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 - Panel: transparent, 40px. Two clusters plus the island.
 - **Cluster background** (decided 2026-10-30): **none by default** — icons and text sit
   bare on the wallpaper like the iPhone status bar; only the pill is a black block. On
-  hover a translucent rounded background (`rgba(0,0,0,0.35)`, radius 12, no blur) wraps
-  the whole cluster. Setting `cluster-background = never | hover | always`, default
-  **`hover`**, with `cluster-radius` (0–16 px, default **16** = a pill like the island) and
-  `cluster-opacity` (5–100 %, default **20**) under it in prefs (Ethan, 2026-11-04; briefly
-  `never` / 12 / 35 earlier the same day). A cluster with nothing to show has no
+  hover a translucent rounded background (no blur) wraps the whole cluster. Setting
+  `cluster-background = never | hover | always`, default **`hover`**, with
+  `cluster-radius` (0–16 px, default **16** = a pill like the island) and
+  `cluster-opacity` (5–100 %, default **17**) under it in prefs (Ethan, 2026-11-04; briefly
+  `never` / 12 / 35 / 20 earlier the same day). The background is filled as GNOME fills a
+  panel button, so it matches a tray button's hover (2026-11-04, was black): the panel
+  foreground colour (white on Shell's dark top bar; Buoy's dark text once `buoy-light`
+  flips it) at `cluster-opacity`, and while the system cluster's menu is open 11 points
+  more, 15 when also hovered — Shell 50 `_drawing.scss` `panel_button`'s .17 / .28 / .32.
+  `always` draws the opacity at rest and on hover. A cluster with nothing to show has no
   background at all (no empty stub), and the background stays 4 px off the screen edges.
 - **Contrast on light wallpapers**: like iPhone, the text flips, not the background. On
   `picture-uri` change (signal, no polling) decode the wallpaper once, downscaled, measure
