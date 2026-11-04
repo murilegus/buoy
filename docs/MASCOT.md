@@ -20,7 +20,7 @@ Two forms, one family:
 
 | Place | What | Since |
 |---|---|---|
-| Brand | extension icon, README, EGO screenshots, prefs About page; empty states ("Nothing going on" in Home, the empty Notifications tab) | M3 release |
+| Brand | extension icon, README, EGO screenshots, prefs About page (M3 About, waving, 2026-11-04); empty states ("Nothing going on" in Home, the empty Notifications tab) | M3 release |
 | Agents | the **leading** of every agent activity (Claude Code, Codex, any D-Bus caller that sends `{mascot}`); the pose follows the agent's lifecycle (§ Agents). The agent's name is always the first word of the text, since Bu does not say which agent it is | M3 `ask`, M4 agent activity |
 | Greeting | leading of the expanded greeting (SPEC §2d), `wave` once | M3 greeting |
 | Idle plan `mascot` | Bu's eyes in the idle pill (§ Eyes), module off by default | M4 |
