@@ -71,8 +71,8 @@ for (const n of Object.keys(SLIDERS)) {
 }
 eq(schema.get_key('cluster-radius').get_range().recursiveUnpack(), ['range', [0, 16]],
     'radius stops at 16: half the 32 px cluster, a pill');
-eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [16, 20],
-    'radius 16 (a pill, like the island) and opacity 20 % by default (2026-11-04)');
+eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [16, 17],
+    'radius 16 (a pill, like the island) and opacity 17 % by default, a panel button\'s hover (2026-11-04)');
 eq(plan.modules.map(m => m.id), ['media', 'notification', 'progress', 'timer', 'calendar', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet');
 eq(plan.modules.find(m => m.id === 'calendar'), {

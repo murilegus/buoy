@@ -41,11 +41,16 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 - Panel: transparent, 40px. Two clusters plus the island.
 - **Cluster background** (decided 2026-10-30): **none by default** — icons and text sit
   bare on the wallpaper like the iPhone status bar; only the pill is a black block. On
-  hover a translucent rounded background (`rgba(0,0,0,0.35)`, radius 12, no blur) wraps
-  the whole cluster. Setting `cluster-background = never | hover | always`, default
-  **`hover`**, with `cluster-radius` (0–16 px, default **16** = a pill like the island) and
-  `cluster-opacity` (5–100 %, default **20**) under it in prefs (Ethan, 2026-11-04; briefly
-  `never` / 12 / 35 earlier the same day). A cluster with nothing to show has no
+  hover a translucent rounded background (no blur) wraps the whole cluster. Setting
+  `cluster-background = never | hover | always`, default **`hover`**, with
+  `cluster-radius` (0–16 px, default **16** = a pill like the island) and
+  `cluster-opacity` (5–100 %, default **17**) under it in prefs (Ethan, 2026-11-04; briefly
+  `never` / 12 / 35 / 20 earlier the same day). The background is filled as GNOME fills a
+  panel button, so it matches a tray button's hover (2026-11-04, was black): the panel
+  foreground colour (white on Shell's dark top bar; Buoy's dark text once `buoy-light`
+  flips it) at `cluster-opacity`, and while the system cluster's menu is open 11 points
+  more, 15 when also hovered — Shell 50 `_drawing.scss` `panel_button`'s .17 / .28 / .32.
+  `always` draws the opacity at rest and on hover. A cluster with nothing to show has no
   background at all (no empty stub), and the background stays 4 px off the screen edges.
 - **Contrast on light wallpapers**: like iPhone, the text flips, not the background. On
   `picture-uri` change (signal, no polling) decode the wallpaper once, downscaled, measure
@@ -308,7 +313,12 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
 - Order: highest priority at screen centre, then to the right. When one ends, the rest
   slide to fill (eased x), never jump.
 - Keyboard (decided 2026-11-03): `Super+B` (`keybind-focus`) takes the keyboard like a
-  menu (modal) and rings the centre pill; ←/→ move the ring (no wrap); Enter or Space
+  menu (modal) and rings the centre pill: its own 1 px border turns the theme's accent
+  (`-st-accent-color`, the colour of GNOME's focus rings), full strength, so it follows
+  Settings → Appearance; an activity's keyline steps aside while it is ringed. Buttons,
+  tabs and rows inside keep GNOME's own 2 px accent ring at 80 % (Shell 50 `_drawing.scss`
+  `focus_ring`). (2026-11-04, Ethan: was 2 px of white at 55 % inside the border, 3 px in
+  all; 2 px of accent still read heavy on the pill); ←/→ move the ring (no wrap); Enter or Space
   opens the ringed pill as a click would (its tab, or Home); Esc or `Super+B` again lets
   go, and so does a click outside the pills. Open: ←/→ walk the tab strip, Esc closes.
   An open the stack made (ask, alert) takes no keyboard (§2); `Super+B` takes it for that

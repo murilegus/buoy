@@ -57,3 +57,30 @@ export function leftCluster({app, index, names, hover, overview, empty}) {
         return {visible: false, icon: null, text: '', extra: null};
     return {visible: true, icon: 'grid', text: name ?? `${index + 1}`, extra: null};
 }
+
+// GNOME's panel button fill over its own hover (Shell 50 _drawing.scss panel_button: the
+// foreground at .17 on hover, .28 open, .32 open and hovered): the steps above
+// `cluster-opacity`, in percent, so the default 17 matches a stock button exactly.
+export const OPEN_STEP = 11;
+export const OPEN_HOVER_STEP = 15;
+
+/**
+ * How strongly a cluster's background is drawn, in the cluster's foreground colour as
+ * GNOME fills a panel button (2026-11-04: same colour and steps as a tray button's hover).
+ *
+ * @param {object} look
+ * @param {string} look.mode  `cluster-background`: never | hover | always
+ * @param {number} look.opacity  `cluster-opacity`, percent
+ * @param {object} state
+ * @param {boolean} state.hover  pointer over the cluster
+ * @param {boolean} state.open  its menu is open
+ * @returns {number} alpha, 0–1
+ */
+export function clusterFill({mode, opacity}, {hover, open}) {
+    if (mode === 'never' || (mode === 'hover' && !hover && !open))
+        return 0;
+    let step = 0;
+    if (open)
+        step = hover ? OPEN_HOVER_STEP : OPEN_STEP;
+    return Math.min(100, opacity + step) / 100;
+}
