@@ -135,7 +135,10 @@ fields and order: [PROFILES.md](PROFILES.md).
    runs in its own process and cannot import a module's index.js, which pulls in Shell
    code.) Shell-level keys that belong to no module (panel clusters, window corners) get
    their own prefs pages; their code lives next to `panel.js`, not under `modules/`.
-10. Standalone tabs are off by default and build their actor on first selection.
+10. Standalone tabs are on but not pinned by default (SPEC §2b, 2026-11-02; was "off by
+    default"): the strip's slot shows Calendar until another is chosen, and ⋯ lists Calendar
+    (marked, in the slot) then Clipboard. Each builds its actor on first selection and
+    destroys it when expanded closes; closed costs nothing however many are enabled.
 11. **Adapters never return measurements.** No `width`, `height`, `x`, px, or monitor
     queries — only content plus discrete hints (`size: 'wide'`, region `priority`). Sizes
     are derived in `kit/shapes.js` from the monitor; the renderer fits content (ellipsize

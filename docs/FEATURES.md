@@ -133,7 +133,7 @@ Nothing user-visible until M1 is done; everything else depends on it.
 | [ ] | VPN / Wi-Fi change / captive portal; power profile | hud | NM, power-profiles-daemon | | 6 |
 | [ ] | Calendar idle plan: next event | calendar | EDS | | — |
 
-## M5 — Standalone tabs & developer modules (opt-in, off by default)  `[ ]`
+## M5 — Standalone tabs & developer modules (developer modules opt-in, off by default; Calendar and Clipboard tabs on, SPEC §2b)  `[ ]`
 
 | | Item | type | Source | note |
 |---|---|---|---|---|
