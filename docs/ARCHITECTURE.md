@@ -18,7 +18,7 @@ src/buoy@murilegus/
 ├── reach.js                the Overview's workspace backgrounds grow under the see-through bar, so closing it ends on the whole wallpaper (2026-11-04)
 ├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
 ├── prefs.js                Adw prefs: General, Modules (one row per module), Apps, Panel (clusters,
-│                           2026-11-04); the Windows page arrives with corners (M2)
+│                           2026-11-04), Windows (corners, 2026-11-04)
 ├── schemas/                GSettings: the one source of every key, its summary and range
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
@@ -35,6 +35,7 @@ src/buoy@murilegus/
     │   ├── settings.js     prefs: which page each schema key goes to, samples; pure (2026-11-03)
     │   ├── cluster.js      what the left cluster shows (app / workspace / hover); pure (2026-11-04)
     │   ├── contrast.js     wallpaper placement + luminance → dark or light text per side; pure (2026-11-04)
+    │   ├── rounded.js      which windows get round top corners, where the arcs fall, the shader; pure (2026-11-04)
     │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
     │   ├── mascot.js       Bu: 13 pose grids + eyes as data, pure; MASCOT.md is the source (2026-11-03)
@@ -156,7 +157,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `left-cluster-empty` | s | workspace \| hidden |
 | `clock-defaults-applied` | b | bookkeeping: the first enable gave GNOME's clock keys Buoy's defaults (time alone, 24 h) where the user had not set them; the clock switches in prefs are GNOME's own keys (2026-11-04) |
 | `dock-defaults-applied` | b | bookkeeping: the first enable gave Ubuntu Dock's keys (`dash-to-dock`) Buoy's defaults — bottom, auto-hide, not edge to edge, 32 px, primary display, no trash or volumes — where the user had not set them; the Dock rows in prefs are the dock's own keys (2026-11-04) |
-| `window-corners` | b | round the top corners of maximized windows; default `true` (2026-11-02) |
+| `window-corners` | b | round the top corners of windows whose top edge meets the bar (maximized, tiled, moved up); default `true` (2026-11-02; top edge 2026-11-04) |
 | `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
 | `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules |
 | `greeting-style`, `greeting-name`, `greeting-last-day` | — | declared by `greeting` (SPEC §2d) |

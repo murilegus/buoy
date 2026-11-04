@@ -169,33 +169,44 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 - The island holds **activities only**; persistent system status stays in the system
   cluster. (This supersedes the earlier "indicators in the pill" decision.)
 
-### 1a. Maximized windows: rounded top corners (decided 2026-11-02)
+### 1a. Windows against the top bar: rounded top corners (decided 2026-11-02; tiled and top edge 2026-11-04)
 
 Floating windows already have round corners (Adwaita `--window-radius`, 15 px in
 libadwaita 1.9 on Ubuntu 26.04), but Adwaita sets it to 0 when maximized or tiled.
 With a transparent panel the maximized window's square top edge meets the wallpaper and looks
-cut off. Buoy rounds the **top-left and top-right corners only** of maximized windows,
+cut off. Buoy rounds the **top-left and top-right corners only** of windows whose top edge meets the bar,
 so the top edge reads as a continuation of the floating windows; the bottom corners stay
 square against the screen edge or dock.
 
 - **On by default.** `window-corners` (b, default `true`), `window-corners-radius`
   (i, default `15` = Adwaita's window radius, range 0–32). Both live on their own prefs
   page (**Windows**), not under a module; changes apply live.
-- **Which windows**: maximized in both directions (`maximized_horizontally &&
-  maximized_vertically`), normal window types, any toolkit (GTK, Qt, Electron, Xwayland).
-  Not fullscreen, not half-tiled (Super+←/→) for now — tiled is an open question.
+- **Which windows**: every normal window whose top edge is on the work area's top
+  (`kit/rounded.js` `onTopEdge`), not fullscreen, any toolkit (GTK, Qt, Electron,
+  Xwayland): maximized vertically — fully maximized, tiled left or right, maximized
+  vertically alone; Mutter pins the top edge then (`window.c` `update_edge_constraints`)
+  and the client, told `tiled-top`, drops its own top radius — or a frame that starts on
+  that line: Ubuntu's tiling-assistant top quarters (pinned with `override_constraints`,
+  which JS cannot read back) and a window moved up against the bar (Ethan 2026-11-04).
+  Both top corners round, the inner one of a tiled pair too, so tiled windows meet under
+  the bar like floating ones. A floating window that already draws round corners looks the
+  same; one that draws square ones (Qt, some Electron apps) is rounded there too. Only
+  pixels inside the frame are cut: a floating window's own shadow is kept.
 - **How** (`corners.js`, next to `panel.js`): a `Shell.GLSLEffect` on the window's
   `Meta.WindowActor` that discards the pixels outside the two top arcs — the pattern
   `ui/lightbox.js` (RadialShaderEffect) uses. Whatever is behind shows through the
   corner: the wallpaper under the panel, another window, the Overview. Added on
   maximize, removed on unmaximize, fullscreen, `window-corners = false`, window close and
-  disable. Signals only (`window-created`, `notify::maximized-*`, `notify::fullscreen`);
-  no polling, nothing animates.
+  disable. Signals only (`window-created`, `workareas-changed`, `notify::maximized-*`,
+  `notify::fullscreen`, `position-changed`, `size-changed`); no polling, nothing animates. On unmaximize the effect stays until the window manager's
+  `size-changed`: Shell freezes the actor at `size-change`, before the state flips, and
+  thaws it once the client has drawn the new size — dropping it at the flip showed the
+  frozen window square for a frame (2026-11-04).
 - **Cost, accepted**: an effect makes Clutter paint that window through an offscreen
   buffer, and Mutter stops culling windows behind it (`meta-cullable.c`
   `has_active_effects`), so windows under a maximized one are painted again inside the
-  damaged area. Only maximized windows carry the effect; with the setting off nothing is
-  attached. Measure frame time with ~5 windows behind a maximized one before shipping.
+  damaged area. Only windows on the top edge carry the effect; with the setting off
+  nothing is attached. Measure frame time with ~5 windows behind a maximized one before shipping.
 - **Rejected**: two corner caps in top chrome painting a clone of the wallpaper — no
   offscreen and no culling loss, but wrong whenever another window sits behind or is
   raised over the corner, and it would have to hide during every move/maximize

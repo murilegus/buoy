@@ -148,5 +148,16 @@
       <summary>Opacity</summary>
       <description>How strong the background is. 17 matches a top bar button's hover; with a menu open it is a little stronger, as GNOME's.</description>
     </key>
+    <key name="window-corners" type="b">
+      <default>true</default>
+      <summary>Rounded top corners</summary>
+      <description>Like a floating window's, with the wallpaper behind them. The bottom stays square.</description>
+    </key>
+    <key name="window-corners-radius" type="i">
+      <range min="0" max="32"/>
+      <default>15</default>
+      <summary>Corner radius</summary>
+      <description>15 is a floating window's.</description>
+    </key>
   </schema>
 </schemalist>

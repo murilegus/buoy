@@ -47,6 +47,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         window.add(this._modulesPage(plan, key));
         window.add(this._appsPage(plan, key));
         window.add(this._panelPage(plan, key));
+        window.add(this._windowsPage(plan, key));
     }
 
     // Keys in the order the XML lists them (list_keys() sorts by name).
@@ -343,6 +344,25 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const dock = this._dockGroup();
         if (dock)
             page.add(dock);
+        return page;
+    }
+
+    // --- Windows ------------------------------------------------------------------------
+
+    // window-corners* (SPEC §1a): the switch, then the radius, which does nothing while the
+    // switch is off.
+    _windowsPage(plan, key) {
+        const page = new Adw.PreferencesPage({title: 'Windows', icon_name: 'window-maximize-symbolic'});
+        const group = new Adw.PreferencesGroup({
+            title: 'Under the Top Bar',
+            description: 'Maximized, tiled, or moved up against the bar.',
+        });
+        const rows = new Map(plan.windows.map(name => [name, this._row(key(name))]));
+        rows.forEach(row => group.add(row));
+        const radius = rows.get('window-corners-radius');
+        if (radius && rows.has('window-corners'))
+            this._settings.bind('window-corners', radius, 'sensitive', Gio.SettingsBindFlags.GET);
+        page.add(group);
         return page;
     }
 
