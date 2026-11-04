@@ -247,8 +247,11 @@ Rules:
 - Expanded opens **Home** from idle, or the **activity's own tab** from its pill (minimal or
   compact).
 - A tab strip exists only inside Expanded (Home · Media · Timer · …). Pill never shows tabs.
-- Activity ends → removed immediately. `ttl` for transient ones (OSD, notifications).
-- Highest priority shows; ties → most recent. Transient interrupts, then previous returns.
+- Activity ends → removed immediately. `ttl` for short-lived ones (feedback §2e,
+  notifications).
+- Highest priority shows; ties → most recent. Feedback (§2e) and transient interrupt, then
+  the previous returns. Transient is Apple's `style: 'transient'` (greeting, a picker): it
+  opens expanded; feedback never does (2026-11-05: the two were mixed up here).
 - Alert (2026-11-01): the shown activity opens expanded for ~2 s (stays while hovered),
   or pulses if it has no expanded; an alert on a covered activity brings it up for ~2 s,
   then the top returns (§2c: an activity with a pill of its own alerts on that pill).
@@ -363,8 +366,9 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   shown, running or not (default strip: Home · Media · Notifications · Transfers · Timer ·
   [Calendar] · ⋯; Notifications, Transfers and Timer are stub modules until their
   roadmap items); until it ships `tab.js` the tab shows its activities' expanded
-  views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied)
-  have none. Kinds no module claims (D-Bus callers) get a tab while one of their
+  views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied;
+  §2e) have no kind tab; a feedback-only module's own `tab.js` (clipboard's history) is a
+  standalone tab, in the slot and ⋯ (2026-11-05). Kinds no module claims (D-Bus callers) get a tab while one of their
   activities has an expanded presentation, after the module tabs.
 - **Strip look** (2026-11-02, after Notchy): one rounded group hugging its tabs; the
   active tab shows icon + title on a lighter pill, the others only their icon (the title
@@ -496,6 +500,27 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 - **Bu waves** (2026-11-03): the expanded greeting's leading is `{mascot: 'wave'}` — two
   frames for ~2 s, then `idle` (`MASCOT.md`).
 
+### 2e. Feedback: minimal only (decided 2026-11-05, Ethan)
+
+- **What.** A confirmation of something you just did: `osd` from `hud` (volume, brightness,
+  keyboard backlight, Caps/Num Lock — replacing GNOME's OSD), the keyboard layout from
+  `layout`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
+- **Minimal only.** No compact on hover, no expanded, no tab; never an alert, never counted
+  as missed (INDICATORS.md). Click → its `onPress` if it has one (Sound settings), else
+  Home (§2b).
+- **Pill 1 for its ttl.** Feedback takes the centre pill above every kind but `ask`; the
+  pill it covers comes back in place when it ends, and the side pills do not move.
+- **ttl** ~1.5 s (copied 1 s). A repeat updates the same activity and restarts the ttl, so
+  holding the volume key keeps one pill and only its bar moves; hover holds it.
+- **Size by type**, content-fit with the adapter's hints, never px (ARCHITECTURE rule 11):
+  volume, brightness and backlight are icon + bar (`wide`); Caps Lock and the layout are
+  icon + a short word; copied is icon + the snippet or an image thumbnail, ellipsized at
+  pill 1's widest.
+- **Clipboard** (2026-11-05, was two modules, `copied` and `clipboard`): one `clipboard`
+  module. Its `source.js` listens to `Meta.Selection` `owner-changed` (mutter
+  `meta-selection.c`; no polling) and surfaces `copied`; with `clipboard-history` on it
+  also keeps the history its standalone tab shows (FEATURES M5). Off, nothing is stored.
+
 ## 3. Expanded: Home
 
 Single screen, no sub-navigation. Four blocks, each a module that can be off:
@@ -591,7 +616,8 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 1. **media** — MPRIS: minimal (art + title · artist), compact (transport, seek bar), tab
    Media (adds what compact has no room for: player choice, the app's volume,
    shuffle/repeat).
-2. **hud** — volume / brightness / caps lock replace the stock OSD.
+2. **hud** — volume / brightness / keyboard backlight / caps lock replace the stock OSD, as
+   feedback (§2e).
 3. **home** — the expanded Home above.
 4. **appname** — left cluster.
 5. **greeting** — once a day, expanded hello with date and weather (§2d).
@@ -621,7 +647,8 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 8. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
 9. **several pills** — pill 1 plus up to two 120 px side pills (§2c).
-10. **clipboard** — optional module, off by default.
+10. **clipboard** — the copied feedback (§2e, v0.1) and, with `clipboard-history`, the
+    Clipboard tab: history, search, pin, paste (M5).
 
 ## 6c. Transfers tab (decided 2026-11-03)
 
