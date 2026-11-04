@@ -63,14 +63,14 @@ src/buoy@murilegus/
 
 | Type | Has | Example |
 |---|---|---|
-| **source module** | `kinds` + `source.js` + `adapter.js`, optionally `tab.js`, `apps/` | media, hud, progress, ask |
+| **source module** | `kinds` + `source.js` + `adapter.js`, optionally `tab.js`, `apps/` | media, hud, progress, ask, clipboard (feedback `copied` + its standalone tab) |
 | **idle plan** | `idle.js` (optionally also a source module) | clock, weather, calendar, mascot |
-| **standalone tab** | `tab.js` only, `kinds: []` | clipboard, launcher |
+| **standalone tab** | `tab.js` only, `kinds: []` | launcher; also the tab of a feedback-only module (`clipboard`, SPEC §2b) |
 
 One module may combine the first two (calendar: next-event activity + idle plan + tab).
 A standalone tab never surfaces activities; if it needs to, it becomes a source module.
 
-v0.1 modules: `media`, `hud`, `home`, `progress`, `copied`, `layout`, `ask`; `notification`,
+v0.1 modules: `media`, `hud`, `home`, `progress`, `clipboard` (its `copied` feedback; `copied` folded in, 2026-11-05), `layout`, `ask`; `notification`,
 `timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
 roadmap items, so their tabs show from v0.1 (2026-11-02);
 `greeting` (2026-11-03); idle plans `clock`, `weather`, `calendar`; standalone tabs `calendar`, `clipboard` (stub `tab.js`, in that order, 2026-11-02).
@@ -135,7 +135,10 @@ fields and order: [PROFILES.md](PROFILES.md).
    runs in its own process and cannot import a module's index.js, which pulls in Shell
    code.) Shell-level keys that belong to no module (panel clusters, window corners) get
    their own prefs pages; their code lives next to `panel.js`, not under `modules/`.
-10. Standalone tabs are off by default and build their actor on first selection.
+10. Standalone tabs are on but not pinned by default (SPEC §2b, 2026-11-02; was "off by
+    default"): the strip's slot shows Calendar until another is chosen, and ⋯ lists Calendar
+    (marked, in the slot) then Clipboard. Each builds its actor on first selection and
+    destroys it when expanded closes; closed costs nothing however many are enabled.
 11. **Adapters never return measurements.** No `width`, `height`, `x`, px, or monitor
     queries — only content plus discrete hints (`size: 'wide'`, region `priority`). Sizes
     are derived in `kit/shapes.js` from the monitor; the renderer fits content (ellipsize

@@ -29,14 +29,14 @@ and in GNOME's icon language, so a pill that switches between plans never change
 | Greeting | leading of the expanded greeting (SPEC §2d), `wave` once | M3 greeting |
 | Idle plan `mascot` | Bu's eyes in the idle pill (§ Eyes), module off by default | M4 |
 
-Not: the compact pills of other modules (app icons and art stay), and not as a
+Not: the pills of other modules (app icons and art stay), and not as a
 replacement for the light in every state.
 
 ## Drawing rules
 
 - **Grid 10 × 10.** Sizes are multiples of 10 so every cell is whole logical px: **20 px**
-  in compact (cell 2, APPLE §B5.3 leading ≤ 20), **50 px** in expanded headers (≤ 56),
-  40 px in Home and prefs. HiDPI multiplies whole px; nothing blurs.
+  in minimal (cell 2, APPLE §B5.3 leading ≤ 20), **40 px** in compact (cell 4, ≤ 40,
+  2026-11-05), **50 px** in expanded headers (≤ 56), 40 px in Home and prefs. HiDPI multiplies whole px; nothing blurs.
 - **A fixed palette, always on dark** (corrected 2026-11-03 to match the reviewed design:
   this table had said "foreground at 35 / 55 / 70 %", which drew grey water and a faded
   stripe). Every cell is a solid colour, no partial opacity, so the edges stay crisp at
@@ -78,7 +78,7 @@ replacement for the light in every state.
   - **Held still**, a loop shows its first frame; a once pose shows its first frame and
     still settles on time (one change, no swaps).
   - **Rebuilt content carries on** (2026-11-04): a pill's content is rebuilt on every
-    update, light change and peek, so `present.js` keeps when each pose was first shown
+    update, light change and hover, so `present.js` keeps when each pose was first shown
     per activity surface (id + surface, last 32). An update mid-wave continues the wave; a
     new `Surface` with the same id starts it again.
 - **Stale** is drawn by the renderer as for any stale activity (dimmed, APPLE §B1): the
@@ -95,8 +95,8 @@ replacement for the light in every state.
 - `tests/mascot.test.js` parses the grid blocks of **this file** and compares them with
   `kit/mascot.js`, so the doc stays the source of truth. It also checks the Poses table
   (every pose, its motion), the lamp rule and the frame timing (`frameAt`).
-- Sizes (2026-11-04): 20 px in compact (and Home's rows, which are compact views), 50 px
-  in the expanded leading; the cells are painted without antialiasing.
+- Sizes (2026-11-04): 20 px in minimal (and Home's rows, which are minimal views), 40 px
+  in compact (2026-11-05), 50 px in the expanded leading; the cells are painted without antialiasing.
 - The SVGs in `docs/mascot/` are previews for review and the README, made from the same
   grids and the palette above (regenerated 2026-11-03 when the palette was corrected, and
   2026-11-04 for the 2 × 2 lamp: `sheet.svg`, the 13 pose files and `hello.svg`; `eyes.svg`
