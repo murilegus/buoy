@@ -5,7 +5,10 @@ import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, clockSwitchOn, clockValue, GNOME_CLOCK, NESTED, SLIDERS, choiceLabel} from './lib/kit/settings.js';
+import {
+    planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
+    NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
+} from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {PATH} from './lib/kit/dbus.js';
 
@@ -337,7 +340,166 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const clock = this._clockGroup();
         if (clock)
             page.add(clock);
+        const dock = this._dockGroup();
+        if (dock)
+            page.add(dock);
         return page;
+    }
+
+    // Ubuntu Dock's own keys (kit/settings.js GNOME_DOCK): the rows of Settings → Ubuntu
+    // Desktop → Dock, on the same keys, so each side follows the other's changes. Shown only
+    // where the dock's schema is installed.
+    _dockGroup() {
+        const source = Gio.SettingsSchemaSource.get_default();
+        const entries = GNOME_DOCK.filter(e => source?.lookup(e.schema, true)?.has_key(e.key));
+        if (!entries.length)
+            return null;
+        const group = new Adw.PreferencesGroup({
+            title: 'Dock',
+            description: 'The same settings as Ubuntu\'s Dock: synced both ways.',
+        });
+        const gs = new Gio.Settings({schema_id: entries[0].schema});
+        const watch = (keys, fn) => {
+            const ids = keys.map(k => gs.connect(`changed::${k}`, fn));
+            this._window.connect('close-request', () => {
+                ids.forEach(id => gs.disconnect(id));
+                return false;
+            });
+        };
+        let monitor = false;
+        for (const e of entries) {
+            if (e.row === 'monitor') {
+                if (!monitor)
+                    group.add(this._dockMonitorRow(gs, watch));
+                monitor = true;
+            } else if (e.min !== undefined) {
+                group.add(this._dockSliderRow(gs, e));
+            } else if (e.choices) {
+                group.add(this._dockChoiceRow(gs, e, watch));
+            } else {
+                const row = new Adw.SwitchRow({title: e.title, subtitle: e.subtitle ?? ''});
+                gs.bind(e.key, row, 'active',
+                    e.invert ? Gio.SettingsBindFlags.INVERT_BOOLEAN : Gio.SettingsBindFlags.DEFAULT);
+                group.add(row);
+            }
+        }
+        return group;
+    }
+
+    // As _sliderRow, on a dock key with GNOME_DOCK's bounds.
+    _dockSliderRow(gs, e) {
+        const row = new Adw.ActionRow({title: e.title});
+        const value = new Gtk.Label({
+            width_chars: 6, xalign: 1, valign: Gtk.Align.CENTER, css_classes: ['dim-label', 'numeric'],
+        });
+        const scale = new Gtk.Scale({
+            adjustment: new Gtk.Adjustment({lower: e.min, upper: e.max, step_increment: 1, page_increment: 4}),
+            digits: 0, round_digits: 0, draw_value: false,
+            width_request: 180, valign: Gtk.Align.CENTER,
+        });
+        scale.update_property([Gtk.AccessibleProperty.LABEL], [e.title]);
+        gs.bind(e.key, scale.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT);
+        const show = () => {
+            value.label = `${Math.round(scale.adjustment.value)} ${e.unit}`;
+        };
+        scale.adjustment.connect('value-changed', show);
+        show();
+        row.add_suffix(value);
+        row.add_suffix(scale);
+        return row;
+    }
+
+    // A dock enum as a drop-down with GNOME_DOCK's labels; a value set elsewhere that the
+    // list lacks (TOP) is shown as it is rather than changed.
+    _dockChoiceRow(gs, e, watch) {
+        const row = new Adw.ComboRow({title: e.title});
+        let values = [];
+        let syncing = false;     // a new model resets the selection: not the user's
+        const sync = () => {
+            syncing = true;
+            const current = gs.get_string(e.key);
+            const next = Object.keys(e.choices).includes(current) ? Object.keys(e.choices) : [...Object.keys(e.choices), current];
+            if (next.join() !== values.join()) {
+                values = next;
+                row.model = Gtk.StringList.new(values.map(v => e.choices[v] ?? v));
+            }
+            if (row.selected !== values.indexOf(current))
+                row.selected = values.indexOf(current);
+            syncing = false;
+        };
+        sync();
+        row.connect('notify::selected', () => {
+            if (syncing)
+                return;
+            const value = values[row.selected];
+            if (value && gs.get_string(e.key) !== value)
+                gs.set_string(e.key, value);
+        });
+        watch([e.key], sync);
+        return row;
+    }
+
+    // "Show on": all displays, the primary one, or one by its connector — two dock keys
+    // behind one drop-down (kit/settings.js dockMonitor*). Displays are named and numbered
+    // from Mutter, as Settings does (org.gnome.Mutter.DisplayConfig GetCurrentState, asked
+    // again on MonitorsChanged); Gdk's connectors stand in until it answers.
+    _dockMonitorRow(gs, watch) {
+        const row = new Adw.ComboRow({title: 'Show on'});
+        let choices = [];
+        let displays = [];
+        const list = Gdk.Display.get_default()?.get_monitors();
+        for (let i = 0; i < (list?.get_n_items() ?? 0); i++) {
+            const connector = list.get_item(i).get_connector();
+            if (connector)
+                displays.push({connector, name: connector, builtin: false, primary: false});
+        }
+        const DC = ['org.gnome.Mutter.DisplayConfig', '/org/gnome/Mutter/DisplayConfig', 'org.gnome.Mutter.DisplayConfig'];
+        const ask = () => Gio.DBus.session.call(...DC, 'GetCurrentState', null, null,
+            Gio.DBusCallFlags.NONE, -1, null, (bus, res) => {
+                try {
+                    const [, monitors, logical] = bus.call_finish(res).recursiveUnpack();
+                    displays = displaysFromState(monitors, logical);
+                    sync();
+                } catch (e) {
+                    console.debug(`Buoy prefs: no display names from Mutter: ${e.message}`);
+                }
+            });
+        const changed = Gio.DBus.session.signal_subscribe(DC[0], DC[2], 'MonitorsChanged', DC[1], null,
+            Gio.DBusSignalFlags.NONE, ask);
+        this._window.connect('close-request', () => {
+            Gio.DBus.session.signal_unsubscribe(changed);
+            return false;
+        });
+        // replacing the model resets the selection: that is not the user choosing
+        let syncing = false;
+        const sync = () => {
+            syncing = true;
+            const current = dockMonitor(gs.get_boolean('multi-monitor'), gs.get_string('preferred-monitor-by-connector'));
+            const next = dockMonitorChoices(displays, current);
+            if (next.map(c => c.join()).join() !== choices.map(c => c.join()).join()) {
+                choices = next;
+                row.model = Gtk.StringList.new(choices.map(c => c[1]));
+            }
+            const i = choices.findIndex(c => c[0] === current);
+            if (row.selected !== i)
+                row.selected = i;
+            syncing = false;
+        };
+        sync();
+        row.connect('notify::selected', () => {
+            if (syncing)
+                return;
+            const choice = choices[row.selected]?.[0];
+            if (!choice || choice === dockMonitor(gs.get_boolean('multi-monitor'), gs.get_string('preferred-monitor-by-connector')))
+                return;
+            const {multi, connector} = dockMonitorValue(choice);
+            gs.set_boolean('multi-monitor', multi);
+            if (connector !== null)
+                gs.set_string('preferred-monitor-by-connector', connector);
+        });
+        watch(['multi-monitor', 'preferred-monitor-by-connector'], sync);
+        ask();
+        return row;
     }
 
     // GNOME's own clock keys (kit/settings.js GNOME_CLOCK): one set of values for this
@@ -349,7 +511,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
             return null;
         const group = new Adw.PreferencesGroup({
             title: 'Clock',
-            description: 'The same settings as GNOME\'s Date &amp; Time: changing one changes the other.',
+            description: 'The same settings as GNOME\'s Date &amp; Time: synced both ways.',
         });
         const schemas = new Map();
         for (const e of entries) {
@@ -361,13 +523,13 @@ export default class BuoyPreferences extends ExtensionPreferences {
                 gs.bind(e.key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
             } else {
                 const sync = () => {
-                    const on = clockSwitchOn(e, gs.get_string(e.key));
+                    const on = switchOn(e, gs.get_string(e.key));
                     if (row.active !== on)
                         row.active = on;
                 };
                 sync();
                 row.connect('notify::active', () => {
-                    const value = clockValue(e, row.active);
+                    const value = switchValue(e, row.active);
                     if (gs.get_string(e.key) !== value)
                         gs.set_string(e.key, value);
                 });

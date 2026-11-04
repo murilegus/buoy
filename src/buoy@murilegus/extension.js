@@ -4,7 +4,8 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {applyClockDefaults, reworkPanel, setClusterBackground, setContrast, setLeftEmpty} from './panel.js';
+import {applyGnomeDefaults, reworkPanel, setClusterBackground, setContrast, setLeftEmpty} from './panel.js';
+import {GNOME_CLOCK, GNOME_DOCK} from './lib/kit/settings.js';
 import {Island} from './lib/kit/island.js';
 import {ActivityStack} from './lib/kit/stack.js';
 import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
@@ -34,7 +35,8 @@ export default class BuoyExtension extends Extension {
         const contrast = () => setContrast(this._settings.get_string('cluster-contrast'));
         contrast();
         reworkPanel(true);
-        applyClockDefaults(this._settings);
+        applyGnomeDefaults(this._settings, GNOME_CLOCK, 'clock-defaults-applied');
+        applyGnomeDefaults(this._settings, GNOME_DOCK, 'dock-defaults-applied');
         const background = () => setClusterBackground({
             mode: this._settings.get_string('cluster-background'),
             radius: this._settings.get_int('cluster-radius'),

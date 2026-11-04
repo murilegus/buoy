@@ -10,7 +10,7 @@ import {AppMenu} from 'resource:///org/gnome/shell/ui/appMenu.js';
 
 import {clusterFill, fallbackIcons, leftCluster} from './lib/kit/cluster.js';
 import {contrastFor, spanLuminance} from './lib/kit/contrast.js';
-import {GNOME_CLOCK, clockDefaults} from './lib/kit/settings.js';
+import {gnomeDefaults} from './lib/kit/settings.js';
 import {TrayGlyphs} from './glyphs.js';
 import {reachUnderBar, wallpaperUnderBar} from './reach.js';
 import {Wallpaper} from './wallpaper.js';
@@ -176,31 +176,36 @@ function applyContrast() {
 }
 
 /**
- * Once per install: GNOME's clock gets Buoy's defaults (the time alone, 24-hour) on the
- * keys the user never set (kit/settings.js clockDefaults, Ethan 2026-11-04). The values
- * are GNOME's own, shared with Settings → Date & Time; nothing is reverted on disable
- * (the lock screen disables Buoy too).
+ * Once per install, per group: GNOME's own keys get Buoy's defaults where the user never
+ * set them (kit/settings.js gnomeDefaults) — the clock (the time alone, 24-hour) and Ubuntu
+ * Dock (bottom, hiding, 32 px, primary display; Ethan 2026-11-04). The values are shared
+ * with Settings, which shows the same keys; nothing is reverted on disable (the lock
+ * screen disables Buoy too). A group whose schema is not installed writes nothing.
  *
  * @param {Gio.Settings} settings  Buoy's
+ * @param {object[]} entries  GNOME_CLOCK or GNOME_DOCK
+ * @param {string} flag  the Buoy key recording it was done
  */
-export function applyClockDefaults(settings) {
-    if (settings.get_boolean('clock-defaults-applied'))
+export function applyGnomeDefaults(settings, entries, flag) {
+    if (settings.get_boolean(flag))
         return;
     const source = Gio.SettingsSchemaSource.get_default();
-    const entries = GNOME_CLOCK.filter(e => source?.lookup(e.schema, true)?.has_key(e.key));
+    const installed = entries.filter(e => source?.lookup(e.schema, true)?.has_key(e.key));
     const open = new Map();
     const of = schema => {
         if (!open.has(schema))
             open.set(schema, new Gio.Settings({schema_id: schema}));
         return open.get(schema);
     };
-    for (const {schema, key, value} of clockDefaults(entries, e => of(e.schema).get_user_value(e.key) !== null)) {
+    for (const {schema, key, value} of gnomeDefaults(installed, e => of(e.schema).get_user_value(e.key) !== null)) {
         if (typeof value === 'boolean')
             of(schema).set_boolean(key, value);
+        else if (typeof value === 'number')
+            of(schema).set_int(key, value);
         else
             of(schema).set_string(key, value);
     }
-    settings.set_boolean('clock-defaults-applied', true);
+    settings.set_boolean(flag, true);
 }
 
 /**

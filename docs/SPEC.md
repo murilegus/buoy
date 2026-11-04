@@ -150,6 +150,17 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
     default is the time alone, 24-hour (`14:05`): written once, on the first enable, to
     the keys the user never set (`clock-defaults-applied`), never reverted (Ethan,
     2026-11-04). Nothing is re-anchored.
+  - **Dock** (Ubuntu Dock, 2026-11-04, Ethan): the Panel page carries its rows like the
+    clock's — Auto-hide, Panel Mode, Icon Size, Show on, Position, Show Trash, Show
+    Volumes — on the dock's own `dash-to-dock` keys, so Settings → Ubuntu Desktop → Dock
+    and Buoy's prefs stay in sync. Buoy's default suits the see-through bar and the
+    island: the dock at the bottom, auto-hiding, not edge to edge, 32 px, on the primary
+    display only, without trash or volumes — written once, on the first enable, to the
+    keys the user never set (`dock-defaults-applied`), never reverted (Ubuntu's own: left,
+    fixed, edge to edge). "Show on" names and numbers the displays as Settings does, from
+    Mutter (`DisplayConfig` GetCurrentState: "Primary Display (1)", "1. Built-in display").
+    Both groups say "The same settings as …: synced both ways". Hidden where the dock is
+    not installed.
   - The stock calendar/notifications popover is no longer reachable by mouse; Super+V /
     Super+M (`toggle-message-tray`) still open it under the clock. Its contents move to
     Buoy: notification history → the notifications tab (§6b), calendar and weather →

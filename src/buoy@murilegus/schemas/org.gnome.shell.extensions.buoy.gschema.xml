@@ -131,6 +131,11 @@
       <summary>Clock defaults applied</summary>
       <description>Set after the first enable gave GNOME's clock Buoy's defaults (the time alone, 24-hour) on the keys the user had not set.</description>
     </key>
+    <key name="dock-defaults-applied" type="b">
+      <default>false</default>
+      <summary>Dock defaults applied</summary>
+      <description>Set after the first enable gave Ubuntu's dock Buoy's defaults (at the bottom, hiding, 32 px, primary display only) on the keys the user had not set.</description>
+    </key>
     <key name="cluster-radius" type="i">
       <range min="0" max="16"/>
       <default>16</default>

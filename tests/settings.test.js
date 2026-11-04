@@ -2,7 +2,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {GNOME_CLOCK, clockDefaults, clockSwitchOn, clockValue, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel} from
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -118,19 +118,19 @@ eq(schema.get_key('cluster-background').get_default_value().unpack(), 'hover',
 // --- the clock switches are GNOME's own keys ------------------------------------------
 const fmt = GNOME_CLOCK.find(e => e.key === 'clock-format');
 const date = GNOME_CLOCK.find(e => e.key === 'clock-show-date');
-eq([clockSwitchOn(fmt, '24h'), clockSwitchOn(fmt, '12h')], [true, false], '24-Hour Time reads clock-format');
-eq([clockValue(fmt, true), clockValue(fmt, false)], ['24h', '12h'], 'and writes it back as a string');
-eq([clockSwitchOn(date, true), clockSwitchOn(date, false), clockValue(date, true)], [true, false, true],
+eq([switchOn(fmt, '24h'), switchOn(fmt, '12h')], [true, false], '24-Hour Time reads clock-format');
+eq([switchValue(fmt, true), switchValue(fmt, false)], ['24h', '12h'], 'and writes it back as a string');
+eq([switchOn(date, true), switchOn(date, false), switchValue(date, true)], [true, false, true],
     'a boolean key passes straight through');
-eq(clockDefaults(GNOME_CLOCK, () => false).map(d => [d.key, d.value]),
+eq(gnomeDefaults(GNOME_CLOCK, () => false).map(d => [d.key, d.value]),
     [['clock-show-weekday', false], ['clock-show-date', false], ['clock-show-seconds', false], ['clock-format', '24h']],
     'first enable: the time alone, 24-hour; week numbers untouched');
-eq(clockDefaults(GNOME_CLOCK, e => e.key === 'clock-format').map(d => d.key),
+eq(gnomeDefaults(GNOME_CLOCK, e => e.key === 'clock-format').map(d => d.key),
     ['clock-show-weekday', 'clock-show-date', 'clock-show-seconds'], 'a key the user set keeps their value');
-eq(clockDefaults(GNOME_CLOCK, () => true), [], 'all set by the user: nothing written');
-eq(clockDefaults([], () => false), [], 'no GNOME schemas installed: nothing written');
+eq(gnomeDefaults(GNOME_CLOCK, () => true), [], 'all set by the user: nothing written');
+eq(gnomeDefaults([], () => false), [], 'no GNOME schemas installed: nothing written');
 for (const e of GNOME_CLOCK.filter(c => 'buoy' in c)) {
-    if (clockValue(e, clockSwitchOn(e, e.buoy)) !== e.buoy)
+    if (switchValue(e, switchOn(e, e.buoy)) !== e.buoy)
         throw new Error(`GNOME_CLOCK ${e.key}: the default ${e.buoy} must be one of the switch's values`);
 }
 const system = Gio.SettingsSchemaSource.get_default();
@@ -150,6 +150,70 @@ for (const e of GNOME_CLOCK) {
             throw new Error(`GNOME_CLOCK: ${e.key} must be a choice of "${e.on}" and "${e.off}"`);
     } else if (type !== 'b') {
         throw new Error(`GNOME_CLOCK: ${e.key} must be a boolean, is ${type}`);
+    }
+}
+
+// --- the dock rows are Ubuntu Dock's own keys (2026-11-04) -----------------------------
+const autohide = GNOME_DOCK.find(e => e.key === 'dock-fixed');
+eq([switchOn(autohide, false), switchOn(autohide, true)], [true, false], 'Auto-hide is on when the dock is not fixed');
+eq([switchValue(autohide, true), switchValue(autohide, false)], [false, true], 'and writes dock-fixed inverted');
+eq(gnomeDefaults(GNOME_DOCK, () => false).map(d => [d.key, d.value]), [
+    ['dock-fixed', false], ['extend-height', false], ['dash-max-icon-size', 32],
+    ['multi-monitor', false], ['preferred-monitor-by-connector', 'primary'], ['dock-position', 'BOTTOM'],
+    ['show-trash', false], ['show-mounts', false],
+], 'first enable: bottom, hiding, 32 px, primary display only, no trash or volumes (Ethan 2026-11-04)');
+eq(gnomeDefaults(GNOME_DOCK, e => e.key === 'dock-position').some(d => d.key === 'dock-position'), false,
+    'a dock key the user set (Settings → Ubuntu Desktop) keeps their value');
+eq(GNOME_DOCK.filter(e => !e.row).map(e => e.title), ['Auto-hide the Dock', 'Panel Mode', 'Icon Size',
+    'Position on Screen', 'Show Trash', 'Show Volumes and Devices'], 'rows in Ubuntu Settings\' order, each titled');
+eq([dockMonitor(true, 'eDP-1'), dockMonitor(false, 'primary'), dockMonitor(false, 'HDMI-1'), dockMonitor(false, '')],
+    ['all', 'primary', 'HDMI-1', 'primary'], 'Show on reads multi-monitor first, then the connector');
+// GetCurrentState as Mutter answers on a laptop with one external display (unpacked)
+const monitors = [
+    [['HDMI-1', 'DEL', 'U2720Q', 'X1'], [], {'display-name': 'Dell Inc. 27"'}],
+    [['eDP-1', 'CMN', 'N153JCA-ELK', '0'], [], {'display-name': 'Built-in display', 'is-builtin': true}],
+];
+const logical = [[0, 0, 1, 0, false, [['HDMI-1', 'DEL', 'U2720Q', 'X1']], {}], [3840, 0, 1, 0, true, [['eDP-1', 'CMN', 'N153JCA-ELK', '0']], {}]];
+const displays = displaysFromState(monitors, logical);
+eq(displays, [
+    {connector: 'HDMI-1', name: 'Dell Inc. 27"', builtin: false, primary: false},
+    {connector: 'eDP-1', name: 'Built-in display', builtin: true, primary: true},
+], 'Mutter\'s monitors: connector, display name, built-in, primary from the logical monitor');
+eq(dockMonitorChoices(displays, 'primary'), [['all', 'All displays'], ['primary', 'Primary Display (1)'],
+    ['eDP-1', '1. Built-in display'], ['HDMI-1', '2. Dell Inc. 27"']],
+'labelled as Settings → Ubuntu Desktop → Dock: built-in first, the primary\'s number');
+eq(dockMonitorChoices([displays[1]], 'primary'), [['all', 'All displays'], ['primary', 'Primary Display (1)'],
+    ['eDP-1', '1. Built-in display']], 'one laptop: exactly what Settings shows (2026-11-04)');
+eq(dockMonitorChoices([{connector: 'eDP-1', name: 'eDP-1'}], 'primary')[1], ['primary', 'Primary Display'],
+    'before Mutter answers: connectors only, no number on Primary');
+eq(displaysFromState([[['DP-2', '', '', ''], [], {}]], [])[0], {connector: 'DP-2', name: 'DP-2', builtin: false, primary: false},
+    'a monitor without a display name is named by its connector');
+eq(dockMonitorChoices([], 'DP-3').at(-1), ['DP-3', 'DP-3'], 'an unplugged display stays listed while chosen');
+eq([dockMonitorValue('all'), dockMonitorValue('primary'), dockMonitorValue('HDMI-1')],
+    [{multi: true, connector: null}, {multi: false, connector: 'primary'}, {multi: false, connector: 'HDMI-1'}],
+    'choosing writes multi-monitor, and the connector unless it is all');
+eq(schema.get_key('dock-defaults-applied').get_default_value().unpack(), false, 'dock defaults not yet applied');
+const dockSchema = system?.lookup('org.gnome.shell.extensions.dash-to-dock', true);
+if (!dockSchema) {
+    console.log('settings: dash-to-dock is not installed here, GNOME_DOCK types not checked');
+} else {
+    for (const e of GNOME_DOCK) {
+        if (!dockSchema.has_key(e.key))
+            throw new Error(`GNOME_DOCK: dash-to-dock has no key ${e.key}`);
+        const k = dockSchema.get_key(e.key), type = k.get_value_type().dup_string();
+        let want = 'b';
+        if (e.min !== undefined)
+            want = 'i';
+        else if (e.choices || e.key.endsWith('connector'))
+            want = 's';
+        eq(type, want, `GNOME_DOCK ${e.key}: type`);
+        if (e.choices) {
+            const [rangeKind, values] = k.get_range().recursiveUnpack();
+            eq([rangeKind, Object.keys(e.choices).every(c => values.includes(c))], ['enum', true],
+                `GNOME_DOCK ${e.key}: every choice is one of the schema's`);
+        }
+        if ('buoy' in e && e.choices && !(e.buoy in e.choices))
+            throw new Error(`GNOME_DOCK ${e.key}: the default ${e.buoy} must be offered`);
     }
 }
 
