@@ -191,6 +191,14 @@ Bu, Bu's lamp is the buoy light: the left edge slot is not drawn, and the lamp s
 stack's `missed`/`waiting` colour if there is one, else the pose's (SPEC §2a-i). The pose
 is data; frames, the swap timer and colours are the kit's.
 
+**One minimal for every place** (2026-11-05): an adapter returns one `leading · text ·
+trailing` and never knows which pill it lands in. Pill 1 shows all three; a 120 px side
+pill (SPEC §2c) shows `leading` and `trailing` only and drops `text`. So the **short value
+that matters most goes in `trailing`**, where every pill shows it, and `text` carries what
+can be lost: media `eq` or pause, progress a ring, timer `{countdown}` (not the time in
+`text`), an agent's step as `{text: '4/7'}`. An activity with nothing useful to put there
+is still recognised by its `leading`.
+
 ```js
 agent(a) → { leading: {mascot: pose(a.state.event)}, text: `${a.attributes.agent} · ${a.state.label}`,
              trailing: {countdown: a.state.elapsed} }   // pose(): MASCOT.md § Agents

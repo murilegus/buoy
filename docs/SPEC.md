@@ -405,8 +405,9 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   (120 … 0.6 × expanded, `wide` 0.8; §4). It never narrows because others run
   (2026-11-05, Ethan: before, every pill was squeezed to ≤ expanded/3).
 - **Side pills 2 and 3** share one fixed shape, 120 × 32 (the idle size): leading, a short
-  trailing (equaliser, `40%`, `4:59`) and the `+N` badge; their text shows only a few
-  characters, if any. Their full content is their compact.
+  trailing (equaliser, `40%`, `4:59`) and the `+N` badge; their text is dropped. The
+  adapter's data is the same for every pill, so the short value that matters goes in
+  `trailing` (APPLE §B3). Their full content is their compact.
 - **How many**: as many side pills as fit before the system cluster (12 px margin), at most
   two, re-measured whenever the right cluster resizes. Side pills go before pill 1 is ever
   narrowed. With pill 1 at its widest and a 300 px system cluster: 1366 → one side pill,
