@@ -7,18 +7,20 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
-import {planCompact, planExpanded, planIdle, planMinimal, lightSlot} from './presentation.js';
+import {planCompact, planExpanded, planIdle, planMinimal} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
  * (what to show, limits, fallbacks) comes from presentation.js, which is unit-tested.
- * Sizes here are the renderer's (APPLE.md B5.3: leading ≤ 20 px minimal, 56 expanded);
+ * Sizes here are the renderer's (APPLE.md B5.3: leading ≤ 20 px minimal, 40 compact,
+ * 56 expanded);
  * adapters never send any.
  */
 
 const SIZE = {
     // mascot: a multiple of Bu's 10 cells, so each cell is whole px (MASCOT.md)
     minimal: {icon: 16, art: 20, ring: 18, bar: 40, mascot: 20},
+    compact: {icon: 24, art: 40, ring: 32, bar: 0, mascot: 40},  // SPEC §4, 2026-11-05
     expanded: {icon: 32, art: 56, ring: 32, bar: 0, mascot: 50}, // bar: 0 = fill the width
 };
 
@@ -377,8 +379,7 @@ function lightDot(light) {
     }) : null;
 }
 
-// One line in the pill: minimal, and for now the hover compact too (same sizes until
-// FEATURES M3 "Compact tier" gives it its own shape).
+// One line in the pill: minimal.
 function pillBox(p, activity, maxWidth, buttons) {
     if (!p.leading && !p.text && !p.trailing && !buttons.length && !p.badge)
         return null;
@@ -404,38 +405,102 @@ function pillBox(p, activity, maxWidth, buttons) {
  * @param {number} [opts.maxWidth]  content width cap; the text ellipsizes to fit
  * @param {string} [opts.light]  the stack's buoy light
  * @param {number} [opts.more]  activities beyond the shown pills → +N badge
+ * @param {boolean} [opts.side]  a 120 px side pill: leading and trailing only
  * @returns {?Clutter.Actor} null when there is nothing to show
  */
-export function buildMinimal(activity, {maxWidth = 0, light, more} = {}) {
-    const p = planMinimal(activity, {light, more});
-    return pillBox(p, activity, maxWidth, p.action ? [p.action] : []);
+export function buildMinimal(activity, {maxWidth = 0, light, more, side = false} = {}) {
+    const p = planMinimal(activity, {light, more, side});
+    // a side pill has no room for a button: its compact carries them
+    return pillBox(p, activity, maxWidth, p.action && !side ? [p.action] : []);
+}
+
+// The compact (SPEC §2, §4): the grown pill. A top row — light, leading 40, title over
+// subtitle, trailing, buttons — then a bar or up to 3 rows under the text column.
+function compactBox(p, activity, maxWidth) {
+    const box = new St.BoxLayout({
+        style_class: 'buoy-compact', orientation: Clutter.Orientation.VERTICAL,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    if (maxWidth > 0)
+        box.set_style(`max-width: ${maxWidth}px;`);
+    const top = new St.BoxLayout({style_class: 'buoy-compact-top', x_expand: true});
+    const lines = new St.BoxLayout({
+        style_class: 'buoy-compact-lines', orientation: Clutter.Orientation.VERTICAL,
+        x_expand: true, y_align: Clutter.ActorAlign.CENTER,
+    });
+    addAll(lines, [
+        p.text ? label(p.text, 'buoy-text buoy-compact-title') : null,
+        p.subtitle ? label(p.subtitle, 'buoy-compact-subtitle') : null,
+    ]);
+    const buttons = p.actions?.length
+        ? new St.BoxLayout({style_class: 'buoy-actions', y_align: Clutter.ActorAlign.CENTER})
+        : null;
+    if (buttons)
+        addAll(buttons, p.actions.map(a => actionButton(a, activity)));
+    addAll(top, [
+        lightDot(p.light),
+        makeElement(p.leading, 'compact', activity),
+        lines.get_n_children() ? lines : null,
+        makeElement(p.trailing, 'compact'),
+        buttons,
+    ]);
+    box.add_child(top);
+    if (p.progress !== null && p.progress !== undefined)
+        box.add_child(indented(meter('bar', p.progress, 0), p));
+    if (p.rows?.length) {
+        const list = new St.BoxLayout({style_class: 'buoy-compact-rows', orientation: Clutter.Orientation.VERTICAL});
+        for (const r of p.rows) {
+            const row = new St.BoxLayout({style_class: 'buoy-compact-row', x_expand: true});
+            addAll(row, [
+                r.icon ? makeElement(r.icon, 'minimal') : null,
+                label(r.text, 'buoy-compact-row-text', true),
+                r.detail ? label(r.detail, 'buoy-compact-row-detail') : null,
+            ]);
+            list.add_child(row);
+        }
+        box.add_child(indented(list, p));
+    }
+    if (p.stale)
+        dimStale(box);
+    return box;
+}
+
+// Under the text column: the leading's width plus the row's spacing (stylesheet.css).
+function indented(actor, p) {
+    const key = {icon: 'icon', glyph: 'icon', ring: 'ring', mascot: 'mascot'}[p.leading?.type] ?? 'art';
+    const lead = p.leading ? SIZE.compact[key] + 10 : 0;
+    actor.x_expand = true;
+    if (lead)
+        actor.set_style(`margin-left: ${lead}px;`);
+    return actor;
 }
 
 /**
- * The hover tier: the activity's `compact` zones (+ transport buttons) in place of minimal.
+ * The hover tier: the activity's `compact` (SPEC §2) in the grown pill.
  *
  * @param {object} activity  presentation data (+ onAction)
  * @param {object} [opts]
- * @param {number} [opts.maxWidth]
+ * @param {number} [opts.maxWidth]  content width cap (the compact's widest − padding)
  * @param {string} [opts.light]
  * @returns {?Clutter.Actor} null when the activity has no compact
  */
 export function buildCompact(activity, {maxWidth = 0, light} = {}) {
     const p = planCompact(activity, {light});
-    return p ? pillBox(p, activity, maxWidth, p.actions) : null;
+    return p ? compactBox(p, activity, maxWidth) : null;
 }
 
 /**
- * The amber light's hover line (`2 missed · Copy done · Tea 4:00`), on the light.
+ * The amber light's compact: "Missed · N" on the light, then up to 3 rows.
  *
- * @param {string} line  presentation.js missedLine()
+ * @param {object} plan  presentation.js planMissed()
  * @param {object} [opts]
  * @param {number} [opts.maxWidth]
- * @param {string} [opts.light]
  * @returns {Clutter.Actor}
  */
-export function buildMissedCompact(line, {maxWidth = 0, light} = {}) {
-    return pillBox({text: line, light: lightSlot(light, {idle: false})}, {}, maxWidth, []);
+export function buildMissedCompact(plan, {maxWidth = 0} = {}) {
+    return compactBox({
+        light: plan.light, text: plan.title, rows: plan.rows, actions: [], progress: null,
+    }, {}, maxWidth);
 }
 
 /**

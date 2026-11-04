@@ -158,7 +158,7 @@ which shows, stale state renders dimmed, alert = brief expanded, transient ends 
 | expanded | width per screen (560–760, `expanded-width` overrides) × height fitting content up to width/2 — as iOS: fixed width, dynamic height; regions **leading / trailing / center / bottom** with `priority`; opened by click; alerts open it briefly; transient activities start here |
 | Lock Screen / banner | n/a (GNOME lock screen out of scope) |
 | Mac menu bar | *we are the menu bar* |
-| hover (no Apple equivalent) | **compact**: the hovered pill grows in place to 0.72 × expanded × 56/88 (leading 40, two lines, ≤ 3 actions, a bar or ≤ 3 rows); before it, +10 % width and +2 height (SPEC §2, §4, 2026-11-05) |
+| hover (no Apple equivalent) | **compact**: the hovered pill grows in place to 0.72 × expanded × 56/88, up to 120 for rows (leading 40, two lines, ≤ 3 actions, a bar or ≤ 3 rows); before it, +10 % width and +2 height (SPEC §2, §4, 2026-11-05) |
 
 Names (2026-11-05): Buoy's tiers are **minimal < compact < expanded** by size. Buoy's
 minimal is Apple's compact and minimal; Buoy's compact is the hover tier Apple has no

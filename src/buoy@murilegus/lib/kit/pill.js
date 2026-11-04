@@ -4,10 +4,12 @@ import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 import {buildCompact, buildExpanded, buildIdle, buildMinimal, buildMissedCompact} from './present.js';
-import {planExpanded, keyline} from './presentation.js';
+import {planCompact, planExpanded, keyline} from './presentation.js';
+import {compactCx} from './shapes.js';
 
 const PAD = 14;          // content + 2·PAD = pill width (shapes add 28)
-const COMPACT_DELAY = 300;  // ms of hover before the compact replaces minimal (SPEC §2)
+const COMPACT_DELAY = 300;  // ms of hover before the pill grows into its compact (SPEC §2)
+const COMPACT_GRACE = 200;  // ms the compact stays after the pointer leaves it (SPEC §2c)
 const MERGE_MS = 300;    // side pills sliding into / out of an expanded one (SPEC §2c)
 const MORPH_MODE = Clutter.AnimationMode.EASE_OUT_BACK;
 const REVEAL_FROM = 0.8; // the bg grows by more than this ratio: it uncovers the content
@@ -18,8 +20,16 @@ const REVEAL_FROM = 0.8; // the bg grows by more than this ratio: it uncovers th
  * centre `cx` in the container), its role and when it opens; the pill does its own
  * sizing, hover → compact, keyline, press pulse and expanded content.
  *
- *   role 'centre'  the highest-priority pill, at the screen centre; carries the buoy light
- *   role 'side'    a side-by-side pill to the right (SPEC §2c), capped at `maxW`
+ *   role 'centre'  pill 1, the highest priority, at the screen centre, content-fit; carries
+ *                  the buoy light
+ *   role 'side'    pills 2 and 3 to the right (SPEC §2c): a fixed 120 × 32, leading and
+ *                  trailing only
+ *
+ * Compact (SPEC §2, §2c, 2026-11-05): after COMPACT_DELAY of hover the pill grows in place
+ * into its compact — its top edge kept, centred on it, shifted only to stay on screen —
+ * raised over its neighbours, which the island fades where they stand. It stays while
+ * the pointer is on it and COMPACT_GRACE after; another pill hovered meanwhile takes over
+ * at once.
  *
  * bg and content are siblings in the island's container, not parent and child, so the
  * content never moves with the morph; both are reactive so a click on text lands here.
@@ -33,14 +43,15 @@ export class Pill {
         this.cx = 0;
         this.light = 'off';
         this.more = 0;
-        this.shared = false;
-        this.maxW = 0;               // 0 = no cap beyond shapes
         this.expanded = false;
         this._panel = null;          // Home's panel while a click has it open (kit/home.js)
         this.fresh = true;           // not placed yet: first layout puts it there, then fades in
         this._compact = false;
         this._contentW = 0;          // resting content size, measured in _applyContentSize()
         this._contentH = 0;
+        this._compactW = 0;          // the compact's content size, the same way
+        this._compactH = 0;
+        this._graceId = 0;
         this._resizeLater = 0;
         this._hoverLater = 0;
         this._compactId = 0;
@@ -67,9 +78,14 @@ export class Pill {
         return this._island.shapes;
     }
 
-    /** The pill is showing the amber missed line, not its activity (a click opens Home). */
+    /** The pill's compact is the amber missed list, not its activity (a click opens Home). */
     get showingMissed() {
-        return this._compact && this._missedLine() !== null;
+        return this._compact && this._missed() !== null;
+    }
+
+    /** Its compact is open, or about to close (the grace after the pointer left). */
+    get compact() {
+        return this._compact;
     }
 
     get expandable() {
@@ -84,8 +100,10 @@ export class Pill {
             return false;
         const [px, py] = global.get_pointer();
         const [ax, ay] = this._island.actor.get_transformed_position();
-        const box = this.expanded ? this._expandedShape() : this.restShape();
-        const x0 = ax + this.cx - box.w / 2;
+        let box = this._compact ? this.compactShape() : this.restShape();
+        if (this.expanded)
+            box = this._expandedShape();
+        const x0 = ax + (box.cx ?? this.cx) - box.w / 2;
         return px >= x0 && px < x0 + box.w && py >= ay && py < ay + box.h + 2;
     }
 
@@ -97,22 +115,26 @@ export class Pill {
      * @param {string} [opts.role]  'centre' | 'side'
      * @param {string} [opts.light]  buoy light (drawn on the centre pill only)
      * @param {number} [opts.more]  +N on this pill (the last one)
-     * @param {boolean} [opts.shared]  several pills share the bar (SPEC §2c): shared shapes
-     * @param {number} [opts.maxW]  width cap from the space before the system cluster
      */
-    configure(activity, {role = 'centre', light = 'off', more = 0, shared = false, maxW = 0} = {}) {
+    configure(activity, {role = 'centre', light = 'off', more = 0} = {}) {
         const same = (activity?.id ?? null) === this.id;
         if (!same)
             this._stopCompact();
         this.id = activity?.id ?? null;
         this.activity = activity;
-        Object.assign(this, {role, light, more, shared, maxW});
+        Object.assign(this, {role, light, more});
         if (this.expanded) {
             if (activity && !this._panel)  // the panel updates itself (Home.update)
                 this._setContent(buildExpanded(activity), false);
             return;
         }
+        if (this._compact && !this._hasCompact())
+            this._stopCompact();     // its compact went away in this update
         this._setContent(this._restingContent(), !same);
+        // A pill that appears (or changes activity) under a resting pointer is hovered
+        // without an enter event: look again, so its compact still opens.
+        if (!same)
+            this._hoverChanged();
     }
 
     // Move the pill's centre; `animate` slides it (slide-to-fill, merge/split).
@@ -138,8 +160,10 @@ export class Pill {
             this.bg.set_style(this._bgStyle({r: this._radius}));
     }
 
-    // Shown (side pills fade out while another pill is open, SPEC §2c merge).
-    setShown(shown, animate) {
+    // Shown (side pills fade out while another pill is open, SPEC §2c merge). `dim`: shown
+    // but at opacity 0, under another pill's compact (still reactive, so hovering where it
+    // shows from under the compact switches to it).
+    setShown(shown, animate, dim = false) {
         for (const a of [this.bg, this.content]) {
             // Hidden: no leave event will come. Shown again (no grab by then): ask St.
             // Only on a real change: the pill that just closed stays as collapse() left it.
@@ -150,27 +174,45 @@ export class Pill {
                 else
                     a.hover = false;
             }
+            const opacity = shown && !dim ? 255 : 0;
             if (animate)
-                a.ease({opacity: shown ? 255 : 0, duration: MERGE_MS, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+                a.ease({opacity, duration: MERGE_MS, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
             else
-                a.opacity = shown ? 255 : 0;
+                a.opacity = opacity;
+        }
+    }
+
+    // Under another pill's compact (SPEC §5): fade where it stands, 100 ms out, 200 ms in;
+    // reactivity is left alone.
+    dim(dimmed) {
+        for (const a of [this.bg, this.content]) {
+            a.remove_transition('opacity');
+            a.ease({opacity: dimmed ? 0 : 255, duration: dimmed ? 100 : 200, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         }
     }
 
     // --- shapes -------------------------------------------------------------------
 
     restShape() {
-        if (!this.activity)  // the idle pill fits the missed line while its compact shows
-            return this._compact ? this._s.minimal(this._contentW) : this._s.idle;
-        const shape = this.shared
-            ? this._s.shared(this._contentW)
-            : this._s.minimal(this._contentW, this.activity.sizeHint);
-        return this.maxW ? {...shape, w: Math.min(shape.w, this.maxW)} : shape;
+        if (!this.activity)
+            return this._s.idle;
+        if (this.role === 'side')
+            return this._s.side;
+        return this._s.minimal(this._contentW, this.activity.sizeHint);
+    }
+
+    // The grown pill: from its content's size, centred on the pill and kept on screen;
+    // `cx` says where (the other shapes centre on this.cx).
+    compactShape() {
+        const shape = this._s.compact(this._compactW, this._compactH);
+        return {...shape, cx: compactCx(this.cx, shape.w, this._s.container.w)};
     }
 
     currentShape() {
         if (this.expanded)
             return this._expandedShape();
+        if (this._compact)
+            return this.compactShape();
         return this.hovered ? this._s.hover(this.restShape()) : this.restShape();
     }
 
@@ -195,7 +237,7 @@ export class Pill {
         this.bg.remove_transition('width');
         this.bg.remove_transition('height');
         this.bg.set_size(shape.w, shape.h);
-        this.bg.set_position(this.cx - shape.w / 2, 0);
+        this.bg.set_position((shape.cx ?? this.cx) - shape.w / 2, 0);
         this.bg.set_style(this._bgStyle(shape));
         this._resetContentTransform();
     }
@@ -207,7 +249,7 @@ export class Pill {
     _morph(shape, duration) {
         if (this._destroyed)
             return;
-        const x = this.cx - shape.w / 2;
+        const x = (shape.cx ?? this.cx) - shape.w / 2;
         this.bg.set_style(this._bgStyle(shape));
         const t = this.bg.get_transition('width') || this.bg.get_transition('x');
         if (!t && this.bg.x === x && this.bg.width === shape.w && this.bg.height === shape.h)
@@ -244,7 +286,7 @@ export class Pill {
                 this._clipToBg(t, from, to, !this._collapsing);
             return;
         }
-        const dx = from.cx - this.cx;
+        const dx = from.cx - (to.cx ?? this.cx);
         if (Math.abs(dx) < 0.5)
             return;
         this.content.translation_x = dx;
@@ -257,7 +299,7 @@ export class Pill {
         const c = this.content;
         // the clip is a rectangle; keep it off the pill's round ends
         const inset = Math.ceil(to.r * 0.15);
-        const x0 = from.cx - from.w / 2, x1 = this.cx - to.w / 2;
+        const x0 = from.cx - from.w / 2, x1 = (to.cx ?? this.cx) - to.w / 2;
         const clip = e => {
             const w = from.w + (to.w - from.w) * e;
             const h = from.h + (to.h - from.h) * e;
@@ -320,7 +362,7 @@ export class Pill {
     expand(panel = null) {
         this.expanded = true;
         this._panel = panel;
-        this._stopCompact();
+        this._dropCompact();          // the panel replaces the compact's content
         this._setContent(panel ?? buildExpanded(this.activity), false);
         this._layoutContent();
         this._morph(this.currentShape(), 380); // fades the content in with the reveal
@@ -352,18 +394,30 @@ export class Pill {
 
     _restingContent() {
         const light = this.role === 'centre' ? this.light : null;
-        const missed = this._compact ? this._missedLine() : null;
-        if (missed) {
-            const capW = this.maxW || this._s.minimal(Infinity, this.activity?.sizeHint).w;
-            return buildMissedCompact(missed, {maxWidth: capW - 2 * PAD, light});
-        }
+        const compact = this._compact ? this._compactContent() : null;
+        if (compact)
+            return compact;
         if (!this.activity)
             return buildIdle({width: this._s.idle.w - 2 * PAD, light, plan: this._island.idle});
-        const capW = this.maxW || (this.shared
-            ? this._s.sharedMax
-            : this._s.minimal(Infinity, this.activity.sizeHint).w);
-        const opts = {maxWidth: capW - 2 * PAD, light, more: this.more};
-        return (this._compact && buildCompact(this.activity, opts)) || buildMinimal(this.activity, opts);
+        if (this.role === 'side')
+            return buildMinimal(this.activity, {maxWidth: this._s.side.w - 2 * PAD, more: this.more, side: true});
+        const capW = this._s.minimal(Infinity, this.activity.sizeHint).w;
+        return buildMinimal(this.activity, {maxWidth: capW - 2 * PAD, light, more: this.more});
+    }
+
+    // The amber missed list over the activity's own compact (INDICATORS.md), else that.
+    _compactContent() {
+        const maxWidth = this._s.compactMax - 2 * PAD;
+        const missed = this._missed();
+        if (missed)
+            return buildMissedCompact(missed, {maxWidth});
+        if (!this.activity)
+            return null;
+        return buildCompact(this.activity, {maxWidth, light: this.role === 'centre' ? this.light : null});
+    }
+
+    _hasCompact() {
+        return this._missed() !== null || (this.activity !== null && planCompact(this.activity) !== null);
     }
 
     // fade: cross-fade between activities; without it the new content replaces the
@@ -419,7 +473,7 @@ export class Pill {
         });
     }
 
-    _applyContentSize() {
+    _applyContentSize(duration = 200) {
         if (!this.expanded) {
             // natural size, not the allocation: another relayout may already be queued
             // (an icon finished loading). The content has been allocated once by now,
@@ -427,24 +481,33 @@ export class Pill {
             const child = this.content.child;
             const [, w] = child ? this.content.get_preferred_width(-1) : [0, 0];
             const [, h] = child ? this.content.get_preferred_height(w) : [0, 0];
-            const restW = this.restShape().w;
-            this._contentW = Math.ceil(w);
-            this._contentH = Math.ceil(h);
-            if (this.restShape().w !== restW) {
-                this.content.y = Math.max(0, Math.round((this._s.idle.h - this._contentH) / 2));
-                this._island._pillResized(this); // neighbours slide to fit
-                return;
+            if (this._compact) {
+                // the compact's size never moves the neighbours: they rest under it
+                this._compactW = Math.ceil(w);
+                this._compactH = Math.ceil(h);
+            } else {
+                const restW = this.restShape().w;
+                this._contentW = Math.ceil(w);
+                this._contentH = Math.ceil(h);
+                if (this.restShape().w !== restW) {
+                    this.content.y = Math.max(0, Math.round((this._s.idle.h - this._contentH) / 2));
+                    this._island._pillResized(this); // neighbours slide to fit
+                    return;
+                }
             }
         }
         this._layoutContent();
-        if (this.activity || this.expanded) // the idle pill opens on Home's panel too
-            this._morph(this.currentShape(), 200);
+        // the idle pill opens on Home's panel and its missed compact too
+        if (this.activity || this.expanded || this._compact)
+            this._morph(this.currentShape(), duration);
     }
 
     _contentX() {
-        return this.expanded
-            ? Math.round(this.cx - this._s.expanded.w / 2)
-            : Math.round(this.cx - this._contentW / 2);
+        if (this.expanded)
+            return Math.round(this.cx - this._s.expanded.w / 2);
+        if (this._compact)
+            return Math.round(this.compactShape().cx - this._compactW / 2);
+        return Math.round(this.cx - this._contentW / 2);
     }
 
     _layoutContent() {
@@ -456,8 +519,10 @@ export class Pill {
         if (this.content.natural_width_set)
             this.content.set_width(-1); // back to natural width after expanded
         // stored sizes only: this also runs right after a new child was set
-        this.content.set_position(this._contentX(),
-            Math.max(0, Math.round((this._s.idle.h - this._contentH) / 2)));
+        const y = this._compact
+            ? Math.round((this.compactShape().h - this._compactH) / 2)
+            : Math.round((this._s.idle.h - this._contentH) / 2);
+        this.content.set_position(this._contentX(), Math.max(0, y));
     }
 
     // --- hover and compact ------------------------------------------------------------
@@ -475,48 +540,87 @@ export class Pill {
     }
 
     _applyHover() {
-        if (this.expanded)
+        if (this.expanded || this._destroyed)
             return;
         if (this.hovered) {
-            if (!this._compact && !this._compactId && (this.activity?.compact || this._missedLine())) {
-                this._compactId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, COMPACT_DELAY, () => {
-                    this._compactId = 0;
-                    this._compact = true;
-                    this._swapResting();
+            this._clearGrace();
+            if (!this._compact && !this._compactId && this._hasCompact()) {
+                const other = this._island.compactPill;
+                if (other && other !== this) {
+                    // moving straight from another compact: take over at once (SPEC §2c)
+                    other._stopCompact();
+                    this._openCompact();
+                } else {
+                    this._compactId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, COMPACT_DELAY, () => {
+                        this._compactId = 0;
+                        this._openCompact();
+                        return GLib.SOURCE_REMOVE;
+                    });
+                }
+            }
+        } else {
+            if (this._compactId) {
+                GLib.source_remove(this._compactId);
+                this._compactId = 0;
+            }
+            if (this._compact && !this._graceId) {
+                this._graceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, COMPACT_GRACE, () => {
+                    this._graceId = 0;
+                    if (!this.hovered)
+                        this._stopCompact();
                     return GLib.SOURCE_REMOVE;
                 });
             }
-        } else {
-            this._stopCompact();
         }
-        this._morph(this.currentShape(), 200);
+        if (!this._compact)
+            this._morph(this.currentShape(), 200);
     }
 
-    // The amber light names what was missed on hover (INDICATORS.md); it shows over the
-    // activity's own compact. Hover only shows it: Home is where it is seen, and a click
-    // while it shows opens Home (island.js _activate, tabs.js pressTarget).
-    _missedLine() {
-        return this.role === 'centre' && this.light === 'missed' ? this._island.missedLine() : null;
+    // The amber light's compact (INDICATORS.md): on the centre pill, while amber.
+    _missed() {
+        return this.role === 'centre' && this.light === 'missed' ? this._island.missedCompact() : null;
     }
 
-    _stopCompact() {
+    _openCompact() {
+        if (this._compact || this.expanded || this._destroyed || !this._hasCompact())
+            return;
+        this._compact = true;
+        this._island._compactShown(this, true);
+        this._swapResting(380);       // a shape morph that uncovers its content (SPEC §5)
+    }
+
+    _clearGrace() {
+        if (this._graceId) {
+            GLib.source_remove(this._graceId);
+            this._graceId = 0;
+        }
+    }
+
+    // Forget the compact without swapping content (expand puts its own).
+    _dropCompact() {
         if (this._compactId) {
             GLib.source_remove(this._compactId);
             this._compactId = 0;
         }
-        if (this._compact) {
-            this._compact = false;
-            if (!this.expanded)
-                this._swapResting();
-        }
+        this._clearGrace();
+        if (!this._compact)
+            return false;
+        this._compact = false;
+        this._island._compactShown(this, false);
+        return true;
     }
 
-    // Compact in or out: a content of another width. Measure and place it now, before this
-    // frame paints; waiting for notify::width (next frame) showed the new text for one
-    // frame at the old place, unclipped, before the bg started to uncover it.
-    _swapResting() {
+    _stopCompact() {
+        if (this._dropCompact() && !this.expanded)
+            this._swapResting();
+    }
+
+    // Compact in or out: a content of another size. Measure and place it now, before
+    // this frame paints; waiting for notify::width (next frame) showed the new text for
+    // one frame at the old place, unclipped, before the bg started to uncover it.
+    _swapResting(duration = 200) {
         this._setContent(this._restingContent(), false);
-        this._applyContentSize();
+        this._applyContentSize(duration);
     }
 
     // --- leaving ------------------------------------------------------------------------
@@ -548,6 +652,7 @@ export class Pill {
             GLib.source_remove(this._compactId);
             this._compactId = 0;
         }
+        this._clearGrace();
         this.bg.destroy();
         this.content.destroy();
     }

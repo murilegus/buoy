@@ -178,6 +178,18 @@
 .buoy-action:hover { background-color: rgba(255, 255, 255, 0.2); }
 .buoy-action:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-minimal .buoy-action { padding: 2px 8px; }
+/* Compact, the hover tier (SPEC §2, §4): leading 40, a title over a subtitle, then a bar
+   or up to 3 rows under the text column (present.js indents them). */
+.buoy-compact { spacing: 4px; }
+.buoy-compact-top { spacing: 10px; }
+.buoy-compact-lines { spacing: 1px; }
+.buoy-compact-title { font-size: 14px; }
+.buoy-compact-subtitle { color: #b8b8b8; font-size: 12px; }
+.buoy-compact-rows { spacing: 1px; }
+.buoy-compact-row { spacing: 8px; }
+.buoy-compact-row-text { color: #d0d0d0; font-size: 12px; }
+.buoy-compact-row-detail { color: rgba(255, 255, 255, 0.5); font-size: 12px; font-feature-settings: "tnum"; }
+.buoy-compact .buoy-action { padding: 6px; border-radius: 999px; }
 /* An ask's key (kit/keys.js), shown only while the island holds the keyboard. */
 .buoy-action-face { spacing: 6px; }
 .buoy-key {

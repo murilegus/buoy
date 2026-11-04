@@ -15,11 +15,20 @@ const evenUp = v => 2 * Math.ceil(v / 2);      // content must still fit
 const evenDown = v => 2 * Math.floor(v / 2);   // must stay within a bound
 const radius = h => Math.floor(h / 2);         // never more than half the height
 
+// Compact (SPEC §2, §4, 2026-11-05): the hovered pill grown in place. Content-fit width
+// between COMPACT_MIN and 0.72 × expanded; 56 for one row, 88 with a bar, and content-fit
+// up to 120 when rows need more (a title and 3 rows measure ~82 px); radius 24.
+export const COMPACT_MIN = 240;
+export const COMPACT_H = Object.freeze([56, 88, 120]);
+const COMPACT_PAD = 14;                             // each side, as the pill's content
+const COMPACT_VPAD = 8;                             // top and bottom
+
 /**
  * @param {{width:number}} monitor   Main.layoutManager.primaryMonitor (logical px)
  * @param {number} panelH            Main.panel.height (40 with Buoy's CSS)
  * @param {{expandedWidth?:number}} [opts]  `expanded-width`; 0 or unset = derived
- * @returns {object} idle/expanded/container shapes, hover/press/minimal/shared builders, sharedMax
+ * @returns {object} idle/side/expanded/container shapes, hover/press/minimal/compact
+ *   builders, compactMax
  */
 export function shapesFor(monitor, panelH, opts = {}) {
     const h = panelH - 2 * GAP;                                    // 32
@@ -30,32 +39,55 @@ export function shapesFor(monitor, panelH, opts = {}) {
         : even(clamp(monitor.width * 0.28, 560, 760));             // 1920→560, 2560→716, 3440→760
     const expH = Math.round(expW / 2);
     const idleW = even(h * 3.75);                                  // ≈ iPhone compact (Apple's) ratio
-    const sharedMax = even(expW / 3);
-    // Centre pill + two side pills to its right, each ≤ sharedMax; never wider than the
-    // monitor (the island also stops adding side pills before the system cluster).
-    const sharedHalf = sharedMax / 2 + 2 * (PILL_GAP + sharedMax) + OVERSHOOT;
-    const containerW = Math.max(expW + 2 * OVERSHOOT,
-        Math.min(evenUp(2 * sharedHalf), evenDown(monitor.width)));
+    const compactMax = Math.max(COMPACT_MIN, even(expW * 0.72));   // 404 / 516 / 548
+    // The container spans the monitor: a compact may open on any pill and goes up to
+    // GAP from the screen edge (SPEC §2c). It is not reactive at rest, so it eats no
+    // clicks (Clutter picks only reactive actors, clutter_actor_should_pick).
+    const containerW = Math.max(expW + 2 * OVERSHOOT, evenDown(monitor.width));
 
     return {
         idle: {w: idleW, h, r: radius(h)},
+        // side pills 2 and 3 (SPEC §2c): one fixed shape, the idle size
+        side: {w: idleW, h, r: radius(h)},
         hover: base => ({w: even(base.w * 1.10), h: h + 2, r: radius(h + 2)}),
         press: base => ({w: even(base.w * 1.16), h: h + 4, r: radius(h + 4)}),
         // minimal (the pill in the bar, SPEC §2), content-fit; `hint` is a discrete size hint
-        // from the adapter, never px
+        // from the adapter, never px. Pill 1 keeps it however many pills share the bar.
         minimal: (contentW, hint = 'normal') => ({
             w: clamp(evenUp(Math.ceil(contentW) + 28), idleW,
                 even(expW * (hint === 'wide' ? 0.8 : 0.6))),
             h, r: radius(h),
         }),
+        // compact from its content's natural size; the island places it (top edge kept)
+        compact: (contentW, contentH) => ({
+            w: clamp(evenUp(Math.ceil(contentW) + 2 * COMPACT_PAD), COMPACT_MIN, compactMax),
+            h: compactH(Math.ceil(contentH) + 2 * COMPACT_VPAD),
+            r: 24,
+        }),
+        compactMax,
         // h is the cap: expanded fits its content up to this height (APPLE.md B5.4)
         expanded: {w: expW, h: expH, r: 28},
         container: {w: containerW, h: expH + 2 * OVERSHOOT},
-        // pills sharing the bar (SPEC §2c): each content-fit between idle and expanded/3
-        shared: contentW => ({
-            w: clamp(evenUp(Math.ceil(contentW) + 28), idleW, sharedMax),
-            h, r: radius(h),
-        }),
-        sharedMax,
     };
+}
+
+function compactH(need) {
+    if (need <= COMPACT_H[0])
+        return COMPACT_H[0];
+    if (need <= COMPACT_H[1])
+        return COMPACT_H[1];
+    return Math.min(evenUp(need), COMPACT_H[2]);
+}
+
+/**
+ * Where a compact of width `w` centres: on its pill, shifted only to stay `GAP` inside
+ * the container (= the monitor).
+ *
+ * @param {number} cx  the pill's centre in the container
+ * @param {number} w  the compact's width
+ * @param {number} containerW
+ * @returns {number} the compact's centre, a whole px
+ */
+export function compactCx(cx, w, containerW) {
+    return Math.round(clamp(cx, GAP + w / 2, containerW - GAP - w / 2));
 }

@@ -9,7 +9,7 @@ import {shapesFor, GAP, PILL_GAP} from './shapes.js';
 import {Pill} from './pill.js';
 import {Home} from './home.js';
 import {showKeys} from './present.js';
-import {planExpanded, missedLine} from './presentation.js';
+import {planExpanded, planMissed} from './presentation.js';
 import {ALERT_MS} from './stack.js';
 import {planStrip, pressTarget} from './tabs.js';
 import {actionForKey, step} from './keys.js';
@@ -22,12 +22,14 @@ const ALERT_HOVER = 1000;  // an alert still hovered at its end stays open this 
  * The island (SPEC §2): one to three pills side by side in the top bar centre. The
  * ActivityStack hands it render(list, {alert, expand}) — every visible activity,
  * highest priority first — and setLight(); the island shows the first `capacity`
- * (2 or 3, whatever fits before the system cluster) and puts +N on the last one.
+ * (1–3, whatever fits before the system cluster) and puts +N on the last one.
  *
- *   centre pill   highest priority, at the screen centre; carries the buoy light; idle
- *                 `none` when there is nothing to show
- *   side pills    to the right, each ≤ expanded/3, content-fit; when one ends the others
+ *   centre pill   pill 1, highest priority, at the screen centre, content-fit and never
+ *                 squeezed; carries the buoy light; idle when there is nothing to show
+ *   side pills    to the right, a fixed 120 × 32 each (SPEC §2c); when one ends the others
  *                 slide to fill (pills follow their activity, so they slide, never jump)
+ *   compact       a hovered pill grows in place into its compact (pill.js); the island
+ *                 raises it and dims the others where they stand, one compact at a time
  *   open          a click grows that pill into the expanded panel at the centre; the
  *                 others slide in and fade (merge); closing splits them again. A click
  *                 opens Home's panel (kit/home.js: tab strip + tab) on the tab its context
@@ -42,8 +44,9 @@ const ALERT_HOVER = 1000;  // an alert still hovered at its end stays open this 
  *                 answer to their key (kit/keys.js, printed on them), Esc closes. On a
  *                 pill the stack opened (ask, alert) Super+B takes the keyboard for it.
  *
- * Structure: a fixed-size invisible container (wide enough for three pills, tall enough
- * for the expanded one) holding each pill's background and content (see pill.js).
+ * Structure: an invisible container as wide as the monitor (a compact may open on any
+ * pill) and tall enough for the expanded pill, holding each pill's background and content
+ * (see pill.js). It is not reactive at rest, so it takes no clicks.
  */
 export class Island {
     constructor() {
@@ -56,7 +59,7 @@ export class Island {
         this._list = [];            // last list from the stack
         this._light = 'off';
         this._capacity = MAX_PILLS;
-        this._sideMax = this._s.sharedMax;
+        this._compactPill = null;   // the pill whose compact is open (SPEC §2c)
         this._open = null;          // the expanded pill
         this._openedBy = null;      // 'user' | 'auto' | 'alert'
         this._home = null;          // Home's panel while a click has the island open
@@ -206,8 +209,6 @@ export class Island {
             role: i === 0 ? 'centre' : 'side',
             light: this._light,
             more: i === n - 1 ? more : 0,
-            shared: n > 1,
-            maxW: n > 1 ? this._sideMax : 0,
         };
     }
 
@@ -257,7 +258,7 @@ export class Island {
             pill.setCx(cx, animate && !pill.fresh); // a new pill appears at its slot
             pill.fresh = false;
             if (!this._open)
-                pill.setShown(true, animate);
+                pill.setShown(true, animate, this._compactPill !== null && this._compactPill !== pill);
         });
     }
 
@@ -279,8 +280,9 @@ export class Island {
         });
     }
 
-    // Side pills stop before the system cluster (SPEC §2c + 1366 px screens): 3 pills
-    // when two side pills of at least the idle width fit, else 2, else 1.
+    // Side pills stop before the system cluster (SPEC §2c, 2026-11-05): as many 120 px side
+    // pills as fit right of pill 1 at its widest (the `wide` cap, so pill 1's text never
+    // changes how many show), at most two; else pill 1 alone.
     _updateCapacity() {
         const m = Main.layoutManager.primaryMonitor;
         const box = Main.panel._rightBox;
@@ -295,15 +297,11 @@ export class Island {
         // keep the last real layout.
         const x1 = a => a.get_allocation_box().x1;
         const boxX = x1(Main.layoutManager.panelBox) + x1(Main.panel) + x1(box);
-        const avail = boxX - CLUSTER_MARGIN - (m.x + m.width / 2) - this._s.sharedMax / 2;
-        const min = this._s.idle.w + PILL_GAP;
-        const sides = Math.max(0, Math.min(MAX_PILLS - 1, Math.floor(avail / min)));
-        const sideMax = sides
-            ? Math.min(this._s.sharedMax, 2 * Math.floor((avail / sides - PILL_GAP) / 2))
-            : this._s.sharedMax;
-        const changed = sides + 1 !== this._capacity || sideMax !== this._sideMax;
+        const widest = this._s.minimal(Infinity, 'wide').w;
+        const avail = boxX - CLUSTER_MARGIN - (m.x + m.width / 2) - widest / 2;
+        const sides = Math.max(0, Math.min(MAX_PILLS - 1, Math.floor(avail / (this._s.side.w + PILL_GAP))));
+        const changed = sides + 1 !== this._capacity;
         this._capacity = sides + 1;
-        this._sideMax = Math.max(this._s.idle.w, sideMax);
         if (changed)
             this.onCapacityChanged?.();
         return changed;
@@ -346,9 +344,42 @@ export class Island {
         }
     }
 
-    /** The amber light's hover line (pill.js shows it as the centre pill's compact). */
-    missedLine() {
-        return missedLine(this.missed.list());
+    /** The amber light's compact (pill.js, on the centre pill): rows with their tab's icon. */
+    missedCompact() {
+        const tabs = this._strip().tabs;
+        return planMissed(this.missed.list(),
+            kind => tabs.find(t => t.type === 'kind' && t.kinds.includes(kind))?.icon ?? null);
+    }
+
+    /** The pill whose compact is open (or in its grace), or null. */
+    get compactPill() {
+        return this._compactPill;
+    }
+
+    // pill.js: a compact opened or closed. One at a time; the open one is raised over its
+    // neighbours, which fade where they stand (SPEC §2c, §5) and come back after.
+    _compactShown(pill, on) {
+        if (on) {
+            if (this._compactPill && this._compactPill !== pill)
+                this._compactPill._stopCompact();
+            this._compactPill = pill;
+            this.actor.set_child_above_sibling(pill.bg, null);
+            this.actor.set_child_above_sibling(pill.content, null);
+            for (const other of this._pills) {
+                if (other !== pill)
+                    other.dim(true);
+            }
+            return;
+        }
+        if (this._compactPill !== pill)
+            return;
+        this._compactPill = null;
+        if (this._open)
+            return;             // opening: _openPill hides the others itself
+        for (const other of this._pills) {
+            if (other !== pill)
+                other.dim(false);
+        }
     }
 
     _strip() {
@@ -366,6 +397,8 @@ export class Island {
     _openPill(pill, how, tab = null) {
         if (this._open || (!tab && !pill.expandable))
             return;
+        if (this._compactPill && this._compactPill !== pill)
+            this._compactPill._stopCompact();   // an alert or ask opens elsewhere
         this._setFocus(undefined);  // the ring goes; a grab already held stays for the panel
         this._open = pill;
         this._openedBy = how;
