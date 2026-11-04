@@ -91,10 +91,10 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   - Foreground only: labels and symbolic icons, white (as GNOME's own see-through panel,
     `$transparent_panel_fg_color`) or `#1a1a1a`; full-colour icons, menus and the filled
     recording/sharing indicators stay GNOME's.
-  - A 1 px unblurred shadow in the wallpaper's tone helps on busy wallpapers, but only
-    while Automatic: with the text forced against the wallpaper the same shadow drew a
-    second, opposite edge — blurred-looking text (Ethan 2026-11-04). GNOME's panel has no
-    shadow (`_panel.scss`), so forced text has none either.
+  - No shadow under the text, Automatic or forced, as GNOME's panel (`_panel.scss`). A 1 px
+    shadow in the wallpaper's tone was tried for busy wallpapers: forced, it drew a second,
+    opposite edge; Automatic, on a wallpaper of mixed tones it still read as a doubled,
+    blurred edge (Ethan 2026-11-04, both).
   - A tray button's highlight follows the text by GNOME's own formula: the foreground at
     .17 hovered, .28 open, .32 open and hovered (`_drawing.scss` `panel_button`). Yaru
     compiles it to a fixed light grey, nearly invisible on a white wallpaper (Ethan

@@ -97,19 +97,8 @@
 #panel.buoy .buoy-dark-text .buoy-app,
 #panel.buoy .buoy-dark-text StLabel,
 #panel.buoy .buoy-dark-text StIcon { color: #1a1a1a; }
-/* A 1 px unblurred shadow in the wallpaper's own tone, for busy wallpapers — only while
-   Automatic (buoy-text-auto): with the text forced against the wallpaper the same shadow
-   is a second, opposite edge. GNOME's panel has none (_panel.scss). */
-#panel.buoy .buoy-light-text.buoy-text-auto StLabel,
-#panel.buoy .buoy-light-text.buoy-text-auto StIcon {
-    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
-    icon-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
-}
-#panel.buoy .buoy-dark-text.buoy-text-auto StLabel,
-#panel.buoy .buoy-dark-text.buoy-text-auto StIcon {
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-    icon-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-}
+/* No shadow, as GNOME's panel (_panel.scss): one under the text, in the wallpaper's tone,
+   read as a second, blurred edge — forced or Automatic (Ethan 2026-11-04). */
 /* A tray button's highlight is GNOME's formula on the new text: the foreground at .17
    hovered, .28 open, .32 open and hovered (_drawing.scss panel_button) — Yaru compiles it
    to a fixed light grey, lost on a white wallpaper. panel.js marks the plain tray
@@ -139,8 +128,6 @@
 #panel.buoy .buoy-dark-text .screen-sharing-indicator StLabel,
 #panel.buoy .buoy-dark-text .screen-sharing-indicator StIcon {
     color: #fff;
-    text-shadow: none;
-    icon-shadow: none;
 }
 
 /* The island pill. Hover/press/expanded are shapes, not CSS states. */

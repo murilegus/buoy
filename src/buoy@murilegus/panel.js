@@ -94,7 +94,7 @@ export function reworkPanel(on) {
         glyphs?.destroy();
         glyphs = null;
         for (const b of sides())
-            [...TEXT, 'text-auto'].forEach(t => b.remove_style_class_name(`buoy-${t}`));
+            TEXT.forEach(t => b.remove_style_class_name(`buoy-${t}`));
         system.destroy();
         system = null;
         left.destroy();
@@ -156,11 +156,6 @@ function applyContrast() {
         const l = spanLuminance(wallpaper?.profile ?? null, x0, x0 + box.width);
         // the Overview's dark backdrop only once it is what shows under the bar (reach.js)
         const text = contrastFor(contrastMode, l, Main.overview.visible && !wallpaperUnderBar());
-        // shadows only while Automatic (stylesheet): forced text may sit on its own tone
-        if (contrastMode === 'auto')
-            box.add_style_class_name('buoy-text-auto');
-        else
-            box.remove_style_class_name('buoy-text-auto');
         for (const t of TEXT) {
             if (t === text)
                 box.add_style_class_name(`buoy-${t}`);
