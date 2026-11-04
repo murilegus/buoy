@@ -2,7 +2,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {GNOME_CLOCK, clockDefaults, clockSwitchOn, clockValue, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS} from
+import {GNOME_CLOCK, clockDefaults, clockSwitchOn, clockValue, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -49,7 +49,17 @@ const plan = planPrefs(order.map(name => ({name})));
 eq(plan.general, ['expanded-width', 'keybind-focus'], 'General: the island\'s own keys, in schema order');
 eq(plan.apps, ['apps-hidden', 'apps-plain'], 'Apps page');
 eq(plan.developer, ['dev-mode'], 'Developer group');
-eq(plan.panel, ['cluster-background', 'left-cluster-empty'], 'Panel page: the top bar\'s own keys, nested ones under their parent');
+eq(plan.panel, ['cluster-background', 'cluster-contrast', 'left-cluster-empty'], 'Panel page: the top bar\'s own keys, nested ones under their parent');
+eq(schema.get_key('cluster-contrast').get_range().recursiveUnpack(), ['enum', ['auto', 'dark-text', 'light-text']],
+    'cluster-contrast names the text, not the wallpaper (GNOME\'s light/dark is another thing, 2026-11-04)');
+eq(schema.get_key('cluster-contrast').get_default_value().unpack(), 'auto', 'cluster-contrast follows the wallpaper by default');
+eq(['auto', 'dark-text', 'light-text'].map(v => choiceLabel('cluster-contrast', v)), ['Automatic', 'Dark', 'Light'],
+    'cluster-contrast drop-down labels');
+eq(choiceLabel('left-cluster-empty', 'workspace'), 'Workspace', 'other choices: the value with a capital');
+for (const [n, labels] of Object.entries(CHOICE_LABELS)) {
+    const [, values] = schema.get_key(n).get_range().recursiveUnpack();
+    eq(Object.keys(labels), values, `CHOICE_LABELS "${n}": one label per choice, in schema order`);
+}
 eq(schema.get_key('left-cluster-empty').get_range().recursiveUnpack(), ['enum', ['workspace', 'hidden']],
     'left-cluster-empty: workspace or hidden');
 eq(schema.get_key('left-cluster-empty').get_default_value().unpack(), 'workspace', 'the workspace shows by default (SPEC §1)');
@@ -96,7 +106,7 @@ const fake = [{name: 'modules-media'}, {name: 'media-peek-on-hover'}, {name: 'mo
 const p2 = planPrefs(fake);
 eq(p2.modules.map(m => [m.id, m.keys]), [['media', ['media-peek-on-hover']]],
     'a module\'s own key lives in its row; a hidden module\'s key is hidden with it');
-throws(() => planPrefs([{name: 'cluster-contrast'}]), 'a key nobody placed fails loudly');
+throws(() => planPrefs([{name: 'window-corners'}]), 'a key nobody placed fails loudly');
 throws(() => planPrefs([{name: 'mediaish'}]), 'a prefix match needs the dash');
 
 // --- choice keys: prefs offers exactly the schema's choices, in order ------------------

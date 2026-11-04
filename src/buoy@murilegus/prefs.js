@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, clockSwitchOn, clockValue, GNOME_CLOCK, NESTED, SLIDERS} from './lib/kit/settings.js';
+import {planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, clockSwitchOn, clockValue, GNOME_CLOCK, NESTED, SLIDERS, choiceLabel} from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {PATH} from './lib/kit/dbus.js';
 
@@ -156,7 +156,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     // `widget` is an Adw.ComboRow or a Gtk.DropDown: both have `model` and `selected`.
     _bindChoice(name, k, widget) {
         const [, choices] = k.get_range().recursiveUnpack();
-        widget.model = Gtk.StringList.new(choices.map(c => c[0].toUpperCase() + c.slice(1)));
+        widget.model = Gtk.StringList.new(choices.map(c => choiceLabel(name, c)));
         const sync = () => {
             const i = choices.indexOf(this._settings.get_string(name));
             if (i >= 0 && widget.selected !== i)

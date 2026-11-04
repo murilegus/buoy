@@ -4,7 +4,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {applyClockDefaults, reworkPanel, setClusterBackground, setLeftEmpty} from './panel.js';
+import {applyClockDefaults, reworkPanel, setClusterBackground, setContrast, setLeftEmpty} from './panel.js';
 import {Island} from './lib/kit/island.js';
 import {ActivityStack} from './lib/kit/stack.js';
 import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
@@ -30,6 +30,9 @@ const MODULES = [media, notification, progress, timer, hud, home, copied, layout
 export default class BuoyExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
+        // set before the panel is reworked, so a fixed text never starts a decode
+        const contrast = () => setContrast(this._settings.get_string('cluster-contrast'));
+        contrast();
         reworkPanel(true);
         applyClockDefaults(this._settings);
         const background = () => setClusterBackground({
@@ -41,7 +44,9 @@ export default class BuoyExtension extends Extension {
         const leftEmpty = () => setLeftEmpty(this._settings.get_string('left-cluster-empty'));
         leftEmpty();
         this._backgroundId = this._settings.connect('changed', (_s, key) => {
-            if (key.startsWith('cluster-'))
+            if (key === 'cluster-contrast')
+                contrast();
+            else if (key.startsWith('cluster-'))
                 background();
             else if (key === 'left-cluster-empty')
                 leftEmpty();

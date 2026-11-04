@@ -9,7 +9,11 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {AppMenu} from 'resource:///org/gnome/shell/ui/appMenu.js';
 
 import {clusterFill, fallbackIcons, leftCluster} from './lib/kit/cluster.js';
+import {contrastFor, spanLuminance} from './lib/kit/contrast.js';
 import {GNOME_CLOCK, clockDefaults} from './lib/kit/settings.js';
+import {TrayGlyphs} from './glyphs.js';
+import {reachUnderBar, wallpaperUnderBar} from './reach.js';
+import {Wallpaper} from './wallpaper.js';
 
 // cluster-background, -radius, -opacity (SPEC §1). St has no CSS variables, so the
 // background is the box's inline style, repainted when the look, its hover or the
@@ -25,8 +29,22 @@ let left = null;
 // The system cluster (SPEC §1, 2026-11-02): quick settings + clock, last in _rightBox.
 let system = null;
 
+// cluster-contrast (SPEC §1, 2026-11-04): auto | dark-text | light-text. The wallpaper is
+// watched and decoded only while `auto` and enabled.
+let contrastMode = 'auto';
+let wallpaper = null;
+const TEXT = ['dark-text', 'light-text'];
+
+// One-colour bitmap tray icons tinted with the text (glyphs.js); made the first time the
+// right side turns dark-text, so a dark wallpaper reads no icon at all.
+let glyphs = null;
+
 // The boxes that draw the cluster background.
 const clusters = () => [Main.panel._leftBox, system?.actor].filter(Boolean);
+
+// The two sides whose text follows the wallpaper under them: the left box, and the right
+// one (the tray and the system cluster, Ethan 2026-11-04: the tray follows too).
+const sides = () => [Main.panel._leftBox, Main.panel._rightBox];
 
 /**
  * SPEC §1: transparent panel; left cluster = focused app or workspace (LeftCluster);
@@ -42,6 +60,8 @@ export function reworkPanel(on) {
     if (on) {
         panel.add_style_class_name('buoy');
         panel._rightBox.add_style_class_name('buoy-tray');
+        // the bar is see-through: the Overview's backgrounds must grow under it (reach.js)
+        reachUnderBar(true, () => applyContrast());
         activities.container.hide();
         saved = {reactive: box.reactive, track_hover: box.track_hover, visible: box.visible, inline: box.get_style()};
         left = new LeftCluster(box);
@@ -51,20 +71,37 @@ export function reworkPanel(on) {
         box.reactive = box.track_hover = true;
         box.add_style_class_name('buoy-cluster');
         followEmpty(box, saved);
+        markTray(panel._rightBox, saved);
         saved.hover = box.connect('notify::hover', paint);
         system = new SystemCluster(panel);
-        // a theme or colour-scheme change, or Buoy's light text, recolours the buttons
+        // a theme change or the contrast's text recolours the buttons, and so the fill
         const qs = panel.statusArea.quickSettings;
-        saved.styleChanged = [qs, qs.connect('style-changed', repaintAll)];
+        saved.styleChanged = [[qs, qs.connect('style-changed', repaintAll)],
+            [left.actor, left.actor.connect('style-changed', repaintAll)]];
+        // where each side sits, and the Overview's dark backdrop, decide its text
+        saved.contrast = [
+            ...sides().map(b => [b, b.connect('notify::allocation', applyContrast)]),
+            [Main.overview, Main.overview.connect('showing', applyContrast)],
+            [Main.overview, Main.overview.connect('hidden', applyContrast)],
+        ];
+        setContrast(contrastMode);
         repaintAll();
     } else {
-        saved.styleChanged[0].disconnect(saved.styleChanged[1]);
+        for (const [obj, id] of [...saved.styleChanged, ...saved.contrast])
+            obj.disconnect(id);
+        wallpaper?.destroy();
+        wallpaper = null;
+        glyphs?.destroy();
+        glyphs = null;
+        for (const b of sides())
+            [...TEXT, 'text-auto'].forEach(t => b.remove_style_class_name(`buoy-${t}`));
         system.destroy();
         system = null;
         left.destroy();
         left = null;
         box.disconnect(saved.hover);
         unfollowEmpty(box, saved);
+        unmarkTray(panel._rightBox, saved);
         box.remove_style_class_name('buoy-cluster');
         box.set_style(saved.inline);
         box.reactive = saved.reactive;
@@ -72,6 +109,7 @@ export function reworkPanel(on) {
         box.visible = saved.visible;
         saved = null;
         activities.container.show();
+        reachUnderBar(false);
         panel._rightBox.remove_style_class_name('buoy-tray');
         panel.remove_style_class_name('buoy');
     }
@@ -90,6 +128,51 @@ export function setClusterBackground(next) {
 
 function repaintAll() {
     clusters().forEach(paint);
+}
+
+/**
+ * @param {string} mode  `cluster-contrast`: auto | dark-text | light-text
+ */
+export function setContrast(mode) {
+    contrastMode = mode;
+    if (!saved)
+        return;                 // applied by reworkPanel(true)
+    if (mode === 'auto' && !wallpaper) {
+        wallpaper = new Wallpaper(applyContrast);
+    } else if (mode !== 'auto' && wallpaper) {
+        wallpaper.destroy();
+        wallpaper = null;
+    }
+    applyContrast();
+}
+
+// Each side gets the text its stretch of the wallpaper wants (kit/contrast.js); the class
+// only changes when the answer does, so a relayout costs a few additions.
+function applyContrast() {
+    const mon = Main.layoutManager.primaryMonitor;
+    for (const box of sides()) {
+        const [x] = box.get_transformed_position();
+        const x0 = x - (mon?.x ?? 0);
+        const l = spanLuminance(wallpaper?.profile ?? null, x0, x0 + box.width);
+        // the Overview's dark backdrop only once it is what shows under the bar (reach.js)
+        const text = contrastFor(contrastMode, l, Main.overview.visible && !wallpaperUnderBar());
+        // shadows only while Automatic (stylesheet): forced text may sit on its own tone
+        if (contrastMode === 'auto')
+            box.add_style_class_name('buoy-text-auto');
+        else
+            box.remove_style_class_name('buoy-text-auto');
+        for (const t of TEXT) {
+            if (t === text)
+                box.add_style_class_name(`buoy-${t}`);
+            else
+                box.remove_style_class_name(`buoy-${t}`);
+        }
+        if (box !== Main.panel._rightBox)
+            continue;
+        if (text === 'dark-text' && !glyphs && system)
+            glyphs = new TrayGlyphs(box, system.actor);
+        glyphs?.setText(text);
+    }
 }
 
 /**
@@ -129,14 +212,15 @@ export function setLeftEmpty(mode) {
 
 // The stylesheet's transition-duration fades the change in both directions.
 // Filled as GNOME fills a panel button, so it reads like a tray button's hover: the
-// button's foreground ($panel_fg_color, Buoy's dark text on a light wallpaper) at
-// kit/cluster.js clusterFill's alpha. The system cluster keeps it, a step up, while its
+// cluster's own foreground (the theme's, or the contrast's text) at kit/cluster.js
+// clusterFill's alpha. The system cluster keeps it, a step up, while its
 // menu is open, as a panel button stays :checked (its own highlight is off, see the
 // stylesheet).
 function paint(box) {
     const open = box === system?.actor && system.open;
     const alpha = clusterFill(look, {hover: box.hover, open});
-    const fg = Main.panel.statusArea.quickSettings.peek_theme_node()?.get_foreground_color();
+    const button = box === system?.actor ? Main.panel.statusArea.quickSettings : left?.actor;
+    const fg = button?.peek_theme_node()?.get_foreground_color();
     const [r, g, b] = fg ? [fg.red, fg.green, fg.blue] : [255, 255, 255];
     box.set_style(`border-radius: ${look.radius}px; background-color: rgba(${r}, ${g}, ${b}, ${alpha});`);
 }
@@ -277,6 +361,31 @@ function followEmpty(box, state) {
     });
     box.get_children().forEach(watch);
     sync();
+}
+
+// The tray's plain buttons, whose highlight follows the text (stylesheet
+// .buoy-tray-button; St has no :not()). GNOME's filled indicators keep their own coloured
+// highlight, and the system cluster's pieces have none: quick settings and the clock are
+// never marked, though they pass through this box (before SystemCluster takes them, and
+// on every session-mode update, Panel._updatePanel).
+const FILLED = ['screen-recording-indicator', 'screen-sharing-indicator'];
+const trayButton = c => {
+    const b = c.get_first_child?.();
+    const {quickSettings, dateMenu} = Main.panel.statusArea;
+    if (!b?.has_style_class_name?.('panel-button') || b === quickSettings || b === dateMenu)
+        return null;
+    return FILLED.some(f => b.has_style_class_name(f)) ? null : b;
+};
+
+function markTray(box, state) {
+    const mark = c => trayButton(c)?.add_style_class_name('buoy-tray-button');
+    box.get_children().forEach(mark);
+    state.trayAdded = box.connect('child-added', (_b, c) => mark(c));
+}
+
+function unmarkTray(box, state) {
+    box.disconnect(state.trayAdded);
+    box.get_children().forEach(c => trayButton(c)?.remove_style_class_name('buoy-tray-button'));
 }
 
 function unfollowEmpty(box, state) {

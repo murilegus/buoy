@@ -107,6 +107,16 @@
       <summary>Cluster background</summary>
       <description>Behind the left and right clusters.</description>
     </key>
+    <key name="cluster-contrast" type="s">
+      <choices>
+        <choice value="auto"/>
+        <choice value="dark-text"/>
+        <choice value="light-text"/>
+      </choices>
+      <default>'auto'</default>
+      <summary>Icons and text</summary>
+      <description>Automatic follows the wallpaper, not the style.</description>
+    </key>
     <key name="left-cluster-empty" type="s">
       <choices>
         <choice value="workspace"/>

@@ -13,6 +13,9 @@ src/buoy@murilegus/
 ├── stylesheet.css
 ├── extension.js            enable(): panel → kit → load enabled modules
 ├── panel.js                top bar rework: left cluster (app/workspace), bare tray, system cluster (QS + clock)
+├── wallpaper.js            the wallpaper Shell draws, decoded once per change, for cluster-contrast (2026-11-04)
+├── glyphs.js               one-colour bitmap tray icons (Electron's white glyphs) tinted like the text (2026-11-04)
+├── reach.js                the Overview's workspace backgrounds grow under the see-through bar, so closing it ends on the whole wallpaper (2026-11-04)
 ├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
 ├── prefs.js                Adw prefs: General, Modules (one row per module), Apps, Panel (clusters,
 │                           2026-11-04); the Windows page arrives with corners (M2)
@@ -31,6 +34,7 @@ src/buoy@murilegus/
     │   ├── keys.js         keyboard: an ask's keys, ←/→ steps; pure, unit-tested (2026-11-03)
     │   ├── settings.js     prefs: which page each schema key goes to, samples; pure (2026-11-03)
     │   ├── cluster.js      what the left cluster shows (app / workspace / hover); pure (2026-11-04)
+    │   ├── contrast.js     wallpaper placement + luminance → dark or light text per side; pure (2026-11-04)
     │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
     │   ├── mascot.js       Bu: 13 pose grids + eyes as data, pure; MASCOT.md is the source (2026-11-03)
@@ -130,7 +134,7 @@ fields and order: [PROFILES.md](PROFILES.md).
 Planned keys are listed here too; the schema holds only the ones whose item has landed
 (2026-11-04: `modules-*`, `apps-hidden`, `apps-plain`, `tabs-pinned`, `tabs-slot`,
 `expanded-width`, `dev-mode`, `keybind-focus`, `cluster-background`, `cluster-radius`,
-`cluster-opacity`, `left-cluster-empty`, `clock-defaults-applied`). Every key applies at once — prefs and
+`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`). Every key applies at once — prefs and
 `gsettings` alike; `modules-<id>` starts or stops only that module.
 
 | Key | Type | Effect |
@@ -148,7 +152,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `cluster-background` | s | never \| hover \| always; default `hover` (2026-11-04) |
 | `cluster-radius` | i | that background's corner radius, 0–16 px; default `16` |
 | `cluster-opacity` | i | that background's opacity, 5–100 %, in the panel foreground colour like a panel button's hover; default `17` (2026-11-04) |
-| `cluster-contrast` | s | auto \| light \| dark |
+| `cluster-contrast` | s | auto \| dark-text \| light-text; default `auto` (2026-11-04: values name the text, not GNOME's light/dark) |
 | `left-cluster-empty` | s | workspace \| hidden |
 | `clock-defaults-applied` | b | bookkeeping: the first enable gave GNOME's clock keys Buoy's defaults (time alone, 24 h) where the user had not set them; the clock switches in prefs are GNOME's own keys (2026-11-04) |
 | `window-corners` | b | round the top corners of maximized windows; default `true` (2026-11-02) |

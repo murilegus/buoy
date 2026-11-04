@@ -30,6 +30,7 @@ export const PLACES = {
     'cluster-background': 'panel',
     'cluster-radius': 'panel',
     'cluster-opacity': 'panel',
+    'cluster-contrast': 'panel',
     'left-cluster-empty': 'panel',
     'tabs-pinned': 'modules',   // the pin switch on standalone modules' rows
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
@@ -91,6 +92,21 @@ export function clockValue(entry, active) {
     if (!entry.on)
         return active;
     return active ? entry.on : entry.off;
+}
+
+// Drop-down labels where the value itself would read badly ("Dark-text"); any other
+// choice shows as its value with a capital.
+export const CHOICE_LABELS = {
+    'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
+};
+
+/**
+ * @param {string} name  the key
+ * @param {string} value  one of its choices
+ * @returns {string} the drop-down's label for it
+ */
+export function choiceLabel(name, value) {
+    return CHOICE_LABELS[name]?.[value] ?? value[0].toUpperCase() + value.slice(1);
 }
 
 // Integer keys drawn as a slider instead of a spin button, with their unit.
