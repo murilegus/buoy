@@ -8,16 +8,16 @@
  *                     | {bar: 0..1} | {countdown: s} | {text}
  *   leading only:     {mascot: '<pose>', icon?} — Bu (MASCOT.md); an unknown pose falls
  *                     back to `icon`, else `idle`; elsewhere only its `icon` counts
- *   expanded: true (= enlarged compact) | {leading, center, trailing, bottom}
+ *   expanded: true (= enlarged minimal) | {leading, center, trailing, bottom}
  *             region: an element as above | {title, subtitle, progress} | {transport: true};
  *             any region may carry `priority` (the highest one takes the free width)
- *   actions: [{id, label?, icon?}] — 1 shown in compact, 3 in expanded (APPLE.md B5.5)
+ *   actions: [{id, label?, icon?}] — 1 shown in minimal, 3 in compact and expanded (APPLE.md B5.5)
  *
- *   peek: {leading, text, trailing, transport?} — shown on hover (Buoy's own, no Apple
+ *   compact: {leading, text, trailing, transport?} — the hover tier (SPEC §2; Buoy's own, no Apple
  *         equivalent); transport: true adds up to 3 of the activity's actions as buttons
  *
  * The buoy light (SPEC §2a-i) is the pill's left edge slot: grey `off` only in idle,
- * `missed` (amber) / `waiting` (red) in idle and compact, never in expanded. When Bu
+ * `missed` (amber) / `waiting` (red) in idle, minimal and compact, never in expanded. When Bu
  * leads, Bu's lamp is the light: no edge slot, and the mascot element carries `light`
  * (amber/red, or null for the pose's own colour, kit/mascot.js lampColour).
  *
@@ -28,7 +28,7 @@
 import {mnemonics} from './keys.js';
 import {poseName} from './mascot.js';
 
-export const MAX_ACTIONS = {compact: 1, expanded: 3, peek: 3};
+export const MAX_ACTIONS = {minimal: 1, compact: 3, expanded: 3};
 const LIGHTS = new Set(['off', 'missed', 'waiting']);
 
 // INDICATORS.md: state colours belong to the light/dot slots, never to a keyline.
@@ -163,13 +163,13 @@ export function planIdle({light, plan = null} = {}) {
  * @param {number} [opts.more]  activities beyond the shown pills (last pill only)
  * @returns {object} {leading, text, trailing, action, keyline, stale, light, badge}
  */
-export function planCompact(p, {light, more} = {}) {
+export function planMinimal(p, {light, more} = {}) {
     const lead = leadingAndLight(p.leading, light);
     return {
         leading: lead.leading,
         text: str(p.text),
         trailing: element(p.trailing),
-        action: actions(p.actions, MAX_ACTIONS.compact)[0] ?? null,
+        action: actions(p.actions, MAX_ACTIONS.minimal)[0] ?? null,
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
         light: lead.light,
@@ -183,16 +183,16 @@ export function planCompact(p, {light, more} = {}) {
  * @param {string} [opts.light]  the stack's light
  * @returns {?object} {leading, text, trailing, actions, keyline, stale, light} or null
  */
-export function planPeek(p, {light} = {}) {
-    if (!isPlain(p.peek))
+export function planCompact(p, {light} = {}) {
+    if (!isPlain(p.compact))
         return null;
-    const peek = p.peek;
-    const lead = leadingAndLight(peek.leading, light);
+    const c = p.compact;
+    const lead = leadingAndLight(c.leading, light);
     const plan = {
         leading: lead.leading,
-        text: str(peek.text),
-        trailing: element(peek.trailing),
-        actions: peek.transport === true ? actions(p.actions, MAX_ACTIONS.peek) : [],
+        text: str(c.text),
+        trailing: element(c.trailing),
+        actions: c.transport === true ? actions(p.actions, MAX_ACTIONS.compact) : [],
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
         light: lead.light,
@@ -216,8 +216,8 @@ function region(r, name) {
 }
 
 /**
- * Expanded is an enlarged compact (APPLE.md B2): regions the adapter leaves out fall
- * back to the compact elements; an explicit null keeps a region empty.
+ * Expanded is an enlarged minimal (APPLE.md B2): regions the adapter leaves out fall
+ * back to the minimal elements; an explicit null keeps a region empty.
  *
  * @param {object} p  presentation data (an activity)
  * @returns {?object} {leading, center, trailing, bottom, grow, actions, keyline, stale}
@@ -228,7 +228,7 @@ export function planExpanded(p) {
     if (!isPlain(ex))
         return null;
 
-    const c = planCompact(p);
+    const c = planMinimal(p);
     let acts = actions(p.actions, MAX_ACTIONS.expanded);
     if (p.kind === 'ask') {
         // answered from the keyboard too: the key is printed on the button while the

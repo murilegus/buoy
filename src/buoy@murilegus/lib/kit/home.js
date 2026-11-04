@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {buildCompact, buildExpanded} from './present.js';
+import {buildExpanded, buildMinimal} from './present.js';
 import {clockTime} from './presentation.js';
 import {planStrip, stripOrder, tabActivities, findTab, HOME} from './tabs.js';
 import {step} from './keys.js';
@@ -333,7 +333,7 @@ export class Home {
             return box;
         }
         for (const a of this._list) {
-            const content = buildCompact(a);
+            const content = buildMinimal(a);
             if (!content)
                 continue;
             const tabId = this._strip.tabs.find(t => t.type === 'kind' && t.kinds.includes(a.kind))?.id;

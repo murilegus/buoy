@@ -5,7 +5,7 @@ import {
     FRAMES, POSES, PALETTE, FOREGROUND, LIGHT_LAMPS, FRAME_MS, ONCE_FRAMES, SIZE,
     poseName, moves, lampColour, frameAt, cells,
 } from '../src/buoy@murilegus/lib/kit/mascot.js';
-import {element, planCompact, planPeek, planExpanded} from '../src/buoy@murilegus/lib/kit/presentation.js';
+import {element, planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/presentation.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -163,23 +163,23 @@ eq(element({mascot: 'busy'}), null, 'not leading, no icon: nothing');
 eq(element({mascot: 'busy', art: '/a.png'}, {leading: true}).type, 'mascot', 'mascot before art');
 
 const agent = {kind: 'agent', leading: {mascot: 'think'}, text: 'Claude · thinking', trailing: {mascot: 'busy'}};
-let c = planCompact(agent, {light: 'missed'});
-eq(c.leading, {type: 'mascot', pose: 'think', light: 'missed'}, 'compact: Bu carries the amber light');
-eq(c.light, null, 'compact: no edge slot when Bu leads');
-eq(c.trailing, null, 'compact: no Bu in trailing');
-c = planCompact(agent, {light: 'waiting'});
-eq([c.leading.light, c.light], ['waiting', null], 'compact: red too');
-c = planCompact(agent, {light: 'off'});
-eq([c.leading.light, c.light], [null, null], 'compact, light off: the pose\'s lamp, no slot');
-c = planCompact(agent, {});
-eq([c.leading.light, c.light], [null, null], 'compact, no light (side pill): the pose\'s lamp');
-c = planCompact({kind: 'x', leading: 'a-symbolic', text: 't'}, {light: 'missed'});
+let c = planMinimal(agent, {light: 'missed'});
+eq(c.leading, {type: 'mascot', pose: 'think', light: 'missed'}, 'minimal: Bu carries the amber light');
+eq(c.light, null, 'minimal: no edge slot when Bu leads');
+eq(c.trailing, null, 'minimal: no Bu in trailing');
+c = planMinimal(agent, {light: 'waiting'});
+eq([c.leading.light, c.light], ['waiting', null], 'minimal: red too');
+c = planMinimal(agent, {light: 'off'});
+eq([c.leading.light, c.light], [null, null], 'minimal, light off: the pose\'s lamp, no slot');
+c = planMinimal(agent, {});
+eq([c.leading.light, c.light], [null, null], 'minimal, no light (side pill): the pose\'s lamp');
+c = planMinimal({kind: 'x', leading: 'a-symbolic', text: 't'}, {light: 'missed'});
 eq(c.light, 'missed', 'any other leading keeps the edge slot');
-c = planCompact({kind: 'x', leading: {mascot: 'nope', icon: 'a-symbolic'}, text: 't'}, {light: 'missed'});
+c = planMinimal({kind: 'x', leading: {mascot: 'nope', icon: 'a-symbolic'}, text: 't'}, {light: 'missed'});
 eq([c.leading.type, c.light], ['icon', 'missed'], 'a fallen-back icon keeps the edge slot');
 
-const pk = planPeek({...agent, peek: {leading: {mascot: 'ask'}, text: 'Allow?'}}, {light: 'missed'});
-eq([pk.leading, pk.light], [{type: 'mascot', pose: 'ask', light: 'missed'}, null], 'peek: Bu carries the light');
+const pk = planCompact({...agent, compact: {leading: {mascot: 'ask'}, text: 'Allow?'}}, {light: 'missed'});
+eq([pk.leading, pk.light], [{type: 'mascot', pose: 'ask', light: 'missed'}, null], 'compact: Bu carries the light');
 
 const ex = planExpanded({...agent, expanded: true});
 eq(ex.leading, {type: 'mascot', pose: 'think', light: null}, 'expanded: Bu leads, the pose\'s lamp (no light there)');

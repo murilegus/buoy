@@ -83,7 +83,7 @@ const CHECKS = {
     leading: v => typeof v === 'string' || isPlain(v) || 'an icon name or an element',
     trailing: v => typeof v === 'string' || isPlain(v) || 'an icon name or an element',
     expanded: v => typeof v === 'boolean' || isPlain(v) || 'true or regions',
-    peek: v => isPlain(v) || 'an object',
+    compact: v => isPlain(v) || 'an object',
     attributes: v => isPlain(v) || 'an object',
     state: v => isPlain(v) || 'an object',
     actions: v => Array.isArray(v) && v.every(a => isPlain(a) && typeof a.id === 'string') || 'a list of {id, label?, icon?}',

@@ -56,7 +56,7 @@ export class Island {
         this._list = [];            // last list from the stack
         this._light = 'off';
         this._capacity = MAX_PILLS;
-        this._sideMax = this._s.minimalMax;
+        this._sideMax = this._s.sharedMax;
         this._open = null;          // the expanded pill
         this._openedBy = null;      // 'user' | 'auto' | 'alert'
         this._home = null;          // Home's panel while a click has the island open
@@ -206,7 +206,7 @@ export class Island {
             role: i === 0 ? 'centre' : 'side',
             light: this._light,
             more: i === n - 1 ? more : 0,
-            minimal: n > 1,
+            shared: n > 1,
             maxW: n > 1 ? this._sideMax : 0,
         };
     }
@@ -295,12 +295,12 @@ export class Island {
         // keep the last real layout.
         const x1 = a => a.get_allocation_box().x1;
         const boxX = x1(Main.layoutManager.panelBox) + x1(Main.panel) + x1(box);
-        const avail = boxX - CLUSTER_MARGIN - (m.x + m.width / 2) - this._s.minimalMax / 2;
+        const avail = boxX - CLUSTER_MARGIN - (m.x + m.width / 2) - this._s.sharedMax / 2;
         const min = this._s.idle.w + PILL_GAP;
         const sides = Math.max(0, Math.min(MAX_PILLS - 1, Math.floor(avail / min)));
         const sideMax = sides
-            ? Math.min(this._s.minimalMax, 2 * Math.floor((avail / sides - PILL_GAP) / 2))
-            : this._s.minimalMax;
+            ? Math.min(this._s.sharedMax, 2 * Math.floor((avail / sides - PILL_GAP) / 2))
+            : this._s.sharedMax;
         const changed = sides + 1 !== this._capacity || sideMax !== this._sideMax;
         this._capacity = sides + 1;
         this._sideMax = Math.max(this._s.idle.w, sideMax);
@@ -346,7 +346,7 @@ export class Island {
         }
     }
 
-    /** The amber light's hover line (pill.js peeks it on the centre pill). */
+    /** The amber light's hover line (pill.js shows it as the centre pill's compact). */
     missedLine() {
         return missedLine(this.missed.list());
     }

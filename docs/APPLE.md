@@ -133,8 +133,8 @@ D-Bus API ──────────────────────┘ 
   keyline:   null,                     // optional border tint
   onPress, onExpand, actions: [{id, label, icon}],  // ≤ 1 in minimal, ≤ 3 compact/expanded (HIG)
   onAction(id)                         // a button was pressed (ask: answers it)
-  peek: {leading, text, trailing, transport}  // compact tier, on hover (Buoy's own); transport = ≤3 actions
-                                       // → `compact` with subtitle, progress, rows ≤ 3 (SPEC §2, 2026-11-05)
+  compact: {leading, text, trailing, transport}  // the hover tier (Buoy's own; was `peek`); transport = ≤3 actions
+                                       // + subtitle, progress, rows ≤ 3 with FEATURES M3 "Compact tier"
 }
 ```
 

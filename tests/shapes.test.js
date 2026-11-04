@@ -15,11 +15,11 @@ eq([GAP, OVERSHOOT, PILL_GAP], [4, 20, 8], 'constants');
 // expanded width = 28 % of the monitor, clamped to [560, 760], snapped to even px;
 // height = w / 2.
 const CASES = [
-    // container: wide enough for the centre pill + two side pills of minimalMax (SPEC §2c)
-    {width: 1366, expW: 560, expH: 280, minimalMax: 186, compactMax: 336, wideMax: 448, containerW: 1002},
-    {width: 1920, expW: 560, expH: 280, minimalMax: 186, compactMax: 336, wideMax: 448, containerW: 1002},
-    {width: 2560, expW: 716, expH: 358, minimalMax: 238, compactMax: 430, wideMax: 572, containerW: 1262},
-    {width: 3440, expW: 760, expH: 380, minimalMax: 254, compactMax: 456, wideMax: 608, containerW: 1342},
+    // container: wide enough for the centre pill + two side pills of sharedMax (SPEC §2c)
+    {width: 1366, expW: 560, expH: 280, sharedMax: 186, minimalMax: 336, wideMax: 448, containerW: 1002},
+    {width: 1920, expW: 560, expH: 280, sharedMax: 186, minimalMax: 336, wideMax: 448, containerW: 1002},
+    {width: 2560, expW: 716, expH: 358, sharedMax: 238, minimalMax: 430, wideMax: 572, containerW: 1262},
+    {width: 3440, expW: 760, expH: 380, sharedMax: 254, minimalMax: 456, wideMax: 608, containerW: 1342},
 ];
 
 for (const c of CASES) {
@@ -33,33 +33,33 @@ for (const c of CASES) {
     if (s.container.w > c.width)
         throw new Error(`${at} container wider than the monitor`);
 
-    // minimal (side-by-side) pills: content + 28, between idle and minimalMax
-    eq(s.minimal(0), s.idle, `${at} minimal(0) is idle`);
-    eq(s.minimal(100.2).w, 130, `${at} minimal content-fit, even`);
-    eq(s.minimal(5000).w, c.minimalMax, `${at} minimal capped at expanded/3`);
-    eq([s.minimal(150).h, s.minimal(150).r], [32, 16], `${at} minimal keeps pill height`);
-    if (c.minimalMax / 2 + 2 * (PILL_GAP + c.minimalMax) > s.container.w / 2)
-        throw new Error(`${at} three minimal pills do not fit the container`);
-    eq(s.minimalMax, c.minimalMax, `${at} minimalMax`);
+    // shared pills (several in the bar): content + 28, between idle and sharedMax
+    eq(s.shared(0), s.idle, `${at} shared(0) is idle`);
+    eq(s.shared(100.2).w, 130, `${at} shared content-fit, even`);
+    eq(s.shared(5000).w, c.sharedMax, `${at} shared capped at expanded/3`);
+    eq([s.shared(150).h, s.shared(150).r], [32, 16], `${at} shared keeps pill height`);
+    if (c.sharedMax / 2 + 2 * (PILL_GAP + c.sharedMax) > s.container.w / 2)
+        throw new Error(`${at} three shared pills do not fit the container`);
+    eq(s.sharedMax, c.sharedMax, `${at} sharedMax`);
 
     // hover / press grow from whatever base they get
     eq(s.hover(s.idle), {w: 132, h: 34, r: 17}, `${at} hover(idle)`);
     eq(s.press(s.idle), {w: 140, h: 36, r: 18}, `${at} press(idle)`);
 
-    // compact: content + 28 px padding rounded up to even, floor at idle width, cap by hint
-    eq(s.compact(0), s.idle, `${at} compact(0) floors at idle`);
-    eq(s.compact(50).w, 120, `${at} compact(50) still idle width`);
-    eq(s.compact(100.2).w, 130, `${at} compact rounds content width up to even`);
-    eq(s.compact(102).w, 130, `${at} compact keeps an even fit as is`);
-    eq(s.compact(5000).w, c.compactMax, `${at} compact cap (normal)`);
-    eq(s.compact(5000, 'wide').w, c.wideMax, `${at} compact cap (wide)`);
-    eq(s.compact(5000, 'bogus').w, c.compactMax, `${at} unknown hint behaves as normal`);
-    eq([s.compact(200).h, s.compact(200).r], [32, 16], `${at} compact keeps pill height`);
+    // minimal: content + 28 px padding rounded up to even, floor at idle width, cap by hint
+    eq(s.minimal(0), s.idle, `${at} minimal(0) floors at idle`);
+    eq(s.minimal(50).w, 120, `${at} minimal(50) still idle width`);
+    eq(s.minimal(100.2).w, 130, `${at} minimal rounds content width up to even`);
+    eq(s.minimal(102).w, 130, `${at} minimal keeps an even fit as is`);
+    eq(s.minimal(5000).w, c.minimalMax, `${at} minimal cap (normal)`);
+    eq(s.minimal(5000, 'wide').w, c.wideMax, `${at} minimal cap (wide)`);
+    eq(s.minimal(5000, 'bogus').w, c.minimalMax, `${at} unknown hint behaves as normal`);
+    eq([s.minimal(200).h, s.minimal(200).r], [32, 16], `${at} minimal keeps pill height`);
 
     // the pill must always fit inside the input container, including press overshoot
-    const press = s.press(s.compact(5000, 'wide'));
+    const press = s.press(s.minimal(5000, 'wide'));
     if (press.w > s.container.w || press.h > s.container.h)
-        throw new Error(`${at} press(wide compact) ${press.w}x${press.h} overflows container`);
+        throw new Error(`${at} press(wide minimal) ${press.w}x${press.h} overflows container`);
     if (s.expanded.w > s.container.w || s.expanded.h > s.container.h)
         throw new Error(`${at} expanded overflows container`);
 
@@ -67,8 +67,8 @@ for (const c of CASES) {
     const shapes = [s.idle, s.expanded, s.hover(s.idle), s.press(s.idle)];
     for (const w of [0, 1, 37.5, 99, 100.2, 211, 333.3, 420, 5000]) {
         for (const hint of ['normal', 'wide']) {
-            const base = s.compact(w, hint);
-            shapes.push(base, s.hover(base), s.press(base), s.minimal(w), s.hover(s.minimal(w)));
+            const base = s.minimal(w, hint);
+            shapes.push(base, s.hover(base), s.press(base), s.shared(w), s.hover(s.shared(w)));
         }
     }
     for (const sh of shapes) {
@@ -82,8 +82,8 @@ for (const c of CASES) {
         if (sh.r > sh.h / 2)
             throw new Error(`${where}: radius above h/2`);
     }
-    if (s.minimalMax % 2 !== 0)
-        throw new Error(`${at} minimalMax not even`);
+    if (s.sharedMax % 2 !== 0)
+        throw new Error(`${at} sharedMax not even`);
 }
 
 // clamp edges
@@ -96,8 +96,8 @@ eq(shapesFor({width: 800}, PANEL_H).expanded.w, 560, 'small monitor never goes b
     const s = shapesFor({width: 1920}, PANEL_H, {expandedWidth: 600});
     eq(s.expanded, {w: 600, h: 300, r: 28}, 'override expanded (h is the content cap)');
     eq(s.container, {w: 1072, h: 340}, 'override container (three 200 px pills)');
-    eq(s.minimalMax, 200, 'override minimalMax');
-    eq(s.compact(5000).w, 360, 'override caps compact at 60 %');
+    eq(s.sharedMax, 200, 'override sharedMax');
+    eq(s.minimal(5000).w, 360, 'override caps minimal at 60 %');
     eq(s.idle, {w: 120, h: 32, r: 16}, 'override leaves idle alone');
 }
 eq(shapesFor({width: 1366}, PANEL_H, {expandedWidth: 900}).expanded.w, 900,

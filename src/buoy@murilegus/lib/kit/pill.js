@@ -3,11 +3,11 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {buildCompact, buildExpanded, buildIdle, buildMissedPeek, buildPeek} from './present.js';
+import {buildCompact, buildExpanded, buildIdle, buildMinimal, buildMissedCompact} from './present.js';
 import {planExpanded, keyline} from './presentation.js';
 
 const PAD = 14;          // content + 2·PAD = pill width (shapes add 28)
-const PEEK_DELAY = 300;  // ms of hover before the peek replaces compact
+const COMPACT_DELAY = 300;  // ms of hover before the compact replaces minimal (SPEC §2)
 const MERGE_MS = 300;    // side pills sliding into / out of an expanded one (SPEC §2c)
 const MORPH_MODE = Clutter.AnimationMode.EASE_OUT_BACK;
 const REVEAL_FROM = 0.8; // the bg grows by more than this ratio: it uncovers the content
@@ -16,7 +16,7 @@ const REVEAL_FROM = 0.8; // the bg grows by more than this ratio: it uncovers th
  * One pill on the island: a background that morphs and a content actor on top, bound
  * to one activity (or none: the idle pill). The Island decides where it sits (its
  * centre `cx` in the container), its role and when it opens; the pill does its own
- * sizing, hover/peek, keyline, press pulse and expanded content.
+ * sizing, hover → compact, keyline, press pulse and expanded content.
  *
  *   role 'centre'  the highest-priority pill, at the screen centre; carries the buoy light
  *   role 'side'    a side-by-side pill to the right (SPEC §2c), capped at `maxW`
@@ -33,17 +33,17 @@ export class Pill {
         this.cx = 0;
         this.light = 'off';
         this.more = 0;
-        this.minimal = false;
+        this.shared = false;
         this.maxW = 0;               // 0 = no cap beyond shapes
         this.expanded = false;
         this._panel = null;          // Home's panel while a click has it open (kit/home.js)
         this.fresh = true;           // not placed yet: first layout puts it there, then fades in
-        this._peeking = false;
+        this._compact = false;
         this._contentW = 0;          // resting content size, measured in _applyContentSize()
         this._contentH = 0;
         this._resizeLater = 0;
         this._hoverLater = 0;
-        this._peekId = 0;
+        this._compactId = 0;
         this._morphTo = null;        // target of the running bg transition
         this._collapsing = false;    // until the collapse morph lands: bg clips the content
         this._follow = null;         // {t, id}: bg transition the content clip follows
@@ -69,7 +69,7 @@ export class Pill {
 
     /** The pill is showing the amber missed line, not its activity (a click opens Home). */
     get showingMissed() {
-        return this._peeking && this._missedLine() !== null;
+        return this._compact && this._missedLine() !== null;
     }
 
     get expandable() {
@@ -97,16 +97,16 @@ export class Pill {
      * @param {string} [opts.role]  'centre' | 'side'
      * @param {string} [opts.light]  buoy light (drawn on the centre pill only)
      * @param {number} [opts.more]  +N on this pill (the last one)
-     * @param {boolean} [opts.minimal]  several pills: minimal shapes
+     * @param {boolean} [opts.shared]  several pills share the bar (SPEC §2c): shared shapes
      * @param {number} [opts.maxW]  width cap from the space before the system cluster
      */
-    configure(activity, {role = 'centre', light = 'off', more = 0, minimal = false, maxW = 0} = {}) {
+    configure(activity, {role = 'centre', light = 'off', more = 0, shared = false, maxW = 0} = {}) {
         const same = (activity?.id ?? null) === this.id;
         if (!same)
-            this._stopPeek();
+            this._stopCompact();
         this.id = activity?.id ?? null;
         this.activity = activity;
-        Object.assign(this, {role, light, more, minimal, maxW});
+        Object.assign(this, {role, light, more, shared, maxW});
         if (this.expanded) {
             if (activity && !this._panel)  // the panel updates itself (Home.update)
                 this._setContent(buildExpanded(activity), false);
@@ -160,11 +160,11 @@ export class Pill {
     // --- shapes -------------------------------------------------------------------
 
     restShape() {
-        if (!this.activity)  // the idle pill fits the missed line while it peeks
-            return this._peeking ? this._s.compact(this._contentW) : this._s.idle;
-        const shape = this.minimal
-            ? this._s.minimal(this._contentW)
-            : this._s.compact(this._contentW, this.activity.sizeHint);
+        if (!this.activity)  // the idle pill fits the missed line while its compact shows
+            return this._compact ? this._s.minimal(this._contentW) : this._s.idle;
+        const shape = this.shared
+            ? this._s.shared(this._contentW)
+            : this._s.minimal(this._contentW, this.activity.sizeHint);
         return this.maxW ? {...shape, w: Math.min(shape.w, this.maxW)} : shape;
     }
 
@@ -320,7 +320,7 @@ export class Pill {
     expand(panel = null) {
         this.expanded = true;
         this._panel = panel;
-        this._stopPeek();
+        this._stopCompact();
         this._setContent(panel ?? buildExpanded(this.activity), false);
         this._layoutContent();
         this._morph(this.currentShape(), 380); // fades the content in with the reveal
@@ -341,7 +341,7 @@ export class Pill {
         this._fadeContent();
     }
 
-    // Soften the swap between compact and expanded content (the bg uncovers it).
+    // Soften the swap between minimal and expanded content (the bg uncovers it).
     _fadeContent() {
         this.content.remove_transition('opacity');
         this.content.opacity = 0;
@@ -352,22 +352,22 @@ export class Pill {
 
     _restingContent() {
         const light = this.role === 'centre' ? this.light : null;
-        const missed = this._peeking ? this._missedLine() : null;
+        const missed = this._compact ? this._missedLine() : null;
         if (missed) {
-            const capW = this.maxW || this._s.compact(Infinity, this.activity?.sizeHint).w;
-            return buildMissedPeek(missed, {maxWidth: capW - 2 * PAD, light});
+            const capW = this.maxW || this._s.minimal(Infinity, this.activity?.sizeHint).w;
+            return buildMissedCompact(missed, {maxWidth: capW - 2 * PAD, light});
         }
         if (!this.activity)
             return buildIdle({width: this._s.idle.w - 2 * PAD, light, plan: this._island.idle});
-        const capW = this.maxW || (this.minimal
-            ? this._s.minimalMax
-            : this._s.compact(Infinity, this.activity.sizeHint).w);
+        const capW = this.maxW || (this.shared
+            ? this._s.sharedMax
+            : this._s.minimal(Infinity, this.activity.sizeHint).w);
         const opts = {maxWidth: capW - 2 * PAD, light, more: this.more};
-        return (this._peeking && buildPeek(this.activity, opts)) || buildCompact(this.activity, opts);
+        return (this._compact && buildCompact(this.activity, opts)) || buildMinimal(this.activity, opts);
     }
 
     // fade: cross-fade between activities; without it the new content replaces the
-    // old one at once (updates of the same activity, light, peek, expand/collapse).
+    // old one at once (updates of the same activity, light, compact, expand/collapse).
     _setContent(actor, fade) {
         const old = this.content.child;
         if (old === actor)
@@ -460,10 +460,10 @@ export class Pill {
             Math.max(0, Math.round((this._s.idle.h - this._contentH) / 2)));
     }
 
-    // --- hover and peek ---------------------------------------------------------------
+    // --- hover and compact ------------------------------------------------------------
 
     // bg and content are siblings: moving between them flips one hover off before the
-    // other on. Settle the combined state once per frame so the peek does not flicker.
+    // other on. Settle the combined state once per frame so the compact does not flicker.
     _hoverChanged() {
         if (this._hoverLater || this._destroyed)
             return;
@@ -478,40 +478,40 @@ export class Pill {
         if (this.expanded)
             return;
         if (this.hovered) {
-            if (!this._peeking && !this._peekId && (this.activity?.peek || this._missedLine())) {
-                this._peekId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, PEEK_DELAY, () => {
-                    this._peekId = 0;
-                    this._peeking = true;
+            if (!this._compact && !this._compactId && (this.activity?.compact || this._missedLine())) {
+                this._compactId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, COMPACT_DELAY, () => {
+                    this._compactId = 0;
+                    this._compact = true;
                     this._swapResting();
                     return GLib.SOURCE_REMOVE;
                 });
             }
         } else {
-            this._stopPeek();
+            this._stopCompact();
         }
         this._morph(this.currentShape(), 200);
     }
 
-    // The amber light names what was missed on hover (INDICATORS.md); it peeks over the
-    // activity's own peek. Hover only shows it: Home is where it is seen, and a click
+    // The amber light names what was missed on hover (INDICATORS.md); it shows over the
+    // activity's own compact. Hover only shows it: Home is where it is seen, and a click
     // while it shows opens Home (island.js _activate, tabs.js pressTarget).
     _missedLine() {
         return this.role === 'centre' && this.light === 'missed' ? this._island.missedLine() : null;
     }
 
-    _stopPeek() {
-        if (this._peekId) {
-            GLib.source_remove(this._peekId);
-            this._peekId = 0;
+    _stopCompact() {
+        if (this._compactId) {
+            GLib.source_remove(this._compactId);
+            this._compactId = 0;
         }
-        if (this._peeking) {
-            this._peeking = false;
+        if (this._compact) {
+            this._compact = false;
             if (!this.expanded)
                 this._swapResting();
         }
     }
 
-    // Peek in or out: a content of another width. Measure and place it now, before this
+    // Compact in or out: a content of another width. Measure and place it now, before this
     // frame paints; waiting for notify::width (next frame) showed the new text for one
     // frame at the old place, unclipped, before the bg started to uncover it.
     _swapResting() {
@@ -523,7 +523,7 @@ export class Pill {
 
     // Activity gone from the shown pills: fade out where it is, then destroy.
     leave(onGone) {
-        this._stopPeek();
+        this._stopCompact();
         this.bg.reactive = this.content.reactive = false;
         this.bg.ease({opacity: 0, duration: 200, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         this.content.ease({
@@ -544,9 +544,9 @@ export class Pill {
                 global.compositor.get_laters().remove(id);
         }
         this._resizeLater = this._hoverLater = 0;
-        if (this._peekId) {
-            GLib.source_remove(this._peekId);
-            this._peekId = 0;
+        if (this._compactId) {
+            GLib.source_remove(this._compactId);
+            this._compactId = 0;
         }
         this.bg.destroy();
         this.content.destroy();

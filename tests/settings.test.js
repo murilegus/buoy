@@ -133,9 +133,9 @@ for (const id of Object.keys(SAMPLES)) {
         throw new Error(`SAMPLES has "${id}", which has no row`);
 }
 
-const fake = [{name: 'modules-media'}, {name: 'media-peek-on-hover'}, {name: 'modules-ask'}, {name: 'ask-timeout'}, {name: 'dev-mode'}];
+const fake = [{name: 'modules-media'}, {name: 'media-compact-on-hover'}, {name: 'modules-ask'}, {name: 'ask-timeout'}, {name: 'dev-mode'}];
 const p2 = planPrefs(fake);
-eq(p2.modules.map(m => [m.id, m.keys]), [['media', ['media-peek-on-hover']]],
+eq(p2.modules.map(m => [m.id, m.keys]), [['media', ['media-compact-on-hover']]],
     'a module\'s own key lives in its row; a hidden module\'s key is hidden with it');
 throws(() => planPrefs([{name: 'window-shadows'}]), 'a key nobody placed fails loudly');
 throws(() => planPrefs([{name: 'mediaish'}]), 'a prefix match needs the dash');
