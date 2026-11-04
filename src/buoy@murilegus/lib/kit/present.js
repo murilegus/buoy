@@ -7,7 +7,7 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
-import {planCompact, planExpanded, planIdle, planMinimal} from './presentation.js';
+import {livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, untilText} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
@@ -45,6 +45,10 @@ function meter(kind, value, size) {
         area.set_size(size, size);
     else
         area.set_size(size || -1, 4);
+    area.setValue = v => {
+        value = v;
+        area.queue_repaint();
+    };
     area.connect('repaint', () => {
         const cr = area.get_context();
         const [w, h] = area.get_surface_size();
@@ -79,6 +83,74 @@ function meter(kind, value, size) {
         cr.$dispose();
     });
     return area;
+}
+
+/**
+ * Once a second while `actor` is on screen and `running()` says so; never otherwise
+ * (ARCHITECTURE rule 8: a live position runs only while its activity is visible). The
+ * timer goes with the actor. Also for a module's tab.js (the Media tab's position).
+ *
+ * @param {Clutter.Actor} actor
+ * @param {function():void} update  called now, on (un)map, then each second
+ * @param {function():boolean} [running]  keep ticking
+ */
+export function tick(actor, update, running = () => true) {
+    let id = 0;
+    const stop = () => {
+        if (id)
+            GLib.source_remove(id);
+        id = 0;
+    };
+    const sync = () => {
+        if (actor.mapped && running()) {
+            if (!id) {
+                id = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
+                    update();
+                    if (running())
+                        return GLib.SOURCE_CONTINUE;
+                    id = 0;
+                    return GLib.SOURCE_REMOVE;
+                });
+            }
+        } else {
+            stop();
+        }
+    };
+    actor.connect('notify::mapped', () => {
+        update();
+        sync();
+    });
+    actor.connect('destroy', stop);
+    update();
+}
+
+// A live position (media): the bar, then elapsed and remaining under it.
+function liveBar(live) {
+    const box = new St.BoxLayout({style_class: 'buoy-live', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+    const bar = meter('bar', 0, 0);
+    const times = new St.BoxLayout({style_class: 'buoy-live-times', x_expand: true});
+    const elapsed = label('', 'buoy-live-time');
+    const left = label('', 'buoy-live-time');
+    times.add_child(elapsed);
+    times.add_child(new St.Widget({x_expand: true}));
+    times.add_child(left);
+    box.add_child(bar);
+    box.add_child(times);
+    tick(box, () => {
+        const pos = livePosition(live, Date.now());
+        bar.setValue(pos / live.length);
+        [elapsed.text, left.text] = mediaTimes(pos, live.length);
+    }, () => live.playing && livePosition(live, Date.now()) < live.length);
+    return box;
+}
+
+// A countdown to `at` (a Spotify ad's end), once a second while shown.
+function untilLabel(at) {
+    const l = label('', 'buoy-label');
+    tick(l, () => {
+        l.text = untilText(at, Date.now());
+    }, () => Date.now() < at);
+    return l;
 }
 
 // --- Bu (MASCOT.md) ------------------------------------------------------------------
@@ -315,6 +387,8 @@ function makeElement(e, mode, activity = null) {
         return meter('bar', e.value, size.bar);
     case 'text':
         return label(e.text, 'buoy-label');
+    case 'until':
+        return untilLabel(e.at);
     }
     return null;
 }
@@ -445,7 +519,9 @@ function compactBox(p, activity, maxWidth) {
         buttons,
     ]);
     box.add_child(top);
-    if (p.progress !== null && p.progress !== undefined)
+    if (p.live)
+        box.add_child(indented(liveBar(p.live), p));
+    else if (p.progress !== null && p.progress !== undefined)
         box.add_child(indented(meter('bar', p.progress, 0), p));
     if (p.rows?.length) {
         const list = new St.BoxLayout({style_class: 'buoy-compact-rows', orientation: Clutter.Orientation.VERTICAL});

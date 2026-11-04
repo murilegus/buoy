@@ -47,11 +47,15 @@ src/buoy@murilegus/
         └── <id>/
             ├── index.js    export default {id, kinds, source, adapter, tab?,
             │               title?, icon?}   title/icon: its tab in the strip
-            ├── source.js   watches a system facility, calls stack.surface/update/end
+            ├── source.js   watches a system facility, calls stack.surface/update/end;
+            │               `enable(stack, registry, settings)` (settings: its `<id>-…`
+            │               keys, 2026-11-05)
             ├── adapter.js  default presentation for this module's kinds
             ├── tab.js      content for its tab in expanded (optional): export a class,
-            │               `new Tab()` → {actor, destroy()}; built on first selection,
-            │               destroyed when expanded closes
+            │               `new Tab()` → {actor, destroy(), update?(activities)}; a kind
+            │               tab's `update` gets its kind's activities at once and on each
+            │               change (2026-11-05); built on first selection, destroyed when
+            │               expanded closes
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
             │               pure: `keys` (its idle-<id>-… keys), `present(ctx, opts)` →
             │               presentation data, `seconds(opts)` (tick each second),

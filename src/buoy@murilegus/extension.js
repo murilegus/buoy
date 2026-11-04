@@ -163,7 +163,7 @@ export default class BuoyExtension extends Extension {
         let src = null;
         if (m.source) {
             src = new m.source();
-            src.enable(this._stack, this._registry);
+            src.enable(this._stack, this._registry, this._settings);
         }
         this._active.push({m, src});
     }
