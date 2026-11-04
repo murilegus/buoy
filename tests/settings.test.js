@@ -49,6 +49,11 @@ const plan = planPrefs(order.map(name => ({name})));
 eq(plan.general, ['expanded-width', 'keybind-focus'], 'General: the island\'s own keys, in schema order');
 eq(plan.apps, ['apps-hidden', 'apps-plain'], 'Apps page');
 eq(plan.developer, ['dev-mode'], 'Developer group');
+eq(plan.windows, ['window-corners', 'window-corners-radius'], 'Windows page: the corners switch, then its radius (SPEC §1a)');
+eq(schema.get_key('window-corners').get_default_value().unpack(), true, 'window corners are on by default');
+eq(schema.get_key('window-corners-radius').get_range().recursiveUnpack(), ['range', [0, 32]], 'window radius 0–32');
+eq(schema.get_key('window-corners-radius').get_default_value().unpack(), 15, 'window radius 15 = Adwaita\'s floating window');
+eq(SLIDERS['window-corners-radius'], 'px', 'the window radius is a slider in px');
 eq(plan.panel, ['cluster-background', 'cluster-contrast', 'left-cluster-empty'], 'Panel page: the top bar\'s own keys, nested ones under their parent');
 eq(schema.get_key('cluster-contrast').get_range().recursiveUnpack(), ['enum', ['auto', 'dark-text', 'light-text']],
     'cluster-contrast names the text, not the wallpaper (GNOME\'s light/dark is another thing, 2026-11-04)');
@@ -106,7 +111,7 @@ const fake = [{name: 'modules-media'}, {name: 'media-peek-on-hover'}, {name: 'mo
 const p2 = planPrefs(fake);
 eq(p2.modules.map(m => [m.id, m.keys]), [['media', ['media-peek-on-hover']]],
     'a module\'s own key lives in its row; a hidden module\'s key is hidden with it');
-throws(() => planPrefs([{name: 'window-corners'}]), 'a key nobody placed fails loudly');
+throws(() => planPrefs([{name: 'window-shadows'}]), 'a key nobody placed fails loudly');
 throws(() => planPrefs([{name: 'mediaish'}]), 'a prefix match needs the dash');
 
 // --- choice keys: prefs offers exactly the schema's choices, in order ------------------

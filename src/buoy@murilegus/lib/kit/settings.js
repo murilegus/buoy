@@ -32,6 +32,8 @@ export const PLACES = {
     'cluster-opacity': 'panel',
     'cluster-contrast': 'panel',
     'left-cluster-empty': 'panel',
+    'window-corners': 'windows',
+    'window-corners-radius': 'windows',
     'tabs-pinned': 'modules',   // the pin switch on standalone modules' rows
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
     'clock-defaults-applied': null, // bookkeeping: GNOME_CLOCK defaults written once
@@ -202,6 +204,7 @@ export function choiceLabel(name, value) {
 export const SLIDERS = {
     'cluster-radius': 'px',
     'cluster-opacity': '%',
+    'window-corners-radius': 'px',
 };
 
 // Modules that ship nothing a user can see yet (no source, no tab): no row until they do.
@@ -212,13 +215,13 @@ export const STANDALONE = new Set(['calendar', 'clipboard']);
 
 /**
  * @param {Array<{name: string}>} keys  schema keys, in schema order
- * @returns {object} {general, apps, panel, developer: key names; modules: [{id, enableKey, keys}]}
+ * @returns {object} {general, apps, panel, windows, developer: key names; modules: [{id, enableKey, keys}]}
  * @throws {Error} a key that is neither placed nor a module's
  */
 export function planPrefs(keys) {
     const names = keys.map(k => k.name);
     const ids = names.filter(n => n.startsWith('modules-')).map(n => n.slice('modules-'.length));
-    const plan = {general: [], apps: [], panel: [], developer: [], modules: []};
+    const plan = {general: [], apps: [], panel: [], windows: [], developer: [], modules: []};
     for (const id of ids) {
         if (HIDDEN_MODULES.has(id))
             continue;

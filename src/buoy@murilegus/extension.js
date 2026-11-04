@@ -4,6 +4,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {WindowCorners} from './corners.js';
 import {applyGnomeDefaults, reworkPanel, setClusterBackground, setContrast, setLeftEmpty} from './panel.js';
 import {GNOME_CLOCK, GNOME_DOCK} from './lib/kit/settings.js';
 import {Island} from './lib/kit/island.js';
@@ -53,6 +54,8 @@ export default class BuoyExtension extends Extension {
             else if (key === 'left-cluster-empty')
                 leftEmpty();
         });
+
+        this._corners = new WindowCorners(this._settings);
 
         this._island = new Island();
         Main.layoutManager.addTopChrome(this._island.actor, {trackFullscreen: true});
@@ -194,6 +197,8 @@ export default class BuoyExtension extends Extension {
             this._island.destroy();
             this._island = null;
         }
+        this._corners?.destroy();
+        this._corners = null;
         reworkPanel(false);
         this._settings = null;
     }
