@@ -8,6 +8,7 @@ import {WindowCorners} from './corners.js';
 import {applyGnomeDefaults, reworkPanel, setClusterBackground, setContrast, setLeftEmpty} from './panel.js';
 import {GNOME_CLOCK, GNOME_DOCK} from './lib/kit/settings.js';
 import {Island} from './lib/kit/island.js';
+import {setMascotRest} from './lib/kit/present.js';
 import {ActivityStack} from './lib/kit/stack.js';
 import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
 import {BuoyDBus} from './lib/kit/dbus.js';
@@ -65,6 +66,9 @@ export default class BuoyExtension extends Extension {
         reposition();
         this._monitorsId = Main.layoutManager.connect('monitors-changed', reposition);
         this._widthId = this._settings.connect('changed::expanded-width', reposition);
+        const rest = () => setMascotRest(this._settings.get_int('mascot-rest-after'));
+        this._restId = this._settings.connect('changed::mascot-rest-after', rest);
+        rest();
 
         // apps-hidden / apps-plain may name an app any way a source does: slug them
         const slugs = key => this._settings.get_strv(key).map(slugOf);
@@ -172,11 +176,11 @@ export default class BuoyExtension extends Extension {
         this._active = null;
         this._dbus?.unexport();
         this._dbus = null;
-        for (const id of [this._hiddenId, this._plainId, this._modulesId, this._widthId, this._devId, this._backgroundId]) {
+        for (const id of [this._hiddenId, this._plainId, this._modulesId, this._widthId, this._restId, this._devId, this._backgroundId]) {
             if (id)
                 this._settings.disconnect(id);
         }
-        this._hiddenId = this._plainId = this._modulesId = this._widthId = this._devId = this._backgroundId = 0;
+        this._hiddenId = this._plainId = this._modulesId = this._widthId = this._restId = this._devId = this._backgroundId = 0;
         if (this._visibleId) {
             this._island.actor.disconnect(this._visibleId);
             this._visibleId = 0;

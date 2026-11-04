@@ -18,7 +18,7 @@ const IFACE = 'org.gnome.Shell.Extensions.Buoy';
  * Buoy's prefs (FEATURES M1 "GSettings schema + prefs.js", 2026-11-03). The schema XML is
  * the source of every key's title and text; lib/kit/settings.js says where it goes.
  *
- *   General   the island (expanded width, Super+B), developer mode, version
+ *   General   the island (expanded width, Super+B, when Bu rests), developer mode, version
  *   Modules   one expander per module: its switch, its own keys, a pin for standalone
  *             tabs, "Show a sample" (Surface over D-Bus, like any script)
  *   Apps      hidden and plain apps (slugged as the registry does), the profiles folder

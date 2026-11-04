@@ -62,9 +62,11 @@ replacement for the light in every state.
   a moving pose is mapped, and is removed on pose change, destroy and disable; the frame
   holds still while the user is away (Mutter idle monitor, a signal) and when
   `org.gnome.desktop.interface enable-animations` is off. The lamp never blinks.
-  - **Away** (2026-11-04) is the same as for the eyes (§ Eyes): 60 s without input on the
-    core idle monitor, an UNINHIBITABLE watch, back on the user-active watch. The watches
-    and the settings signal exist only while a moving Bu is mapped.
+  - **Away** (2026-11-04) is the same as for the eyes (§ Eyes): no input for
+    `mascot-rest-after` seconds (10–600, default 60; General page, Ethan) on the core
+    idle monitor, an UNINHIBITABLE watch, back on the user-active watch. The watches and
+    the settings signal exist only while a moving Bu is mapped; a new value applies at
+    once.
   - **Held still**, a loop shows its first frame; a once pose shows its first frame and
     still settles on time (one change, no swaps).
   - **Rebuilt content carries on** (2026-11-04): a pill's content is rebuilt on every

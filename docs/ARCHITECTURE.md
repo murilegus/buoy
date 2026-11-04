@@ -116,8 +116,8 @@ fields and order: [PROFILES.md](PROFILES.md).
    (stepped, never eased), only while visible and in use; asleep and still after 60 s
    without input, in power-saver and with animations off (`MASCOT.md` § Eyes, 2026-11-03).
    Bu's moving poses are not idle content: they swap two frames every 500 ms only while
-   their activity's pill is mapped, and hold still after 60 s without input and with
-   animations off (`MASCOT.md` § Drawing rules, 2026-11-04).
+   their activity's pill is mapped, and hold still after `mascot-rest-after` (60 s)
+   without input and with animations off (`MASCOT.md` § Drawing rules, 2026-11-04).
 9. Every setting is a key in `schemas/…gschema.xml` with a `<summary>` and a
    `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). A module's
    own keys are named `<id>-…` and appear inside its row on the Modules page;
@@ -138,7 +138,7 @@ fields and order: [PROFILES.md](PROFILES.md).
 Planned keys are listed here too; the schema holds only the ones whose item has landed
 (2026-11-04: `modules-*`, `apps-hidden`, `apps-plain`, `tabs-pinned`, `tabs-slot`,
 `expanded-width`, `dev-mode`, `keybind-focus`, `cluster-background`, `cluster-radius`,
-`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`, `dock-defaults-applied`). Every key applies at once — prefs and
+`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`, `dock-defaults-applied`, `window-corners`, `window-corners-radius`, `mascot-rest-after`). Every key applies at once — prefs and
 `gsettings` alike; `modules-<id>` starts or stops only that module.
 
 | Key | Type | Effect |
@@ -167,6 +167,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
 | `transfers-folders` | as | M4: folders watched for finished downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03) |
 | `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc (default Super+B, SPEC §2c) |
+| `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60 (MASCOT.md, 2026-11-04); General page, as Bu is the kit's |
 | per-module keys | — | declared by the module |
 
 ## Open for later

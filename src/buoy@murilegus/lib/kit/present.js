@@ -81,14 +81,15 @@ function meter(kind, value, size) {
 
 // --- Bu (MASCOT.md) ------------------------------------------------------------------
 
-// Bu holds still while nobody is at the desk (60 s without input, the core idle monitor
-// as ui/messageTray.js uses it; UNINHIBITABLE so a playing video does not keep it moving,
-// mutter meta-idle-monitor.c update_inhibited_watch) or with animations off
-// (St.Settings enable-animations, which also counts Shell's inhibitors). The watches and
-// the settings signal exist only while a moving Bu is mapped.
-const AWAY_MS = 60 * 1000;
+// Bu holds still while nobody is at the desk (`mascot-rest-after` s without input, 60 by
+// default, on the core idle monitor as ui/messageTray.js uses it; UNINHIBITABLE so a
+// playing video does not keep it moving, mutter meta-idle-monitor.c
+// update_inhibited_watch) or with animations off (St.Settings enable-animations, which
+// also counts Shell's inhibitors). The watches and the settings signal exist only while
+// a moving Bu is mapped.
 const stillness = {
     _subs: new Set(),
+    _restMs: 60 * 1000,
     _away: false,
     _idleId: 0,
     _activeId: 0,
@@ -117,7 +118,7 @@ const stillness = {
         this._away = false;
         // fires at once when already idle that long (its ready time counts from the
         // last event, meta-idle-monitor.c make_watch)
-        this._idleId = monitor.add_idle_watch_full(AWAY_MS, () => this._setAway(true),
+        this._idleId = monitor.add_idle_watch_full(this._restMs, () => this._setAway(true),
             Meta.IdleMonitorWatchFlags.UNINHIBITABLE);
         this._animId = St.Settings.get().connect('notify::enable-animations', () => this._emit());
     },
@@ -139,6 +140,17 @@ const stillness = {
             cb();
     },
 
+    setRest(ms) {
+        if (ms === this._restMs)
+            return;
+        this._restMs = ms;
+        if (!this._subs.size)
+            return;
+        this._stop();    // a new watch; one already idle that long fires at once
+        this._start();
+        this._emit();
+    },
+
     _stop() {
         const monitor = global.backend.get_core_idle_monitor();
         for (const id of [this._idleId, this._activeId]) {
@@ -152,6 +164,16 @@ const stillness = {
         this._away = false;
     },
 };
+
+/**
+ * How long without input before a moving Bu holds still (`mascot-rest-after`, set by the
+ * extension from GSettings; present.js has no settings of its own).
+ *
+ * @param {number} seconds
+ */
+export function setMascotRest(seconds) {
+    stillness.setRest(Math.max(1, seconds) * 1000);
+}
 
 // When each Bu was first shown, per activity surface and pose: content is rebuilt on
 // every update, light change and peek, and a rebuilt Bu carries on (a once pose does not

@@ -24,6 +24,7 @@ export const PAGES = ['general', 'modules', 'apps', 'panel'];
 export const PLACES = {
     'expanded-width': 'general',
     'keybind-focus': 'general',
+    'mascot-rest-after': 'general', // Bu is the kit's, not a module's (MASCOT.md)
     'apps-hidden': 'apps',
     'apps-plain': 'apps',
     'dev-mode': 'developer',
