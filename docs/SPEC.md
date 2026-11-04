@@ -39,6 +39,17 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 ```
 
 - Panel: transparent, 40px. Two clusters plus the island.
+- **The Overview opens and closes on the whole wallpaper** (Ethan, 2026-11-04). Shell sizes
+  the Overview's workspace backgrounds to the work area — the monitor minus the struts —
+  and clips them there (`shell-workspace-background.c` allocate; `workspace.js`
+  `_bin` clip_to_allocation and `_updateRoundedClipBounds`). Under GNOME's opaque bar
+  that is all one sees; under a see-through one the strip behind the bar stayed the
+  Overview's dark backdrop through the animation — and from the first pixel of a
+  three-finger swipe — then jumped to the wallpaper at the end. `reach.js` lets both
+  clips reach out over every strut by `strut × (1 − state)`: exactly GNOME's with the
+  Overview shown (pixel-identical), the whole monitor at the desktop, the same curve in
+  between. The text under the bar follows what is there: the wallpaper's contrast below
+  state 0.5, the Overview's (light text) from 0.5.
 - **Cluster background** (decided 2026-10-30): **none by default** — icons and text sit
   bare on the wallpaper like the iPhone status bar; only the pill is a black block. On
   hover a translucent rounded background (no blur) wraps the whole cluster. Setting
@@ -47,17 +58,57 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   `cluster-opacity` (5–100 %, default **17**) under it in prefs (Ethan, 2026-11-04; briefly
   `never` / 12 / 35 / 20 earlier the same day). The background is filled as GNOME fills a
   panel button, so it matches a tray button's hover (2026-11-04, was black): the panel
-  foreground colour (white on Shell's dark top bar; Buoy's dark text once `buoy-light`
-  flips it) at `cluster-opacity`, and while the system cluster's menu is open 11 points
+  foreground colour (the side's text, white or dark, from the contrast below) at `cluster-opacity`, and while the system cluster's menu is open 11 points
   more, 15 when also hovered — Shell 50 `_drawing.scss` `panel_button`'s .17 / .28 / .32.
   `always` draws the opacity at rest and on hover. A cluster with nothing to show has no
   background at all (no empty stub), and the background stays 4 px off the screen edges.
-- **Contrast on light wallpapers**: like iPhone, the text flips, not the background. On
-  `picture-uri` change (signal, no polling) decode the wallpaper once, downscaled, measure
-  mean luminance of the top 40 px under each cluster, and toggle class `buoy-light` → dark
-  text/icons. 1 px non-blurred text/icon shadow as fallback for busy wallpapers. Setting
-  `cluster-contrast = auto | light | dark`, default `auto`. The pill is always black and
-  unaffected.
+- **Contrast on light wallpapers**: like iPhone, the text flips, not the background.
+  Setting `cluster-contrast = auto | dark-text | light-text`, default `auto` (prefs:
+  Text colour — Automatic / Dark / Light). The values name the text, not the wallpaper,
+  so they are not taken for GNOME's light/dark style, which is another thing: it styles
+  Shell's menus and picks `picture-uri-dark`, and whether it recolours the panel depends
+  on the theme (Adwaita does, Yaru keeps `#f2f2f2` on a `#131313` bar); on Buoy's
+  see-through bar what is behind the text is the wallpaper, so `auto` follows that alone
+  (2026-11-04).
+  - Each side on its own: the left box, and the right one — the tray **and** the system
+    cluster (Ethan 2026-11-04: the tray follows too, chosen from rendered samples). The
+    class goes on that box: `buoy-dark-text` or `buoy-light-text` (not `buoy-light`, the
+    island's light's class).
+  - Measured: the file Shell draws (`picture-uri`, or `picture-uri-dark` under
+    prefer-dark — `background.js` `getBackground`) placed as Mutter places it for
+    `picture-options` (`meta-background.c` `get_texture_area`), the colours around or
+    instead of it (`none`, the bars of `scaled`/`centered`, transparency); mean WCAG
+    luminance of the top 40 px under the side; dark text when it reads better than
+    white (the two cross near 0.2).
+  - Signals only: the background keys and `color-scheme`; the image is decoded once per
+    change of what is drawn (GdkPixbuf, async, 512 px wide) and kept, so a monitor change
+    or a cluster moving only re-measures. Nothing is watched or decoded unless `auto`.
+  - The Overview: light text once its dark backdrop is what shows under the bar (state ≥ 0.5,
+    see the Overview above). Unknown (decoding, a missing file,
+    a slideshow `.xml`, which changes over the day and is not followed): light text, as
+    before. A file replaced in place keeps its old measure until the next change.
+  - Foreground only: labels and symbolic icons, white (as GNOME's own see-through panel,
+    `$transparent_panel_fg_color`) or `#1a1a1a`; full-colour icons, menus and the filled
+    recording/sharing indicators stay GNOME's.
+  - A 1 px unblurred shadow in the wallpaper's tone helps on busy wallpapers, but only
+    while Automatic: with the text forced against the wallpaper the same shadow drew a
+    second, opposite edge — blurred-looking text (Ethan 2026-11-04). GNOME's panel has no
+    shadow (`_panel.scss`), so forced text has none either.
+  - A tray button's highlight follows the text by GNOME's own formula: the foreground at
+    .17 hovered, .28 open, .32 open and hovered (`_drawing.scss` `panel_button`). Yaru
+    compiles it to a fixed light grey, nearly invisible on a white wallpaper (Ethan
+    2026-11-04). panel.js marks the plain tray buttons (`buoy-tray-button`; St has no
+    `:not()`), so the filled indicators keep their coloured highlight.
+  - One-colour bitmap tray icons count as glyphs (Ethan 2026-11-04): Electron apps
+    (Claude, Discord…) send their tray icon as a white PNG through AppIndicator
+    (`IconThemePath` + `IconName`, read by `appIndicator.js` into a FileIcon), which
+    `color` cannot reach, so on a light wallpaper it vanished. An icon whose shown pixels
+    are ≥ 97 % near-white is drawn in the text colour on a dark-text side
+    (`Clutter.ColorizeEffect`); a logo — several colours, or one brand colour — keeps its
+    look (Slack, Firefox). Each picture is read once, at 32 px, and only after the right
+    side has first turned dark-text. A dark one-colour glyph is left as it is: on light
+    text it is as invisible as on GNOME's own dark bar. The cluster background takes the side's text
+    colour, as a panel button's hover does. The pill is always black and unaffected.
 - **Left cluster** (decided 2026-10-30): two layers of information in one place.
   - Normal: icon + name of the focused app (`Shell.WindowTracker`, `notify::focus-app`). The
     icon is the app's own; if the theme has none, its monochrome `<icon>-symbolic`, then a
@@ -72,7 +123,8 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   - Click → Overview (replaces the hidden Activities button; same corner people already
     aim for). Right-click → app menu (New window, Quit, Details). Scroll → switch workspace.
 - **Third-party tray icons** keep GNOME's own per-item hover highlight and colours; Buoy
-  never wraps them. Only their size is made the same (2026-11-04, Ethan): every tray
+  never wraps them. Their text and symbolic icons follow the contrast above (dark on a
+  light wallpaper, 2026-11-04). Their size is made the same (2026-11-04, Ethan): every tray
   button is a 32 px square (16 px of content), so each highlight is one 26 px circle,
   the input-method label ("vi", "en") centred in it too.
 - **Right side** (decided 2026-10-30, after the Notchy bar): two different things.

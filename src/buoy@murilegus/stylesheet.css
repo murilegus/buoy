@@ -83,20 +83,64 @@
 #panel.buoy .buoy-app-grid { icon-size: 14px; }
 #panel.buoy .buoy-app-icon { icon-size: 16px; }
 #panel.buoy .buoy-app-extra { color: rgba(255, 255, 255, 0.75); }
-#panel.buoy:not(.buoy-light) .buoy-app { text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45); }
 
-/* Light wallpaper under the clusters: flip text, keep the pill black. */
-#panel.buoy.buoy-light .buoy-cluster .panel-button,
-#panel.buoy.buoy-light .buoy-cluster StLabel,
-#panel.buoy.buoy-light .buoy-cluster StIcon {
-    color: #1a1a1a;
+/* Text over the wallpaper (cluster-contrast, SPEC §1, 2026-11-04): panel.js puts
+   buoy-light-text or buoy-dark-text on each side's box from the wallpaper under it.
+   Foreground only — labels and symbolic icons, the tray's too (Ethan 2026-11-04); a
+   full-colour icon ignores `color`, and menus are not in these boxes. Light text is white,
+   as on GNOME's own see-through panel ($transparent_panel_fg_color); the pill stays black. */
+#panel.buoy .buoy-light-text .panel-button,
+#panel.buoy .buoy-light-text .buoy-app,
+#panel.buoy .buoy-light-text StLabel,
+#panel.buoy .buoy-light-text StIcon { color: #fff; }
+#panel.buoy .buoy-dark-text .panel-button,
+#panel.buoy .buoy-dark-text .buoy-app,
+#panel.buoy .buoy-dark-text StLabel,
+#panel.buoy .buoy-dark-text StIcon { color: #1a1a1a; }
+/* A 1 px unblurred shadow in the wallpaper's own tone, for busy wallpapers — only while
+   Automatic (buoy-text-auto): with the text forced against the wallpaper the same shadow
+   is a second, opposite edge. GNOME's panel has none (_panel.scss). */
+#panel.buoy .buoy-light-text.buoy-text-auto StLabel,
+#panel.buoy .buoy-light-text.buoy-text-auto StIcon {
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+    icon-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+#panel.buoy .buoy-dark-text.buoy-text-auto StLabel,
+#panel.buoy .buoy-dark-text.buoy-text-auto StIcon {
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
     icon-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
-#panel.buoy:not(.buoy-light) .buoy-cluster .panel-button,
-#panel.buoy:not(.buoy-light) .buoy-tray .panel-button {
-    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
-    icon-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+/* A tray button's highlight is GNOME's formula on the new text: the foreground at .17
+   hovered, .28 open, .32 open and hovered (_drawing.scss panel_button) — Yaru compiles it
+   to a fixed light grey, lost on a white wallpaper. panel.js marks the plain tray
+   buttons (buoy-tray-button); GNOME's filled indicators keep their own. */
+#panel.buoy .buoy-light-text .buoy-tray-button:hover,
+#panel.buoy .buoy-light-text .buoy-tray-button:focus { box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.17); }
+#panel.buoy .buoy-light-text .buoy-tray-button:active,
+#panel.buoy .buoy-light-text .buoy-tray-button:checked { box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.28); }
+#panel.buoy .buoy-light-text .buoy-tray-button:active:hover,
+#panel.buoy .buoy-light-text .buoy-tray-button:checked:hover { box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.32); }
+#panel.buoy .buoy-dark-text .buoy-tray-button:hover,
+#panel.buoy .buoy-dark-text .buoy-tray-button:focus { box-shadow: inset 0 0 0 100px rgba(26, 26, 26, 0.17); }
+#panel.buoy .buoy-dark-text .buoy-tray-button:active,
+#panel.buoy .buoy-dark-text .buoy-tray-button:checked { box-shadow: inset 0 0 0 100px rgba(26, 26, 26, 0.28); }
+#panel.buoy .buoy-dark-text .buoy-tray-button:active:hover,
+#panel.buoy .buoy-dark-text .buoy-tray-button:checked:hover { box-shadow: inset 0 0 0 100px rgba(26, 26, 26, 0.32); }
+/* the hover's workspace stays a step quieter than the app */
+#panel.buoy .buoy-light-text .buoy-app-extra StLabel,
+#panel.buoy .buoy-light-text .buoy-app-extra StIcon { color: rgba(255, 255, 255, 0.75); }
+#panel.buoy .buoy-dark-text .buoy-app-extra StLabel,
+#panel.buoy .buoy-dark-text .buoy-app-extra StIcon { color: rgba(26, 26, 26, 0.75); }
+/* GNOME's filled indicators keep their white on red / orange (_panel.scss, `filled`) */
+#panel.buoy .buoy-dark-text .screen-recording-indicator,
+#panel.buoy .buoy-dark-text .screen-recording-indicator StLabel,
+#panel.buoy .buoy-dark-text .screen-recording-indicator StIcon,
+#panel.buoy .buoy-dark-text .screen-sharing-indicator,
+#panel.buoy .buoy-dark-text .screen-sharing-indicator StLabel,
+#panel.buoy .buoy-dark-text .screen-sharing-indicator StIcon {
+    color: #fff;
+    text-shadow: none;
+    icon-shadow: none;
 }
 
 /* The island pill. Hover/press/expanded are shapes, not CSS states. */
