@@ -520,6 +520,20 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   module. Its `source.js` listens to `Meta.Selection` `owner-changed` (mutter
   `meta-selection.c`; no polling) and surfaces `copied`; with `clipboard-history` on it
   also keeps the history its standalone tab shows (FEATURES M5). Off, nothing is stored.
+  `copied` skips a clipboard Shell set itself — the new owner is a
+  `Meta.SelectionSourceMemory` (`st-clipboard.c` `st_clipboard_set_content` →
+  `meta_selection_source_memory_new`): a screenshot, or a row the Clipboard tab put back;
+  the history still records it.
+- **Screenshot** (2026-11-05): not feedback but a `notification`, from Shell's own
+  "Screenshot captured" (`ui/screenshot.js` `_storeScreenshot`: the PNG goes to the
+  clipboard, then a transient notification with the thumbnail, "Show in Files" and
+  activate → open the file), presented by the notification module's override for Shell's
+  screenshot source. Short like feedback: pill 1 for ~3 s, never counted as missed (your
+  own action), minimal = thumbnail 20 + "Screenshot". Unlike feedback it has a compact —
+  thumbnail 40, "Show in Files", click opens the image — since it leaves a file you may
+  act on. One pill per shot: the clipboard side stays quiet (above). A finished screencast
+  ("Screencast recorded", same file) is handled the same way; the recording itself is a
+  running activity with its timer and stop button (§6b privacy / recording).
 
 ## 3. Expanded: Home
 
