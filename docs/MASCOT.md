@@ -49,8 +49,12 @@ replacement for the light in every state.
   | `Z` | sleep "z" | `#444441` |
   | `W` | water | `#185FA5` |
   | `E` | eye — a hole, the black shows through | transparent |
-  | `L` | lamp | the pose's lamp colour (INDICATORS § Bu's lamp); `foreground` = the body colour |
+  | `L` | lamp, 2 × 2 cells (4 × 4 px in compact) | the pose's lamp colour (INDICATORS § Bu's lamp); `foreground` = the body colour |
 
+- **The lamp is 2 × 2 cells** in every pose (2026-11-04, Ethan): at 2 × 1 it was 4 × 2 px in
+  the pill, too small to tell amber from green. It sits straight on the round body where
+  the neck was; the grids below, `kit/mascot.js` and every preview in `docs/mascot/`
+  changed together.
 - **The lamp is the light.** When a pill's leading is Bu, the left edge slot is not drawn.
   If the stack's light is `missed` or `waiting`, the lamp shows that colour whatever the
   pose (an `ask` waiting elsewhere still reads red); otherwise it shows the pose's own
@@ -90,8 +94,10 @@ replacement for the light in every state.
 - Sizes (2026-11-04): 20 px in compact (and Home's rows, which are compact views), 50 px
   in the expanded leading; the cells are painted without antialiasing.
 - The SVGs in `docs/mascot/` are previews for review and the README, made from the same
-  grids and the palette above (regenerated 2026-11-03 when the palette was corrected);
-  they are not loaded at runtime. The `stale` preview is dimmed to 40 %, as the renderer
+  grids and the palette above (regenerated 2026-11-03 when the palette was corrected, and
+  2026-11-04 for the 2 × 2 lamp: `sheet.svg`, the 13 pose files and `hello.svg`; `eyes.svg`
+  has no lamp); they are not loaded at runtime. `tests/mascot.test.js` checks each pose
+  file cell by cell against its grid and lamp colour. The `stale` preview is dimmed to 40 %, as the renderer
   dims a stale activity.
   `hello.svg` (README, 2026-11-03) waves `wave.1`/`wave.2` for 5 s at 500 ms (3 s until
   2026-11-04, Ethan), then
@@ -123,7 +129,7 @@ Every block is one frame: `<pose>[.<frame>]  lamp <colour>`. Moving poses have f
 ```bu
 idle  lamp #B4B2A9
 ....LL....
-....BB....
+....LL....
 ..BBBBBB..
 .BBEBBEBB.
 .BBBBBBBB.
@@ -137,7 +143,7 @@ W.WW..WW.W
 ```bu
 sleep  lamp #444441
 ....LL..Z.
-....BB.Z..
+....LL.Z..
 ..BBBBBB..
 .BBBBBBBB.
 .BEEBBEEB.
@@ -151,7 +157,7 @@ W.WW..WW.W
 ```bu
 missed  lamp #EF9F27
 ....LL....
-....BB....
+....LL....
 ..BBBBBB..
 .BBBEBBEB.
 .BBBBBBBB.
@@ -165,7 +171,7 @@ W.WW..WW.W
 ```bu
 ask  lamp #E24B4A
 ....LL..A.
-....BB..A.
+....LL..A.
 ..BBBBBBA.
 .BBEBBEBB.
 .BBEBBEBB.
@@ -179,7 +185,7 @@ W.WW..WW.W
 ```bu
 done  lamp #97C459
 ....LL....
-....BB....
+....LL....
 ..BBBBBB..
 .BBEBBEBB.
 .BBBEEBBB.
@@ -193,7 +199,7 @@ W.WW..WW.W
 ```bu
 busy.1  lamp #85B7EB
 ....LL....
-....BB....
+....LL....
 ..BBBBBB..
 .BEBBEBBB.
 .BBBBBBBB.
@@ -208,7 +214,7 @@ W.WW..WW.W
 busy.2  lamp #85B7EB
 ..........
 ....LL....
-....BB....
+....LL....
 ..BBBBBB..
 .BEBBEBBB.
 .BBBBBBBB.
@@ -221,7 +227,7 @@ W.WW..WW.W
 ```bu
 wave.1  lamp #FAC775
 .A..LL....
-.A..BB....
+.A..LL....
 .ABBBBBB..
 .BBEBBEBB.
 .BBBEEBBB.
@@ -235,7 +241,7 @@ W.WW..WW.W
 ```bu
 wave.2  lamp #FAC775
 A...LL....
-.A..BB....
+.A..LL....
 ..BBBBBB..
 .BBEBBEBB.
 .BBBEEBBB.
@@ -249,7 +255,7 @@ W.WW..WW.W
 ```bu
 think.1  lamp #AFA9EC
 ....LL.D.D
-....BB.D..
+....LL.D..
 ..BEBBEB..
 .BBBBBBBB.
 .BBBBBBBB.
@@ -263,7 +269,7 @@ W.WW..WW.W
 ```bu
 think.2  lamp #AFA9EC
 ....LL.D..
-....BB.D..
+....LL.D..
 ..BEBBEB..
 .BBBBBBBB.
 .BBBBBBBB.
@@ -277,7 +283,7 @@ W.WW..WW.W
 ```bu
 turn  lamp foreground
 ....LL.DDD
-....BB.D..
+....LL.D..
 ..BBBBBB..
 .BBBBBBBB.
 .BBEBBEBB.
@@ -292,7 +298,7 @@ W.WW..WW.W
 error  lamp #5F5E5A
 ..........
 ....LL....
-....BB....
+....LL....
 ..BBBBBB..
 .BEBBBEBB.
 .BBEBBBEB.
@@ -306,7 +312,7 @@ W.WW..WW.W
 compact  lamp #B5D4F4
 ..........
 ....LL....
-....BB....
+....LL....
 BBBBBBBBBB
 BEEBBBBEEB
 SSSSSSSSSS
@@ -319,7 +325,7 @@ W.WW..WW.W
 ```bu
 stale  lamp #444441
 ....LL....
-....BB....
+....LL....
 ..BBBBBB..
 .BBBBBBBB.
 .BEEBBEEB.
@@ -333,7 +339,7 @@ W.WW..WW.W
 ```bu
 party.1  lamp #97C459
 D...LL...D
-....BB....
+....LL....
 ..BBBBBB..
 .BBEBBEBB.
 .BBBEEBBB.
@@ -347,7 +353,7 @@ WW.W..W.WW
 ```bu
 party.2  lamp #97C459
 ....LL....
-....BB....
+....LL....
 ..BBBBBB..
 .BBEBBEBB.
 .BBBEEBBB.
