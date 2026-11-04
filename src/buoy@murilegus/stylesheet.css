@@ -103,18 +103,27 @@
    hovered, .28 open, .32 open and hovered (_drawing.scss panel_button) — Yaru compiles it
    to a fixed light grey, lost on a white wallpaper. panel.js marks the plain tray
    buttons (buoy-tray-button); GNOME's filled indicators keep their own. */
+/* GNOME fakes a panel button's padding with a 3 px transparent border and fills inside it
+   (_drawing.scss panel_button / panel_button_fill), and PanelMenu.ButtonBox sizes the
+   button without that border (panelMenu.js): the 32 px tray button's highlight was a 26 px
+   circle beside the 32 px cluster background. Without the border it fills the button; the
+   icon keeps its place (ButtonBox places it by -natural-hpadding) (Ethan 2026-11-04). St
+   only paints an inset shadow over a border or a background (st-theme-node-drawing.c
+   st_theme_node_maybe_prerender_background), so the fill is the background here and the
+   stock shadow is dropped. */
+#panel.buoy .buoy-tray-button { border-width: 0; box-shadow: none; }
 #panel.buoy .buoy-light-text .buoy-tray-button:hover,
-#panel.buoy .buoy-light-text .buoy-tray-button:focus { box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.17); }
+#panel.buoy .buoy-light-text .buoy-tray-button:focus { background-color: rgba(255, 255, 255, 0.17); box-shadow: none; }
 #panel.buoy .buoy-light-text .buoy-tray-button:active,
-#panel.buoy .buoy-light-text .buoy-tray-button:checked { box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.28); }
+#panel.buoy .buoy-light-text .buoy-tray-button:checked { background-color: rgba(255, 255, 255, 0.28); box-shadow: none; }
 #panel.buoy .buoy-light-text .buoy-tray-button:active:hover,
-#panel.buoy .buoy-light-text .buoy-tray-button:checked:hover { box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.32); }
+#panel.buoy .buoy-light-text .buoy-tray-button:checked:hover { background-color: rgba(255, 255, 255, 0.32); box-shadow: none; }
 #panel.buoy .buoy-dark-text .buoy-tray-button:hover,
-#panel.buoy .buoy-dark-text .buoy-tray-button:focus { box-shadow: inset 0 0 0 100px rgba(26, 26, 26, 0.17); }
+#panel.buoy .buoy-dark-text .buoy-tray-button:focus { background-color: rgba(26, 26, 26, 0.17); box-shadow: none; }
 #panel.buoy .buoy-dark-text .buoy-tray-button:active,
-#panel.buoy .buoy-dark-text .buoy-tray-button:checked { box-shadow: inset 0 0 0 100px rgba(26, 26, 26, 0.28); }
+#panel.buoy .buoy-dark-text .buoy-tray-button:checked { background-color: rgba(26, 26, 26, 0.28); box-shadow: none; }
 #panel.buoy .buoy-dark-text .buoy-tray-button:active:hover,
-#panel.buoy .buoy-dark-text .buoy-tray-button:checked:hover { box-shadow: inset 0 0 0 100px rgba(26, 26, 26, 0.32); }
+#panel.buoy .buoy-dark-text .buoy-tray-button:checked:hover { background-color: rgba(26, 26, 26, 0.32); box-shadow: none; }
 /* the hover's workspace stays a step quieter than the app */
 #panel.buoy .buoy-light-text .buoy-app-extra StLabel,
 #panel.buoy .buoy-light-text .buoy-app-extra StIcon { color: rgba(255, 255, 255, 0.75); }

@@ -100,6 +100,10 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
     compiles it to a fixed light grey, nearly invisible on a white wallpaper (Ethan
     2026-11-04). panel.js marks the plain tray buttons (`buoy-tray-button`; St has no
     `:not()`), so the filled indicators keep their coloured highlight.
+    It fills the whole 32 px button, the cluster background's height: GNOME's 3 px
+    transparent border (which made it a 26 px circle) is dropped on those buttons, and
+    the fill is their background, since St paints an inset shadow only over a border or
+    a background (Ethan 2026-11-04).
   - One-colour bitmap tray icons count as glyphs (Ethan 2026-11-04): Electron apps
     (Claude, Discord…) send their tray icon as a white PNG through AppIndicator
     (`IconThemePath` + `IconName`, read by `appIndicator.js` into a FileIcon), which
