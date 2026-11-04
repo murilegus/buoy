@@ -12,20 +12,25 @@ import {WorkspaceBackground} from 'resource:///org/gnome/shell/ui/workspace.js';
  * visible picture; under Buoy's the strip behind the bar stayed the Overview's dark
  * backdrop to the last frame and then jumped to the wallpaper.
  *
- * Here both clips reach out over the struts by `strut × (1 − state)`: at state 1 (the
- * Overview) exactly GNOME's, at 0 (the desktop) the whole monitor, in between the same
+ * Here both clips reach out over the struts by `strut × (1 − overview)`, `overview` being
+ * how far the Overview is open — its controls' OverviewAdjustment, 0 hidden, 1 window
+ * picker, 2 app grid (overviewControls.js), clamped to 1: at the window picker and the
+ * app grid exactly GNOME's, at 0 (the desktop) the whole monitor, in between the same
  * curve the background itself follows — from the first pixel of a three-finger swipe,
- * too. Every edge with a strut reaches, so the corner above Ubuntu's dock opens with the
- * rest; on an edge without one nothing changes. Shell calls
+ * too. Not the background's own state: in the app grid Shell sets it back to 0
+ * (workspacesView.js _getWorkspaceModeForOverviewState), as on the desktop (Ethan
+ * 2026-11-04). Every edge with a strut reaches, so the corner above Ubuntu's dock opens
+ * with the rest; on an edge without one nothing changes. Shell calls
  * `_updateBorderRadius` on every state step and `_updateRoundedClipBounds` on layout
- * changes; both are wrapped.
+ * changes; both are wrapped, and the adjustment itself is watched, since going to or
+ * from the app grid leaves the background's state still.
  *
- * What is under the bar then follows the state: the wallpaper below 0.5, the Overview's
- * dark backdrop from 0.5 up — `wallpaperUnderBar()` for the text's contrast, with a
- * call to `onChange` when it flips.
+ * What is under the bar then follows the Overview: the wallpaper below 0.5, the
+ * Overview's dark backdrop from 0.5 up (the app grid included) — `wallpaperUnderBar()`
+ * for the text's contrast, with a call to `onChange` when it flips.
  */
 
-let patched = null;     // {radius, bounds, touched: Map<WorkspaceBackground, ids>, under, onChange}
+let patched = null;     // {radius, bounds, touched: Map<WorkspaceBackground, ids>, under, onChange, adjId}
 
 /**
  * @param {boolean} on  wrap (enable) or restore (disable)
@@ -36,8 +41,14 @@ export function reachUnderBar(on, onChange) {
     if (on && !patched) {
         patched = {
             radius: proto._updateBorderRadius, bounds: proto._updateRoundedClipBounds,
-            touched: new Map(), under: true, onChange,
+            touched: new Map(), under: true, onChange, adjId: 0,
         };
+        const adj = overviewAdjustment();
+        patched.adjId = adj?.connect('notify::value', () => {
+            for (const bg of patched.touched.keys())
+                reach(bg);
+            updateUnder();
+        }) ?? 0;
         proto._updateBorderRadius = function () {
             patched.radius.call(this);
             reach(this);
@@ -46,6 +57,8 @@ export function reachUnderBar(on, onChange) {
             reach(this);
         };
     } else if (!on && patched) {
+        if (patched.adjId)
+            overviewAdjustment()?.disconnect(patched.adjId);
         proto._updateBorderRadius = patched.radius;
         proto._updateRoundedClipBounds = patched.bounds;
         for (const [bg, ids] of patched.touched) {
@@ -66,11 +79,33 @@ export function wallpaperUnderBar() {
     return patched?.under ?? true;
 }
 
+// The Overview's controls state (OverviewAdjustment: 0 hidden … 2 app grid); null before
+// the controls exist.
+function overviewAdjustment() {
+    return Main.overview._overview?.controls?._stateAdjustment ?? null;
+}
+
+// How far the Overview is open. The adjustment starts at the window picker (1) before the
+// Overview was ever shown, so a hidden Overview is 0.
+function overviewProgress() {
+    if (!Main.overview.visible)
+        return 0;
+    return overviewAdjustment()?.value ?? 0;
+}
+
+function updateUnder() {
+    const under = overviewProgress() < 0.5;
+    if (under !== patched.under) {
+        patched.under = under;
+        patched.onChange?.();
+    }
+}
+
 // How far past the work area the background shows on each edge, in monitor px: the
 // struts, times how far the Overview is from shown.
 function beyond(bg) {
     const m = Main.layoutManager.monitors[bg._monitorIndex], w = bg._workarea;
-    const f = 1 - bg._stateAdjustment.value;
+    const f = 1 - Math.min(1, overviewProgress());
     if (!m)
         return {left: 0, top: 0, right: 0, bottom: 0};
     return {
@@ -87,13 +122,7 @@ function reach(bg) {
     const monitor = Main.layoutManager.monitors[bg._monitorIndex];
     const work = bg._workarea;
     const out = beyond(bg);
-    if (work.y > monitor.y) {
-        const under = bg._stateAdjustment.value < 0.5;
-        if (under !== patched.under) {
-            patched.under = under;
-            patched.onChange?.();
-        }
-    }
+    updateUnder();
     const rect = new Graphene.Rect();
     rect.origin.x = work.x - monitor.x - out.left;
     rect.origin.y = work.y - monitor.y - out.top;

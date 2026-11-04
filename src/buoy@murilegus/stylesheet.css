@@ -97,35 +97,33 @@
 #panel.buoy .buoy-dark-text .buoy-app,
 #panel.buoy .buoy-dark-text StLabel,
 #panel.buoy .buoy-dark-text StIcon { color: #1a1a1a; }
-/* A 1 px unblurred shadow in the wallpaper's own tone, for busy wallpapers — only while
-   Automatic (buoy-text-auto): with the text forced against the wallpaper the same shadow
-   is a second, opposite edge. GNOME's panel has none (_panel.scss). */
-#panel.buoy .buoy-light-text.buoy-text-auto StLabel,
-#panel.buoy .buoy-light-text.buoy-text-auto StIcon {
-    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
-    icon-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
-}
-#panel.buoy .buoy-dark-text.buoy-text-auto StLabel,
-#panel.buoy .buoy-dark-text.buoy-text-auto StIcon {
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-    icon-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-}
+/* No shadow, as GNOME's panel (_panel.scss): one under the text, in the wallpaper's tone,
+   read as a second, blurred edge — forced or Automatic (Ethan 2026-11-04). */
 /* A tray button's highlight is GNOME's formula on the new text: the foreground at .17
    hovered, .28 open, .32 open and hovered (_drawing.scss panel_button) — Yaru compiles it
    to a fixed light grey, lost on a white wallpaper. panel.js marks the plain tray
    buttons (buoy-tray-button); GNOME's filled indicators keep their own. */
+/* GNOME fakes a panel button's padding with a 3 px transparent border and fills inside it
+   (_drawing.scss panel_button / panel_button_fill), and PanelMenu.ButtonBox sizes the
+   button without that border (panelMenu.js): the 32 px tray button's highlight was a 26 px
+   circle beside the 32 px cluster background. Without the border it fills the button; the
+   icon keeps its place (ButtonBox places it by -natural-hpadding) (Ethan 2026-11-04). St
+   only paints an inset shadow over a border or a background (st-theme-node-drawing.c
+   st_theme_node_maybe_prerender_background), so the fill is the background here and the
+   stock shadow is dropped. */
+#panel.buoy .buoy-tray-button { border-width: 0; box-shadow: none; }
 #panel.buoy .buoy-light-text .buoy-tray-button:hover,
-#panel.buoy .buoy-light-text .buoy-tray-button:focus { box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.17); }
+#panel.buoy .buoy-light-text .buoy-tray-button:focus { background-color: rgba(255, 255, 255, 0.17); box-shadow: none; }
 #panel.buoy .buoy-light-text .buoy-tray-button:active,
-#panel.buoy .buoy-light-text .buoy-tray-button:checked { box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.28); }
+#panel.buoy .buoy-light-text .buoy-tray-button:checked { background-color: rgba(255, 255, 255, 0.28); box-shadow: none; }
 #panel.buoy .buoy-light-text .buoy-tray-button:active:hover,
-#panel.buoy .buoy-light-text .buoy-tray-button:checked:hover { box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.32); }
+#panel.buoy .buoy-light-text .buoy-tray-button:checked:hover { background-color: rgba(255, 255, 255, 0.32); box-shadow: none; }
 #panel.buoy .buoy-dark-text .buoy-tray-button:hover,
-#panel.buoy .buoy-dark-text .buoy-tray-button:focus { box-shadow: inset 0 0 0 100px rgba(26, 26, 26, 0.17); }
+#panel.buoy .buoy-dark-text .buoy-tray-button:focus { background-color: rgba(26, 26, 26, 0.17); box-shadow: none; }
 #panel.buoy .buoy-dark-text .buoy-tray-button:active,
-#panel.buoy .buoy-dark-text .buoy-tray-button:checked { box-shadow: inset 0 0 0 100px rgba(26, 26, 26, 0.28); }
+#panel.buoy .buoy-dark-text .buoy-tray-button:checked { background-color: rgba(26, 26, 26, 0.28); box-shadow: none; }
 #panel.buoy .buoy-dark-text .buoy-tray-button:active:hover,
-#panel.buoy .buoy-dark-text .buoy-tray-button:checked:hover { box-shadow: inset 0 0 0 100px rgba(26, 26, 26, 0.32); }
+#panel.buoy .buoy-dark-text .buoy-tray-button:checked:hover { background-color: rgba(26, 26, 26, 0.32); box-shadow: none; }
 /* the hover's workspace stays a step quieter than the app */
 #panel.buoy .buoy-light-text .buoy-app-extra StLabel,
 #panel.buoy .buoy-light-text .buoy-app-extra StIcon { color: rgba(255, 255, 255, 0.75); }
@@ -139,8 +137,6 @@
 #panel.buoy .buoy-dark-text .screen-sharing-indicator StLabel,
 #panel.buoy .buoy-dark-text .screen-sharing-indicator StIcon {
     color: #fff;
-    text-shadow: none;
-    icon-shadow: none;
 }
 
 /* The island pill. Hover/press/expanded are shapes, not CSS states. */

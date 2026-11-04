@@ -49,7 +49,11 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   clips reach out over every strut by `strut × (1 − state)`: exactly GNOME's with the
   Overview shown (pixel-identical), the whole monitor at the desktop, the same curve in
   between. The text under the bar follows what is there: the wallpaper's contrast below
-  state 0.5, the Overview's (light text) from 0.5.
+  state 0.5, the Overview's (light text) from 0.5. `state` is how far the Overview is
+  open — its controls' adjustment, 0 hidden, 1 window picker, 2 app grid
+  (`overviewControls.js`), clamped to 1 — not the background's own state, which Shell
+  sets back to 0 in the app grid (`workspacesView.js`): that kept the wallpaper's dark
+  text over the app grid's dark backdrop (Ethan 2026-11-04).
 - **Cluster background** (decided 2026-10-30): **none by default** — icons and text sit
   bare on the wallpaper like the iPhone status bar; only the pill is a black block. On
   hover a translucent rounded background (no blur) wraps the whole cluster. Setting
@@ -91,15 +95,19 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
   - Foreground only: labels and symbolic icons, white (as GNOME's own see-through panel,
     `$transparent_panel_fg_color`) or `#1a1a1a`; full-colour icons, menus and the filled
     recording/sharing indicators stay GNOME's.
-  - A 1 px unblurred shadow in the wallpaper's tone helps on busy wallpapers, but only
-    while Automatic: with the text forced against the wallpaper the same shadow drew a
-    second, opposite edge — blurred-looking text (Ethan 2026-11-04). GNOME's panel has no
-    shadow (`_panel.scss`), so forced text has none either.
+  - No shadow under the text, Automatic or forced, as GNOME's panel (`_panel.scss`). A 1 px
+    shadow in the wallpaper's tone was tried for busy wallpapers: forced, it drew a second,
+    opposite edge; Automatic, on a wallpaper of mixed tones it still read as a doubled,
+    blurred edge (Ethan 2026-11-04, both).
   - A tray button's highlight follows the text by GNOME's own formula: the foreground at
     .17 hovered, .28 open, .32 open and hovered (`_drawing.scss` `panel_button`). Yaru
     compiles it to a fixed light grey, nearly invisible on a white wallpaper (Ethan
     2026-11-04). panel.js marks the plain tray buttons (`buoy-tray-button`; St has no
     `:not()`), so the filled indicators keep their coloured highlight.
+    It fills the whole 32 px button, the cluster background's height: GNOME's 3 px
+    transparent border (which made it a 26 px circle) is dropped on those buttons, and
+    the fill is their background, since St paints an inset shadow only over a border or
+    a background (Ethan 2026-11-04).
   - One-colour bitmap tray icons count as glyphs (Ethan 2026-11-04): Electron apps
     (Claude, Discord…) send their tray icon as a white PNG through AppIndicator
     (`IconThemePath` + `IconName`, read by `appIndicator.js` into a FileIcon), which
