@@ -131,9 +131,10 @@ D-Bus API ──────────────────────┘ 
   style:     'standard' | 'transient', // transient = opens expanded, ends on click-outside
   alert:     false,                    // true on update → expand briefly (Apple alert config)
   keyline:   null,                     // optional border tint
-  onPress, onExpand, actions: [{id, label, icon}],  // ≤ 1 in compact, ≤ 3 expanded (HIG)
+  onPress, onExpand, actions: [{id, label, icon}],  // ≤ 1 in minimal, ≤ 3 compact/expanded (HIG)
   onAction(id)                         // a button was pressed (ask: answers it)
-  peek: {leading, text, trailing, transport}  // hover content (Buoy's own); transport = ≤3 actions
+  peek: {leading, text, trailing, transport}  // compact tier, on hover (Buoy's own); transport = ≤3 actions
+                                       // → `compact` with subtitle, progress, rows ≤ 3 (SPEC §2, 2026-11-05)
 }
 ```
 
@@ -152,16 +153,20 @@ which shows, stale state renders dimmed, alert = brief expanded, transient ends 
 
 | Apple | Buoy |
 |---|---|
-| compact leading + trailing | one pill, three zones: **leading** (icon/art) · **text** · **trailing** (status glyph/progress); content-fit width, h 32 |
-| compact reduced width (two activities, iPhone 18 Pro) | **two compact pills side by side**, each squeezed to a 28 px circle leading glyph + short trailing — Buoy's "minimal mode", modelled on the 18 Pro, not the detached bubble |
-| minimal detached (up to 3) | fallback when width is tight: attached pill + detached circle(s) |
+| compact leading + trailing | **minimal**, pill 1: one pill, three zones: **leading** (icon/art) · **text** · **trailing** (status glyph/progress); content-fit width, h 32 |
+| compact reduced width (two activities, iPhone 18 Pro) / minimal (up to 3) | **minimal**, side pills: up to two 120 × 32 pills right of pill 1, attached in the bar (not detached bubbles); leading + short trailing + `+N` (SPEC §2c, 2026-11-05) |
 | expanded | width per screen (560–760, `expanded-width` overrides) × height fitting content up to width/2 — as iOS: fixed width, dynamic height; regions **leading / trailing / center / bottom** with `priority`; opened by click; alerts open it briefly; transient activities start here |
 | Lock Screen / banner | n/a (GNOME lock screen out of scope) |
 | Mac menu bar | *we are the menu bar* |
-| hover (no Apple equivalent) | +12 px growth; for media shows transport (Islet peek) |
+| hover (no Apple equivalent) | **compact**: the hovered pill grows in place to 0.72 × expanded × 56/88 (leading 40, two lines, ≤ 3 actions, a bar or ≤ 3 rows); before it, +10 % width and +2 height (SPEC §2, §4, 2026-11-05) |
+
+Names (2026-11-05): Buoy's tiers are **minimal < compact < expanded** by size. Buoy's
+minimal is Apple's compact and minimal; Buoy's compact is the hover tier Apple has no
+counterpart for. Apple's words above, in part A, keep Apple's meaning.
 
 Expanded is an enlarged compact: adapters give the same elements for both and the renderer
-positions them; adapters do not get a free-form canvas.
+positions them; adapters do not get a free-form canvas. Expanded also carries what compact
+has no room for (media: player choice, the app's volume, shuffle/repeat).
 
 ### B3. Adapters (= the app's widget extension, written by us or the community)
 
@@ -205,9 +210,9 @@ Selection → copied · GSConnect notifications → phone · D-Bus API → anyth
 
 1. Black opaque pill; colour lives in content; optional keyline tint per activity.
 2. Radius = h/2 for the pill; expanded radius 28; concentric margins (8 px pill, 14 px expanded).
-3. Text 13–14 px medium+; leading element ≤ 20 px in compact, 56 px in expanded.
-4. Expanded = enlarged compact, same order; height grows only with content.
-5. ≤ 1 action in compact, ≤ 3 in expanded; click elsewhere = open the app/window.
+3. Text 13–14 px medium+; leading element ≤ 20 px in minimal, 40 px in compact, 56 px in expanded.
+4. Compact and expanded = enlarged minimal, same order; height grows only with content.
+5. ≤ 1 action in minimal, ≤ 3 in compact and expanded; click elsewhere = open the app/window.
 6. Rotate one activity through sub-events (e.g. one "downloads" activity cycling files)
    rather than stacking many.
 7. End immediately; update only on change; alert rarely; never start unexpectedly
@@ -218,7 +223,7 @@ Selection → copied · GSConnect notifications → phone · D-Bus API → anyth
 ### B6. What Buoy adds that Apple doesn't have
 
 - `ask()` — synchronous question with buttons returning the answer to the caller.
-- Hover peek.
+- A hover tier, compact: the pill grows in place to show controls (SPEC §2).
 - Adapters for apps that never adopted anything (Apple has none).
 - Priority across apps (Apple only ranks within one app; the system decides across apps).
 - Missed-activity light + short history.

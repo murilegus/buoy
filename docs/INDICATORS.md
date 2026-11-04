@@ -13,7 +13,8 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 3. **Only when meaningful.** A slot is not drawn when it has nothing to say; the three
    content zones then use the full pill. The only exception is the grey "off" light in
    idle `none`, so an empty pill never reads as broken.
-4. **Same in idle and compact.** Expanded hides both: Home and peek already explain them.
+4. **Same in idle, minimal and compact.** Expanded hides both: Home and the compact's
+   missed list already explain them.
 5. **One colour = one meaning**, across every module. Modules never pick colours.
 
 ## Buoy light (left edge)
@@ -53,13 +54,14 @@ palette, none of which is a state colour here (2026-11-03).
 | `#5F5E5A` | error |
 | `#B5D4F4` | compact |
 
-Hover on the centre pill while the light is amber peeks one line naming what was missed
-(`2 missed · Copy done · Tea 4:00`, newest first, ellipsized); hover clears nothing. Click →
+Hover on the centre pill while the light is amber opens its compact as the missed list
+(2026-11-05: up to 3 rows, newest first, each the kind's icon, its text and the time it
+ended; was one ellipsized line, `2 missed · Copy done · Tea 4:00`); hover clears nothing. Click →
 Home, whose Missed section lists them with their times and turns the light off (SPEC §3,
-2026-11-03). With an activity running, the line takes the place of the activity's own peek
-(media's transport comes back once Home has been shown), and a click while the line shows
+2026-11-03). With an activity running, the list takes the place of the activity's own compact
+(media's transport comes back once Home has been shown), and a click while the list shows
 opens Home, not the activity's tab; a click before it shows (the first 300 ms) opens the
-tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Red (waiting) has no peek line yet: M4 Buoy light.
+tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Red (waiting) has no compact yet: M4 Buoy light.
 
 ## Privacy dot (right edge)
 
@@ -112,7 +114,7 @@ the pill grows by that amount (one short morph). Both slots are inserted by
 
 ## Accessibility
 
-Colour is never the only channel: the hover peek names the state in words
+Colour is never the only channel: the hover compact names the state in words
 ("2 missed", "Waiting: Claude Code wants to run `git push`"), and the Home row for the
 privacy dot names the app. High-contrast theme swaps amber/red/orange/green for the
 GNOME accent and error colours.

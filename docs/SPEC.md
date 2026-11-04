@@ -222,22 +222,36 @@ square against the screen edge or dock.
 
 ## 2. Island states
 
+Three tiers (decided 2026-11-05, Ethan), named by size: **minimal** < **compact** <
+**expanded**. Apple's words, not Apple's mapping (APPLE §B2):
+- **minimal** — resting in the bar: one line, 32 px tall, one to three pills.
+- **compact** — on hover: the hovered pill itself grows in place into a short panel, 56 or
+  88 px tall, over the top of windows (and the system cluster, if it must). No Apple
+  equivalent; it replaces the old hover peek, which only swapped a pill's content.
+- **expanded** — on click, or opened by the stack: the panel with tabs; it carries what
+  compact has no room for (media: player choice, the app's volume, shuffle/repeat).
+
+Until the rename item (FEATURES M3 "Three tiers: names in code") lands, code and the older
+notes in FEATURES still say compact for minimal, peek for compact and minimal mode for
+several pills.
+
 | State | When | Shape | Interaction |
 |---|---|---|---|
-| **Idle** | no activity | `IDLE` 120×32 r16; content per `idle-content` (§2a) | hover → +12px; press → +20px pulse; **click → open Home** |
-| **Compact** | one activity | `activity.shape`, content-fit | hover → `hoverShape`; after 300 ms the activity's `peek` if it has one (e.g. media transport), or the amber missed line instead (INDICATORS.md); **click → open that activity's tab**, Home while the missed line shows (2026-11-04) |
-| **Minimal** | two+ activities | **side-by-side compact pills** (iPhone 18 Pro / iOS 27 model): highest priority at screen centre, others to the right in priority order, each 120 px … expanded/3, same zones as a single compact (text ellipsizes); fewer pills when three would reach the system cluster (2026-11-01) | each pill clicks into its own tab |
-| **Expanded** | opened from idle or compact; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open); clicks inside do nothing, buttons run their action (decided 2026-11-01) |
+| **Idle** | no activity | `IDLE` 120×32 r16; content per `idle-content` (§2a) | hover → +10 % width, +2 height, and with the amber light the missed list as a compact; press → +16 % pulse; **click → open Home** |
+| **Minimal** | one or more activities | pill 1 (highest priority) at screen centre, content-fit; up to two side pills to its right, each a fixed 120×32, as many as fit before the system cluster (§2c) | hover a pill 300 ms → its compact; **click → that activity's tab**, Home on the `+N` badge or while the missed list shows (2026-11-04) |
+| **Compact** | the pointer rests on a pill | the hovered pill grows in place: top edge kept, width 0.72 × expanded (content-fit, ≥ 240), height 56 for one row or 88 with a bar or up to 3 rows (§4) | the activity's compact content (media: transport and seek bar), or the amber missed list instead (INDICATORS.md); its buttons run their action, a click elsewhere on it = the pill's click; never takes the keyboard; collapses 200 ms after the pointer leaves |
+| **Expanded** | opened from idle, minimal or compact by a click; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open); clicks inside do nothing, buttons run their action (decided 2026-11-01) |
 
 Rules:
 - Pill closed = live activities only, no UI chrome. Expanded = Notchy-style panel.
-- Expanded opens **Home** from idle, or the **activity's own tab** from compact.
+- Expanded opens **Home** from idle, or the **activity's own tab** from its pill (minimal or
+  compact).
 - A tab strip exists only inside Expanded (Home · Media · Timer · …). Pill never shows tabs.
 - Activity ends → removed immediately. `ttl` for transient ones (OSD, notifications).
 - Highest priority shows; ties → most recent. Transient interrupts, then previous returns.
 - Alert (2026-11-01): the shown activity opens expanded for ~2 s (stays while hovered),
   or pulses if it has no expanded; an alert on a covered activity brings it up for ~2 s,
-  then the top returns (until side-by-side minimal mode gives it its own pill).
+  then the top returns (§2c: an activity with a pill of its own alerts on that pill).
 - A click-open takes the keyboard (modal, so Esc works); automatic opens (alert, ask,
   transient) never do, so typing elsewhere is not interrupted.
 - Fullscreen (2026-11-03): the island hides with the top bar on a monitor showing a
@@ -257,7 +271,7 @@ and shrinks when they are off; `auto` and `none` are the kit's own.
 | `auto` | the idle plan that matters right now, chosen and rotated by context (§2a-iii) — a smart stack, not a random carousel | core | plan signals + one re-rank timer while idle |
 | `none` | black pill + the **buoy light**: a small amber dot at the leading edge. Off normally; lit when something was missed (§6 missed history) | core | event |
 | `clock` | a *second* clock, styled unlike the one in the right cluster: an icon of the part of the day + the time in bold even figures. Six icons, one per daypart (`kit/daypart.js`, §2d): the sun along an arc over the horizon (dawn and evening half-set in peach `#F5C4B3`, morning/noon/afternoon in pale gold `#FAC775`), then the moon; colour SVGs at 20 px like art and Bu, no state colour (2026-11-04, Ethan). The time is GNOME's (12/24 h, locale). Variants via `idle-clock-style`: icon and time (default) · time only · icon only · with seconds | `clock` | GNOME's wall clock (`GnomeDesktop.WallClock`, as the lock screen): a tick on the minute (each second with seconds), right after suspend; it exists only while the idle pill is on screen |
-| `weather` | condition icon + temperature; hover peek adds wind direction/speed, humidity, feels-like; expanded shows the day | `weather` | GNOME's own `ui/weather.js` client (same location as dateMenu); `idle-weather-refresh` 30 min / 1 h |
+| `weather` | condition icon + temperature; its compact adds wind direction/speed, humidity, feels-like; expanded shows the day | `weather` | GNOME's own `ui/weather.js` client (same location as dateMenu); `idle-weather-refresh` 30 min / 1 h |
 | `next-event` | next calendar event: title · time, Join glyph when it has a link | `calendar` | EDS signals |
 | `mascot` | Bu's eyes in the pill, four modes — idle · sleep · missed · waiting; in `idle` the eyes stroll in pixel steps: look, walk, blink, smile, one beat every few seconds (`idle-mascot-stroll`); asleep after 60 s without input, in power-saver and with animations off (`MASCOT.md` § Eyes, 2026-11-03) | `mascot` (off by default) | light changes, daypart, idle monitor, power profile; one beat timer only while strolling |
 
@@ -271,18 +285,18 @@ ARCHITECTURE rule 9). Until `auto` lands, `idle-content` defaults to `clock` (Et
 
 Pill structure is the same in every state: `[light] leading · text · trailing [dot]`.
 The two edge slots are Buoy's own status layers; the three zones between them belong to
-the plan (idle) or the adapter (compact). **Edge slots exist only when they have
+the plan (idle) or the adapter (minimal). **Edge slots exist only when they have
 something to say**: no light → no slot, the three zones take the full pill; a light or
 dot appears → that zone nudges inward and the pill grows a few px (one small morph).
 The grey "off" light is drawn only in idle `none`, so an empty pill never looks broken;
 idle `none` keeps the full 120 px.
 
-### 2a-i. The buoy light (left edge slot, idle and compact)
+### 2a-i. The buoy light (left edge slot, idle, minimal and compact)
 
 Static, never blinking. Off (faint grey, idle `none` only) · **amber** = something ended while you were
 away / fullscreen (missed history: hover names it, opening Home turns it off — 2026-11-03) · **red** = something
-is waiting for your answer (an `ask` while DND). Red › amber. Shown in idle **and**
-compact — it is a separate slot, so it never competes with the app icon; `present.js`
+is waiting for your answer (an `ask` while DND). Red › amber. Shown in idle, minimal
+**and** compact — it is a separate slot, so it never competes with the app icon; `present.js`
 nudges the leading zone inward when the light is on. Hidden only while expanded, where
 Home already lists what was missed.
 
@@ -291,7 +305,7 @@ activities and the greeting), the edge slot is not drawn — Bu's lamp is the li
 shows the stack's amber/red when there is one, otherwise the pose's own colour
 (INDICATORS § Bu's lamp). One light per pill, never two.
 
-### 2a-ii. Privacy dot (right edge slot, idle and compact)
+### 2a-ii. Privacy dot (right edge slot, idle, minimal and compact)
 
 Mirrors iOS and the buoy light: a small **orange** (mic) / **green** (camera, screen
 share) dot at the far right of the pill, outside the content zones, present whether the
@@ -331,7 +345,7 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   "Idle"): a reorderable list with switches, one row per plan, its own keys under it; a
   plan whose module is off is greyed ("Turn on in Modules"). The Modules switch turns the
   whole module on or off; the Island switch only puts its plan in the stack. A plan whose module is off does not exist (ARCHITECTURE rule 6).
-- **Interaction.** Hover → the shown plan's peek; scroll on the idle pill → next /
+- **Interaction.** Hover → the shown plan's compact; scroll on the idle pill → next /
   previous plan in the stack (held for one interval, like swiping the Smart Stack);
   click → Home, as in every idle state.
 - **Motion.** A switch is one content transition (fade out 100 ms / in 200 ms, plus the
@@ -356,8 +370,8 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   active tab shows icon + title on a lighter pill, the others only their icon (the title
   is their accessible name). Every tab has an icon: the module's `icon`, for an unclaimed
   kind its activity's icon, else a generic one.
-- Where you open from decides the tab: idle → Home; the `+N` badge → Home; a compact pill
-  → the tab of its kind (`kind → module → tab`); kinds without a tab (osd, copied) → the
+- Where you open from decides the tab: idle → Home; the `+N` badge → Home; a pill (minimal or
+  its compact) → the tab of its kind (`kind → module → tab`); kinds without a tab (osd, copied) → the
   activity's `onPress` if it has one (e.g. raise the player), else Home. Tabs can be
   switched inside expanded, but the next open follows context again — the last tab is not
   remembered. While open the strip follows the stack: a tab whose last activity ends
@@ -385,17 +399,36 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   - May use Shell APIs in `tab.js`; still no polling while closed.
   - Likely first ones: Clipboard, Launcher. Not planned: Calculator, Emoji (GNOME search has them).
 
-### 2c. Several pills (minimal mode, decided 2026-10-30)
+### 2c. Several pills (decided 2026-10-30; shapes and hover 2026-11-05)
 
-- Each pill is an independent actor: hover grows only that pill; hover peek only on it.
-- Click on any pill opens expanded at that pill's tab. On open, pills **merge**: the primary
-  grows into the expanded panel, the others slide in and fade (300 ms). Close = split again.
+- **Pill 1** is the highest priority, at screen centre, content-fit as when it is alone
+  (120 … 0.6 × expanded, `wide` 0.8; §4). It never narrows because others run
+  (2026-11-05, Ethan: before, every pill was squeezed to ≤ expanded/3).
+- **Side pills 2 and 3** share one fixed shape, 120 × 32 (the idle size): leading, a short
+  trailing (equaliser, `40%`, `4:59`) and the `+N` badge; their text shows only a few
+  characters, if any. Their full content is their compact.
+- **How many**: as many side pills as fit before the system cluster (12 px margin), at most
+  two, re-measured whenever the right cluster resizes. Side pills go before pill 1 is ever
+  narrowed. With pill 1 at its widest and a 300 px system cluster: 1366 → one side pill,
+  1920 and wider → two.
+- `+N` sits on the last pill shown; clicking the badge opens Home with the full list, the
+  rest of that pill its own tab (2026-11-02). Further activities don't show.
+- **Hover → compact** (2026-11-05): each pill is an independent actor. After 300 ms on any
+  pill, that pill grows **in place** into its compact (§2, §4): its top edge stays at the
+  pill's, it is centred where the pill stands and shifted only to stay 4 px inside the
+  screen — it may cover the system cluster while hovered. It is raised over its
+  neighbours, which fade out where they stand: nothing slides, so the pill under the
+  pointer never moves away from it. Pill 1 does the same, at the centre.
+  Measured with pill 1 at its widest, a compact on pill 3 needs no shift on any screen
+  from 1920 to 3440; on 1366 a compact on pill 2 covers ~60 px of a 300 px system cluster.
+- **Leaving**: the compact stays while the pointer is on the pill or the compact, collapses
+  200 ms after it leaves, and the neighbours fade back. Moving straight onto another pill
+  switches at once (no new 300 ms), as Shell's panel menus follow the pointer while one is
+  open (`ui/popupMenu.js` `PopupMenuManager`: an ENTER on another source → `_changeMenu`).
+- Click on any pill or its compact opens expanded at that pill's tab. On open, pills
+  **merge**: the primary grows into the expanded panel, the others slide in and fade
+  (300 ms). Close = split again.
 - An `alert: true` update briefly expands **only that pill** (~2 s, no tab strip).
-- Max 3 pills. Further activities don't show; the last pill carries a `+N` badge; clicking
-  the badge opens Home with the full list, the rest of that pill its own tab (2026-11-02).
-- Space (2026-11-01): pills stop before the system cluster (12 px margin). On 1366 px all
-  three fit at ~124 px each; if two side pills of 120 px don't fit, only two pills show
-  (or one), and the rest count in `+N`. Re-measured whenever the right cluster resizes.
 - An alert on an activity beyond the shown pills brings it to the centre for ~2 s.
 - Order: highest priority at screen centre, then to the right. When one ends, the rest
   slide to fill (eased x), never jump.
@@ -429,7 +462,7 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   expanded like any stack open (no keyboard grab, §2), stays ~8 s (held while hovered),
   click outside closes it early, then it ends and the idle content takes over. Any real
   activity that surfaces meanwhile interrupts it (transient rules); the day still counts.
-  `greeting-style = expanded | compact | off`, default `expanded`; `compact` shows only the
+  `greeting-style = expanded | minimal | off`, default `expanded`; `minimal` shows only the
   first line in the pill for 4 s.
 - **Expanded content**, three lines, the greeting large:
   ```
@@ -492,10 +525,10 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
   notification there points to the real one, never a copy, and Buoy posts no
   notifications of its own.
 - **Until the M3 blocks** (2026-11-02): Home lists every visible activity (the full list,
-  also behind `+N`), each row its compact view; a row opens that activity's tab. Nothing
+  also behind `+N`), each row its minimal view; a row opens that activity's tab. Nothing
   running → "Nothing going on" with Bu (`idle`, or `missed` while history has entries). The panel's height fits its content up to the expanded cap;
   beyond that the tab body scrolls (no blur, scrollbar only when needed).
-- Now playing (compact) — MPRIS. Hidden when nothing plays.
+- Now playing (one row) — MPRIS. Hidden when nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu).
 - Weather — reuse `ui/weather.js` (same GWeather location as dateMenu).
 - Up next — today's events from the same calendar source.
@@ -517,11 +550,16 @@ container is sized to that cap.
 |---|---|---|---|---|
 | pill height `h` | panel 40 − 2×4 | 32 | 32 | 32 |
 | idle | `h × 3.75` wide, r = h/2 | 120×32 | 120×32 | 120×32 |
-| hover / press | +10 % / +16 % width, +2 / +4 height | 132×34 / 140×36 from idle | | |
-| compact | content + 28 (rounded up), clamped to [idle, 0.6×expanded] (`'wide'` hint → 0.8) | ≤ 336 | ≤ 430 | ≤ 456 |
+| hover / press | +10 % / +16 % width, +2 / +4 height (a pill before or without its compact) | 132×34 / 140×36 from idle | | |
+| minimal, pill 1 | content + 28 (rounded up), clamped to [idle, 0.6×expanded] (`'wide'` hint → 0.8) | ≤ 336 | ≤ 430 | ≤ 456 |
+| minimal, pills 2–3 | fixed, the idle size | 120×32 | 120×32 | 120×32 |
+| compact | width 0.72 × expanded, content-fit down to 240; height 56 (one row) or 88 (a bar, or up to 3 rows); r 24; top edge at the pill's (2026-11-05) | 404 × 56/88 | 516 × 56/88 | 548 × 56/88 |
 | expanded | width `clamp(0.28 × W, 560, 760)` or `expanded-width` (≤ W − 40); height fits content, at most width/2; r 28 | 560 × ≤280 | 716 × ≤358 | 760 × ≤380 |
-| container | expanded + 20 px each side (overshoot room) | | | |
-| minimal pills | ≤ expanded/3 each, max 3 | | | |
+| container | expanded + 20 px each side (overshoot room); tall enough for expanded, so for compact too | | | |
+
+Leading element per tier (2026-11-05): 20 px minimal, 40 compact, 56 expanded; Bu
+20 / 40 / 50, whole multiples of its 10-cell grid (MASCOT.md). Up to 1 action in
+minimal, 3 in compact and expanded.
 
 Inside expanded, Home and tabs use flowing layouts (`St.BoxLayout`, `x_expand`); the one
 content breakpoint is below ~600 px, where Home goes from 4 cells to 2 columns.
@@ -533,6 +571,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 
 - Background actor eases `x / width / height`; content fades (100 ms out, 200 ms in).
 - `EASE_OUT_BACK`, 380 ms shape · 200 ms hover · 120/250 ms press.
+- Compact (2026-11-05): a pill growing into its compact is a shape morph (380 ms) and
+  grows by far more than 25 %, so it uncovers its content as expanded does (below);
+  neighbour pills fade where they stand (100 ms out, 200 ms in).
 - Border radius snaps at transition start.
 - Content never moves or scales during a morph. On expand (and any morph that grows the
   pill by more than 25%) it sits at its final place and the background **uncovers** it:
@@ -546,7 +587,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 
 ## 6. Modules for v0.1
 
-1. **media** — MPRIS: compact (art + title · artist), hover peek (transport), tab Media.
+1. **media** — MPRIS: minimal (art + title · artist), compact (transport, seek bar), tab
+   Media (adds what compact has no room for: player choice, the app's volume,
+   shuffle/repeat).
 2. **hud** — volume / brightness / caps lock replace the stock OSD.
 3. **home** — the expanded Home above.
 4. **appname** — left cluster.
@@ -555,7 +598,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 
 ## 6b. Roadmap after v0.1 (all pure JS)
 
-1. **notifications** — peek in the pill with the notification's own actions
+1. **notifications** — a compact with the notification's own actions
    (Reply / Mark as read / Open); DND toggle. A **notifications tab** lists the history
    (2026-11-02, replaces the clock popover's list): read from `Main.messageTray`
    (`getSources()` + `source-added`, each source's `notifications` +
@@ -576,7 +619,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    mount-added with one-tap eject.
 8. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
-9. **minimal mode** — side-by-side compact pills for two or three activities (§2c).
+9. **several pills** — pill 1 plus up to two 120 px side pills (§2c).
 10. **clipboard** — optional module, off by default.
 
 ## 6c. Transfers tab (decided 2026-11-03)
@@ -647,8 +690,8 @@ Roadmap: FEATURES.md (milestones M0–M5 with status). Status marks: INDICATORS.
 Buoy is a framework first, features second — see `APPLE.md` part B for the full contract.
 
 - **Core** owns: activity lifecycle (`surface / update / end / schedule / ask`), priority
-  across apps, ttl and stale state, the three presentations (compact, side-by-side
-  minimal, expanded with leading/trailing/center/bottom regions), Home, motion, and the
+  across apps, ttl and stale state, the three tiers (minimal — one to three pills —,
+  compact on hover, expanded with leading/trailing/center/bottom regions), Home, motion, and the
   D-Bus API.
 - **Default adapters** (`lib/apps/default.js`) render every `kind` (media, notification,
   progress, osd, power, device, timer, ask, attention, copied, phone…) well enough that
