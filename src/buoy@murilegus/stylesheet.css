@@ -201,7 +201,7 @@
 .buoy-light-waiting { background-color: #E24B4A; }
 .buoy-idle { padding-left: 2px; }
 /* An idle plan (clock…): its zones centred; the time unlike the cluster's clock, bold
-   with even figures so the minutes do not shift the picture (SPEC §2a). */
+   with even figures so the minutes do not shift the icon (SPEC §2a). */
 .buoy-idle-zones { spacing: 7px; }
 .buoy-idle-text { font-weight: 600; font-feature-settings: "tnum"; }
 .buoy-badge {

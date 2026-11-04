@@ -464,7 +464,7 @@ export function buildIdle({width, light, plan = null}) {
         makeElement(p.trailing, 'compact'),
     ]);
     addAll(box, [lightDot(p.light), zones]);
-    // a picture alone says nothing to a screen reader: name the part of the day
+    // an icon alone says nothing to a screen reader: name the part of the day
     if (typeof plan.daypart === 'string')
         box.accessible_name = p.text ? `${plan.daypart}, ${p.text}` : plan.daypart;
     return box;

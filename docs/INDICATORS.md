@@ -26,7 +26,7 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 
 Precedence: red › amber › off. Only one light is drawn.
 
-Not states: the clock plan's daypart pictures (SPEC §2a, 2026-11-04) are pale gold
+Not states: the clock plan's daypart icons (SPEC §2a, 2026-11-04) are pale gold
 `#FAC775` and peach `#F5C4B3` beside the light, never amber or red; `tests/clock.test.js`
 checks the files.
 

@@ -19,7 +19,7 @@ Two forms, one family:
 ## Where Bu appears
 
 Bu is the only pixel art in Buoy (2026-11-04, Ethan): it is a character, seen seldom and
-on purpose. Data pictures — the clock's dayparts, weather, calendar — are vectors, quiet
+on purpose. Data icons — the clock's dayparts, weather, calendar — are vectors, quiet
 and in GNOME's icon language, so a pill that switches between plans never changes style.
 
 | Place | What | Since |

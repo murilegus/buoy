@@ -1,6 +1,6 @@
 /**
  * The clock idle plan (SPEC §2a, FEATURES M3 "clock"): a second clock in the idle pill,
- * unlike the one in the right cluster — the part of the day as a colour picture, then
+ * unlike the one in the right cluster — the part of the day as a colour icon, then
  * the time. Presentation only, pure (no St, no timer): the kit reads the time from
  * GNOME's wall clock (GnomeDesktop.WallClock, as Shell's lock screen) and calls
  * present() on each of its ticks.
@@ -19,7 +19,7 @@ export const keys = Object.freeze(['idle-clock-style']);
 
 /**
  * @param {string} daypart  one of DAYPARTS
- * @returns {string} file URI of its picture (icons/daypart-<part>.svg, a colour SVG:
+ * @returns {string} file URI of its icon (icons/daypart-<part>.svg, a colour SVG:
  *   the pill is always black, MASCOT/INDICATORS keep amber and red for the light)
  */
 export function iconFor(daypart) {
