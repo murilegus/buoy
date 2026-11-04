@@ -61,6 +61,31 @@
       <summary>Clipboard</summary>
       <description>The Clipboard tab.</description>
     </key>
+    <key name="modules-clock" type="b">
+      <default>true</default>
+      <summary>Clock</summary>
+      <description>A second clock in the idle pill, with the part of the day. Options on the Island page.</description>
+    </key>
+    <key name="idle-content" type="s">
+      <choices>
+        <choice value="none"/>
+        <choice value="clock"/>
+      </choices>
+      <default>'clock'</default>
+      <summary>Show</summary>
+      <description>Nothing leaves only the buoy light.</description>
+    </key>
+    <key name="idle-clock-style" type="s">
+      <choices>
+        <choice value="icon-time"/>
+        <choice value="time"/>
+        <choice value="icon"/>
+        <choice value="seconds"/>
+      </choices>
+      <default>'icon-time'</default>
+      <summary>Style</summary>
+      <description>The picture shows the part of the day; the time follows Date &amp; Time's 12 or 24 hours.</description>
+    </key>
     <key name="apps-hidden" type="as">
       <default>[]</default>
       <summary>Hidden apps</summary>

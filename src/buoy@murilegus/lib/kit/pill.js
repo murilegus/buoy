@@ -358,7 +358,7 @@ export class Pill {
             return buildMissedPeek(missed, {maxWidth: capW - 2 * PAD, light});
         }
         if (!this.activity)
-            return buildIdle({width: this._s.idle.w - 2 * PAD, light});
+            return buildIdle({width: this._s.idle.w - 2 * PAD, light, plan: this._island.idle});
         const capW = this.maxW || (this.minimal
             ? this._s.minimalMax
             : this._s.compact(Infinity, this.activity.sizeHint).w);

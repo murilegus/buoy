@@ -18,6 +18,10 @@ Two forms, one family:
 
 ## Where Bu appears
 
+Bu is the only pixel art in Buoy (2026-11-04, Ethan): it is a character, seen seldom and
+on purpose. Data pictures — the clock's dayparts, weather, calendar — are vectors, quiet
+and in GNOME's icon language, so a pill that switches between plans never changes style.
+
 | Place | What | Since |
 |---|---|---|
 | Brand | extension icon, README, EGO screenshots, prefs About page (M3 About, waving, 2026-11-04); empty states ("Nothing going on" in Home, the empty Notifications tab) | M3 release |

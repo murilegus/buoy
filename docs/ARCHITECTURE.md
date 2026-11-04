@@ -37,6 +37,7 @@ src/buoy@murilegus/
     │   ├── contrast.js     wallpaper placement + luminance → dark or light text per side; pure (2026-11-04)
     │   ├── rounded.js      which windows get round top corners, where the arcs fall, the shader; pure (2026-11-04)
     │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
+    │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
     │   ├── mascot.js       Bu: 13 pose grids, lamp rule, frame timing, pure; MASCOT.md is the source (2026-11-03; eyes data with M4)
     │   ├── registry.js     app-id normalisation table; adapter resolution
@@ -52,7 +53,9 @@ src/buoy@murilegus/
             │               `new Tab()` → {actor, destroy()}; built on first selection,
             │               destroyed when expanded closes
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
-            │               also exports `relevance(ctx)` for `auto` (SPEC §2a-iii)
+            │               pure: `keys` (its idle-<id>-… keys), `present(ctx, opts)` →
+            │               presentation data, `seconds(opts)` (tick each second),
+            │               `relevance(ctx)` for `auto` (SPEC §2a-iii); ctx = {now, clock, starts}
             └── apps/       per-app overrides, <slug>.js, same method names as adapter.js
 ```
 
@@ -143,7 +146,7 @@ fields and order: [PROFILES.md](PROFILES.md).
 Planned keys are listed here too; the schema holds only the ones whose item has landed
 (2026-11-04: `modules-*`, `apps-hidden`, `apps-plain`, `tabs-pinned`, `tabs-slot`,
 `expanded-width`, `dev-mode`, `keybind-focus`, `cluster-background`, `cluster-radius`,
-`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`, `dock-defaults-applied`, `window-corners`, `window-corners-radius`, `mascot-rest-after`, `daypart-starts`). Every key applies at once — prefs and
+`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`, `dock-defaults-applied`, `window-corners`, `window-corners-radius`, `mascot-rest-after`, `daypart-starts`, `modules-clock`, `idle-content`, `idle-clock-style`). Every key applies at once — prefs and
 `gsettings` alike; `modules-<id>` starts or stops only that module.
 
 | Key | Type | Effect |
@@ -151,7 +154,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `modules-<id>` | b | the module runs or not; applies at once (prefs: its row's switch) |
 | `apps-hidden` | as | apps whose activities never surface; any app id, slugged (2026-11-02) |
 | `apps-plain` | as | apps that use the default adapter instead of their override; any app id, slugged |
-| `idle-content` | s | `auto` (default, 2026-11-03) \| `none` \| any module's idle plan id |
+| `idle-content` | s | `auto` (default once the smart stack lands, 2026-11-03) \| `none` \| any module's idle plan id; `clock` by default until then (2026-11-04) |
 | `idle-auto-plans` | as | plans `auto` may show, in tie-break order; default every enabled plan |
 | `idle-auto-interval` | i | minutes between `auto` re-ranks while idle; default `5`, 2–30 |
 | `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`; bad values → defaults. In the schema since M3 daypart, on the Island page once a plan reads it (2026-11-04) |
