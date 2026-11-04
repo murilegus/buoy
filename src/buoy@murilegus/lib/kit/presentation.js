@@ -6,6 +6,8 @@
  *   {leading, text, trailing, expanded, actions, keyline, isStale}
  *   leading/trailing: 'icon-name' | Gio.Icon | {art, icon} | {icon} | {progress: 0..1}
  *                     | {bar: 0..1} | {countdown: s} | {text}
+ *   leading only:     {mascot: '<pose>', icon?} — Bu (MASCOT.md); an unknown pose falls
+ *                     back to `icon`, else `idle`; elsewhere only its `icon` counts
  *   expanded: true (= enlarged compact) | {leading, center, trailing, bottom}
  *             region: an element as above | {title, subtitle, progress} | {transport: true};
  *             any region may carry `priority` (the highest one takes the free width)
@@ -15,13 +17,16 @@
  *         equivalent); transport: true adds up to 3 of the activity's actions as buttons
  *
  * The buoy light (SPEC §2a-i) is the pill's left edge slot: grey `off` only in idle,
- * `missed` (amber) / `waiting` (red) in idle and compact, never in expanded.
+ * `missed` (amber) / `waiting` (red) in idle and compact, never in expanded. When Bu
+ * leads, Bu's lamp is the light: no edge slot, and the mascot element carries `light`
+ * (amber/red, or null for the pose's own colour, kit/mascot.js lampColour).
  *
  * Measurements from adapters (`size`, `width`, …) are ignored (ARCHITECTURE rule 11).
  * Text is never truncated here; the renderer ellipsizes.
  */
 
 import {mnemonics} from './keys.js';
+import {poseName} from './mascot.js';
 
 export const MAX_ACTIONS = {compact: 1, expanded: 3, peek: 3};
 const LIGHTS = new Set(['off', 'missed', 'waiting']);
@@ -63,11 +68,19 @@ function clock(seconds) {
 
 /**
  * @param {*} e  one leading/trailing/region value from an adapter
- * @returns {?object} {type: 'icon'|'glyph'|'art'|'ring'|'bar'|'text', …} or null
+ * @param {object} [opts]
+ * @param {boolean} [opts.leading]  the leading zone: the only place Bu may be
+ * @returns {?object} {type: 'icon'|'glyph'|'art'|'ring'|'bar'|'text'|'mascot', …} or null
  */
-export function element(e) {
+export function element(e, {leading = false} = {}) {
     if (!isPlain(e))
         return icon(e);
+    if ('mascot' in e) {
+        const pose = leading ? poseName(e.mascot) : null;
+        if (pose)
+            return {type: 'mascot', pose};
+        return icon(e.icon) ?? (leading ? {type: 'mascot', pose: 'idle'} : null);
+    }
     const art = str(e.art);
     if (art) {
         const fb = icon(e.icon);
@@ -117,6 +130,16 @@ export function lightSlot(light, {idle}) {
     return l === 'off' && !idle ? null : l;
 }
 
+// The leading zone, and where the light goes: Bu carries amber/red in its lamp (no edge
+// slot); anything else leaves the light to the edge slot.
+function leadingAndLight(v, light) {
+    const leading = element(v, {leading: true});
+    const slot = lightSlot(light, {idle: false});
+    if (leading?.type !== 'mascot')
+        return {leading, light: slot};
+    return {leading: {...leading, light: slot}, light: null};
+}
+
 /**
  * @param {object} [opts]
  * @param {string} [opts.light]
@@ -134,14 +157,15 @@ export function planIdle({light} = {}) {
  * @returns {object} {leading, text, trailing, action, keyline, stale, light, badge}
  */
 export function planCompact(p, {light, more} = {}) {
+    const lead = leadingAndLight(p.leading, light);
     return {
-        leading: element(p.leading),
+        leading: lead.leading,
         text: str(p.text),
         trailing: element(p.trailing),
         action: actions(p.actions, MAX_ACTIONS.compact)[0] ?? null,
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
-        light: lightSlot(light, {idle: false}),
+        light: lead.light,
         badge: Number.isInteger(more) && more > 0 ? `+${more}` : null,
     };
 }
@@ -156,21 +180,24 @@ export function planPeek(p, {light} = {}) {
     if (!isPlain(p.peek))
         return null;
     const peek = p.peek;
+    const lead = leadingAndLight(peek.leading, light);
     const plan = {
-        leading: element(peek.leading),
+        leading: lead.leading,
         text: str(peek.text),
         trailing: element(peek.trailing),
         actions: peek.transport === true ? actions(p.actions, MAX_ACTIONS.peek) : [],
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
-        light: lightSlot(light, {idle: false}),
+        light: lead.light,
     };
     if (!plan.leading && !plan.text && !plan.trailing && !plan.actions.length)
         return null;
     return plan;
 }
 
-function region(r) {
+function region(r, name) {
+    if (isPlain(r) && 'mascot' in r)  // Bu leads only; no light in expanded: the pose's lamp
+        return name === 'leading' ? leadingAndLight(r, null).leading : element(r);
     if (isPlain(r)) {
         if (r.transport === true)
             return {type: 'actions'};
@@ -210,7 +237,7 @@ export function planExpanded(p) {
     };
     const plan = {};
     for (const name of [...REGIONS, 'bottom']) {
-        let r = name in ex ? region(ex[name]) : fallback[name];
+        let r = name in ex ? region(ex[name], name) : fallback[name];
         if (r?.type === 'actions' && !acts.length)
             r = null;
         plan[name] = r;

@@ -38,7 +38,7 @@ src/buoy@murilegus/
     │   ├── rounded.js      which windows get round top corners, where the arcs fall, the shader; pure (2026-11-04)
     │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
-    │   ├── mascot.js       Bu: 13 pose grids + eyes as data, pure; MASCOT.md is the source (2026-11-03)
+    │   ├── mascot.js       Bu: 13 pose grids, lamp rule, frame timing, pure; MASCOT.md is the source (2026-11-03; eyes data with M4)
     │   ├── registry.js     app-id normalisation table; adapter resolution
     │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
     │   └── shapes.js
@@ -115,6 +115,9 @@ fields and order: [PROFILES.md](PROFILES.md).
    stroll by the same rule: a scripted beat every few seconds, each a few single frames
    (stepped, never eased), only while visible and in use; asleep and still after 60 s
    without input, in power-saver and with animations off (`MASCOT.md` § Eyes, 2026-11-03).
+   Bu's moving poses are not idle content: they swap two frames every 500 ms only while
+   their activity's pill is mapped, and hold still after 60 s without input and with
+   animations off (`MASCOT.md` § Drawing rules, 2026-11-04).
 9. Every setting is a key in `schemas/…gschema.xml` with a `<summary>` and a
    `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). A module's
    own keys are named `<id>-…` and appear inside its row on the Modules page;

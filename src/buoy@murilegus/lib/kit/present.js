@@ -1,8 +1,12 @@
+import Cairo from 'cairo';
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
+import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
 import {planCompact, planExpanded, planIdle, planPeek, lightSlot} from './presentation.js';
 
 /**
@@ -13,8 +17,9 @@ import {planCompact, planExpanded, planIdle, planPeek, lightSlot} from './presen
  */
 
 const SIZE = {
-    compact: {icon: 16, art: 20, ring: 18, bar: 40},
-    expanded: {icon: 32, art: 56, ring: 32, bar: 0}, // bar: 0 = fill the width
+    // mascot: a multiple of Bu's 10 cells, so each cell is whole px (MASCOT.md)
+    compact: {icon: 16, art: 20, ring: 18, bar: 40, mascot: 20},
+    expanded: {icon: 32, art: 56, ring: 32, bar: 0, mascot: 50}, // bar: 0 = fill the width
 };
 
 function label(text, styleClass, xExpand = false) {
@@ -74,6 +79,185 @@ function meter(kind, value, size) {
     return area;
 }
 
+// --- Bu (MASCOT.md) ------------------------------------------------------------------
+
+// Bu holds still while nobody is at the desk (60 s without input, the core idle monitor
+// as ui/messageTray.js uses it; UNINHIBITABLE so a playing video does not keep it moving,
+// mutter meta-idle-monitor.c update_inhibited_watch) or with animations off
+// (St.Settings enable-animations, which also counts Shell's inhibitors). The watches and
+// the settings signal exist only while a moving Bu is mapped.
+const AWAY_MS = 60 * 1000;
+const stillness = {
+    _subs: new Set(),
+    _away: false,
+    _idleId: 0,
+    _activeId: 0,
+    _animId: 0,
+
+    get held() {
+        return this._away || !St.Settings.get().enable_animations;
+    },
+
+    /**
+     * @param {function():void} cb  called when `held` may have changed
+     * @returns {function():void} unsubscribe
+     */
+    subscribe(cb) {
+        if (!this._subs.size)
+            this._start();
+        this._subs.add(cb);
+        return () => {
+            if (this._subs.delete(cb) && !this._subs.size)
+                this._stop();
+        };
+    },
+
+    _start() {
+        const monitor = global.backend.get_core_idle_monitor();
+        this._away = false;
+        // fires at once when already idle that long (its ready time counts from the
+        // last event, meta-idle-monitor.c make_watch)
+        this._idleId = monitor.add_idle_watch_full(AWAY_MS, () => this._setAway(true),
+            Meta.IdleMonitorWatchFlags.UNINHIBITABLE);
+        this._animId = St.Settings.get().connect('notify::enable-animations', () => this._emit());
+    },
+
+    _setAway(away) {
+        this._away = away;
+        if (away && !this._activeId) {
+            // one-shot: Mutter removes it once fired (meta_idle_monitor_watch_fire)
+            this._activeId = global.backend.get_core_idle_monitor().add_user_active_watch(() => {
+                this._activeId = 0;
+                this._setAway(false);
+            });
+        }
+        this._emit();
+    },
+
+    _emit() {
+        for (const cb of [...this._subs])
+            cb();
+    },
+
+    _stop() {
+        const monitor = global.backend.get_core_idle_monitor();
+        for (const id of [this._idleId, this._activeId]) {
+            if (id)
+                monitor.remove_watch(id);
+        }
+        this._idleId = this._activeId = 0;
+        if (this._animId)
+            St.Settings.get().disconnect(this._animId);
+        this._animId = 0;
+        this._away = false;
+    },
+};
+
+// When each Bu was first shown, per activity surface and pose: content is rebuilt on
+// every update, light change and peek, and a rebuilt Bu carries on (a once pose does not
+// replay). A short list: an entry outlives its activity only until 32 newer ones.
+const STARTS = new Map();
+const STARTS_MAX = 32;
+const now = () => GLib.get_monotonic_time() / 1000;
+
+function startOf(key) {
+    if (!STARTS.has(key)) {
+        STARTS.set(key, now());
+        if (STARTS.size > STARTS_MAX)
+            STARTS.delete(STARTS.keys().next().value);
+    }
+    return STARTS.get(key);
+}
+
+// A stale activity is dimmed (APPLE §B1): its text and icons turn grey in CSS; Bu's
+// palette is fixed, so it is dimmed to 40 % as the `stale` preview (MASCOT.md).
+const STALE_OPACITY = 102;
+
+function dimMascots(actor) {
+    for (const a of actor.get_children()) {
+        if (a.has_style_class_name?.('buoy-mascot'))
+            a.opacity = STALE_OPACITY;
+        else
+            dimMascots(a);
+    }
+}
+
+function dimStale(box) {
+    box.add_style_class_name('buoy-stale');
+    dimMascots(box);
+}
+
+const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+
+/**
+ * One St.DrawingArea painting Bu's grid in MASCOT.md's palette; the lamp in the stack's
+ * amber/red or the pose's colour (kit/mascot.js lampColour). A moving pose swaps two
+ * frames every 500 ms with one timer, only while mapped and not held still; gone on
+ * unmap, destroy, and with it on pose change and disable (the content is rebuilt).
+ *
+ * @param {object} e  {type: 'mascot', pose, light}
+ * @param {number} size  px, a multiple of 10
+ * @param {?object} activity  for where the pose started (id and surface)
+ * @returns {St.DrawingArea}
+ */
+function mascot(e, size, activity) {
+    const area = new St.DrawingArea({style_class: 'buoy-mascot', y_align: Clutter.ActorAlign.CENTER});
+    area.set_size(size, size);
+    const start = startOf(`${activity?.id}\u0000${activity?._seq}\u0000${e.pose}`);
+    const frame = held => frameAt(e.pose, now() - start, {still: held});
+    let shown = frame(false);
+    let timer = 0, unsubscribe = null;
+
+    const clear = () => {
+        if (timer)
+            GLib.source_remove(timer);
+        timer = 0;
+    };
+    const step = () => {
+        clear();
+        const f = frame(unsubscribe ? stillness.held : false);
+        if (f.frame !== shown.frame || f.pose !== shown.pose) {
+            shown = f;
+            area.queue_repaint();
+        }
+        if (f.nextIn !== null && unsubscribe) {
+            timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, Math.max(1, Math.ceil(f.nextIn)), () => {
+                timer = 0;
+                step();
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+    };
+    const stop = () => {
+        clear();
+        unsubscribe?.();
+        unsubscribe = null;
+    };
+    if (moves(e.pose)) {
+        area.connect('notify::mapped', () => {
+            stop();
+            if (area.mapped)
+                unsubscribe = stillness.subscribe(step);
+            step();
+        });
+        area.connect('destroy', stop);
+    }
+
+    area.connect('repaint', () => {
+        const cr = area.get_context();
+        const [w] = area.get_surface_size();
+        const cell = w / GRID;
+        cr.setAntialias(Cairo.Antialias.NONE);  // crisp cells (MASCOT.md: no partial opacity)
+        for (const c of cells(shown.frame, lampColour(shown.pose, e.light))) {
+            cr.setSourceRGB(...rgb(c.colour));
+            cr.rectangle(c.x * cell, c.y * cell, c.w * cell, cell);
+            cr.fill();
+        }
+        cr.$dispose();
+    });
+    return area;
+}
+
 function eqGlyph() {
     const box = new St.BoxLayout({style_class: 'buoy-eq', y_align: Clutter.ActorAlign.CENTER});
     for (const h of [6, 10, 8]) // static: nothing animates (SPEC §8)
@@ -81,11 +265,13 @@ function eqGlyph() {
     return box;
 }
 
-function makeElement(e, mode) {
+function makeElement(e, mode, activity = null) {
     if (!e)
         return null;
     const size = SIZE[mode];
     switch (e.type) {
+    case 'mascot':
+        return mascot(e, size.mascot, activity);
     case 'icon':
         return new St.Icon({
             style_class: 'buoy-icon', icon_size: size.icon,
@@ -177,14 +363,14 @@ function compactBox(p, activity, maxWidth, buttons) {
         box.set_style(`max-width: ${maxWidth}px;`);
     addAll(box, [
         lightDot(p.light),           // edge slot first: the zones nudge inward (SPEC §2a)
-        makeElement(p.leading, 'compact'),
+        makeElement(p.leading, 'compact', activity),
         p.text ? label(p.text, 'buoy-text', true) : null,
         makeElement(p.trailing, 'compact'),
         ...buttons.map(a => actionButton(a, activity)),
         p.badge ? badge(p.badge) : null, // +N on the last pill (SPEC §2c)
     ]);
     if (p.stale)
-        box.add_style_class_name('buoy-stale');
+        dimStale(box);
     return box;
 }
 
@@ -242,9 +428,9 @@ export function buildIdle({width, light}) {
     return box;
 }
 
-function makeRegion(r) {
+function makeRegion(r, activity) {
     if (r?.type !== 'block')
-        return makeElement(r, 'expanded');
+        return makeElement(r, 'expanded', activity);
     const box = new St.BoxLayout({
         style_class: 'buoy-block', orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
@@ -271,7 +457,7 @@ export function buildExpanded(activity) {
     });
     const top = new St.BoxLayout({style_class: 'buoy-expanded-top', x_expand: true});
     for (const name of ['leading', 'center', 'trailing']) {
-        const actor = makeRegion(p[name]);
+        const actor = makeRegion(p[name], activity);
         if (actor) {
             actor.x_expand = p.grow === name;
             top.add_child(actor);
@@ -285,6 +471,6 @@ export function buildExpanded(activity) {
         box.add_child(row);
     }
     if (p.stale)
-        box.add_style_class_name('buoy-stale');
+        dimStale(box);
     return box;
 }
