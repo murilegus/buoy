@@ -40,9 +40,9 @@ carry. `kind` is required; everything else is optional. An unknown key is an err
 | `app` | s | any id the app goes by; slugged (`com.example.Deploy` → `deploy`) |
 | `text` | s | the pill's text; ellipsized, never cut by Buoy |
 | `leading`, `trailing` | s or a{sv} | icon name, or `{'icon'}`, `{'art'}`, `{'progress': 0..1}`, `{'bar'}`, `{'countdown': s}`, `{'text'}`, `{'mascot': s}` (a Bu pose, leading only, MASCOT.md; drawn since M3 Bu, 2026-11-04; an unknown pose shows `icon` if sent, else `idle`) |
-| `expanded` | b or a{sv} | `true` = enlarged compact; or regions `leading`, `center` (`{'title', 'subtitle', 'progress'}`), `trailing`, `bottom` (`{'transport': true}`) |
-| `actions` | aa{sv} | `[{'id', 'label'?, 'icon'?}]`: 1 shown in compact, 3 in expanded; pressed → `Action` |
-| `peek` | a{sv} | what hover shows: `{'leading', 'text', 'trailing', 'transport'}` |
+| `expanded` | b or a{sv} | `true` = enlarged minimal; or regions `leading`, `center` (`{'title', 'subtitle', 'progress'}`), `trailing`, `bottom` (`{'transport': true}`) |
+| `actions` | aa{sv} | `[{'id', 'label'?, 'icon'?}]`: 1 shown in minimal, 3 in compact and expanded; pressed → `Action` |
+| `compact` | a{sv} | what hover shows, the compact tier (SPEC §2; was `peek` until 2026-11-05): `{'leading', 'text', 'trailing', 'transport'}` |
 | `attributes`, `state` | a{sv} | your data; profiles read `attributes` like an event |
 | `priority` | number 0–100 | across all apps; default by kind (progress 30, notification 70 …) |
 | `ttl`, `staleAfter` | number, ms | ends after `ttl` (8 h at most); dims after `staleAfter` without an update |
