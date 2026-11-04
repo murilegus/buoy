@@ -239,7 +239,7 @@ for several pills.
 |---|---|---|---|
 | **Idle** | no activity | `IDLE` 120×32 r16; content per `idle-content` (§2a) | hover → +10 % width, +2 height, and with the amber light the missed list as a compact; press → +16 % pulse; **click → open Home** |
 | **Minimal** | one or more activities | pill 1 (highest priority) at screen centre, content-fit; up to two side pills to its right, each a fixed 120×32, as many as fit before the system cluster (§2c) | hover a pill 300 ms → its compact; **click → that activity's tab**, Home on the `+N` badge or while the missed list shows (2026-11-04) |
-| **Compact** | the pointer rests on a pill | the hovered pill grows in place: top edge kept, width 0.72 × expanded (content-fit, ≥ 240), height 56 for one row or 88 with a bar or up to 3 rows (§4) | the activity's compact content (media: transport and seek bar), or the amber missed list instead (INDICATORS.md); its buttons run their action, a click elsewhere on it = the pill's click; never takes the keyboard; collapses 200 ms after the pointer leaves |
+| **Compact** | the pointer rests on a pill | the hovered pill grows in place: top edge kept, width 0.72 × expanded (content-fit, ≥ 240), height 56 for one row, 88 with a bar, content-fit up to 120 for rows (§4) | the activity's compact content (media: transport and seek bar), or the amber missed list instead (INDICATORS.md); its buttons run their action, a click elsewhere on it = the pill's click; never takes the keyboard; collapses 200 ms after the pointer leaves |
 | **Expanded** | opened from idle, minimal or compact by a click; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open); clicks inside do nothing, buttons run their action (decided 2026-11-01) |
 
 Rules:
@@ -593,9 +593,9 @@ container is sized to that cap.
 | hover / press | +10 % / +16 % width, +2 / +4 height (a pill before or without its compact) | 132×34 / 140×36 from idle | | |
 | minimal, pill 1 | content + 28 (rounded up), clamped to [idle, 0.6×expanded] (`'wide'` hint → 0.8) | ≤ 336 | ≤ 430 | ≤ 456 |
 | minimal, pills 2–3 | fixed, the idle size | 120×32 | 120×32 | 120×32 |
-| compact | width 0.72 × expanded, content-fit down to 240; height 56 (one row) or 88 (a bar, or up to 3 rows); r 24; top edge at the pill's (2026-11-05) | 404 × 56/88 | 516 × 56/88 | 548 × 56/88 |
+| compact | width 0.72 × expanded, content-fit down to 240; height 56 (one row), 88 (a bar), content-fit up to 120 for rows (a title and 3 rows measure 72 px, so the missed list is 88; a 40 px leading over 3 rows needs more — measured in Shell 50.1, 2026-11-05); r 24; top edge at the pill's (2026-11-05) | ≤ 404 × 56/88/≤120 | ≤ 516 | ≤ 548 |
 | expanded | width `clamp(0.28 × W, 560, 760)` or `expanded-width` (≤ W − 40); height fits content, at most width/2; r 28 | 560 × ≤280 | 716 × ≤358 | 760 × ≤380 |
-| container | expanded + 20 px each side (overshoot room); tall enough for expanded, so for compact too | | | |
+| container | the monitor's width (2026-11-05, was expanded + 20 each side: a compact may open on any pill, up to 4 px from the screen edge), expanded's cap + 40 tall; never reactive at rest, so it takes no clicks (Clutter picks only reactive actors, `clutter_actor_should_pick`) | 1920 | 2560 | 3440 |
 
 Leading element per tier (2026-11-05): 20 px minimal, 40 compact, 56 expanded; Bu
 20 / 40 / 50, whole multiples of its 10-cell grid (MASCOT.md). Up to 1 action in

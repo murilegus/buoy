@@ -1,5 +1,5 @@
 // Run: gjs -m tests/presentation.test.js   (pure: presentation data → render plan)
-import {element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, missedLine, clockTime, MAX_ACTIONS} from
+import {element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, planMissed, clockTime, MAX_ACTIONS, MAX_ROWS} from
     '../src/buoy@murilegus/lib/kit/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
@@ -161,15 +161,27 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     eq(planMinimal({...ask, kind: 'ask'}).action, {id: 'Deny', label: 'Deny', icon: null}, 'minimal ask action has no key');
 }
 
-// --- missed history (2026-11-03): the hover line and row times ------------------------
-eq(missedLine([]), null, 'nothing missed: no line');
-eq(missedLine([{text: 'Copy done'}]), '1 missed · Copy done', 'one');
-eq(missedLine([{text: 'Copy done'}, {text: 'Tea 4:00'}]), '2 missed · Copy done · Tea 4:00', 'newest first, as given');
-eq(missedLine([{text: ''}, {kind: 'timer'}, {text: null, kind: 'progress'}]), '3 missed · timer · progress',
-    'empty text falls back to the kind; an entry with neither is left out of the line but counted');
-eq(missedLine(Array.from({length: 5}, (_, i) => ({text: `t${i}`}))), '5 missed · t0 · t1 · t2 · t3 · t4',
-    'all five named: the renderer ellipsizes, never cut here');
+// --- missed history: the amber light's compact (INDICATORS.md, 2026-11-05) -------------
 const local = (h, m) => new Date(2026, 10, 3, h, m).getTime();
+eq(planMissed([]), null, 'nothing missed: no compact');
+eq(planMissed(null), null, 'no list: no compact');
+{
+    const tabIcon = k => ({timer: 'alarm-symbolic', progress: 'folder-download-symbolic'}[k] ?? null);
+    const m = planMissed([
+        {kind: 'progress', text: 'Copy done', at: local(22, 41)},
+        {kind: 'timer', text: '', at: local(22, 5)},
+        {kind: 'agent', text: 'Claude finished', at: local(21, 30)},
+        {kind: 'x', text: 'fourth', at: local(20, 0)},
+    ], tabIcon);
+    eq(m.title, 'Missed · 4', 'the count is the whole history');
+    eq(m.rows.length, MAX_ROWS, 'at most 3 rows');
+    eq(m.rows[0], {icon: {type: 'icon', icon: 'folder-download-symbolic'}, text: 'Copy done', detail: '22:41'},
+        'a row: its tab icon, its text, the time it ended');
+    eq(m.rows[1].text, 'timer', 'empty text falls back to the kind');
+    eq(m.rows[2].icon, {type: 'icon', icon: 'view-app-grid-symbolic'}, 'a kind with no tab: the generic icon');
+    eq([m.tall, m.light], [true, 'missed'], 'always the 88 px compact, on the amber light');
+    eq(planMissed([{kind: 'x', text: 'a'}]).rows[0].detail, null, 'no time: no detail');
+}
 eq(clockTime(local(14, 2)), '14:02', '24 h clock, zero-padded minutes');
 eq(clockTime(local(9, 5)), '09:05', 'zero-padded hours');
 eq(clockTime(NaN), '', 'no time: empty');
@@ -204,6 +216,36 @@ eq(planCompact({compact: {}}), null, 'empty compact → no compact');
     eq([p.keyline, p.stale, p.light], ['#1db954', true, 'missed'], 'compact inherits keyline, stale, light');
     eq(planCompact({actions: acts, compact: {text: 'x'}}).actions, [], 'no transport → no buttons');
     eq(planCompact({compact: {transport: true}}), null, 'transport without actions or content → no compact');
+}
+
+// --- compact: two lines, a bar or rows (SPEC §2, §4, 2026-11-05) ---------------------
+{
+    const p = planCompact({compact: {leading: {art: 'file:///a.png'}, text: 'Song', subtitle: 'Artist · Album', progress: 0.42}});
+    eq([p.text, p.subtitle, p.progress, p.tall], ['Song', 'Artist · Album', 0.42, true], 'title, subtitle, a bar → tall');
+    eq(planCompact({compact: {text: 'x', progress: 7}}).progress, 1, 'progress clamps to 1');
+    eq(planCompact({compact: {text: 'x', progress: '0.5'}}).progress, null, 'progress must be a number');
+    eq(planCompact({compact: {text: 'x'}}).tall, false, 'one row → 56 px');
+    eq(planCompact({compact: {subtitle: 'only the second line'}}).subtitle, 'only the second line', 'a subtitle alone is content');
+    const rowsIn = [{icon: 'a-symbolic', text: 'one', detail: '1:00'}, {text: '  '}, 'nope',
+        {text: 'two'}, {text: 'three'}, {text: 'four'}];
+    const r = planCompact({compact: {rows: rowsIn}});
+    eq(r.rows.map(x => x.text), ['one', 'two', 'three'], 'rows: blank and non-objects dropped, at most 3');
+    eq(r.rows[0], {icon: {type: 'icon', icon: 'a-symbolic'}, text: 'one', detail: '1:00'}, 'a row');
+    eq(r.rows[1], {icon: null, text: 'two', detail: null}, 'a row without icon or detail');
+    eq(r.tall, true, 'rows → tall');
+    eq(planCompact({compact: {rows: 'no'}}), null, 'rows must be a list');
+    const long = 'x'.repeat(500);
+    eq(planCompact({compact: {text: long, subtitle: long}}).subtitle, long, 'long text is not cut here (the renderer ellipsizes)');
+}
+
+// --- side pills: leading + trailing, text dropped (SPEC §2c, APPLE §B3) -----------------
+{
+    const timer = {leading: 'alarm-symbolic', text: 'Tea', trailing: {countdown: 240}};
+    eq(planMinimal(timer, {side: true}).text, null, 'side pill drops text');
+    eq(planMinimal(timer, {side: true}).trailing, {type: 'text', text: '4:00'}, 'side pill keeps the countdown in trailing');
+    eq(planMinimal(timer).text, 'Tea', 'pill 1 keeps text');
+    eq(planMinimal({text: 'only text'}, {side: true}).text, 'only text', 'nothing else to show: the text stays');
+    eq(planMinimal({leading: 'a-symbolic', text: 't'}, {side: true, more: 2}).badge, '+2', 'side pill still carries +N');
 }
 
 // --- +N badge (SPEC §2c: the last pill carries it) ----------------------------------

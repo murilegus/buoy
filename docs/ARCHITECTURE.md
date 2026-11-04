@@ -105,7 +105,8 @@ fields and order: [PROFILES.md](PROFILES.md).
    priority, keyline, style, sizeHint, onPress, compact}` (`compact` = the hover tier, was
    `peek` until 2026-11-05; SPEC §2). An override returns the same shape. Names in code
    follow the tiers: `shapes.minimal` / `planMinimal` / `buildMinimal` for the pill in the
-   bar, `planCompact` / `buildCompact` for the hover tier, `shared` for pills sharing the bar.
+   bar, `planCompact` / `buildCompact` for the hover tier, `shapes.side` for the 120 px side
+   pills (2026-11-05).
 4. **Per-app overrides live under the module of the kind they override.** An app present
    in two kinds has two small files. No central `apps/<app>/` folder.
 5. **One slug per app** across every source (MPRIS bus name, desktop id, notification

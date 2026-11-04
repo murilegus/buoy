@@ -13,8 +13,13 @@
  *             any region may carry `priority` (the highest one takes the free width)
  *   actions: [{id, label?, icon?}] — 1 shown in minimal, 3 in compact and expanded (APPLE.md B5.5)
  *
- *   compact: {leading, text, trailing, transport?} — the hover tier (SPEC §2; Buoy's own, no Apple
- *         equivalent); transport: true adds up to 3 of the activity's actions as buttons
+ *   compact: {leading, text, subtitle?, trailing, transport?, progress?, rows?} — the hover
+ *         tier (SPEC §2; Buoy's own, no Apple equivalent): leading 40, a title and a
+ *         subtitle line, transport: true adds up to 3 of the activity's actions as buttons,
+ *         progress (0..1) a bar under them, rows up to 3 `{icon?, text, detail?}`
+ *
+ * Minimal is one set of data for every pill (APPLE §B3): a side pill drops `text` and
+ * keeps leading + trailing, so the short value that matters belongs in `trailing`.
  *
  * The buoy light (SPEC §2a-i) is the pill's left edge slot: grey `off` only in idle,
  * `missed` (amber) / `waiting` (red) in idle, minimal and compact, never in expanded. When Bu
@@ -161,14 +166,17 @@ export function planIdle({light, plan = null} = {}) {
  * @param {object} [opts]
  * @param {string} [opts.light]  the stack's light
  * @param {number} [opts.more]  activities beyond the shown pills (last pill only)
+ * @param {boolean} [opts.side]  a 120 px side pill (SPEC §2c): text dropped, unless there
+ *   is nothing else to show
  * @returns {object} {leading, text, trailing, action, keyline, stale, light, badge}
  */
-export function planMinimal(p, {light, more} = {}) {
+export function planMinimal(p, {light, more, side = false} = {}) {
     const lead = leadingAndLight(p.leading, light);
+    const trailing = element(p.trailing);
     return {
         leading: lead.leading,
-        text: str(p.text),
-        trailing: element(p.trailing),
+        text: side && (lead.leading || trailing) ? null : str(p.text),
+        trailing,
         action: actions(p.actions, MAX_ACTIONS.minimal)[0] ?? null,
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
@@ -181,7 +189,8 @@ export function planMinimal(p, {light, more} = {}) {
  * @param {object} p  presentation data (an activity)
  * @param {object} [opts]
  * @param {string} [opts.light]  the stack's light
- * @returns {?object} {leading, text, trailing, actions, keyline, stale, light} or null
+ * @returns {?object} {leading, text, subtitle, trailing, actions, progress, rows, tall,
+ *   keyline, stale, light} or null; `tall`: a bar or rows (88 px, else 56)
  */
 export function planCompact(p, {light} = {}) {
     if (!isPlain(p.compact))
@@ -191,15 +200,31 @@ export function planCompact(p, {light} = {}) {
     const plan = {
         leading: lead.leading,
         text: str(c.text),
+        subtitle: str(c.subtitle),
         trailing: element(c.trailing),
         actions: c.transport === true ? actions(p.actions, MAX_ACTIONS.compact) : [],
+        progress: isNum(c.progress) ? clamp01(c.progress) : null,
+        rows: rows(c.rows),
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
         light: lead.light,
     };
-    if (!plan.leading && !plan.text && !plan.trailing && !plan.actions.length)
+    plan.tall = plan.progress !== null || plan.rows.length > 0;
+    if (!plan.leading && !plan.text && !plan.subtitle && !plan.trailing && !plan.actions.length &&
+        !plan.tall)
         return null;
     return plan;
+}
+
+export const MAX_ROWS = 3;
+
+function rows(list) {
+    if (!Array.isArray(list))
+        return [];
+    return list
+        .filter(r => isPlain(r) && str(r.text))
+        .slice(0, MAX_ROWS)
+        .map(r => ({icon: icon(r.icon), text: str(r.text), detail: str(r.detail)}));
 }
 
 function region(r, name) {
@@ -265,17 +290,27 @@ export function planExpanded(p) {
 }
 
 /**
- * The hover line of the amber light (INDICATORS.md: the state in words, not only a
- * colour): `2 missed · Copy done · Tea 4:00`, newest first. Not cut here.
+ * The amber light's compact (INDICATORS.md, 2026-11-05): "Missed · N" and up to 3 rows,
+ * newest first, each the kind's icon, its text and the time it ended.
  *
- * @param {object[]} missed  stack.missed: {text, kind, at}
- * @returns {?string} null when nothing was missed
+ * @param {object[]} missed  the stack's history, newest first ({kind, text, at})
+ * @param {function(string): ?string} [iconOf]  kind → icon name (its tab's)
+ * @returns {?object} {title, rows: [{icon: element, text, detail}], tall: true, light: 'missed'} or
+ *   null when nothing was missed
  */
-export function missedLine(missed) {
-    if (!missed?.length)
+export function planMissed(missed, iconOf = () => null) {
+    if (!Array.isArray(missed) || !missed.length)
         return null;
-    const names = missed.map(m => str(m.text) ?? str(m.kind)).filter(Boolean);
-    return [`${missed.length} missed`, ...names].join(' · ');
+    return {
+        title: `Missed · ${missed.length}`,
+        rows: missed.slice(0, MAX_ROWS).map(m => ({
+            icon: icon(iconOf(m.kind)) ?? icon('view-app-grid-symbolic'),
+            text: str(m.text) ?? str(m.kind) ?? '',
+            detail: clockTime(m.at) || null,
+        })),
+        tall: true,
+        light: 'missed',
+    };
 }
 
 /**

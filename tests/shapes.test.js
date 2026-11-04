@@ -1,5 +1,5 @@
 // Run: gjs -m tests/shapes.test.js   (pure; no Shell needed)
-import {shapesFor, GAP, OVERSHOOT, PILL_GAP} from '../src/buoy@murilegus/lib/kit/shapes.js';
+import {shapesFor, compactCx, COMPACT_MIN, COMPACT_H, GAP, OVERSHOOT, PILL_GAP} from '../src/buoy@murilegus/lib/kit/shapes.js';
 
 const PANEL_H = 40; // Buoy's panel height (stylesheet.css)
 
@@ -9,17 +9,17 @@ function eq(actual, expected, msg) {
         throw new Error(`${msg}: expected ${e}, got ${a}`);
 }
 
-eq([GAP, OVERSHOOT, PILL_GAP], [4, 20, 8], 'constants');
+eq([GAP, OVERSHOOT, PILL_GAP, COMPACT_MIN, COMPACT_H], [4, 20, 8, 240, [56, 88, 120]], 'constants');
 
 // --- derivation per monitor width ------------------------------------------
 // expanded width = 28 % of the monitor, clamped to [560, 760], snapped to even px;
 // height = w / 2.
 const CASES = [
-    // container: wide enough for the centre pill + two side pills of sharedMax (SPEC §2c)
-    {width: 1366, expW: 560, expH: 280, sharedMax: 186, minimalMax: 336, wideMax: 448, containerW: 1002},
-    {width: 1920, expW: 560, expH: 280, sharedMax: 186, minimalMax: 336, wideMax: 448, containerW: 1002},
-    {width: 2560, expW: 716, expH: 358, sharedMax: 238, minimalMax: 430, wideMax: 572, containerW: 1262},
-    {width: 3440, expW: 760, expH: 380, sharedMax: 254, minimalMax: 456, wideMax: 608, containerW: 1342},
+    // container: the monitor's width, so a compact can open on any pill (SPEC §2c)
+    {width: 1366, expW: 560, expH: 280, minimalMax: 336, wideMax: 448, compactMax: 404, containerW: 1366},
+    {width: 1920, expW: 560, expH: 280, minimalMax: 336, wideMax: 448, compactMax: 404, containerW: 1920},
+    {width: 2560, expW: 716, expH: 358, minimalMax: 430, wideMax: 572, compactMax: 516, containerW: 2560},
+    {width: 3440, expW: 760, expH: 380, minimalMax: 456, wideMax: 608, compactMax: 548, containerW: 3440},
 ];
 
 for (const c of CASES) {
@@ -33,14 +33,8 @@ for (const c of CASES) {
     if (s.container.w > c.width)
         throw new Error(`${at} container wider than the monitor`);
 
-    // shared pills (several in the bar): content + 28, between idle and sharedMax
-    eq(s.shared(0), s.idle, `${at} shared(0) is idle`);
-    eq(s.shared(100.2).w, 130, `${at} shared content-fit, even`);
-    eq(s.shared(5000).w, c.sharedMax, `${at} shared capped at expanded/3`);
-    eq([s.shared(150).h, s.shared(150).r], [32, 16], `${at} shared keeps pill height`);
-    if (c.sharedMax / 2 + 2 * (PILL_GAP + c.sharedMax) > s.container.w / 2)
-        throw new Error(`${at} three shared pills do not fit the container`);
-    eq(s.sharedMax, c.sharedMax, `${at} sharedMax`);
+    // side pills 2 and 3: one fixed shape, the idle size (SPEC §2c, 2026-11-05)
+    eq(s.side, {w: 120, h: 32, r: 16}, `${at} side pill is 120 × 32`);
 
     // hover / press grow from whatever base they get
     eq(s.hover(s.idle), {w: 132, h: 34, r: 17}, `${at} hover(idle)`);
@@ -56,19 +50,44 @@ for (const c of CASES) {
     eq(s.minimal(5000, 'bogus').w, c.minimalMax, `${at} unknown hint behaves as normal`);
     eq([s.minimal(200).h, s.minimal(200).r], [32, 16], `${at} minimal keeps pill height`);
 
+    // compact (SPEC §4): 0.72 × expanded, content-fit down to 240, 56 or 88 tall, r 24
+    eq(s.compactMax, c.compactMax, `${at} compactMax = 0.72 × expanded`);
+    eq(s.compact(5000, 40), {w: c.compactMax, h: 56, r: 24}, `${at} compact capped, one row`);
+    eq(s.compact(10, 10).w, COMPACT_MIN, `${at} compact never below 240`);
+    eq(s.compact(300.4, 40).w, 330, `${at} compact content-fit + 28, even`);
+    eq(s.compact(300, 40).h, 56, `${at} 40 px of content (leading 40) → 56`);
+    eq(s.compact(300, 41).h, 88, `${at} more than one row → 88`);
+    eq(s.compact(300, 72).h, 88, `${at} a bar under a 40 px row still 88`);
+    eq(s.compact(300, 82).h, 98, `${at} a title and 3 rows: content-fit (82 + 16)`);
+    eq(s.compact(300, 81).h, 98, `${at} content-fit heights are even`);
+    eq(s.compact(300, 200).h, 120, `${at} taller content stops at 120`);
+
+    // where a compact opens: on its pill, shifted only to stay GAP inside the screen
+    const W = s.container.w, cw = c.compactMax;
+    eq(compactCx(W / 2, cw, W), W / 2, `${at} compact on the centre pill stays centred`);
+    eq(compactCx(W - 10, cw, W), W - GAP - cw / 2, `${at} near the right edge: shifted left`);
+    eq(compactCx(10, cw, W), GAP + cw / 2, `${at} near the left edge: shifted right`);
+    // pill 1 at its widest (wide), two side pills: a compact on pill 3 needs no shift
+    const p3 = W / 2 + c.wideMax / 2 + 2 * PILL_GAP + s.side.w + s.side.w / 2;
+    if (p3 + cw / 2 > W - GAP)
+        throw new Error(`${at} a compact on pill 3 would leave the screen`);
+    eq(compactCx(p3, cw, W), Math.round(p3), `${at} compact on pill 3 keeps its centre`);
+
     // the pill must always fit inside the input container, including press overshoot
     const press = s.press(s.minimal(5000, 'wide'));
     if (press.w > s.container.w || press.h > s.container.h)
         throw new Error(`${at} press(wide minimal) ${press.w}x${press.h} overflows container`);
     if (s.expanded.w > s.container.w || s.expanded.h > s.container.h)
         throw new Error(`${at} expanded overflows container`);
+    if (COMPACT_H[2] > s.container.h)
+        throw new Error(`${at} compact overflows container`);
 
     // every resting shape is whole and even-wide, so it centres on a whole pixel
-    const shapes = [s.idle, s.expanded, s.hover(s.idle), s.press(s.idle)];
+    const shapes = [s.idle, s.side, s.expanded, s.hover(s.idle), s.press(s.idle), s.hover(s.side)];
     for (const w of [0, 1, 37.5, 99, 100.2, 211, 333.3, 420, 5000]) {
         for (const hint of ['normal', 'wide']) {
             const base = s.minimal(w, hint);
-            shapes.push(base, s.hover(base), s.press(base), s.shared(w), s.hover(s.shared(w)));
+            shapes.push(base, s.hover(base), s.press(base), s.compact(w, 30), s.compact(w, 70), s.compact(w, 87));
         }
     }
     for (const sh of shapes) {
@@ -82,8 +101,6 @@ for (const c of CASES) {
         if (sh.r > sh.h / 2)
             throw new Error(`${where}: radius above h/2`);
     }
-    if (s.sharedMax % 2 !== 0)
-        throw new Error(`${at} sharedMax not even`);
 }
 
 // clamp edges
@@ -95,8 +112,8 @@ eq(shapesFor({width: 800}, PANEL_H).expanded.w, 560, 'small monitor never goes b
 {
     const s = shapesFor({width: 1920}, PANEL_H, {expandedWidth: 600});
     eq(s.expanded, {w: 600, h: 300, r: 28}, 'override expanded (h is the content cap)');
-    eq(s.container, {w: 1072, h: 340}, 'override container (three 200 px pills)');
-    eq(s.sharedMax, 200, 'override sharedMax');
+    eq(s.container, {w: 1920, h: 340}, 'override container (the monitor)');
+    eq(s.compactMax, 432, 'override: compact 0.72 × 600');
     eq(s.minimal(5000).w, 360, 'override caps minimal at 60 %');
     eq(s.idle, {w: 120, h: 32, r: 16}, 'override leaves idle alone');
 }
@@ -104,6 +121,8 @@ eq(shapesFor({width: 1366}, PANEL_H, {expandedWidth: 900}).expanded.w, 900,
     'override wins over the monitor clamp (above 760)');
 eq(shapesFor({width: 3440}, PANEL_H, {expandedWidth: 400}).expanded.w, 400,
     'override wins over the monitor clamp (below 560)');
+eq(shapesFor({width: 3440}, PANEL_H, {expandedWidth: 300}).compactMax, COMPACT_MIN,
+    'a tiny expanded never makes compact narrower than its floor');
 eq(shapesFor({width: 1920}, PANEL_H, {expandedWidth: 601}).expanded, {w: 602, h: 301, r: 28},
     'odd override snaps to even');
 eq(shapesFor({width: 1366}, PANEL_H, {expandedWidth: 5000}).container.w, 1366,
