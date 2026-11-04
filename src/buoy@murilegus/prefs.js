@@ -72,7 +72,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     _islandPage(plan, key) {
         const page = new Adw.PreferencesPage({title: 'Island', icon_name: 'focus-top-bar-symbolic'});
 
-        const idle = new Adw.PreferencesGroup({title: 'When Idle', description: 'What the pill shows with nothing going on.'});
+        const idle = new Adw.PreferencesGroup({title: 'When Idle'});
         for (const name of plan.idle)
             idle.add(this._row(key(name)));
         page.add(idle);

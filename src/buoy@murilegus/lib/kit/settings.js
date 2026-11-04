@@ -194,8 +194,7 @@ export const CHOICE_LABELS = {
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
     'idle-content': {'none': 'Nothing', 'clock': 'Clock'},
     'idle-clock-style': {
-        'icon-time': 'Picture and time', 'time': 'Time only', 'icon': 'Picture only',
-        'seconds': 'Picture and time with seconds',
+        'icon-time': 'Picture & time', 'time': 'Time', 'icon': 'Picture', 'seconds': 'With seconds',
     },
 };
 
