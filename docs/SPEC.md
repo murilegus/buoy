@@ -450,6 +450,10 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 - **Dayparts** — `kit/daypart.js`, shared with the clock plan's icons and `auto`'s
   `ctx.daypart`: `dawn · morning · noon · afternoon · evening · night`, starts from
   `daypart-starts` (ai, hours, default `[5, 7, 11, 13, 18, 22]`, wrapping past midnight).
+  Any rotation works (night may start at 1, dawn at 23) as long as the six hours are
+  distinct and in cyclic order; anything else falls back to the defaults, never an
+  error. A part changes on the hour; a consumer that must follow it arms one timer at
+  `nextBoundary()` (2026-11-04).
   Greetings: dawn and morning → "Good morning", noon → "Good day" (vi "Chào buổi trưa"),
   afternoon → "Good afternoon", evening → "Good evening", night → "Still up" (vi
   "Khuya rồi").

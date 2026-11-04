@@ -143,7 +143,7 @@ fields and order: [PROFILES.md](PROFILES.md).
 Planned keys are listed here too; the schema holds only the ones whose item has landed
 (2026-11-04: `modules-*`, `apps-hidden`, `apps-plain`, `tabs-pinned`, `tabs-slot`,
 `expanded-width`, `dev-mode`, `keybind-focus`, `cluster-background`, `cluster-radius`,
-`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`, `dock-defaults-applied`, `window-corners`, `window-corners-radius`, `mascot-rest-after`). Every key applies at once — prefs and
+`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`, `dock-defaults-applied`, `window-corners`, `window-corners-radius`, `mascot-rest-after`, `daypart-starts`). Every key applies at once — prefs and
 `gsettings` alike; `modules-<id>` starts or stops only that module.
 
 | Key | Type | Effect |
@@ -154,7 +154,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `idle-content` | s | `auto` (default, 2026-11-03) \| `none` \| any module's idle plan id |
 | `idle-auto-plans` | as | plans `auto` may show, in tie-break order; default every enabled plan |
 | `idle-auto-interval` | i | minutes between `auto` re-ranks while idle; default `5`, 2–30 |
-| `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]` |
+| `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`; bad values → defaults. In the schema since M3 daypart, on the Island page once a plan reads it (2026-11-04) |
 | `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only) |
 | `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |
 | `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
