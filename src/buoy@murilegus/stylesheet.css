@@ -136,7 +136,7 @@
     background-color: rgba(255, 255, 255, 0.12);
 }
 .buoy-action:hover { background-color: rgba(255, 255, 255, 0.2); }
-.buoy-action:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-action:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-compact .buoy-action { padding: 2px 8px; }
 /* An ask's key (kit/keys.js), shown only while the island holds the keyboard. */
 .buoy-action-face { spacing: 6px; }
@@ -149,8 +149,10 @@
     border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
-/* Super+B (SPEC §2c): the pill the keyboard is on. No blur: a flat inset ring. */
-.buoy-island.buoy-focused { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55); }
+/* Super+B (SPEC §2c): the pill the keyboard is on. Its own 1 px border turns the theme's
+   accent (-st-accent-color, as GNOME's focus rings), full strength since it is thinner
+   than GNOME's 2 px; flat, no blur. pill.js drops the keyline meanwhile. */
+.buoy-island.buoy-focused { border-color: -st-accent-color; }
 
 /* The buoy light: left edge slot, static (INDICATORS.md — one colour, one meaning). */
 .buoy-light { width: 7px; height: 7px; border-radius: 4px; }
@@ -193,12 +195,12 @@
 .buoy-tab-box { spacing: 7px; }
 .buoy-tab:hover { color: #fff; background-color: rgba(255, 255, 255, 0.08); }
 .buoy-tab:checked { padding: 6px 14px; color: #fff; background-color: rgba(255, 255, 255, 0.2); }
-.buoy-tab:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-tab:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-tab.buoy-more:checked { padding: 6px 9px; } /* the menu hangs from its edge */
 .buoy-home-list { spacing: 2px; }
 .buoy-home-row { padding: 6px 8px; border-radius: 12px; }
 .buoy-home-row:hover { background-color: rgba(255, 255, 255, 0.08); }
-.buoy-home-row:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-home-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-home-empty { color: #8a8a8a; padding: 8px; }
 /* Home's Missed section (2026-11-03): what ended while the island was hidden. */
 .buoy-home-section { spacing: 8px; padding: 8px 8px 2px; font-size: 12px; color: rgba(255, 255, 255, 0.55); }
@@ -221,7 +223,7 @@
 }
 .buoy-menu-row { padding: 7px 10px; border-radius: 9px; color: #fff; font-weight: 500; }
 .buoy-menu-row:hover { background-color: rgba(255, 255, 255, 0.1); }
-.buoy-menu-row:focus { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.buoy-menu-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-menu-row-box { spacing: 10px; }
 /* ⚙ at the right of the strip row: a round button in the strip's own grey */
 .buoy-panel-header { spacing: 8px; }

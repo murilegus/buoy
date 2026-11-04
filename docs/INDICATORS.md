@@ -81,6 +81,7 @@ The one place an app may put its colour on the pill — Apple's `keylineTint`. I
 | cover-art colour | if ever added (deferred), it feeds the keyline, never the background |
 | state colours | amber/red/orange/green are reserved for the slots; an adapter must not use them as keyline |
 | setting | `keyline = brand \| none`, default `brand`; `none` = plain black pill like iOS |
+| theme accent | never the keyline: an accent border at rest would say nothing and pull the eye all day. The accent is only the keyboard focus ring (`Super+B`, SPEC §2c), as everywhere in GNOME; while ringed, the 1 px border is the accent and the keyline waits (2026-11-04) |
 | motion | not eased (St can't); it switches with the content swap |
 
 ## What is NOT an indicator

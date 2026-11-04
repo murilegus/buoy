@@ -122,12 +122,15 @@ export class Pill {
     }
 
     // The keyboard ring (SPEC §2c): Super+B is on this pill. A style class, so nothing
-    // relayouts or animates.
+    // relayouts or animates; the ring is the border, so the keyline steps aside.
     setFocused(focused) {
+        this._focused = focused;
         if (focused)
             this.bg.add_style_class_name('buoy-focused');
         else
             this.bg.remove_style_class_name('buoy-focused');
+        if (this._radius !== undefined)
+            this.bg.set_style(this._bgStyle({r: this._radius}));
     }
 
     // Shown (side pills fade out while another pill is open, SPEC §2c merge).
@@ -175,7 +178,8 @@ export class Pill {
     }
 
     _bgStyle(shape) {
-        const k = keyline(this.activity?.keyline);
+        this._radius = shape.r;
+        const k = this._focused ? null : keyline(this.activity?.keyline);
         return `border-radius: ${shape.r}px;${k ? ` border-color: ${k};` : ''}`;
     }
 

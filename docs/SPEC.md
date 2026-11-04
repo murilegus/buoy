@@ -313,7 +313,12 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
 - Order: highest priority at screen centre, then to the right. When one ends, the rest
   slide to fill (eased x), never jump.
 - Keyboard (decided 2026-11-03): `Super+B` (`keybind-focus`) takes the keyboard like a
-  menu (modal) and rings the centre pill; ←/→ move the ring (no wrap); Enter or Space
+  menu (modal) and rings the centre pill: its own 1 px border turns the theme's accent
+  (`-st-accent-color`, the colour of GNOME's focus rings), full strength, so it follows
+  Settings → Appearance; an activity's keyline steps aside while it is ringed. Buttons,
+  tabs and rows inside keep GNOME's own 2 px accent ring at 80 % (Shell 50 `_drawing.scss`
+  `focus_ring`). (2026-11-04, Ethan: was 2 px of white at 55 % inside the border, 3 px in
+  all; 2 px of accent still read heavy on the pill); ←/→ move the ring (no wrap); Enter or Space
   opens the ringed pill as a click would (its tab, or Home); Esc or `Super+B` again lets
   go, and so does a click outside the pills. Open: ←/→ walk the tab strip, Esc closes.
   An open the stack made (ask, alert) takes no keyboard (§2); `Super+B` takes it for that
