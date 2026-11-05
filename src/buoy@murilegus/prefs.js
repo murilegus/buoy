@@ -1,4 +1,5 @@
 import Adw from 'gi://Adw';
+import Cairo from 'cairo';
 import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
@@ -10,20 +11,28 @@ import {
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
 } from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
+import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
 import {PATH} from './lib/kit/dbus.js';
 
 const IFACE = 'org.gnome.Shell.Extensions.Buoy';
+const REPOSITORY = 'https://github.com/murilegus/buoy';
+const BU = 40;                    // px, a multiple of GRID (MASCOT.md: 40 in prefs)
+const TILE = BU * 1.2;            // hello.svg: Bu on a 120 px tile with a 10 px margin
+const TILE_RADIUS = TILE / 6;     // hello.svg: rx 20 on 120
 
 /**
  * Buoy's prefs (FEATURES M1 "GSettings schema + prefs.js", 2026-11-03). The schema XML is
  * the source of every key's title and text; lib/kit/settings.js says where it goes.
  *
  *   Island    when idle (idle-content), each idle plan's keys, the pill (expanded width,
- *             Super+B, when Bu rests), developer mode, version (was General, 2026-11-04)
+ *             Super+B, when Bu rests) (was General, 2026-11-04)
  *   Modules   one expander per module: its switch, its own keys, a pin for standalone
  *             tabs, "Show a sample" (Surface over D-Bus, like any script)
  *   Apps      hidden and plain apps (slugged as the registry does), the profiles folder
  *   Panel     the top bar's clusters (M2)
+ *   Windows   under the top bar, the dock
+ *   About     Bu waving hello, the version, the repository, issues and license, and
+ *             developer mode (#102, 2026-11-05; was on Island)
  */
 /**
  * An Adw row whose title and subtitle are plain text. Adw rows read them as Pango markup
@@ -43,6 +52,17 @@ function textRow(Cls, {title = '', subtitle, ...props}) {
     if (subtitle !== undefined)
         row.subtitle = subtitle;
     return row;
+}
+
+const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+
+function roundedRect(cr, x, y, w, h, r) {
+    cr.newSubPath();
+    cr.arc(x + w - r, y + r, r, -Math.PI / 2, 0);
+    cr.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
+    cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
+    cr.arc(x + r, y + r, r, Math.PI, 3 * Math.PI / 2);
+    cr.closePath();
 }
 
 export default class BuoyPreferences extends ExtensionPreferences {
@@ -69,6 +89,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         window.add(this._appsPage(plan, key));
         window.add(this._panelPage(plan, key));
         window.add(this._windowsPage(plan, key));
+        window.add(this._aboutPage(plan, key));
     }
 
     // Keys in the order the XML lists them (list_keys() sorts by name).
@@ -87,8 +108,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
 
     // Island (ARCHITECTURE rule 9, SPEC §2a-iii; was General until 2026-11-04): what the
     // idle pill shows and each idle plan's own keys under it, then the pill's size and
-    // shortcut. #101 adds Automatic and the plans' order; Developer and About move to
-    // their own page with #102.
+    // shortcut. #101 adds Automatic and the plans' order. Developer and the version are
+    // on About (#102).
     _islandPage(plan, key) {
         const page = new Adw.PreferencesPage({title: 'Island', icon_name: 'focus-top-bar-symbolic'});
 
@@ -109,6 +130,36 @@ export default class BuoyPreferences extends ExtensionPreferences {
         for (const name of plan.general)
             island.add(this._row(key(name)));
         page.add(island);
+        return page;
+    }
+
+    // --- About (FEATURES M3 "Prefs: About page", #102) ---------------------------------
+
+    _aboutPage(plan, key) {
+        const page = new Adw.PreferencesPage({title: 'About', icon_name: 'help-about-symbolic'});
+
+        const head = new Adw.PreferencesGroup();
+        const box = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL, spacing: 6, halign: Gtk.Align.CENTER,
+            margin_top: 12, margin_bottom: 12,
+        });
+        box.append(this._helloBu());
+        box.append(new Gtk.Label({label: 'Buoy', css_classes: ['title-1'], margin_top: 6}));
+        box.append(new Gtk.Label({
+            label: 'A living pill for the top bar.', css_classes: ['dim-label'],
+            wrap: true, justify: Gtk.Justification.CENTER,
+        }));
+        const version = String(this.metadata['version-name'] ?? this.metadata.version ?? 'dev');
+        box.append(new Gtk.Label({label: `Version ${version}`, css_classes: ['caption', 'dim-label']}));
+        head.add(box);
+        page.add(head);
+
+        const repo = this.metadata.url || REPOSITORY;
+        const links = new Adw.PreferencesGroup();
+        links.add(this._linkRow('Source code', repo, repo.replace(/^https:\/\//, '')));
+        links.add(this._linkRow('Report an issue', `${repo}/issues`));
+        links.add(this._linkRow('License', `${repo}/blob/main/LICENSE`, 'GNU GPL v2 or later'));
+        page.add(links);
 
         if (plan.developer.length) {
             const dev = new Adw.PreferencesGroup({title: 'Developer'});
@@ -116,14 +167,83 @@ export default class BuoyPreferences extends ExtensionPreferences {
                 dev.add(this._row(key(name)));
             page.add(dev);
         }
-
-        const about = new Adw.PreferencesGroup({title: 'About'});
-        about.add(new Adw.ActionRow({
-            title: 'Version',
-            subtitle: String(this.metadata['version-name'] ?? this.metadata.version ?? 'dev'),
-        }));
-        page.add(about);
         return page;
+    }
+
+    // A row that opens a web page in the default browser.
+    _linkRow(title, uri, subtitle) {
+        const row = new Adw.ActionRow({title, subtitle: subtitle ?? '', activatable: true, tooltip_text: uri});
+        row.add_suffix(new Gtk.Image({icon_name: 'adw-external-link-symbolic'}));
+        row.connect('activated', () => new Gtk.UriLauncher({uri}).launch(this._window, null, null));
+        return row;
+    }
+
+    // Bu on its #0b0b0b tile (MASCOT.md: never on a light background), drawn from
+    // kit/mascot.js's grid — no image file ships. The first time the page shows, Bu waves
+    // hello for HELLO_MS (helloAt, as the README's hello.svg), then rests on idle; with
+    // GTK animations off it is idle from the start. One timer, only while waving and
+    // mapped; leaving the page mid-wave settles on idle.
+    _helloBu() {
+        const area = new Gtk.DrawingArea({
+            content_width: TILE, content_height: TILE, halign: Gtk.Align.CENTER,
+            accessible_role: Gtk.AccessibleRole.IMG,
+        });
+        area.update_property([Gtk.AccessibleProperty.LABEL], ['Bu, the Buoy mascot, waving hello']);
+        let start = 0, timer = 0, done = false;
+        let shown = helloAt(0, {still: true});
+        const stop = () => {
+            if (timer)
+                GLib.source_remove(timer);
+            timer = 0;
+        };
+        const step = () => {
+            stop();
+            const still = done || !Gtk.Settings.get_default().gtk_enable_animations;
+            const f = helloAt((GLib.get_monotonic_time() - start) / 1000, {still});
+            if (f.frame !== shown.frame) {
+                shown = f;
+                area.queue_draw();
+            }
+            if (f.nextIn === null) {
+                done = true;
+                return;
+            }
+            timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, Math.max(1, Math.ceil(f.nextIn)), () => {
+                timer = 0;
+                step();
+                return GLib.SOURCE_REMOVE;
+            });
+        };
+        area.connect('map', () => {
+            if (done)
+                return;
+            start = GLib.get_monotonic_time();
+            step();
+        });
+        area.connect('unmap', () => {
+            stop();
+            if (!done) {
+                done = true;
+                shown = helloAt(0, {still: true});
+                area.queue_draw();
+            }
+        });
+        area.connect('destroy', stop);
+        area.set_draw_func((_a, cr, w, h) => {
+            const x0 = (w - TILE) / 2, y0 = (h - TILE) / 2;
+            cr.setSourceRGB(...rgb('#0b0b0b'));
+            roundedRect(cr, x0, y0, TILE, TILE, TILE_RADIUS);
+            cr.fill();
+            const cell = BU / GRID, inset = (TILE - BU) / 2;
+            cr.setAntialias(Cairo.Antialias.NONE);   // crisp cells (MASCOT.md: no partial opacity)
+            for (const c of cells(shown.frame, lampColour(shown.pose))) {
+                cr.setSourceRGB(...rgb(c.colour));
+                cr.rectangle(x0 + inset + c.x * cell, y0 + inset + c.y * cell, c.w * cell, cell);
+                cr.fill();
+            }
+            cr.$dispose();
+        });
+        return area;
     }
 
     // A row for one key, by its type and name. Rows built from schema text are plain

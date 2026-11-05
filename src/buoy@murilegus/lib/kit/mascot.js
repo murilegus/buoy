@@ -318,6 +318,28 @@ export function frameAt(pose, elapsed, {still = false} = {}) {
     return {frame: p.frames[i % p.frames.length], pose, nextIn: FRAME_MS - t % FRAME_MS};
 }
 
+/** How long Bu waves hello (README hello.svg, the About page), 2026-11-04. */
+export const HELLO_MS = 5000;
+
+/**
+ * Bu saying hello: wave.1 / wave.2 every FRAME_MS for HELLO_MS, then idle for good —
+ * as docs/mascot/hello.svg does in the README. Held still (animations off) it is idle
+ * from the start, as hello.svg under prefers-reduced-motion.
+ *
+ * @param {number} elapsed  ms since shown
+ * @param {object} [opts]
+ * @param {boolean} [opts.still]
+ * @returns {{frame: string, pose: string, nextIn: ?number}} as frameAt()
+ */
+export function helloAt(elapsed, {still = false} = {}) {
+    const t = Math.max(0, elapsed);
+    if (still || t >= HELLO_MS)
+        return {frame: 'idle', pose: 'idle', nextIn: null};
+    const i = Math.floor(t / FRAME_MS);
+    const frames = POSES.wave.frames;
+    return {frame: frames[i % frames.length], pose: 'wave', nextIn: Math.min(FRAME_MS - t % FRAME_MS, HELLO_MS - t)};
+}
+
 /**
  * A frame as rectangles to fill, runs of one colour merged along each row.
  *
