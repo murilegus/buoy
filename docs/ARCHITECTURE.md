@@ -75,7 +75,7 @@ src/buoy@murilegus/
 One module may combine the first two (calendar: next-event activity + idle plan + tab).
 A standalone tab never surfaces activities; if it needs to, it becomes a source module.
 
-v0.1 modules: `media`, `hud`, `home`, `progress`, `clipboard` (its `copied` feedback; `copied` folded in, 2026-11-05), `layout`, `ask`; `notification`,
+v0.1 modules: `media`, `hud`, `home`, `progress`, `clipboard` (its `copied` feedback; `copied` folded in, 2026-11-05), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `ask`; `notification`,
 `timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
 roadmap items, so their tabs show from v0.1 (2026-11-02);
 `greeting` (2026-11-03); idle plans `clock`, `weather`, `calendar`; standalone tabs `calendar`, `clipboard` (stub `tab.js`, in that order, 2026-11-02).

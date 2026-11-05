@@ -1,5 +1,5 @@
-// Run: gjs -m tests/layout.test.js   (no Shell needed; adapters are pure)
-import adapter, {TTL, ICON, PANEL, labelOf, shouldFlash} from '../src/buoy@murilegus/lib/modules/layout/adapter.js';
+// Run: gjs -m tests/input.test.js   (no Shell needed; adapters are pure)
+import adapter, {TTL, ICON, PANEL, labelOf, shouldFlash} from '../src/buoy@murilegus/lib/modules/input/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {FEEDBACK, PRIORITY, validate} from '../src/buoy@murilegus/lib/kit/activity.js';
 
@@ -36,7 +36,7 @@ eq(shouldFlash({switched: true, label: null, lastLabel: 'en'}), false, 'no curre
 // --- the pill: icon + a short word (SPEC §2e) ----------------------------------------------
 {
     const opened = [];
-    const p = adapter.layout({id: 'layout', label: 'en', name: 'English (US)', open: id => opened.push(id)}, null);
+    const p = adapter.input({id: 'input', label: 'en', name: 'English (US)', open: id => opened.push(id)}, null);
     eq(p.leading, {icon: ICON}, 'the keyboard icon');
     eq(p.text, 'EN · English (US)', 'the label in capitals, then the source name');
     eq(p.ttl, TTL, 'ttl');
@@ -45,32 +45,32 @@ eq(shouldFlash({switched: true, label: null, lastLabel: 'en'}), false, 'no curre
     p.onPress();
     eq(opened, [PANEL], 'click: Keyboard settings');
     eq(PANEL, 'gnome-keyboard-panel.desktop', 'the Keyboard panel');
-    const m = planMinimal(validate({id: 'layout:system:layout', kind: 'layout', ...p}));
+    const m = planMinimal(validate({id: 'input:system:input', kind: 'input', ...p}));
     eq([m.leading.type, m.text], ['icon', 'EN · English (US)'], 'planned: icon + text');
     eq(planCompact(p), null, 'no compact');
 }
-eq(adapter.layout({id: 'layout', label: 'V', name: 'Vietnamese (Bamboo)'}, null).text, 'V · Vietnamese (Bamboo)',
+eq(adapter.input({id: 'input', label: 'V', name: 'Vietnamese (Bamboo)'}, null).text, 'V · Vietnamese (Bamboo)',
     'an IBus mode symbol');
-eq(adapter.layout({id: 'layout', label: 'あ', name: 'Japanese (Anthy)'}, null).text, 'あ · Japanese (Anthy)',
+eq(adapter.input({id: 'input', label: 'あ', name: 'Japanese (Anthy)'}, null).text, 'あ · Japanese (Anthy)',
     'non-Latin label kept as is');
-eq(adapter.layout({id: 'layout', label: 'en', name: ''}, null).text, 'EN', 'no name: the label alone');
-eq(adapter.layout({id: 'layout', label: '', name: 'English (US)'}, null).text, 'English (US)', 'no label: the name alone');
-eq(adapter.layout({id: 'layout', label: '', name: ''}, null), null, 'nothing: null');
-eq(adapter.layout({id: 'layout', label: 'en', name: 'English'}, null).onPress, null, 'no opener: no onPress');
+eq(adapter.input({id: 'input', label: 'en', name: ''}, null).text, 'EN', 'no name: the label alone');
+eq(adapter.input({id: 'input', label: '', name: 'English (US)'}, null).text, 'English (US)', 'no label: the name alone');
+eq(adapter.input({id: 'input', label: '', name: ''}, null), null, 'nothing: null');
+eq(adapter.input({id: 'input', label: 'en', name: 'English'}, null).onPress, null, 'no opener: no onPress');
 {
     const long = 'Vietnamese (Bamboo with a very long engine description from IBus)';
-    eq(adapter.layout({id: 'layout', label: 'vi', name: long}, null).text, `VI · ${long}`, 'long name kept whole');
+    eq(adapter.input({id: 'input', label: 'vi', name: long}, null).text, `VI · ${long}`, 'long name kept whole');
 }
 {
     const keys = ['leading', 'text', 'trailing', 'sizeHint', 'onPress', 'ttl'];
-    const p = adapter.layout({id: 'layout', label: 'en', name: 'English'}, null);
+    const p = adapter.input({id: 'input', label: 'en', name: 'English'}, null);
     eq(keys.filter(k => !(k in p)), [], 'every field set: one pill updated in place');
     if (/"(width|height|w|h|px|size)":/.test(JSON.stringify(p)))
-        throw new Error('layout: no measurements in the adapter');
+        throw new Error('input: no measurements in the adapter');
 }
 
 // --- a feedback kind (SPEC §2e) ------------------------------------------------------------
-eq(FEEDBACK.has('layout'), true, 'layout is feedback: pill 1 for its ttl, never missed');
-eq(PRIORITY.layout, PRIORITY.osd, 'same priority as the other OSD feedback');
+eq(FEEDBACK.has('input'), true, 'input is feedback: pill 1 for its ttl, never missed');
+eq(PRIORITY.input, PRIORITY.osd, 'same priority as the other OSD feedback');
 
-print('layout: ok');
+print('input: ok');

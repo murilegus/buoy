@@ -1,5 +1,5 @@
 /**
- * layout adapter (SPEC §2e, FEATURES M3 "layout"): the input source you switch to — an
+ * input adapter (SPEC §2e, FEATURES M3 "input"): the input source you switch to — an
  * xkb layout or an IBus engine, or an IBus engine's own mode (Bamboo's V / E) — as a
  * short feedback pill. Pure: the source turns Shell's InputSource and its IBus
  * properties into plain data.
@@ -53,7 +53,7 @@ export function shouldFlash({switched, label, lastLabel}) {
 }
 
 export default {
-    layout(ev) {
+    input(ev) {
         const label = typeof ev.label === 'string' ? ev.label.trim() : '';
         const name = typeof ev.name === 'string' ? ev.name.trim() : '';
         const short = /^[a-z]{1,3}[₀-₉]?$/.test(label) ? label.toUpperCase() : label;

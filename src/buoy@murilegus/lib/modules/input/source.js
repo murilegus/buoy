@@ -6,7 +6,7 @@ import {getInputSourceManager} from 'resource:///org/gnome/shell/ui/status/keybo
 import {Source} from '../../kit/source.js';
 import {labelOf, shouldFlash} from './adapter.js';
 
-const ID = 'layout';
+const ID = 'input';
 
 /**
  * The input source as feedback (SPEC §2e). Shell's InputSourceManager (ui/status/
@@ -17,7 +17,7 @@ const ID = 'layout';
  * what Shell's indicator shows (labelOf) and the source's name; nothing at enable, and
  * nothing when a property update leaves the label as it was. Signals only.
  */
-export class LayoutSource extends Source {
+export class InputChangeSource extends Source {
     enable(stack, registry = null, settings = null) {
         super.enable(stack, registry, settings);
         this._manager = getInputSourceManager();
@@ -33,7 +33,7 @@ export class LayoutSource extends Source {
         this._last = label;
         if (!flash || !this._stack)
             return;
-        const a = this._registry?.build('layout', 'system', {
+        const a = this._registry?.build('input', 'system', {
             id: ID, label, name: source.displayName ?? '', open: openPanel,
         });
         if (!a)
@@ -48,8 +48,8 @@ export class LayoutSource extends Source {
             this._manager.disconnect(this._changedId);
         this._changedId = 0;
         this._manager = null;
-        if (this._stack?.has(`layout:system:${ID}`))
-            this._stack.end(`layout:system:${ID}`);
+        if (this._stack?.has(`input:system:${ID}`))
+            this._stack.end(`input:system:${ID}`);
         super.disable();
     }
 }

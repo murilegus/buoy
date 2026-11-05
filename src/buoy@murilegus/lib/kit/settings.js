@@ -327,8 +327,8 @@ export const SAMPLES = {
         kind: 'osd', app: 'buoy', leading: 'audio-volume-medium-symbolic',
         trailing: {bar: 0.72, label: '72%'}, sizeHint: 'wide',
     },
-    layout: {
-        kind: 'layout', app: 'buoy', leading: 'input-keyboard-symbolic', text: 'EN · English (US)',
+    input: {
+        kind: 'input', app: 'buoy', leading: 'input-keyboard-symbolic', text: 'EN · English (US)',
     },
 };
 

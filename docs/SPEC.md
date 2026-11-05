@@ -502,9 +502,10 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 
 ### 2e. Feedback: minimal only (decided 2026-11-05, Ethan)
 
-- **What.** A confirmation of something you just did: `osd` from `hud`, the keyboard layout
-  from `layout`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
-- **layout** (2026-11-05): the input source you switch to, xkb or IBus, as Shell's indicator
+- **What.** A confirmation of something you just did: `osd` from `hud`, the input source
+  from `input`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
+- **input** (2026-11-05; named `layout` until then — it covers IBus input methods too): the
+  input source you switch to, xkb or IBus, as Shell's indicator
   names it — the IBus engine's `InputMode` symbol when it has one (Bamboo's V / E), else
   the short name — then the source's name: "EN · English (US)". It also flashes when an
   engine switches its own mode. Shell's Super+Space switcher popup stays: it is a chooser,
@@ -556,7 +557,7 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 - **While Home is open** feedback shows as a row in Now for its ttl (the pill is the
   panel then).
 - **Size by type**, content-fit with the adapter's hints, never px (ARCHITECTURE rule 11):
-  volume, brightness and backlight are icon + bar (`wide`); Caps Lock and the layout are
+  volume, brightness and backlight are icon + bar (`wide`); Caps Lock and the input source are
   icon + a short word; copied is icon + the snippet or an image thumbnail, ellipsized at
   pill 1's widest.
 - **Clipboard** (2026-11-05, was two modules, `copied` and `clipboard`): one `clipboard`
