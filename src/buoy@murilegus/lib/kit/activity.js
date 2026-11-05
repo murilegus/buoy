@@ -10,6 +10,9 @@ export const PRIORITY = {
     copied: 45, attention: 50, osd: 60, notification: 70, phone: 75, ask: 90, call: 95,
 };
 
+/** Feedback for your own action (SPEC §2e): minimal only, pill 1 for its ttl, never missed. */
+export const FEEDBACK = new Set(['osd', 'copied']);
+
 const EIGHT_HOURS = 8 * 60 * 60 * 1000;
 
 /**

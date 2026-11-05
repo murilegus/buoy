@@ -502,16 +502,34 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 
 ### 2e. Feedback: minimal only (decided 2026-11-05, Ethan)
 
-- **What.** A confirmation of something you just did: `osd` from `hud` (volume, brightness,
-  keyboard backlight, Caps/Num Lock — replacing GNOME's OSD), the keyboard layout from
-  `layout`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
+- **What.** A confirmation of something you just did: `osd` from `hud`, the keyboard layout
+  from `layout`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
+- **hud = every GNOME OSD** (2026-11-05, Ethan: "ẩn toàn bộ OSD của hệ thống"), all of which
+  go through `Main.osdWindowManager` `show` / `showAll`, so `hud` overrides both and the
+  stock window never opens while `hud-replace-osd` is on:
+  - levels — icon + bar + its number 0–100 (more when amplified, e.g. 130): speaker volume
+    (gsd names an external output: "Headphones" as text), microphone, display brightness,
+    keyboard backlight (keys and the firmware's Fn: gsd forwards UPower's
+    `BrightnessChangedWithSource` "internal"), the battery key. Muted: the muted icon, the
+    bar and number dimmed at their level;
+  - toggles — icon + a short word: touchpad, airplane (and hardware airplane), Bluetooth,
+    rotation lock, the privacy screen (mutter), eject, "unavailable" (icon alone). gsd's
+    own labels are used as they come (translated); Buoy words the ones without;
+  - Caps Lock and Num Lock — Buoy's own (GNOME has no OSD for them), from the keymap.
+  Off, GNOME's popup shows and only Caps/Num Lock stay in the pill. Click on a level opens
+  its Settings panel (Sound, Displays, Keyboard, Power, Mouse).
 - **Minimal only.** No compact on hover, no expanded, no tab; never an alert, never counted
   as missed (INDICATORS.md). Click → its `onPress` if it has one (Sound settings), else
   Home (§2b).
 - **Pill 1 for its ttl.** Feedback takes the centre pill above every kind but `ask`; the
-  pill it covers comes back in place when it ends, and the side pills do not move.
+  pill it covers comes back in place when it ends, and the side pills keep their
+  activities and the `+N` its count (`stack.js` `pillWindow`; they slide only as pill 1's
+  width changes). The newest feedback covers an older one. Under an `ask` it is pill 2.
 - **ttl** ~1.5 s (copied 1 s). A repeat updates the same activity and restarts the ttl, so
-  holding the volume key keeps one pill and only its bar moves; hover holds it.
+  holding the volume key keeps one pill and only its bar moves. Hover holds it: the
+  pointer on any pill pauses its ttl, and leaving gives it a fresh one (`stack.hold`).
+- **While Home is open** feedback shows as a row in Now for its ttl (the pill is the
+  panel then).
 - **Size by type**, content-fit with the adapter's hints, never px (ARCHITECTURE rule 11):
   volume, brightness and backlight are icon + bar (`wide`); Caps Lock and the layout are
   icon + a short word; copied is icon + the snippet or an image thumbnail, ellipsized at

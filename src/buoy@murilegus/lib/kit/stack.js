@@ -1,6 +1,6 @@
 import GLib from 'gi://GLib';
 
-import {validate} from './activity.js';
+import {FEEDBACK, validate} from './activity.js';
 
 /**
  * ActivityStack: which activity is on the island right now (APPLE.md §B1, SPEC §2).
@@ -9,12 +9,15 @@ import {validate} from './activity.js';
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
  *   answer(id, choice) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool)
  *   seeMissed() · openMissed(id, at) · clearMissed()
- *   has(id) · get(id)
+ *   has(id) · get(id) · hold(id, held)
  *
  * Rules:
  *   - every activity goes through validate(); priority defaults from activity.js PRIORITY
- *   - highest priority shows; ties → most recently surfaced
- *   - end removes immediately; ttl (capped at 8 h by validate) ends it; ttl 0 = until ended
+ *   - highest priority shows; ties → most recently surfaced; the newest feedback (osd,
+ *     copied) goes first unless an ask is on top, and covers pill 1 only (pillWindow)
+ *   - end removes immediately; ttl (capped at 8 h by validate) ends it; ttl 0 = until ended;
+ *     hold(id, true) — the pointer on its pill — pauses the ttl, hold(id, false) gives it
+ *     a fresh one (SPEC §2e: hover holds feedback)
  *   - staleAfter ms without update → `isStale`; update clears it
  *   - style 'transient' asks the island to open expanded and ends when it collapses
  *   - alert (on surface, or update(..., {alert: true})) is one-shot; a covered activity's
@@ -39,7 +42,27 @@ export const ALERT_MS = 2000;
 
 const MAX_DELAY = 2 ** 31 - 1;          // GLib timeouts are 32-bit ms; longer waits re-arm
 const MISSED_MAX = 5;
-const NOT_MISSABLE = new Set(['osd', 'copied', 'ask']);
+const NOT_MISSABLE = new Set([...FEEDBACK, 'ask']);
+
+/**
+ * Which activities get a pill (SPEC §2c, §2e): the first `cap` in order, except that
+ * feedback first takes pill 1 *in place of* the next one — that one is covered, not
+ * pushed aside, so the side pills keep their activities and the +N badge its count, and
+ * when the feedback ends the covered pill comes back where it was. The island and the
+ * stack both use this, so what the stack thinks is shown is what the island shows.
+ *
+ * @param {object[]} list  visible activities, in order (ActivityStack render())
+ * @param {number} cap  island.capacity
+ * @returns {{shown: object[], more: number}}
+ */
+export function pillWindow(list, cap) {
+    cap = Math.max(1, cap);
+    if (list.length > 1 && FEEDBACK.has(list[0].kind)) {
+        const others = list.length - 1;            // the covered one counts as shown
+        return {shown: [list[0], ...list.slice(2, cap + 1)], more: Math.max(0, others - cap)};
+    }
+    return {shown: list.slice(0, cap), more: Math.max(0, list.length - cap)};
+}
 
 /** Default clock: wall time + GLib main-loop timeouts. */
 export const glibClock = {
@@ -67,6 +90,7 @@ export class ActivityStack {
         this._clock = clock;
         this._items = new Map();      // id → activity
         this._timers = new Map();     // `${id}\n${what}` → clock handle
+        this._held = new Set();       // ids whose pill the pointer is on: ttl paused
         this._scheduled = new Set();  // ids waiting for their start
         this._asks = new Map();       // id → {resolve, options, dismissed}
         this._hidden = new Set(hiddenApps);
@@ -90,7 +114,7 @@ export class ActivityStack {
         a.isStale = false;
         this._wrapExpand(a, activity.onExpand);
         this._items.set(a.id, a);
-        if (a.ttl > 0)
+        if (a.ttl > 0 && !this._held.has(a.id))
             this._arm(a.id, 'ttl', a.ttl, () => this.end(a.id));
         this._armStale(a);
         this._render({changed: a.id, alert: a.alert ? a.id : null});
@@ -109,7 +133,7 @@ export class ActivityStack {
         a.isStale = false;
         this._wrapExpand(a, 'onExpand' in patch ? patch.onExpand : old._ownExpand);
         this._items.set(id, a);
-        if ('ttl' in patch) {
+        if ('ttl' in patch && !this._held.has(id)) {
             this._disarm(id, 'ttl');
             if (a.ttl > 0)
                 this._arm(id, 'ttl', a.ttl, () => this.end(id));
@@ -271,6 +295,31 @@ export class ActivityStack {
      * @param {string} id
      * @returns {boolean} live or scheduled
      */
+    /**
+     * The pointer is on this activity's pill: its ttl waits (SPEC §2e, "hover holds it");
+     * let go, it gets the whole ttl again. Unknown ids and ttl 0 do nothing.
+     *
+     * @param {string} id
+     * @param {boolean} held
+     */
+    hold(id, held) {
+        const a = this._items.get(id);
+        if (!a) {
+            this._held.delete(id);
+            return;
+        }
+        if (held === this._held.has(id))
+            return;
+        if (held) {
+            this._held.add(id);
+            this._disarm(id, 'ttl');
+        } else {
+            this._held.delete(id);
+            if (a.ttl > 0)
+                this._arm(id, 'ttl', a.ttl, () => this.end(id));
+        }
+    }
+
     has(id) {
         return this._items.has(id) || this._scheduled.has(id);
     }
@@ -322,6 +371,7 @@ export class ActivityStack {
         for (const what of ['ttl', 'stale', 'ask', 'promote'])
             this._disarm(id, what);
         this._items.delete(id);
+        this._held.delete(id);
         if (this._promoted === id)
             this._promoted = null;
     }
@@ -396,7 +446,13 @@ export class ActivityStack {
         const list = [...this._items.values()].filter(a => this._visible(a))
             .sort((a, b) => b.priority - a.priority || b._seq - a._seq);
         const promoted = list.find(a => a.id === this._promoted);
-        return promoted ? [promoted, ...list.filter(a => a !== promoted)] : list;
+        if (promoted)
+            return [promoted, ...list.filter(a => a !== promoted)];
+        // the newest feedback takes pill 1 over every kind but ask (SPEC §2e)
+        const feedback = list.filter(a => FEEDBACK.has(a.kind)).sort((a, b) => b._seq - a._seq)[0];
+        if (feedback && list[0].kind !== 'ask')
+            return [feedback, ...list.filter(a => a !== feedback)];
+        return list;
     }
 
     get _capacity() {
@@ -409,9 +465,9 @@ export class ActivityStack {
         if (alert)
             this._promote(alert);
         const list = this._visibleList();
-        const cap = this._capacity;
-        const shown = list.slice(0, cap).map(a => a.id);
-        const more = list.length - shown.length;
+        const win = pillWindow(list, this._capacity);
+        const shown = win.shown.map(a => a.id);
+        const more = win.more;
         const prev = this._shownIds;
         const prevMore = this._more;
         this._shownIds = shown;

@@ -1,5 +1,5 @@
 // Run: gjs -m tests/stack.test.js   (no Shell; fake clock + fake island)
-import {ActivityStack, ALERT_MS} from '../src/buoy@murilegus/lib/kit/stack.js';
+import {ActivityStack, ALERT_MS, pillWindow} from '../src/buoy@murilegus/lib/kit/stack.js';
 import {PRIORITY} from '../src/buoy@murilegus/lib/kit/activity.js';
 
 const HOUR = 60 * 60 * 1000;
@@ -91,8 +91,9 @@ class FakeIsland {
             this.log.push(`show ${a.id}${info.alert === a.id ? ' alert' : ''}${info.expand === a.id ? ' expand' : ''}`);
             return;
         }
-        const shown = list.slice(0, this.capacity).map(a => a.id).join('|');
-        const more = list.length - Math.min(list.length, this.capacity);
+        const win = pillWindow(list, this.capacity);   // the renderer's own rule
+        const shown = win.shown.map(a => a.id).join('|');
+        const more = win.more;
         this.log.push(`show ${shown}${more ? ` +${more}` : ''}` +
             `${info.alert ? ` alert:${info.alert}` : ''}${info.expand ? ` expand:${info.expand}` : ''}`);
     }
@@ -136,9 +137,9 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
 {
     const {island, stack} = setup();
     stack.surface(media());
-    stack.surface({id: 'osd', kind: 'osd'});
-    eq(island.top.id, 'osd', 'higher priority (osd) wins over media');
-    stack.surface({id: 'low', kind: 'osd', priority: 1});
+    stack.surface({id: 'osd', kind: 'notification'});
+    eq(island.top.id, 'osd', 'higher priority (notification) wins over media');
+    stack.surface({id: 'low', kind: 'notification', priority: 1});
     eq(island.top.id, 'osd', 'explicit low priority does not win');
     eq(stack.end('osd'), true, 'end returns true for a live activity');
     eq(island.top.id, 'media:spotify', 'media returns after osd ends');
@@ -649,6 +650,107 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(island.log, [], 'destroy does not touch the island');
     clock.advance(5000);
     eq(island.log, [], 'nothing fires after destroy');
+}
+
+// --- feedback takes pill 1, then gives it back (SPEC §2e) ------------------------------
+{
+    const {clock, island, stack} = setup({}, 3);
+    stack.surface(media('m'));
+    stack.surface({id: 'n', kind: 'notification', app: 'chat', text: 'Hi'});
+    stack.surface({id: 'p', kind: 'progress', app: 'files', text: 'Copy'});
+    stack.surface({id: 't', kind: 'timer', app: 'clock', text: '5:00'});
+    eq(lastRender(island), 'show n|p|t +1', 'before: notification centre, progress and timer beside, +1');
+    stack.surface({id: 'osd', kind: 'osd', app: 'hud', text: 'Volume', ttl: 1500});
+    eq(lastRender(island), 'show osd|p|t +1',
+        'feedback covers pill 1 only: the side pills stay, the badge does not change');
+    eq(island.list.map(a => a.id), ['osd', 'n', 'p', 't', 'm'], 'the renderer still gets the covered one');
+    stack.update('osd', {text: 'Volume 40'});
+    eq(lastRender(island), 'show osd|p|t +1', 'a repeat updates in place');
+    clock.advance(1499);
+    eq(lastRender(island), 'show osd|p|t +1', 'the repeat restarted the ttl');
+    clock.advance(1);
+    eq(lastRender(island), 'show n|p|t +1', 'ttl over: the covered pill comes back in place');
+}
+{
+    const {island, stack} = setup({}, 3);
+    stack.surface({id: 'call', kind: 'call', app: 'phone', text: 'Ana'});
+    stack.surface({id: 'osd', kind: 'osd', app: 'hud', text: 'Volume', ttl: 1500});
+    eq(lastRender(island), 'show osd', 'feedback above a call (priority 95): over every kind but ask');
+}
+{
+    const {island, stack} = setup({}, 3);
+    stack.ask('q', 'Allow?', ['Deny', 'Allow'], {app: 'agent'});
+    stack.surface({id: 'osd', kind: 'osd', app: 'hud', text: 'Volume', ttl: 1500});
+    eq(lastRender(island).split(' ')[1].split('|')[0], 'q', 'an ask keeps pill 1 under feedback');
+}
+{
+    const {island, stack} = setup({}, 1);
+    stack.surface(media('m'));
+    stack.surface({id: 'osd', kind: 'osd', app: 'hud', text: 'Volume', ttl: 1500});
+    eq(lastRender(island), 'show osd', 'one pill: feedback takes it');
+}
+{
+    const {clock, island, stack} = setup({}, 3);
+    stack.surface({id: 'osd', kind: 'osd', app: 'hud', text: 'Volume', ttl: 1500});
+    eq(lastRender(island), 'show osd', 'feedback alone: just it');
+    clock.advance(500);
+    stack.surface({id: 'cp', kind: 'copied', app: 'clipboard', text: 'abc', ttl: 1000});
+    eq(lastRender(island), 'show cp', 'the newest feedback goes first, even at a lower priority, and covers the older');
+    clock.advance(900);
+    eq(lastRender(island), 'show cp', 'still the newest while both last');
+    clock.advance(200);
+    eq(lastRender(island), 'clear', 'both over: nothing');
+}
+
+// --- hover holds a ttl (SPEC §2e): paused while held, a fresh ttl when let go ---------------
+{
+    const {clock, island, stack} = setup({}, 3);
+    stack.surface({id: 'osd', kind: 'osd', app: 'hud', text: 'Volume', ttl: 1500});
+    clock.advance(1000);
+    stack.hold('osd', true);
+    clock.advance(5000);
+    eq(lastRender(island), 'show osd', 'held: the ttl does not run out');
+    stack.update('osd', {text: 'Volume 40', ttl: 1500});
+    clock.advance(5000);
+    eq(lastRender(island), 'show osd', 'an update while held does not re-arm the ttl');
+    stack.hold('osd', false);
+    clock.advance(1499);
+    eq(lastRender(island), 'show osd', 'let go: a fresh ttl, not what was left');
+    clock.advance(1);
+    eq(lastRender(island), 'clear', 'then it ends');
+}
+{
+    const {clock, island, stack} = setup({}, 3);
+    stack.surface({id: 'osd', kind: 'osd', app: 'hud', text: 'Volume', ttl: 1500});
+    stack.hold('osd', true);
+    eq(stack.end('osd'), true, 'a held activity can still be ended');
+    stack.hold('osd', false);
+    clock.advance(5000);
+    eq(lastRender(island), 'clear', 'letting go of an ended one does nothing');
+    stack.hold('nope', true);
+    stack.hold('nope', false);
+    stack.surface(media('m'));
+    stack.hold('m', true);
+    stack.hold('m', false);
+    clock.advance(HOUR);
+    eq(lastRender(island), 'show m', 'no ttl (0 = until ended): holding changes nothing');
+    stack.surface({id: 'osd', kind: 'osd', app: 'hud', text: 'Volume', ttl: 1500});
+    clock.advance(1500);
+    eq(lastRender(island), 'show m', 'surfaced again after the old hold: its ttl runs');
+}
+
+// pillWindow, the shared rule
+{
+    const L = kinds => kinds.map((kind, i) => ({id: `${kind}${i}`, kind}));
+    eq(pillWindow([], 3), {shown: [], more: 0}, 'pillWindow: empty');
+    eq(pillWindow(L(['media', 'timer']), 3).shown.map(a => a.id), ['media0', 'timer1'], 'pillWindow: no feedback, in order');
+    eq(pillWindow(L(['media', 'timer', 'progress', 'power']), 3).more, 1, 'pillWindow: one beyond capacity');
+    const w = pillWindow(L(['osd', 'media', 'timer', 'progress', 'power']), 3);
+    eq(w.shown.map(a => a.id), ['osd0', 'timer2', 'progress3'], 'pillWindow: feedback in place of the first');
+    eq(w.more, 1, 'pillWindow: the covered one counts as shown (no badge flicker)');
+    eq(pillWindow(L(['osd']), 3).shown.map(a => a.id), ['osd0'], 'pillWindow: feedback with nothing to cover');
+    eq(pillWindow(L(['ask', 'osd', 'media']), 3).shown.map(a => a.id), ['ask0', 'osd1', 'media2'],
+        'pillWindow: feedback not first covers nothing');
 }
 
 console.log('stack: ok');

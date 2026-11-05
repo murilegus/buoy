@@ -19,12 +19,13 @@
  * - Where you open from decides the tab (tabFor); nothing remembers the last tab.
  */
 
+import {FEEDBACK} from './activity.js';
 import {planExpanded} from './presentation.js';
 
 export const HOME = 'home';
 
-// SPEC §2b: kinds without a tab; an open from them goes to onPress or Home
-const FEEDBACK = new Set(['osd', 'copied']);
+// FEEDBACK (activity.js), SPEC §2b: kinds without a tab; an open from them goes to
+// onPress or Home
 
 // Inactive tabs show only their icon (Notchy's strip, 2026-11-02), so every tab has one.
 const GENERIC_ICON = 'view-app-grid-symbolic';

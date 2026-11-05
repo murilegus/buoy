@@ -158,6 +158,10 @@
 .buoy-text { font-weight: 600; }
 .buoy-label { color: #d0d0d0; font-feature-settings: "tnum"; }
 .buoy-icon, .buoy-ring, .buoy-bar { color: #fff; }
+/* A level (hud): the bar and its number in even figures, dimmed when muted. */
+.buoy-level { spacing: 8px; }
+.buoy-level-label { font-size: 12px; font-feature-settings: "tnum"; min-width: 22px; text-align: right; }
+.buoy-level-off .buoy-bar, .buoy-level-off .buoy-level-label { color: rgba(255, 255, 255, 0.4); }
 /* .buoy-art: no border-radius, St.Icon does not clip to it; present.js rounds minimal
    and compact art with a shader (kit/rounded.js artRadius), expanded and tabs stay square. */
 /* The equaliser: four bars that grow from their middle while playing (present.js eqGlyph). */

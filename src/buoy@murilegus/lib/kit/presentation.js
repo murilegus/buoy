@@ -100,8 +100,14 @@ export function element(e, {leading = false} = {}) {
         return ic;
     if (isNum(e.progress))
         return {type: 'ring', value: clamp01(e.progress)};
-    if (isNum(e.bar))
-        return {type: 'bar', value: clamp01(e.bar)};
+    if (isNum(e.bar)) {
+        // a level (hud): its number beside it, dimmed when off (muted), SPEC §2e
+        const label = str(e.label);
+        return {
+            type: 'bar', value: clamp01(e.bar),
+            ...label ? {label} : {}, ...e.off === true ? {off: true} : {},
+        };
+    }
     if (isNum(e.countdown))
         return {type: 'text', text: clock(e.countdown)};
     if (isNum(e.until))

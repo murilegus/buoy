@@ -542,6 +542,7 @@ export class Pill {
     _applyHover() {
         if (this.expanded || this._destroyed)
             return;
+        this._island._holdHovered(this, this.hovered);   // hover holds its ttl (SPEC §2e)
         if (this.hovered) {
             this._clearGrace();
             if (!this._compact && !this._compactId && this._hasCompact()) {
