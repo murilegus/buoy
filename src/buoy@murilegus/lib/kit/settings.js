@@ -215,7 +215,7 @@ export const SLIDERS = {
 };
 
 // Modules that ship nothing a user can see yet (no source, no tab): no row until they do.
-export const HIDDEN_MODULES = new Set(['hud', 'home', 'copied', 'layout', 'ask']);
+export const HIDDEN_MODULES = new Set(['home', 'copied', 'layout', 'ask']);
 
 // Idle plans, in the Island page's order (ARCHITECTURE rule 9): each one's
 // `idle-<id>-…` keys sit under it there, never on Modules. Prefs cannot import a module,
@@ -322,6 +322,10 @@ export const SAMPLES = {
     timer: {
         kind: 'timer', app: 'buoy', text: 'Tea',
         leading: 'alarm-symbolic', trailing: {countdown: 240},
+    },
+    hud: {
+        kind: 'osd', app: 'buoy', leading: 'audio-volume-medium-symbolic',
+        trailing: {bar: 0.72, label: '72%'}, sizeHint: 'wide',
     },
 };
 
