@@ -24,7 +24,8 @@ src/buoy@murilegus/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
     │   ├── activity.js     contract (APPLE.md §B1), validate + normalise
     │   ├── stack.js        surface / update / end / schedule / ask; priority across apps;
-    │   │                   ttl, stale, transient, alert; apps.hidden filter; missed history
+    │   │                   ttl, stale, transient, alert; apps.hidden filter; missed history;
+    │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
     │   ├── presentation.js presentation data → render plan; pure, unit-tested (2026-11-01)
     │   ├── present.js      render plan → St actors. ONLY place content actors are made
     │   ├── island.js       the pills together: capacity, slots, merge/split, grab, alert

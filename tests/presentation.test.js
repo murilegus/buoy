@@ -35,6 +35,11 @@ eq(element({progress: NaN}), null, 'NaN progress is no element');
 eq(element({progress: true}), null, 'progress: true (live, source-driven) is no static element');
 eq(element({bar: 0.3}), {type: 'bar', value: 0.3}, 'bar');
 eq(element({bar: 2}), {type: 'bar', value: 1}, 'bar clamps');
+eq(element({bar: 0.62, label: '62'}), {type: 'bar', value: 0.62, label: '62'}, 'bar with its number (hud level)');
+eq(element({bar: 1, label: 120}), {type: 'bar', value: 1, label: '120'}, 'bar label: a number becomes text; the bar clamps, the label does not');
+eq(element({bar: 0.5, label: '  '}), {type: 'bar', value: 0.5}, 'bar: a blank label is dropped');
+eq(element({bar: 0.5, off: true}), {type: 'bar', value: 0.5, off: true}, 'bar off (muted): dimmed, level kept');
+eq(element({bar: 0.5, off: 'yes'}), {type: 'bar', value: 0.5}, 'bar off must be true, nothing else');
 eq(element({countdown: 30}), {type: 'text', text: '0:30'}, 'countdown m:ss');
 eq(element({countdown: 3725}), {type: 'text', text: '1:02:05'}, 'countdown h:mm:ss');
 eq(element({countdown: -5}), {type: 'text', text: '0:00'}, 'negative countdown');
@@ -78,9 +83,9 @@ const track = {
     eq([c.text, c.trailing], ['Ad', {type: 'until', at: 31000}], 'spotify ad: a live countdown in trailing');
 }
 {
-    const c = planMinimal(hud.osd({icon: 'audio-volume-high-symbolic', level: 0.4}));
+    const c = planMinimal(hud.osd({iconName: 'audio-volume-high-symbolic', level: 0.4}));
     eq([c.leading, c.text, c.trailing], [{type: 'icon', icon: 'audio-volume-high-symbolic'}, null,
-        {type: 'bar', value: 0.4}], 'hud: icon + bar, no text');
+        {type: 'bar', value: 0.4, label: '40%'}], 'hud: icon + bar and its percentage, no text');
 }
 {
     const long = 'x'.repeat(500);

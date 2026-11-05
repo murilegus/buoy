@@ -10,7 +10,7 @@ import {Pill} from './pill.js';
 import {Home} from './home.js';
 import {showKeys} from './present.js';
 import {planExpanded, planMissed} from './presentation.js';
-import {ALERT_MS} from './stack.js';
+import {ALERT_MS, pillWindow} from './stack.js';
 import {planStrip, pressTarget} from './tabs.js';
 import {actionForKey, step} from './keys.js';
 
@@ -57,6 +57,8 @@ export class Island {
         this._pills = [];           // shown pills, centre first
         this._leaving = new Set();  // fading out after their activity left
         this._list = [];            // last list from the stack
+        this._heldId = null;        // the hovered activity whose ttl waits (_holdHovered)
+        this._heldPill = null;
         this._light = 'off';
         this._capacity = MAX_PILLS;
         this._compactPill = null;   // the pill whose compact is open (SPEC §2c)
@@ -200,11 +202,27 @@ export class Island {
 
     // --- pills ------------------------------------------------------------------------
 
+    // The activity under the pointer keeps its ttl (stack.hold, SPEC §2e): one at a time;
+    // a pill that changes activity or stops being hovered lets the old one go.
+    _holdHovered(pill, hovered) {
+        const id = hovered && this._pills.includes(pill) ? pill.id : null;
+        if (!hovered && this._heldPill !== pill)
+            return;
+        if (id === this._heldId)
+            return;
+        if (this._heldId)
+            this.onHold?.(this._heldId, false);
+        this._heldId = id;
+        this._heldPill = id ? pill : null;
+        if (id)
+            this.onHold?.(id, true);
+    }
+
+
     _roleOf(pill) {
         const i = this._pills.indexOf(pill);
         const n = this._pills.length;
-        const shownCount = this._list.length ? n : 0;
-        const more = Math.max(0, this._list.length - shownCount);
+        const more = this._list.length ? pillWindow(this._list, this._capacity).more : 0;
         return {
             role: i === 0 ? 'centre' : 'side',
             light: this._light,
@@ -217,7 +235,7 @@ export class Island {
     _apply(animate) {
         if (this._destroyed)
             return;
-        const shown = this._list.slice(0, this._capacity);
+        const shown = pillWindow(this._list, this._capacity).shown;   // feedback covers pill 1
         const wanted = shown.length ? shown : [null];
         const byId = new Map(this._pills.map(p => [p.id, p]));
         const next = [];
@@ -236,6 +254,8 @@ export class Island {
             next.push(pill);
         }
         for (const gone of byId.values()) {
+            if (gone === this._heldPill)
+                this._holdHovered(gone, false);
             this._leaving.add(gone);
             gone.leave(p => this._leaving.delete(p));
         }

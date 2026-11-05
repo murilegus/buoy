@@ -209,7 +209,8 @@ function meter(kind, value, size) {
         const cr = area.get_context();
         const [w, h] = area.get_surface_size();
         const c = area.get_theme_node().get_foreground_color();
-        const rgba = a => cr.setSourceRGBA(c.red / 255, c.green / 255, c.blue / 255, a);
+        // the theme's alpha too: a muted level is drawn at 40 % (.buoy-level-off)
+        const rgba = a => cr.setSourceRGBA(c.red / 255, c.green / 255, c.blue / 255, a * c.alpha / 255);
         if (kind === 'ring') {
             const lw = Math.max(2, w / 8), r = (Math.min(w, h) - lw) / 2;
             cr.setLineWidth(lw);
@@ -278,6 +279,24 @@ export function tick(actor, update, running = () => true) {
     });
     actor.connect('destroy', stop);
     update();
+}
+
+// A level (hud, SPEC §2e): the bar, its number after it in even figures, dimmed when off
+// (muted). Alone in a minimal pill (no text) the bar is the content: LONG_BAR.
+const LONG_BAR = 120;
+
+function levelBar(e, width) {
+    const bar = meter('bar', e.value, width);
+    if (!e.label && !e.off)
+        return bar;
+    // off is set before the bar is styled: its repaint reads the colour once
+    const box = new St.BoxLayout({
+        style_class: e.off ? 'buoy-level buoy-level-off' : 'buoy-level', y_align: Clutter.ActorAlign.CENTER,
+    });
+    box.add_child(bar);
+    if (e.label)
+        box.add_child(label(e.label, 'buoy-level-label'));
+    return box;
 }
 
 // A live position (media): the bar, then elapsed and remaining under it.
@@ -608,7 +627,7 @@ function makeElement(e, mode, activity = null) {
     case 'ring':
         return meter('ring', e.value, size.ring);
     case 'bar':
-        return meter('bar', e.value, size.bar);
+        return levelBar(e, e.long ? LONG_BAR : size.bar);
     case 'text':
         return label(e.text, 'buoy-label');
     case 'until':
@@ -688,7 +707,7 @@ function pillBox(p, activity, maxWidth, buttons) {
         lightDot(p.light),           // edge slot first: the zones nudge inward (SPEC §2a)
         makeElement(p.leading, 'minimal', activity),
         p.text ? label(p.text, 'buoy-text', true) : null,
-        makeElement(p.trailing, 'minimal'),
+        makeElement(p.trailing?.type === 'bar' && !p.text ? {...p.trailing, long: true} : p.trailing, 'minimal'),
         ...buttons.map(a => actionButton(a, activity)),
         p.badge ? badge(p.badge) : null, // +N on the last pill (SPEC §2c)
     ]);

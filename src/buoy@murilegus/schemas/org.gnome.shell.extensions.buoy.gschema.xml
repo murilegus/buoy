@@ -30,7 +30,12 @@
     <key name="modules-hud" type="b">
       <default>true</default>
       <summary>Volume and brightness</summary>
-      <description>Shows the volume, brightness and caps lock changes in the pill instead of the stock popup.</description>
+      <description>Volume, brightness, backlight, toggles and Caps/Num/Fn Lock as a short pill.</description>
+    </key>
+    <key name="hud-replace-osd" type="b">
+      <default>true</default>
+      <summary>Replace GNOME's popup</summary>
+      <description>Off, GNOME's own popup shows; Caps, Num and Fn Lock stay in the pill.</description>
     </key>
     <key name="modules-home" type="b">
       <default>true</default>

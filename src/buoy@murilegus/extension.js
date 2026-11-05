@@ -85,6 +85,8 @@ export default class BuoyExtension extends Extension {
         this._stack = new ActivityStack(this._island, {hiddenApps: slugs('apps-hidden')});
         // the island fits 2 or 3 pills before the system cluster; the stack re-renders
         this._island.onCapacityChanged = () => this._stack?.refresh();
+        // the pointer on a pill holds its ttl (SPEC §2e)
+        this._island.onHold = (id, held) => this._stack?.hold(id, held);
         this._hiddenId = this._settings.connect('changed::apps-hidden',
             () => this._stack.setHiddenApps(slugs('apps-hidden')));
         // Fullscreen (FEATURES M1): Shell hides top chrome on a monitor with a fullscreen

@@ -502,16 +502,51 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 
 ### 2e. Feedback: minimal only (decided 2026-11-05, Ethan)
 
-- **What.** A confirmation of something you just did: `osd` from `hud` (volume, brightness,
-  keyboard backlight, Caps/Num Lock — replacing GNOME's OSD), the keyboard layout from
-  `layout`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
+- **What.** A confirmation of something you just did: `osd` from `hud`, the keyboard layout
+  from `layout`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
+- **hud = every GNOME OSD** (2026-11-05, Ethan: "ẩn toàn bộ OSD của hệ thống"), all of which
+  go through `Main.osdWindowManager` `show` / `showAll`, so `hud` overrides both and the
+  stock window never opens while `hud-replace-osd` is on:
+  - levels — icon + bar + its percentage, `72%` as Notchy (more when amplified, `130%`): speaker volume
+    (gsd names an external output: "Headphones" as text), microphone, display brightness,
+    keyboard backlight (keys and the firmware's Fn: gsd forwards UPower's
+    `BrightnessChangedWithSource` "internal"), the battery key. Muted: the muted icon, the
+    bar and number dimmed at their level;
+  - toggles — icon + a short word: touchpad, airplane (and hardware airplane), Bluetooth,
+    rotation lock, the privacy screen (mutter), eject, and "Nothing playing" — gsd's ⊘ for a
+    media key with no MPRIS player (`do_multimedia_player_action`). gsd's own labels are
+    used as they come (translated); Buoy words the ones without;
+  - Caps Lock, Num Lock and Fn Lock — Buoy's own (GNOME has no OSD for them): Caps and
+    Num Lock from the keymap, on every keyboard; Fn Lock only where the kernel tells the
+    system about it — see "Fn Lock support" below.
+  Off, GNOME's popup shows and only Caps/Num/Fn Lock stay in the pill. Click on a level opens
+  its Settings panel (Sound, Displays, Keyboard, Power, Mouse).
+- **Fn Lock support** (2026-11-05). Fn Lock lives in the laptop's firmware; Linux learns of
+  a change only if the vendor's kernel driver reports it. Buoy shows it when the driver
+  exposes an LED `<device>::fnlock` with `brightness_hw_changed` (the LED core then wakes
+  a reader on each change: one POLLPRI watch, no polling). Today that is:
+
+  | Machine (kernel driver) | Fn Lock in the pill | Why |
+  |---|---|---|
+  | **Lenovo IdeaPad** with the Fn-keys WMI event (`ideapad-laptop` + `ideapad_wmi`, WMI `8FC0DE0C-B4E4-43FD-B0F3-8871711C1294`) | **yes** — tested on an IdeaPad Slim 3 15IRH10 (83K1), kernel 7.0: each Fn+Esc flips it once, matching the key's light | the driver registers `platform::fnlock` with `LED_BRIGHT_HW_CHANGED` and notifies from that WMI event (`ideapad_fn_lock_led_notify`) |
+  | Lenovo IdeaPad without that WMI event | no change shown | the LED exists but nothing reports a key press; it moves only when software sets `fn_lock` |
+  | any other driver that adopts the `*::fnlock` LED | yes, untested | same interface |
+  | Huawei (`huawei-wmi`), LG (`lg-laptop`), Uniwill-based (`uniwill-laptop`) | no | only a `fn_lock` file: no change event known, reading it would mean polling (ARCHITECTURE rule 8) |
+  | ASUS (`asus-wmi`), ThinkPad, Dell, HP, external keyboards | no | Fn Lock is handled in firmware or the keyboard; the system never sees it |
+
+  No LED, or a driver that never reports: no Fn Lock pill, nothing else changes.
 - **Minimal only.** No compact on hover, no expanded, no tab; never an alert, never counted
   as missed (INDICATORS.md). Click → its `onPress` if it has one (Sound settings), else
   Home (§2b).
 - **Pill 1 for its ttl.** Feedback takes the centre pill above every kind but `ask`; the
-  pill it covers comes back in place when it ends, and the side pills do not move.
+  pill it covers comes back in place when it ends, and the side pills keep their
+  activities and the `+N` its count (`stack.js` `pillWindow`; they slide only as pill 1's
+  width changes). The newest feedback covers an older one. Under an `ask` it is pill 2.
 - **ttl** ~1.5 s (copied 1 s). A repeat updates the same activity and restarts the ttl, so
-  holding the volume key keeps one pill and only its bar moves; hover holds it.
+  holding the volume key keeps one pill and only its bar moves. Hover holds it: the
+  pointer on any pill pauses its ttl, and leaving gives it a fresh one (`stack.hold`).
+- **While Home is open** feedback shows as a row in Now for its ttl (the pill is the
+  panel then).
 - **Size by type**, content-fit with the adapter's hints, never px (ARCHITECTURE rule 11):
   volume, brightness and backlight are icon + bar (`wide`); Caps Lock and the layout are
   icon + a short word; copied is icon + the snippet or an image thumbnail, ellipsized at
