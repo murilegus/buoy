@@ -2,6 +2,8 @@
 // metadata.json and the schema must agree, or getSettings() throws in enable().
 import GLib from 'gi://GLib';
 
+import {donationLinks} from '../src/buoy@murilegus/lib/kit/settings.js';
+
 const ROOT = GLib.path_get_dirname(GLib.path_get_dirname(
     GLib.filename_from_uri(import.meta.url)[0]));
 const EXT = `${ROOT}/src/buoy@murilegus`;
@@ -37,5 +39,19 @@ for (const [, dir] of ext.matchAll(/from '\.\/lib\/modules\/([\w-]+)\/index\.js'
     if (!xml.includes(`<key name="modules-${dir}" type="b">`))
         throw new Error(`module ${dir} is imported by extension.js but has no modules-${dir} key`);
 }
+
+// donations (gjs.guide; EGO and the About page show them): every service is one EGO and
+// donationLinks() know, so a typo cannot hide the Support group without a failing test
+const SERVICES = ['buymeacoffee', 'custom', 'github', 'kofi', 'liberapay', 'opencollective', 'patreon', 'paypal'];
+if (meta.donations !== undefined) {
+    for (const k of Object.keys(meta.donations)) {
+        if (!SERVICES.includes(k))
+            throw new Error(`metadata donations: unknown service "${k}"`);
+    }
+    if (!donationLinks(meta.donations).length)
+        throw new Error('metadata donations: no usable link');
+}
+if (!/^https:\/\/github\.com\/murilegus\/buoy$/.test(meta.url ?? ''))
+    throw new Error(`metadata url: ${meta.url} (the About page and EGO link it)`);
 
 console.log('metadata/schema: ok');
