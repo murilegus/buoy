@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 
 import {
     FRAMES, POSES, PALETTE, FOREGROUND, LIGHT_LAMPS, FRAME_MS, ONCE_FRAMES, SIZE,
-    poseName, moves, lampColour, frameAt, cells,
+    poseName, moves, lampColour, frameAt, cells, HELLO_MS, helloAt,
 } from '../src/buoy@murilegus/lib/kit/mascot.js';
 import {element, planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/presentation.js';
 
@@ -188,5 +188,23 @@ eq(planExpanded({...agent, expanded: {leading: {mascot: 'wave'}, center: {title:
     {type: 'mascot', pose: 'wave', light: null}, 'expanded leading region may be Bu');
 eq(planExpanded({...agent, expanded: {trailing: {mascot: 'wave'}, center: {title: 'Hi'}}}).trailing, null,
     'expanded trailing region may not');
+
+// --- hello: the About page and the README wave for 5 s, then idle (FEATURES #102) ------
+eq(HELLO_MS, 5000, 'hello lasts 5 s (hello.svg, Ethan 2026-11-04)');
+eq(helloAt(0), {frame: 'wave.1', pose: 'wave', nextIn: 500}, 'hello starts on wave.1');
+eq(helloAt(499).frame, 'wave.1', 'still wave.1 at 499 ms');
+eq(helloAt(500), {frame: 'wave.2', pose: 'wave', nextIn: 500}, 'wave.2 at 500 ms');
+eq(helloAt(1250), {frame: 'wave.1', pose: 'wave', nextIn: 250}, 'back to wave.1, 250 ms left');
+eq(helloAt(4999).frame, 'wave.2', 'the last frame before 5 s');
+eq(helloAt(4999).nextIn, 1, 'one ms to idle');
+eq(helloAt(5000), {frame: 'idle', pose: 'idle', nextIn: null}, 'at 5 s: idle, and nothing more');
+eq(helloAt(60000), {frame: 'idle', pose: 'idle', nextIn: null}, 'long after: idle');
+eq(helloAt(-10).frame, 'wave.1', 'negative elapsed counts as 0');
+eq(helloAt(1000, {still: true}), {frame: 'idle', pose: 'idle', nextIn: null}, 'animations off: idle at once, as hello.svg');
+eq(lampColour(helloAt(0).pose), '#FAC775', 'the wave lamp while waving');
+let swaps = 0;
+for (let t = 0, f = helloAt(0); f.nextIn !== null; t += f.nextIn, f = helloAt(t))
+    swaps++;
+eq(swaps, 10, 'ten frames of 500 ms, then it stops: a bounded animation');
 
 print('mascot: ok');

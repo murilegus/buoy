@@ -7,5 +7,8 @@
   ],
   "settings-schema": "org.gnome.shell.extensions.buoy",
   "version": 1,
-  "url": ""
+  "url": "https://github.com/murilegus/buoy",
+  "donations": {
+    "github": "murilegus"
+  }
 }

@@ -364,3 +364,40 @@ export function toVariant(v) {
 export function packDict(obj) {
     return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, toVariant(v)]));
 }
+
+// metadata.json `donations` (gjs.guide, Extension Anatomy): a handle per service, or full
+// URLs under `custom`; a string or up to 3 strings each. EGO shows the same links.
+const DONATION_SERVICES = {
+    github: {label: 'GitHub Sponsors', url: h => `https://github.com/sponsors/${h}`},
+    kofi: {label: 'Ko-fi', url: h => `https://ko-fi.com/${h}`},
+    buymeacoffee: {label: 'Buy Me a Coffee', url: h => `https://buymeacoffee.com/${h}`},
+    liberapay: {label: 'Liberapay', url: h => `https://liberapay.com/${h}`},
+    opencollective: {label: 'Open Collective', url: h => `https://opencollective.com/${h}`},
+    patreon: {label: 'Patreon', url: h => `https://patreon.com/${h}`},
+    paypal: {label: 'PayPal', url: h => `https://paypal.me/${h}`},
+};
+
+/**
+ * The About page's "Support Buoy" rows, from metadata.json `donations`.
+ *
+ * @param {*} donations  metadata.json `donations`
+ * @returns {Array<{label: string, uri: string}>} in the service order above, custom last;
+ *   unknown services, blank or non-string handles and anything past 3 per service dropped
+ */
+export function donationLinks(donations) {
+    if (!donations || typeof donations !== 'object' || Array.isArray(donations))
+        return [];
+    const list = v => (Array.isArray(v) ? v : [v])
+        .filter(x => typeof x === 'string' && x.trim()).slice(0, 3).map(x => x.trim());
+    const out = [];
+    for (const [service, {label, url}] of Object.entries(DONATION_SERVICES)) {
+        for (const handle of list(donations[service]))
+            out.push({label, uri: url(encodeURIComponent(handle))});
+    }
+    for (const uri of list(donations.custom)) {
+        if (/^https:\/\//.test(uri))
+            out.push({label: uri.replace(/^https:\/\//, '').replace(/\/$/, ''), uri});
+    }
+    return out;
+}
+
