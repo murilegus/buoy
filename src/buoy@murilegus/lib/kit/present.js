@@ -75,11 +75,12 @@ function label(text, styleClass, xExpand = false) {
     return l;
 }
 
-// A long compact title scrolls right to left (2026-11-05, Ethan): rests MARQUEE_PAUSE at
-// the start, then slides one copy plus the gap out while a second copy follows it in, so
-// each loop ends where it began. Only while the title overflows, the compact is mapped and
-// animations are on (ARCHITECTURE rule 8); otherwise it stands still, ellipsized. One
-// Clutter.Timeline on the frame clock; translation only, no relayout.
+// A long title scrolls right to left — the compact's, and the Media tab's through
+// marquee() (2026-11-05, Ethan): rests MARQUEE_PAUSE at the start, then slides one copy
+// plus the gap out while a second copy follows it in, so each loop ends where it began.
+// Only while the title overflows, it is mapped and animations are on (ARCHITECTURE
+// rule 8); otherwise it stands still, ellipsized. One Clutter.Timeline on the frame clock;
+// translation only, no relayout.
 const MARQUEE_GAP = 40;       // px between the copies
 const MARQUEE_SPEED = 30;     // px per second
 const MARQUEE_PAUSE = 2000;   // ms at the start of each loop
@@ -172,6 +173,18 @@ class Marquee extends St.Widget {
         this._timeline.start();
     }
 });
+
+/**
+ * A one-line label that scrolls when its text is wider than the room it gets (above);
+ * for a module's tab.js (the Media tab's title).
+ *
+ * @param {string} text
+ * @param {string} styleClass  the label's
+ * @returns {St.Widget}
+ */
+export function marquee(text, styleClass) {
+    return new Marquee(text, styleClass);
+}
 
 function file(src) {
     return /^[a-z][a-z0-9+.-]*:/i.test(src) ? Gio.File.new_for_uri(src) : Gio.File.new_for_path(src);
@@ -507,8 +520,9 @@ const EQ_BARS = [
 ];
 
 /**
- * The equaliser (SPEC §6 media): four 12 px bars scaled from their foot. While mapped
- * they swing up and down, one endless auto-reversing transition per bar on `scale-y`
+ * The equaliser (SPEC §6 media): four 12 px bars that grow from their middle, up and
+ * down at once (2026-11-05, Ethan). While mapped they stretch and shrink, one endless
+ * auto-reversing transition per bar on `scale-y`
  * (a transform: no relayout, no repaint of anything else); unmapped, or with animations
  * off (St.Settings enable-animations), they stand at rest and no transition exists. An
  * activity shows it only while playing (ARCHITECTURE rule 8: this is an activity, not
@@ -520,8 +534,8 @@ function eqGlyph() {
     const box = new St.BoxLayout({style_class: 'buoy-eq', y_align: Clutter.ActorAlign.CENTER});
     const bars = EQ_BARS.map(b => {
         const bar = new St.Widget({
-            style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.END,
-            pivot_point: new Graphene.Point({x: 0.5, y: 1}), scale_y: b.rest,
+            style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.CENTER,
+            pivot_point: new Graphene.Point({x: 0.5, y: 0.5}), scale_y: b.rest,
         });
         box.add_child(bar);
         return bar;

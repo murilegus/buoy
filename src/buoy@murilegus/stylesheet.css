@@ -160,7 +160,7 @@
 .buoy-icon, .buoy-ring, .buoy-bar { color: #fff; }
 /* .buoy-art: no border-radius, St.Icon does not clip to it; present.js rounds minimal
    and compact art with a shader (kit/rounded.js artRadius), expanded and tabs stay square. */
-/* The equaliser: four bars that rise and fall while playing (present.js eqGlyph). */
+/* The equaliser: four bars that grow from their middle while playing (present.js eqGlyph). */
 .buoy-eq { spacing: 2px; }
 .buoy-eq-bar { width: 3px; height: 12px; border-radius: 1px; background-color: #fff; }
 
