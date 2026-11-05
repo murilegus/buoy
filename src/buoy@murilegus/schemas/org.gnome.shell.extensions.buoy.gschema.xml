@@ -62,10 +62,15 @@
       <summary>Copied</summary>
       <description>A short flash when something is copied.</description>
     </key>
-    <key name="modules-layout" type="b">
+    <key name="modules-input" type="b">
       <default>true</default>
-      <summary>Keyboard layout</summary>
-      <description>A short flash when the input source changes.</description>
+      <summary>Input source</summary>
+      <description>A short flash when you switch input source or input method.</description>
+    </key>
+    <key name="input-replace-switcher" type="b">
+      <default>true</default>
+      <summary>Hide GNOME's switcher</summary>
+      <description>Off, holding Super+Space shows GNOME's list.</description>
     </key>
     <key name="modules-ask" type="b">
       <default>true</default>
