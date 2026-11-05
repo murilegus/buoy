@@ -29,13 +29,13 @@
     </key>
     <key name="modules-hud" type="b">
       <default>true</default>
-      <summary>Volume and brightness</summary>
-      <description>Volume, brightness, backlight, toggles and Caps/Num/Fn Lock as a short pill.</description>
+      <summary>System popups</summary>
+      <description>Volume, brightness and lock keys, shown in the pill.</description>
     </key>
     <key name="hud-replace-osd" type="b">
       <default>true</default>
-      <summary>Replace GNOME's popup</summary>
-      <description>Off, GNOME's own popup shows; Caps, Num and Fn Lock stay in the pill.</description>
+      <summary>Hide GNOME's popup</summary>
+      <description>Off, GNOME shows its own.</description>
     </key>
     <key name="modules-home" type="b">
       <default>true</default>

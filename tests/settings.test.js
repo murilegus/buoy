@@ -122,7 +122,7 @@ eq(plan.modules.find(m => m.id === 'calendar'), {
 eq(plan.modules.find(m => m.id === 'media').sample !== null, true, 'media has a sample');
 {
     const hud = plan.modules.find(m => m.id === 'hud');
-    eq(hud?.keys, ['hud-replace-osd'], 'hud has a row with "Replace GNOME\'s popup" (it was hidden as a stub)');
+    eq(hud?.keys, ['hud-replace-osd'], 'hud has a row with "Hide GNOME\'s popup" (it was hidden as a stub)');
     eq(hud?.sample?.trailing, {bar: 0.72, label: '72%'}, 'hud\'s sample: a volume level');
 }
 for (const id of HIDDEN_MODULES) {
