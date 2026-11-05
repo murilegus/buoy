@@ -159,8 +159,9 @@
 .buoy-label { color: #d0d0d0; font-feature-settings: "tnum"; }
 .buoy-icon, .buoy-ring, .buoy-bar { color: #fff; }
 .buoy-art { border-radius: 4px; }
+/* The equaliser: four bars that rise and fall while playing (present.js eqGlyph). */
 .buoy-eq { spacing: 2px; }
-.buoy-eq-bar { width: 3px; border-radius: 1px; background-color: #fff; }
+.buoy-eq-bar { width: 3px; height: 12px; border-radius: 1px; background-color: #fff; }
 
 .buoy-expanded { padding: 14px; spacing: 12px; }
 .buoy-expanded-top { spacing: 14px; }
@@ -181,17 +182,18 @@
 /* Compact, the hover tier (SPEC §2, §4): leading 40, a title over a subtitle, then a bar
    or up to 3 rows under the text column (present.js indents them). */
 .buoy-compact { spacing: 4px; }
-.buoy-compact-top { spacing: 10px; }
-.buoy-compact-lines { spacing: 1px; }
+.buoy-compact-top { spacing: 12px; }   /* present.js INDENT_GAP */
+.buoy-compact-lines { spacing: 3px; }
 .buoy-compact-title { font-size: 14px; }
 .buoy-compact-subtitle { color: #b8b8b8; font-size: 12px; }
 .buoy-compact-rows { spacing: 1px; }
 .buoy-compact-row { spacing: 8px; }
 .buoy-compact-row-text { color: #d0d0d0; font-size: 12px; }
 .buoy-compact-row-detail { color: rgba(255, 255, 255, 0.5); font-size: 12px; font-feature-settings: "tnum"; }
+.buoy-compact .buoy-actions { spacing: 6px; padding-left: 4px; }
 .buoy-compact .buoy-action { padding: 6px; border-radius: 999px; }
 /* A live position (media): the bar, then elapsed and remaining in even figures. */
-.buoy-live { spacing: 2px; }
+.buoy-live { spacing: 4px; padding-top: 6px; }
 .buoy-live-time { color: rgba(255, 255, 255, 0.5); font-size: 11px; font-feature-settings: "tnum"; }
 /* An ask's key (kit/keys.js), shown only while the island holds the keyboard. */
 .buoy-action-face { spacing: 6px; }

@@ -1,7 +1,9 @@
 import Cairo from 'cairo';
 import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
@@ -354,10 +356,75 @@ function mascot(e, size, activity) {
     return area;
 }
 
+// Each bar: its height at rest and the range and half-period it swings through while
+// playing. Unequal periods keep the four out of step, so the motion never visibly repeats.
+const EQ_BARS = [
+    {rest: 0.5, from: 0.25, to: 1, ms: 430},
+    {rest: 0.85, from: 0.45, to: 1, ms: 610},
+    {rest: 0.65, from: 0.2, to: 0.85, ms: 520},
+    {rest: 0.4, from: 0.3, to: 0.95, ms: 690},
+];
+
+/**
+ * The equaliser (SPEC §6 media): four 12 px bars scaled from their foot. While mapped
+ * they swing up and down, one endless auto-reversing transition per bar on `scale-y`
+ * (a transform: no relayout, no repaint of anything else); unmapped, or with animations
+ * off (St.Settings enable-animations), they stand at rest and no transition exists. An
+ * activity shows it only while playing (ARCHITECTURE rule 8: this is an activity, not
+ * idle). Unlike Bu it does not rest after `mascot-rest-after`: music plays without input.
+ *
+ * @returns {St.BoxLayout}
+ */
 function eqGlyph() {
     const box = new St.BoxLayout({style_class: 'buoy-eq', y_align: Clutter.ActorAlign.CENTER});
-    for (const h of [6, 10, 8]) // static: nothing animates (SPEC §8)
-        box.add_child(new St.Widget({style_class: 'buoy-eq-bar', height: h, y_align: Clutter.ActorAlign.END}));
+    const bars = EQ_BARS.map(b => {
+        const bar = new St.Widget({
+            style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.END,
+            pivot_point: new Graphene.Point({x: 0.5, y: 1}), scale_y: b.rest,
+        });
+        box.add_child(bar);
+        return bar;
+    });
+    const settings = St.Settings.get();
+    let animId = 0;
+    const still = () => {
+        bars.forEach((bar, i) => {
+            bar.remove_transition('buoy-eq');
+            bar.scale_y = EQ_BARS[i].rest;
+        });
+    };
+    const sync = () => {
+        still();
+        if (!box.mapped || !settings.enable_animations)
+            return;
+        bars.forEach((bar, i) => {
+            const b = EQ_BARS[i];
+            const t = new Clutter.PropertyTransition({
+                property_name: 'scale-y',
+                interval: new Clutter.Interval({value_type: GObject.TYPE_DOUBLE}),
+                duration: b.ms, repeat_count: -1, auto_reverse: true,
+                progress_mode: Clutter.AnimationMode.EASE_IN_OUT_SINE,
+            });
+            t.set_from(b.from);
+            t.set_to(b.to);
+            bar.add_transition('buoy-eq', t);
+        });
+    };
+    const disconnect = () => {
+        if (animId)
+            settings.disconnect(animId);
+        animId = 0;
+    };
+    box.connect('notify::mapped', () => {
+        disconnect();
+        if (box.mapped)
+            animId = settings.connect('notify::enable-animations', sync);
+        sync();
+    });
+    box.connect('destroy', () => {
+        disconnect();
+        still();
+    });
     return box;
 }
 
@@ -541,10 +608,12 @@ function compactBox(p, activity, maxWidth) {
     return box;
 }
 
-// Under the text column: the leading's width plus the row's spacing (stylesheet.css).
+// Under the text column: the leading's width plus the top row's spacing
+// (.buoy-compact-top in stylesheet.css).
+const INDENT_GAP = 12;
 function indented(actor, p) {
     const key = {icon: 'icon', glyph: 'icon', ring: 'ring', mascot: 'mascot'}[p.leading?.type] ?? 'art';
-    const lead = p.leading ? SIZE.compact[key] + 10 : 0;
+    const lead = p.leading ? SIZE.compact[key] + INDENT_GAP : 0;
     actor.x_expand = true;
     if (lead)
         actor.set_style(`margin-left: ${lead}px;`);

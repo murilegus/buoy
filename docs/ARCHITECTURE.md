@@ -129,6 +129,9 @@ fields and order: [PROFILES.md](PROFILES.md).
    Bu's moving poses are not idle content: they swap two frames every 500 ms only while
    their activity's pill is mapped, and hold still after `mascot-rest-after` (60 s)
    without input and with animations off (`MASCOT.md` § Drawing rules, 2026-11-04).
+   The media equaliser moves only while it is mapped (playing: paused shows ⏸), one
+   endless `scale-y` transition per bar, none unmapped or with animations off; it does
+   not rest without input, since music plays untouched (2026-11-05, Ethan).
 9. Every setting is a key in `schemas/…gschema.xml` with a `<summary>` and a
    `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). A module's
    own keys are named `<id>-…` and appear inside its row on the Modules page, **except an

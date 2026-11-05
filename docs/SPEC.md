@@ -628,7 +628,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 ## 6. Modules for v0.1
 
 1. **media** — MPRIS (2026-11-05, Ethan): one pill per player from the moment it plays.
-   Minimal: art + title · artist + equaliser while playing, ⏸ when paused, no button; a
+   Minimal: art + title · artist + equaliser while playing (its four bars rise and fall
+   while the pill is on screen, wherever it shows — side pill, Home's Now; still with
+   animations off; 2026-11-05, Ethan), ⏸ when paused, no button; a
    paused pill goes after `media-hide-paused-after` (5 min). Compact (hover): art 40,
    title / artist · app, ⏮ ⏯ ⏭, the position running with elapsed and remaining —
    display only. Tab Media: players as chips, art, title / artist / album, "Open app",
@@ -754,5 +756,6 @@ Buoy is a framework first, features second — see `APPLE.md` part B for the ful
 ## 8. Non-negotiables
 
 No polling while closed; no blur; no shadows with blur; actors reused not recreated;
-nothing animating while idle (a content change is one transition, §2a); a module switched
+nothing animating while idle (a content change is one transition, §2a; a playing
+equaliser is an activity, not idle, §6); a module switched
 off costs zero.
