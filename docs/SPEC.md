@@ -757,7 +757,9 @@ the % and the file rows show size only.
   - **Running** — one row per app: icon, name, the count when sent ("2 downloads"), %,
     a thin bar.
   - **Done** — a row stays a little after the app's progress ends (pill gone), with the
-    time, then leaves.
+    time, then leaves (2026-11-05: 10 min, at most 5). The pill says "Name · Done" for
+    2.5 s first. Done means the progress was hidden at ≥ 99 %; hidden earlier (cancelled)
+    or the app leaving the bus ends it without Done.
   - A click focuses that app's window (`Shell.AppSystem.lookup_app(id).activate()`);
     there is nothing more to open.
   - Not in M3: Firefox (no signal), Files outside Ubuntu (it only posts the notification

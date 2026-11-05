@@ -139,7 +139,7 @@ export class Home {
         for (const [id, tab] of this._tabs) {
             const t = findTab(this._strip, id);
             if (t?.type === 'kind')
-                tab.update?.(tabActivities(t, this._list));
+                tab.update?.(tabActivities(t, this._list, {own: true}));
         }
     }
 
@@ -329,7 +329,7 @@ export class Home {
             this._tabs.set(id, tab);
             const t = findTab(this._strip, id);
             if (t?.type === 'kind')
-                tab.update?.(tabActivities(t, this._list));
+                tab.update?.(tabActivities(t, this._list, {own: true}));
         }
         return tab;
     }
