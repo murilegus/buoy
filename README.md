@@ -43,6 +43,14 @@ buoy/
 
 Data flow: `module/source` → `registry.build(kind, app, ev)` → `stack.surface()` → `island`.
 
+## Hardware notes
+
+- **Fn Lock** shows in the pill only where the laptop's kernel driver reports it: today
+  Lenovo IdeaPads whose `ideapad-laptop` driver exposes the `platform::fnlock` LED with
+  change events (tested on an IdeaPad Slim 3). ThinkPad, Dell, HP, ASUS, Huawei, LG and
+  external keyboards keep Fn Lock to themselves. Caps Lock and Num Lock work everywhere.
+  Details: `docs/SPEC.md` §2e, "Fn Lock support".
+
 ## Setup
 
 Needs GNOME Shell 50, `gjs`, pnpm (fetches its own Node, see `devEngines` in

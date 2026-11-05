@@ -516,14 +516,25 @@ Once a day, the first time the island appears, it opens expanded and says hello.
     rotation lock, the privacy screen (mutter), eject, and "Nothing playing" — gsd's ⊘ for a
     media key with no MPRIS player (`do_multimedia_player_action`). gsd's own labels are
     used as they come (translated); Buoy words the ones without;
-  - Caps Lock, Num Lock and Fn Lock — Buoy's own (GNOME has no OSD for them): the first
-    two from the keymap; Fn Lock where the kernel driver exposes an LED `*::fnlock` with
-    `brightness_hw_changed` (ideapad-laptop, from its WMI Fn-keys event), one POLLPRI watch.
-    Drivers with only a `fn_lock` file (huawei-wmi, lg-laptop, uniwill-laptop) would need
-    polling and are left out; ThinkPad, Dell, HP and ASUS keep Fn Lock in firmware, where
-    the system never sees it.
-  Off, GNOME's popup shows and only Caps/Num Lock stay in the pill. Click on a level opens
+  - Caps Lock, Num Lock and Fn Lock — Buoy's own (GNOME has no OSD for them): Caps and
+    Num Lock from the keymap, on every keyboard; Fn Lock only where the kernel tells the
+    system about it — see "Fn Lock support" below.
+  Off, GNOME's popup shows and only Caps/Num/Fn Lock stay in the pill. Click on a level opens
   its Settings panel (Sound, Displays, Keyboard, Power, Mouse).
+- **Fn Lock support** (2026-11-05). Fn Lock lives in the laptop's firmware; Linux learns of
+  a change only if the vendor's kernel driver reports it. Buoy shows it when the driver
+  exposes an LED `<device>::fnlock` with `brightness_hw_changed` (the LED core then wakes
+  a reader on each change: one POLLPRI watch, no polling). Today that is:
+
+  | Machine (kernel driver) | Fn Lock in the pill | Why |
+  |---|---|---|
+  | **Lenovo IdeaPad** with the Fn-keys WMI event (`ideapad-laptop` + `ideapad_wmi`, WMI `8FC0DE0C-B4E4-43FD-B0F3-8871711C1294`) | **yes** — tested on an IdeaPad Slim 3 15IRH10 (83K1), kernel 7.0: each Fn+Esc flips it once, matching the key's light | the driver registers `platform::fnlock` with `LED_BRIGHT_HW_CHANGED` and notifies from that WMI event (`ideapad_fn_lock_led_notify`) |
+  | Lenovo IdeaPad without that WMI event | no change shown | the LED exists but nothing reports a key press; it moves only when software sets `fn_lock` |
+  | any other driver that adopts the `*::fnlock` LED | yes, untested | same interface |
+  | Huawei (`huawei-wmi`), LG (`lg-laptop`), Uniwill-based (`uniwill-laptop`) | no | only a `fn_lock` file: no change event known, reading it would mean polling (ARCHITECTURE rule 8) |
+  | ASUS (`asus-wmi`), ThinkPad, Dell, HP, external keyboards | no | Fn Lock is handled in firmware or the keyboard; the system never sees it |
+
+  No LED, or a driver that never reports: no Fn Lock pill, nothing else changes.
 - **Minimal only.** No compact on hover, no expanded, no tab; never an alert, never counted
   as missed (INDICATORS.md). Click → its `onPress` if it has one (Sound settings), else
   Home (§2b).
