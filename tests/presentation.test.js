@@ -1,6 +1,8 @@
 // Run: gjs -m tests/presentation.test.js   (pure: presentation data → render plan)
-import {element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, planMissed, clockTime, MAX_ACTIONS, MAX_ROWS} from
-    '../src/buoy@murilegus/lib/kit/presentation.js';
+import {
+    element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, planMissed, clockTime,
+    MAX_ACTIONS, MAX_ROWS, livePosition, mediaTimes, untilText,
+} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
 import hud from '../src/buoy@murilegus/lib/modules/hud/adapter.js';
@@ -68,12 +70,12 @@ const track = {
         'media minimal leading = art');
     eq(c.text, 'Monument Valley · Lumen Coast', 'media minimal text');
     eq(c.trailing, {type: 'glyph', name: 'eq'}, 'media minimal trailing = eq glyph');
-    eq(c.action, {id: 'playpause', label: null, icon: 'media-playback-start-symbolic'}, 'one minimal action');
+    eq(c.action, null, 'media: no button in minimal (minimalAction: false; the compact has them)');
     eq([c.keyline, c.stale], [null, false], 'no keyline, not stale');
 }
 {
-    const c = planMinimal(spotify.media({...track, title: 'Advertisement'}, null));
-    eq([c.text, c.trailing], ['Ad', {type: 'text', text: '0:30'}], 'spotify ad: countdown trailing');
+    const c = planMinimal(spotify.media({...track, ad: true, position: 0, length: 30000, at: 1000}, null));
+    eq([c.text, c.trailing], ['Ad', {type: 'until', at: 31000}], 'spotify ad: a live countdown in trailing');
 }
 {
     const c = planMinimal(hud.osd({icon: 'audio-volume-high-symbolic', level: 0.4}));
@@ -105,10 +107,10 @@ eq(planExpanded({text: 'x'}), null, 'no expanded → no plan');
 eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expanded → no plan');
 {
     const e = planExpanded(media.media(track, null));
-    eq(e.leading, {type: 'art', src: 'file:///tmp/cover.png', fallback: null},
-        'expanded leading from the adapter (size ignored)');
+    eq(e.leading, {type: 'art', src: 'file:///tmp/cover.png', fallback: 'audio-x-generic-symbolic'},
+        'expanded leading from the adapter, with the icon behind the art');
     eq(e.center, {type: 'block', title: 'Monument Valley', subtitle: 'Lumen Coast', bar: null},
-        'center block; progress: true is source-driven, not static');
+        'center block');
     eq(e.trailing, {type: 'glyph', name: 'eq'}, 'trailing falls back to the minimal one');
     eq(e.bottom, {type: 'actions'}, 'transport → actions row');
     eq(e.actions.map(a => a.id), ['playpause'], 'expanded actions');
@@ -238,6 +240,30 @@ eq(planCompact({compact: {}}), null, 'empty compact → no compact');
     eq(planCompact({compact: {text: long, subtitle: long}}).subtitle, long, 'long text is not cut here (the renderer ellipsizes)');
 }
 
+// --- live progress (media, 2026-11-05): runs while shown, times beside it ---------------
+{
+    const p = planCompact({compact: {text: 's', progress: {position: 92000, length: 221000, at: 1000, playing: true}}});
+    eq(p.live, {position: 92000, length: 221000, at: 1000, playing: true}, 'a live position is carried');
+    eq(p.progress, 92000 / 221000, 'its fraction when read');
+    eq(p.tall, true, 'a live bar → tall');
+    eq(planCompact({compact: {text: 's', progress: {position: 5, length: 0}}}).progress, null, 'no length → no bar');
+    eq(planCompact({compact: {text: 's', progress: {position: 'x', length: 10}}}).progress, null, 'position must be a number');
+    eq(planCompact({compact: {text: 's', progress: {position: 999, length: 10}}}).live.position, 10, 'position clamps to the length');
+    eq(planCompact({compact: {text: 's', progress: 0.3}}).live, null, 'a plain fraction is not live');
+    const live = {position: 92000, length: 221000, at: 1000, playing: true};
+    eq(livePosition(live, 4000), 95000, 'runs from `at` while playing');
+    eq(livePosition({...live, playing: false}, 4000), 92000, 'paused: stays');
+    eq(livePosition(live, 10 ** 9), 221000, 'never past the end');
+    eq(livePosition({...live, at: 0}, 4000), 92000, 'no read time: stays');
+    eq(livePosition(live, 500), 92000, 'a clock behind `at` never runs backwards');
+    eq(mediaTimes(92000, 221000), ['1:32', '\u22122:09'], 'elapsed and remaining (minus sign)');
+    eq(mediaTimes(0, 3725000), ['0:00', '\u22121:02:05'], 'hours when the track has them');
+    eq(mediaTimes(300000, 200000)[1], '\u22120:00', 'remaining never negative');
+}
+eq(element({until: 31000}), {type: 'until', at: 31000}, 'a live countdown element');
+eq(untilText(31000, 1500), '0:30', 'what is left, rounded');
+eq(untilText(1000, 5000), '0:00', 'never negative');
+
 // --- side pills: leading + trailing, text dropped (SPEC §2c, APPLE §B3) -----------------
 {
     const timer = {leading: 'alarm-symbolic', text: 'Tea', trailing: {countdown: 240}};
@@ -253,5 +279,7 @@ eq(planMinimal({text: 't'}, {more: 2}).badge, '+2', '+N badge');
 for (const none of [0, -1, undefined, NaN, '3'])
     eq(planMinimal({text: 't'}, {more: none}).badge, null, `no badge for ${none}`);
 eq(planMinimal({}, {more: 4}).badge, '+4', 'badge alone still counts as content');
+eq(planMinimal({actions: [{id: 'a', label: 'A'}]}).action?.id, 'a', 'an activity keeps its minimal button by default');
+eq(planMinimal({actions: [{id: 'a', label: 'A'}], minimalAction: false}).action, null, 'minimalAction: false drops it');
 
 console.log('presentation: ok');

@@ -158,9 +158,11 @@
 .buoy-text { font-weight: 600; }
 .buoy-label { color: #d0d0d0; font-feature-settings: "tnum"; }
 .buoy-icon, .buoy-ring, .buoy-bar { color: #fff; }
-.buoy-art { border-radius: 4px; }
+/* .buoy-art: no border-radius, St.Icon does not clip to it; present.js rounds minimal
+   and compact art with a shader (kit/rounded.js artRadius), expanded and tabs stay square. */
+/* The equaliser: four bars that rise and fall while playing (present.js eqGlyph). */
 .buoy-eq { spacing: 2px; }
-.buoy-eq-bar { width: 3px; border-radius: 1px; background-color: #fff; }
+.buoy-eq-bar { width: 3px; height: 12px; border-radius: 1px; background-color: #fff; }
 
 .buoy-expanded { padding: 14px; spacing: 12px; }
 .buoy-expanded-top { spacing: 14px; }
@@ -181,15 +183,19 @@
 /* Compact, the hover tier (SPEC §2, §4): leading 40, a title over a subtitle, then a bar
    or up to 3 rows under the text column (present.js indents them). */
 .buoy-compact { spacing: 4px; }
-.buoy-compact-top { spacing: 10px; }
-.buoy-compact-lines { spacing: 1px; }
+.buoy-compact-top { spacing: 12px; }   /* present.js INDENT_GAP */
+.buoy-compact-lines { spacing: 3px; }
 .buoy-compact-title { font-size: 14px; }
 .buoy-compact-subtitle { color: #b8b8b8; font-size: 12px; }
 .buoy-compact-rows { spacing: 1px; }
 .buoy-compact-row { spacing: 8px; }
 .buoy-compact-row-text { color: #d0d0d0; font-size: 12px; }
 .buoy-compact-row-detail { color: rgba(255, 255, 255, 0.5); font-size: 12px; font-feature-settings: "tnum"; }
+.buoy-compact .buoy-actions { spacing: 6px; padding-left: 4px; }
 .buoy-compact .buoy-action { padding: 6px; border-radius: 999px; }
+/* A live position (media): the bar, then elapsed and remaining in even figures. */
+.buoy-live { spacing: 4px; padding-top: 6px; }
+.buoy-live-time { color: rgba(255, 255, 255, 0.5); font-size: 11px; font-feature-settings: "tnum"; }
 /* An ask's key (kit/keys.js), shown only while the island holds the keyboard. */
 .buoy-action-face { spacing: 6px; }
 .buoy-key {
@@ -285,3 +291,25 @@
 .buoy-panel-header { spacing: 8px; }
 .buoy-tab.buoy-gear { padding: 9px; background-color: rgba(255, 255, 255, 0.11); }
 .buoy-tab.buoy-gear:hover { color: #fff; background-color: rgba(255, 255, 255, 0.2); }
+
+/* The Media tab (modules/media/tab.js): players, the track, the position, the transport. */
+.buoy-media-tab { spacing: 12px; padding: 4px 6px 6px; }
+.buoy-media-chips { spacing: 6px; }
+.buoy-media-chip { padding: 3px 10px; border-radius: 999px; font-size: 12px; color: #b8b8b8; background-color: rgba(255, 255, 255, 0.10); }
+.buoy-media-chip:hover { background-color: rgba(255, 255, 255, 0.18); }
+.buoy-media-chip-on { color: #000; background-color: #f1efe8; }
+.buoy-media-track { spacing: 14px; }
+.buoy-media-art { border-radius: 12px; }
+.buoy-media-title { font-size: 15px; font-weight: 600; }
+.buoy-media-artist { color: #b8b8b8; }
+.buoy-media-album { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+.buoy-media-position { spacing: 2px; }
+.buoy-media-transport { spacing: 12px; }
+.buoy-media-button { padding: 8px; border-radius: 999px; color: rgba(255, 255, 255, 0.55); }
+.buoy-media-button:hover { background-color: rgba(255, 255, 255, 0.12); }
+.buoy-media-button:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-media-on { color: #fff; }
+.buoy-media-skip { color: #fff; background-color: rgba(255, 255, 255, 0.10); }
+.buoy-media-play { padding: 12px; color: #000; background-color: #f1efe8; }
+.buoy-media-play:hover { background-color: #fff; }
+.buoy-media-empty { color: #b8b8b8; }

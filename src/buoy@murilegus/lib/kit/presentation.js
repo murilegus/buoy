@@ -5,18 +5,22 @@
  * Adapter data (APPLE.md §B1/B3, ARCHITECTURE rule 3):
  *   {leading, text, trailing, expanded, actions, keyline, isStale}
  *   leading/trailing: 'icon-name' | Gio.Icon | {art, icon} | {icon} | {progress: 0..1}
- *                     | {bar: 0..1} | {countdown: s} | {text}
+ *                     | {bar: 0..1} | {countdown: s} | {until: ms since the epoch} | {text}
+ *                     `until` counts down live, once a second while shown (present.js)
  *   leading only:     {mascot: '<pose>', icon?} — Bu (MASCOT.md); an unknown pose falls
  *                     back to `icon`, else `idle`; elsewhere only its `icon` counts
  *   expanded: true (= enlarged minimal) | {leading, center, trailing, bottom}
  *             region: an element as above | {title, subtitle, progress} | {transport: true};
  *             any region may carry `priority` (the highest one takes the free width)
- *   actions: [{id, label?, icon?}] — 1 shown in minimal, 3 in compact and expanded (APPLE.md B5.5)
+ *   actions: [{id, label?, icon?}] — 1 shown in minimal, 3 in compact and expanded (APPLE.md B5.5);
+ *            `minimalAction: false` keeps the minimal pill without a button
  *
  *   compact: {leading, text, subtitle?, trailing, transport?, progress?, rows?} — the hover
  *         tier (SPEC §2; Buoy's own, no Apple equivalent): leading 40, a title and a
  *         subtitle line, transport: true adds up to 3 of the activity's actions as buttons,
- *         progress (0..1) a bar under them, rows up to 3 `{icon?, text, detail?}`
+ *         progress a bar under them — 0..1, or live `{position, length, at, playing}` (ms;
+ *         `at` when position was read) which runs with the elapsed and remaining times —
+ *         rows up to 3 `{icon?, text, detail?}`
  *
  * Minimal is one set of data for every pill (APPLE §B3): a side pill drops `text` and
  * keeps leading + trailing, so the short value that matters belongs in `trailing`.
@@ -100,6 +104,8 @@ export function element(e, {leading = false} = {}) {
         return {type: 'bar', value: clamp01(e.bar)};
     if (isNum(e.countdown))
         return {type: 'text', text: clock(e.countdown)};
+    if (isNum(e.until))
+        return {type: 'until', at: e.until};
     const text = str(e.text);
     return text ? {type: 'text', text} : null;
 }
@@ -177,7 +183,8 @@ export function planMinimal(p, {light, more, side = false} = {}) {
         leading: lead.leading,
         text: side && (lead.leading || trailing) ? null : str(p.text),
         trailing,
-        action: actions(p.actions, MAX_ACTIONS.minimal)[0] ?? null,
+        // `minimalAction: false`: the buttons live in the compact (media, 2026-11-05)
+        action: p.minimalAction === false ? null : actions(p.actions, MAX_ACTIONS.minimal)[0] ?? null,
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
         light: lead.light,
@@ -203,7 +210,7 @@ export function planCompact(p, {light} = {}) {
         subtitle: str(c.subtitle),
         trailing: element(c.trailing),
         actions: c.transport === true ? actions(p.actions, MAX_ACTIONS.compact) : [],
-        progress: isNum(c.progress) ? clamp01(c.progress) : null,
+        ...progressOf(c.progress),
         rows: rows(c.rows),
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
@@ -217,6 +224,50 @@ export function planCompact(p, {light} = {}) {
 }
 
 export const MAX_ROWS = 3;
+
+// A static fraction, or a live position (media): its fraction when read, and `live` for
+// the renderer to run it on.
+function progressOf(v) {
+    if (isNum(v))
+        return {progress: clamp01(v), live: null};
+    if (!isPlain(v) || !isNum(v.length) || v.length <= 0 || !isNum(v.position))
+        return {progress: null, live: null};
+    const live = {
+        position: Math.max(0, Math.min(v.position, v.length)), length: v.length,
+        at: isNum(v.at) ? v.at : 0, playing: v.playing === true,
+    };
+    return {progress: live.position / live.length, live};
+}
+
+/**
+ * Where a live position is now: it runs from `at` while playing, never past the end.
+ *
+ * @param {{position: number, length: number, at: number, playing: boolean}} live  ms
+ * @param {number} now  ms since the epoch
+ * @returns {number} ms
+ */
+export function livePosition(live, now) {
+    const run = live.playing && live.at > 0 ? Math.max(0, now - live.at) : 0;
+    return Math.min(live.length, live.position + run);
+}
+
+/**
+ * @param {number} position  ms
+ * @param {number} length  ms
+ * @returns {[string, string]} elapsed and remaining, `1:32` and `−2:09` (as Notchy, GNOME)
+ */
+export function mediaTimes(position, length) {
+    return [clock(position / 1000), `\u2212${clock(Math.max(0, length - position) / 1000)}`];
+}
+
+/**
+ * @param {number} at  ms since the epoch
+ * @param {number} now
+ * @returns {string} what is left, `0:29` — never negative
+ */
+export function untilText(at, now) {
+    return clock(Math.max(0, at - now) / 1000);
+}
 
 function rows(list) {
     if (!Array.isArray(list))

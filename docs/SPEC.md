@@ -627,9 +627,20 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 
 ## 6. Modules for v0.1
 
-1. **media** — MPRIS: minimal (art + title · artist), compact (transport, seek bar), tab
-   Media (adds what compact has no room for: player choice, the app's volume,
-   shuffle/repeat).
+1. **media** — MPRIS (2026-11-05, Ethan): one pill per player from the moment it plays.
+   Minimal: art + title · artist + equaliser while playing (its four bars rise and fall
+   while the pill is on screen, wherever it shows — side pill, Home's Now; still with
+   animations off; 2026-11-05, Ethan), ⏸ when paused, no button; a
+   paused pill goes after `media-hide-paused-after` (5 min). Compact (hover): art 40,
+   title / artist · app (a title too long for the compact scrolls right to left: 2 s at
+   the start, 30 px/s, two copies 40 px apart so each loop ends where it began; still and
+   ellipsized with animations off; 2026-11-05, Ethan), ⏮ ⏯ ⏭, the position running with elapsed and remaining —
+   display only. Tab Media: players as chips, art, title / artist / album, "Open app",
+   a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. Art in minimal and compact has corners
+   inside the pill's: the pill's radius less the art's inset across, the content padding
+   (24 − 14 = 10 on the compact's 40; minimal 16 − 14 = 2, raised to 6, under which a
+   20 px art reads square); in expanded and the tab it stays square (2026-11-05, Ethan). No volume in the tab: per-app volume and
+   the output device go to a Sound tab (§6b). Spotify ads: "Ad" and their countdown.
 2. **hud** — volume / brightness / keyboard backlight / caps lock replace the stock OSD, as
    feedback (§2e).
 3. **home** — the expanded Home above.
@@ -663,6 +674,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 9. **several pills** — pill 1 plus up to two 120 px side pills (§2c).
 10. **clipboard** — the copied feedback (§2e, v0.1) and, with `clipboard-history`, the
     Clipboard tab: history, search, pin, paste (M5).
+11. **Sound tab** (2026-11-05, Ethan) — a standalone tab, Notchy's mixer: every app playing
+    sound with its own volume slider, and the output device (GNOME's, for everything),
+    from Shell's mixer (`ui/status/volume.js` `getMixerControl`). Not in the Media tab.
 
 ## 6c. Transfers tab (decided 2026-11-03)
 
@@ -747,5 +761,6 @@ Buoy is a framework first, features second — see `APPLE.md` part B for the ful
 ## 8. Non-negotiables
 
 No polling while closed; no blur; no shadows with blur; actors reused not recreated;
-nothing animating while idle (a content change is one transition, §2a); a module switched
+nothing animating while idle (a content change is one transition, §2a; a playing
+equaliser is an activity, not idle, §6); a module switched
 off costs zero.

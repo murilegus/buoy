@@ -1,13 +1,18 @@
 import Cairo from 'cairo';
 import Clutter from 'gi://Clutter';
+import Cogl from 'gi://Cogl';
+import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
 import Pango from 'gi://Pango';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
-import {planCompact, planExpanded, planIdle, planMinimal} from './presentation.js';
+import {ART_CODE, ART_DECLARATIONS, artRadius, effectBox} from './rounded.js';
+import {livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, untilText} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
@@ -24,11 +29,149 @@ const SIZE = {
     expanded: {icon: 32, art: 56, ring: 32, bar: 0, mascot: 50}, // bar: 0 = fill the width
 };
 
+// Album art's corners, inside the pill's (kit/rounded.js artRadius): the pill's radius
+// (minimal 16, compact 24; shapes.js) less the content padding (14, pill.js PAD); minimal
+// at least 6. Expanded and tabs stay square.
+const ART_INSET = 14;
+const ART_RADIUS = {
+    minimal: artRadius(16, ART_INSET, SIZE.minimal.art, 6),     // 6
+    compact: artRadius(24, ART_INSET, SIZE.compact.art),        // 10
+};
+
+// One Shell.GLSLEffect per art (the ui/lightbox.js RadialShaderEffect pattern, as corners.js):
+// St.Icon keeps loading the cover asynchronously; the shader rounds what it draws.
+const ArtCorners = GObject.registerClass(
+class ArtCorners extends Shell.GLSLEffect {
+    vfunc_build_pipeline() {
+        this.add_glsl_snippet(Cogl.SnippetHook.FRAGMENT, ART_DECLARATIONS, ART_CODE, false);
+    }
+
+    /**
+     * @param {number} size  the art's side, logical px (its allocation: icon_size)
+     * @param {number} r  radius
+     * @param {number} scale  device px per logical px
+     */
+    setShape(size, r, scale) {
+        this._loc ??= {box: this.get_uniform_location('buoy_box'), art: this.get_uniform_location('buoy_art')};
+        const box = effectBox(size, size);    // the texture is the padded paint box
+        this.set_uniform_float(this._loc.box, 4, [box.x, box.y, box.width, box.height]);
+        this.set_uniform_float(this._loc.art, 4, [size, size, r, 1 / Math.max(scale, 1)]);
+        this.queue_repaint();
+    }
+});
+
+function roundArt(icon, size, r) {
+    const effect = new ArtCorners();
+    const sync = () => effect.setShape(size, r, icon.get_resource_scale());
+    icon.add_effect_with_name('buoy-art-corners', effect);
+    icon.connect('resource-scale-changed', sync);
+    sync();
+    return icon;
+}
+
 function label(text, styleClass, xExpand = false) {
     const l = new St.Label({text, style_class: styleClass, x_expand: xExpand, y_align: Clutter.ActorAlign.CENTER});
     l.clutter_text.ellipsize = Pango.EllipsizeMode.END;
     return l;
 }
+
+// A long compact title scrolls right to left (2026-11-05, Ethan): rests MARQUEE_PAUSE at
+// the start, then slides one copy plus the gap out while a second copy follows it in, so
+// each loop ends where it began. Only while the title overflows, the compact is mapped and
+// animations are on (ARCHITECTURE rule 8); otherwise it stands still, ellipsized. One
+// Clutter.Timeline on the frame clock; translation only, no relayout.
+const MARQUEE_GAP = 40;       // px between the copies
+const MARQUEE_SPEED = 30;     // px per second
+const MARQUEE_PAUSE = 2000;   // ms at the start of each loop
+
+const Marquee = GObject.registerClass(
+class Marquee extends St.Widget {
+    _init(text, styleClass) {
+        super._init({clip_to_allocation: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER});
+        this._first = label(text, styleClass);
+        this._second = label(text, styleClass);
+        this.add_child(this._first);
+        this.add_child(this._second);
+        this._dist = 0;          // the scroll per loop; 0 = fits or held still
+        this._overflow = false;
+        this._timeline = null;
+        this._animId = 0;
+        this._settings = St.Settings.get();
+        this.connect('notify::mapped', () => {
+            if (this._animId)
+                this._settings.disconnect(this._animId);
+            this._animId = this.mapped
+                ? this._settings.connect('notify::enable-animations', () => {
+                    this.queue_relayout();
+                    this._sync();
+                })
+                : 0;
+            // allocate() decides moving or not with mapped and the setting: ask it again
+            this.queue_relayout();
+            this._sync();
+        });
+        this.connect('destroy', () => {
+            if (this._animId)
+                this._settings.disconnect(this._animId);
+            this._animId = 0;
+            this._stop();
+        });
+    }
+
+    // Asks for nothing: the column gives what it has, the copies are clipped to it.
+    vfunc_get_preferred_width(forHeight) {
+        const [, nat] = this._first.get_preferred_width(forHeight);
+        return [0, nat];
+    }
+
+    vfunc_get_preferred_height(_forWidth) {
+        return this._first.get_preferred_height(-1);
+    }
+
+    vfunc_allocate(box) {
+        this.set_allocation(box);
+        const w = box.get_width(), h = box.get_height();
+        const [, nat] = this._first.get_preferred_width(h);
+        this._overflow = nat > w + 0.5;
+        const moving = this._overflow && this.mapped && this._settings.enable_animations;
+        const one = new Clutter.ActorBox();
+        one.set_origin(0, 0);
+        one.set_size(moving ? nat : w, h);
+        this._first.allocate(one);
+        const two = new Clutter.ActorBox();
+        two.set_origin(moving ? nat + MARQUEE_GAP : w + MARQUEE_GAP, 0);
+        two.set_size(nat, h);
+        this._second.allocate(two);
+        const dist = moving ? nat + MARQUEE_GAP : 0;
+        if (dist !== this._dist) {
+            this._dist = dist;
+            this._sync();
+        }
+    }
+
+    _stop() {
+        this._timeline?.stop();
+        this._timeline = null;
+        this._first.translation_x = this._second.translation_x = 0;
+    }
+
+    _sync() {
+        this._stop();
+        if (!this._dist || !this.mapped || !this._settings.enable_animations)
+            return;
+        const dist = this._dist;
+        const scrollMs = dist / MARQUEE_SPEED * 1000;
+        this._timeline = new Clutter.Timeline({
+            actor: this, duration: Math.round(MARQUEE_PAUSE + scrollMs), repeat_count: -1,
+        });
+        this._timeline.connect('new-frame', tl => {
+            const t = tl.get_elapsed_time() - MARQUEE_PAUSE;
+            const x = t > 0 ? -Math.round(dist * Math.min(t / scrollMs, 1)) : 0;
+            this._first.translation_x = this._second.translation_x = x;
+        });
+        this._timeline.start();
+    }
+});
 
 function file(src) {
     return /^[a-z][a-z0-9+.-]*:/i.test(src) ? Gio.File.new_for_uri(src) : Gio.File.new_for_path(src);
@@ -45,6 +188,10 @@ function meter(kind, value, size) {
         area.set_size(size, size);
     else
         area.set_size(size || -1, 4);
+    area.setValue = v => {
+        value = v;
+        area.queue_repaint();
+    };
     area.connect('repaint', () => {
         const cr = area.get_context();
         const [w, h] = area.get_surface_size();
@@ -79,6 +226,74 @@ function meter(kind, value, size) {
         cr.$dispose();
     });
     return area;
+}
+
+/**
+ * Once a second while `actor` is on screen and `running()` says so; never otherwise
+ * (ARCHITECTURE rule 8: a live position runs only while its activity is visible). The
+ * timer goes with the actor. Also for a module's tab.js (the Media tab's position).
+ *
+ * @param {Clutter.Actor} actor
+ * @param {function():void} update  called now, on (un)map, then each second
+ * @param {function():boolean} [running]  keep ticking
+ */
+export function tick(actor, update, running = () => true) {
+    let id = 0;
+    const stop = () => {
+        if (id)
+            GLib.source_remove(id);
+        id = 0;
+    };
+    const sync = () => {
+        if (actor.mapped && running()) {
+            if (!id) {
+                id = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
+                    update();
+                    if (running())
+                        return GLib.SOURCE_CONTINUE;
+                    id = 0;
+                    return GLib.SOURCE_REMOVE;
+                });
+            }
+        } else {
+            stop();
+        }
+    };
+    actor.connect('notify::mapped', () => {
+        update();
+        sync();
+    });
+    actor.connect('destroy', stop);
+    update();
+}
+
+// A live position (media): the bar, then elapsed and remaining under it.
+function liveBar(live) {
+    const box = new St.BoxLayout({style_class: 'buoy-live', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+    const bar = meter('bar', 0, 0);
+    const times = new St.BoxLayout({style_class: 'buoy-live-times', x_expand: true});
+    const elapsed = label('', 'buoy-live-time');
+    const left = label('', 'buoy-live-time');
+    times.add_child(elapsed);
+    times.add_child(new St.Widget({x_expand: true}));
+    times.add_child(left);
+    box.add_child(bar);
+    box.add_child(times);
+    tick(box, () => {
+        const pos = livePosition(live, Date.now());
+        bar.setValue(pos / live.length);
+        [elapsed.text, left.text] = mediaTimes(pos, live.length);
+    }, () => live.playing && livePosition(live, Date.now()) < live.length);
+    return box;
+}
+
+// A countdown to `at` (a Spotify ad's end), once a second while shown.
+function untilLabel(at) {
+    const l = label('', 'buoy-label');
+    tick(l, () => {
+        l.text = untilText(at, Date.now());
+    }, () => Date.now() < at);
+    return l;
 }
 
 // --- Bu (MASCOT.md) ------------------------------------------------------------------
@@ -282,10 +497,75 @@ function mascot(e, size, activity) {
     return area;
 }
 
+// Each bar: its height at rest and the range and half-period it swings through while
+// playing. Unequal periods keep the four out of step, so the motion never visibly repeats.
+const EQ_BARS = [
+    {rest: 0.5, from: 0.25, to: 1, ms: 430},
+    {rest: 0.85, from: 0.45, to: 1, ms: 610},
+    {rest: 0.65, from: 0.2, to: 0.85, ms: 520},
+    {rest: 0.4, from: 0.3, to: 0.95, ms: 690},
+];
+
+/**
+ * The equaliser (SPEC §6 media): four 12 px bars scaled from their foot. While mapped
+ * they swing up and down, one endless auto-reversing transition per bar on `scale-y`
+ * (a transform: no relayout, no repaint of anything else); unmapped, or with animations
+ * off (St.Settings enable-animations), they stand at rest and no transition exists. An
+ * activity shows it only while playing (ARCHITECTURE rule 8: this is an activity, not
+ * idle). Unlike Bu it does not rest after `mascot-rest-after`: music plays without input.
+ *
+ * @returns {St.BoxLayout}
+ */
 function eqGlyph() {
     const box = new St.BoxLayout({style_class: 'buoy-eq', y_align: Clutter.ActorAlign.CENTER});
-    for (const h of [6, 10, 8]) // static: nothing animates (SPEC §8)
-        box.add_child(new St.Widget({style_class: 'buoy-eq-bar', height: h, y_align: Clutter.ActorAlign.END}));
+    const bars = EQ_BARS.map(b => {
+        const bar = new St.Widget({
+            style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.END,
+            pivot_point: new Graphene.Point({x: 0.5, y: 1}), scale_y: b.rest,
+        });
+        box.add_child(bar);
+        return bar;
+    });
+    const settings = St.Settings.get();
+    let animId = 0;
+    const still = () => {
+        bars.forEach((bar, i) => {
+            bar.remove_transition('buoy-eq');
+            bar.scale_y = EQ_BARS[i].rest;
+        });
+    };
+    const sync = () => {
+        still();
+        if (!box.mapped || !settings.enable_animations)
+            return;
+        bars.forEach((bar, i) => {
+            const b = EQ_BARS[i];
+            const t = new Clutter.PropertyTransition({
+                property_name: 'scale-y',
+                interval: new Clutter.Interval({value_type: GObject.TYPE_DOUBLE}),
+                duration: b.ms, repeat_count: -1, auto_reverse: true,
+                progress_mode: Clutter.AnimationMode.EASE_IN_OUT_SINE,
+            });
+            t.set_from(b.from);
+            t.set_to(b.to);
+            bar.add_transition('buoy-eq', t);
+        });
+    };
+    const disconnect = () => {
+        if (animId)
+            settings.disconnect(animId);
+        animId = 0;
+    };
+    box.connect('notify::mapped', () => {
+        disconnect();
+        if (box.mapped)
+            animId = settings.connect('notify::enable-animations', sync);
+        sync();
+    });
+    box.connect('destroy', () => {
+        disconnect();
+        still();
+    });
     return box;
 }
 
@@ -301,12 +581,14 @@ function makeElement(e, mode, activity = null) {
             style_class: 'buoy-icon', icon_size: size.icon,
             ...e.gicon ? {gicon: e.gicon} : {icon_name: e.icon},
         });
-    case 'art':
-        return new St.Icon({
+    case 'art': {
+        const icon = new St.Icon({
             style_class: 'buoy-art', icon_size: size.art,
             gicon: new Gio.FileIcon({file: file(e.src)}),
             fallback_icon_name: e.fallback ?? 'audio-x-generic-symbolic',
         });
+        return ART_RADIUS[mode] ? roundArt(icon, size.art, ART_RADIUS[mode]) : icon;
+    }
     case 'glyph':
         return eqGlyph();
     case 'ring':
@@ -315,6 +597,8 @@ function makeElement(e, mode, activity = null) {
         return meter('bar', e.value, size.bar);
     case 'text':
         return label(e.text, 'buoy-label');
+    case 'until':
+        return untilLabel(e.at);
     }
     return null;
 }
@@ -429,7 +713,7 @@ function compactBox(p, activity, maxWidth) {
         x_expand: true, y_align: Clutter.ActorAlign.CENTER,
     });
     addAll(lines, [
-        p.text ? label(p.text, 'buoy-text buoy-compact-title') : null,
+        p.text ? new Marquee(p.text, 'buoy-text buoy-compact-title') : null,
         p.subtitle ? label(p.subtitle, 'buoy-compact-subtitle') : null,
     ]);
     const buttons = p.actions?.length
@@ -445,7 +729,9 @@ function compactBox(p, activity, maxWidth) {
         buttons,
     ]);
     box.add_child(top);
-    if (p.progress !== null && p.progress !== undefined)
+    if (p.live)
+        box.add_child(indented(liveBar(p.live), p));
+    else if (p.progress !== null && p.progress !== undefined)
         box.add_child(indented(meter('bar', p.progress, 0), p));
     if (p.rows?.length) {
         const list = new St.BoxLayout({style_class: 'buoy-compact-rows', orientation: Clutter.Orientation.VERTICAL});
@@ -465,10 +751,12 @@ function compactBox(p, activity, maxWidth) {
     return box;
 }
 
-// Under the text column: the leading's width plus the row's spacing (stylesheet.css).
+// Under the text column: the leading's width plus the top row's spacing
+// (.buoy-compact-top in stylesheet.css).
+const INDENT_GAP = 12;
 function indented(actor, p) {
     const key = {icon: 'icon', glyph: 'icon', ring: 'ring', mascot: 'mascot'}[p.leading?.type] ?? 'art';
-    const lead = p.leading ? SIZE.compact[key] + 10 : 0;
+    const lead = p.leading ? SIZE.compact[key] + INDENT_GAP : 0;
     actor.x_expand = true;
     if (lead)
         actor.set_style(`margin-left: ${lead}px;`);

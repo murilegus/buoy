@@ -11,6 +11,17 @@
       <summary>Media</summary>
       <description>What is playing, from any MPRIS player, with its tab.</description>
     </key>
+    <key name="media-compact-on-hover" type="b">
+      <default>true</default>
+      <summary>Controls on hover</summary>
+      <description>The pill grows into the track, its buttons and position.</description>
+    </key>
+    <key name="media-hide-paused-after" type="i">
+      <range min="1" max="60"/>
+      <default>5</default>
+      <summary>Hide paused after</summary>
+      <description>Minutes a paused player keeps its pill.</description>
+    </key>
     <key name="modules-notification" type="b">
       <default>true</default>
       <summary>Notifications</summary>

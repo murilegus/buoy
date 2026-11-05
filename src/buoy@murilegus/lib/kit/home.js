@@ -22,7 +22,8 @@ const STRIP_H = 60; // first guess for the strip + panel padding; measured once 
  *   kind tab    the module's tab.js, or the expanded views of its activities
  *   standalone  a module's tab.js, built on first selection (slot / ⋯ / pinned)
  *
- * A tab.js export is a class: `new Tab()` → {actor, destroy()}.
+ * A tab.js export is a class: `new Tab()` → {actor, destroy(), update?(activities)}; a
+ * kind tab's `update` gets its kind's visible activities, at once and on every change.
  */
 export class Home {
     /**
@@ -130,6 +131,16 @@ export class Home {
             this.select(HOME);       // its last activity ended
         else if (before !== this._strip.tabs.map(t => t.id).join() || this._isLive(this._current))
             this.select(this._current);
+        this._feedTabs();
+    }
+
+    // Kind tabs with a tab.js keep their actor: hand them their activities instead.
+    _feedTabs() {
+        for (const [id, tab] of this._tabs) {
+            const t = findTab(this._strip, id);
+            if (t?.type === 'kind')
+                tab.update?.(tabActivities(t, this._list));
+        }
     }
 
     select(id) {
@@ -316,6 +327,9 @@ export class Home {
         if (!tab) {
             tab = new (this._module(id).tab)();
             this._tabs.set(id, tab);
+            const t = findTab(this._strip, id);
+            if (t?.type === 'kind')
+                tab.update?.(tabActivities(t, this._list));
         }
         return tab;
     }

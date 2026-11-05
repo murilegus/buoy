@@ -132,9 +132,12 @@ D-Bus API ──────────────────────┘ 
   alert:     false,                    // true on update → expand briefly (Apple alert config)
   keyline:   null,                     // optional border tint
   onPress, onExpand, actions: [{id, label, icon}],  // ≤ 1 in minimal, ≤ 3 compact/expanded (HIG)
-  onAction(id)                         // a button was pressed (ask: answers it)
-  compact: {leading, text, trailing, transport}  // the hover tier (Buoy's own; was `peek`); transport = ≤3 actions
-                                       // + subtitle, progress, rows ≤ 3 with FEATURES M3 "Compact tier"
+  minimalAction: true,                 // false: no button in minimal, the compact has them (media)
+  onAction(id, value?)                 // a button was pressed (ask: answers it); a tab may pass a value (seek)
+  compact: {leading, text, subtitle, trailing, transport, progress, rows}  // the hover tier (Buoy's
+                                       // own; was `peek`); transport = ≤3 actions; progress 0..1 or
+                                       // live {position, length, at, playing} (ms), which runs with
+                                       // elapsed and remaining while shown; rows ≤ 3
 }
 ```
 
@@ -185,6 +188,8 @@ export default { media(a) { ...detect 'Advertisement' → text 'Ad', trailing co
 Leading/trailing values an adapter may return (normalised by `kit/presentation.js#element`):
 `'icon-name'` or a `Gio.Icon` (icon) · `'eq'` (a named glyph) · `{art, icon}` (artwork with
 an icon fallback) · `{progress}` (ring) · `{bar}` · `{countdown}` / `{text}` (text) ·
+`{until: ms since the epoch}` (a countdown the renderer runs once a second while shown,
+2026-11-05: a Spotify ad) ·
 **`{mascot: '<pose>', icon?}`** (Bu, added 2026-11-03): one of the 13 poses in
 `MASCOT.md`; an unknown pose falls back to `icon`, else `idle`. When a pill's leading is
 Bu, Bu's lamp is the buoy light: the left edge slot is not drawn, and the lamp shows the

@@ -47,11 +47,15 @@ src/buoy@murilegus/
         └── <id>/
             ├── index.js    export default {id, kinds, source, adapter, tab?,
             │               title?, icon?}   title/icon: its tab in the strip
-            ├── source.js   watches a system facility, calls stack.surface/update/end
+            ├── source.js   watches a system facility, calls stack.surface/update/end;
+            │               `enable(stack, registry, settings)` (settings: its `<id>-…`
+            │               keys, 2026-11-05)
             ├── adapter.js  default presentation for this module's kinds
             ├── tab.js      content for its tab in expanded (optional): export a class,
-            │               `new Tab()` → {actor, destroy()}; built on first selection,
-            │               destroyed when expanded closes
+            │               `new Tab()` → {actor, destroy(), update?(activities)}; a kind
+            │               tab's `update` gets its kind's activities at once and on each
+            │               change (2026-11-05); built on first selection, destroyed when
+            │               expanded closes
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
             │               pure: `keys` (its idle-<id>-… keys), `present(ctx, opts)` →
             │               presentation data, `seconds(opts)` (tick each second),
@@ -125,6 +129,11 @@ fields and order: [PROFILES.md](PROFILES.md).
    Bu's moving poses are not idle content: they swap two frames every 500 ms only while
    their activity's pill is mapped, and hold still after `mascot-rest-after` (60 s)
    without input and with animations off (`MASCOT.md` § Drawing rules, 2026-11-04).
+   The media equaliser moves only while it is mapped (playing: paused shows ⏸), one
+   endless `scale-y` transition per bar, none unmapped or with animations off; it does
+   not rest without input, since music plays untouched (2026-11-05, Ethan). So does a
+   compact title too long for its width: it scrolls only while the compact is mapped and
+   animations are on, one Clutter.Timeline, translation only (2026-11-05, Ethan).
 9. Every setting is a key in `schemas/…gschema.xml` with a `<summary>` and a
    `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). A module's
    own keys are named `<id>-…` and appear inside its row on the Modules page, **except an
