@@ -504,6 +504,11 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 
 - **What.** A confirmation of something you just did: `osd` from `hud`, the keyboard layout
   from `layout`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
+- **layout** (2026-11-05): the input source you switch to, xkb or IBus, as Shell's indicator
+  names it — the IBus engine's `InputMode` symbol when it has one (Bamboo's V / E), else
+  the short name — then the source's name: "EN · English (US)". It also flashes when an
+  engine switches its own mode. Shell's Super+Space switcher popup stays: it is a chooser,
+  not an OSD.
 - **hud = every GNOME OSD** ("Volume & keys" in prefs; not hardware events — USB,
   Bluetooth and power are the M4 `device` / `power` modules) (2026-11-05, Ethan: "ẩn toàn bộ OSD của hệ thống"), all of which
   go through `Main.osdWindowManager` `show` / `showAll`, so `hud` overrides both and the

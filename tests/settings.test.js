@@ -88,7 +88,7 @@ eq(schema.get_key('cluster-radius').get_range().recursiveUnpack(), ['range', [0,
     'radius stops at 16: half the 32 px cluster, a pill');
 eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [16, 17],
     'radius 16 (a pill, like the island) and opacity 17 % by default, a panel button\'s hover (2026-11-04)');
-eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'calendar', 'clipboard', 'clock'],
+eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'calendar', 'layout', 'clipboard', 'clock'],
     'Modules: schema order, without the modules that ship nothing yet');
 eq(plan.modules.find(m => m.id === 'clock').keys, [], 'clock: a switch-only row on Modules (rule 9)');
 eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
@@ -124,6 +124,8 @@ eq(plan.modules.find(m => m.id === 'media').sample !== null, true, 'media has a 
     const hud = plan.modules.find(m => m.id === 'hud');
     eq(hud?.keys, ['hud-replace-osd'], 'hud has a row with "Hide GNOME\'s popup" (it was hidden as a stub)');
     eq(hud?.sample?.trailing, {bar: 0.72, label: '72%'}, 'hud\'s sample: a volume level');
+    eq(plan.modules.find(m => m.id === 'layout')?.sample?.text, 'EN · English (US)',
+        'layout has a row (it was hidden as a stub) and a sample');
 }
 for (const id of HIDDEN_MODULES) {
     if (!order.includes(`modules-${id}`))
