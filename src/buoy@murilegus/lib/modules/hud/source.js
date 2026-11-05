@@ -60,6 +60,17 @@ export class OsdSource extends Source {
             return this._osd(icon, label, {[Main.layoutManager.primaryIndex]: {level, maxLevel}});
         });
 
+        // Quick Settings builds its indicators asynchronously (ui/panel.js
+        // _setupIndicators): if the sliders are not there yet, hook them the first time
+        // the menu opens — the only time they can be dragged
+        if (!this._feedbackOnVolumeSliders()) {
+            const qs = Main.panel.statusArea.quickSettings;
+            qs?.menu.connectObject('open-state-changed', (_m, open) => {
+                if (open && this._feedbackOnVolumeSliders())
+                    qs.menu.disconnectObject(this);
+            }, this);
+        }
+
         this._keymap = Clutter.get_default_backend().get_default_seat().get_keymap();
         this._caps = this._keymap.get_caps_lock_state();
         this._num = this._keymap.get_num_lock_state();
@@ -119,6 +130,32 @@ export class OsdSource extends Source {
         }
     }
 
+    // Quick Settings' volume and microphone sliders set the stream and play a click, but
+    // show no OSD (ui/status/volume.js StreamSlider._sliderChanged; brightness does, from
+    // misc/brightnessManager.js). With the pill replacing the OSD, a slider moved by hand
+    // shows its level too: after the original runs, the slider's own showOSD() — which
+    // lands in the showAll override above. _sliderChanged runs only for the user's drag or
+    // scroll (programmatic updates block it, _changeSlider). StreamSlider is not exported:
+    // its prototype is reached from the output slider Quick Settings holds (ui/panel.js
+    // _volumeOutput); both sliders share it. Returns whether the sliders are hooked.
+    _feedbackOnVolumeSliders() {
+        let proto = Main.panel.statusArea.quickSettings?._volumeOutput?.quickSettingsItems?.[0] ?? null;
+        while (proto && !Object.hasOwn(proto, '_sliderChanged'))
+            proto = Object.getPrototypeOf(proto);
+        if (!proto || typeof proto.showOSD !== 'function')
+            return false;                 // not there (yet): the keys still work
+        const source = this;
+        this._injections.overrideMethod(proto, '_sliderChanged', original => function (...args) {
+            // eslint-disable-next-line no-invalid-this -- the slider Shell calls this on
+            const slider = this;
+            const result = original.apply(slider, args);
+            if (slider._stream && source._replacing())
+                slider.showOSD();
+            return result;
+        });
+        return true;
+    }
+
     _replacing() {
         return this._stack !== null && this._settings?.get_boolean('hud-replace-osd') !== false;
     }
@@ -163,6 +200,7 @@ export class OsdSource extends Source {
     }
 
     disable() {
+        Main.panel.statusArea.quickSettings?.menu.disconnectObject(this);
         this._injections?.clear();
         this._injections = null;
         if (this._keymapId)
