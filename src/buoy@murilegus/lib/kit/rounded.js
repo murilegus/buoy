@@ -143,18 +143,20 @@ if (r > 0.0 && in_frame && p.y < cy && cx != p.x) {
 // art keeps its St.Icon (async load, as Shell's media message) and a small shader rounds it.
 
 /**
- * The art's radius, concentric with the pill's: the pill's radius less the art's inset
- * from the pill's edge, at most a circle. Minimal: 16 − (32 − 20) / 2 = 10, a circle;
- * compact: 24 − (56 − 40) / 2 = 16.
+ * The art's radius: smaller than the pill's by the art's inset (inner = outer − padding).
+ * The inset is the larger one, across: the pill's content padding (14 px, pill.js PAD) is
+ * more than the gap above the art, and the corner must clear both. Never under `floor`, at
+ * most a circle. Compact: 24 − 14 = 10; minimal: 16 − 14 = 2, raised to 6, under which
+ * a 20 px art reads square (2026-11-05, Ethan).
  *
  * @param {number} pillR  the pill's corner radius
- * @param {number} pillH  the pill's height (one row)
+ * @param {number} inset  the art's larger distance from the pill's edge
  * @param {number} size  the art's side
+ * @param {number} [floor]  the least radius
  * @returns {number}
  */
-export function artRadius(pillR, pillH, size) {
-    const inset = (pillH - size) / 2;
-    return Math.min(Math.max(pillR - inset, 0), size / 2);
+export function artRadius(pillR, inset, size, floor = 0) {
+    return Math.min(Math.max(pillR - inset, floor, 0), size / 2);
 }
 
 /**

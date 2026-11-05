@@ -98,11 +98,12 @@ if (!CODE.includes('cogl_tex_coord_in[0]') || !CODE.includes('cogl_color_out *='
     throw new Error('shader: reads the texture coordinate and scales the premultiplied colour');
 
 // --- album art: concentric with the pill ------------------------------------------------
-eq(artRadius(16, 32, 20), 10, 'minimal: 16 − 6 = 10, a 20 px circle');
-eq(artRadius(24, 56, 40), 16, 'compact: 24 − 8 = 16');
-eq(artRadius(16, 32, 28), 14, 'a bigger art sits closer to the edge: rounder');
-eq(artRadius(16, 32, 8), 4, 'never past a circle');
-eq(artRadius(8, 56, 40), 0, 'an inset larger than the pill radius: square, not negative');
+eq(artRadius(24, 14, 40), 10, 'compact: 24 − 14 = 10, smaller than the pill\'s 24');
+eq(artRadius(16, 14, 20, 6), 6, 'minimal: 16 − 14 = 2 is raised to the floor 6');
+eq(artRadius(16, 14, 20), 2, 'without a floor: 16 − 14 = 2');
+eq(artRadius(16, 4, 20, 6), 10, 'a small inset: 12, but never past a circle (10)');
+eq(artRadius(8, 14, 40), 0, 'an inset larger than the pill radius: square, not negative');
+eq(artRadius(30, 4, 40, 6) < 30, true, 'inner is always smaller than outer');
 
 const art = [20, 20, 10, 1];
 near(artCoverage(0.5, 0.5, art), 1, 'art: the centre is kept');

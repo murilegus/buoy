@@ -637,9 +637,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    ellipsized with animations off; 2026-11-05, Ethan), ⏮ ⏯ ⏭, the position running with elapsed and remaining —
    display only. Tab Media: players as chips, art, title / artist / album, "Open app",
    a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. Art in minimal and compact has corners
-   concentric with the pill (pill radius less the art's inset: a 20 px circle in minimal,
-   16 px on the compact's 40); in expanded and the tab it stays square (2026-11-05,
-   Ethan). No volume in the tab: per-app volume and
+   inside the pill's: the pill's radius less the art's inset across, the content padding
+   (24 − 14 = 10 on the compact's 40; minimal 16 − 14 = 2, raised to 6, under which a
+   20 px art reads square); in expanded and the tab it stays square (2026-11-05, Ethan). No volume in the tab: per-app volume and
    the output device go to a Sound tab (§6b). Spotify ads: "Ad" and their countdown.
 2. **hud** — volume / brightness / keyboard backlight / caps lock replace the stock OSD, as
    feedback (§2e).

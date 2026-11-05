@@ -29,11 +29,13 @@ const SIZE = {
     expanded: {icon: 32, art: 56, ring: 32, bar: 0, mascot: 50}, // bar: 0 = fill the width
 };
 
-// Album art's corners, concentric with the pill (kit/rounded.js artRadius): minimal 16 px
-// radius, 32 tall; compact 24, 56 for one row (shapes.js). Expanded and tabs stay square.
+// Album art's corners, inside the pill's (kit/rounded.js artRadius): the pill's radius
+// (minimal 16, compact 24; shapes.js) less the content padding (14, pill.js PAD); minimal
+// at least 6. Expanded and tabs stay square.
+const ART_INSET = 14;
 const ART_RADIUS = {
-    minimal: artRadius(16, 32, SIZE.minimal.art),
-    compact: artRadius(24, 56, SIZE.compact.art),
+    minimal: artRadius(16, ART_INSET, SIZE.minimal.art, 6),     // 6
+    compact: artRadius(24, ART_INSET, SIZE.compact.art),        // 10
 };
 
 // One Shell.GLSLEffect per art (the ui/lightbox.js RadialShaderEffect pattern, as corners.js):
