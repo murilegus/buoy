@@ -607,6 +607,10 @@ export class Island {
         this._letGo();
         pill.collapse();
         this._apply(true);
+        // while open, hover is not tracked (pill.js _applyHover): the held activity is let
+        // go here unless the pointer is still on its pill, or its ttl never ran out again
+        if (this._heldPill)
+            this._holdHovered(this._heldPill, this._heldPill.hovered);
         pill.activity?.onExpand?.(false); // last: a transient ends here and re-renders
     }
 
