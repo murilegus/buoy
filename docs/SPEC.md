@@ -635,7 +635,8 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    title / artist · app (a title too long for the compact scrolls right to left: 2 s at
    the start, 30 px/s, two copies 40 px apart so each loop ends where it began; still and
    ellipsized with animations off; 2026-11-05, Ethan), ⏮ ⏯ ⏭, the position running with elapsed and remaining —
-   display only. Tab Media: players as chips, art, title / artist / album, "Open app",
+   display only. Tab Media: players as chips, art, title (scrolling
+   like the compact's when long) / artist / album, "Open app",
    a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. Art in minimal and compact has corners
    inside the pill's: the pill's radius less the art's inset across, the content padding
    (24 − 14 = 10 on the compact's 40; minimal 16 − 14 = 2, raised to 6, under which a

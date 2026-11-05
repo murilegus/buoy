@@ -4,7 +4,7 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
-import {tick} from '../../kit/present.js';
+import {marquee, tick} from '../../kit/present.js';
 import {livePosition, mediaTimes} from '../../kit/presentation.js';
 
 /**
@@ -95,7 +95,8 @@ export class MediaTab {
             l.clutter_text.ellipsize = Pango.EllipsizeMode.END;
             text.add_child(l);
         };
-        line(at.title, 'buoy-media-title');
+        if (at.title)
+            text.add_child(marquee(at.title, 'buoy-media-title'));   // scrolls when long
         line(at.artist, 'buoy-media-artist');
         line(at.album, 'buoy-media-album');
         row.add_child(text);

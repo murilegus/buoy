@@ -75,11 +75,12 @@ function label(text, styleClass, xExpand = false) {
     return l;
 }
 
-// A long compact title scrolls right to left (2026-11-05, Ethan): rests MARQUEE_PAUSE at
-// the start, then slides one copy plus the gap out while a second copy follows it in, so
-// each loop ends where it began. Only while the title overflows, the compact is mapped and
-// animations are on (ARCHITECTURE rule 8); otherwise it stands still, ellipsized. One
-// Clutter.Timeline on the frame clock; translation only, no relayout.
+// A long title scrolls right to left — the compact's, and the Media tab's through
+// marquee() (2026-11-05, Ethan): rests MARQUEE_PAUSE at the start, then slides one copy
+// plus the gap out while a second copy follows it in, so each loop ends where it began.
+// Only while the title overflows, it is mapped and animations are on (ARCHITECTURE
+// rule 8); otherwise it stands still, ellipsized. One Clutter.Timeline on the frame clock;
+// translation only, no relayout.
 const MARQUEE_GAP = 40;       // px between the copies
 const MARQUEE_SPEED = 30;     // px per second
 const MARQUEE_PAUSE = 2000;   // ms at the start of each loop
@@ -172,6 +173,18 @@ class Marquee extends St.Widget {
         this._timeline.start();
     }
 });
+
+/**
+ * A one-line label that scrolls when its text is wider than the room it gets (above);
+ * for a module's tab.js (the Media tab's title).
+ *
+ * @param {string} text
+ * @param {string} styleClass  the label's
+ * @returns {St.Widget}
+ */
+export function marquee(text, styleClass) {
+    return new Marquee(text, styleClass);
+}
 
 function file(src) {
     return /^[a-z][a-z0-9+.-]*:/i.test(src) ? Gio.File.new_for_uri(src) : Gio.File.new_for_path(src);
