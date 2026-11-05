@@ -504,7 +504,8 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 
 - **What.** A confirmation of something you just did: `osd` from `hud`, the keyboard layout
   from `layout`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
-- **hud = every GNOME OSD** (2026-11-05, Ethan: "ẩn toàn bộ OSD của hệ thống"), all of which
+- **hud = every GNOME OSD** ("Volume & keys" in prefs; not hardware events — USB,
+  Bluetooth and power are the M4 `device` / `power` modules) (2026-11-05, Ethan: "ẩn toàn bộ OSD của hệ thống"), all of which
   go through `Main.osdWindowManager` `show` / `showAll`, so `hud` overrides both and the
   stock window never opens while `hud-replace-osd` is on:
   - levels — icon + bar + its percentage, `72%` as Notchy (more when amplified, `130%`): speaker volume

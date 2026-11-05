@@ -29,8 +29,8 @@
     </key>
     <key name="modules-hud" type="b">
       <default>true</default>
-      <summary>System popups</summary>
-      <description>Volume, brightness and lock keys, shown in the pill.</description>
+      <summary>Volume &amp; keys</summary>
+      <description>Volume, brightness and lock keys in the pill, instead of GNOME's popup.</description>
     </key>
     <key name="hud-replace-osd" type="b">
       <default>true</default>
