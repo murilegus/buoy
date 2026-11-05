@@ -750,7 +750,10 @@ covers exactly **one** growing file (Chrome, one download), its fraction is that
 and the file row gets the ring; with two or more it cannot be split, so the app row keeps
 the % and the file rows show size only.
 
-- **M3, `progress`.** LauncherEntry says only *which app* is busy: progress 0–1, maybe a
+- **M3, `progress`.** libunity only sends while a launcher owns `com.canonical.Unity` (Ubuntu
+  Dock does): Buoy asks for the name too, yielding to the dock, so Files keeps reporting
+  with the dock off and after it reloads (2026-11-05, seen with the real Files).
+  LauncherEntry says only *which app* is busy: progress 0–1, maybe a
   count, urgent. One pill and one row per app, the fraction summed over everything the
   app is doing: two copies in Files are one "Files 55 %" (Ubuntu's patch sends the
   combined ratio and no count, so not even "2 operations"). The tab:

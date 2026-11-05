@@ -10,13 +10,21 @@ import {appIdOf, applyUpdate, transition} from './adapter.js';
 import {doneHistory} from './history.js';
 
 const IFACE = 'com.canonical.Unity.LauncherEntry';
+const UNITY = 'com.canonical.Unity';
 
 /**
  * Unity's LauncherEntry on the session bus (SPEC §6c): apps broadcast
  * `com.canonical.Unity.LauncherEntry.Update(app_uri, properties)` — Files on Ubuntu
  * through its libunity patch, Chrome — with progress 0–1, progress-visible, count,
  * count-visible, urgent. Subscribed as Ubuntu Dock does (ubuntu-dock launcherAPI.js
- * LauncherEntryRemoteModel), without owning `com.canonical.Unity`, which the dock owns.
+ * LauncherEntryRemoteModel).
+ *
+ * libunity only sends while some launcher owns `com.canonical.Unity` on the bus: with
+ * nobody there Files says nothing, and if the owner leaves mid-copy it stops reporting —
+ * the pill stuck where it was (seen in headless Shell, 2026-11-05). So Buoy asks for the
+ * name too, as Ubuntu Dock does, but yielding: ALLOW_REPLACEMENT and queued. With the
+ * dock running the dock keeps it (it asks with REPLACE); without it, or when it goes,
+ * Buoy holds it and the signals keep coming.
  * One state per app; transition() turns each update into start / update / done / stop.
  * A sender leaving the bus (NameOwnerChanged) stops its apps. Signals only.
  */
@@ -25,6 +33,8 @@ export class LauncherEntrySource extends Source {
         super.enable(stack, registry, settings);
         this._apps = new Map();     // appId → {state, sender, id (stack)}
         const bus = Gio.DBus.session;
+        this._unityId = Gio.bus_own_name_on_connection(bus, UNITY, Gio.BusNameOwnerFlags.ALLOW_REPLACEMENT,
+            null, null);
         this._updateId = bus.signal_subscribe(null, IFACE, 'Update', null, null,
             Gio.DBusSignalFlags.NONE, (_c, sender, _p, _i, _s, params) => {
                 const [uri, props] = params.deepUnpack();
@@ -93,6 +103,9 @@ export class LauncherEntrySource extends Source {
     }
 
     disable() {
+        if (this._unityId)
+            Gio.bus_unown_name(this._unityId);
+        this._unityId = 0;
         const bus = Gio.DBus.session;
         for (const id of [this._updateId, this._ownerId]) {
             if (id)
