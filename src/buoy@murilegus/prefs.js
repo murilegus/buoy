@@ -25,6 +25,26 @@ const IFACE = 'org.gnome.Shell.Extensions.Buoy';
  *   Apps      hidden and plain apps (slugged as the registry does), the profiles folder
  *   Panel     the top bar's clusters (M2)
  */
+/**
+ * An Adw row whose title and subtitle are plain text. Adw rows read them as Pango markup
+ * by default, so schema text such as "Date & Time" warned and showed nothing
+ * (2026-11-05). use_markup goes first: GObject sets construct properties in no promised
+ * order, and a subtitle set before it is still parsed.
+ *
+ * @param {Function} Cls  an Adw.PreferencesRow subclass
+ * @param {object} props  its properties; title and subtitle are set afterwards
+ * @param {string} [props.title]
+ * @param {string} [props.subtitle]
+ * @returns {Adw.PreferencesRow}
+ */
+function textRow(Cls, {title = '', subtitle, ...props}) {
+    const row = new Cls({...props, use_markup: false});
+    row.title = title;
+    if (subtitle !== undefined)
+        row.subtitle = subtitle;
+    return row;
+}
+
 export default class BuoyPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
@@ -106,7 +126,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
         return page;
     }
 
-    // A row for one key, by its type and name.
+    // A row for one key, by its type and name. Rows built from schema text are plain
+    // text (textRow).
     _row(k) {
         const name = k.get_name();
         const title = k.get_summary(), subtitle = k.get_description();
@@ -114,7 +135,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         if (name.startsWith('keybind-'))
             return this._shortcutRow(k);
         if (type === 'b') {
-            const row = new Adw.SwitchRow({title, subtitle});
+            const row = textRow(Adw.SwitchRow, {title, subtitle});
             this._settings.bind(name, row, 'active', Gio.SettingsBindFlags.DEFAULT);
             return row;
         }
@@ -123,7 +144,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         if (type === 'i') {
             const [kind, range] = k.get_range().recursiveUnpack();
             const [lo, hi] = kind === 'range' ? range : [0, 10000];
-            const row = new Adw.SpinRow({
+            const row = textRow(Adw.SpinRow, {
                 title, subtitle,
                 adjustment: new Gtk.Adjustment({lower: lo, upper: hi, step_increment: 10, page_increment: 50}),
             });
@@ -151,11 +172,11 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const name = k.get_name();
         const nested = nestedIn(name);
         if (!nested.length) {
-            const row = new Adw.ComboRow({title: k.get_summary(), subtitle: k.get_description()});
+            const row = textRow(Adw.ComboRow, {title: k.get_summary(), subtitle: k.get_description()});
             this._bindChoice(name, k, row);
             return row;
         }
-        const row = new Adw.ExpanderRow({title: k.get_summary(), subtitle: k.get_description()});
+        const row = textRow(Adw.ExpanderRow, {title: k.get_summary(), subtitle: k.get_description()});
         const drop = new Gtk.DropDown({valign: Gtk.Align.CENTER});
         drop.update_property([Gtk.AccessibleProperty.LABEL], [k.get_summary()]);
         this._bindChoice(name, k, drop);
@@ -199,7 +220,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     // whatever their subtitles and values are.
     _sliderRow(k, unit) {
         const [, [lo, hi]] = k.get_range().recursiveUnpack();
-        const row = new Adw.ActionRow({title: k.get_summary(), subtitle: k.get_description()});
+        const row = textRow(Adw.ActionRow, {title: k.get_summary(), subtitle: k.get_description()});
         const value = new Gtk.Label({
             width_chars: 6, xalign: 1, valign: Gtk.Align.CENTER, css_classes: ['dim-label', 'numeric'],
         });
@@ -224,7 +245,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     // disables), Reset puts the default back.
     _shortcutRow(k) {
         const name = k.get_name();
-        const row = new Adw.ActionRow({title: k.get_summary(), subtitle: k.get_description(), activatable: true});
+        const row = textRow(Adw.ActionRow, {title: k.get_summary(), subtitle: k.get_description(), activatable: true});
         const label = new Gtk.ShortcutLabel({disabled_text: 'Disabled', valign: Gtk.Align.CENTER});
         const reset = new Gtk.Button({
             icon_name: 'edit-undo-symbolic', valign: Gtk.Align.CENTER,
@@ -291,7 +312,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     // module is off the plan does not exist (rule 6), so the row says where to turn it on.
     _planRow(p, key) {
         const title = p.enableKey ? key(p.enableKey).get_summary() : p.id;
-        const row = new Adw.ExpanderRow({title});
+        const row = textRow(Adw.ExpanderRow, {title});
         for (const name of p.keys)
             row.add_row(this._row(key(name)));
         if (p.enableKey) {
@@ -310,7 +331,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
 
     _moduleRow(m, key) {
         const k = key(m.enableKey);
-        const row = new Adw.ExpanderRow({title: k.get_summary(), subtitle: k.get_description(), show_enable_switch: true});
+        const row = textRow(Adw.ExpanderRow, {title: k.get_summary(), subtitle: k.get_description(), show_enable_switch: true});
         this._settings.bind(m.enableKey, row, 'enable-expansion', Gio.SettingsBindFlags.DEFAULT);
         for (const name of m.keys)
             row.add_row(this._row(key(name)));
@@ -637,7 +658,12 @@ export default class BuoyPreferences extends ExtensionPreferences {
     // What is saved is the slug (the registry compares slugs), shown as the row's subtitle.
     _appList(k) {
         const name = k.get_name();
-        const group = new Adw.PreferencesGroup({title: k.get_summary(), description: k.get_description()});
+        // a group's title and description are always markup (no use-markup on
+        // Adw.PreferencesGroup): escape the schema text
+        const group = new Adw.PreferencesGroup({
+            title: GLib.markup_escape_text(k.get_summary(), -1),
+            description: GLib.markup_escape_text(k.get_description(), -1),
+        });
         const entry = new Adw.EntryRow({title: 'Add an app (name, desktop id or MPRIS name)', show_apply_button: true});
         entry.connect('apply', () => {
             const slug = slugOf(entry.text.trim());

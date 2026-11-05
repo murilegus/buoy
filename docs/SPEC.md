@@ -504,7 +504,8 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 
 - **What.** A confirmation of something you just did: `osd` from `hud`, the keyboard layout
   from `layout`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
-- **hud = every GNOME OSD** (2026-11-05, Ethan: "ẩn toàn bộ OSD của hệ thống"), all of which
+- **hud = every GNOME OSD** ("Volume & keys" in prefs; not hardware events — USB,
+  Bluetooth and power are the M4 `device` / `power` modules) (2026-11-05, Ethan: "ẩn toàn bộ OSD của hệ thống"), all of which
   go through `Main.osdWindowManager` `show` / `showAll`, so `hud` overrides both and the
   stock window never opens while `hud-replace-osd` is on:
   - levels — icon + bar + its percentage, `72%` as Notchy (more when amplified, `130%`): speaker volume
@@ -519,6 +520,8 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   - Caps Lock, Num Lock and Fn Lock — Buoy's own (GNOME has no OSD for them): Caps and
     Num Lock from the keymap, on every keyboard; Fn Lock only where the kernel tells the
     system about it — see "Fn Lock support" below.
+  - Quick Settings' volume and microphone sliders: GNOME shows no OSD when they are dragged
+    (only brightness does), Buoy shows their level as it moves (2026-11-05, Ethan).
   Off, GNOME's popup shows and only Caps/Num/Fn Lock stay in the pill. Click on a level opens
   its Settings panel (Sound, Displays, Keyboard, Power, Mouse).
 - **Fn Lock support** (2026-11-05). Fn Lock lives in the laptop's firmware; Linux learns of
