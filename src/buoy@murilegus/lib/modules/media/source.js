@@ -62,6 +62,13 @@ class Player {
         }, this._cancel);
     }
 
+    // Once the player leaves, Shell's MprisPlayer drops its proxy and its `status` throws
+    // (ui/mpris.js _close); our proxy still says g-properties-changed as GDBusProxy clears
+    // its cache on the owner's loss, with g-name-owner already null. Gone reads Stopped.
+    get status() {
+        return this.extra && !this.extra.g_name_owner ? 'Stopped' : this.mpris.status;
+    }
+
     get meta() {
         const m = this.extra?.Metadata ?? {};
         const v = k => m[k]?.deepUnpack?.();
@@ -69,7 +76,7 @@ class Player {
     }
 
     _changed() {
-        const key = `${this.mpris.status}|${this.meta.trackId}|${this.mpris.trackTitle}`;
+        const key = `${this.status}|${this.meta.trackId}|${this.mpris.trackTitle}`;
         if (key !== this._key) {
             this._key = key;
             this._readPosition();
@@ -219,7 +226,7 @@ export class MprisSource extends Source {
             id: p.busName,
             title, artist: (m.trackArtists ?? []).join(', '), album: meta.album,
             art: m.trackCoverUrl, appName: m.app?.get_name() ?? m.source?.title ?? '',
-            status: m.status, canPrev: m.canGoPrevious, canNext: m.canGoNext,
+            status: p.status, canPrev: m.canGoPrevious, canNext: m.canGoNext,
             canSeek: p.extra?.CanSeek === true,
             position: p.position, at: p.at,
             length: meta.length !== null ? Number(meta.length) / 1000 : null,
@@ -236,7 +243,7 @@ export class MprisSource extends Source {
     _emit(p) {
         if (!this._stack)
             return;
-        const status = p.mpris.status;
+        const status = p.status;
         if (!p.mpris.canPlay || (status !== 'Playing' && status !== 'Paused')) {
             this._end(p.busName);
             return;

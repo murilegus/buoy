@@ -632,9 +632,14 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    while the pill is on screen, wherever it shows — side pill, Home's Now; still with
    animations off; 2026-11-05, Ethan), ⏸ when paused, no button; a
    paused pill goes after `media-hide-paused-after` (5 min). Compact (hover): art 40,
-   title / artist · app, ⏮ ⏯ ⏭, the position running with elapsed and remaining —
+   title / artist · app (a title too long for the compact scrolls right to left: 2 s at
+   the start, 30 px/s, two copies 40 px apart so each loop ends where it began; still and
+   ellipsized with animations off; 2026-11-05, Ethan), ⏮ ⏯ ⏭, the position running with elapsed and remaining —
    display only. Tab Media: players as chips, art, title / artist / album, "Open app",
-   a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. No volume in the tab: per-app volume and
+   a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. Art in minimal and compact has corners
+   concentric with the pill (pill radius less the art's inset: a 20 px circle in minimal,
+   16 px on the compact's 40); in expanded and the tab it stays square (2026-11-05,
+   Ethan). No volume in the tab: per-app volume and
    the output device go to a Sound tab (§6b). Spotify ads: "Ad" and their countdown.
 2. **hud** — volume / brightness / keyboard backlight / caps lock replace the stock OSD, as
    feedback (§2e).

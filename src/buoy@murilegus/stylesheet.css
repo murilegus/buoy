@@ -158,7 +158,8 @@
 .buoy-text { font-weight: 600; }
 .buoy-label { color: #d0d0d0; font-feature-settings: "tnum"; }
 .buoy-icon, .buoy-ring, .buoy-bar { color: #fff; }
-.buoy-art { border-radius: 4px; }
+/* .buoy-art: no border-radius, St.Icon does not clip to it; present.js rounds minimal
+   and compact art with a shader (kit/rounded.js artRadius), expanded and tabs stay square. */
 /* The equaliser: four bars that rise and fall while playing (present.js eqGlyph). */
 .buoy-eq { spacing: 2px; }
 .buoy-eq-bar { width: 3px; height: 12px; border-radius: 1px; background-color: #fff; }

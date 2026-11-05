@@ -134,3 +134,59 @@ if (r > 0.0 && in_frame && p.y < cy && cx != p.x) {
     cogl_color_out *= clamp((r - d) / buoy_pixel + 0.5, 0.0, 1.0);
 }
 `;
+
+// --- Album art in the pill (SPEC §6 media, 2026-11-05) ------------------------------------
+// St.Icon does not clip its texture to border-radius (st-icon.c st_icon_paint_node paints the
+// background, then the texture), and a background-image is loaded synchronously at paint
+// and cached for ever (st-texture-cache.c st_texture_cache_load_file_sync_to_cairo_surface,
+// ST_TEXTURE_CACHE_POLICY_FOREVER): no good for https covers that change every track. So the
+// art keeps its St.Icon (async load, as Shell's media message) and a small shader rounds it.
+
+/**
+ * The art's radius, concentric with the pill's: the pill's radius less the art's inset
+ * from the pill's edge, at most a circle. Minimal: 16 − (32 − 20) / 2 = 10, a circle;
+ * compact: 24 − (56 − 40) / 2 = 16.
+ *
+ * @param {number} pillR  the pill's corner radius
+ * @param {number} pillH  the pill's height (one row)
+ * @param {number} size  the art's side
+ * @returns {number}
+ */
+export function artRadius(pillR, pillH, size) {
+    const inset = (pillH - size) / 2;
+    return Math.min(Math.max(pillR - inset, 0), size / 2);
+}
+
+/**
+ * What ART_CODE does to one pixel, for the tests: keep these two in step. The effect's
+ * texture is the art's paint box, padded (effectBox above): (u, v) maps through `box`.
+ *
+ * @param {number} u  texture coordinate 0…1 across
+ * @param {number} v  0…1 down
+ * @param {number[]} art  [width, height, radius, logical px per device px]
+ * @param {{x: number, y: number, width: number, height: number}} [box]  effectBox(); the art
+ *   itself when left out
+ * @returns {number} how much of the art's pixel is kept, 0…1
+ */
+export function artCoverage(u, v, [w, h, r, pixel], box = {x: 0, y: 0, width: w, height: h}) {
+    const px = box.x + u * box.width, py = box.y + v * box.height;
+    const qx = Math.abs(px - w / 2) - (w / 2 - r);
+    const qy = Math.abs(py - h / 2) - (h / 2 - r);
+    const d = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
+    return Math.min(Math.max(0.5 - d / pixel, 0), 1);
+}
+
+// Cogl FRAGMENT snippet: a rounded rectangle over the art (its signed distance), faded
+// over one device px; the texture's padding around the art is outside, so it goes.
+export const ART_DECLARATIONS = `
+uniform vec4 buoy_box;
+uniform vec4 buoy_art;
+`;
+
+export const ART_CODE = `
+vec2 hs = buoy_art.xy * 0.5;
+vec2 p = buoy_box.xy + cogl_tex_coord_in[0].xy * buoy_box.zw;
+vec2 q = abs(p - hs) - (hs - buoy_art.z);
+float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - buoy_art.z;
+cogl_color_out *= clamp(0.5 - d / buoy_art.w, 0.0, 1.0);
+`;

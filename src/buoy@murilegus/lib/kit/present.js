@@ -1,14 +1,17 @@
 import Cairo from 'cairo';
 import Clutter from 'gi://Clutter';
+import Cogl from 'gi://Cogl';
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
 import Pango from 'gi://Pango';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
+import {ART_CODE, ART_DECLARATIONS, artRadius, effectBox} from './rounded.js';
 import {livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, untilText} from './presentation.js';
 
 /**
@@ -26,11 +29,147 @@ const SIZE = {
     expanded: {icon: 32, art: 56, ring: 32, bar: 0, mascot: 50}, // bar: 0 = fill the width
 };
 
+// Album art's corners, concentric with the pill (kit/rounded.js artRadius): minimal 16 px
+// radius, 32 tall; compact 24, 56 for one row (shapes.js). Expanded and tabs stay square.
+const ART_RADIUS = {
+    minimal: artRadius(16, 32, SIZE.minimal.art),
+    compact: artRadius(24, 56, SIZE.compact.art),
+};
+
+// One Shell.GLSLEffect per art (the ui/lightbox.js RadialShaderEffect pattern, as corners.js):
+// St.Icon keeps loading the cover asynchronously; the shader rounds what it draws.
+const ArtCorners = GObject.registerClass(
+class ArtCorners extends Shell.GLSLEffect {
+    vfunc_build_pipeline() {
+        this.add_glsl_snippet(Cogl.SnippetHook.FRAGMENT, ART_DECLARATIONS, ART_CODE, false);
+    }
+
+    /**
+     * @param {number} size  the art's side, logical px (its allocation: icon_size)
+     * @param {number} r  radius
+     * @param {number} scale  device px per logical px
+     */
+    setShape(size, r, scale) {
+        this._loc ??= {box: this.get_uniform_location('buoy_box'), art: this.get_uniform_location('buoy_art')};
+        const box = effectBox(size, size);    // the texture is the padded paint box
+        this.set_uniform_float(this._loc.box, 4, [box.x, box.y, box.width, box.height]);
+        this.set_uniform_float(this._loc.art, 4, [size, size, r, 1 / Math.max(scale, 1)]);
+        this.queue_repaint();
+    }
+});
+
+function roundArt(icon, size, r) {
+    const effect = new ArtCorners();
+    const sync = () => effect.setShape(size, r, icon.get_resource_scale());
+    icon.add_effect_with_name('buoy-art-corners', effect);
+    icon.connect('resource-scale-changed', sync);
+    sync();
+    return icon;
+}
+
 function label(text, styleClass, xExpand = false) {
     const l = new St.Label({text, style_class: styleClass, x_expand: xExpand, y_align: Clutter.ActorAlign.CENTER});
     l.clutter_text.ellipsize = Pango.EllipsizeMode.END;
     return l;
 }
+
+// A long compact title scrolls right to left (2026-11-05, Ethan): rests MARQUEE_PAUSE at
+// the start, then slides one copy plus the gap out while a second copy follows it in, so
+// each loop ends where it began. Only while the title overflows, the compact is mapped and
+// animations are on (ARCHITECTURE rule 8); otherwise it stands still, ellipsized. One
+// Clutter.Timeline on the frame clock; translation only, no relayout.
+const MARQUEE_GAP = 40;       // px between the copies
+const MARQUEE_SPEED = 30;     // px per second
+const MARQUEE_PAUSE = 2000;   // ms at the start of each loop
+
+const Marquee = GObject.registerClass(
+class Marquee extends St.Widget {
+    _init(text, styleClass) {
+        super._init({clip_to_allocation: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER});
+        this._first = label(text, styleClass);
+        this._second = label(text, styleClass);
+        this.add_child(this._first);
+        this.add_child(this._second);
+        this._dist = 0;          // the scroll per loop; 0 = fits or held still
+        this._overflow = false;
+        this._timeline = null;
+        this._animId = 0;
+        this._settings = St.Settings.get();
+        this.connect('notify::mapped', () => {
+            if (this._animId)
+                this._settings.disconnect(this._animId);
+            this._animId = this.mapped
+                ? this._settings.connect('notify::enable-animations', () => {
+                    this.queue_relayout();
+                    this._sync();
+                })
+                : 0;
+            // allocate() decides moving or not with mapped and the setting: ask it again
+            this.queue_relayout();
+            this._sync();
+        });
+        this.connect('destroy', () => {
+            if (this._animId)
+                this._settings.disconnect(this._animId);
+            this._animId = 0;
+            this._stop();
+        });
+    }
+
+    // Asks for nothing: the column gives what it has, the copies are clipped to it.
+    vfunc_get_preferred_width(forHeight) {
+        const [, nat] = this._first.get_preferred_width(forHeight);
+        return [0, nat];
+    }
+
+    vfunc_get_preferred_height(_forWidth) {
+        return this._first.get_preferred_height(-1);
+    }
+
+    vfunc_allocate(box) {
+        this.set_allocation(box);
+        const w = box.get_width(), h = box.get_height();
+        const [, nat] = this._first.get_preferred_width(h);
+        this._overflow = nat > w + 0.5;
+        const moving = this._overflow && this.mapped && this._settings.enable_animations;
+        const one = new Clutter.ActorBox();
+        one.set_origin(0, 0);
+        one.set_size(moving ? nat : w, h);
+        this._first.allocate(one);
+        const two = new Clutter.ActorBox();
+        two.set_origin(moving ? nat + MARQUEE_GAP : w + MARQUEE_GAP, 0);
+        two.set_size(nat, h);
+        this._second.allocate(two);
+        const dist = moving ? nat + MARQUEE_GAP : 0;
+        if (dist !== this._dist) {
+            this._dist = dist;
+            this._sync();
+        }
+    }
+
+    _stop() {
+        this._timeline?.stop();
+        this._timeline = null;
+        this._first.translation_x = this._second.translation_x = 0;
+    }
+
+    _sync() {
+        this._stop();
+        if (!this._dist || !this.mapped || !this._settings.enable_animations)
+            return;
+        const dist = this._dist;
+        const scrollMs = dist / MARQUEE_SPEED * 1000;
+        this._timeline = new Clutter.Timeline({
+            actor: this, duration: Math.round(MARQUEE_PAUSE + scrollMs), repeat_count: -1,
+        });
+        this._timeline.connect('new-frame', tl => {
+            const t = tl.get_elapsed_time() - MARQUEE_PAUSE;
+            const x = t > 0 ? -Math.round(dist * Math.min(t / scrollMs, 1)) : 0;
+            this._first.translation_x = this._second.translation_x = x;
+        });
+        this._timeline.start();
+    }
+});
 
 function file(src) {
     return /^[a-z][a-z0-9+.-]*:/i.test(src) ? Gio.File.new_for_uri(src) : Gio.File.new_for_path(src);
@@ -440,12 +579,14 @@ function makeElement(e, mode, activity = null) {
             style_class: 'buoy-icon', icon_size: size.icon,
             ...e.gicon ? {gicon: e.gicon} : {icon_name: e.icon},
         });
-    case 'art':
-        return new St.Icon({
+    case 'art': {
+        const icon = new St.Icon({
             style_class: 'buoy-art', icon_size: size.art,
             gicon: new Gio.FileIcon({file: file(e.src)}),
             fallback_icon_name: e.fallback ?? 'audio-x-generic-symbolic',
         });
+        return ART_RADIUS[mode] ? roundArt(icon, size.art, ART_RADIUS[mode]) : icon;
+    }
     case 'glyph':
         return eqGlyph();
     case 'ring':
@@ -570,7 +711,7 @@ function compactBox(p, activity, maxWidth) {
         x_expand: true, y_align: Clutter.ActorAlign.CENTER,
     });
     addAll(lines, [
-        p.text ? label(p.text, 'buoy-text buoy-compact-title') : null,
+        p.text ? new Marquee(p.text, 'buoy-text buoy-compact-title') : null,
         p.subtitle ? label(p.subtitle, 'buoy-compact-subtitle') : null,
     ]);
     const buttons = p.actions?.length

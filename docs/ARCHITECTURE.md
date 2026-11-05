@@ -131,7 +131,9 @@ fields and order: [PROFILES.md](PROFILES.md).
    without input and with animations off (`MASCOT.md` § Drawing rules, 2026-11-04).
    The media equaliser moves only while it is mapped (playing: paused shows ⏸), one
    endless `scale-y` transition per bar, none unmapped or with animations off; it does
-   not rest without input, since music plays untouched (2026-11-05, Ethan).
+   not rest without input, since music plays untouched (2026-11-05, Ethan). So does a
+   compact title too long for its width: it scrolls only while the compact is mapped and
+   animations are on, one Clutter.Timeline, translation only (2026-11-05, Ethan).
 9. Every setting is a key in `schemas/…gschema.xml` with a `<summary>` and a
    `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). A module's
    own keys are named `<id>-…` and appear inside its row on the Modules page, **except an

@@ -1,6 +1,7 @@
 // Run: gjs -m tests/rounded.test.js   (pure: rounded top corners under the bar, SPEC §1a)
 import {
-    CODE, DECLARATIONS, cornerUniforms, coverage, effectBox, frameInActor, onTopEdge, wantsCorners,
+    ART_CODE, ART_DECLARATIONS, CODE, DECLARATIONS, artCoverage, artRadius, cornerUniforms, coverage,
+    effectBox, frameInActor, onTopEdge, wantsCorners,
 } from '../src/buoy@murilegus/lib/kit/rounded.js';
 
 function eq(actual, expected, msg) {
@@ -95,5 +96,46 @@ for (const name of ['buoy_box', 'buoy_frame', 'buoy_pixel']) {
 }
 if (!CODE.includes('cogl_tex_coord_in[0]') || !CODE.includes('cogl_color_out *='))
     throw new Error('shader: reads the texture coordinate and scales the premultiplied colour');
+
+// --- album art: concentric with the pill ------------------------------------------------
+eq(artRadius(16, 32, 20), 10, 'minimal: 16 − 6 = 10, a 20 px circle');
+eq(artRadius(24, 56, 40), 16, 'compact: 24 − 8 = 16');
+eq(artRadius(16, 32, 28), 14, 'a bigger art sits closer to the edge: rounder');
+eq(artRadius(16, 32, 8), 4, 'never past a circle');
+eq(artRadius(8, 56, 40), 0, 'an inset larger than the pill radius: square, not negative');
+
+const art = [20, 20, 10, 1];
+near(artCoverage(0.5, 0.5, art), 1, 'art: the centre is kept');
+near(artCoverage(0.5, 0.025, art), 1, 'art: the middle of the top edge is kept');
+near(artCoverage(0.025, 0.5, art), 1, 'art: the middle of the left edge is kept');
+near(artCoverage(0.025, 0.025, art), 0, 'art: the top-left corner pixel is cut');
+near(artCoverage(0.975, 0.975, art), 0, 'art: the bottom-right corner pixel is cut');
+near(artCoverage(0.5 + Math.SQRT1_2 / 2, 0.5 + Math.SQRT1_2 / 2, art), 0.5,
+    'art: a point on the circle is half covered', 1e-9);
+near(artCoverage(0.0125, 0.0125, [40, 40, 0, 1]), 1, 'art: radius 0 keeps the corners');
+near(artCoverage(0.0125, 0.0125, [40, 40, 16, 1]), 0, 'compact art: its corner pixel is cut');
+near(artCoverage(0.5, 0.0125, [40, 40, 16, 1]), 1, 'compact art: past the arc the top edge is kept');
+let kept = 0;
+for (let y = 0; y < 40; y++) {
+    for (let x = 0; x < 40; x++)
+        kept += artCoverage((x + 0.5) / 40, (y + 0.5) / 40, [40, 40, 16, 1]);
+}
+near(40 * 40 - kept, 16 * 16 * (4 - Math.PI), 'compact art: four corners\' worth is cut (4r² − πr²)', 2);
+// the real texture: the 20 px art's paint box padded to 23 px from −2 (effectBox)
+const pad = effectBox(20, 20);
+eq(pad, {x: -2, y: -2, width: 23, height: 23}, 'a 20 px art\'s texture runs −2…21');
+// at a point of the art, in actor px
+const tex = (x, y) => artCoverage((x - pad.x) / pad.width, (y - pad.y) / pad.height, art, pad);
+near(tex(10, 10), 1, 'padded: the art\'s centre is kept');
+near(tex(-0.5, 10), 0, 'padded: the padding left of the art goes');
+near(tex(20.5, 10), 0, 'padded: the padding right of the art goes');
+near(tex(10, 0.5), 1, 'padded: the top of the art\'s middle column is kept');
+near(tex(1.5, 1.5), 0, 'padded: a 20 px circle cuts the art\'s pixel (1, 1)');
+near(tex(10 + 10 * Math.SQRT1_2, 10 - 10 * Math.SQRT1_2), 0.5, 'padded: a point on the circle is half covered', 1e-9);
+if (!ART_DECLARATIONS.includes('buoy_art') || !ART_CODE.includes('buoy_art') ||
+    !ART_CODE.includes('buoy_box') || !ART_CODE.includes('cogl_tex_coord_in[0]') || !ART_CODE.includes('cogl_color_out *='))
+    throw new Error('art shader: declares and uses buoy_art, scales the premultiplied colour');
+if (/\bhalf\b/.test(ART_CODE))
+    throw new Error('art shader: "half" is reserved in GLSL ES');
 
 print('rounded: ok');
