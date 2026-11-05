@@ -52,6 +52,46 @@ export function shouldFlash({switched, label, lastLabel}) {
     return lastLabel !== null && label !== lastLabel;
 }
 
+/** A press counts as the same held Super+Space only this soon after the last one. */
+export const CHAIN_MS = 1500;
+
+/**
+ * Super+Space without GNOME's switcher (SPEC §2e): which source a press picks, as an
+ * index into the MRU list taken when the press chain began (current source first) —
+ * the order the switcher shows. A first press picks the source used before (1), or
+ * backward the least recent; while Super stays held each further press moves one on.
+ *
+ * @param {object} args
+ * @param {number} args.n  sources in that list
+ * @param {?number} args.chain  the index the last press of this chain picked, or null
+ * @param {boolean} args.backward  Shift (switch-input-source-backward)
+ * @returns {?number} null when there is nothing to switch to
+ */
+export function switchStep({n, chain, backward}) {
+    if (!(n >= 2))
+        return null;
+    const from = chain ?? 0;
+    return ((from + (backward ? -1 : 1)) % n + n) % n;
+}
+
+/**
+ * The modifier a keybinding is held with: its highest bit (a port of ui/switcherPopup.js
+ * primaryModifier, which is not exported). 0 when there is none.
+ *
+ * @param {number} mask  Clutter.ModifierType bits
+ * @returns {number}
+ */
+export function primaryModifier(mask) {
+    if (!mask)
+        return 0;
+    let primary = 1;
+    while (mask > 1) {
+        mask >>= 1;
+        primary <<= 1;
+    }
+    return primary;
+}
+
 export default {
     input(ev) {
         const label = typeof ev.label === 'string' ? ev.label.trim() : '';

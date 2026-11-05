@@ -508,8 +508,10 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   input source you switch to, xkb or IBus, as Shell's indicator
   names it — the IBus engine's `InputMode` symbol when it has one (Bamboo's V / E), else
   the short name — then the source's name: "EN · English (US)". It also flashes when an
-  engine switches its own mode. Shell's Super+Space switcher popup stays: it is a chooser,
-  not an OSD.
+  engine switches its own mode. Shell's Super+Space switcher list is replaced too
+  (2026-11-05, Ethan; `input-replace-switcher`, on): a press switches at once to the source
+  used before; with Super still held, each Space moves one further along the recent list —
+  the pill shows where it landed. Off, GNOME's list returns.
 - **hud = every GNOME OSD** ("Volume & keys" in prefs; not hardware events — USB,
   Bluetooth and power are the M4 `device` / `power` modules) (2026-11-05, Ethan: "ẩn toàn bộ OSD của hệ thống"), all of which
   go through `Main.osdWindowManager` `show` / `showAll`, so `hud` overrides both and the

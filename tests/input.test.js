@@ -1,5 +1,5 @@
 // Run: gjs -m tests/input.test.js   (no Shell needed; adapters are pure)
-import adapter, {TTL, ICON, PANEL, labelOf, shouldFlash} from '../src/buoy@murilegus/lib/modules/input/adapter.js';
+import adapter, {TTL, ICON, PANEL, labelOf, shouldFlash, CHAIN_MS, switchStep, primaryModifier} from '../src/buoy@murilegus/lib/modules/input/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {FEEDBACK, PRIORITY, validate} from '../src/buoy@murilegus/lib/kit/activity.js';
 
@@ -32,6 +32,20 @@ eq(shouldFlash({switched: false, label: 'vi', lastLabel: 'vi'}), false,
 eq(shouldFlash({switched: false, label: 'E', lastLabel: 'V'}), true, 'Bamboo V → E inside the same source flashes');
 eq(shouldFlash({switched: false, label: 'vi', lastLabel: null}), false, 'nothing seen before (startup): no flash');
 eq(shouldFlash({switched: true, label: null, lastLabel: 'en'}), false, 'no current source: nothing to show');
+
+// --- Super+Space without GNOME's switcher: which source each press picks ---------------------
+// The list is the MRU order when the press began (current first), as the switcher's items.
+eq(switchStep({n: 2, chain: null, backward: false}), 1, 'a tap: the source used before, as the switcher\'s first pick');
+eq(switchStep({n: 2, chain: null, backward: true}), 1, 'backward with two: the other one too');
+eq(switchStep({n: 3, chain: null, backward: true}), 2, 'backward with three: the least recent');
+eq(switchStep({n: 3, chain: 1, backward: false}), 2, 'Super still held, Space again: one further in that list');
+eq(switchStep({n: 3, chain: 2, backward: false}), 0, 'and it wraps to where it began');
+eq(switchStep({n: 3, chain: 0, backward: true}), 2, 'backward wraps the other way');
+eq(switchStep({n: 1, chain: null, backward: false}), null, 'one source: nothing to switch to');
+eq(switchStep({n: 0, chain: null, backward: false}), null, 'none: nothing');
+eq(CHAIN_MS > 0 && CHAIN_MS <= 2000, true, 'a held chain expires (a missed release cannot stick)');
+eq([primaryModifier(0), primaryModifier(1 << 26), primaryModifier((1 << 26) | 1), primaryModifier(0b1010)],
+    [0, 1 << 26, 1 << 26, 0b1000], 'primaryModifier: the highest bit, as switcherPopup.js');
 
 // --- the pill: icon + a short word (SPEC §2e) ----------------------------------------------
 {

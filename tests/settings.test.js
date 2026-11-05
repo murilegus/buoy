@@ -124,6 +124,7 @@ eq(plan.modules.find(m => m.id === 'media').sample !== null, true, 'media has a 
     const hud = plan.modules.find(m => m.id === 'hud');
     eq(hud?.keys, ['hud-replace-osd'], 'hud has a row with "Hide GNOME\'s popup" (it was hidden as a stub)');
     eq(hud?.sample?.trailing, {bar: 0.72, label: '72%'}, 'hud\'s sample: a volume level');
+    eq(plan.modules.find(m => m.id === 'input')?.keys, ['input-replace-switcher'], 'input\'s row has the switcher option');
     eq(plan.modules.find(m => m.id === 'input')?.sample?.text, 'EN · English (US)',
         'input has a row (it was hidden as a stub as `layout`) and a sample');
 }
