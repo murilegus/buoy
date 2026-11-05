@@ -9,6 +9,7 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 import {
     planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
+    donationLinks,
 } from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
@@ -161,12 +162,25 @@ export default class BuoyPreferences extends ExtensionPreferences {
         links.add(this._linkRow('License', `${repo}/blob/main/LICENSE`, 'GNU GPL v2 or later'));
         page.add(links);
 
+        // metadata.json `donations`, as EGO shows them; no rows until there is one
+        const support = donationLinks(this.metadata.donations);
+        if (support.length) {
+            const group = new Adw.PreferencesGroup({title: 'Support Buoy'});
+            for (const d of support)
+                group.add(this._linkRow(d.label, d.uri));
+            page.add(group);
+        }
+
         if (plan.developer.length) {
             const dev = new Adw.PreferencesGroup({title: 'Developer'});
             for (const name of plan.developer)
                 dev.add(this._row(key(name)));
             page.add(dev);
         }
+
+        const credit = new Adw.PreferencesGroup();
+        credit.add(new Gtk.Label({label: 'From Murilegus with ♥', css_classes: ['dim-label'], margin_top: 6}));
+        page.add(credit);
         return page;
     }
 

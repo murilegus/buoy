@@ -2,7 +2,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel} from
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -278,5 +278,21 @@ eq(setPinned(['calendar'], 'clipboard', false), ['calendar'], 'unpin what is not
 eq(addApp(['spotify'], 'firefox'), ['spotify', 'firefox'], 'add an app');
 eq(addApp(['spotify'], 'spotify'), ['spotify'], 'add twice: once');
 eq(addApp(['spotify'], ''), ['spotify'], 'an empty slug adds nothing');
+
+
+// --- donations (metadata.json, gjs.guide) → About's "Support Buoy" rows -------------------
+eq(donationLinks(undefined), [], 'no donations: no rows');
+eq(donationLinks({}), [], 'empty: no rows');
+eq(donationLinks([]), [], 'an array is not the object');
+eq(donationLinks({github: 'murilegus'}), [{label: 'GitHub Sponsors', uri: 'https://github.com/sponsors/murilegus'}],
+    'a handle becomes the service\'s page');
+eq(donationLinks({kofi: 'murilegus', github: 'murilegus'}).map(d => d.label), ['GitHub Sponsors', 'Ko-fi'],
+    'services in a fixed order');
+eq(donationLinks({paypal: ['a', 'b', 'c', 'd']}).length, 3, 'at most 3 per service (gjs.guide)');
+eq(donationLinks({paypal: ['  ', 7, null, ' x ']}), [{label: 'PayPal', uri: 'https://paypal.me/x'}], 'blank and non-string dropped, trimmed');
+eq(donationLinks({kofi: 'a/b?c'})[0].uri, 'https://ko-fi.com/a%2Fb%3Fc', 'a handle cannot change the path');
+eq(donationLinks({custom: ['https://me.example/coffee/', 'http://plain.example', 'javascript:alert(1)']}),
+    [{label: 'me.example/coffee', uri: 'https://me.example/coffee/'}], 'custom: https URLs only, shown without the scheme');
+eq(donationLinks({nope: 'x'}), [], 'unknown services ignored');
 
 console.log('settings: ok');
