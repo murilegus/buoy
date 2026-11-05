@@ -1,11 +1,14 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import GLibUnix from 'gi://GLibUnix';
 import Shell from 'gi://Shell';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {Source} from '../../kit/source.js';
+import {isFnLockLed, ledOn} from './adapter.js';
 
 const ID = 'hud';
 
@@ -14,7 +17,10 @@ const ROOT = import.meta.url.split('/').slice(0, -4).join('/');
 const LOCK_ICONS = {
     caps: `${ROOT}/icons/caps-lock-symbolic.svg`,
     num: `${ROOT}/icons/num-lock-symbolic.svg`,
+    fn: `${ROOT}/icons/fn-lock-symbolic.svg`,
 };
+const LEDS = '/sys/class/leds';
+const STORM = 20;           // more wake-ups than this in a second: the watch gives up
 
 /**
  * Every OSD GNOME shows goes through Main.osdWindowManager: gsd-media-keys' volume, mic,
@@ -28,7 +34,11 @@ const LOCK_ICONS = {
  * With `hud-replace-osd` on it surfaces one feedback pill and the stock window stays
  * hidden; off, GNOME's own shows and nothing lands here. Caps Lock and Num Lock have
  * no OSD in GNOME: Buoy watches the keymap's `state-changed` (clutter-keymap.c), as
- * ui/shellEntry.js CapsLockWarning does. No polling; disable() restores show().
+ * ui/shellEntry.js CapsLockWarning does. Fn Lock neither: where the kernel driver
+ * exposes it as an LED `*::fnlock` with brightness_hw_changed (ideapad-laptop, from its
+ * WMI Fn-keys event), the LED core sysfs_notify()s that file, so one POLLPRI watch on it
+ * wakes Buoy on each toggle (Documentation/ABI/testing/sysfs-class-led). No polling;
+ * disable() restores show() and drops the watch.
  */
 export class OsdSource extends Source {
     enable(stack, registry = null, settings = null) {
@@ -54,6 +64,59 @@ export class OsdSource extends Source {
         this._caps = this._keymap.get_caps_lock_state();
         this._num = this._keymap.get_num_lock_state();
         this._keymapId = this._keymap.connect('state-changed', () => this._locks());
+        this._watchFnLock();
+    }
+
+    // Read-only and event-driven: a watch on brightness_hw_changed, re-armed by reading it.
+    _watchFnLock() {
+        let name = null;
+        try {
+            const children = Gio.File.new_for_path(LEDS).enumerate_children('standard::name',
+                Gio.FileQueryInfoFlags.NONE, null);
+            for (let info; !name && (info = children.next_file(null));)
+                name = isFnLockLed(info.get_name()) ? info.get_name() : null;
+            children.close(null);
+        } catch {
+            return;                       // no LED class: nothing to watch
+        }
+        if (!name)
+            return;
+        try {
+            this._fnStream = Gio.File.new_for_path(`${LEDS}/${name}/brightness_hw_changed`).read(null);
+        } catch {
+            return;                       // the driver gives no change events
+        }
+        this._fnOn = ledOn(readFile(`${LEDS}/${name}/brightness`));
+        this._readFnChange();             // arm: sysfs wakes a reader once per change
+        let burst = 0, since = GLib.get_monotonic_time();
+        this._fnId = GLibUnix.fd_add_full(GLib.PRIORITY_DEFAULT, this._fnStream.get_fd(),
+            GLib.IOCondition.PRI | GLib.IOCondition.ERR, () => {
+                const now = GLib.get_monotonic_time();
+                if (now - since > 1e6) {
+                    since = now;
+                    burst = 0;
+                }
+                if (++burst > STORM) {   // a file that never settles: stop, never spin
+                    this._fnId = 0;
+                    return GLib.SOURCE_REMOVE;
+                }
+                const on = this._readFnChange();
+                if (on !== null && on !== this._fnOn) {
+                    this._fnOn = on;
+                    this._lock('fn', on);
+                }
+                return GLib.SOURCE_CONTINUE;
+            });
+    }
+
+    _readFnChange() {
+        try {
+            this._fnStream.seek(0, GLib.SeekType.SET, null);
+            const bytes = this._fnStream.read_bytes(16, null).toArray();
+            return ledOn(new TextDecoder().decode(bytes));
+        } catch {
+            return null;                  // ENODATA until the first change
+        }
     }
 
     _replacing() {
@@ -106,9 +169,22 @@ export class OsdSource extends Source {
             this._keymap.disconnect(this._keymapId);
         this._keymapId = 0;
         this._keymap = null;
+        if (this._fnId)
+            GLib.source_remove(this._fnId);
+        this._fnId = 0;
+        this._fnStream?.close(null);
+        this._fnStream = null;
         if (this._stack?.has(`osd:system:${ID}`))
             this._stack.end(`osd:system:${ID}`);
         super.disable();
+    }
+}
+
+function readFile(path) {
+    try {
+        return new TextDecoder().decode(Gio.File.new_for_path(path).load_contents(null)[1]);
+    } catch {
+        return null;
     }
 }
 

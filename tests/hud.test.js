@@ -1,5 +1,5 @@
 // Run: gjs -m tests/hud.test.js   (no Shell needed; adapters are pure)
-import adapter, {TTL, family, isMuted, percent, panelFor} from '../src/buoy@murilegus/lib/modules/hud/adapter.js';
+import adapter, {TTL, family, isFnLockLed, isMuted, ledOn, percent, panelFor} from '../src/buoy@murilegus/lib/modules/hud/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {validate} from '../src/buoy@murilegus/lib/kit/activity.js';
 
@@ -39,20 +39,20 @@ eq([panelFor('volume'), panelFor('mic'), panelFor('brightness'), panelFor('keybo
     const p = osd('audio-volume-medium-symbolic', 0.624);
     eq(p.leading, {icon: 'audio-volume-medium-symbolic'}, 'level: its icon');
     eq(p.text ?? null, null, 'no label: no text');
-    eq(p.trailing, {bar: 0.624, label: '62'}, 'level: bar and 0–100');
+    eq(p.trailing, {bar: 0.624, label: '62%'}, 'level: bar and 0–100 % (as Notchy)');
     eq([p.ttl, p.sizeHint], [TTL, 'wide'], 'level: 1.5 s, wide');
     eq([p.compact ?? null, p.expanded ?? null], [null, null], 'feedback is minimal only');
     const m = planMinimal(validate({id: 'osd:system:hud', kind: 'osd', ...p}));
-    eq([m.leading.type, m.trailing.type, m.trailing.label, m.text], ['icon', 'bar', '62', null], 'planned: icon, bar 62');
+    eq([m.leading.type, m.trailing.type, m.trailing.label, m.text], ['icon', 'bar', '62%', null], 'planned: icon, bar 62%');
     eq(planCompact(p), null, 'no compact');
     eq(TTL, 1500, 'ttl ~1.5 s');
 }
 eq(osd('audio-volume-medium-symbolic', 0.4, {label: 'Headphones'}).text, 'Headphones', 'gsd\'s device label as text');
-eq(osd('audio-volume-overamplified-symbolic', 1.3, {maxLevel: 1.5}).trailing, {bar: 1, label: '130'},
+eq(osd('audio-volume-overamplified-symbolic', 1.3, {maxLevel: 1.5}).trailing, {bar: 1, label: '130%'},
     'over 100 %: the bar is full, the number says 130');
-eq(osd('audio-volume-muted-symbolic', 0.5).trailing, {bar: 0.5, label: '50', off: true}, 'muted: the level stays, dimmed');
-eq(osd('microphone-sensitivity-muted-symbolic', 0).trailing, {bar: 0, label: '0', off: true}, 'mic muted at 0');
-eq(osd('display-brightness-symbolic', 0).trailing, {bar: 0, label: '0'}, 'brightness 0 is a level, not a toggle');
+eq(osd('audio-volume-muted-symbolic', 0.5).trailing, {bar: 0.5, label: '50%', off: true}, 'muted: the level stays, dimmed');
+eq(osd('microphone-sensitivity-muted-symbolic', 0).trailing, {bar: 0, label: '0%', off: true}, 'mic muted at 0');
+eq(osd('display-brightness-symbolic', 0).trailing, {bar: 0, label: '0%'}, 'brightness 0 is a level, not a toggle');
 
 // --- click → its Settings panel, through the source -------------------------------------
 {
@@ -74,11 +74,7 @@ eq(osd('touchpad-disabled-symbolic').text, 'Touchpad off', 'touchpad off');
 eq(osd('rotation-locked-symbolic').text, 'Rotation locked', 'rotation locked');
 eq(osd('rotation-allowed-symbolic').text, 'Rotation unlocked', 'rotation unlocked');
 eq(osd('media-eject-symbolic').text, 'Eject', 'eject');
-{
-    const p = osd('action-unavailable-symbolic');
-    eq([p.leading, p.text ?? null, p.sizeHint ?? 'normal'], [{icon: 'action-unavailable-symbolic'}, null, 'normal'],
-        'unavailable: the icon alone');
-}
+eq(osd('action-unavailable-symbolic').text, 'Nothing playing', 'unavailable (a media key, no player): said plainly');
 eq(osd('screen-privacy-symbolic', null, {label: 'Privacy Screen Enabled'}).text, 'Privacy Screen Enabled', 'mutter\'s label');
 eq(adapter.osd({id: 'hud', iconName: '', label: null, level: null}, null), null, 'nothing to show: null');
 eq(osd('audio-volume-high-symbolic', NaN).trailing ?? null, null, 'NaN level: no bar');
@@ -94,17 +90,25 @@ eq(adapter.osd({id: 'hud', lock: 'caps', on: true, iconName: 'caps'}, null).text
 eq(adapter.osd({id: 'hud', lock: 'caps', on: false, iconName: 'caps'}, null).text, 'Caps Lock off', 'caps off');
 eq(adapter.osd({id: 'hud', lock: 'num', on: true, iconName: 'num'}, null).text, 'Num Lock on', 'num on');
 eq(adapter.osd({id: 'hud', lock: 'num', on: true, iconName: 'num'}, null).ttl, TTL, 'locks: same ttl');
+eq(adapter.osd({id: 'hud', lock: 'fn', on: true, iconName: 'fn'}, null).text, 'Fn Lock on', 'fn on');
+eq(adapter.osd({id: 'hud', lock: 'fn', on: false, iconName: 'fn'}, null).text, 'Fn Lock off', 'fn off');
 
 // --- every output sets the same fields, so updating the one pill in place replaces them ---
 {
     const keys = p => ['leading', 'text', 'trailing', 'sizeHint', 'onPress', 'ttl'].filter(k => !(k in p));
     for (const p of [osd('audio-volume-high-symbolic', 0.5), osd('input-touchpad-symbolic'),
-        osd('action-unavailable-symbolic'), adapter.osd({id: 'hud', lock: 'caps', on: true, iconName: 'c'}, null)])
+        osd('screen-privacy-symbolic'), adapter.osd({id: 'hud', lock: 'caps', on: true, iconName: 'c'}, null)])
         eq(keys(p), [], `all fields set (${p.text ?? p.leading?.icon})`);
     const merged = {...osd('audio-volume-high-symbolic', 0.5, {label: 'Headphones'}), ...osd('input-touchpad-symbolic')};
     eq([merged.trailing, merged.text, merged.sizeHint], [null, 'Touchpad on', 'normal'],
         'a toggle after a level (stack.update merges): no bar, no device left over');
 }
+
+// --- Fn Lock: an LED class `*::fnlock` (ideapad-laptop's platform::fnlock) --------------
+eq(['platform::fnlock', 'input2::capslock', 'phy0-led', 'tpacpi::fnLock', 'fnlock', null].map(isFnLockLed),
+    [true, false, false, true, false, false], 'the fnlock LED by its class name');
+eq([ledOn('1\n'), ledOn('0\n'), ledOn(' 255 '), ledOn(''), ledOn(null), ledOn('x')], [true, false, true, null, null, null],
+    'sysfs brightness text: on, off, nothing');
 
 // --- long text is not cut by the adapter -------------------------------------------------
 {

@@ -85,7 +85,7 @@ const track = {
 {
     const c = planMinimal(hud.osd({iconName: 'audio-volume-high-symbolic', level: 0.4}));
     eq([c.leading, c.text, c.trailing], [{type: 'icon', icon: 'audio-volume-high-symbolic'}, null,
-        {type: 'bar', value: 0.4, label: '40'}], 'hud: icon + bar and its number, no text');
+        {type: 'bar', value: 0.4, label: '40%'}], 'hud: icon + bar and its percentage, no text');
 }
 {
     const long = 'x'.repeat(500);

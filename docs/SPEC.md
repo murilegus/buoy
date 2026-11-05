@@ -507,15 +507,21 @@ Once a day, the first time the island appears, it opens expanded and says hello.
 - **hud = every GNOME OSD** (2026-11-05, Ethan: "ẩn toàn bộ OSD của hệ thống"), all of which
   go through `Main.osdWindowManager` `show` / `showAll`, so `hud` overrides both and the
   stock window never opens while `hud-replace-osd` is on:
-  - levels — icon + bar + its number 0–100 (more when amplified, e.g. 130): speaker volume
+  - levels — icon + bar + its percentage, `72%` as Notchy (more when amplified, `130%`): speaker volume
     (gsd names an external output: "Headphones" as text), microphone, display brightness,
     keyboard backlight (keys and the firmware's Fn: gsd forwards UPower's
     `BrightnessChangedWithSource` "internal"), the battery key. Muted: the muted icon, the
     bar and number dimmed at their level;
   - toggles — icon + a short word: touchpad, airplane (and hardware airplane), Bluetooth,
-    rotation lock, the privacy screen (mutter), eject, "unavailable" (icon alone). gsd's
-    own labels are used as they come (translated); Buoy words the ones without;
-  - Caps Lock and Num Lock — Buoy's own (GNOME has no OSD for them), from the keymap.
+    rotation lock, the privacy screen (mutter), eject, and "Nothing playing" — gsd's ⊘ for a
+    media key with no MPRIS player (`do_multimedia_player_action`). gsd's own labels are
+    used as they come (translated); Buoy words the ones without;
+  - Caps Lock, Num Lock and Fn Lock — Buoy's own (GNOME has no OSD for them): the first
+    two from the keymap; Fn Lock where the kernel driver exposes an LED `*::fnlock` with
+    `brightness_hw_changed` (ideapad-laptop, from its WMI Fn-keys event), one POLLPRI watch.
+    Drivers with only a `fn_lock` file (huawei-wmi, lg-laptop, uniwill-laptop) would need
+    polling and are left out; ThinkPad, Dell, HP and ASUS keep Fn Lock in firmware, where
+    the system never sees it.
   Off, GNOME's popup shows and only Caps/Num Lock stay in the pill. Click on a level opens
   its Settings panel (Sound, Displays, Keyboard, Power, Mouse).
 - **Minimal only.** No compact on hover, no expanded, no tab; never an alert, never counted

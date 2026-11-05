@@ -17,7 +17,12 @@ const WORDS = {
     'rotation-locked-symbolic': 'Rotation locked',
     'rotation-allowed-symbolic': 'Rotation unlocked',
     'media-eject-symbolic': 'Eject',
+    // gsd shows it only for a media key with no MPRIS player to take it
+    // (do_multimedia_player_action)
+    'action-unavailable-symbolic': 'Nothing playing',
 };
+
+const LOCKS = {caps: 'Caps Lock', num: 'Num Lock', fn: 'Fn Lock'};
 
 const PANELS = {
     volume: 'gnome-sound-panel.desktop',
@@ -67,6 +72,28 @@ export function panelFor(fam) {
     return PANELS[fam] ?? null;
 }
 
+/**
+ * An Fn Lock indicator in /sys/class/leds: the LED class name `<device>::fnlock`
+ * (ideapad-laptop registers `platform::fnlock` with brightness_hw_changed). Drivers that
+ * only offer a `fn_lock` file (huawei-wmi, lg-laptop, uniwill-laptop) and machines whose
+ * firmware keeps Fn Lock to itself (ThinkPad, Dell, HP, ASUS) are not covered.
+ *
+ * @param {string} name  a directory name under /sys/class/leds
+ * @returns {boolean}
+ */
+export function isFnLockLed(name) {
+    return typeof name === 'string' && /::fnlock$/i.test(name);
+}
+
+/**
+ * @param {?string} text  what a sysfs brightness file reads ("0\n", "1\n")
+ * @returns {?boolean} on, off, or null when it says nothing (ENODATA before any event)
+ */
+export function ledOn(text) {
+    const n = Number.parseInt(String(text ?? '').trim(), 10);
+    return Number.isNaN(n) ? null : n > 0;
+}
+
 const hasLevel = v => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 
 export default {
@@ -84,7 +111,7 @@ export default {
         };
 
         if (ev.lock) {
-            const what = ev.lock === 'num' ? 'Num Lock' : 'Caps Lock';
+            const what = LOCKS[ev.lock] ?? 'Caps Lock';
             return {...base, text: `${what} ${ev.on ? 'on' : 'off'}`};
         }
         if (hasLevel(ev.level)) {
@@ -92,7 +119,7 @@ export default {
                 ...base,
                 text: ev.label || null,          // gsd names an external output (Headphones)
                 trailing: {
-                    bar: Math.min(ev.level, 1), label: String(percent(ev.level)),
+                    bar: Math.min(ev.level, 1), label: `${percent(ev.level)}%`,
                     ...isMuted(name) ? {off: true} : {},
                 },
                 sizeHint: 'wide',
