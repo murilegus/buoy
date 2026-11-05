@@ -507,8 +507,9 @@ const EQ_BARS = [
 ];
 
 /**
- * The equaliser (SPEC §6 media): four 12 px bars scaled from their foot. While mapped
- * they swing up and down, one endless auto-reversing transition per bar on `scale-y`
+ * The equaliser (SPEC §6 media): four 12 px bars that grow from their middle, up and
+ * down at once (2026-11-05, Ethan). While mapped they stretch and shrink, one endless
+ * auto-reversing transition per bar on `scale-y`
  * (a transform: no relayout, no repaint of anything else); unmapped, or with animations
  * off (St.Settings enable-animations), they stand at rest and no transition exists. An
  * activity shows it only while playing (ARCHITECTURE rule 8: this is an activity, not
@@ -520,8 +521,8 @@ function eqGlyph() {
     const box = new St.BoxLayout({style_class: 'buoy-eq', y_align: Clutter.ActorAlign.CENTER});
     const bars = EQ_BARS.map(b => {
         const bar = new St.Widget({
-            style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.END,
-            pivot_point: new Graphene.Point({x: 0.5, y: 1}), scale_y: b.rest,
+            style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.CENTER,
+            pivot_point: new Graphene.Point({x: 0.5, y: 0.5}), scale_y: b.rest,
         });
         box.add_child(bar);
         return bar;
