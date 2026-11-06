@@ -412,8 +412,27 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     stack.setUnseen(true);
     stack.setUnseen(false);
     eq(island.log.slice(before).filter(l => l.includes('expand')), [], 'seen again: still not opened');
+    eq(stack.wake('quiet'), true, 'a quiet ask wakes');
+    eq(island.log.at(-1), 'show quiet expand', 'on top: it opens expanded, as an ask arriving');
+    eq(stack.wake('quiet'), false, 'once');
     stack.answer('quiet', 'Allow');
     eq(await q, 'Allow', 'answered from its pill');
+    eq([stack.wake('nope'), stack.wake('call')], [false, false], 'unknown or not an ask: nothing');
+}
+{
+    const {island, stack} = setup();
+    const q = stack.ask('quiet', 'Allow?', ['Deny', 'Allow'], {quiet: true});
+    stack.surface({id: 'call', kind: 'call'});        // 95: over the ask
+    stack.setUnseen(true);
+    const before = island.log.length;
+    stack.wake('quiet');
+    eq(island.log.slice(before).filter(l => l.includes('quiet')), [], 'unseen: nothing opens now');
+    stack.end('call');
+    const seenAt = island.log.length;
+    stack.setUnseen(false);
+    eq(island.log.slice(seenAt).includes('show quiet expand'), true, 'seen again: the woken ask opens');
+    stack.end('quiet');
+    eq(await q, null, 'ended');
 }
 {
     const {island, stack} = setup();

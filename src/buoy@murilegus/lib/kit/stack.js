@@ -7,7 +7,7 @@ import {FEEDBACK, validate} from './activity.js';
  *
  *   surface(activity) → id · update(id, patch, {alert}) · end(id, {dismissal})
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
- *   answer(id, choice) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool)
+ *   answer(id, choice) · wake(id) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool)
  *   seeMissed() · openMissed(id, at) · clearMissed()
  *   has(id) · get(id) · hold(id, held)
  *
@@ -231,6 +231,29 @@ export class ActivityStack {
             if (timeoutMs > 0)
                 this._arm(id, 'ask', timeoutMs, () => this._settle(id, fallback));
         });
+    }
+
+    /**
+     * A quiet ask speaks up: it opens as an ask arriving would (CODING-AGENTS.md §4: the
+     * asker's window lost the focus). On top it opens expanded; covered, it alerts, which
+     * brings it up; unseen, it opens when seen again.
+     *
+     * @param {string} id
+     * @returns {boolean} it was a quiet ask
+     */
+    wake(id) {
+        const a = this._items.get(id);
+        if (!this._asks.has(id) || !a?.quiet)
+            return false;
+        a.quiet = false;
+        if (this._unseen)
+            return true;
+        const list = this._visibleList();
+        if (list[0]?.id === id)
+            this._island.render(list, {alert: null, expand: id});
+        else
+            this._render({changed: id, alert: id});
+        return true;
     }
 
     answer(id, choice) {

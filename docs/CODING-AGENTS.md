@@ -11,7 +11,7 @@ Not named `AGENTS.md`: that file name is the convention coding agents read as th
 instructions.
 
 Sources: Claude Code's hooks reference (code.claude.com/docs/en/hooks), read 2026-11-07;
-the field names below were checked against it when the code landed (§12 says what is
+the field names below were checked against it when the code landed (§13 says what is
 checked and what still waits for a real session).
 
 ## Principles
@@ -142,7 +142,7 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
   dialog while the hook waits. And when the waiting hook leaves the bus (Claude Code
   dropped it, the session was interrupted; a D-Bus name watch on the caller). Whether the
   terminal shows its own dialog while the hook waits is not documented — to be seen in a
-  real session (§12). **Claude Desktop** asks through `--permission-prompt-tool=stdio`;
+  real session (§13). **Claude Desktop** asks through `--permission-prompt-tool=stdio`;
   the hooks reference says the hooks run alongside the host and whichever decides first
   applies — the pill or Desktop's own card.
 - **Hook timeout**: the `PermissionRequest` entry gets `timeout` 1810 s, above the longest
@@ -151,8 +151,10 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
   island hidden. **Not jumping open** while the session's terminal is focused (§6,
   `agent-quiet-focused`): the ask is `quiet` — no alert, no expand, also not when the
   island is seen again — and waits in the pill, its buttons in the compact (hover) and
-  expanded (click). Focus leaving the terminal later does not open it (an open question
-  for review).
+  expanded (click). When another app takes the focus while it waits, it opens as an ask
+  arriving would (kit `stack.wake`; Ethan, 2026-11-07). No window focused (the terminal
+  minimized, the bare desktop) is not "another app": it keeps waiting. The focus is
+  watched (`Shell.WindowTracker` `notify::focus-app`) only while such an ask waits.
 
 ## 5. Keyboard
 
@@ -247,7 +249,7 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
   extension's top level: Claude Code runs it).
 - Kit: the `{since}` element (§2); D-Bus `Agent` (DBUS.md, `Version` 2; a source gets the
   `BuoyDBus` in `enable(…, {dbus})` and answers with `setAgent`); `stack.ask` `look` and
-  `quiet`; a stale activity's Bu takes the pose `stale`.
+  `quiet`, `stack.wake`; a stale activity's Bu takes the pose `stale`.
 - Tests (`tests/agent.test.js`): every row of §3 (pose, title, detail per tool), the run
   > 10 min `party`, stale, two sessions, subagents counted in the parent (no pill),
   priorities 35 / 60 / 90, unknown events ignored; the three replies and the
@@ -260,7 +262,19 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
 - In a real Claude Code session (Ethan's machine): install from prefs, run a session,
   answer a permission in the pill and in the terminal.
 
-## 12. Verified, and what still waits for a real session
+## 12. extensions.gnome.org
+
+The review guidelines (gjs.guide, "Scripts and Binaries", read 2026-11-07): external
+scripts are "strongly discouraged", allowed when the extension needs them, if written in
+GJS, under an OSI license, spawned carefully. `hooks/claude.js` is GJS, GPL-2.0-or-later
+(SPDX line), starts with a `gjs -m` shebang (the guide's `#!@GJS@ -m` is a build-time
+placeholder; Buoy has no build step), and Buoy never spawns it — Claude Code does. Not
+covered by the guidelines: writing another app's config (prefs, on the user's switch
+only, Buoy's entries only, a `.bak` first) and a D-Bus method. A reviewer could still
+cite "Don't include unnecessary files" (the extension never runs the script): the answer
+is that the module does nothing without it. To say in the EGO submission notes.
+
+## 13. Verified, and what still waits for a real session
 
 Checked 2026-11-07 against the hooks reference (when the code landed):
 
@@ -280,7 +294,8 @@ Checked 2026-11-07 against the hooks reference (when the code landed):
 Driven in headless Shell 50.1 with the real script and recorded events (2026-11-07):
 the table of §3, Deny · Allow · Always by click and by keys, the timeout, an answer from
 the terminal (the same call's result), the hook killed, disable while it waits, the
-screen shared, a focused "terminal" (a GTK window whose child ran the hook), prefs
+screen shared, a focused "terminal" (a GTK window whose child ran the hook) and another
+app taking the focus from it (the ask opened), prefs
 install / remove / a partly installed and a non-JSON file.
 
 Still to see in a real Claude Code session (Ethan's machine):

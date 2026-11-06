@@ -150,7 +150,7 @@ export class AgentSource extends Source {
         const {question, options, look} = askOf(rec, ev, {shared: this._shared});
         const minutes = this._settings?.get_int('agent-ask-timeout') ?? 10;
         const quiet = this._quiet(key);
-        const entry = {event: ev, askId, watch: 0};
+        const entry = {event: ev, askId, watch: 0, focusId: 0};
         this._asks.set(key, entry);
         // the hook process gone (answered in the terminal, Claude Code interrupted): no answer
         if (sender) {
@@ -162,9 +162,23 @@ export class AgentSource extends Source {
                     }
                 });
         }
-        return this._stack.ask(askId, question, options, {
+        const asked = this._stack.ask(askId, question, options, {
             app: rec.source, timeoutMs: minutes * 60 * 1000, fallback: TIMEOUT, look, quiet,
-        }).then(choice => {
+        });
+        // quiet while its terminal is focused; another app focused, it opens (Ethan
+        // 2026-11-07). Watched only while such an ask waits.
+        if (quiet) {
+            const tracker = Shell.WindowTracker.get_default();
+            const app = this._apps.get(key);
+            entry.focusId = tracker.connect('notify::focus-app', () => {
+                const now = tracker.focus_app;
+                if (!now || now === app || this._asks?.get(key) !== entry)
+                    return;
+                this._unwatchFocus(entry);
+                this._stack?.wake(askId);
+            });
+        }
+        return asked.then(choice => {
             if (this._asks?.get(key) === entry) {
                 this._dropAsk(key);
                 this._backToWork(key);
@@ -199,6 +213,14 @@ export class AgentSource extends Source {
         this._asks.delete(key);
         if (entry?.watch)
             Gio.bus_unwatch_name(entry.watch);
+        if (entry)
+            this._unwatchFocus(entry);
+    }
+
+    _unwatchFocus(entry) {
+        if (entry.focusId)
+            Shell.WindowTracker.get_default().disconnect(entry.focusId);
+        entry.focusId = 0;
     }
 
     // --- the session's window (§6) ------------------------------------------------------

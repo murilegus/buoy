@@ -1,3 +1,6 @@
+#!/usr/bin/env -S gjs -m
+// SPDX-License-Identifier: GPL-2.0-or-later
+//
 // Claude Code's hook for Buoy (docs/CODING-AGENTS.md §1). Claude Code runs it, never
 // Buoy: `gjs -m '<extension>/hooks/claude.js'`, installed from Buoy's prefs into
 // ~/.claude/settings.json. It reads the event's JSON on stdin, hands it to Buoy over
