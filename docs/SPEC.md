@@ -804,8 +804,8 @@ the % and the file rows show size only.
   no row.
   Acting on a row (2026-11-06, Ethan, "as a clicked notification"): opening the file,
   showing it in Files or focusing the app closes the island, and a Done or Downloaded row
-  acted on leaves its list. Done and Downloaded each have **Clear** in their header, as
-  Home's Missed does; it empties the list, never the files. The same close applies to
+  acted on leaves its list. Done and Downloaded each have an icon-only **×** in their
+  header (no label, Ethan); it empties the list, never the files. The same close applies to
   every tab action that brings a window up (kit: `new Tab({close})`; Media's "Open
   <app>"; a Home row running its activity's onPress).
   Where files are caught:
