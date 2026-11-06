@@ -200,6 +200,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `left-cluster-empty` | s | workspace \| hidden |
 | `clock-defaults-applied` | b | bookkeeping: the first enable gave GNOME's clock keys Buoy's defaults (time alone, 24 h) where the user had not set them; the clock switches in prefs are GNOME's own keys (2026-11-04) |
 | `dock-defaults-applied` | b | bookkeeping: the first enable gave Ubuntu Dock's keys (`dash-to-dock`) Buoy's defaults — bottom, auto-hide, not edge to edge, 32 px, primary display, no trash or volumes — where the user had not set them; the Dock rows in prefs are the dock's own keys (2026-11-04) |
+| `weather-defaults-applied` | b | bookkeeping: the first enable gave GNOME Weather's units (`org.gnome.GWeather4` `temperature-unit`, `speed-unit`) °C and km/h where the user had not chosen them; the Weather plan's unit rows in prefs are those keys (2026-11-06) |
 | `window-corners` | b | round the top corners of windows whose top edge meets the bar (maximized, tiled, moved up); default `true` (2026-11-02; top edge 2026-11-04) |
 | `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
 | `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules (`idle-weather-refresh`: `30m` \| `1h`, default `30m`; `idle-weather-automatic` b, default `true`: the place from Geoclue, else the city picked in prefs, 2026-11-06) |

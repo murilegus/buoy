@@ -5,7 +5,7 @@ import weather, {
     REFRESH, DEFAULT_REFRESH, keys, ticks, refreshMs, degrees, conditionOf, isWet, windText, present, relevance,
     ART, artFor,
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
-import {readInfo, nextHour} from '../src/buoy@murilegus/lib/modules/weather/read.js';
+import {readInfo, nextHour, unitNames} from '../src/buoy@murilegus/lib/modules/weather/read.js';
 import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 
 function eq(actual, expected, msg) {
@@ -178,5 +178,13 @@ eq(readInfo(fakeInfo({get_forecast_list: broken}), {now: t0, units: U}).next, nu
     'a getter that throws: that value missing, the rest read');
 eq(nextHour([fc(t0 / 1000 + 5400, 27, 'x')], t0, U), null, 'the first forecast later than an hour: none');
 eq([nextHour([], t0, U), nextHour(null, t0, U)], [null, null], 'no forecasts');
+
+// --- units: GNOME Weather's keys win over the locale (2026-11-06) ----------------------------
+eq(unitNames('centigrade', 'kph'), {temperature: 'CENTIGRADE', speed: 'KPH'}, '°C and km/h chosen in the keys');
+eq(unitNames('fahrenheit', 'bft'), {temperature: 'FAHRENHEIT', speed: 'BFT'}, '°F and Beaufort');
+eq(unitNames('default', 'default'), {temperature: 'DEFAULT', speed: 'DEFAULT'},
+    'Automatic: the locale\'s (GWeather DEFAULT; Buoy\'s first enable sets °C and km/h where never set)');
+eq([unitNames('invalid', 'x'), unitNames(null, undefined)], [{temperature: 'DEFAULT', speed: 'DEFAULT'},
+    {temperature: 'DEFAULT', speed: 'DEFAULT'}], 'invalid or missing: the locale\'s');
 
 print('weather: ok');

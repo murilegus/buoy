@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {MAX_FOLDERS as progressMaxFolders} from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
-import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, weatherNote, placeLabel, searchPlaces, withPlace} from
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, weatherNote, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -160,6 +160,28 @@ eq(schema.get_key('idle-weather-automatic').get_default_value().unpack(), true, 
     eq(note(false, true, []), 'No place yet: search for a city below', 'a city of my own, none picked');
     eq([note(false, false, [['x']]), note(false, true, [['x']])], [null, null], 'a picked city: nothing to say');
     eq(note(false, false, null), 'No place yet: search for a city below', 'unreadable locations: as none');
+}
+
+// --- the Weather plan's units: GNOME Weather's own keys ---------------------------------------
+{
+    const src = Gio.SettingsSchemaSource.get_default();
+    const gw = src?.lookup('org.gnome.GWeather4', true);
+    eq([WEATHER_UNITS['temperature-unit'][0][0], WEATHER_UNITS['speed-unit'][0][0]], ['centigrade', 'kph'],
+        'first: °C and km/h');
+    eq(gnomeDefaults(GNOME_WEATHER, () => false).map(d => [d.key, d.value]),
+        [['temperature-unit', 'centigrade'], ['speed-unit', 'kph']], 'first enable: °C and km/h, written once');
+    eq(gnomeDefaults(GNOME_WEATHER, e => e.key === 'temperature-unit').map(d => d.key), ['speed-unit'],
+        'a unit the user chose keeps theirs');
+    eq([...Object.values(planPrefs(order.map(name => ({name})))).flat()].includes('weather-defaults-applied'), false,
+        'weather-defaults-applied: bookkeeping, no row');
+    for (const [key, choices] of Object.entries(WEATHER_UNITS)) {
+        eq(choices.at(-1), ['default', 'Automatic'], `${key}: Automatic (the locale's) last`);
+        if (gw) {
+            const [, values] = gw.get_key(key).get_range().recursiveUnpack();
+            for (const [v] of choices)
+                eq(values.includes(v), true, `${key}: "${v}" is one of GWeather's values`);
+        }
+    }
 }
 
 // --- picking a city (the Weather plan's search, GWeather's own cities) -----------------------

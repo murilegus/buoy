@@ -178,7 +178,7 @@ function applyContrast() {
  * screen disables Buoy too). A group whose schema is not installed writes nothing.
  *
  * @param {Gio.Settings} settings  Buoy's
- * @param {object[]} entries  GNOME_CLOCK or GNOME_DOCK
+ * @param {object[]} entries  GNOME_CLOCK, GNOME_DOCK or GNOME_WEATHER
  * @param {string} flag  the Buoy key recording it was done
  */
 export function applyGnomeDefaults(settings, entries, flag) {

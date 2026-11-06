@@ -6,7 +6,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {WindowCorners} from './corners.js';
 import {applyGnomeDefaults, reworkPanel, setClusterBackground, setContrast, setLeftEmpty} from './panel.js';
-import {GNOME_CLOCK, GNOME_DOCK} from './lib/kit/settings.js';
+import {GNOME_CLOCK, GNOME_DOCK, GNOME_WEATHER} from './lib/kit/settings.js';
 import {Island} from './lib/kit/island.js';
 import {IdleContent} from './lib/kit/idle.js';
 import {setMascotRest} from './lib/kit/present.js';
@@ -41,6 +41,7 @@ export default class BuoyExtension extends Extension {
         reworkPanel(true);
         applyGnomeDefaults(this._settings, GNOME_CLOCK, 'clock-defaults-applied');
         applyGnomeDefaults(this._settings, GNOME_DOCK, 'dock-defaults-applied');
+        applyGnomeDefaults(this._settings, GNOME_WEATHER, 'weather-defaults-applied');
         const background = () => setClusterBackground({
             mode: this._settings.get_string('cluster-background'),
             radius: this._settings.get_int('cluster-radius'),

@@ -11,7 +11,7 @@ import {
     planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
     donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote, weatherNote, placeLabel,
-    searchPlaces, withPlace,
+    searchPlaces, withPlace, WEATHER_UNITS,
 } from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
@@ -547,6 +547,12 @@ export default class BuoyPreferences extends ExtensionPreferences {
         row.add_row(place);
         row.add_row(off);
         row.add_row(search);
+        // the units: GNOME Weather's own keys, which the plan reads (Automatic: the locale's)
+        if (source.lookup('org.gnome.GWeather4', true)) {
+            const units = new Gio.Settings({schema_id: 'org.gnome.GWeather4'});
+            for (const [key, title] of [['temperature-unit', 'Temperature'], ['speed-unit', 'Wind speed']])
+                row.add_row(this._unitRow(units, key, title));
+        }
 
         const sync = () => {
             const locations = weather.get_value('locations').deepUnpack();
@@ -586,6 +592,35 @@ export default class BuoyPreferences extends ExtensionPreferences {
                 return r;
             });
         });
+    }
+
+    // A drop-down over one of GNOME Weather's unit keys (kit/settings.js WEATHER_UNITS)
+    _unitRow(settings, key, title) {
+        const choices = WEATHER_UNITS[key];
+        const row = new Adw.ComboRow({
+            title, subtitle: 'Shared with GNOME Weather. Automatic follows the region formats.',
+            model: Gtk.StringList.new(choices.map(([, label]) => label)),
+        });
+        // Automatic is `default`: the locale's units, as GWeather guesses them
+        const auto = choices.findIndex(([v]) => v === 'default');
+        const indexOf = value => {
+            const i = choices.findIndex(([v]) => v === value);
+            return i < 0 ? auto : i;
+        };
+        const sync = () => {
+            const i = indexOf(settings.get_string(key));
+            if (row.selected !== i)
+                row.selected = i;
+        };
+        row.connect('notify::selected', () => {
+            const value = choices[row.selected]?.[0];
+            if (value && value !== settings.get_string(key))
+                settings.set_string(key, value);
+        });
+        const id = settings.connect(`changed::${key}`, sync);
+        this._drops.push(() => settings.disconnect(id));
+        sync();
+        return row;
     }
 
     _planRow(p, key) {

@@ -44,6 +44,7 @@ export const PLACES = {
     'daypart-starts': null,     // kit/daypart.js; on the Island page once a plan reads it (rule 9)
     'clock-defaults-applied': null, // bookkeeping: GNOME_CLOCK defaults written once
     'dock-defaults-applied': null,  // bookkeeping: GNOME_DOCK defaults written once
+    'weather-defaults-applied': null, // bookkeeping: GNOME_WEATHER defaults written once
 };
 
 // Keys shown inside another key's row (an expander under it), and the parent's value
@@ -96,8 +97,8 @@ export const GNOME_DOCK = [
 ];
 
 /**
- * Buoy's defaults for GNOME's own keys (GNOME_CLOCK, GNOME_DOCK), for the first enable
- * only (`clock-defaults-applied`, `dock-defaults-applied`): each key the user never set
+ * Buoy's defaults for GNOME's own keys (GNOME_CLOCK, GNOME_DOCK, GNOME_WEATHER), for the
+ * first enable only (`clock-`, `dock-`, `weather-defaults-applied`): each key the user never set
  * gets Buoy's value; a key they did set keeps theirs. After that Buoy never writes them
  * again, so a change in either place stays.
  *
@@ -242,6 +243,25 @@ export function weatherNote({automatic, locating, locations}) {
         return 'No place yet: search for a city below';
     return null;
 }
+
+/**
+ * The units rows under the Weather plan: GNOME Weather's own keys (`org.gnome.GWeather4`),
+ * which the weather plan reads (modules/weather/read.js unitNames) — a pick there is GNOME
+ * Weather's too. Automatic (`default`) is GWeather's guess from the locale (an en_US
+ * session gets °F), last (Ethan, 2026-11-06). Value, label.
+ */
+export const WEATHER_UNITS = Object.freeze({
+    'temperature-unit': [['centigrade', '°C'], ['fahrenheit', '°F'], ['kelvin', 'K'], ['default', 'Automatic']],
+    'speed-unit': [['kph', 'km/h'], ['ms', 'm/s'], ['mph', 'mph'], ['knots', 'Knots'], ['bft', 'Beaufort'],
+        ['default', 'Automatic']],
+});
+
+// Buoy's defaults for those keys, written once like the clock's (`weather-defaults-applied`,
+// gnomeDefaults): °C and km/h where the user never chose (Ethan, 2026-11-06)
+export const GNOME_WEATHER = [
+    {schema: 'org.gnome.GWeather4', key: 'temperature-unit', title: 'Temperature', buoy: 'centigrade'},
+    {schema: 'org.gnome.GWeather4', key: 'speed-unit', title: 'Wind speed', buoy: 'kph'},
+];
 
 // Case and accents do not matter when searching a place: "ha noi" finds "Hà Nội"
 const fold = text => String(text ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();

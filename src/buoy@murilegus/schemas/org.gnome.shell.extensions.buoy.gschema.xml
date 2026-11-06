@@ -213,6 +213,11 @@
       <summary>Clock defaults applied</summary>
       <description>Set after the first enable gave GNOME's clock Buoy's defaults (the time alone, 24-hour) on the keys the user had not set.</description>
     </key>
+    <key name="weather-defaults-applied" type="b">
+      <default>false</default>
+      <summary>Weather units applied</summary>
+      <description>Set after the first enable gave GNOME Weather's units °C and km/h where the user had not chosen them.</description>
+    </key>
     <key name="dock-defaults-applied" type="b">
       <default>false</default>
       <summary>Dock defaults applied</summary>

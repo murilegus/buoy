@@ -6,7 +6,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {withPlace} from '../../kit/settings.js';
 import {refreshMs} from './idle.js';
-import {readInfo} from './read.js';
+import {readInfo, unitNames} from './read.js';
 
 // As long as Geoclue may take for a first fix before this ask gives up (Wi-Fi scan, IP)
 const LOCATE_TIMEOUT = 15;
@@ -51,6 +51,9 @@ export class WeatherFeed {
         this._fetched = last > 0 ? last * 1000 : 0;
         this.state = null;
         this._client?.connectObject('changed', () => this._read(), this);
+        // the user's units (GNOME Weather's keys): read again when they change
+        this._units = settingsOf('org.gnome.GWeather4');
+        this._units?.connectObject('changed', () => this._read(), this);
         this._read(false);
     }
 
@@ -61,7 +64,7 @@ export class WeatherFeed {
             const info = client.info;
             if (!client.loading && info.is_valid())
                 this._fetched = Date.now();
-            state = readInfo(info, {now: Date.now(), units: units(), place: placeOf(info.location)});
+            state = readInfo(info, {now: Date.now(), units: units(this._units), place: placeOf(info.location)});
             // while loading the info keeps the last values; GWeather drops them on a
             // location change (info.set_location), which reads as no data — right then
             if (!state && client.loading && this.state)
@@ -155,6 +158,8 @@ export class WeatherFeed {
 
     destroy() {
         this._stopTimer();
+        this._units?.disconnectObject(this);
+        this._units = null;
         this._locating?.cancel();
         this._locating = null;
         this._client?.disconnectObject(this);
@@ -188,13 +193,18 @@ function setPlace(city) {
     return true;
 }
 
-// GWeather's units, the user's (org.gnome.GWeather4, else the locale's): DEFAULT resolves
-// to one of them; to_string(DEFAULT) names it ("km/h")
-function units() {
-    const speed = GWeather.SpeedUnit.DEFAULT;
+function settingsOf(id) {
+    return Gio.SettingsSchemaSource.get_default()?.lookup(id, true) ? new Gio.Settings({schema_id: id}) : null;
+}
+
+// The units the user chose in GNOME Weather's keys (read.js unitNames), else the locale's
+// (Automatic): GWeather's DEFAULT reads only the locale. to_string names the speed unit ("km/h")
+function units(settings) {
+    const names = unitNames(settings?.get_string('temperature-unit'), settings?.get_string('speed-unit'));
+    const speed = GWeather.SpeedUnit[names.speed] ?? GWeather.SpeedUnit.DEFAULT;
     const speedLabel = GWeather.SpeedUnit.to_string(speed);
     return {
-        display: GWeather.TemperatureUnit.DEFAULT,
+        display: GWeather.TemperatureUnit[names.temperature] ?? GWeather.TemperatureUnit.DEFAULT,
         celsius: GWeather.TemperatureUnit.CENTIGRADE,
         speed,
         speedLabel,
