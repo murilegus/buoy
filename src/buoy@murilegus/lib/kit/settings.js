@@ -361,7 +361,7 @@ export const SAMPLES = {
         kind: 'input', app: 'buoy', leading: 'input-keyboard-symbolic', text: 'EN · English (US)',
     },
     clipboard: {
-        kind: 'copied', app: 'buoy', leading: 'edit-copy-symbolic', text: 'npm install --save buoy',
+        kind: 'copied', app: 'buoy', leading: 'edit-copy-symbolic', text: 'Copied text shows here',
         sizeHint: 'wide',
     },
 };

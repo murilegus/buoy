@@ -57,14 +57,14 @@ eq([oneLine(''), oneLine(' \n '), oneLine(null)], ['', '', ''], 'nothing');
 // --- the pill (SPEC §2e: minimal only, ~1 s, pill 1's widest) ---------------------------------
 const copied = ev => adapter.copied({id: 'clipboard', ...ev}, null);
 {
-    const p = copied({what: 'text', text: 'npm install\n  --save buoy'});
-    eq([p.leading, p.text, p.trailing], ['edit-copy-symbolic', 'npm install --save buoy', null], 'text: copy icon + snippet');
+    const p = copied({what: 'text', text: 'Copied text\n  shows here'});
+    eq([p.leading, p.text, p.trailing], ['edit-copy-symbolic', 'Copied text shows here', null], 'text: copy icon + snippet');
     eq([p.ttl, p.sizeHint, p.compact, p.expanded, p.onPress], [TTL, 'wide', null, null, null],
         '1.5 s, as wide as pill 1 gets, no compact, no expanded, click → Home');
     eq(TTL, 1500, 'copied stays 1.5 s, as the other feedback');
     eq(FEEDBACK.has('copied'), true, 'a feedback kind (pill 1, never missed)');
     const m = planMinimal(validate({id: 'copied:x:clipboard', kind: 'copied', ...p}));
-    eq([m.leading.type, m.leading.icon, m.text], ['icon', 'edit-copy-symbolic', 'npm install --save buoy'], 'planned');
+    eq([m.leading.type, m.leading.icon, m.text], ['icon', 'edit-copy-symbolic', 'Copied text shows here'], 'planned');
     eq(planCompact(validate({id: 'copied:x:clipboard', kind: 'copied', ...p})), null, 'no compact planned');
 }
 {
