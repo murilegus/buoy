@@ -348,7 +348,8 @@ events too, not only `SessionStart`, and the adapter takes it from any event. Wh
 mode); Deny in the pill wins: the dialog goes and the transcript says "Denied by
 PermissionRequest hook · Reason: Denied in Buoy". While a session asks, its prompt's pill
 is its only pill, and after the answer the session's pill is back ("Done"). Answered
-"Yes" in the terminal first, the pill's prompt ended by itself and the command ran.
+"Yes" in the terminal first, the pill's prompt ended by itself and the command ran. Allow
+from the Claude Code tab's row: "Allowed by PermissionRequest hook", and the command ran.
 
 Still to see in a real Claude Code session:
 - That `PermissionRequest` hooks run in Claude Desktop's sessions and race its card.
