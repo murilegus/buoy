@@ -26,7 +26,7 @@ and in GNOME's icon language, so a pill that switches between plans never change
 | Place | What | Since |
 |---|---|---|
 | Brand | extension icon, README, EGO screenshots, prefs About page (M3 About, waving, 2026-11-04); empty states ("Nothing going on" in Home, the empty Notifications tab) | M3 release |
-| Agents | the **leading** of every agent activity (Claude Code, Codex, any D-Bus caller that sends `{mascot}`); the pose follows the agent's lifecycle (§ Agents). The agent's name is always the first word of the text, since Bu does not say which agent it is | M3 `ask`, M4 agent activity |
+| Agents | the **leading** of every agent activity (Claude Code, Codex, any D-Bus caller that sends `{mascot}`); the pose follows the agent's lifecycle (§ Agents). The agent's name is always the first word of the text, since Bu does not say which agent it is | M3 "Claude Code: ask + agent activity" (merged 2026-11-07) |
 | Greeting | leading of every greeting (GREETING.md §6): `wave` for 5 s at start, wake, welcome back and leaving; `party` on a birthday or celebration; `done` for a good weekend; `sleep` for good night; `busy` while updating | M3 greeting |
 | Idle plan `mascot` | Bu's eyes in the idle pill (§ Eyes), module off by default | M4 |
 
@@ -371,24 +371,15 @@ W.WW..WW.W
 
 ## Agents
 
-An agent activity (kind `agent`, M4; the `ask` module uses `ask` from M3) maps its
-source's events to poses in the adapter — pure, so every mapping is unit-tested. For
-Claude Code hooks:
+An agent activity (kind `agent`, M3 with `ask` since 2026-11-07: one module, FEATURES "Claude Code") maps its
+source's events to poses in the adapter — pure, so every mapping is unit-tested. The
+event → pose table for Claude Code's hooks is [CODING-AGENTS.md](CODING-AGENTS.md) §3
+(2026-11-07; it replaced the table that was here): `think` on a prompt, `busy` on tools
+and subagents, `error` on a failure, `ask` on a permission prompt, `turn` when it waits
+for you, `compact` while compacting, `done` (or `party` after > 10 min) when it stops,
+`stale` without news.
 
-| Hook event | Pose | Notes |
-|---|---|---|
-| `UserPromptSubmit` | `think` | surfaces the activity |
-| `PreToolUse` | `busy` | permission needed → `ask()`, pose `ask` until answered |
-| `PostToolUse` with an error | `error` | until the next event |
-| `Notification` (permission prompt) | `ask` | |
-| `Notification` (waiting for input) | `turn` | |
-| `PreCompact` | `compact` | |
-| `SubagentStop` | `busy` | the parent keeps working |
-| `Stop` | `done` (alert), `party` first if the run took > 10 min | ends after its ttl |
-| no update for `staleAfter` | `stale` | the renderer dims it |
-| `SessionEnd` | — | `end()` |
-
-Codex's `notify` (turn complete) → `done`, or `turn` when it waits for input. A D-Bus
+Codex (later, CODING-AGENTS.md §10): `notify` (turn complete) → `done`, or `turn` when it waits for input. A D-Bus
 caller may send `{mascot}` directly and skip the adapter.
 
 ## Eyes — idle plan `mascot`
