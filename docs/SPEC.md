@@ -592,8 +592,9 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   activate → open the file), presented by the notification module's override for Shell's
   screenshot source. Short like feedback: pill 1 for ~3 s, never counted as missed (your
   own action), minimal = thumbnail 20 + "Screenshot". Unlike feedback it has a compact —
-  thumbnail 40, "Show in Files", click opens the image — since it leaves a file you may
-  act on. One pill per shot: the clipboard side stays quiet (above). A finished screencast
+  thumbnail 40, "Show in Files", Delete (to the Trash), click opens the image — since it
+  leaves a file you may act on. (M4's separate "Screenshot taken" item merged here
+  2026-11-06, Ethan; no Copy: Shell already copied it.) One pill per shot: the clipboard side stays quiet (above). A finished screencast
   ("Screencast recorded", same file) is handled the same way; the recording itself is a
   running activity with its timer and stop button (§6b privacy / recording).
 
