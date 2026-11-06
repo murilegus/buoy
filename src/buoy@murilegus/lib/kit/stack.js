@@ -13,7 +13,8 @@ import {FEEDBACK, validate} from './activity.js';
  *
  * Rules:
  *   - every activity goes through validate(); priority defaults from activity.js PRIORITY
- *   - highest priority shows; ties → most recently surfaced; the newest feedback (osd,
+ *   - highest priority shows; ties → a fresh one before a stale one (2026-11-07), then the
+ *     most recently surfaced; the newest feedback (osd,
  *     copied) goes first unless an ask is on top, and covers pill 1 only (pillWindow)
  *   - end removes immediately; ttl (capped at 8 h by validate) ends it; ttl 0 = until ended;
  *     hold(id, true) — the pointer on its pill — pauses the ttl, hold(id, false) gives it
@@ -481,7 +482,7 @@ export class ActivityStack {
     // activity brought up by _promote() goes first.
     _visibleList() {
         const list = [...this._items.values()].filter(a => this._visible(a))
-            .sort((a, b) => b.priority - a.priority || b._seq - a._seq);
+            .sort((a, b) => b.priority - a.priority || Number(a.isStale) - Number(b.isStale) || b._seq - a._seq);
         const promoted = list.find(a => a.id === this._promoted);
         if (promoted)
             return [promoted, ...list.filter(a => a !== promoted)];

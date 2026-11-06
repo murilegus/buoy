@@ -63,7 +63,9 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   transfer, under a notification); waiting for you (`turn`) **60**, over what is only to
   look at; a permission prompt **90**, as every ask. Done (and stopped with an error)
   alerts once, then drops to **5**, under every other kind (media is 10), so anything else
-  takes the centre while it lingers (Ethan, 2026-11-07).
+  takes the centre while it lingers (Ethan, 2026-11-07). Among sessions of one priority
+  the one that finished last leads (re-surfaced on `Stop`), and a stale one goes after a
+  fresh one (kit: ties → fresh before stale).
 - **Subagents** are no pills of their own: they share the parent's `session_id` (only
   `agent_id` differs); the parent's compact counts them, "Working with 2 subagents", from
   `SubagentStart` / `SubagentStop`. A session started apart (a new `session_id`) is its
@@ -378,7 +380,7 @@ is its only pill, and after the answer the session's pill is back ("Done"). Answ
 "Yes" in the terminal first, the pill's prompt ended by itself and the command ran. Allow
 from the Claude Code tab's row: "Allowed by PermissionRequest hook", and the command ran. A
 Claude Desktop session's prompt shows in the pill beside Desktop's own card (the hook
-runs there too).
+runs there too), and an answer on either ends the other.
 
 Still to see in a real Claude Code session:
-- Whether an answer on Desktop's card ends the pill's prompt, and the reverse.
+- Nothing left from the list above.

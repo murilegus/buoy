@@ -357,6 +357,23 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.top.id, 'far', 'far schedule fires on time');
 }
 
+// --- ties: a fresh one before a stale one (2026-11-07) -----------------------------------
+{
+    const {clock, island, stack} = setup();
+    stack.surface({id: 'old', kind: 'agent', priority: 5, staleAfter: 1000});
+    clock.advance(1000);                         // old is stale now
+    stack.surface({id: 'mid', kind: 'agent', priority: 5});
+    stack.surface({id: 'new', kind: 'agent', priority: 5, staleAfter: 1000});
+    eq(island.list.map(a => a.id), ['new', 'mid', 'old'], 'same priority: the stale one goes last');
+    stack.update('old', {text: 'news'});         // an update clears stale
+    eq(island.list.map(a => a.id), ['new', 'mid', 'old'], 'fresh again: by when it was surfaced');
+    clock.advance(1000);
+    eq(island.list.map(a => a.id)[0], 'mid', 'stale ones yield to a fresh one');
+    stack.surface({id: 'hi', kind: 'agent', priority: 60, staleAfter: 1});
+    clock.advance(1);
+    eq(island.list.map(a => a.id)[0], 'hi', 'stale never beats a higher priority');
+}
+
 // --- an activity's own `hidden` (CODING-AGENTS.md §4) ------------------------------------
 {
     const {island, stack} = setup();

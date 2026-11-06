@@ -88,10 +88,13 @@ export class AgentSource extends Source {
             return '';
         }
         this._remember(key, res.rec);
-        if (res.show)
-            this._show(res.rec, {alert: res.alert && !this._quiet(key)});
-        else if (settled && this._stack.has(this._activityId(res.rec)))
+        if (res.show) {
+            this._show(res.rec, {
+                alert: res.alert && !this._quiet(key), renew: res.rec.stopped && !old?.stopped,
+            });
+        } else if (settled && this._stack.has(this._activityId(res.rec))) {
             this._show(res.rec);          // out from behind its ended prompt
+        }
 
         // the session's window, while the hook is still on the bus: the reply waits for it
         // (a report's hook exits right after; a few ms in the background)
@@ -109,7 +112,9 @@ export class AgentSource extends Source {
         return `${KIND}:${rec.source}:${rec.id}`;
     }
 
-    _show(rec, {alert = false} = {}) {
+    // renew: surfaced anew, so it counts as the newest of its priority (a session that
+    // just finished leads one that finished earlier, Ethan 2026-11-07)
+    _show(rec, {alert = false, renew = false} = {}) {
         if (!this._registry)
             return;
         this._watchSharing(true);
@@ -120,7 +125,7 @@ export class AgentSource extends Source {
         a.onPress = opts => this._raise(key, opts);
         // its prompt's pill stands for it meanwhile: one pill per session (§4, Ethan)
         a.hidden = this._asks?.has(key) ?? false;
-        if (this._stack.has(a.id))
+        if (this._stack.has(a.id) && !renew)
             this._stack.update(a.id, a, {alert});
         else
             this._stack.surface({...a, alert});
