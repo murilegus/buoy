@@ -381,11 +381,12 @@ export class Home {
     // Until the M4 notifications tab carries it.
     _missedSection(box) {
         const header = this._sectionHeader(`Missed · ${this._missed.length}`, true);
-        const clear = new St.Button({style_class: 'buoy-home-clear', can_focus: true, accessible_name: 'Clear missed'});
-        const face = new St.BoxLayout({style_class: 'buoy-home-clear-box'});
-        face.add_child(new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}));
-        face.add_child(new St.Label({text: 'Clear', y_align: Clutter.ActorAlign.CENTER}));
-        clear.set_child(face);
+        // icon-only, as the Transfers tab's (2026-11-06, Ethan); the name stays for a11y
+        const clear = new St.Button({
+            style_class: 'buoy-home-clear', can_focus: true, accessible_name: 'Clear missed',
+            child: new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}),
+            y_align: Clutter.ActorAlign.CENTER,
+        });
         clear.connect('clicked', () => {
             this._missed = [];
             this._onMissedClear?.();
