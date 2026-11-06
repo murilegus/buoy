@@ -420,6 +420,19 @@ export function desktopRoute(fileName, text, sessionId) {
 }
 
 /**
+ * Which session Claude Desktop shows (§2, 2026-11-07): its own `claude_desktop_config.json`
+ * keeps `lastPrimaryCodeSession: {id: 'local_<uuid>'}` and writes it as you switch
+ * (undocumented, seen in Desktop 4.23118).
+ *
+ * @param {*} text  the file's contents
+ * @returns {?string} `local_<uuid>`, or null
+ */
+export function desktopShown(text) {
+    const m = /"lastPrimaryCodeSession"\s*:\s*\{\s*"id"\s*:\s*"(local_[A-Za-z0-9-]{1,64})"/.exec(typeof text === 'string' ? text : '');
+    return m?.[1] ?? null;
+}
+
+/**
  * @param {object} rec
  * @returns {string} the compact's title: the session's name, else "New session" for a
  *   Desktop session on no folder, else the label (§2)

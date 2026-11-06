@@ -5,7 +5,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Source} from '../../kit/source.js';
-import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, parseEvent, reply, settles, step} from './adapter.js';
+import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, parseEvent, reply, settles, step} from './adapter.js';
 
 const KIND = 'agent';
 const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
@@ -253,20 +253,20 @@ export class AgentSource extends Source {
 
     // A click on the session's pill (or its compact): its terminal — or its very session
     // in Claude Desktop (a deep link, desktopSessionUri) — comes up. false — no window
-    // known, or that app is in front already (Ethan 2026-11-07: a click from it did
-    // nothing to see, Desktop included) — and the caller opens the Claude Code tab (§2).
-    // A row of that tab passes {row: true}: then always that session, so from inside
-    // Desktop the tab is how you switch to another of its sessions.
+    // known, or you are looking at it already: its terminal in front, or Desktop in front
+    // showing this very session (Ethan 2026-11-07) — and the caller opens the Claude Code
+    // tab (§2). A row of that tab passes {row: true}: then always that session.
     _raise(key, {row = false} = {}) {
         const app = this._apps?.get(key);
         if (!app)
             return false;
-        if (!row && Shell.WindowTracker.get_default().focus_app === app)
-            return false;
+        const front = Shell.WindowTracker.get_default().focus_app === app;
         // Claude Desktop shows one session at a time: open this one
         if (app.get_id() === DESKTOP_APP) {
             const uri = desktopSessionUri(this._sessions?.get(key)?.id);
             if (uri) {
+                if (!row && front && uri.endsWith(`=${desktopShownSession()}`))
+                    return false;
                 try {
                     Gio.AppInfo.launch_default_for_uri(uri, global.create_app_launch_context(0, -1));
                     return true;
@@ -275,6 +275,8 @@ export class AgentSource extends Source {
                 }
             }
         }
+        if (!row && front)
+            return false;
         app.activate();
         return true;
     }
@@ -357,6 +359,17 @@ function desktopSessionUri(sessionId) {
         } catch {}
     }
     return null;
+}
+
+/** @returns {?string} the session Claude Desktop shows (adapter.js desktopShown), on a click only */
+function desktopShownSession() {
+    try {
+        const path = GLib.build_filenamev([GLib.get_user_config_dir(), 'Claude', 'claude_desktop_config.json']);
+        const [, bytes] = GLib.file_get_contents(path);
+        return desktopShown(new TextDecoder().decode(bytes));
+    } catch {
+        return null;
+    }
 }
 
 /**

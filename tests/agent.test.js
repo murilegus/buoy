@@ -2,7 +2,7 @@
 // permission reply, Buoy's entries in ~/.claude/settings.json; docs/CODING-AGENTS.md §11)
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, END_AFTER_STOP, PARTY_AFTER, PRIORITY, STALE_MS, TIMEOUT,
-    agent, answered, askOf, desktopRoute, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    agent, answered, askOf, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, commandFor, hooksNote, install, installed, isOurs, uninstall,
@@ -273,6 +273,10 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
         desktopRoute('local_a b.json', file, '133367a0-1112')], [null, null, null, null, null],
     'another session, a deleted file, an odd id or name, no text: none');
     eq(DESKTOP_APP, 'com.anthropic.Claude.desktop', 'Desktop\'s app id');
+    const conf = '{"preferences": {"x": {"lastPrimaryCodeSession": {\n  "id": "local_406924c9-1051",\n  "type": "local"\n}}}}';
+    eq(desktopShown(conf), 'local_406924c9-1051', 'the session Desktop shows');
+    eq([desktopShown('{}'), desktopShown(null), desktopShown('{"lastPrimaryCodeSession": {"id": "cse_x"}}')], [null, null, null],
+        'none, no file, not a local session: null');
 }
 
 // --- the permission prompt (§4) ------------------------------------------------------------

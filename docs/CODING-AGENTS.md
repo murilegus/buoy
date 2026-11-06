@@ -104,11 +104,12 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   (`~/.config/Claude/claude-code-sessions/<id>/<id>/local_<uuid>.json`, searched as text
   on the click only, newest first). Both the files and the route are Desktop's own,
   undocumented (seen in Desktop 4.23118, 2026-11-07): no match, and Desktop comes up as
-  for a terminal. When the session's app is in front already — Desktop
-  included, whichever of its sessions it shows — the click opens the Claude Code tab
-  instead, and a click on a row of the tab opens that session (the deep link, or the
-  terminal brought up): from inside Desktop, the tab is how you switch sessions (Ethan,
-  2026-11-07). No
+  for a terminal. When you are looking at the session already — its terminal in front,
+  or Desktop in front showing that very session (`lastPrimaryCodeSession.id` in
+  Desktop's `claude_desktop_config.json`, written as you switch; undocumented) — the
+  click opens the Claude Code tab instead; Desktop in front on another session, the
+  click switches to the pill's (Ethan, 2026-11-07). A row of the tab always opens its
+  session. No
   window known (a remote shell, an unknown launcher), or that window already in front (a
   click from Claude Desktop on its own session; Ethan, 2026-11-07): the Claude Code tab
   opens. The kit's
