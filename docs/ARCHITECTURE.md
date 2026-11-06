@@ -63,10 +63,20 @@ src/buoy@murilegus/
             │               that brings a window up (2026-11-06)
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
             │               pure: `keys` (its idle-<id>-… keys), `present(ctx, opts)` →
-            │               presentation data, `seconds(opts)` (tick each second),
-            │               `relevance(ctx)` for `auto` (SPEC §2a-iii); ctx = {now, clock, starts}
+            │               presentation data (its `compact` is the idle pill's hover tier,
+            │               2026-11-06), `seconds(opts)` (tick each second), `ticks: false`
+            │               (no wall clock), `relevance(ctx)` for `auto` (SPEC §2a-iii);
+            │               ctx = {now, clock, starts, data}
+            ├── feed.js     the Shell side of an idle plan with data of its own (optional;
+            │               weather, 2026-11-06): index.js `feed`, `new Feed(onChanged)` →
+            │               {state, shown(shown, opts), destroy()}; `state` is the plan's
+            │               `ctx.data`. Made by kit/idle.js while its plan is the one in use,
+            │               told when the idle pill shows so it fetches only then (rule 8)
             └── apps/       per-app overrides, <slug>.js, same method names as adapter.js
 ```
+
+A module may keep more pure files beside these when they are worth testing alone
+(weather's `read.js`: GWeather.Info → the plan's state, tested with a fake info).
 
 ### Module kinds
 
@@ -192,7 +202,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `dock-defaults-applied` | b | bookkeeping: the first enable gave Ubuntu Dock's keys (`dash-to-dock`) Buoy's defaults — bottom, auto-hide, not edge to edge, 32 px, primary display, no trash or volumes — where the user had not set them; the Dock rows in prefs are the dock's own keys (2026-11-04) |
 | `window-corners` | b | round the top corners of windows whose top edge meets the bar (maximized, tiled, moved up); default `true` (2026-11-02; top edge 2026-11-04) |
 | `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
-| `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules |
+| `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules (`idle-weather-refresh`: `30m` \| `1h`, default `30m`; `idle-weather-automatic` b, default `true`: the place from Geoclue, else the city picked in prefs, 2026-11-06) |
 | `greeting-style`, `greeting-name`, `greeting-last-day` | — | declared by `greeting` (SPEC §2d) |
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
 | `progress-folders` | as | folders watched for downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03; M3 and renamed from `transfers-folders` 2026-11-06, rule 9) |

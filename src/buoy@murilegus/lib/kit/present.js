@@ -905,8 +905,11 @@ export function buildIdle({width, light, plan = null}) {
         makeElement(p.trailing, 'minimal'),
     ]);
     addAll(box, [lightDot(p.light), zones]);
-    // an icon alone says nothing to a screen reader: name the part of the day
-    if (typeof plan.daypart === 'string')
+    // an icon alone says nothing to a screen reader: name the part of the day, or what
+    // the plan names itself (weather: "Ho Chi Minh, 31°, Clear")
+    if (typeof plan.accessibleName === 'string' && plan.accessibleName)
+        box.accessible_name = plan.accessibleName;
+    else if (typeof plan.daypart === 'string')
         box.accessible_name = p.text ? `${plan.daypart}, ${p.text}` : plan.daypart;
     return box;
 }

@@ -26,10 +26,11 @@ import input from './lib/modules/input/index.js';
 import ask from './lib/modules/ask/index.js';
 import clipboard from './lib/modules/clipboard/index.js';
 import clock from './lib/modules/clock/index.js';
+import weather from './lib/modules/weather/index.js';
 
 // Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
 // Order is also the tab strip's order (SPEC §2b).
-const MODULES = [media, notification, progress, timer, hud, home, input, ask, calendar, clipboard, clock];
+const MODULES = [media, notification, progress, timer, hud, home, input, ask, calendar, clipboard, clock, weather];
 
 export default class BuoyExtension extends Extension {
     enable() {

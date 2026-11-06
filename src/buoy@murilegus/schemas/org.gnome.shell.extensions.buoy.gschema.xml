@@ -92,10 +92,16 @@
       <summary>Clock</summary>
       <description>A second clock in the idle pill, with the part of the day.</description>
     </key>
+    <key name="modules-weather" type="b">
+      <default>true</default>
+      <summary>Weather</summary>
+      <description>The condition and temperature where you are.</description>
+    </key>
     <key name="idle-content" type="s">
       <choices>
         <choice value="none"/>
         <choice value="clock"/>
+        <choice value="weather"/>
       </choices>
       <default>'clock'</default>
       <summary>Show</summary>
@@ -111,6 +117,20 @@
       <default>'icon-time'</default>
       <summary>Style</summary>
       <description>The time follows Date &amp; Time.</description>
+    </key>
+    <key name="idle-weather-automatic" type="b">
+      <default>true</default>
+      <summary>Use my location</summary>
+      <description>Where you are, with Location Services on. Off, the city below.</description>
+    </key>
+    <key name="idle-weather-refresh" type="s">
+      <choices>
+        <choice value="30m"/>
+        <choice value="1h"/>
+      </choices>
+      <default>'30m'</default>
+      <summary>Refresh</summary>
+      <description>Asked only while the pill shows the weather.</description>
     </key>
     <key name="apps-hidden" type="as">
       <default>[]</default>
