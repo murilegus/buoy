@@ -777,29 +777,44 @@ the % and the file rows show size only.
     `transfer-complete` gives "Files · Done". Reopened, Files reports once more and then
     stops again, so the pill stays without % and says "Files · working" while its window
     is open (its own window shows the progress). Minimized, Files keeps reporting.
-  - Not in M3: Firefox (no signal), Files outside Ubuntu (it only posts the notification
-    "N file operations active" while its window is closed —
-    `nautilus-progress-persistence-handler.c`; that reaches Buoy with M4 notifications).
+  - Not from LauncherEntry: Firefox (no signal; its downloads come from `downloads`
+    below), Files outside Ubuntu (it only posts the notification "N file operations
+    active" while its window is closed — `nautilus-progress-persistence-handler.c`; that
+    reaches Buoy with the notifications module).
 - **M3, `downloads`** (moved from M4 2026-11-06, Ethan: on GNOME neither browser sends
   LauncherEntry — Chrome loads libunity only on Unity/KDE — so this is their only way in).
   Each `.part` / `.crdownload` in a watched folder is its own
-  **Running** row from the moment it appears (name, size, speed; the ring only per the
-  exception above) — this is how Firefox shows up at all. Renamed to its final name, it
-  moves to a **Downloaded** group: file type icon, file name, folder · app · time. A
-  click opens the file; two **icon-only** buttons (accessible name and tooltip "Open",
-  "Show in Files"): `document-open-symbolic` opens it, `folder-open-symbolic` shows it
-  selected in Files.
+  **Running** row (and pill) once it is written to (name, size, speed; the ring only per
+  the exception above) — this is how Firefox shows up at all. A partial file that is
+  never written to while watched (a leftover from a broken download) never shows. Chrome
+  names the file `Unconfirmed 123456.crdownload` until the download is checked — seen
+  2026-11-06 for the whole download (a `.bin` and a `.pdf` from a local server), renamed
+  to the real name only at the end; the word is translated — so a `.crdownload` named
+  words + space + up to 6 digits, without an extension, shows the browser's name
+  ("Google Chrome · 12.3 MB") until it is renamed. The browser is the running app that
+  writes such files (Chromium's family `.crdownload`, Firefox's family `.part`); none
+  running, no app is named. Renamed to its final name, it says "name → folder" for 4 s
+  and moves to a **Downloaded** group (2026-11-06: kept an hour, at most 5; a file
+  deleted since leaves when the tab is drawn): file type icon, file name, folder · app ·
+  time. A click opens the file; two **icon-only** buttons, "Open"
+  (`document-open-symbolic`, the default app) and "Show in Files"
+  (`folder-open-symbolic`, `org.freedesktop.FileManager1.ShowItems`, selected in its
+  folder). St has no tooltips: hovered or focused, a button's name replaces the row's
+  detail line (2026-11-06). Deleted or moved out before the end (cancelled): it ends,
+  no row.
   Where files are caught:
   1. the user's Downloads folder, `GLib.get_user_special_dir(DIRECTORY_DOWNLOAD)` (not a
      hard-coded `~/Downloads`), always;
-  2. up to 10 more folders in prefs (`transfers-folders`), each one non-recursive
-     `Gio.FileMonitor` (one inotify watch per folder, hence the cap);
-  3. to try first in M4: Recent files (`recently-used.xbel`, one monitor) as the
-     catch-all for a file saved anywhere — filtered to browsers and to entries added
-     just now, since it also lists every file opened elsewhere. If Firefox and Chrome
-     both write there, it becomes the main source for finished files and 1–2 the
-     fallback; not verified yet. Recent files only see a file once it is finished, so
-     Running rows still need 1–2.
+  2. up to 10 more folders in prefs (`progress-folders`, renamed from
+     `transfers-folders` 2026-11-06 for ARCHITECTURE rule 9; "More download folders"
+     in the Transfers row, Add Folder… through the portal's folder chooser), each one
+     non-recursive `Gio.FileMonitor` with WATCH_MOVES (one inotify watch per folder,
+     hence the cap), applied at once;
+  3. ~~Recent files~~ — dropped 2026-11-06: neither browser writes there for a download.
+     A real Chrome download in the test session left no `recently-used.xbel`, and on
+     Ethan's machine every Downloads entry in it comes from `xdg-desktop-portal-gnome`,
+     i.e. a file saved through a Save dialog, never from Chrome or Firefox themselves. It
+     cannot be the catch-all.
 - **Not planned:** "source → destination" for a Files copy — Nautilus exposes no names
   over D-Bus (`org.gnome.Nautilus.FileOperations2` starts operations, it does not report
   them), and a guess could be wrong.

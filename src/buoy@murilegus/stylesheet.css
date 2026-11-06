@@ -331,3 +331,8 @@
 .buoy-transfers-bar { color: #fff; margin-top: 4px; }
 .buoy-transfers-pct { color: #fff; font-size: 12px; font-feature-settings: "tnum"; min-width: 36px; text-align: right; }
 .buoy-transfers-empty { color: #b8b8b8; padding: 8px; }
+.buoy-transfers-actions-line { spacing: 2px; }
+.buoy-transfers-action { padding: 8px; border-radius: 99px; color: #fff; }
+.buoy-transfers-action:hover { background-color: rgba(255, 255, 255, 0.12); }
+.buoy-transfers-action:active { background-color: rgba(255, 255, 255, 0.2); }
+.buoy-transfers-action:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }

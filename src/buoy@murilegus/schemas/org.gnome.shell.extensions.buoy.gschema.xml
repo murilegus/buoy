@@ -47,6 +47,11 @@
       <summary>Transfers</summary>
       <description>File copies and downloads, with the Transfers tab.</description>
     </key>
+    <key name="progress-folders" type="as">
+      <default>[]</default>
+      <summary>More download folders</summary>
+      <description>Browser downloads show from your Downloads folder and from these, up to 10. Folders inside them are not watched.</description>
+    </key>
     <key name="modules-timer" type="b">
       <default>true</default>
       <summary>Timer</summary>

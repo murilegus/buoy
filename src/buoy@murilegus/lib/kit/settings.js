@@ -302,6 +302,36 @@ export function addApp(list, slug) {
     return !slug || list.includes(slug) ? list : [...list, slug];
 }
 
+/** Folders `progress-folders` may hold (modules/progress adapter.js MAX_FOLDERS). */
+export const MAX_FOLDERS = 10;
+
+/**
+ * @param {string[]} list  `progress-folders`
+ * @param {?string} path  a folder the user picked
+ * @param {?string} downloads  the Downloads folder, always watched
+ * @returns {string[]} the list with it added once; unchanged when it is not an absolute
+ *   path, already there, the Downloads folder, or the list is full
+ */
+export function addFolder(list, path, downloads = null) {
+    if (typeof path !== 'string' || !path.startsWith('/'))
+        return list;
+    const p = path.replace(/(.)\/+$/, '$1');
+    if (p === downloads || list.includes(p) || list.length >= MAX_FOLDERS)
+        return list;
+    return [...list, p];
+}
+
+/**
+ * @param {string} path
+ * @param {string} home  the home folder
+ * @returns {string} the path with the home folder as `~`, as Files writes it
+ */
+export function shortPath(path, home) {
+    if (home && home !== '/' && (path === home || path.startsWith(`${home}/`)))
+        return `~${path.slice(home.length)}`;
+    return path;
+}
+
 // What "Show a sample" surfaces, through the real D-Bus API (kit/dbus.js `Surface`): the
 // same path a script takes, so the preview shows what the island really draws. A short
 // ttl; the same id replaces the previous sample.

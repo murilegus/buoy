@@ -190,7 +190,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules |
 | `greeting-style`, `greeting-name`, `greeting-last-day` | — | declared by `greeting` (SPEC §2d) |
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
-| `transfers-folders` | as | M4: folders watched for finished downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03) |
+| `progress-folders` | as | folders watched for downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03; M3 and renamed from `transfers-folders` 2026-11-06, rule 9) |
 | `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc (default Super+B, SPEC §2c) |
 | `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60 (MASCOT.md, 2026-11-04); General page, as Bu is the kit's |
 | per-module keys | — | declared by the module |
