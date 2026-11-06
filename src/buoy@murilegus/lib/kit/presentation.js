@@ -4,7 +4,8 @@
  *
  * Adapter data (APPLE.md §B1/B3, ARCHITECTURE rule 3):
  *   {leading, text, trailing, expanded, actions, keyline, isStale}
- *   leading/trailing: 'icon-name' | Gio.Icon | {art, icon} | {icon} | {progress: 0..1}
+ *   leading/trailing: 'icon-name' | Gio.Icon | {art (path, URI or Gio.Icon), icon} | {icon} |
+ *   {progress: 0..1}
  *                     | {bar: 0..1} | {countdown: s} | {until: ms since the epoch} | {text}
  *                     `until` counts down live, once a second while shown (present.js)
  *   leading only:     {mascot: '<pose>', icon?} — Bu (MASCOT.md); an unknown pose falls
@@ -90,10 +91,16 @@ export function element(e, {leading = false} = {}) {
             return {type: 'mascot', pose};
         return icon(e.icon) ?? (leading ? {type: 'mascot', pose: 'idle'} : null);
     }
-    const art = str(e.art);
-    if (art) {
+    // art: a file path or URI (album art), or a Gio.Icon from the source (a copied image's
+    // bytes, clipboard 2026-11-06)
+    const artIcon = e.art !== null && typeof e.art === 'object' && !isPlain(e.art) ? e.art : null;
+    const art = artIcon ? null : str(e.art);
+    if (art || artIcon) {
         const fb = icon(e.icon);
-        return {type: 'art', src: art, fallback: fb?.type === 'icon' ? fb.icon ?? null : null};
+        return {
+            type: 'art', ...artIcon ? {gicon: artIcon} : {src: art},
+            fallback: fb?.type === 'icon' ? fb.icon ?? null : null,
+        };
     }
     const ic = icon(e.icon);
     if (ic)

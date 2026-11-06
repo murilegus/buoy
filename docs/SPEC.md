@@ -570,6 +570,17 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   `Meta.SelectionSourceMemory` (`st-clipboard.c` `st_clipboard_set_content` →
   `meta_selection_source_memory_new`): a screenshot, or a row the Clipboard tab put back;
   the history still records it.
+  What the pill shows (2026-11-06), from the new owner's mimetypes, first match wins:
+  a password manager's secret (`x-kde-passwordManagerHint`, KeePassXC and KDE's) →
+  "Copied · hidden", never read; files (`x-special/gnome-copied-files`, `text/uri-list`)
+  → the name, or "3 items"; an image → its thumbnail as art (the PNG bytes as a
+  `Gio.BytesIcon`, nothing written) and "Image"; text → the snippet on one line
+  (whitespace collapsed, the source hands at most 500 characters), ellipsized at pill 1's
+  widest (`wide`). Only the clipboard: PRIMARY changes with every selection and is
+  ignored. Emptied text (a password manager clearing it) shows nothing. The app is the
+  focused one, so `apps-hidden` and profiles apply (hide a password manager by name);
+  a window without a `.desktop` counts as `system`. `clipboard-show-preview` off: "Copied"
+  alone and the clipboard is not read. Click → Home (no tab of its kind).
 - **Screenshot** (2026-11-05): not feedback but a `notification`, from Shell's own
   "Screenshot captured" (`ui/screenshot.js` `_storeScreenshot`: the PNG goes to the
   clipboard, then a transient notification with the thumbnail, "Show in Files" and

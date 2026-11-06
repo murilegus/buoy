@@ -1,12 +1,16 @@
+import {ClipboardSource} from './source.js';
+import adapter from './adapter.js';
 import {ClipboardTab} from './tab.js';
 
-// Standalone tab (SPEC §2b): no kinds, no source; lives in ⋯ until pinned. Empty for now.
+// The copied feedback (SPEC §2e) and the Clipboard tab (SPEC §2b): `copied` is a feedback
+// kind, so the module has no kind tab; its tab.js is standalone, in ⋯ until pinned (empty
+// until the M5 history). Was two modules, `copied` and `clipboard` (2026-11-05).
 export default {
     id: 'clipboard',
     title: 'Clipboard',
     icon: 'edit-paste-symbolic',
-    kinds: [],
-    source: null,
-    adapter: {},
+    kinds: ['copied'],
+    source: ClipboardSource,
+    adapter,
     tab: ClipboardTab,
 };

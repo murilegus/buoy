@@ -25,7 +25,9 @@ import {planExpanded} from './presentation.js';
 export const HOME = 'home';
 
 // FEEDBACK (activity.js), SPEC §2b: kinds without a tab; an open from them goes to
-// onPress or Home
+// onPress or Home. A module whose kinds are all feedback (clipboard: `copied`) has no
+// kind tab; its own tab.js is a standalone tab (SPEC §2b, 2026-11-05).
+const feedbackOnly = m => m.kinds.every(k => FEEDBACK.has(k));
 
 // Inactive tabs show only their icon (Notchy's strip, 2026-11-02), so every tab has one.
 const GENERIC_ICON = 'view-app-grid-symbolic';
@@ -53,7 +55,9 @@ export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
         if (!m.kinds?.length)
             continue;
         m.kinds.forEach(k => claimed.add(k));
-        if (m.tab || m.kinds.some(k => !FEEDBACK.has(k)) || shown(m.kinds)) {
+        // feedback-only: a kind tab only while one of its activities brings an expanded
+        // view, and never when its tab.js is the standalone one
+        if (!feedbackOnly(m) || (!m.tab && shown(m.kinds))) {
             tabs.push({
                 id: m.id, type: 'kind', label: m.title ?? title(m.id),
                 icon: m.icon ?? GENERIC_ICON, kinds: [...m.kinds],
@@ -70,7 +74,7 @@ export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
     }
 
     const standalone = modules
-        .filter(m => m.tab && !m.kinds?.length && m.id !== HOME)
+        .filter(m => m.tab && (!m.kinds?.length || feedbackOnly(m)) && m.id !== HOME)
         .map(m => ({id: m.id, type: 'standalone', label: m.title ?? title(m.id), icon: m.icon ?? GENERIC_ICON, kinds: []}));
     tabs.push(...standalone.filter(t => pinned.includes(t.id)));
     const free = standalone.filter(t => !pinned.includes(t.id));
