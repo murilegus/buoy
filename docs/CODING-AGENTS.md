@@ -147,8 +147,12 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
 - `PermissionRequest` → `stack.ask` (the same kit ask as D-Bus `Ask()`, with two new
   options: `look`, the ask's leading / compact / expanded, and `quiet`): an `ask` activity
   `agent:claude:<session_id>:ask`, priority 90, Bu `ask` leading, opens expanded (never
-  takes the keyboard unless clicked), the session's pill in pose `ask` meanwhile. One
-  open prompt per session: a second one ends the first without an answer.
+  takes the keyboard unless clicked). Meanwhile the session's own pill is hidden (kit
+  `hidden`: live, timed, never drawn or missed) — the prompt's pill stands for it, one
+  pill per session (Ethan, 2026-11-07: two pills of one session were one too many); it
+  comes back when the prompt ends. In the Claude Code tab the prompt's row carries the
+  session's name and what it wants. One open prompt per session: a second one ends the
+  first without an answer.
 - **Expanded content**: title "Claude · {project} needs your OK"; subtitle what it wants:
   "Run: pnpm test", "Edit: src/…/pill.js", "Fetch: example.com", "Use: {mcp_server}
   {tool}" — the command or path on one line, ellipsized, after the session's name when it
@@ -339,10 +343,12 @@ hooks installed from prefs; a session's pill, its compact and the Claude Code ta
 from the session's own window opens the tab; a long command (`sleep 90` in a terminal
 session) dims the working pill after a minute and its result brings it back; `/rename`
 in a CLI session shows on hover at once ("TrungPT's home"): the title rides on later
-events too, not only `SessionStart`, and the adapter takes it from any event.
+events too, not only `SessionStart`, and the adapter takes it from any event. While the
+`PermissionRequest` hook waits, the terminal shows its own dialog too (CLI, default
+mode); Deny in the pill wins: the dialog goes and the transcript says "Denied by
+PermissionRequest hook · Reason: Denied in Buoy".
 
 Still to see in a real Claude Code session:
-- What the terminal shows while a `PermissionRequest` hook waits, and which answer wins.
-- That a terminal answer drops the waiting hook (the pill's ask ends at once) or sends
-  the same call's result (it ends with it).
+- That an answer in the terminal first drops the waiting hook (the pill's ask ends at
+  once) or sends the same call's result (it ends with it).
 - That `PermissionRequest` hooks run in Claude Desktop's sessions and race its card.
