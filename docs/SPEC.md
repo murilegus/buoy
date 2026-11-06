@@ -611,7 +611,12 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
   tab (2026-11-06, Ethan; kit `EmptyState`). It grows to the cap too when a list empties
   while open.
 - Now playing (one row) — MPRIS. Hidden when nothing plays.
-- Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu).
+- Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu). Every account in Settings → Online
+  Accounts (Google, Microsoft 365, Exchange, Nextcloud, WebDAV) syncs in by itself: GOA
+  registers its calendars with EDS and Shell's calendar server watches every selected
+  source (`calendar-sources.c`); a calendar unticked in GNOME Calendar stays out. Buoy
+  never talks to those services; prefs offers "Online Accounts" (Settings' `launch-panel`)
+  (2026-11-06, Ethan).
 - Weather — reuse `ui/weather.js` (same GWeather location as dateMenu).
 - Up next — today's events from the same calendar source.
 - Timer — current pomodoro/stopwatch or `--:--`.
