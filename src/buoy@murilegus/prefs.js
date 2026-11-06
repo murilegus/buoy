@@ -9,7 +9,7 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 import {
     planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
-    donationLinks, addFolder, shortPath, MAX_FOLDERS,
+    donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote,
 } from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
@@ -115,8 +115,12 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const page = new Adw.PreferencesPage({title: 'Island', icon_name: 'focus-top-bar-symbolic'});
 
         const idle = new Adw.PreferencesGroup({title: 'When Idle'});
-        for (const name of plan.idle)
-            idle.add(this._row(key(name)));
+        for (const name of plan.idle) {
+            const row = this._row(key(name));
+            if (name === 'idle-content')
+                this._followPlanSwitches(row, key(name).get_description(), plan.plans);
+            idle.add(row);
+        }
         page.add(idle);
 
         const plans = plan.plans.filter(p => p.keys.length || p.enableKey);
@@ -446,6 +450,20 @@ export default class BuoyPreferences extends ExtensionPreferences {
             page.add(group);
         }
         return page;
+    }
+
+    // Show names a plan whose module is off: the pill falls back to nothing, and the row
+    // says why under it ("Clock is off, so the pill shows nothing") until the plan is back (kit/settings.js
+    // idleOffNote, 2026-11-06).
+    _followPlanSwitches(row, description, plans) {
+        const sync = () => {
+            row.subtitle = idleOffNote(this._settings.get_string('idle-content'), plans,
+                k => this._settings.get_boolean(k)) ?? description;
+        };
+        const keys = ['idle-content', ...plans.map(p => p.enableKey).filter(Boolean)];
+        for (const k of keys)
+            this._ids.push(this._settings.connect(`changed::${k}`, sync));
+        sync();
     }
 
     // One idle plan: its own keys inside. A module that is only this plan (clock) has its

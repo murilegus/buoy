@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {MAX_FOLDERS as progressMaxFolders} from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
-import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS} from
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -128,6 +128,14 @@ eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
 
 // --- Island page (ARCHITECTURE rule 9, 2026-11-04) ------------------------------------------
 eq(plan.idle, ['idle-content'], 'When idle: idle-content');
+{
+    const plans = [{id: 'clock', enableKey: 'modules-clock'}, {id: 'free', enableKey: null}];
+    const on = v => k => ({'modules-clock': v})[k];
+    eq(idleOffNote('clock', plans, on(false)), 'Clock is off, so the pill shows nothing', 'Show = Clock with Clock off: the row says so');
+    eq(idleOffNote('clock', plans, on(true)), null, 'Clock on: its own description');
+    eq([idleOffNote('none', plans, on(false)), idleOffNote('free', plans, on(false))], [null, null],
+        'Nothing, or a plan with no module switch: nothing to say');
+}
 eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['none', 'clock']],
     'idle-content: none or a plan (auto comes with the smart stack)');
 eq(schema.get_key('idle-content').get_default_value().unpack(), 'clock', 'the clock until auto lands (Ethan)');

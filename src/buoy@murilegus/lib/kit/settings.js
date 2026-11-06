@@ -202,6 +202,23 @@ export const CHOICE_LABELS = {
 };
 
 /**
+ * What the Show row says under it when the plan it names cannot show: the plan's module
+ * is off, so the idle pill falls back to nothing (2026-11-06, Ethan: the row still said
+ * "Clock" with the Clock switch off right below).
+ *
+ * @param {string} shown  `idle-content`
+ * @param {Array<{id: string, enableKey: ?string}>} plans  planPrefs().plans
+ * @param {function(string): boolean} isOn  reads a `modules-<id>` key
+ * @returns {?string} "Clock is off, so the pill shows nothing", or null when the choice can show (or is none)
+ */
+export function idleOffNote(shown, plans, isOn) {
+    const p = plans.find(x => x.id === shown);
+    if (!p?.enableKey || isOn(p.enableKey))
+        return null;
+    return `${choiceLabel('idle-content', shown)} is off, so the pill shows nothing`;
+}
+
+/**
  * @param {string} name  the key
  * @param {string} value  one of its choices
  * @returns {string} the drop-down's label for it
