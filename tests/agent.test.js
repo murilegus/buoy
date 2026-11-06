@@ -1,8 +1,8 @@
 // Run: gjs -m tests/agent.test.js   (pure: Claude Code's events → the session's pill, the
 // permission reply, Buoy's entries in ~/.claude/settings.json; docs/CODING-AGENTS.md §11)
 import {
-    AGENTS, ALLOW, ALWAYS, DENY, DONE_STALE, END_AFTER_STOP, PARTY_AFTER, PRIORITY, STALE_MS, TIMEOUT,
-    agent, answered, askOf, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, END_AFTER_STOP, PARTY_AFTER, PRIORITY, STALE_MS, TIMEOUT,
+    agent, answered, askOf, desktopRoute, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, commandFor, hooksNote, install, installed, isOurs, uninstall,
@@ -259,6 +259,20 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     const a2 = reg.build('agent', 'claude', {...r2.rec, shared: false});
     eq([a1.id, a2.id, a1.app], [`agent:claude:${SID}`, 'agent:claude:other', 'claude'], 'two sessions, two pills');
     eq([a1.kind, a1.priority], ['agent', 35], 'kind agent');
+}
+
+// --- Claude Desktop's deep link to a session (§2) -------------------------------------
+{
+    const file = '{"sessionId":"local_b665708f-bcab-40f2","cliSessionId":"133367a0-1112","title":"x"}';
+    eq(desktopRoute('local_b665708f-bcab-40f2.json', file, '133367a0-1112'), 'claude://code/continue?session=local_b665708f-bcab-40f2',
+        'the session\'s file: its deep link');
+    eq(desktopRoute('local_a.json', '{"lastAssistantCliSessionId":"s-2"}', 's-2'), 'claude://code/continue?session=local_a',
+        'the latest CLI id counts too');
+    eq([desktopRoute('local_a.json', file, 'other'), desktopRoute('deleted_a.json', file, '133367a0-1112'),
+        desktopRoute('local_a.json', file, '"x'), desktopRoute('local_a.json', null, '133367a0-1112'),
+        desktopRoute('local_a b.json', file, '133367a0-1112')], [null, null, null, null, null],
+    'another session, a deleted file, an odd id or name, no text: none');
+    eq(DESKTOP_APP, 'com.anthropic.Claude.desktop', 'Desktop\'s app id');
 }
 
 // --- the permission prompt (§4) ------------------------------------------------------------

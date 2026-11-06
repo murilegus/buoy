@@ -97,7 +97,14 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   give way to "Running a command", "Editing a file"… while the screen is shared (§7).
 - **Expanded**: only for a permission prompt (§4).
 - **Click** on a session's pill (Ethan, 2026-11-07): its terminal — or Claude Desktop —
-  comes to the front (the app found in §6, `Shell.App.activate`) and nothing opens. No
+  comes to the front (the app found in §6, `Shell.App.activate`) and nothing opens.
+  Claude Desktop shows one session at a time, so for its sessions the click opens that
+  very session: `claude://code/continue?session=local_<uuid>`, the id read from the
+  Desktop file whose `cliSessionId` is the hook's `session_id`
+  (`~/.config/Claude/claude-code-sessions/<id>/<id>/local_<uuid>.json`, searched as text
+  on the click only, newest first). Both the files and the route are Desktop's own,
+  undocumented (seen in Desktop 4.23118, 2026-11-07): no match, and Desktop comes up as
+  for a terminal. No
   window known (a remote shell, an unknown launcher), or that window already in front (a
   click from Claude Desktop on its own session; Ethan, 2026-11-07): the Claude Code tab
   opens. The kit's

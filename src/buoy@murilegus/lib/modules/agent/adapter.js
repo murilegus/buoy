@@ -395,6 +395,30 @@ export function labelOf(rec) {
     return rec?.project ? `${who} · ${rec.project}` : who;
 }
 
+/** Claude Desktop's app id (its .desktop file), whose sessions open by deep link (§2). */
+export const DESKTOP_APP = 'com.anthropic.Claude.desktop';
+
+/**
+ * The deep link that opens a session in Claude Desktop (§2, 2026-11-07): Desktop keeps
+ * each of its sessions in `~/.config/Claude/claude-code-sessions/<id>/<id>/local_<uuid>.json`
+ * with the CLI's `cliSessionId` (the hook's `session_id`), and its handler opens
+ * `claude://code/continue?session=local_<uuid>` (seen in Desktop 4.23118, both
+ * undocumented: no match → null, and the caller brings Desktop up as before).
+ *
+ * @param {string} fileName  `local_<uuid>.json`
+ * @param {string} text  the file's contents (searched, not parsed)
+ * @param {string} sessionId  the hook's session_id
+ * @returns {?string} the URI, or null when this file is not that session
+ */
+export function desktopRoute(fileName, text, sessionId) {
+    const local = /^(local_[A-Za-z0-9-]{1,64})\.json$/.exec(String(fileName ?? ''))?.[1];
+    const id = str(sessionId);
+    if (!local || !id || !/^[\w-]{1,80}$/.test(id) || typeof text !== 'string')
+        return null;
+    const ours = text.includes(`"cliSessionId":"${id}"`) || text.includes(`"lastAssistantCliSessionId":"${id}"`);
+    return ours ? `claude://code/continue?session=${local}` : null;
+}
+
 /**
  * @param {object} rec
  * @returns {string} the compact's title: the session's name, else "New session" for a

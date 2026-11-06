@@ -5,7 +5,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Source} from '../../kit/source.js';
-import {AGENTS, TIMEOUT, answered, askOf, parseEvent, reply, settles, step} from './adapter.js';
+import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, parseEvent, reply, settles, step} from './adapter.js';
 
 const KIND = 'agent';
 const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
@@ -256,7 +256,21 @@ export class AgentSource extends Source {
     // see, Ethan 2026-11-07) — and the caller opens the Claude Code tab instead (§2)
     _raise(key) {
         const app = this._apps?.get(key);
-        if (!app || Shell.WindowTracker.get_default().focus_app === app)
+        if (!app)
+            return false;
+        // Claude Desktop shows one session at a time: open this one (Ethan, 2026-11-07)
+        if (app.get_id() === DESKTOP_APP) {
+            const uri = desktopSessionUri(this._sessions?.get(key)?.id);
+            if (uri) {
+                try {
+                    Gio.AppInfo.launch_default_for_uri(uri, global.create_app_launch_context(0, -1));
+                    return true;
+                } catch (e) {
+                    console.debug(`Buoy: agent: ${uri}: ${e.message}`);
+                }
+            }
+        }
+        if (Shell.WindowTracker.get_default().focus_app === app)
             return false;
         app.activate();
         return true;
@@ -296,6 +310,50 @@ export class AgentSource extends Source {
         this._sharing.forEach(i => i.connectObject('notify::visible', sync, this));
         this._shared = this._sharing.some(i => i.visible);
     }
+}
+
+const DESKTOP_SESSIONS = ['Claude', 'claude-code-sessions'];
+const MAX_DESKTOP_FILES = 200;
+
+/**
+ * Claude Desktop's deep link to a session (adapter.js desktopRoute), read on a click only:
+ * its session files, two folders down, the newest first. Null when none is that session.
+ *
+ * @param {?string} sessionId  the hook's session_id
+ * @returns {?string}
+ */
+function desktopSessionUri(sessionId) {
+    if (!sessionId)
+        return null;
+    const root = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_user_config_dir(), ...DESKTOP_SESSIONS]));
+    const files = [];
+    const list = (dir, depth) => {
+        let e;
+        try {
+            e = dir.enumerate_children('standard::name,standard::type,time::modified', Gio.FileQueryInfoFlags.NONE, null);
+        } catch {
+            return;
+        }
+        for (let info = e.next_file(null); info && files.length < MAX_DESKTOP_FILES; info = e.next_file(null)) {
+            const child = dir.get_child(info.get_name());
+            if (info.get_file_type() === Gio.FileType.DIRECTORY && depth < 2)
+                list(child, depth + 1);
+            else if (depth === 2 && /^local_.*\.json$/.test(info.get_name()))
+                files.push({file: child, name: info.get_name(), at: info.get_modification_date_time()?.to_unix() ?? 0});
+        }
+        e.close(null);
+    };
+    list(root, 0);
+    files.sort((a, b) => b.at - a.at);
+    for (const f of files) {
+        try {
+            const [, bytes] = f.file.load_contents(null);
+            const uri = desktopRoute(f.name, new TextDecoder().decode(bytes), sessionId);
+            if (uri)
+                return uri;
+        } catch {}
+    }
+    return null;
 }
 
 /**
