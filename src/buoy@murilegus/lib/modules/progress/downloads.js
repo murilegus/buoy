@@ -189,8 +189,17 @@ export class DownloadSource extends Source {
         const name = final.get_basename();
         const [type] = Gio.content_type_guess(name, null);
         const icon = Gio.content_type_get_symbolic_icon(type);
-        const open = () => openFile(final);
-        const show = () => showInFiles(final);
+        // opened or shown from its row — the row itself or its buttons — the download is
+        // seen: the row leaves, as a clicked notification does (2026-11-06, Ethan). The
+        // pill's click opens the Transfers tab (tabs.js pressTarget), not the file.
+        const open = () => {
+            downloadHistory.remove(path);
+            openFile(final);
+        };
+        const show = () => {
+            downloadHistory.remove(path);
+            showInFiles(final);
+        };
         downloadHistory.add({
             key: path, path, name, icon, at: Date.now(), open, show,
             folder: folderName(entry.folder), app: entry.app?.get_name() ?? null,

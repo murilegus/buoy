@@ -22,8 +22,11 @@ const STRIP_H = 60; // first guess for the strip + panel padding; measured once 
  *   kind tab    the module's tab.js, or the expanded views of its activities
  *   standalone  a module's tab.js, built on first selection (slot / ⋯ / pinned)
  *
- * A tab.js export is a class: `new Tab()` → {actor, destroy(), update?(activities)}; a
- * kind tab's `update` gets its kind's visible activities, at once and on every change.
+ * A tab.js export is a class: `new Tab({close})` → {actor, destroy(), update?(activities)};
+ * a kind tab's `update` gets its kind's visible activities, at once and on every change.
+ * `close()` closes the island: a tab calls it after an action that brings a window up
+ * (open a file, focus an app), as a notification goes once it is clicked (2026-11-06,
+ * Ethan). A Home row that runs its activity's onPress closes it the same way.
  */
 export class Home {
     /**
@@ -35,13 +38,14 @@ export class Home {
      * @param {{slot: string, pinned: string[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`
      * @param {function(string):void} [opts.onSlot]  a standalone tab was chosen from ⋯
      * @param {function():void} [opts.onPrefs]  ⚙ was clicked
+     * @param {function():void} [opts.onClose]  close the island (a tab's action is done)
      * @param {object[]} [opts.missed]  stack.missed, newest first: Home's Missed section
      * @param {function():void} [opts.onMissedSeen]  Home was shown with that section
      * @param {function(object):void} [opts.onMissedOpen]  one of its rows was opened
      * @param {function():void} [opts.onMissedClear]  its × was clicked
      */
     constructor({
-        modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null,
+        modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null, onClose = null,
         missed = [], onMissedSeen = null, onMissedOpen = null, onMissedClear = null,
     }) {
         this._modules = modules;
@@ -53,6 +57,7 @@ export class Home {
         this._settings = settings;
         this._onSlot = onSlot;
         this._onPrefs = onPrefs;
+        this._onClose = onClose;
         this._tabs = new Map();      // module id → tab.js instance, built on first selection
         this._strip = null;
         this._current = null;
@@ -325,7 +330,7 @@ export class Home {
     _moduleTab(id) {
         let tab = this._tabs.get(id);
         if (!tab) {
-            tab = new (this._module(id).tab)();
+            tab = new (this._module(id).tab)({close: () => this._onClose?.()});
             this._tabs.set(id, tab);
             const t = findTab(this._strip, id);
             if (t?.type === 'kind')
@@ -358,10 +363,12 @@ export class Home {
             });
             content.x_expand = true; // St.Button centres a child at its natural width
             row.connect('clicked', () => {
-                if (tabId)
+                if (tabId) {
                     this.select(tabId);
-                else
-                    a.onPress?.();
+                } else if (a.onPress) {
+                    a.onPress();
+                    this._onClose?.();
+                }
             });
             box.add_child(row);
         }

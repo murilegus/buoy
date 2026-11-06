@@ -53,10 +53,11 @@ src/buoy@murilegus/
             │               keys, 2026-11-05)
             ├── adapter.js  default presentation for this module's kinds
             ├── tab.js      content for its tab in expanded (optional): export a class,
-            │               `new Tab()` → {actor, destroy(), update?(activities)}; a kind
+            │               `new Tab({close})` → {actor, destroy(), update?(activities)}; a kind
             │               tab's `update` gets its kind's activities at once and on each
             │               change (2026-11-05); built on first selection, destroyed when
-            │               expanded closes
+            │               expanded closes; `close()` closes the island after an action
+            │               that brings a window up (2026-11-06)
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
             │               pure: `keys` (its idle-<id>-… keys), `present(ctx, opts)` →
             │               presentation data, `seconds(opts)` (tick each second),

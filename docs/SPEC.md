@@ -802,6 +802,12 @@ the % and the file rows show size only.
   folder). St has no tooltips: hovered or focused, a button's name replaces the row's
   detail line (2026-11-06). Deleted or moved out before the end (cancelled): it ends,
   no row.
+  Acting on a row (2026-11-06, Ethan, "as a clicked notification"): opening the file,
+  showing it in Files or focusing the app closes the island, and a Done or Downloaded row
+  acted on leaves its list. Done and Downloaded each have **Clear** in their header, as
+  Home's Missed does; it empties the list, never the files. The same close applies to
+  every tab action that brings a window up (kit: `new Tab({close})`; Media's "Open
+  <app>"; a Home row running its activity's onPress).
   Where files are caught:
   1. the user's Downloads folder, `GLib.get_user_special_dir(DIRECTORY_DOWNLOAD)` (not a
      hard-coded `~/Downloads`), always;

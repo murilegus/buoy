@@ -21,7 +21,9 @@ import {livePosition, mediaTimes} from '../../kit/presentation.js';
 const ART = 72;
 
 export class MediaTab {
-    constructor() {
+    /** @param {{close?: function():void}} [kit]  close(): the island, after "Open <app>" */
+    constructor({close = null} = {}) {
+        this._close = close;
         this.actor = new St.BoxLayout({
             style_class: 'buoy-media-tab', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
         });
@@ -105,7 +107,10 @@ export class MediaTab {
                 style_class: 'buoy-media-chip', label: `Open ${at.app}`, can_focus: true,
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            open.connect('clicked', () => a.onAction?.('raise'));
+            open.connect('clicked', () => {
+                a.onAction?.('raise');
+                this._close?.();
+            });
             row.add_child(open);
         }
         return row;

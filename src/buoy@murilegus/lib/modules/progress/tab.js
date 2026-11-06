@@ -19,15 +19,20 @@ import {doneHistory, downloadHistory} from './history.js';
  *   Downloaded  each finished download: its file type icon, name, folder · app · time; a
  *               click opens it, and two icon-only buttons Open / Show in Files
  *
- * An app row brings its app forward (the activity's onPress). It reads the kit's
- * activities (`update`, kit/home.js) and the module's stores. A Downloaded file deleted
- * since leaves its row when the tab is drawn.
+ * A row's action brings a window up — the app, the file, its folder — and closes the
+ * island, as a clicked notification goes; a Done or Downloaded row acted on leaves the
+ * list (2026-11-06, Ethan). It reads the kit's activities (`update`, kit/home.js) and the
+ * module's stores. A Downloaded file deleted since leaves its row when the tab is drawn.
+ * Done and Downloaded each have Clear in their header, as Home's Missed does: it empties
+ * that list (the files stay where they are).
  */
 const ICON = 24;
 const ACTION_ICON = 16;
 
 export class TransfersTab {
-    constructor() {
+    /** @param {{close?: function():void}} [kit]  close(): the island, after an action */
+    constructor({close = null} = {}) {
+        this._close = close;
         this.actor = new St.BoxLayout({
             style_class: 'buoy-transfers-tab', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
         });
@@ -61,28 +66,47 @@ export class TransfersTab {
                 this.actor.add_child(this._row({
                     icon: a.compact?.leading?.icon ?? null, name: a.attributes?.app ?? a.text,
                     detail: background ? 'In the background' : a.attributes?.count ?? null,
-                    progress: background ? null : a.leading?.progress ?? null, onPress: a.onPress,
+                    progress: background ? null : a.leading?.progress ?? null,
+                    onPress: a.onPress ? () => this._acted(a.onPress) : null,
                 }));
             }
         }
         if (done.length) {
-            this.actor.add_child(header('Done'));
-            for (const d of done)
-                this.actor.add_child(this._row({icon: d.icon, name: d.name, detail: clockTime(d.at), onPress: d.focus}));
+            this.actor.add_child(header('Done', 'Clear done', () => this._clear(doneHistory)));
+            for (const d of done) {
+                this.actor.add_child(this._row({
+                    icon: d.icon, name: d.name, detail: clockTime(d.at),
+                    onPress: d.focus ? () => this._acted(d.focus, () => doneHistory.remove(d.appId)) : null,
+                }));
+            }
         }
         if (downloaded.length) {
-            this.actor.add_child(header('Downloaded'));
+            this.actor.add_child(header('Downloaded', 'Clear downloaded', () => this._clear(downloadHistory)));
             for (const d of downloaded) {
+                // d.open / d.show take the row out of downloadHistory themselves
                 this.actor.add_child(this._row({
                     icon: d.icon, name: d.name, detail: downloadedDetail(d.folder, d.app, clockTime(d.at)),
-                    onPress: d.open,
+                    onPress: () => this._acted(d.open),
                     actions: [
-                        {label: 'Open', icon: 'document-open-symbolic', run: d.open},
-                        {label: 'Show in Files', icon: 'folder-open-symbolic', run: d.show},
+                        {label: 'Open', icon: 'document-open-symbolic', run: () => this._acted(d.open)},
+                        {label: 'Show in Files', icon: 'folder-open-symbolic', run: () => this._acted(d.show)},
                     ],
                 }));
             }
         }
+    }
+
+    _clear(store) {
+        store.clear();
+        this._render();
+    }
+
+    // Run a row's action, drop what it consumed, and close the island; the tab is
+    // destroyed with it, so nothing is redrawn here.
+    _acted(action, consume = null) {
+        consume?.();
+        action?.();
+        this._close?.();
     }
 
     // icon · name over detail · % — under them a bar while a fraction is known; icon-only
@@ -141,8 +165,23 @@ export class TransfersTab {
     }
 }
 
-function header(text) {
-    return new St.Label({text, style_class: 'buoy-transfers-header'});
+// A group's title; with onClear, Clear at its end — the look of Home's Missed (home.js)
+function header(text, clearName = null, onClear = null) {
+    if (!onClear)
+        return new St.Label({text, style_class: 'buoy-transfers-header'});
+    const box = new St.BoxLayout({style_class: 'buoy-transfers-header', x_expand: true});
+    box.add_child(new St.Label({text, y_align: Clutter.ActorAlign.CENTER}));
+    box.add_child(new St.Widget({x_expand: true}));
+    const face = new St.BoxLayout({style_class: 'buoy-home-clear-box'});
+    face.add_child(new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}));
+    face.add_child(new St.Label({text: 'Clear', y_align: Clutter.ActorAlign.CENTER}));
+    const clear = new St.Button({
+        style_class: 'buoy-home-clear', can_focus: true, accessible_name: clearName, child: face,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    clear.connect('clicked', () => onClear());
+    box.add_child(clear);
+    return box;
 }
 
 function label(text, styleClass) {
