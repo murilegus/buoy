@@ -7,6 +7,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Source} from '../../kit/source.js';
 import {slugOf} from '../../kit/registry.js';
 import {appIdOf, appSignal, applyUpdate, transition} from './adapter.js';
+import {DownloadSource} from './downloads.js';
 import {doneHistory} from './history.js';
 
 const IFACE = 'com.canonical.Unity.LauncherEntry';
@@ -113,6 +114,7 @@ export class LauncherEntrySource extends Source {
         const background = !!entry?.background && (what === null || what === 'update');
         this._apps.set(appId, {...entry, state, sender, background});
         this._act(appId, what);
+        this.onFraction?.(slugOf(appId), state.progressVisible ? state.progress : null);
     }
 
     // The sender left the bus (the app quit or crashed): its progress stops.
@@ -122,6 +124,7 @@ export class LauncherEntrySource extends Source {
                 continue;
             this._act(appId, transition(entry.state, null));
             this._apps.delete(appId);
+            this.onFraction?.(slugOf(appId), null);
         }
     }
 
@@ -179,6 +182,28 @@ export class LauncherEntrySource extends Source {
             this._end(entry);
         this._apps = null;
         doneHistory.clear();
+        super.disable();
+    }
+}
+
+/**
+ * The module's source: apps' LauncherEntry and browsers' download files, each its own
+ * Source; a browser's LauncherEntry fraction goes to its one download (SPEC §6c).
+ */
+export class ProgressSource extends Source {
+    enable(stack, registry = null, settings = null) {
+        super.enable(stack, registry, settings);
+        this._downloads = new DownloadSource();
+        this._launcher = new LauncherEntrySource();
+        this._downloads.enable(stack, registry, settings);
+        this._launcher.onFraction = (slug, fraction) => this._downloads.setFraction(slug, fraction);
+        this._launcher.enable(stack, registry, settings);
+    }
+
+    disable() {
+        this._launcher?.disable();
+        this._downloads?.disable();
+        this._launcher = this._downloads = null;
         super.disable();
     }
 }

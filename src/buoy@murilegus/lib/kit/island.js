@@ -440,6 +440,8 @@ export class Island {
                     this._close();
                     this.tabs.onPrefs?.();
                 },
+                // a tab's action brought a window up (or a Home row ran its onPress)
+                onClose: () => this._close(),
                 missed: this.missed.list(),
                 onMissedSeen: () => this.missed.seen?.(),
                 onMissedOpen: m => this.missed.open?.(m.id, m.at),

@@ -1,8 +1,12 @@
 // Run: gjs -m tests/progress.test.js   (no Shell needed; adapters are pure)
 import adapter, {
     DONE_TTL, DONE_AT, BACKGROUND_STALE, appIdOf, applyUpdate, transition, countText, percent, appSignal,
+    DOWNLOADED_TTL, DOWNLOAD_STALE, MAX_FOLDERS, partialOf, ownerOf, renameOf, nextRate, sizeText, speedText,
+    ringFor, downloadedDetail, watchedFolders,
 } from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
-import {DoneHistory, KEEP_MS, MAX_DONE} from '../src/buoy@murilegus/lib/modules/progress/history.js';
+import {
+    DoneHistory, KEEP_MS, MAX_DONE, KEEP_DOWNLOADS_MS, MAX_DOWNLOADS, downloadHistory,
+} from '../src/buoy@murilegus/lib/modules/progress/history.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {validate} from '../src/buoy@murilegus/lib/kit/activity.js';
 
@@ -130,5 +134,131 @@ eq([appSignal(null, 'progress'), appSignal('org.gnome.Nautilus.desktop', null)],
     h.clear();
     eq(h.list(5000), [], 'cleared with the module');
 }
+
+{
+    const h = new DoneHistory({keep: 1000, max: 2});
+    h.add({key: '/d/a.pdf', name: 'a.pdf', at: 0});
+    h.add({key: '/d/b.pdf', name: 'b.pdf', at: 10});
+    h.add({key: '/d/a.pdf', name: 'a.pdf', at: 20});
+    eq(h.list(20).map(r => r.name), ['a.pdf', 'b.pdf'], 'keyed rows: the same file again moves up, once');
+    h.add({key: '/d/c.pdf', name: 'c.pdf', at: 30});
+    eq(h.list(30).map(r => r.name), ['c.pdf', 'a.pdf'], 'its own max');
+    eq(h.list(1020).map(r => r.name), ['c.pdf'], 'its own keep');
+    h.remove('/d/c.pdf');
+    eq(h.list(1020), [], 'remove by key (the file is gone)');
+    const apps = new DoneHistory();
+    apps.add({appId: 'x.desktop', at: 0});
+    apps.add({key: 'x.desktop', at: 1});
+    eq(apps.list(1).length, 1, 'no key: the app id is the key');
+    eq([KEEP_DOWNLOADS_MS, MAX_DOWNLOADS], [60 * 60 * 1000, 5], 'Downloaded rows: an hour, at most 5');
+    eq(downloadHistory.list(0), [], 'a separate store for downloads');
+}
+
+// --- downloads: partial files (SPEC §6c) ---------------------------------------------------
+eq(partialOf('report.pdf.crdownload'), {final: 'report.pdf', suffix: '.crdownload', unnamed: false}, 'Chrome\'s partial file');
+eq(partialOf('Unconfirmed 123456.crdownload'), {final: 'Unconfirmed 123456', suffix: '.crdownload', unnamed: true},
+    'Chrome before it names the file');
+eq([partialOf('Chưa xác nhận 7.crdownload').unnamed, partialOf('Non confermato 42.crdownload').unnamed], [true, true],
+    'the placeholder in other languages');
+eq([partialOf('Invoice 12345.pdf.crdownload').unnamed, partialOf('Unconfirmed 1234567.crdownload').unnamed,
+    partialOf('Week 12.part').unnamed, partialOf('report.crdownload').unnamed], [false, false, false, false],
+'a real name: with an extension, a longer number, Firefox, no number');
+eq(partialOf('video.mp4.part'), {final: 'video.mp4', suffix: '.part', unnamed: false}, 'Firefox\'s partial file');
+eq([partialOf('report.pdf'), partialOf('.crdownload'), partialOf('.part'), partialOf('.com.google.Chrome.ab12'),
+    partialOf('.x.part'), partialOf(''), partialOf(null), partialOf('part'), partialOf('a.partial')],
+[null, null, null, null, null, null, null, null, null],
+'not a partial: finished files, a bare suffix, hidden temporaries, nothing');
+eq(ownerOf('.crdownload', ['nautilus', 'chrome']), 'chrome', 'the running Chromium-family browser');
+eq(ownerOf('.crdownload', ['brave-browser', 'chrome']), 'brave-browser', 'the first running one, in Shell\'s order');
+eq(ownerOf('.part', ['chrome', 'firefox']), 'firefox', '.part: Firefox');
+eq([ownerOf('.part', ['chrome']), ownerOf('.crdownload', []), ownerOf('.zip', ['chrome'])], [null, null, null],
+    'no such browser running: no app (never a guess)');
+eq(renameOf('a.pdf.crdownload', 'a.pdf'), 'done', 'renamed to its final name: done');
+eq(renameOf('a.pdf.part', 'a.pdf'), 'done', 'Firefox: over its placeholder');
+eq(renameOf('a.pdf.crdownload', 'other.pdf'), 'done', 'to any finished name: done');
+eq(renameOf('Unconfirmed 1.crdownload', 'a.pdf.crdownload'), 'renamed', 'partial to partial: the same download');
+eq(renameOf('a.pdf.crdownload', null), 'gone', 'moved out of the folder');
+eq([renameOf('a.pdf', 'b.pdf'), renameOf('a.pdf', 'a.pdf.part')], [null, null], 'not a download');
+eq(MAX_FOLDERS, 10, 'at most 10 more folders (one inotify watch each)');
+eq(watchedFolders('/home/u/Downloads', ['/data/dl/', '/home/u/Downloads', 'rel/dir', '', null, '/data/dl', '/']),
+    ['/home/u/Downloads', '/data/dl', '/'], 'Downloads first, each once, absolute only, no trailing slash');
+eq(watchedFolders(null, ['/a']), ['/a'], 'no Downloads folder set: the others');
+eq(watchedFolders('/d', 'nope'), ['/d'], 'a broken setting: Downloads alone');
+eq(watchedFolders('/d', Array.from({length: 14}, (_, i) => `/f${i}`)).length, 1 + MAX_FOLDERS,
+    'Downloads plus at most 10');
+
+// --- size and speed ------------------------------------------------------------------------
+eq([sizeText(0), sizeText(1), sizeText(999), sizeText(1000), sizeText(12_345_678), sizeText(1_400_000_000),
+    sizeText(999_960), sizeText(-5), sizeText(NaN)],
+['0 bytes', '1 byte', '999 bytes', '1.0 kB', '12.3 MB', '1.4 GB', '1.0 MB', '0 bytes', '0 bytes'],
+'sizes as GLib.format_size writes them');
+{
+    const a = nextRate(null, 1000, 0);
+    eq(a, {size: 1000, at: 0, speed: null}, 'first sample: no speed yet');
+    const b = nextRate(a, 3000, 1e6);
+    eq(b.speed, 2000, 'bytes per second between two samples');
+    const c = nextRate(b, 3000, 2e6);
+    eq(c.speed, 1000, 'smoothed: half the last, half the new (0 now)');
+    eq(nextRate(c, 500, 3e6), {size: 500, at: 3e6, speed: null}, 'shrank (restarted): start again');
+    eq(nextRate(b, 4000, 1e6), {size: 4000, at: 1e6, speed: 2000}, 'same instant: size taken, speed kept');
+}
+eq([speedText(2_100_000), speedText(0), speedText(null)], ['2.1 MB/s', null, null], 'speed only while bytes come');
+
+// --- the ring only when one LauncherEntry covers exactly one file ---------------------------
+eq(ringFor([{owner: 'chrome'}], 'chrome', 0.4), 0.4, 'one Chrome download: its fraction');
+eq(ringFor([{owner: 'chrome'}, {owner: 'chrome'}], 'chrome', 0.4), null, 'two: cannot be split');
+eq(ringFor([{owner: 'chrome'}, {owner: 'firefox'}], 'chrome', 0.4), 0.4, 'another browser\'s file does not count');
+eq([ringFor([{owner: 'chrome'}], 'chrome', null), ringFor([{owner: null}], null, 0.4),
+    ringFor([{owner: 'firefox'}], 'chrome', 0.4)], [null, null, null], 'no fraction, no owner, not its file: none');
+
+// --- the download pills ---------------------------------------------------------------------
+{
+    const focused = [], opened = [];
+    const ev = {
+        id: '/home/u/Downloads/report.pdf.crdownload', file: true, name: 'report.pdf', folder: 'Downloads',
+        app: 'Google Chrome', size: 12_345_678, speed: 2_100_000, fraction: null, phase: 'running',
+        focus: () => focused.push(1), open: () => opened.push(1),
+    };
+    const r = adapter.progress(ev, null);
+    eq([r.leading, r.text, r.trailing], [{icon: 'folder-download-symbolic'}, 'report.pdf', {text: '12.3 MB'}],
+        'running: a static download icon, the name, the size — no ring, no %');
+    eq(r.compact, {leading: {icon: 'folder-download-symbolic'}, text: 'report.pdf', subtitle: '12.3 MB · 2.1 MB/s'},
+        'compact: size and speed, no bar');
+    eq([r.ttl, r.staleAfter], [0, DOWNLOAD_STALE], 'until it ends; dimmed when bytes stop');
+    eq(r.attributes, {app: 'report.pdf', count: '12.3 MB · 2.1 MB/s', phase: 'running', file: true}, 'the tab row');
+    r.onPress();
+    eq(focused.length, 1, 'click: the browser');
+    eq(adapter.progress({...ev, speed: null}, null).compact.subtitle, '12.3 MB', 'no speed yet: the size alone');
+    const unnamed = adapter.progress({...ev, name: null}, null);
+    eq([unnamed.text, unnamed.compact.text, unnamed.attributes.app], ['Google Chrome', 'Google Chrome', 'Google Chrome'],
+        'not named yet: the browser\'s name');
+    eq(adapter.progress({...ev, name: null, app: null}, null).text, 'Download', 'neither: "Download"');
+    eq(adapter.progress({...ev, focus: null}, null).onPress, null, 'no browser known: Home');
+    const ring = adapter.progress({...ev, fraction: 0.4}, null);
+    eq([ring.leading, ring.trailing, ring.compact.progress, ring.compact.subtitle],
+        [{progress: 0.4}, {text: '40%'}, 0.4, '12.3 MB · 2.1 MB/s · 40%'], 'one LauncherEntry covers it: the ring');
+    const m = planMinimal(validate({id: 'progress:chrome:x', kind: 'progress', ...r}));
+    eq([m.leading.type, m.text, m.trailing.text], ['icon', 'report.pdf', '12.3 MB'], 'planned');
+    eq(planCompact(validate({id: 'progress:chrome:x', kind: 'progress', ...r})).progress, null, 'no bar planned');
+    const d = adapter.progress({...ev, phase: 'done', icon: 'application-pdf-symbolic'}, null);
+    eq([d.leading, d.text, d.trailing, d.ttl], [{icon: 'application-pdf-symbolic'}, 'report.pdf',
+        {text: '→ Downloads'}, DOWNLOADED_TTL], 'done: the file type icon, name → folder, briefly');
+    eq(d.compact.subtitle, 'Downloaded to Downloads', 'compact says where');
+    d.onPress();
+    eq(opened.length, 1, 'click: open the file');
+    eq(d.attributes.phase, 'done', 'not a Running row');
+    const bare = adapter.progress({...ev, phase: 'done', folder: null, icon: null, open: null}, null);
+    eq([bare.leading, bare.trailing, bare.compact.subtitle, bare.onPress],
+        [{icon: 'text-x-generic-symbolic'}, null, 'Downloaded', null], 'nothing known: a generic icon, no folder');
+    const keys = ['leading', 'text', 'trailing', 'compact', 'ttl', 'staleAfter', 'onPress'];
+    for (const x of [r, ring, d])
+        eq(keys.filter(k => !(k in x)), [], 'every field set: a download updated in place');
+    const long = 'A Very Long File Name That A Browser Might Save From A Content Disposition Header.tar.gz';
+    eq(adapter.progress({...ev, name: long}, null).text, long, 'long file name kept whole');
+    if (/"(width|height|w|h|px|size)":/.test(JSON.stringify([r, d])))
+        throw new Error('downloads: no measurements in the adapter');
+}
+eq(downloadedDetail('Downloads', 'Google Chrome', '14:05'), 'Downloads · Google Chrome · 14:05', 'folder · app · time');
+eq(downloadedDetail('Downloads', null, '14:05'), 'Downloads · 14:05', 'no app known: left out');
 
 print('progress: ok');

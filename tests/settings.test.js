@@ -2,7 +2,8 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel} from
+import {MAX_FOLDERS as progressMaxFolders} from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -280,6 +281,22 @@ eq(setPinned(['clipboard', 'calendar'], 'clipboard', false), ['calendar'], 'unpi
 eq(setPinned(['calendar'], 'clipboard', false), ['calendar'], 'unpin what is not pinned');
 eq(addApp(['spotify'], 'firefox'), ['spotify', 'firefox'], 'add an app');
 eq(addApp(['spotify'], 'spotify'), ['spotify'], 'add twice: once');
+
+// --- progress-folders: the folder chooser's pick, added once ------------------------------
+eq(addFolder([], '/data/dl/', '/home/u/Downloads'), ['/data/dl'], 'a folder, without its trailing slash');
+{
+    const list = ['/a'];
+    eq(addFolder(list, '/a'), list, 'twice: once (the same list back)');
+    eq(addFolder(list, '/home/u/Downloads', '/home/u/Downloads'), list, 'Downloads is always watched: not listed');
+    eq([addFolder(list, null), addFolder(list, 'rel'), addFolder(list, '')], [list, list, list],
+        'no local path (a remote location in the chooser): unchanged');
+    const full = Array.from({length: MAX_FOLDERS}, (_, i) => `/f${i}`);
+    eq(addFolder(full, '/new'), full, `full at ${MAX_FOLDERS}: unchanged`);
+}
+eq(MAX_FOLDERS, progressMaxFolders, 'prefs and the watch agree on the cap');
+eq([shortPath('/home/u/Downloads', '/home/u'), shortPath('/home/u', '/home/u'), shortPath('/home/uu/x', '/home/u'),
+    shortPath('/data/dl', '/home/u'), shortPath('/x', '/')], ['~/Downloads', '~', '/home/uu/x', '/data/dl', '/x'],
+'home as ~, only for the home folder itself and inside it');
 eq(addApp(['spotify'], ''), ['spotify'], 'an empty slug adds nothing');
 
 

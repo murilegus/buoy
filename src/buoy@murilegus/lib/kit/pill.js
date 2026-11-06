@@ -612,8 +612,14 @@ export class Pill {
     }
 
     _stopCompact() {
-        if (this._dropCompact() && !this.expanded)
-            this._swapResting();
+        if (!this._dropCompact() || this.expanded)
+            return;
+        this._swapResting();
+        // _applyContentSize morphs an activity's pill back; the idle pill (its compact is
+        // the amber Missed list) is left to the island at rest, which does not move it:
+        // without this its bg stayed at the compact's size around the clock (2026-11-06)
+        if (!this.activity)
+            this._morph(this.currentShape(), 200);
     }
 
     // Compact in or out: a content of another size. Measure and place it now, before

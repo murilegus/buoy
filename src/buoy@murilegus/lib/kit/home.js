@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {buildExpanded, buildMinimal} from './present.js';
+import {EmptyState, FILL, buildExpanded, buildMinimal} from './present.js';
 import {clockTime} from './presentation.js';
 import {planStrip, stripOrder, tabActivities, findTab, HOME} from './tabs.js';
 import {step} from './keys.js';
@@ -22,8 +22,11 @@ const STRIP_H = 60; // first guess for the strip + panel padding; measured once 
  *   kind tab    the module's tab.js, or the expanded views of its activities
  *   standalone  a module's tab.js, built on first selection (slot / ⋯ / pinned)
  *
- * A tab.js export is a class: `new Tab()` → {actor, destroy(), update?(activities)}; a
- * kind tab's `update` gets its kind's visible activities, at once and on every change.
+ * A tab.js export is a class: `new Tab({close})` → {actor, destroy(), update?(activities)};
+ * a kind tab's `update` gets its kind's visible activities, at once and on every change.
+ * `close()` closes the island: a tab calls it after an action that brings a window up
+ * (open a file, focus an app), as a notification goes once it is clicked (2026-11-06,
+ * Ethan). A Home row that runs its activity's onPress closes it the same way.
  */
 export class Home {
     /**
@@ -35,13 +38,14 @@ export class Home {
      * @param {{slot: string, pinned: string[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`
      * @param {function(string):void} [opts.onSlot]  a standalone tab was chosen from ⋯
      * @param {function():void} [opts.onPrefs]  ⚙ was clicked
+     * @param {function():void} [opts.onClose]  close the island (a tab's action is done)
      * @param {object[]} [opts.missed]  stack.missed, newest first: Home's Missed section
      * @param {function():void} [opts.onMissedSeen]  Home was shown with that section
      * @param {function(object):void} [opts.onMissedOpen]  one of its rows was opened
      * @param {function():void} [opts.onMissedClear]  its × was clicked
      */
     constructor({
-        modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null,
+        modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null, onClose = null,
         missed = [], onMissedSeen = null, onMissedOpen = null, onMissedClear = null,
     }) {
         this._modules = modules;
@@ -53,6 +57,7 @@ export class Home {
         this._settings = settings;
         this._onSlot = onSlot;
         this._onPrefs = onPrefs;
+        this._onClose = onClose;
         this._tabs = new Map();      // module id → tab.js instance, built on first selection
         this._strip = null;
         this._current = null;
@@ -80,6 +85,7 @@ export class Home {
         this._body.set_style(`max-height: ${Math.max(0, maxHeight - STRIP_H)}px;`);
         // the scrolled child must be St.Scrollable; tab bodies of any kind go inside it
         this._view = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        this._view[FILL] = Math.max(0, maxHeight - STRIP_H);   // an empty tab fills it (EmptyState)
         this._body.set_child(this._view);
         // the strip on the left, ⚙ (prefs, SPEC §3) on the right of the same row
         this._header = new St.BoxLayout({style_class: 'buoy-panel-header', x_expand: true});
@@ -103,7 +109,11 @@ export class Home {
             this._fitLater = global.compositor.get_laters().add(Meta.LaterType.BEFORE_REDRAW, () => {
                 this._fitLater = 0;
                 const chrome = Math.ceil(this._column.height - this._body.height);
-                this._body.set_style(`max-height: ${Math.max(0, this._maxHeight - chrome)}px;`);
+                const room = Math.max(0, this._maxHeight - chrome);
+                this._body.set_style(`max-height: ${room}px;`);
+                const node = this._body.get_theme_node();
+                this._view[FILL] = Math.max(0, room - node.get_vertical_padding());
+                this._view.queue_relayout();
                 return GLib.SOURCE_REMOVE;
             });
         });
@@ -319,13 +329,15 @@ export class Home {
             if (view)
                 box.add_child(view);
         }
+        if (!box.get_n_children())
+            box.add_child(new EmptyState(`No ${tab.label.toLowerCase()}`));
         return box;
     }
 
     _moduleTab(id) {
         let tab = this._tabs.get(id);
         if (!tab) {
-            tab = new (this._module(id).tab)();
+            tab = new (this._module(id).tab)({close: () => this._onClose?.()});
             this._tabs.set(id, tab);
             const t = findTab(this._strip, id);
             if (t?.type === 'kind')
@@ -343,7 +355,7 @@ export class Home {
         }
         if (!this._list.length) {
             if (!this._missed.length)
-                box.add_child(new St.Label({text: 'Nothing going on', style_class: 'buoy-home-empty'}));
+                box.add_child(new EmptyState('Nothing going on'));
             return box;
         }
         for (const a of this._list) {
@@ -358,10 +370,12 @@ export class Home {
             });
             content.x_expand = true; // St.Button centres a child at its natural width
             row.connect('clicked', () => {
-                if (tabId)
+                if (tabId) {
                     this.select(tabId);
-                else
-                    a.onPress?.();
+                } else if (a.onPress) {
+                    a.onPress();
+                    this._onClose?.();
+                }
             });
             box.add_child(row);
         }
@@ -374,11 +388,12 @@ export class Home {
     // Until the M4 notifications tab carries it.
     _missedSection(box) {
         const header = this._sectionHeader(`Missed · ${this._missed.length}`, true);
-        const clear = new St.Button({style_class: 'buoy-home-clear', can_focus: true, accessible_name: 'Clear missed'});
-        const face = new St.BoxLayout({style_class: 'buoy-home-clear-box'});
-        face.add_child(new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}));
-        face.add_child(new St.Label({text: 'Clear', y_align: Clutter.ActorAlign.CENTER}));
-        clear.set_child(face);
+        // icon-only, as the Transfers tab's (2026-11-06, Ethan); the name stays for a11y
+        const clear = new St.Button({
+            style_class: 'buoy-home-clear', can_focus: true, accessible_name: 'Clear missed',
+            child: new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}),
+            y_align: Clutter.ActorAlign.CENTER,
+        });
         clear.connect('clicked', () => {
             this._missed = [];
             this._onMissedClear?.();

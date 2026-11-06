@@ -9,7 +9,7 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 import {
     planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
-    donationLinks,
+    donationLinks, addFolder, shortPath, MAX_FOLDERS,
 } from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
@@ -296,6 +296,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
         }
         if (type === 's' && k.get_range().recursiveUnpack()[0] === 'enum')
             return this._choiceRow(k);
+        if (type === 'as' && name.endsWith('-folders'))
+            return this._folderList(k);
         throw new Error(`prefs.js has no row for ${name} (${type})`);
     }
 
@@ -786,6 +788,68 @@ export default class BuoyPreferences extends ExtensionPreferences {
         profiles.add(row);
         page.add(profiles);
         return page;
+    }
+
+    // progress-folders: an expander listing the Downloads folder (always watched, not
+    // removable), each added folder with a remove button, and "Add Folder…" (a portal
+    // folder chooser) until the list is full.
+    _folderList(k) {
+        const name = k.get_name();
+        const row = textRow(Adw.ExpanderRow, {title: k.get_summary(), subtitle: k.get_description()});
+        const downloads = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOWNLOAD);
+        if (downloads) {
+            const fixed = textRow(Adw.ActionRow, {
+                title: GLib.filename_display_basename(downloads), subtitle: shortPath(downloads, GLib.get_home_dir()),
+            });
+            fixed.add_suffix(new Gtk.Label({label: 'Always', css_classes: ['dim-label']}));
+            row.add_row(fixed);
+        }
+        const add = new Adw.ButtonRow({title: 'Add Folder…', start_icon_name: 'list-add-symbolic'});
+        add.connect('activated', () => {
+            new Gtk.FileDialog({title: 'Watch a Folder for Downloads', modal: true})
+                .select_folder(this._window, null, (dialog, res) => {
+                    let folder;
+                    try {
+                        folder = dialog.select_folder_finish(res);
+                    } catch {
+                        return;           // dismissed
+                    }
+                    const now = this._settings.get_strv(name);
+                    const next = addFolder(now, folder?.get_path() ?? null, downloads);
+                    if (next !== now)
+                        this._settings.set_strv(name, next);
+                    else if (folder?.get_path() === null)
+                        this._toast('Only local folders can be watched');
+                });
+        });
+        let rows = [];
+        const sync = () => {
+            for (const r of rows)
+                row.remove(r);
+            const list = this._settings.get_strv(name);
+            rows = list.map(path => {
+                const r = textRow(Adw.ActionRow, {
+                    title: GLib.filename_display_basename(path), subtitle: shortPath(path, GLib.get_home_dir()),
+                });
+                const remove = new Gtk.Button({
+                    icon_name: 'list-remove-symbolic', valign: Gtk.Align.CENTER,
+                    tooltip_text: 'Remove', css_classes: ['flat'],
+                });
+                remove.update_property([Gtk.AccessibleProperty.LABEL], [`Remove ${path}`]);
+                remove.connect('clicked', () => this._settings.set_strv(name,
+                    this._settings.get_strv(name).filter(p => p !== path)));
+                r.add_suffix(remove);
+                row.add_row(r);
+                return r;
+            });
+            row.remove(add);
+            row.add_row(add);
+            add.sensitive = list.length < MAX_FOLDERS;
+        };
+        row.add_row(add);
+        this._ids.push(this._settings.connect(`changed::${name}`, sync));
+        sync();
+        return row;
     }
 
     // apps-hidden / apps-plain: one row per app with a remove button, an entry to add one.
