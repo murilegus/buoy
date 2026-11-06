@@ -44,10 +44,11 @@ function sun(cx, cy, r, ri, ro, sw, {color = SUN, n = 8, off = 0} = {}) {
     return `<g id="sun"><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" fill="${color}"/>${rays.join('')}</g>`;
 }
 
-// The upper half of a disc on the horizon, with three rays.
+// The upper half of a disc on the horizon, with three rays (steep enough to stay inside
+// the grid at either end of the horizon).
 function halfSun(cx, cy, r, ri, ro, sw, color = PEACH) {
     const disc = `<path d="M${f(cx - r)} ${f(cy)}A${f(r)} ${f(r)} 0 0 1 ${f(cx + r)} ${f(cy)}Z" fill="${color}"/>`;
-    const rays = [225, 270, 315].map(deg => ray(cx, cy, ri, ro, deg, sw, color));
+    const rays = [240, 270, 300].map(deg => ray(cx, cy, ri, ro, deg, sw, color));
     return `<g id="sun">${disc}${rays.join('')}</g>`;
 }
 
@@ -95,7 +96,10 @@ const svg = (...parts) =>
     `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">${parts.join('')}</svg>\n`;
 
 // ---- dayparts: one horizon and one faint dotted arc, shared ------------------------
-const HY = 14.2;
+// the horizon sits at 11, not at the bottom: at 20 px in the idle pill it falls on the
+// time's baseline row (measured in headless Shell, 2026-11-06, Ethan); on the grid's
+// bottom edge (14.2) the scene read as sunk 1.5 px under the digits
+const HY = 11;
 const AR = 5.6;
 const horizon = () =>
     `<path id="arc" d="M${f(8 - AR)} ${f(HY)}A${f(AR)} ${f(AR)} 0 0 1 ${f(8 + AR)} ${f(HY)}" fill="none" ` +
@@ -107,12 +111,12 @@ const [ax, ay] = onArc(56);
 const arcSun = (x, y) => sun(x, y, 2.1, 2.8, 3.6, 1.1, {off: 22.5});
 
 const icons = {
-    'daypart-dawn': svg(horizon(), halfSun(3.8, HY, 3.2, 3.9, 5.4, 1.2)),
+    'daypart-dawn': svg(horizon(), halfSun(4.4, HY, 3.6, 4.4, 6.2, 1.2)),
     'daypart-morning': svg(horizon(), arcSun(mx, my)),
     'daypart-noon': svg(horizon(), arcSun(8, HY - AR)),
     'daypart-afternoon': svg(horizon(), arcSun(ax, ay)),
-    'daypart-evening': svg(horizon(), halfSun(12.2, HY, 3.2, 3.9, 5.4, 1.2)),
-    'daypart-night': svg(horizon(), moon(7.4, 8.4, 3.6), star(12.4, 4.4, 1.2), star(11.8, 9.4, 0.75)),
+    'daypart-evening': svg(horizon(), halfSun(11.6, HY, 3.6, 4.4, 6.2, 1.2)),
+    'daypart-night': svg(horizon(), moon(7.4, 5.2, 3.6), star(12.4, 1.6, 1.2), star(11.8, 6.2, 0.75)),
 
     // ---- weather: GWeather's conditions; sun or moon behind the cloud, upper left ----
     'weather-clear': svg(sun(8, 8, 3.7, 5.0, 6.9, 1.5)),

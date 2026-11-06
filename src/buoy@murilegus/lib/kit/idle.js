@@ -12,6 +12,12 @@ import GnomeDesktop from 'gi://GnomeDesktop?version=4.0';
  * expanded, not hidden by a fullscreen window (ARCHITECTURE rule 8); it is disposed on
  * every other change and on destroy. A plan's settings, `daypart-starts` and module
  * changes re-present at once.
+ *
+ * A plan with data of its own (weather, 2026-11-06) has a feed (`module.feed`, its
+ * feed.js): made while that plan is the one in use, destroyed with it; its `state` is
+ * the plan's `ctx.data`, its callback re-presents, and it is told when the idle pill
+ * shows or hides so it fetches only while shown. A plan with `ticks: false` runs no
+ * wall clock.
  */
 export class IdleContent {
     /**
@@ -26,6 +32,8 @@ export class IdleContent {
         this._clock = null;
         this._clockId = 0;
         this._seconds = false;
+        this._feed = null;
+        this._feedId = null;
         this._settingsId = settings.connect('changed', (_s, key) => {
             if (key === 'idle-content' || key === 'daypart-starts' || key.startsWith('idle-'))
                 this.sync();
@@ -34,10 +42,34 @@ export class IdleContent {
         this.sync();
     }
 
+    /** The module whose plan `idle-content` names, if it runs. */
+    get module() {
+        const id = this._settings.get_string('idle-content');
+        return this._plans().find(m => m.id === id) ?? null;
+    }
+
     /** The plan for `idle-content`, if its module runs. */
     get plan() {
-        const id = this._settings.get_string('idle-content');
-        return this._plans().find(m => m.id === id)?.idle ?? null;
+        return this.module?.idle ?? null;
+    }
+
+    // A plan with data of its own (weather) has a feed: made while its plan is the one in
+    // use, dropped with it; told when the idle pill shows, so it fetches only then
+    _syncFeed(module) {
+        const id = module?.feed ? module.id : null;
+        if (id === this._feedId)
+            return;
+        this._feed?.destroy();
+        this._feed = null;
+        this._feedId = id;
+        if (!id)
+            return;
+        try {
+            this._feed = new module.feed(() => this._present());
+        } catch (e) {
+            console.warn(`Buoy: idle feed ${id} failed: ${e.message}`);
+            this._feed = null;
+        }
     }
 
     _opts(plan) {
@@ -49,32 +81,40 @@ export class IdleContent {
 
     /** Re-read the settings and modules; re-present (modules on/off call this too). */
     sync() {
-        const plan = this.plan;
+        const module = this.module;
+        const plan = module?.idle ?? null;
+        this._syncFeed(plan ? module : null);
         if (!plan) {
             this._stopClock();
             this._island.setIdle(null);
             return;
         }
         const seconds = Boolean(plan.seconds?.(this._opts(plan)));
-        if (this._clock && seconds !== this._seconds)
+        if (this._clock && (seconds !== this._seconds || plan.ticks === false))
             this._stopClock();      // force-seconds is set at construction
         this._seconds = seconds;
-        if (this._island.idleShown)
+        if (this._island.idleShown) {
             this._startClock();
+            this._feed?.shown(true, this._opts(plan));   // its refresh may have changed
+        }
         this._present();
     }
 
     _shown(shown) {
-        if (shown && this.plan) {
+        const plan = this.plan;
+        if (shown && plan) {
             this._startClock();
+            this._feed?.shown(true, this._opts(plan));
             this._present();        // the time may have moved while hidden
         } else {
             this._stopClock();
+            this._feed?.shown(false);
         }
     }
 
     _startClock() {
-        if (this._clock)
+        // a plan that does not change with the minute (weather) runs no wall clock
+        if (this._clock || this.plan?.ticks === false)
             return;
         this._clock = new GnomeDesktop.WallClock({time_only: true, force_seconds: this._seconds});
         this._clockId = this._clock.connect('notify::clock', () => this._present());
@@ -101,6 +141,7 @@ export class IdleContent {
             now: new Date(),
             clock,
             starts: this._settings.get_value('daypart-starts').deepUnpack(),
+            data: this._feed?.state ?? null,    // the plan's feed, if it has one
         };
         try {
             this._island.setIdle(plan.present(ctx, this._opts(plan)));
@@ -112,6 +153,7 @@ export class IdleContent {
 
     destroy() {
         this._stopClock();
+        this._syncFeed(null);
         if (this._settingsId)
             this._settings.disconnect(this._settingsId);
         this._settingsId = 0;

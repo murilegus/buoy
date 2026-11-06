@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {MAX_FOLDERS as progressMaxFolders} from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
-import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote} from
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, weatherNote, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -136,11 +136,83 @@ eq(plan.idle, ['idle-content'], 'When idle: idle-content');
     eq([idleOffNote('none', plans, on(false)), idleOffNote('free', plans, on(false))], [null, null],
         'Nothing, or a plan with no module switch: nothing to say');
 }
-eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['none', 'clock']],
+eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['none', 'clock', 'weather']],
     'idle-content: none or a plan (auto comes with the smart stack)');
+eq(IDLE_PLANS.filter(id => id !== 'none').every(id => schema.get_key('idle-content').range_check(new GLib.Variant('s', id))),
+    true, 'every plan can be chosen in Show');
 eq(schema.get_key('idle-content').get_default_value().unpack(), 'clock', 'the clock until auto lands (Ethan)');
-eq(plan.plans, [{id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style'], ownSwitch: true}],
-    'Plans: the clock with its own key and its module\'s switch');
+eq(plan.plans, [
+    {id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style'], ownSwitch: true},
+    {id: 'weather', enableKey: 'modules-weather', keys: ['idle-weather-automatic', 'idle-weather-refresh'], ownSwitch: true},
+], 'Plans: the clock, then the weather, each with its own key and its module\'s switch');
+eq(plan.modules.some(m => m.id === 'weather'), false, 'weather is only a plan: no row on Modules');
+eq(schema.get_key('idle-weather-refresh').get_range().recursiveUnpack(), ['enum', ['30m', '1h']],
+    'weather refresh: 30 min or 1 h, SPEC §2a');
+eq(schema.get_key('idle-weather-refresh').get_default_value().unpack(), '30m', 'every 30 minutes by default');
+eq(['30m', '1h'].map(v => choiceLabel('idle-weather-refresh', v)), ['Every 30 minutes', 'Every hour'], 'refresh labels');
+eq(choiceLabel('idle-content', 'weather'), 'Weather', 'Show: Weather');
+eq(schema.get_key('idle-weather-automatic').get_default_value().unpack(), true, 'Use my location: on by default');
+{
+    const note = (automatic, locating, locations) => weatherNote({automatic, locating, locations});
+    eq(note(true, true, []), null, 'my location with Location Services on: it can show (the place comes on the first ask)');
+    eq(note(true, false, []), 'Location Services is off: turn it on, or pick a city', 'my location, services off, no place');
+    eq(note(true, false, [['x']]), 'Location Services is off: showing the last place', 'services off: the last place stays');
+    eq(note(false, true, []), 'No place yet: search for a city below', 'a city of my own, none picked');
+    eq([note(false, false, [['x']]), note(false, true, [['x']])], [null, null], 'a picked city: nothing to say');
+    eq(note(false, false, null), 'No place yet: search for a city below', 'unreadable locations: as none');
+}
+
+// --- the Weather plan's units: GNOME Weather's own keys ---------------------------------------
+{
+    const src = Gio.SettingsSchemaSource.get_default();
+    const gw = src?.lookup('org.gnome.GWeather4', true);
+    eq([WEATHER_UNITS['temperature-unit'][0][0], WEATHER_UNITS['speed-unit'][0][0]], ['centigrade', 'kph'],
+        'first: °C and km/h');
+    eq(gnomeDefaults(GNOME_WEATHER, () => false).map(d => [d.key, d.value]),
+        [['temperature-unit', 'centigrade'], ['speed-unit', 'kph']], 'first enable: °C and km/h, written once');
+    eq(gnomeDefaults(GNOME_WEATHER, e => e.key === 'temperature-unit').map(d => d.key), ['speed-unit'],
+        'a unit the user chose keeps theirs');
+    eq([...Object.values(planPrefs(order.map(name => ({name})))).flat()].includes('weather-defaults-applied'), false,
+        'weather-defaults-applied: bookkeeping, no row');
+    for (const [key, choices] of Object.entries(WEATHER_UNITS)) {
+        eq(choices.at(-1), ['default', 'Automatic'], `${key}: Automatic (the locale's) last`);
+        if (gw) {
+            const [, values] = gw.get_key(key).get_range().recursiveUnpack();
+            for (const [v] of choices)
+                eq(values.includes(v), true, `${key}: "${v}" is one of GWeather's values`);
+        }
+    }
+}
+
+// --- picking a city (the Weather plan's search, GWeather's own cities) -----------------------
+{
+    const hcm = {name: 'Ho Chi Minh City', region: null, country: 'Viet Nam'};
+    const hanoi = {name: 'Hanoi', region: null, country: 'Viet Nam'};
+    const hue = {name: 'Huế', region: null, country: 'Viet Nam'};
+    const ldnUK = {name: 'London', region: 'East and South East England', country: 'United Kingdom'};
+    const ldnCA = {name: 'London', region: 'Ontario', country: 'Canada'};
+    const newLondon = {name: 'New London', region: 'Connecticut', country: 'United States'};
+    const vn = {name: 'Viet Nam Town', region: null, country: 'Nowhere'};
+    const all = [hcm, hanoi, hue, ldnUK, ldnCA, newLondon, vn];
+    eq([placeLabel(hcm), placeLabel(ldnCA)], ['Ho Chi Minh City, Viet Nam', 'London, Ontario, Canada'], 'city, region, country');
+    eq(placeLabel({name: 'Singapore', region: 'Singapore', country: 'Singapore'}), 'Singapore', 'a name said once');
+    eq(searchPlaces(all, 'chi minh'), [hcm], 'a word inside the name');
+    eq(searchPlaces(all, 'HO CHI'), [hcm], 'case does not matter');
+    eq(searchPlaces(all, 'hue'), [hue], 'accents do not matter');
+    eq(searchPlaces(all, 'london').map(placeLabel), ['London, East and South East England, United Kingdom',
+        'London, Ontario, Canada', 'New London, Connecticut, United States'],
+    'the name first, then a word of it; equal names by their label');
+    eq(searchPlaces(all, 'viet nam').map(p => p.name), ['Viet Nam Town', 'Huế', 'Hanoi', 'Ho Chi Minh City'],
+        'a city named so first, then by its country, shorter names first');
+    eq([searchPlaces(all, 'h'), searchPlaces(all, ' '), searchPlaces(all, null)], [[], [], []], 'fewer than 2 letters: nothing yet');
+    eq(searchPlaces(all, 'zzz'), [], 'no match');
+    eq(searchPlaces(Array(20).fill(hanoi), 'ha').length, 6, 'at most 6');
+    const k = x => x;
+    eq(withPlace(['a', 'b', 'c'], 'b', k), ['b', 'a', 'c'], 'picked again: moves first, not twice');
+    eq(withPlace(['a', 'b'], 'z', k), ['z', 'a', 'b'], 'a new one first');
+    eq(withPlace(['a', 'b', 'c', 'd', 'e'], 'z', k), ['z', 'a', 'b', 'c', 'd'], 'five kept');
+    eq(withPlace(null, 'z', k), ['z'], 'none before');
+}
 eq(schema.get_key('idle-clock-style').get_range().recursiveUnpack(), ['enum', ['icon-time', 'time', 'icon', 'seconds']],
     'clock styles, SPEC §2a');
 for (const name of order.filter(n => n.startsWith('idle-') && n !== 'idle-content')) {

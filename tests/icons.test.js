@@ -56,8 +56,21 @@ for (const name of ALL) {
         ok(Number(sw[1]) >= 1 || /stroke-linejoin|id="bolt"/.test(svg), `${name}: stroke ${sw[1]} is thinner than 1 px`);
     const firstId = svg.match(/id="([a-z-]+)"/)?.[1];
     ok(firstId, `${name}: parts carry ids`);
-    if (Rsvg)
-        ok(Rsvg.Handle.new_from_file(`${dir}/${name}.svg`).has_sub(`#${firstId}`), `${name}: librsvg parses it and finds #${firstId}`);
+    if (Rsvg) {
+        const handle = Rsvg.Handle.new_from_file(`${dir}/${name}.svg`);
+        ok(handle.has_sub(`#${firstId}`), `${name}: librsvg parses it and finds #${firstId}`);
+        // Inside the grid (ink past the edge is cut; antialiased round caps may reach half a
+        // pixel out), and a weather icon centred on it. The dayparts are placed by their
+        // horizon instead (below): a scene with the sun or moon high is top-heavy by design
+        const [, ink] = handle.get_geometry_for_layer(null, new Rsvg.Rectangle({x: 0, y: 0, width: 16, height: 16}));
+        const [cx, cy] = [ink.x + ink.width / 2, ink.y + ink.height / 2];
+        if (name.startsWith('weather-')) {
+            ok(Math.abs(cx - 8) <= 1.2 && Math.abs(cy - 8) <= 1.2,
+                `${name}: its drawing centred within 1.2 px of the grid's centre, is at (${cx.toFixed(1)}, ${cy.toFixed(1)})`);
+        }
+        ok(ink.x >= -0.5 && ink.y >= -0.5 && ink.x + ink.width <= 16.5 && ink.y + ink.height <= 16.5,
+            `${name}: inside the 16 grid (${ink.x.toFixed(1)}, ${ink.y.toFixed(1)}, ${(ink.x + ink.width).toFixed(1)}, ${(ink.y + ink.height).toFixed(1)})`);
+    }
 }
 
 // One family: the parts are shared drawings
@@ -66,6 +79,9 @@ const dayparts = DAYPARTS.map(read);
 const horizon = dayparts[0].match(/<path id="arc".*?<line id="horizon"[^>]*>/)[0];
 for (const [i, svg] of dayparts.entries())
     ok(svg.includes(horizon), `${DAYPARTS[i]}: the same horizon and arc as dawn`);
+// The horizon at y 11: at 20 px in the idle pill it falls on the time's baseline row (measured
+// in headless Shell, 2026-11-06, Ethan); at 14.2 the scene sat 1.5 px under the digits
+ok(/<line id="horizon" x1="1" y1="11" x2="15" y2="11"/.test(dayparts[0]), 'the horizon at y 11, level with the time\'s baseline');
 ok(!read('daypart-night').includes('id="sun"') && read('daypart-night').includes('id="moon"'), 'night: moon, no sun');
 ok(read('daypart-dawn').includes('#FFB889') && read('daypart-evening').includes('#FFB889'), 'dawn and evening: peach sun');
 const cloudy = ['few-clouds', 'few-clouds-night', 'overcast', 'fog', 'showers-scattered', 'showers', 'snow', 'storm'].map(c => `weather-${c}`);

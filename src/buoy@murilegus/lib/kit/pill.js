@@ -407,19 +407,30 @@ export class Pill {
         return buildMinimal(this.activity, {maxWidth: capW - 2 * PAD, light, more: this.more});
     }
 
-    // The amber missed list over the activity's own compact (INDICATORS.md), else that.
+    // The amber missed list over the activity's own compact (INDICATORS.md), else that;
+    // the idle pill's is its plan's (weather: feels like, wind, humidity — SPEC §2a)
     _compactContent() {
         const maxWidth = this._s.compactMax - 2 * PAD;
         const missed = this._missed();
         if (missed)
             return buildMissedCompact(missed, {maxWidth});
-        if (!this.activity)
+        const shown = this._compactOf();
+        if (!shown)
             return null;
-        return buildCompact(this.activity, {maxWidth, light: this.role === 'centre' ? this.light : null});
+        return buildCompact(shown, {maxWidth, light: this.role === 'centre' ? this.light : null});
+    }
+
+    // What the compact shows besides the missed list: the activity, or the idle plan
+    _compactOf() {
+        if (this.activity)
+            return this.activity;
+        const plan = this.role === 'centre' ? this._island.idle : null;
+        return plan && planCompact(plan) !== null ? plan : null;
     }
 
     _hasCompact() {
-        return this._missed() !== null || (this.activity !== null && planCompact(this.activity) !== null);
+        const shown = this._compactOf();
+        return this._missed() !== null || (shown !== null && planCompact(shown) !== null);
     }
 
     // fade: cross-fade between activities; without it the new content replaces the

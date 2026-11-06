@@ -44,6 +44,7 @@ export const PLACES = {
     'daypart-starts': null,     // kit/daypart.js; on the Island page once a plan reads it (rule 9)
     'clock-defaults-applied': null, // bookkeeping: GNOME_CLOCK defaults written once
     'dock-defaults-applied': null,  // bookkeeping: GNOME_DOCK defaults written once
+    'weather-defaults-applied': null, // bookkeeping: GNOME_WEATHER defaults written once
 };
 
 // Keys shown inside another key's row (an expander under it), and the parent's value
@@ -96,8 +97,8 @@ export const GNOME_DOCK = [
 ];
 
 /**
- * Buoy's defaults for GNOME's own keys (GNOME_CLOCK, GNOME_DOCK), for the first enable
- * only (`clock-defaults-applied`, `dock-defaults-applied`): each key the user never set
+ * Buoy's defaults for GNOME's own keys (GNOME_CLOCK, GNOME_DOCK, GNOME_WEATHER), for the
+ * first enable only (`clock-`, `dock-`, `weather-defaults-applied`): each key the user never set
  * gets Buoy's value; a key they did set keeps theirs. After that Buoy never writes them
  * again, so a change in either place stays.
  *
@@ -195,10 +196,11 @@ export function switchValue(entry, active) {
 // choice shows as its value with a capital.
 export const CHOICE_LABELS = {
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
-    'idle-content': {'none': 'Nothing', 'clock': 'Clock'},
+    'idle-content': {'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather'},
     'idle-clock-style': {
         'icon-time': 'Icon & time', 'time': 'Time', 'icon': 'Icon', 'seconds': 'With seconds',
     },
+    'idle-weather-refresh': {'30m': 'Every 30 minutes', '1h': 'Every hour'},
 };
 
 /**
@@ -216,6 +218,108 @@ export function idleOffNote(shown, plans, isOn) {
     if (!p?.enableKey || isOn(p.enableKey))
         return null;
     return `${choiceLabel('idle-content', shown)} is off, so the pill shows nothing`;
+}
+
+/**
+ * What the Weather plan's row says when it cannot show (2026-11-06): the weather comes
+ * from the date menu's client (modules/weather/feed.js), whose place is the first of
+ * `org.gnome.shell.weather` `locations`. With "Use my location" Buoy writes it there from
+ * Geoclue, which needs Location Services; off, the user picks a city under the plan.
+ *
+ * @param {object} state
+ * @param {boolean} state.automatic  `idle-weather-automatic`
+ * @param {boolean} state.locating  `org.gnome.system.location` `enabled`
+ * @param {*[]} state.locations  `org.gnome.shell.weather` `locations` (av)
+ * @returns {?string} null when the plan can show
+ */
+export function weatherNote({automatic, locating, locations}) {
+    const placed = Array.isArray(locations) && locations.length > 0;
+    if (automatic && !locating) {
+        return placed
+            ? 'Location Services is off: showing the last place'
+            : 'Location Services is off: turn it on, or pick a city';
+    }
+    if (!automatic && !placed)
+        return 'No place yet: search for a city below';
+    return null;
+}
+
+/**
+ * The units rows under the Weather plan: GNOME Weather's own keys (`org.gnome.GWeather4`),
+ * which the weather plan reads (modules/weather/read.js unitNames) — a pick there is GNOME
+ * Weather's too. Automatic (`default`) is GWeather's guess from the locale (an en_US
+ * session gets °F), last (Ethan, 2026-11-06). Value, label.
+ */
+export const WEATHER_UNITS = Object.freeze({
+    'temperature-unit': [['centigrade', '°C'], ['fahrenheit', '°F'], ['kelvin', 'K'], ['default', 'Automatic']],
+    'speed-unit': [['kph', 'km/h'], ['ms', 'm/s'], ['mph', 'mph'], ['knots', 'Knots'], ['bft', 'Beaufort'],
+        ['default', 'Automatic']],
+});
+
+// Buoy's defaults for those keys, written once like the clock's (`weather-defaults-applied`,
+// gnomeDefaults): °C and km/h where the user never chose (Ethan, 2026-11-06)
+export const GNOME_WEATHER = [
+    {schema: 'org.gnome.GWeather4', key: 'temperature-unit', title: 'Temperature', buoy: 'centigrade'},
+    {schema: 'org.gnome.GWeather4', key: 'speed-unit', title: 'Wind speed', buoy: 'kph'},
+];
+
+// Case and accents do not matter when searching a place: "ha noi" finds "Hà Nội"
+const fold = text => String(text ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+
+/**
+ * @param {{name: string, region?: ?string, country?: ?string}} place
+ * @returns {string} "Ho Chi Minh City, Viet Nam", "London, Ontario, Canada"
+ */
+export function placeLabel(place) {
+    return [place?.name, place?.region, place?.country].filter(t => typeof t === 'string' && t)
+        .filter((t, i, all) => all.indexOf(t) === i).join(', ');
+}
+
+/**
+ * Cities matching what was typed, best first: the name starting with it, then a word of
+ * it, then anywhere in the name or its region and country; shorter names first within each.
+ *
+ * @param {Array<{name: string, region?: ?string, country?: ?string}>} places  GWeather's cities
+ * @param {string} query
+ * @param {number} [max]
+ * @returns {object[]} at most `max` of `places`; none for fewer than 2 letters
+ */
+export function searchPlaces(places, query, max = 6) {
+    const q = fold(query);
+    if (q.length < 2)
+        return [];
+    const ranked = [];
+    for (const place of places) {
+        const name = fold(place.name);
+        let rank = -1;
+        if (name.startsWith(q))
+            rank = 0;
+        else if (name.split(/[\s-]+/).some(w => w.startsWith(q)))
+            rank = 1;
+        else if (name.includes(q) || fold(placeLabel(place)).includes(q))
+            rank = 2;
+        if (rank >= 0)
+            ranked.push({place, rank, len: name.length});
+    }
+    ranked.sort((a, b) => a.rank - b.rank || a.len - b.len ||
+        placeLabel(a.place).localeCompare(placeLabel(b.place)));
+    return ranked.slice(0, max).map(r => r.place);
+}
+
+/**
+ * `locations` with a place first (the one shown), an equal one dropped from the rest, as
+ * GNOME Weather keeps them (most recent first).
+ *
+ * @param {*[]} list  the current locations
+ * @param {*} place  the new one
+ * @param {function(*): string} keyOf  how two are the same (their serialized text)
+ * @param {number} [max]
+ * @returns {*[]}
+ */
+export function withPlace(list, place, keyOf, max = 5) {
+    const key = keyOf(place);
+    const rest = (Array.isArray(list) ? list : []).filter(p => keyOf(p) !== key);
+    return [place, ...rest].slice(0, max);
 }
 
 /**
@@ -240,7 +344,7 @@ export const HIDDEN_MODULES = new Set(['home', 'ask']);
 // Idle plans, in the Island page's order (ARCHITECTURE rule 9): each one's
 // `idle-<id>-…` keys sit under it there, never on Modules. Prefs cannot import a module,
 // so the list is here.
-export const IDLE_PLANS = ['clock'];
+export const IDLE_PLANS = ['clock', 'weather'];
 
 // The Modules page in groups, by how a module shows (2026-11-06, Ethan: the list grew
 // past reading). Prefs cannot import a module, so the groups are listed here; the test

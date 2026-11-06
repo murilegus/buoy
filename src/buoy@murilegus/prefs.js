@@ -4,12 +4,14 @@ import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
+import GWeather from 'gi://GWeather?version=4.0';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import {
     planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
-    donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote,
+    donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote, weatherNote, placeLabel,
+    searchPlaces, withPlace, WEATHER_UNITS,
 } from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
@@ -55,6 +57,49 @@ function textRow(Cls, {title = '', subtitle, ...props}) {
     return row;
 }
 
+// GWeather's cities, the database GNOME Weather and the date menu search (a few thousand)
+function citiesOf(world) {
+    const out = [];
+    const walk = loc => {
+        for (let c = loc.next_child(null); c; c = loc.next_child(c)) {
+            const level = c.get_level();
+            if (level === GWeather.LocationLevel.CITY)
+                out.push(c);
+            else if (level < GWeather.LocationLevel.CITY)
+                walk(c);
+        }
+    };
+    walk(world);
+    return out;
+}
+
+// Open a Settings panel the way Shell does (ui/status/network.js launchSettingsPanel):
+// org.gnome.Settings' `launch-panel` action, its parameter `(sav)`, here over D-Bus
+// (org.freedesktop.Application.ActivateAction; prefs has no Shell.AppSystem)
+function launchPanel(panel) {
+    const param = new GLib.Variant('(sav)', [panel, []]);
+    Gio.DBus.session.call('org.gnome.Settings', '/org/gnome/Settings', 'org.freedesktop.Application',
+        'ActivateAction', new GLib.Variant('(sava{sv})', ['launch-panel', [param], {}]),
+        null, Gio.DBusCallFlags.NONE, -1, null, (conn, res) => {
+            try {
+                conn.call_finish(res);
+            } catch (e) {
+                console.warn(`Buoy: could not open Settings: ${e.message}`);
+            }
+        });
+}
+
+// A GWeather city as kit/settings.js names it: its region when it sits in one (Ontario),
+// its country
+function describe(loc) {
+    const parent = loc.get_parent();
+    return {
+        name: loc.get_name(),
+        region: parent?.get_level() === GWeather.LocationLevel.ADM1 ? parent.get_name() : null,
+        country: loc.get_country_name(),
+    };
+}
+
 const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
 
 function roundedRect(cr, x, y, w, h, r) {
@@ -71,12 +116,17 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const settings = this.getSettings();
         this._settings = settings;
         this._window = window;
-        // rows listen to the settings; the settings outlive the window
+        // rows listen to the settings; the settings outlive the window. `_ids`: Buoy's
+        // handler ids; `_drops`: other settings' (GNOME Weather's), as functions
         this._ids = [];
+        this._drops = [];
         window.connect('close-request', () => {
             for (const id of this._ids)
                 settings.disconnect(id);
+            for (const drop of this._drops)
+                drop();
             this._ids = [];
+            this._drops = [];
             return false;
         });
         const schema = settings.settings_schema;
@@ -470,6 +520,109 @@ export default class BuoyPreferences extends ExtensionPreferences {
     // switch here, like a Modules row (2026-11-06, Ethan). A module that is more keeps
     // its switch on Modules; while it is off the plan does not exist (rule 6), so the row
     // says where to turn it on.
+    // The weather plan's place (2026-11-06, Ethan: GNOME Weather is not on Ubuntu, so Buoy
+    // picks it): the first of Shell's own `org.gnome.shell.weather` `locations`, which the
+    // date menu's client shows. "Use my location" (a row from the schema) has the pill
+    // write it from Geoclue; Place shows it, and a city picked from the search below goes
+    // first there and turns "Use my location" off. The plan row's subtitle says when the
+    // pill cannot show (kit/settings.js weatherNote).
+    _weatherPlace(row, description) {
+        const source = Gio.SettingsSchemaSource.get_default();
+        if (!source?.lookup('org.gnome.shell.weather', true))
+            return;
+        const weather = new Gio.Settings({schema_id: 'org.gnome.shell.weather'});
+        const location = source.lookup('org.gnome.system.location', true)
+            ? new Gio.Settings({schema_id: 'org.gnome.system.location'}) : null;
+        const world = GWeather.Location.get_world();
+
+        const place = new Adw.ActionRow({title: 'Place'});
+        // "Use my location" with Location Services off: say so where it is switched on
+        const off = new Adw.ActionRow({
+            title: 'Location Services is off', subtitle: 'Turn it on to follow where you are',
+        });
+        const open = new Gtk.Button({label: 'Open Settings', valign: Gtk.Align.CENTER});
+        open.connect('clicked', () => launchPanel('privacy'));
+        off.add_suffix(open);
+        const search = new Adw.EntryRow({title: 'Search for a city'});
+        row.add_row(place);
+        row.add_row(off);
+        row.add_row(search);
+        // the units: GNOME Weather's own keys, which the plan reads (Automatic: the locale's)
+        if (source.lookup('org.gnome.GWeather4', true)) {
+            const units = new Gio.Settings({schema_id: 'org.gnome.GWeather4'});
+            for (const [key, title] of [['temperature-unit', 'Temperature'], ['speed-unit', 'Wind speed']])
+                row.add_row(this._unitRow(units, key, title));
+        }
+
+        const sync = () => {
+            const locations = weather.get_value('locations').deepUnpack();
+            const first = locations.length ? world.deserialize(locations[0]) : null;
+            place.subtitle = first ? placeLabel(describe(first)) : 'None yet';
+            const automatic = this._settings.get_boolean('idle-weather-automatic');
+            const locating = location?.get_boolean('enabled') ?? false;
+            off.visible = automatic && !locating;
+            row.subtitle = weatherNote({automatic, locating, locations}) ?? description;
+        };
+        for (const [settings, signal] of [[weather, 'changed::locations'], [location, 'changed::enabled']]) {
+            const id = settings?.connect(signal, sync);
+            if (id)
+                this._drops.push(() => settings.disconnect(id));
+        }
+        this._ids.push(this._settings.connect('changed::idle-weather-automatic', sync));
+        sync();
+
+        // GWeather's cities, read once on the first search (some 4000, a few ms)
+        let cities = null;
+        let shown = [];
+        const pick = city => {
+            const key = v => v.print(true);
+            const list = weather.get_value('locations').deepUnpack();
+            weather.set_value('locations', new GLib.Variant('av', withPlace(list, city.serialize(), key)));
+            this._settings.set_boolean('idle-weather-automatic', false);
+            search.text = '';
+        };
+        search.connect('changed', () => {
+            cities ??= citiesOf(world).map(loc => ({loc, ...describe(loc)}));
+            for (const r of shown)
+                row.remove(r);
+            shown = searchPlaces(cities, search.text).map(c => {
+                const r = new Adw.ActionRow({title: c.name, subtitle: placeLabel({...c, name: null}), activatable: true});
+                r.connect('activated', () => pick(c.loc));
+                row.add_row(r);
+                return r;
+            });
+        });
+    }
+
+    // A drop-down over one of GNOME Weather's unit keys (kit/settings.js WEATHER_UNITS)
+    _unitRow(settings, key, title) {
+        const choices = WEATHER_UNITS[key];
+        const row = new Adw.ComboRow({
+            title, subtitle: 'Shared with GNOME Weather. Automatic follows the region formats.',
+            model: Gtk.StringList.new(choices.map(([, label]) => label)),
+        });
+        // Automatic is `default`: the locale's units, as GWeather guesses them
+        const auto = choices.findIndex(([v]) => v === 'default');
+        const indexOf = value => {
+            const i = choices.findIndex(([v]) => v === value);
+            return i < 0 ? auto : i;
+        };
+        const sync = () => {
+            const i = indexOf(settings.get_string(key));
+            if (row.selected !== i)
+                row.selected = i;
+        };
+        row.connect('notify::selected', () => {
+            const value = choices[row.selected]?.[0];
+            if (value && value !== settings.get_string(key))
+                settings.set_string(key, value);
+        });
+        const id = settings.connect(`changed::${key}`, sync);
+        this._drops.push(() => settings.disconnect(id));
+        sync();
+        return row;
+    }
+
     _planRow(p, key) {
         if (p.ownSwitch) {
             const k = key(p.enableKey);
@@ -479,6 +632,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
             this._settings.bind(p.enableKey, row, 'enable-expansion', Gio.SettingsBindFlags.DEFAULT);
             for (const name of p.keys)
                 row.add_row(this._row(key(name)));
+            if (p.id === 'weather')
+                this._weatherPlace(row, k.get_description());
             return row;
         }
         const title = p.enableKey ? key(p.enableKey).get_summary() : p.id;
