@@ -665,7 +665,7 @@ function makeElement(e, mode, activity = null) {
     case 'art': {
         const icon = new St.Icon({
             style_class: 'buoy-art', icon_size: size.art,
-            gicon: new Gio.FileIcon({file: file(e.src)}),
+            gicon: e.gicon ?? new Gio.FileIcon({file: file(e.src)}),
             fallback_icon_name: e.fallback ?? 'audio-x-generic-symbolic',
         });
         return ART_RADIUS[mode] ? roundArt(icon, size.art, ART_RADIUS[mode]) : icon;

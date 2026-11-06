@@ -27,6 +27,16 @@ eq(ids(planStrip([media, hud, timer], [])), [HOME, 'media', 'timer'],
 eq(ids(planStrip([media], [act('m', 'media')])), [HOME, 'media'], 'an activity without expanded keeps its module tab');
 eq(ids(planStrip([hud], [])), [HOME], 'a feedback-only module (osd) has no tab (SPEC §2b)');
 eq(ids(planStrip([{id: 'copied', kinds: ['copied']}], [])), [HOME], 'copied neither');
+{
+    // clipboard: the copied feedback and its own tab.js (history, M5) — SPEC §2b
+    const clipboard = {id: 'clipboard', kinds: ['copied'], tab: true};
+    const s = planStrip([media, clipboard], [act('c', 'copied', {expanded: true})]);
+    eq(ids(s), [HOME, 'media'], 'a feedback-only module with tab.js: no kind tab, even for an expanded copied');
+    eq([s.slot?.id, s.slot?.type, s.more.map(t => t.id)], ['clipboard', 'standalone', ['clipboard']],
+        'its tab.js is a standalone tab: in the slot and ⋯');
+    eq(ids(planStrip([clipboard], [], {pinned: ['clipboard']})), [HOME, 'clipboard'], 'pinned like any standalone tab');
+    eq(tabFor(act('c', 'copied'), s), HOME, 'a copied pill opens Home, not the Clipboard tab');
+}
 eq(ids(planStrip([hud], [act('v', 'osd')])), [HOME], 'osd without expanded: still no tab → Home');
 eq(ids(planStrip([{id: 'mix', kinds: ['osd', 'timer']}], [])), [HOME, 'mix'],
     'a module with a non-feedback kind among its kinds has its tab');

@@ -215,7 +215,7 @@ export const SLIDERS = {
 };
 
 // Modules that ship nothing a user can see yet (no source, no tab): no row until they do.
-export const HIDDEN_MODULES = new Set(['home', 'copied', 'ask']);
+export const HIDDEN_MODULES = new Set(['home', 'ask']);
 
 // Idle plans, in the Island page's order (ARCHITECTURE rule 9): each one's
 // `idle-<id>-…` keys sit under it there, never on Modules. Prefs cannot import a module,
@@ -359,6 +359,10 @@ export const SAMPLES = {
     },
     input: {
         kind: 'input', app: 'buoy', leading: 'input-keyboard-symbolic', text: 'EN · English (US)',
+    },
+    clipboard: {
+        kind: 'copied', app: 'buoy', leading: 'edit-copy-symbolic', text: 'Copied text shows here',
+        sizeHint: 'wide',
     },
 };
 

@@ -25,6 +25,13 @@ eq(element({icon: 'eq'}), {type: 'glyph', name: 'eq'}, '{icon: "eq"} too');
 eq(element({art: 'file:///a.png', icon: 'audio-x-generic-symbolic'}),
     {type: 'art', src: 'file:///a.png', fallback: 'audio-x-generic-symbolic'}, 'art with icon fallback');
 eq(element({art: '/tmp/a.png'}), {type: 'art', src: '/tmp/a.png', fallback: null}, 'art without fallback');
+{
+    const bytesIcon = new class FakeBytesIcon {}();
+    const e = element({art: bytesIcon, icon: 'image-x-generic-symbolic'});
+    eq([e.type, e.gicon === bytesIcon, 'src' in e, e.fallback], ['art', true, false, 'image-x-generic-symbolic'],
+        'art from a Gio.Icon (a copied image): no path');
+    eq(element({art: {}}), null, 'a plain object is not an icon');
+}
 eq(element({art: null, icon: 'x-symbolic'}), {type: 'icon', icon: 'x-symbolic'}, 'missing art → icon');
 eq(element({icon: 'x-symbolic', size: 56, width: 9}), {type: 'icon', icon: 'x-symbolic'},
     'measurements from adapters are ignored (ARCHITECTURE rule 11)');
