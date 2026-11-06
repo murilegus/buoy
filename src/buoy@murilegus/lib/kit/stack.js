@@ -22,7 +22,9 @@ import {FEEDBACK, validate} from './activity.js';
  *   - style 'transient' asks the island to open expanded and ends when it collapses
  *   - alert (on surface, or update(..., {alert: true})) is one-shot; a covered activity's
  *     alert brings it up for ALERT_MS, then the real top returns
- *   - apps-hidden is a filter: hidden activities stay live but never reach the island
+ *   - apps-hidden is a filter: hidden activities stay live but never reach the island;
+ *     so is an activity's own `hidden: true` (an agent's session while its ask stands for
+ *     it, CODING-AGENTS.md §4, 2026-11-07): live, timed, never drawn, never missed
  *   - while unseen (fullscreen, away, DND) an ending activity goes to the missed history
  *     (last 5), except osd/copied (feedback for your own action) and ask (red light)
  *   - while unseen the island gets no alert and no expand: an ask must not open in a
@@ -166,7 +168,7 @@ export class ActivityStack {
             this._asks.delete(id);
             ask.resolve(null);
         }
-        if (this._unseen && !this._hidden.has(a.app) && !NOT_MISSABLE.has(a.kind))
+        if (this._unseen && !this._hidden.has(a.app) && a.hidden !== true && !NOT_MISSABLE.has(a.kind))
             this._recordMissed(a);
         this._render();
         return true;
@@ -472,7 +474,7 @@ export class ActivityStack {
     }
 
     _visible(a) {
-        return !this._hidden.has(a.app) && !this._asks.get(a.id)?.dismissed;
+        return a.hidden !== true && !this._hidden.has(a.app) && !this._asks.get(a.id)?.dismissed;
     }
 
     // Every visible activity, highest priority first (ties → most recent); an alerted

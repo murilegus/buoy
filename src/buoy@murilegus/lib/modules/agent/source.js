@@ -78,7 +78,8 @@ export class AgentSource extends Source {
         const old = this._sessions.get(key) ?? null;
         // the ask of this session, answered elsewhere
         const open = this._asks.get(key);
-        if (open && settles(open.event, ev))
+        const settled = !!open && settles(open.event, ev);
+        if (settled)
             this._settleAsk(key);
 
         const res = step(old, ev, Date.now(), source);
@@ -89,6 +90,8 @@ export class AgentSource extends Source {
         this._remember(key, res.rec);
         if (res.show)
             this._show(res.rec, {alert: res.alert && !this._quiet(key)});
+        else if (settled && this._stack.has(this._activityId(res.rec)))
+            this._show(res.rec);          // out from behind its ended prompt
 
         // the session's window, while the hook is still on the bus: the reply waits for it
         // (a report's hook exits right after; a few ms in the background)
@@ -115,6 +118,8 @@ export class AgentSource extends Source {
             return;
         const key = `${rec.source}:${rec.id}`;
         a.onPress = () => this._raise(key);
+        // its prompt's pill stands for it meanwhile: one pill per session (§4, Ethan)
+        a.hidden = this._asks?.has(key) ?? false;
         if (this._stack.has(a.id))
             this._stack.update(a.id, a, {alert});
         else
@@ -154,6 +159,7 @@ export class AgentSource extends Source {
         const quiet = this._quiet(key);
         const entry = {event: ev, askId, watch: 0, focusId: 0};
         this._asks.set(key, entry);
+        this._show(rec);                  // hidden while the prompt stands for it
         // the hook process gone (answered in the terminal, Claude Code interrupted): no answer
         if (sender) {
             entry.watch = Gio.bus_watch_name_on_connection(Gio.DBus.session, sender,
@@ -202,12 +208,12 @@ export class AgentSource extends Source {
     // stale if nothing follows)
     _backToWork(key) {
         const rec = this._sessions?.get(key);
-        const next = answered(rec, Date.now());
-        if (!rec || next === rec)
+        if (!rec)
             return;
+        const next = answered(rec, Date.now());
         this._sessions.set(key, next);
         if (this._stack?.has(this._activityId(next)))
-            this._show(next);
+            this._show(next);             // and shown again: the prompt is gone
     }
 
     _dropAsk(key) {

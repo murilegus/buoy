@@ -357,6 +357,27 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.top.id, 'far', 'far schedule fires on time');
 }
 
+// --- an activity's own `hidden` (CODING-AGENTS.md §4) ------------------------------------
+{
+    const {island, stack} = setup();
+    stack.surface({id: 's', kind: 'agent', text: 'session', ttl: 5000});
+    stack.update('s', {hidden: true});
+    eq([stack.has('s'), stack.top], [true, null], 'hidden: live, not drawn');
+    eq(island.list.length, 0, 'the island shows nothing');
+    stack.setUnseen(true);
+    stack.end('s');
+    eq(stack.missed.length, 0, 'ended while unseen and hidden: never missed (nothing was on screen for it)');
+}
+{
+    const {clock, island, stack} = setup();
+    stack.surface({id: 's', kind: 'agent', text: 'session', ttl: 5000});
+    stack.update('s', {hidden: true});
+    stack.update('s', {hidden: false});
+    eq(island.list.map(a => a.id), ['s'], 'shown again');
+    clock.advance(5000);
+    eq(stack.has('s'), false, 'its ttl ran meanwhile');
+}
+
 // --- ask --------------------------------------------------------------------
 {
     const {island, stack} = setup();

@@ -34,8 +34,9 @@ export class AgentsTab {
             this.actor.add_child(new EmptyState('No Claude Code sessions'));
             return;
         }
+        // a prompt whose session is hidden behind it (source.js) or another caller's
         for (const q of asks.filter(x => !own.has(x)))
-            this.actor.add_child(this._row(q, q, {name: q.text, doing: null}));
+            this.actor.add_child(this._row(q, q, {name: q.compact?.text ?? q.text, doing: q.compact?.subtitle ?? null}));
         for (const s of sessions) {
             this.actor.add_child(this._row(s, askOf(s), {
                 name: s.compact?.text ?? s.text, doing: s.compact?.subtitle ?? null,
