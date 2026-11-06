@@ -185,10 +185,12 @@ the region's) · `global` (global only) · `off`. A region is added by a PR with
 | Vietnam | 20 October | observe | "Today is Vietnamese Women's Day." |
 | Vietnam | 20 November | observe | "Today is Teachers' Day." |
 
-- **Lunar dates** are a generated table of Gregorian dates for 2026–2040
-  (`scripts/lunar.js`, the Vietnamese lunar calendar at UTC+7, run by hand like
-  `scripts/icons.js`; its output is data in `holidays.js`). Past 2040 the lunar days are
-  silently skipped until the table is extended. Test anchors: Tết 2026 = 17 February.
+- **Lunar dates** are a generated table of Gregorian dates for 2026–2099 — per year the
+  first day of Tết, Hùng Kings' day and Mid-Autumn (Tết's 2nd and 3rd days follow), some
+  2.5 KB (Ethan, 2026-11-07: through 2099) — from `scripts/lunar.js` (the Vietnamese
+  lunar calendar at UTC+7, Hồ Ngọc Đức's algorithm, run by hand like `scripts/icons.js`;
+  its output is data in `holidays.js`, nothing is computed at runtime). Past 2099 the
+  lunar days are silently skipped. Test anchors: Tết 2026 = 17 February.
 - **Two on one day**: the birthday wins over a celebration; a celebration over an
   observance (the observance still goes on line 2).
 - Shown at Start, Wake and Welcome back, and on the Leaving title for celebrations; never
