@@ -243,6 +243,17 @@ function meter(kind, value, size) {
 }
 
 /**
+ * The kit's thin bar (the compact's), filling the width it is given; for a module's
+ * tab.js (Transfers rows). setValue(v) moves it.
+ *
+ * @param {number} value  0–1
+ * @returns {St.DrawingArea}
+ */
+export function progressBar(value) {
+    return meter('bar', value, 0);
+}
+
+/**
  * Once a second while `actor` is on screen and `running()` says so; never otherwise
  * (ARCHITECTURE rule 8: a live position runs only while its activity is visible). The
  * timer goes with the actor. Also for a module's tab.js (the Media tab's position).
@@ -763,9 +774,9 @@ function compactBox(p, activity, maxWidth) {
     ]);
     box.add_child(top);
     if (p.live)
-        box.add_child(indented(liveBar(p.live), p));
+        box.add_child(indented(liveBar(p.live), p, BAR_MIN));
     else if (p.progress !== null && p.progress !== undefined)
-        box.add_child(indented(meter('bar', p.progress, 0), p));
+        box.add_child(indented(meter('bar', p.progress, 0), p, BAR_MIN));
     if (p.rows?.length) {
         const list = new St.BoxLayout({style_class: 'buoy-compact-rows', orientation: Clutter.Orientation.VERTICAL});
         for (const r of p.rows) {
@@ -787,12 +798,17 @@ function compactBox(p, activity, maxWidth) {
 // Under the text column: the leading's width plus the top row's spacing
 // (.buoy-compact-top in stylesheet.css).
 const INDENT_GAP = 12;
-function indented(actor, p) {
+// A bar has no width of its own: without this a short title leaves it a sliver (a
+// progress compact is content-fit). 160 + a 24 icon and its gap fill the 240 minimum.
+const BAR_MIN = 160;
+
+function indented(actor, p, minWidth = 0) {
     const key = {icon: 'icon', glyph: 'icon', ring: 'ring', mascot: 'mascot'}[p.leading?.type] ?? 'art';
     const lead = p.leading ? SIZE.compact[key] + INDENT_GAP : 0;
     actor.x_expand = true;
-    if (lead)
-        actor.set_style(`margin-left: ${lead}px;`);
+    const style = [lead ? `margin-left: ${lead}px;` : '', minWidth ? `min-width: ${minWidth}px;` : ''].join(' ').trim();
+    if (style)
+        actor.set_style(style);
     return actor;
 }
 

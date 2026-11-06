@@ -116,6 +116,8 @@ eq(planStrip([clip], []).slot.icon, 'view-app-grid-symbolic', 'slot tab has an i
 eq(tabActivities(planStrip([media], list).tabs[1], list).map(a => a.id), ['a', 'd'],
     'kind tab shows its activities with an expanded presentation, in stack order');
 eq(tabActivities({kinds: ['progress']}, list), [], 'none of its kind: the tab stays empty');
+eq(tabActivities({kinds: ['media']}, list, {own: true}).map(a => a.id), ['a', 'c', 'd'],
+    'a tab.js of its own gets every activity of its kinds, expanded or not');
 
 // --- findTab ----------------------------------------------------------------------------
 s = planStrip([media, clip, launcher], [act('m', 'media', {expanded: true})], {slot: 'launcher'});

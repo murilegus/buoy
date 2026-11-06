@@ -115,10 +115,14 @@ export function pressTarget(activity, strip, {badge = false, missed = false} = {
 /**
  * @param {object} tab  a kind tab
  * @param {object[]} list  visible activities (stack order)
- * @returns {object[]} the tab's activities with an expanded presentation, in stack order
+ * @param {object} [opts]
+ * @param {boolean} [opts.own]  the module draws the tab itself (its tab.js): every
+ *   activity of its kinds, not only those with an expanded presentation (2026-11-05:
+ *   Transfers lists progress, which has none)
+ * @returns {object[]} the tab's activities, in stack order
  */
-export function tabActivities(tab, list) {
-    return list.filter(a => tab.kinds.includes(a.kind) && hasExpanded(a));
+export function tabActivities(tab, list, {own = false} = {}) {
+    return list.filter(a => tab.kinds.includes(a.kind) && (own || hasExpanded(a)));
 }
 
 /**

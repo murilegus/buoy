@@ -730,7 +730,11 @@ What the tab can show is bounded by its sources, so it grows in two steps. Check
 2026-11-03 against Nautilus upstream, Ubuntu's packaging and the installed binaries:
 `com.canonical.Unity.LauncherEntry` comes from **Files on Ubuntu only** (Ubuntu's
 `12_unity_launcher_support.patch` via `libunity`; upstream Nautilus sends none) and from
-**Chrome** (`libunity.so.9`); **Firefox sends none** (only `_NET_WM_XAPP_PROGRESS`, an X11
+**Chrome** (`libunity.so.9`) — **but only on Unity or KDE**: Chrome dlopens libunity by
+`XDG_CURRENT_DESKTOP`, and on GNOME (Ubuntu's `ubuntu:GNOME` too) it never loads it
+(checked 2026-11-06: a real Chrome download sent nothing under `ubuntu:GNOME`, and 57
+updates to "Done" under `Unity`). On GNOME, Chrome's downloads reach Buoy only through the
+`.crdownload` watch below. **Firefox sends none** (only `_NET_WM_XAPP_PROGRESS`, an X11
 window hint). Transmission not checked yet.
 
 **Ring only when the source gives a fraction.** No total, no percentage — Buoy never
@@ -750,16 +754,29 @@ covers exactly **one** growing file (Chrome, one download), its fraction is that
 and the file row gets the ring; with two or more it cannot be split, so the app row keeps
 the % and the file rows show size only.
 
-- **M3, `progress`.** LauncherEntry says only *which app* is busy: progress 0–1, maybe a
+- **M3, `progress`.** libunity only sends while a launcher owns `com.canonical.Unity` (Ubuntu
+  Dock does): Buoy asks for the name too, yielding to the dock, so Files keeps reporting
+  with the dock off and after it reloads (2026-11-05, seen with the real Files).
+  LauncherEntry says only *which app* is busy: progress 0–1, maybe a
   count, urgent. One pill and one row per app, the fraction summed over everything the
   app is doing: two copies in Files are one "Files 55 %" (Ubuntu's patch sends the
   combined ratio and no count, so not even "2 operations"). The tab:
   - **Running** — one row per app: icon, name, the count when sent ("2 downloads"), %,
     a thin bar.
   - **Done** — a row stays a little after the app's progress ends (pill gone), with the
-    time, then leaves.
+    time, then leaves (2026-11-05: 10 min, at most 5). The pill says "Name · Done" for
+    2.5 s first. Done means the progress was hidden at ≥ 99 %; hidden earlier (cancelled)
+    or the app leaving the bus ends it without Done.
   - A click focuses that app's window (`Shell.AppSystem.lookup_app(id).activate()`);
     there is nothing more to open.
+  - Files closed mid-operation (2026-11-06, Ethan): it keeps working but stops sending
+    LauncherEntry, and posts "N file operations active" (GNotification id `progress`), then
+    "All file operations have been completed" (`transfer-complete`). Buoy reads both (it
+    leaves them shown; banners are the notifications module's call): the pill becomes
+    "Files · in background" — no ring, no %, since no number comes any more — and
+    `transfer-complete` gives "Files · Done". Reopened, Files reports once more and then
+    stops again, so the pill stays without % and says "Files · working" while its window
+    is open (its own window shows the progress). Minimized, Files keeps reporting.
   - Not in M3: Firefox (no signal), Files outside Ubuntu (it only posts the notification
     "N file operations active" while its window is closed —
     `nautilus-progress-persistence-handler.c`; that reaches Buoy with M4 notifications).
