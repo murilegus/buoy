@@ -372,23 +372,14 @@ W.WW..WW.W
 ## Agents
 
 An agent activity (kind `agent`, M3 with `ask` since 2026-11-07: one module, FEATURES "Claude Code") maps its
-source's events to poses in the adapter — pure, so every mapping is unit-tested. For
-Claude Code hooks:
+source's events to poses in the adapter — pure, so every mapping is unit-tested. The
+event → pose table for Claude Code's hooks is [CODING-AGENTS.md](CODING-AGENTS.md) §3
+(2026-11-07; it replaced the table that was here): `think` on a prompt, `busy` on tools
+and subagents, `error` on a failure, `ask` on a permission prompt, `turn` when it waits
+for you, `compact` while compacting, `done` (or `party` after > 10 min) when it stops,
+`stale` without news.
 
-| Hook event | Pose | Notes |
-|---|---|---|
-| `UserPromptSubmit` | `think` | surfaces the activity |
-| `PreToolUse` | `busy` | permission needed → `ask()`, pose `ask` until answered |
-| `PostToolUse` with an error | `error` | until the next event |
-| `Notification` (permission prompt) | `ask` | |
-| `Notification` (waiting for input) | `turn` | |
-| `PreCompact` | `compact` | |
-| `SubagentStop` | `busy` | the parent keeps working |
-| `Stop` | `done` (alert), `party` first if the run took > 10 min | ends after its ttl |
-| no update for `staleAfter` | `stale` | the renderer dims it |
-| `SessionEnd` | — | `end()` |
-
-Codex's `notify` (turn complete) → `done`, or `turn` when it waits for input. A D-Bus
+Codex (later, CODING-AGENTS.md §10): `notify` (turn complete) → `done`, or `turn` when it waits for input. A D-Bus
 caller may send `{mascot}` directly and skip the adapter.
 
 ## Eyes — idle plan `mascot`
