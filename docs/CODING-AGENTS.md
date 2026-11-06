@@ -78,11 +78,10 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   name always leads the text (MASCOT.md: Bu does not say which agent it is). Sessions of
   one project share it in the minimal pill: no number there (Ethan, 2026-11-07).
 - **The session's name**, on hover only: its title when Claude Code sends one
-  (`session_title` on `SessionStart`, when the session has a title: Claude Desktop names
-  every session, the CLI after `/rename`), whole — "Buoy — Optimization and security
+  (`session_title`, on `SessionStart` and later events once the session has a title:
+  Claude Desktop names every session, the CLI after `/rename` — both seen 2026-11-07), whole — "Buoy — Optimization and security
   check" as it is (Ethan, 2026-11-07); else its worktree's slug; else the label. Titles seen on this machine are 4–44 characters; none
-  is cut by Buoy, the renderer ellipsizes. Whether the field arrives is to be seen in a
-  real session (§13).
+  is cut by Buoy, the renderer ellipsizes.
 - **Minimal**: Bu (the pose, §3) · "Claude · buoy" · elapsed since the prompt, "4 min"
   (a new kit element `{since}`, the twin of `{until}`: "<1 min", "4 min", "1 h 5 min";
   read every 20 s only while shown, so the text changes within 20 s of the minute).
@@ -338,11 +337,11 @@ Seen on Ethan's machine (2026-11-07, Claude Desktop and the CLI in a terminal): 
 hooks installed from prefs; a session's pill, its compact and the Claude Code tab;
 `session_title` arrives for a Desktop session ("Buoy — Implementation" on hover); a click
 from the session's own window opens the tab; a long command (`sleep 90` in a terminal
-session) dims the working pill after a minute and its result brings it back.
+session) dims the working pill after a minute and its result brings it back; `/rename`
+in a CLI session shows on hover at once ("TrungPT's home"): the title rides on later
+events too, not only `SessionStart`, and the adapter takes it from any event.
 
 Still to see in a real Claude Code session:
-
-- Whether the CLI sends `session_title` after `/rename` (§2).
 - What the terminal shows while a `PermissionRequest` hook waits, and which answer wins.
 - That a terminal answer drops the waiting hook (the pill's ask ends at once) or sends
   the same call's result (it ends with it).

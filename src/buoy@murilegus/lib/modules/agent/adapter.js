@@ -219,7 +219,7 @@ export function step(rec, ev, now, source = 'claude') {
     let r = rec ?? newRecord(source, ev);
     if (str(ev.cwd))
         r = {...r, cwd: str(ev.cwd), project: projectOf(ev.cwd)};
-    if (str(ev.session_title))                    // SessionStart, when the session has one
+    if (str(ev.session_title))                    // any event once the session has one (/rename)
         r = {...r, sessionTitle: str(ev.session_title)};
     const out = (next, {show = next.shown, end = false, alert = false} = {}) =>
         ({rec: {...next, lastAt: now}, show, end, alert});
