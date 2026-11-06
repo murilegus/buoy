@@ -171,7 +171,7 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
     not installed.
   - The stock calendar/notifications popover is no longer reachable by mouse; Super+V /
     Super+M (`toggle-message-tray`) still open it under the clock. Its contents move to
-    Buoy: notification history → the notifications tab (§6b), calendar and weather →
+    Buoy: notification history → the notifications tab (§6), calendar and weather →
     Home (§3) and idle plans, DND → the stock quick toggle (`status/doNotDisturb.js`).
     World clocks: placement later (Home or elsewhere), not in v0.1.
 - The island holds **activities only**; persistent system status stays in the system
@@ -694,34 +694,34 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 4. **appname** — left cluster.
 5. **greeting** — once a day, expanded hello with date and weather (§2d).
 6. **idle `auto`** — the smart stack over the `clock`, `weather`, `next-event` plans (§2a-iii).
-
-## 6b. Roadmap after v0.1 (all pure JS)
-
-1. **notifications** — a compact with the notification's own actions
+7. **notifications** (moved here from §6b 2026-11-06, Ethan) — a compact with the notification's own actions
    (Reply / Mark as read / Open); DND toggle. A **notifications tab** lists the history
    (2026-11-02, replaces the clock popover's list): read from `Main.messageTray`
    (`getSources()` + `source-added`, each source's `notifications` +
    `notification-added`), the same data the stock message list uses — no store of our
    own; dismissing in either place removes it from both.
-2. **dbus** — `org.gnome.Shell.Extensions.Buoy` iface: `Show/Update/End` activity,
+
+## 6b. Roadmap after v0.1 (all pure JS)
+
+1. **dbus** — `org.gnome.Shell.Extensions.Buoy` iface: `Show/Update/End` activity,
    `Ask(question, options) → answer`. Hook scripts call it with `gdbus call`.
-3. **agents** — Claude Code / Codex approvals as a two-button activity in the pill
+2. **agents** — Claude Code / Codex approvals as a two-button activity in the pill
    (Deny · Allow · Always), done-alerts; hooks installed/removed from prefs. One `agent`
    activity per session with **Bu** as its leading: the pose follows the hook events
    (think · busy · ask · turn · error · compact · done · party, `MASCOT.md` § Agents);
    the agent's name leads the text (2026-11-03).
-4. **timer** — pomodoro + stopwatch, keep-awake, ring in the compact pill.
-5. **power / bluetooth** — charging, low battery, device connected with its battery.
-6. **calendar** — Up next in Home; alert 5 min before with Join when the event has
+3. **timer** — pomodoro + stopwatch, keep-awake, ring in the compact pill.
+4. **power / bluetooth** — charging, low battery, device connected with its battery.
+5. **calendar** — Up next in Home; alert 5 min before with Join when the event has
    a meeting link.
-7. **downloads / eject** — finished downloads named in the Transfers tab (§6c);
+6. **downloads / eject** — finished downloads named in the Transfers tab (§6c);
    mount-added with one-tap eject.
-8. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
+7. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
-9. **several pills** — pill 1 plus up to two 120 px side pills (§2c).
-10. **clipboard** — the copied feedback (§2e, v0.1) and, with `clipboard-history`, the
+8. **several pills** — pill 1 plus up to two 120 px side pills (§2c).
+9. **clipboard** — the copied feedback (§2e, v0.1) and, with `clipboard-history`, the
     Clipboard tab: history, search, pin, paste (M5).
-11. **Sound tab** (2026-11-05, Ethan) — a standalone tab, Notchy's mixer: every app playing
+10. **Sound tab** (2026-11-05, Ethan) — a standalone tab, Notchy's mixer: every app playing
     sound with its own volume slider, and the output device (GNOME's, for everything),
     from Shell's mixer (`ui/status/volume.js` `getMixerControl`). Not in the Media tab.
 
