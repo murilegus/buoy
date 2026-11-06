@@ -21,6 +21,8 @@ src/buoy@murilegus/
 │                           quick feedback, tabs — kit/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
 │                           2026-11-04), Windows (corners, 2026-11-04)
 ├── schemas/                GSettings: the one source of every key, its summary and range
+├── hooks/                  claude.js: Claude Code's hook (run by Claude Code, never by Buoy),
+│                           installed from prefs; stdin → D-Bus `Agent` (CODING-AGENTS.md, 2026-11-07)
 ├── icons/                  the daypart and weather colour SVGs (one family, scripts/icons.js is the
 │                           source and draws docs/icons.png; 2026-11-06) and the lock-key symbolics
 └── lib/
@@ -82,14 +84,14 @@ A module may keep more pure files beside these when they are worth testing alone
 
 | Type | Has | Example |
 |---|---|---|
-| **source module** | `kinds` + `source.js` + `adapter.js`, optionally `tab.js`, `apps/` | media, hud, progress, ask, clipboard (feedback `copied` + its standalone tab) |
+| **source module** | `kinds` + `source.js` + `adapter.js`, optionally `tab.js`, `apps/` | media, hud, progress, agent (Claude Code: kind `agent`, its asks through the kit's `ask`), clipboard (feedback `copied` + its standalone tab) |
 | **idle plan** | `idle.js` (optionally also a source module) | clock, weather, calendar, mascot |
 | **standalone tab** | `tab.js` only, `kinds: []` | launcher; also the tab of a feedback-only module (`clipboard`, SPEC §2b) |
 
 One module may combine the first two (calendar: next-event activity + idle plan + tab).
 A standalone tab never surfaces activities; if it needs to, it becomes a source module.
 
-v0.1 modules: `media`, `hud`, `home`, `progress`, `clipboard` (its `copied` feedback; `copied` folded in, 2026-11-05), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `ask`; `notification`,
+v0.1 modules: `media`, `hud`, `home`, `progress`, `clipboard` (its `copied` feedback; `copied` folded in, 2026-11-05), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `agent` (Claude Code's sessions and permission prompts; was the stub `ask`, 2026-11-07); `notification`,
 `timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
 roadmap items, so their tabs show from v0.1 (2026-11-02);
 `greeting` (2026-11-03); idle plans `clock`, `weather`, `calendar`; standalone tabs `calendar`, `clipboard` (stub `tab.js`, in that order, 2026-11-02).
@@ -162,7 +164,8 @@ fields and order: [PROFILES.md](PROFILES.md).
    key anywhere but under its plan. A key enters the schema with the item that implements it, so prefs
    has no switch without an effect. (Changed 2026-11-03 from `index.js#schema`: prefs.js
    runs in its own process and cannot import a module's index.js, which pulls in Shell
-   code.) Shell-level keys that belong to no module (panel clusters, window corners) get
+   code. One exception, 2026-11-07: `modules/agent/hooks.js`, pure and importing nothing,
+   which prefs uses to add and remove Buoy's entries in Claude Code's settings.) Shell-level keys that belong to no module (panel clusters, window corners) get
    their own prefs pages; their code lives next to `panel.js`, not under `modules/`.
 10. Standalone tabs are on but not pinned by default (SPEC §2b, 2026-11-02; was "off by
     default"): the strip's slot shows Calendar until another is chosen, and ⋯ lists Calendar
@@ -208,7 +211,8 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
 | `progress-folders` | as | folders watched for downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03; M3 and renamed from `transfers-folders` 2026-11-06, rule 9) |
 | `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc (default Super+B, SPEC §2c) |
-| `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60 (MASCOT.md, 2026-11-04); the kit's, as Bu is. Not in prefs until something draws Bu on the pill (greeting, ask, agents): until then it changes nothing (2026-11-06, Ethan); then on the Island page's Pill group |
+| `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60 (MASCOT.md, 2026-11-04); the kit's, as Bu is. On the Island page's Pill group since Claude Code's sessions draw Bu (2026-11-07; hidden before: nothing drew Bu, 2026-11-06, Ethan) |
+| `agent-ask-timeout`, `agent-quiet-focused` | — | declared by the agent module (CODING-AGENTS.md §9): minutes before an unanswered permission prompt is denied, 1–30, default 10; no jump open while the session's terminal is focused, default `true`. Whether Claude Code's hooks are installed lives in `~/.claude/settings.json`, not in a key |
 | per-module keys | — | declared by the module |
 
 ## Open for later

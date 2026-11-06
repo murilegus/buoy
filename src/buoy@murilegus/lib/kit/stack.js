@@ -43,6 +43,8 @@ export const ALERT_MS = 2000;
 const MAX_DELAY = 2 ** 31 - 1;          // GLib timeouts are 32-bit ms; longer waits re-arm
 const MISSED_MAX = 5;
 const NOT_MISSABLE = new Set([...FEEDBACK, 'ask']);
+// What an asker may set on its ask's look (ask() `look`); the rest is the stack's
+const ASK_LOOK = ['leading', 'trailing', 'compact', 'expanded', 'minimalAction', 'keyline'];
 
 /**
  * Which activities get a pill (SPEC §2c, §2e): the first `cap` in order, except that
@@ -202,17 +204,27 @@ export class ActivityStack {
      * @param {object} [opts]
      * @param {string} [opts.app]  slug of the asking app
      * @param {number} [opts.timeoutMs]  0 = wait forever
-     * @param {?string} [opts.fallback]  answer on timeout (ask module: 10 min → deny)
+     * @param {?string} [opts.fallback]  answer on timeout (agent module: 10 min → deny)
+     * @param {object} [opts.look]  how it looks beyond the question: `leading`, `trailing`,
+     *   `compact`, `expanded`, `minimalAction`, `keyline` (presentation data; Bu leading,
+     *   CODING-AGENTS.md §4)
+     * @param {boolean} [opts.quiet]  never jumps open nor alerts: it waits in its pill,
+     *   answered from the compact or a click (the asker's own window is focused, §6)
      * @returns {Promise<?string>}
      */
-    ask(id, question, options, {app = 'system', timeoutMs = 0, fallback = null} = {}) {
+    ask(id, question, options, {app = 'system', timeoutMs = 0, fallback = null, look = {}, quiet = false} = {}) {
         if (!options?.length)
             throw new Error(`ask(${id}) needs at least one option`);
         this._settle(id, null);
+        const own = {};
+        for (const k of ASK_LOOK) {
+            if (look && k in look)
+                own[k] = look[k];
+        }
         return new Promise(resolve => {
             this._asks.set(id, {resolve, options, dismissed: false});
             this.surface({
-                id, kind: 'ask', app, text: question, alert: true, expanded: true,
+                id, kind: 'ask', app, text: question, alert: !quiet, expanded: true, ...own, quiet: !!quiet,
                 actions: options.map(o => ({id: o, label: o})),
                 onAction: choice => this.answer(id, choice), // present.js buttons
             });
@@ -254,7 +266,7 @@ export class ActivityStack {
         const back = this._unseen && !unseen;
         this._unseen = !!unseen;
         const top = back ? this._visibleList()[0] : null;
-        if (top && (top.kind === 'ask' || top.style === 'transient'))
+        if (top && !top.quiet && (top.kind === 'ask' || top.style === 'transient'))
             this._island.render(this._visibleList(), {alert: null, expand: top.id});
         this._updateLight();
     }
@@ -486,7 +498,8 @@ export class ActivityStack {
                 alert: shown.includes(alert) ? alert : null,
                 // transient (APPLE.md A3) and ask (all options are only in expanded)
                 // open expanded when they reach the centre pill
-                expand: (top.style === 'transient' || top.kind === 'ask') && top.id !== prevPrimary &&
+                // a quiet ask waits in its pill (ask() `quiet`)
+                expand: (top.style === 'transient' || top.kind === 'ask') && !top.quiet && top.id !== prevPrimary &&
                     !this._unseen ? top.id : null,
             });
         }

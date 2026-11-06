@@ -25,10 +25,10 @@ export const PLACES = {
     'idle-content': 'idle',     // Island page, "When idle"
     'expanded-width': 'general',
     'keybind-focus': 'general',
-    // Bu is the kit's, not a module's (MASCOT.md); hidden until something draws Bu on the
-    // pill (greeting, ask, agents): until then the key changes nothing (rule 9, Ethan
-    // 2026-11-06). Back on the Island page's Pill group with the first of them.
-    'mascot-rest-after': null,
+    // Bu is the kit's, not a module's (MASCOT.md); hidden while nothing drew Bu on the pill
+    // (rule 9, Ethan 2026-11-06), back on the Island page's Pill group with the first that
+    // does: Claude Code's sessions (2026-11-07)
+    'mascot-rest-after': 'general',
     'apps-hidden': 'apps',
     'apps-plain': 'apps',
     'dev-mode': 'developer',
@@ -339,7 +339,7 @@ export const SLIDERS = {
 };
 
 // Modules that ship nothing a user can see yet (no source, no tab): no row until they do.
-export const HIDDEN_MODULES = new Set(['home', 'ask']);
+export const HIDDEN_MODULES = new Set(['home']);
 
 // Idle plans, in the Island page's order (ARCHITECTURE rule 9): each one's
 // `idle-<id>-…` keys sit under it there, never on Modules. Prefs cannot import a module,
@@ -354,7 +354,7 @@ export const MODULE_GROUPS = [
     {
         id: 'live', title: 'Live in the Pill',
         description: 'What stays on the pill while it runs.',
-        modules: ['media', 'notification', 'progress', 'timer'],
+        modules: ['media', 'notification', 'progress', 'timer', 'agent'],
     },
     {
         id: 'feedback', title: 'Quick Feedback',

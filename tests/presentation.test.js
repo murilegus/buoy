@@ -1,7 +1,7 @@
 // Run: gjs -m tests/presentation.test.js   (pure: presentation data → render plan)
 import {
     element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, planMissed, clockTime,
-    MAX_ACTIONS, MAX_ROWS, livePosition, mediaTimes, untilText,
+    MAX_ACTIONS, MAX_ROWS, livePosition, mediaTimes, sinceText, untilText,
 } from '../src/buoy@murilegus/lib/kit/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
@@ -275,6 +275,14 @@ eq(planCompact({compact: {}}), null, 'empty compact → no compact');
 eq(element({until: 31000}), {type: 'until', at: 31000}, 'a live countdown element');
 eq(untilText(31000, 1500), '0:30', 'what is left, rounded');
 eq(untilText(1000, 5000), '0:00', 'never negative');
+eq(element({since: 5000}), {type: 'since', at: 5000}, 'a live elapsed time element (CODING-AGENTS.md §2)');
+eq([sinceText(0, 59_999), sinceText(0, 60_000), sinceText(0, 4 * 60_000 + 59_000), sinceText(0, 3_900_000),
+    sinceText(0, 7_200_000), sinceText(9000, 1000)],
+['<1 min', '1 min', '4 min', '1 h 5 min', '2 h', '<1 min'], 'since: whole minutes, hours past 60, never negative');
+eq(planMinimal({leading: {mascot: 'busy'}, text: 'x', isStale: true}).leading.pose, 'stale', 'a stale activity\'s Bu is stale');
+eq(planMinimal({leading: {mascot: 'busy'}, text: 'x'}).leading.pose, 'busy', 'a fresh one keeps its pose');
+eq(planMinimal({leading: 'x-symbolic', text: 'x', isStale: true}).leading, {type: 'icon', icon: 'x-symbolic'},
+    'stale changes only Bu');
 
 // --- side pills: leading + trailing, text dropped (SPEC §2c, APPLE §B3) -----------------
 {

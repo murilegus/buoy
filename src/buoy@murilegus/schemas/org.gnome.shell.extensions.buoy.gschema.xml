@@ -72,10 +72,21 @@
       <summary>Hide GNOME's switcher</summary>
       <description>Off, holding Super+Space shows GNOME's list.</description>
     </key>
-    <key name="modules-ask" type="b">
+    <key name="modules-agent" type="b">
       <default>true</default>
-      <summary>Questions</summary>
-      <description>Questions from scripts and coding agents, answered in the pill.</description>
+      <summary>Claude Code</summary>
+      <description>Your Claude Code sessions in the pill, and their permission prompts.</description>
+    </key>
+    <key name="agent-ask-timeout" type="i">
+      <range min="1" max="30"/>
+      <default>10</default>
+      <summary>Deny after (minutes)</summary>
+      <description>A permission prompt nobody answers is denied then.</description>
+    </key>
+    <key name="agent-quiet-focused" type="b">
+      <default>true</default>
+      <summary>Quiet in its terminal</summary>
+      <description>While its terminal is focused, a session's pill does not open on its own.</description>
     </key>
     <key name="modules-clipboard" type="b">
       <default>true</default>

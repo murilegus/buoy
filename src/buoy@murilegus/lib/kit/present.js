@@ -12,7 +12,7 @@ import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
 import {ART_CODE, ART_DECLARATIONS, artRadius, effectBox} from './rounded.js';
-import {livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, untilText} from './presentation.js';
+import {livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, sinceText, untilText} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
@@ -298,8 +298,9 @@ export function progressBar(value) {
  * @param {Clutter.Actor} actor
  * @param {function():void} update  called now, on (un)map, then each second
  * @param {function():boolean} [running]  keep ticking
+ * @param {number} [every]  seconds between two updates
  */
-export function tick(actor, update, running = () => true) {
+export function tick(actor, update, running = () => true, every = 1) {
     let id = 0;
     const stop = () => {
         if (id)
@@ -309,7 +310,7 @@ export function tick(actor, update, running = () => true) {
     const sync = () => {
         if (actor.mapped && running()) {
             if (!id) {
-                id = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
+                id = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, every, () => {
                     update();
                     if (running())
                         return GLib.SOURCE_CONTINUE;
@@ -373,6 +374,16 @@ function untilLabel(at) {
     tick(l, () => {
         l.text = untilText(at, Date.now());
     }, () => Date.now() < at);
+    return l;
+}
+
+// The time since `at` (an agent's run, CODING-AGENTS.md §2): its text changes once a
+// minute, so it is read every 20 s while shown, never off screen.
+function sinceLabel(at) {
+    const l = label('', 'buoy-label');
+    tick(l, () => {
+        l.text = sinceText(at, Date.now());
+    }, () => true, 20);
     return l;
 }
 
@@ -680,6 +691,8 @@ function makeElement(e, mode, activity = null) {
         return label(e.text, 'buoy-label');
     case 'until':
         return untilLabel(e.at);
+    case 'since':
+        return sinceLabel(e.at);
     }
     return null;
 }

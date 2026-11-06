@@ -23,7 +23,7 @@ export async function reloadModule(ext, id) {
     let src = null;
     if (fresh.source) {
         src = new fresh.source();
-        src.enable(ext._stack, ext._registry);
+        src.enable(ext._stack, ext._registry, ext._settings, {dbus: ext._dbus});
     }
     ext._active.push({m: fresh, src});
     return fresh.id;

@@ -10,9 +10,9 @@ same module (§10).
 Not named `AGENTS.md`: that file name is the convention coding agents read as their own
 instructions.
 
-Sources: Claude Code's hooks reference (code.claude.com/docs/en/hooks), read 2026-11-07
-through a summary — every field name below is checked against the live page and a real
-session before the code relies on it (§12).
+Sources: Claude Code's hooks reference (code.claude.com/docs/en/hooks), read 2026-11-07;
+the field names below were checked against it when the code landed (§12 says what is
+checked and what still waits for a real session).
 
 ## Principles
 
@@ -40,9 +40,11 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 
 - **The hook** is a gjs script shipped in the extension, `hooks/claude.js`, run by Claude
   Code (never by Buoy: ARCHITECTURE "no subprocess" holds). gjs because the JSON goes to
-  D-Bus untouched through `Gio` — no shell quoting — and gjs is on every GNOME system.
-  It reads stdin, adds `ppid` (its parent: the Claude Code process, for §6), calls
-  `Agent`, prints the reply if there is one, exits 0.
+  D-Bus through `Gio` — no shell quoting — and gjs is on every GNOME system. It reads
+  stdin, cuts strings longer than 4 KiB (a Write's content, an Edit's strings: never
+  shown, and the bus stays light), calls `Agent`, prints the reply if there is one, exits
+  0. About 70 ms a run (2026-11-07). Buoy finds the process itself (§6), so the script
+  sends nothing of its own.
 - **D-Bus** (DBUS.md): a new method `Agent(s source, s event) → s reply`; `source` is
   `claude` (later `codex`), `event` the hook's JSON as text. Buoy parses it in the module's
   pure adapter. `reply` is `''`, or for a permission prompt the whole stdout JSON Claude
@@ -50,6 +52,7 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 - **Buoy not there** (disabled, logged out, another desktop): the call fails fast (2 s
   D-Bus timeout for reports) and the script exits 0 with nothing on stdout — for a
   permission prompt that means "no decision": Claude Code asks in the terminal as usual.
+  An event over 256 KiB is refused (InvalidArgs): the same.
 - Unknown events and fields are ignored, never an error (Claude Code adds events often).
 
 ## 2. One pill per session
@@ -72,15 +75,18 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   `CLAUDE_PROJECT_DIR`). The agent's name always leads the text (MASCOT.md: Bu does not
   say which agent it is).
 - **Minimal**: Bu (the pose, §3) · "Claude · buoy" · elapsed since the prompt, "4 min"
-  (a new kit element `{since}`, the twin of `{until}`: minutes, ticking once a minute,
-  only while shown).
+  (a new kit element `{since}`, the twin of `{until}`: "<1 min", "4 min", "1 h 5 min";
+  read every 20 s only while shown, so the text changes within 20 s of the minute).
+  Done freezes it: the run's length.
 - **Compact** (hover): title — what it is doing ("Thinking", "Running a command",
   "Editing pill.js", "Waiting for you", "Done"); subtitle — the tool's detail ("Bash ·
   pnpm test", "Edit · src/…/pill.js"), hidden while the screen is shared (§7).
 - **Expanded**: only for a permission prompt (§4).
 - **Starts** on the first `UserPromptSubmit` of a session: a session that is open but
-  idle takes no room. **Ends** on `SessionEnd`, or 30 s after `Stop` if no new prompt
-  came (the next prompt brings it back; Ethan, 2026-11-07).
+  idle takes no room. A tool, a subagent or a permission prompt before any prompt was
+  seen (the hooks installed mid-run) starts it too, its clock from then. **Ends** on
+  `SessionEnd`, or 30 s after `Stop` if no new prompt came (the activity's `ttl`; the
+  pointer on it holds it, as any ttl; the next prompt brings it back; Ethan, 2026-11-07).
 
 ## 3. Events → Bu and the pill
 
@@ -88,27 +94,31 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 |---|---|---|---|
 | `SessionStart` | — | — | remembered (cwd, model), nothing shown |
 | `UserPromptSubmit` | `think` | "Thinking" | surfaces the pill; the elapsed time restarts |
-| `PreToolUse` | `busy` | by tool: "Running a command", "Editing {file}", "Reading {file}", "Searching", "Fetching a page", "Using {tool}" | |
+| `PreToolUse` | `busy` | by tool: "Running a command", "Editing {file}", "Reading {file}", "Searching", "Fetching a page", "Searching the web", "Starting a subagent" (`Agent`, once `Task`), "Using {tool}" (MCP: the tool, its server in the detail) | inside a subagent (`agent_id`): the title keeps the count, the detail is its tool |
 | `PostToolUse` | `busy` | unchanged | clears an `error` |
 | `PostToolUseFailure` | `error` | "Something failed" | until the next event |
-| `SubagentStart` / `SubagentStop` | `busy` | "Working with a subagent" | the parent keeps working |
-| `PermissionRequest` | `ask` | "Needs your OK" | §4 |
+| `SubagentStart` / `SubagentStop` | `busy` | "Working with a subagent", "… with 2 subagents"; "Working" when the last stops | the parent keeps working |
+| `PermissionRequest` | `ask` | "Needs your OK", detail what it wants ("Run: pnpm test") | §4; after the prompt, with no other news: `busy` "Working" (so it can go stale) |
 | `Notification` `permission_prompt` | `ask` | "Needs your OK" | the terminal's own prompt; no buttons (the hook of §4 carries them) |
-| `Notification` `idle_prompt`, `agent_needs_input`, `elicitation_dialog` | `turn` | "Waiting for you" | alert once |
-| `PreCompact` | `compact` | "Compacting" | `PostCompact` → back to `busy` |
-| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done in {n} min" | the pill ends 30 s later |
+| `Notification` `idle_prompt`, `agent_needs_input`, `elicitation_dialog`, `elicitation_url_dialog` | `turn` | "Waiting for you" | alert once; priority 60; never after `Stop` (the pill is ending). Other types ignored |
+| `PreCompact` | `compact` | "Compacting" | `PostCompact` → `busy` "Working"; a `/compact` between prompts takes no room |
+| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done", "Done in {n} min" from a minute | the pill ends 30 s later |
 | `StopFailure` | `error`, alert | "Stopped with an error" | ends 30 s later |
-| no event for 2 min while `busy` / `think` | `stale` | unchanged | the renderer dims it (`staleAfter`) |
+| no event for 2 min while `busy` / `think` / `compact` | `stale` | unchanged | `staleAfter`: the renderer dims it and draws Bu `stale` (kit, any stale activity led by Bu) |
 | `SessionEnd` | — | — | `end()` at once |
 
 Poses and lamp colours: MASCOT.md § Poses and § Agents. The `ask` lamp is red as every
-waiting ask (INDICATORS: the red light when it cannot show).
+waiting ask (INDICATORS: the red light when it cannot show). An alert on a session's pill
+is a pulse where it stands: the pill has no expanded presentation (kit island.js render,
+`expandable`).
 
 ## 4. The permission prompt
 
-- `PermissionRequest` → `stack.ask` (the same kit ask as D-Bus `Ask()`): an `ask`
-  activity `agent:claude:<session_id>:ask`, Bu `ask` leading, transient (opens expanded,
-  never takes the keyboard unless clicked), the session's pill in pose `ask` meanwhile.
+- `PermissionRequest` → `stack.ask` (the same kit ask as D-Bus `Ask()`, with two new
+  options: `look`, the ask's leading / compact / expanded, and `quiet`): an `ask` activity
+  `agent:claude:<session_id>:ask`, priority 90, Bu `ask` leading, opens expanded (never
+  takes the keyboard unless clicked), the session's pill in pose `ask` meanwhile. One
+  open prompt per session: a second one ends the first without an answer.
 - **Expanded content**: title "Claude · {project} needs your OK"; subtitle what it wants:
   "Run: pnpm test", "Edit: src/…/pill.js", "Fetch: example.com", "Use: {mcp_server}
   {tool}" — the command or path on one line, ellipsized; buttons **Deny · Allow ·
@@ -120,26 +130,36 @@ waiting ask (INDICATORS: the red light when it cannot show).
   | Allow | `{"hookSpecificOutput": {"hookEventName": "PermissionRequest", "decision": {"behavior": "allow"}}}` |
   | Always | the same with `"updatedPermissions": [<the first of permission_suggestions, unchanged>]` — Claude Code's own suggestion, kept where it says (usually the project's `.claude/settings.local.json`) |
   | Deny | `{… "decision": {"behavior": "deny", "message": "Denied in Buoy"}}` |
-  | timeout (`agent-ask-timeout`, 10 min) | Deny, message "No answer in Buoy" |
+  | timeout (`agent-ask-timeout`, 10 min) | Deny, message "No answer in Buoy" (seen with 1 min, 2026-11-07) |
   | answered in the terminal first, ended, Buoy disabled | `''` — no decision: Claude Code's own flow stands |
 
-- **Answered in the terminal**: the next event of that session (any) ends the open ask and
-  the hook returns `''`. Whether the terminal shows its own dialog while the hook waits
-  is not documented — to be seen in a real session (§12). **Claude Desktop** asks through
-  `--permission-prompt-tool=stdio`; with a prompt tool the hooks reference says the hook
-  and the tool race and the first decision applies — the pill or Desktop's own card,
-  whichever is answered first.
-- **Hook timeout**: the `PermissionRequest` entry gets `timeout` 610 s, just above
-  `agent-ask-timeout`, so Buoy always answers before Claude Code gives up.
+- **Answered elsewhere** (the terminal, Desktop's card): the ask ends and the hook returns
+  `''` when (adapter.js `settles`) the same call's `PostToolUse` / `PostToolUseFailure`
+  arrives (same tool and input: PermissionRequest has no `tool_use_id`), or a new prompt,
+  `Stop`, `StopFailure`, `SessionEnd`. Not on any event: reports run in the background, so
+  one sent before the prompt (the previous tool's result, this tool's own `PreToolUse`)
+  may arrive after it, and a `Notification` `permission_prompt` is the terminal's own
+  dialog while the hook waits. And when the waiting hook leaves the bus (Claude Code
+  dropped it, the session was interrupted; a D-Bus name watch on the caller). Whether the
+  terminal shows its own dialog while the hook waits is not documented — to be seen in a
+  real session (§12). **Claude Desktop** asks through `--permission-prompt-tool=stdio`;
+  the hooks reference says the hooks run alongside the host and whichever decides first
+  applies — the pill or Desktop's own card.
+- **Hook timeout**: the `PermissionRequest` entry gets `timeout` 1810 s, above the longest
+  `agent-ask-timeout` (30 min), so Buoy always answers before Claude Code gives up.
 - **Not opened** (the red light instead, INDICATORS): fullscreen, Do Not Disturb, the
-  island hidden. **Not jumping open** while the session's terminal is focused (§6): the
-  ask waits in the pill, its buttons in the compact (hover) and expanded (click).
+  island hidden. **Not jumping open** while the session's terminal is focused (§6,
+  `agent-quiet-focused`): the ask is `quiet` — no alert, no expand, also not when the
+  island is seen again — and waits in the pill, its buttons in the compact (hover) and
+  expanded (click). Focus leaving the terminal later does not open it (an open question
+  for review).
 
 ## 5. Keyboard
 
 As every ask (SPEC §2c, `kit/keys.js`): when the island holds the keyboard (a click, or
-Super+B), the buttons carry their key — D(eny), A(llow), Al(w)ays by mnemonic — Enter
-the first, Esc closes without answering (the ask stays). Never takes the keyboard on its
+Super+B), the buttons carry their key — `d` for Deny; Allow and Always share their first
+letter, so they take their position, `2` and `3` (kit `mnemonics`; Deny · Allow alone is
+`d` · `a`) — Esc closes without answering (the ask stays). Never takes the keyboard on its
 own.
 
 ## 6. The session's terminal
@@ -147,15 +167,18 @@ own.
 Claude Code does not say which terminal runs a session (the hooks reference documents
 `cwd`, `session_id`, `CLAUDE_PROJECT_DIR`, no window or TTY). Buoy finds it:
 
-- The hook sends `ppid`, the Claude Code process. Buoy walks `/proc/<pid>/stat` up the
-  parents (a handful of reads, once per session) until a process owns a window
-  (`Shell.WindowTracker.get_app_from_pid`, or a `Meta.Window.get_pid()` match): the
-  terminal app.
-- **Focused** = that app's window has focus. GNOME Terminal and Ptyxis run one process
-  for all their windows and tabs, so this is per app, not per tab: any window of that
-  terminal counts. A terminal in VS Code is VS Code.
+- Buoy asks the bus for the hook's pid (`GetConnectionUnixProcessID` of the caller, while
+  the hook is still connected: the reply waits for it, a few ms in the background) and
+  walks `/proc/<pid>/stat` up the parents (hook → `sh -c` → Claude Code → shell →
+  terminal; a handful of reads, once per session) until Shell knows a window of that pid
+  (`Shell.WindowTracker.get_app_from_pid`): the terminal app. Looked up again with the
+  next event only if the pid could not be had.
+- **Focused** = that app is `Shell.WindowTracker` `focus_app`. GNOME Terminal and Ptyxis
+  run one process for all their windows and tabs, so this is per app, not per tab: any
+  window of that terminal counts. A terminal in VS Code is VS Code.
 - Claude Desktop's sessions walk up to its window (`claude` → `disclaimer` →
-  `claude-desktop`, seen 2026-11-07): Desktop focused = quiet, as a terminal.
+  `claude-desktop`, seen 2026-11-07 with `ps` and with the Shell's own walk from a
+  command this session ran): Desktop focused = quiet, as a terminal.
 - Not found (a remote shell, an unknown launcher): never "focused"; the prompt opens as
   normal.
 
@@ -163,30 +186,38 @@ Claude Code does not say which terminal runs a session (the hooks reference docu
 
 - The prompt you typed (`UserPromptSubmit.prompt`) is never shown or kept.
 - Commands, paths and URLs show in the compact and the ask's subtitle — you need them to
-  decide. While the screen is shared or recorded (the privacy rule of notifications,
-  SPEC §6) they are replaced by the tool's name: "Run a command", "Edit a file".
+  decide; a URL only by its host. While the screen is shared or recorded (Shell's own
+  indicators, `Main.panel.statusArea.screenSharing` / `screenRecording` `visible`,
+  watched only while a session is shown; the privacy rule of notifications, SPEC §6) they
+  are replaced by the tool's name: "Run a command", "Edit a file", "Editing a file".
 - Nothing is written anywhere by Buoy except, on Always, the rule Claude Code suggested,
   through Claude Code.
 
 ## 8. Installing the hooks (prefs)
 
-A row **Claude Code** in Modules (group "Live in the Pill"): a switch "Show my Claude Code
-sessions", its subtitle the state ("Hooks installed in ~/.claude/settings.json", "Claude
-Code not found").
+A row **Claude Code** in Modules (group "Live in the Pill"), and inside it a switch "Show
+my Claude Code sessions", its subtitle the state ("Hooks installed in
+~/.claude/settings.json", "Claude Code not found", "Part of Buoy's hooks are in …",
+"… could not be read (not valid JSON): Buoy leaves it alone"). The file is
+`$CLAUDE_CONFIG_DIR/settings.json` when that is set, as Claude Code does. Prefs imports
+`modules/agent/hooks.js` for this: pure, no Shell import (ARCHITECTURE rule 9).
 
 - **On**: Buoy's prefs adds its entries to `~/.claude/settings.json` (created if
   missing), keeping everything else in it — other hooks, permissions, comments are not
   supported by JSON so none are lost. Each entry's command is
-  `gjs -m '<extension>/hooks/claude.js'`; Buoy recognises its own entries by that path.
+  `gjs -m '<extension>/hooks/claude.js'`; Buoy recognises its own entries by
+  `buoy@murilegus/hooks/claude.js` in the command, wherever the extension is installed.
   Reporting events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`,
   `PostToolUseFailure`, `SubagentStart`, `SubagentStop`, `Notification`, `PreCompact`,
   `PostCompact`, `Stop`, `StopFailure`, `SessionEnd`) get `"async": true`;
-  `PermissionRequest` is synchronous with `timeout` 610.
+  `PermissionRequest` is synchronous with `timeout` 1810. No matcher: every tool. A
+  file that is not a JSON object (comments, a typo) is never written.
 - **Off**: removes exactly Buoy's entries (and an event's list left empty), nothing else.
 - Claude Code reloads the file by itself: running sessions pick the change up.
 - The switch reflects the file, not a Buoy key: it reads the entries on open and when the
-  file changes while prefs is open. Turning the module off in Modules leaves the hooks in
-  place (they then return at once, §1); the row says so.
+  file changes while prefs is open (a file monitor). Turning the module off in Modules
+  leaves the hooks in place (they then return at once, §1); the switch is inside the
+  module's row, so it is reached with the module on.
 - The file is written atomically (`Gio.File.replace_contents`, a backup `settings.json.bak`
   of the previous version the first time Buoy touches it).
 
@@ -194,9 +225,9 @@ Code not found").
 
 | Key | Type | Default | Prefs | Meaning |
 |---|---|---|---|---|
-| `modules-agent` | b | true | Modules, row Claude Code | the module (replaces the stub `modules-ask`) |
-| `agent-ask-timeout` | i | 600 | under the row, minutes 1–30 | no answer → Deny (was `ask-timeout`) |
-| `agent-quiet-focused` | b | true | under the row | §6: no jump open while the terminal is focused |
+| `modules-agent` | b | true | Modules, row "Claude Code" | the module (replaces the stub `modules-ask`) |
+| `agent-ask-timeout` | i | 10 | in the row, "Deny after (minutes)", 1–30 | no answer → Deny (was `ask-timeout`) |
+| `agent-quiet-focused` | b | true | in the row, "Quiet in its terminal" | §6: no jump open while the terminal is focused |
 
 The hooks' presence is in `~/.claude/settings.json`, not in a key (§8).
 
@@ -214,7 +245,9 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
   30-second end after `Stop`, stale, the terminal lookup of §6), `hooks.js` (pure: add and
   remove Buoy's entries in a settings object), `hooks/claude.js` (the script, at the
   extension's top level: Claude Code runs it).
-- Kit: the `{since}` element (§2); D-Bus `Agent` (DBUS.md, `Version` 2).
+- Kit: the `{since}` element (§2); D-Bus `Agent` (DBUS.md, `Version` 2; a source gets the
+  `BuoyDBus` in `enable(…, {dbus})` and answers with `setAgent`); `stack.ask` `look` and
+  `quiet`; a stale activity's Bu takes the pose `stale`.
 - Tests (`tests/agent.test.js`): every row of §3 (pose, title, detail per tool), the run
   > 10 min `party`, stale, two sessions, subagents counted in the parent (no pill),
   priorities 35 / 60 / 90, unknown events ignored; the three replies and the
@@ -227,13 +260,32 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
 - In a real Claude Code session (Ethan's machine): install from prefs, run a session,
   answer a permission in the pill and in the terminal.
 
-## 12. To verify before the code relies on it
+## 12. Verified, and what still waits for a real session
 
-- Exact field names (`notification_type` values, `PostToolUseFailure` fields,
-  `permission_suggestions` shape) against the live hooks reference.
+Checked 2026-11-07 against the hooks reference (when the code landed):
+
+- Common fields `session_id`, `cwd`, `hook_event_name`; `agent_id` / `agent_type` inside a
+  subagent. `PostToolUseFailure` (`error`, `is_interrupt`) and `StopFailure` (`error`)
+  exist; `PostCompact` exists. `PermissionRequest` has `tool_name`, `tool_input`,
+  `permission_suggestions` (objects like `{type: 'addRules', rules, behavior,
+  destination}`), no `tool_use_id`. `notification_type`: `permission_prompt`,
+  `idle_prompt`, `agent_needs_input`, `elicitation_dialog`, `elicitation_url_dialog`
+  (used), others ignored. The agent tool is `Agent` (`Task` kept).
+- The reply shape (`hookSpecificOutput.decision.behavior`, `message` for deny,
+  `updatedPermissions` for allow); exit 0 with nothing printed is no decision.
+- `async: true` is a command hook's key; default timeout 600 s; settings files are
+  watched, so running sessions pick the hooks up. Hooks run through `sh -c` (the walk of
+  §6 goes through it).
+
+Driven in headless Shell 50.1 with the real script and recorded events (2026-11-07):
+the table of §3, Deny · Allow · Always by click and by keys, the timeout, an answer from
+the terminal (the same call's result), the hook killed, disable while it waits, the
+screen shared, a focused "terminal" (a GTK window whose child ran the hook), prefs
+install / remove / a partly installed and a non-JSON file.
+
+Still to see in a real Claude Code session (Ethan's machine):
+
 - What the terminal shows while a `PermissionRequest` hook waits, and which answer wins.
-- What Claude Code does when a `PermissionRequest` hook times out.
-- That a hook's parent process is Claude Code (for `ppid`, §6), in a terminal and in
-  Claude Desktop.
-- That `PermissionRequest` hooks run in Claude Desktop's sessions (prompt tool `stdio`)
-  and race its card as documented.
+- That a terminal answer drops the waiting hook (the pill's ask ends at once) or sends
+  the same call's result (it ends with it).
+- That `PermissionRequest` hooks run in Claude Desktop's sessions and race its card.

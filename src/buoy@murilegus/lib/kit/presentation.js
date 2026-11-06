@@ -6,10 +6,14 @@
  *   {leading, text, trailing, expanded, actions, keyline, isStale}
  *   leading/trailing: 'icon-name' | Gio.Icon | {art (path, URI or Gio.Icon), icon} | {icon} |
  *   {progress: 0..1}
- *                     | {bar: 0..1} | {countdown: s} | {until: ms since the epoch} | {text}
- *                     `until` counts down live, once a second while shown (present.js)
+ *                     | {bar: 0..1} | {countdown: s} | {until: ms since the epoch}
+ *                     | {since: ms since the epoch} | {text}
+ *                     `until` counts down live, once a second while shown (present.js);
+ *                     `since` is its twin, the time since then in minutes ("4 min"), the
+ *                     text changing once a minute while shown (CODING-AGENTS.md §2)
  *   leading only:     {mascot: '<pose>', icon?} — Bu (MASCOT.md); an unknown pose falls
- *                     back to `icon`, else `idle`; elsewhere only its `icon` counts
+ *                     back to `icon`, else `idle`; elsewhere only its `icon` counts. A
+ *                     stale activity's Bu takes the pose `stale` (MASCOT.md § Poses)
  *   expanded: true (= enlarged minimal) | {leading, center, trailing, bottom}
  *             region: an element as above | {title, subtitle, progress} | {transport: true};
  *             any region may carry `priority` (the highest one takes the free width)
@@ -119,6 +123,8 @@ export function element(e, {leading = false} = {}) {
         return {type: 'text', text: clock(e.countdown)};
     if (isNum(e.until))
         return {type: 'until', at: e.until};
+    if (isNum(e.since))
+        return {type: 'since', at: e.since};
     const text = str(e.text);
     return text ? {type: 'text', text} : null;
 }
@@ -155,13 +161,13 @@ export function lightSlot(light, {idle}) {
 }
 
 // The leading zone, and where the light goes: Bu carries amber/red in its lamp (no edge
-// slot); anything else leaves the light to the edge slot.
-function leadingAndLight(v, light) {
+// slot); anything else leaves the light to the edge slot. A stale activity's Bu is `stale`.
+function leadingAndLight(v, light, {stale = false} = {}) {
     const leading = element(v, {leading: true});
     const slot = lightSlot(light, {idle: false});
     if (leading?.type !== 'mascot')
         return {leading, light: slot};
-    return {leading: {...leading, light: slot}, light: null};
+    return {leading: {...leading, ...stale ? {pose: 'stale'} : {}, light: slot}, light: null};
 }
 
 /**
@@ -190,7 +196,7 @@ export function planIdle({light, plan = null} = {}) {
  * @returns {object} {leading, text, trailing, action, keyline, stale, light, badge}
  */
 export function planMinimal(p, {light, more, side = false} = {}) {
-    const lead = leadingAndLight(p.leading, light);
+    const lead = leadingAndLight(p.leading, light, {stale: p.isStale === true});
     const trailing = element(p.trailing);
     return {
         leading: lead.leading,
@@ -216,7 +222,7 @@ export function planCompact(p, {light} = {}) {
     if (!isPlain(p.compact))
         return null;
     const c = p.compact;
-    const lead = leadingAndLight(c.leading, light);
+    const lead = leadingAndLight(c.leading, light, {stale: p.isStale === true});
     const plan = {
         leading: lead.leading,
         text: str(c.text),
@@ -271,6 +277,21 @@ export function livePosition(live, now) {
  */
 export function mediaTimes(position, length) {
     return [clock(position / 1000), `\u2212${clock(Math.max(0, length - position) / 1000)}`];
+}
+
+/**
+ * @param {number} at  ms since the epoch
+ * @param {number} now
+ * @returns {string} the time since `at` in minutes: `<1 min`, `4 min`, `1 h 5 min`, `2 h`
+ */
+export function sinceText(at, now) {
+    const min = Math.floor(Math.max(0, now - at) / 60000);
+    if (min < 1)
+        return '<1 min';
+    if (min < 60)
+        return `${min} min`;
+    const h = Math.floor(min / 60), m = min % 60;
+    return m ? `${h} h ${m} min` : `${h} h`;
 }
 
 /**

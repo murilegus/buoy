@@ -16,6 +16,8 @@ import {
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
 import {PATH} from './lib/kit/dbus.js';
+// the one module file prefs imports: pure, no Shell (CODING-AGENTS.md §8)
+import {commandFor, hooksNote, install, installed, uninstall} from './lib/modules/agent/hooks.js';
 
 const IFACE = 'org.gnome.Shell.Extensions.Buoy';
 const REPOSITORY = 'https://github.com/murilegus/buoy';
@@ -660,6 +662,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
         this._settings.bind(m.enableKey, row, 'enable-expansion', Gio.SettingsBindFlags.DEFAULT);
         for (const name of m.keys)
             row.add_row(this._row(key(name)));
+        if (m.id === 'agent')
+            row.add_row(this._claudeHooksRow(m.enableKey));
         if (m.standalone)
             row.add_row(this._pinRow(m.id));
         if (m.sample) {
@@ -667,6 +671,81 @@ export default class BuoyPreferences extends ExtensionPreferences {
             sample.connect('activated', () => this._showSample(m.id));
             row.add_row(sample);
         }
+        return row;
+    }
+
+    // Claude Code's hooks (CODING-AGENTS.md §8): the switch reflects ~/.claude/settings.json,
+    // not a key — read on open and whenever the file changes while prefs is open. On adds
+    // Buoy's entries, off removes exactly them; the rest of the file is kept. The first
+    // write keeps the old file as settings.json.bak.
+    _claudeHooksRow(enableKey) {
+        const dir = GLib.getenv('CLAUDE_CONFIG_DIR') || GLib.build_filenamev([GLib.get_home_dir(), '.claude']);
+        const file = Gio.File.new_for_path(GLib.build_filenamev([dir, 'settings.json']));
+        const shown = file.get_path().replace(GLib.get_home_dir(), '~');
+        const command = commandFor(`${this.path}/hooks/claude.js`);
+        const row = new Adw.SwitchRow({title: 'Show my Claude Code sessions'});
+        let current = null, error = null, syncing = false;
+        const read = () => {
+            current = null;
+            error = null;
+            try {
+                const [, bytes] = file.load_contents(null);
+                const text = new TextDecoder().decode(bytes);
+                current = text.trim() ? JSON.parse(text) : {};
+                if (current === null || typeof current !== 'object' || Array.isArray(current))
+                    throw new Error('not a JSON object');
+            } catch (e) {
+                current = null;
+                if (e instanceof SyntaxError)
+                    error = 'not valid JSON';
+                else if (!e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
+                    error = e.message;
+                else
+                    current = {};
+            }
+        };
+        const sync = () => {
+            read();
+            const state = error ? 'none' : installed(current);
+            syncing = true;
+            row.active = state === 'all';
+            syncing = false;
+            row.sensitive = !error;
+            row.subtitle = hooksNote({
+                state, error, file: shown, moduleOn: this._settings.get_boolean(enableKey),
+                found: GLib.file_test(dir, GLib.FileTest.IS_DIR) || GLib.find_program_in_path('claude') !== null,
+            });
+        };
+        row.connect('notify::active', () => {
+            if (syncing)
+                return;
+            read();
+            if (error) {
+                sync();
+                return;
+            }
+            try {
+                const next = row.active ? install(current, command) : uninstall(current);
+                GLib.mkdir_with_parents(dir, 0o700);
+                const backup = Gio.File.new_for_path(`${file.get_path()}.bak`);
+                if (file.query_exists(null) && !backup.query_exists(null))
+                    file.copy(backup, Gio.FileCopyFlags.NONE, null, null);
+                file.replace_contents(new TextEncoder().encode(`${JSON.stringify(next, null, 2)}\n`), null, false,
+                    Gio.FileCreateFlags.NONE, null);
+            } catch (e) {
+                this._toast(`Could not change ${shown}: ${e.message}`);
+            }
+            sync();
+        });
+        const monitor = file.monitor_file(Gio.FileMonitorFlags.NONE, null);
+        monitor.connect('changed', (_m, _f, _o, event) => {
+            if (event === Gio.FileMonitorEvent.CHANGES_DONE_HINT || event === Gio.FileMonitorEvent.DELETED ||
+                event === Gio.FileMonitorEvent.CREATED)
+                sync();
+        });
+        this._drops.push(() => monitor.cancel());
+        this._ids.push(this._settings.connect(`changed::${enableKey}`, sync));
+        sync();
         return row;
     }
 

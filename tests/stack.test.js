@@ -388,11 +388,32 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     stack.top.onAction('Allow');
     eq([await b, stack.top?.id ?? null], ['Allow', null], 'pressing an action button answers the ask');
 
+    // look: how the asker's ask looks; quiet: it waits in its pill (CODING-AGENTS.md §4, §6)
+    const l = stack.ask('l', 'Claude · buoy needs your OK', ['Deny', 'Allow'], {
+        look: {leading: {mascot: 'ask'}, compact: {text: 'Needs your OK', transport: true}, kind: 'x', actions: [], text: 'no'},
+    });
+    eq([stack.top.leading, stack.top.compact.text, stack.top.kind, stack.top.text, stack.top.actions.length],
+        [{mascot: 'ask'}, 'Needs your OK', 'ask', 'Claude · buoy needs your OK', 2],
+        'look sets leading and compact; kind, text and buttons stay the stack\'s');
+    stack.end('l');
+    eq(await l, null, 'ended');
     const s1 = stack.ask('s', 'one?', ['a']);
     const s2 = stack.ask('s', 'two?', ['b']);
     eq(await s1, null, 're-asking the same id settles the old ask with null');
     stack.answer('s', 'b');
     eq(await s2, 'b', 'new ask answered');
+}
+{
+    const {island, stack} = setup();
+    const q = stack.ask('quiet', 'Allow?', ['Deny', 'Allow'], {quiet: true});
+    eq(island.log.at(-1), 'show quiet', 'a quiet ask: no alert, not opened');
+    eq([stack.top.id, stack.light], ['quiet', 'off'], 'it waits in its pill, shown, so no red light');
+    const before = island.log.length;
+    stack.setUnseen(true);
+    stack.setUnseen(false);
+    eq(island.log.slice(before).filter(l => l.includes('expand')), [], 'seen again: still not opened');
+    stack.answer('quiet', 'Allow');
+    eq(await q, 'Allow', 'answered from its pill');
 }
 {
     const {island, stack} = setup();

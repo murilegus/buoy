@@ -47,7 +47,8 @@ for (const name of order) {
 
 // --- every key has a place --------------------------------------------------------------
 const plan = planPrefs(order.map(name => ({name})));
-eq(plan.general, ['expanded-width', 'keybind-focus'], 'Island page, Pill group: the pill\'s own keys, in schema order (Bu rests after hidden for now)');
+eq(plan.general, ['expanded-width', 'keybind-focus', 'mascot-rest-after'],
+    'Island page, Pill group: the pill\'s own keys, in schema order; Bu rests after is back with Claude Code (2026-11-07)');
 eq(plan.apps, ['apps-hidden', 'apps-plain'], 'Apps page');
 eq(plan.developer, ['dev-mode'], 'Developer group');
 eq(plan.windows, ['window-corners', 'window-corners-radius'], 'Windows page: the corners switch, then its radius (SPEC §1a)');
@@ -89,7 +90,7 @@ eq(schema.get_key('cluster-radius').get_range().recursiveUnpack(), ['range', [0,
     'radius stops at 16: half the 32 px cluster, a pill');
 eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [16, 17],
     'radius 16 (a pill, like the island) and opacity 17 % by default, a panel button\'s hover (2026-11-04)');
-eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'calendar', 'input', 'clipboard'],
+eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'calendar', 'input', 'agent', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet, nor a module that is only an idle plan');
 eq(plan.plans.find(p => p.id === 'clock').ownSwitch, true,
     'clock: its switch on its plan row on the Island page, not on Modules (2026-11-06, Ethan)');
@@ -113,7 +114,7 @@ eq(plan.plans.find(p => p.id === 'clock').ownSwitch, true,
         eq(Boolean(g.title && g.description), true, `group "${g.id}" has a title and a description`);
     }
     eq(plan.groups.map(g => [g.id, g.modules.map(m => m.id)]), [
-        ['live', ['media', 'notification', 'progress', 'timer']],
+        ['live', ['media', 'notification', 'progress', 'timer', 'agent']],
         ['feedback', ['hud', 'input', 'clipboard']],
         ['tabs', ['calendar']],
     ], 'live in the pill · quick feedback · tabs (the idle plans are on the Island page)');
@@ -121,8 +122,6 @@ eq(plan.plans.find(p => p.id === 'clock').ownSwitch, true,
     const hidden = planPrefs(order.filter(n => n !== 'modules-calendar').map(name => ({name})));
     eq(hidden.groups.map(g => g.id), ['live', 'feedback'], 'a group with no module left is not drawn');
 }
-eq([...Object.values(plan).flat()].includes('mascot-rest-after'), false,
-    'Bu rests after: hidden until something draws Bu on the pill (rule 9, 2026-11-06)');
 eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
     'clock-defaults-applied stays hidden: placed by name, not taken by the clock module\'s prefix');
 
@@ -253,7 +252,7 @@ for (const id of Object.keys(SAMPLES)) {
         throw new Error(`SAMPLES has "${id}", which has no row`);
 }
 
-const fake = [{name: 'modules-media'}, {name: 'media-compact-on-hover'}, {name: 'modules-ask'}, {name: 'ask-timeout'}, {name: 'dev-mode'}];
+const fake = [{name: 'modules-media'}, {name: 'media-compact-on-hover'}, {name: 'modules-home'}, {name: 'home-thing'}, {name: 'dev-mode'}];
 const p2 = planPrefs(fake);
 eq(p2.modules.map(m => [m.id, m.keys]), [['media', ['media-compact-on-hover']]],
     'a module\'s own key lives in its row; a hidden module\'s key is hidden with it');
