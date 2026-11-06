@@ -90,7 +90,7 @@
     <key name="modules-clock" type="b">
       <default>true</default>
       <summary>Clock</summary>
-      <description>A second clock in the idle pill, with the part of the day. Options on the Island page.</description>
+      <description>A second clock in the idle pill, with the part of the day.</description>
     </key>
     <key name="idle-content" type="s">
       <choices>

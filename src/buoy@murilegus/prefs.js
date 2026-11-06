@@ -9,7 +9,7 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 import {
     planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
-    donationLinks, addFolder, shortPath, MAX_FOLDERS,
+    donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote,
 } from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
@@ -115,8 +115,12 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const page = new Adw.PreferencesPage({title: 'Island', icon_name: 'focus-top-bar-symbolic'});
 
         const idle = new Adw.PreferencesGroup({title: 'When Idle'});
-        for (const name of plan.idle)
-            idle.add(this._row(key(name)));
+        for (const name of plan.idle) {
+            const row = this._row(key(name));
+            if (name === 'idle-content')
+                this._followPlanSwitches(row, key(name).get_description(), plan.plans);
+            idle.add(row);
+        }
         page.add(idle);
 
         const plans = plan.plans.filter(p => p.keys.length || p.enableKey);
@@ -432,21 +436,51 @@ export default class BuoyPreferences extends ExtensionPreferences {
 
     // --- Modules ------------------------------------------------------------------------
 
+    // One group per way a module shows (kit/settings.js MODULE_GROUPS, 2026-11-06): live
+    // in the pill, quick feedback, tabs, at rest. Group text is markup (no use-markup on
+    // Adw.PreferencesGroup): it is Buoy's own, with nothing to escape.
     _modulesPage(plan, key) {
+        // no page-wide line: it stood alone above the groups (Ethan 2026-11-06); a switch
+        // says enough
         const page = new Adw.PreferencesPage({title: 'Modules', icon_name: 'view-grid-symbolic'});
-        const group = new Adw.PreferencesGroup({
-            title: 'Modules',
-            description: 'Turning one off removes it and its tab at once.',
-        });
-        for (const m of plan.modules)
-            group.add(this._moduleRow(m, key));
-        page.add(group);
+        for (const g of plan.groups) {
+            const group = new Adw.PreferencesGroup({title: g.title, description: g.description});
+            for (const m of g.modules)
+                group.add(this._moduleRow(m, key));
+            page.add(group);
+        }
         return page;
     }
 
-    // One idle plan: its own keys inside. Its module's switch stays on Modules; while the
-    // module is off the plan does not exist (rule 6), so the row says where to turn it on.
+    // Show names a plan whose module is off: the pill falls back to nothing, and the row
+    // says why under it ("Clock is off, so the pill shows nothing") until the plan is back (kit/settings.js
+    // idleOffNote, 2026-11-06).
+    _followPlanSwitches(row, description, plans) {
+        const sync = () => {
+            row.subtitle = idleOffNote(this._settings.get_string('idle-content'), plans,
+                k => this._settings.get_boolean(k)) ?? description;
+        };
+        const keys = ['idle-content', ...plans.map(p => p.enableKey).filter(Boolean)];
+        for (const k of keys)
+            this._ids.push(this._settings.connect(`changed::${k}`, sync));
+        sync();
+    }
+
+    // One idle plan: its own keys inside. A module that is only this plan (clock) has its
+    // switch here, like a Modules row (2026-11-06, Ethan). A module that is more keeps
+    // its switch on Modules; while it is off the plan does not exist (rule 6), so the row
+    // says where to turn it on.
     _planRow(p, key) {
+        if (p.ownSwitch) {
+            const k = key(p.enableKey);
+            const row = textRow(Adw.ExpanderRow, {
+                title: k.get_summary(), subtitle: k.get_description(), show_enable_switch: true,
+            });
+            this._settings.bind(p.enableKey, row, 'enable-expansion', Gio.SettingsBindFlags.DEFAULT);
+            for (const name of p.keys)
+                row.add_row(this._row(key(name)));
+            return row;
+        }
         const title = p.enableKey ? key(p.enableKey).get_summary() : p.id;
         const row = textRow(Adw.ExpanderRow, {title});
         for (const name of p.keys)

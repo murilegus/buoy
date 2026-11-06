@@ -25,7 +25,10 @@ export const PLACES = {
     'idle-content': 'idle',     // Island page, "When idle"
     'expanded-width': 'general',
     'keybind-focus': 'general',
-    'mascot-rest-after': 'general', // Bu is the kit's, not a module's (MASCOT.md)
+    // Bu is the kit's, not a module's (MASCOT.md); hidden until something draws Bu on the
+    // pill (greeting, ask, agents): until then the key changes nothing (rule 9, Ethan
+    // 2026-11-06). Back on the Island page's Pill group with the first of them.
+    'mascot-rest-after': null,
     'apps-hidden': 'apps',
     'apps-plain': 'apps',
     'dev-mode': 'developer',
@@ -199,6 +202,23 @@ export const CHOICE_LABELS = {
 };
 
 /**
+ * What the Show row says under it when the plan it names cannot show: the plan's module
+ * is off, so the idle pill falls back to nothing (2026-11-06, Ethan: the row still said
+ * "Clock" with the Clock switch off right below).
+ *
+ * @param {string} shown  `idle-content`
+ * @param {Array<{id: string, enableKey: ?string}>} plans  planPrefs().plans
+ * @param {function(string): boolean} isOn  reads a `modules-<id>` key
+ * @returns {?string} "Clock is off, so the pill shows nothing", or null when the choice can show (or is none)
+ */
+export function idleOffNote(shown, plans, isOn) {
+    const p = plans.find(x => x.id === shown);
+    if (!p?.enableKey || isOn(p.enableKey))
+        return null;
+    return `${choiceLabel('idle-content', shown)} is off, so the pill shows nothing`;
+}
+
+/**
  * @param {string} name  the key
  * @param {string} value  one of its choices
  * @returns {string} the drop-down's label for it
@@ -222,35 +242,70 @@ export const HIDDEN_MODULES = new Set(['home', 'ask']);
 // so the list is here.
 export const IDLE_PLANS = ['clock'];
 
+// The Modules page in groups, by how a module shows (2026-11-06, Ethan: the list grew
+// past reading). Prefs cannot import a module, so the groups are listed here; the test
+// fails on a shown module in no group or in two, or a group naming a module the schema
+// does not have. A module enters its group with the item that ships it.
+export const MODULE_GROUPS = [
+    {
+        id: 'live', title: 'Live in the Pill',
+        description: 'What stays on the pill while it runs.',
+        modules: ['media', 'notification', 'progress', 'timer'],
+    },
+    {
+        id: 'feedback', title: 'Quick Feedback',
+        description: 'A short flash after something you did.',
+        modules: ['hud', 'input', 'clipboard'],
+    },
+    {
+        id: 'tabs', title: 'Tabs',
+        description: 'A tab of their own, in the strip\'s slot or pinned.',
+        modules: ['calendar'],
+    },
+];
+// An idle plan's module that is nothing else (clock) is in no group: its switch is on
+// its plan's row, on the Island page.
+
 // Modules whose tab is standalone (SPEC §2b): their row has "Pin to the strip".
 export const STANDALONE = new Set(['calendar', 'clipboard']);
 
 /**
  * @param {Array<{name: string}>} keys  schema keys, in schema order
  * @returns {object} {general, idle, apps, panel, windows, developer: key names;
- *   modules: [{id, enableKey, keys}]; plans: [{id, enableKey, keys}] (Island page)}
+ *   modules: [{id, enableKey, keys}]; groups: MODULE_GROUPS with those modules, empty
+ *   groups left out (Modules page); plans: [{id, enableKey, keys, ownSwitch}] (Island
+ *   page; ownSwitch: the plan's row carries its module's switch)}
  * @throws {Error} a key that is neither placed nor a module's, or an `idle-…` key of no plan
  */
 export function planPrefs(keys) {
     const names = keys.map(k => k.name);
     const ids = names.filter(n => n.startsWith('modules-')).map(n => n.slice('modules-'.length));
-    const plan = {general: [], idle: [], apps: [], panel: [], windows: [], developer: [], modules: [], plans: []};
+    const plan = {
+        general: [], idle: [], apps: [], panel: [], windows: [], developer: [], modules: [], plans: [],
+        groups: [],
+    };
+    // A module that is only an idle plan (no keys of its own, no tab): its switch sits on
+    // its plan's row on the Island page, not on Modules (2026-11-06, Ethan). One that is
+    // more (calendar later: an activity, a tab and a plan) keeps its row on Modules.
+    const ownKeys = id => names.filter(n => n.startsWith(`${id}-`) && !(n in PLACES));
+    const planOnly = id => IDLE_PLANS.includes(id) && !ownKeys(id).length && !STANDALONE.has(id);
     for (const id of IDLE_PLANS) {
+        const enableKey = names.includes(`modules-${id}`) ? `modules-${id}` : null;
         plan.plans.push({
-            id,
-            enableKey: names.includes(`modules-${id}`) ? `modules-${id}` : null,
+            id, enableKey,
             keys: names.filter(n => n.startsWith(`idle-${id}-`)),
+            ownSwitch: enableKey !== null && planOnly(id),
         });
     }
     for (const id of ids) {
-        if (HIDDEN_MODULES.has(id))
+        if (HIDDEN_MODULES.has(id) || planOnly(id))
             continue;
         plan.modules.push({
             id,
             enableKey: `modules-${id}`,
             // a key placed by name wins over the prefix (clock-defaults-applied is not
             // the clock module's)
-            keys: names.filter(n => n.startsWith(`${id}-`) && !(n in PLACES)),
+            keys: ownKeys(id),
             standalone: STANDALONE.has(id),
             sample: SAMPLES[id] ?? null,
         });
@@ -270,6 +325,11 @@ export function planPrefs(keys) {
         const place = PLACES[n];
         if (place && place !== 'modules' && !(n in NESTED))
             plan[place].push(n);
+    }
+    for (const g of MODULE_GROUPS) {
+        const modules = g.modules.map(id => plan.modules.find(m => m.id === id)).filter(Boolean);
+        if (modules.length)
+            plan.groups.push({id: g.id, title: g.title, description: g.description, modules});
     }
     return plan;
 }
