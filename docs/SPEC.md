@@ -765,6 +765,12 @@ the % and the file rows show size only.
     or the app leaving the bus ends it without Done.
   - A click focuses that app's window (`Shell.AppSystem.lookup_app(id).activate()`);
     there is nothing more to open.
+  - Files closed mid-operation (2026-11-06, Ethan): it keeps working but stops sending
+    LauncherEntry, and posts "N file operations active" (GNotification id `progress`), then
+    "All file operations have been completed" (`transfer-complete`). Buoy reads both (it
+    leaves them shown; banners are the notifications module's call): the pill becomes
+    "Files · in background" — no ring, no %, since no number comes any more — and
+    `transfer-complete` gives "Files · Done".
   - Not in M3: Firefox (no signal), Files outside Ubuntu (it only posts the notification
     "N file operations active" while its window is closed —
     `nautilus-progress-persistence-handler.c`; that reaches Buoy with M4 notifications).

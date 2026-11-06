@@ -6,7 +6,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Source} from '../../kit/source.js';
 import {slugOf} from '../../kit/registry.js';
-import {appIdOf, applyUpdate, transition} from './adapter.js';
+import {appIdOf, appSignal, applyUpdate, transition} from './adapter.js';
 import {doneHistory} from './history.js';
 
 const IFACE = 'com.canonical.Unity.LauncherEntry';
@@ -27,6 +27,13 @@ const UNITY = 'com.canonical.Unity';
  * Buoy holds it and the signals keep coming.
  * One state per app; transition() turns each update into start / update / done / stop.
  * A sender leaving the bus (NameOwnerChanged) stops its apps. Signals only.
+ *
+ * Files closed while an operation runs keeps working but stops sending LauncherEntry; it
+ * says so with its own notifications instead (appSignal: `progress` → in the background,
+ * `transfer-complete` → done). Buoy reads them from Main.messageTray — the sources Shell
+ * keeps per app (ui/notificationDaemon.js GtkNotificationDaemonAppSource, `policy.id`) —
+ * and leaves them as they are: whether Buoy takes over GNOME's banners is the
+ * notifications module's call (FEATURES M3).
  */
 export class LauncherEntrySource extends Source {
     enable(stack, registry = null, settings = null) {
@@ -47,6 +54,36 @@ export class LauncherEntrySource extends Source {
                 if (!owner)
                     this._gone(name);
             });
+
+        const tray = Main.messageTray;
+        tray.getSources().forEach(s => this._watchSource(s));
+        tray.connectObject('source-added', (_t, s) => this._watchSource(s), this);
+    }
+
+    _watchSource(source) {
+        source.connectObject('notification-added', (s, n) => {
+            const appId = s.policy?.id ? `${s.policy.id}.desktop` : null;
+            const what = appSignal(appId, n.id ?? null);
+            if (what)
+                this._signal(appId, what);
+        }, this);
+    }
+
+    // The app's own word on a progress LauncherEntry no longer reports.
+    _signal(appId, what) {
+        const entry = this._apps?.get(appId);
+        if (!entry?.state.progressVisible || !this._stack)
+            return;
+        if (what === 'background') {
+            entry.background = true;
+            this._act(appId, 'update');
+            return;
+        }
+        // done: as if hidden at the end, so a late LauncherEntry starts afresh
+        const prev = entry.state;
+        entry.state = {...prev, progress: 1, progressVisible: false};
+        entry.background = false;
+        this._act(appId, transition({...prev, progress: 1}, entry.state));
     }
 
     _update(sender, appId, props) {
@@ -55,7 +92,10 @@ export class LauncherEntrySource extends Source {
         const entry = this._apps.get(appId);
         const state = applyUpdate(entry?.state, props);
         const what = transition(entry?.state, state);
-        this._apps.set(appId, {...entry, state, sender});
+        // a real change means the app reports again (Files' window reopened): no longer in
+        // the background; a repeat of the last value (Files sends one as it finishes in the
+        // background) changes nothing (transition() null)
+        this._apps.set(appId, {...entry, state, sender, background: !!entry?.background && what === null});
         this._act(appId, what);
     }
 
@@ -85,7 +125,7 @@ export class LauncherEntrySource extends Source {
         const a = this._registry?.build('progress', appId, {
             id: appId, slug: slugOf(appId), name, icon,
             progress: entry.state.progress, count: entry.state.count, countVisible: entry.state.countVisible,
-            phase: what === 'done' ? 'done' : 'running', focus: focusOf(app),
+            phase: phaseOf(what, entry), focus: focusOf(app),
         });
         if (!a) {
             this._end(entry);
@@ -103,6 +143,9 @@ export class LauncherEntrySource extends Source {
     }
 
     disable() {
+        Main.messageTray.disconnectObject(this);
+        for (const s of Main.messageTray.getSources())
+            s.disconnectObject(this);
         if (this._unityId)
             Gio.bus_unown_name(this._unityId);
         this._unityId = 0;
@@ -118,6 +161,12 @@ export class LauncherEntrySource extends Source {
         doneHistory.clear();
         super.disable();
     }
+}
+
+function phaseOf(what, entry) {
+    if (what === 'done')
+        return 'done';
+    return entry.background ? 'background' : 'running';
 }
 
 // a{sv} values unpacked one level, as the adapter reads them

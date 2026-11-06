@@ -12,6 +12,25 @@
 export const DONE_TTL = 2500;
 /** A progress hidden at or above this ended; below, it was stopped (cancelled, closed). */
 export const DONE_AT = 0.99;
+/** A pill left "in the background" dims after this without word from the app. */
+export const BACKGROUND_STALE = 10 * 60 * 1000;
+
+// What an app's own notifications say about its progress, by GNotification id (the same
+// in every language). Files, closed while an operation runs, stops sending LauncherEntry
+// and posts "N file operations active" (id `progress`), then "All file operations have
+// been completed" (`transfer-complete`) — seen in headless Shell 2026-11-05.
+const APP_NOTIFICATIONS = {
+    'org.gnome.Nautilus.desktop': {'progress': 'background', 'transfer-complete': 'done'},
+};
+
+/**
+ * @param {?string} appId  the notification's app (desktop id)
+ * @param {?string} notificationId  its GNotification id
+ * @returns {?string} 'background' | 'done' | null
+ */
+export function appSignal(appId, notificationId) {
+    return APP_NOTIFICATIONS[appId]?.[notificationId] ?? null;
+}
 
 // libunity's defaults (as Ubuntu Dock's launcherAPI.js launcherEntryDefaults)
 const DEFAULTS = Object.freeze({progress: 0, progressVisible: false, count: 0, countVisible: false, urgent: false});
@@ -97,7 +116,20 @@ export default {
         if (ev.phase === 'done') {
             return {
                 leading: {icon: 'object-select-symbolic'}, text: `${name} · Done`, trailing: null,
-                compact: null, ttl: DONE_TTL, onPress,
+                compact: null, ttl: DONE_TTL, staleAfter: 0, onPress,
+                attributes: {app: name, count: null, phase: 'done'},
+            };
+        }
+        if (ev.phase === 'background') {
+            return {
+                leading: ev.icon ? {icon: ev.icon} : {icon: 'folder-download-symbolic'},
+                text: `${name} · in background`, trailing: null,
+                compact: {
+                    leading: ev.icon ? {icon: ev.icon} : null, text: name,
+                    subtitle: 'Still working in the background',
+                },
+                ttl: 0, staleAfter: BACKGROUND_STALE, onPress,
+                attributes: {app: name, count: null, phase: 'background'},
             };
         }
         const pct = `${percent(ev.progress)}%`;
@@ -108,8 +140,8 @@ export default {
                 leading: ev.icon ? {icon: ev.icon} : null, text: name,
                 subtitle: count ? `${count} · ${pct}` : pct, progress: ev.progress,
             },
-            ttl: 0, onPress,
-            attributes: {app: name, count},
+            ttl: 0, staleAfter: 0, onPress,
+            attributes: {app: name, count, phase: 'running'},
         };
     },
 };

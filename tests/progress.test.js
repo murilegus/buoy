@@ -1,6 +1,6 @@
 // Run: gjs -m tests/progress.test.js   (no Shell needed; adapters are pure)
 import adapter, {
-    DONE_TTL, DONE_AT, appIdOf, applyUpdate, transition, countText, percent,
+    DONE_TTL, DONE_AT, BACKGROUND_STALE, appIdOf, applyUpdate, transition, countText, percent, appSignal,
 } from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
 import {DoneHistory, KEEP_MS, MAX_DONE} from '../src/buoy@murilegus/lib/modules/progress/history.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
@@ -85,6 +85,27 @@ eq([countText(0, true, 'x'), countText(2, false, 'x'), countText(2, true, 'nauti
     eq(adapter.progress({...ev, name: long}, null).text, long, 'long name kept whole');
     if (/"(width|height|w|h|px|size)":/.test(JSON.stringify(p)))
         throw new Error('progress: no measurements in the adapter');
+}
+
+// --- an app's own notifications: Files goes on in the background, then is done -----------
+eq(appSignal('org.gnome.Nautilus.desktop', 'progress'), 'background',
+    'Files closed mid-operation ("N file operations active"): it stops sending LauncherEntry');
+eq(appSignal('org.gnome.Nautilus.desktop', 'transfer-complete'), 'done', '"All file operations have been completed"');
+eq(appSignal('org.gnome.Nautilus.desktop', 'other'), null, 'another Files notification: nothing');
+eq(appSignal('google-chrome.desktop', 'progress'), null, 'another app\'s "progress" id means nothing');
+eq([appSignal(null, 'progress'), appSignal('org.gnome.Nautilus.desktop', null)], [null, null], 'missing: nothing');
+{
+    const b = adapter.progress({
+        id: 'org.gnome.Nautilus.desktop', slug: 'nautilus', name: 'Files', icon: 'org.gnome.Nautilus',
+        progress: 0.11, count: 0, countVisible: false, phase: 'background', focus: () => {},
+    }, null);
+    eq([b.leading, b.text, b.trailing], [{icon: 'org.gnome.Nautilus'}, 'Files · in background', null],
+        'background: the app icon, no ring and no % (Files sends no more numbers)');
+    eq(b.compact, {leading: {icon: 'org.gnome.Nautilus'}, text: 'Files', subtitle: 'Still working in the background'},
+        'compact says so');
+    eq([b.ttl, b.staleAfter], [0, BACKGROUND_STALE], 'until done; dimmed if that never comes');
+    eq(b.attributes.phase, 'background', 'the tab knows the phase');
+    eq(BACKGROUND_STALE, 10 * 60 * 1000, 'stale after 10 minutes');
 }
 
 // --- Done rows for the Transfers tab: kept a while, newest first --------------------------

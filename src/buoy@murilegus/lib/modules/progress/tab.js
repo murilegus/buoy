@@ -10,7 +10,8 @@ import {doneHistory} from './history.js';
  * The Transfers tab (SPEC §6c, FEATURES M3 "progress"). LauncherEntry says which app is
  * busy and how far, nothing more, so the tab lists apps:
  *
- *   Running   one row per app: icon, name, the count when sent, %, a thin bar
+ *   Running   one row per app: icon, name, the count when sent, %, a thin bar; "In the
+ *             background" without them when the app no longer reports (Files closed)
  *   Done      an app's transfer that ended, with the time, for KEEP_MS (history.js)
  *
  * A row brings its app forward (the activity's onPress). It reads the kit's activities
@@ -34,7 +35,7 @@ export class TransfersTab {
 
     _render() {
         this.actor.destroy_all_children();
-        const running = this._list.filter(a => a.trailing);      // a Done pill has none
+        const running = this._list.filter(a => a.attributes?.phase !== 'done');
         const done = doneHistory.list(Date.now());
         if (!running.length && !done.length) {
             this.actor.add_child(new St.Label({text: 'No transfers', style_class: 'buoy-transfers-empty'}));
@@ -43,8 +44,10 @@ export class TransfersTab {
         if (running.length) {
             this.actor.add_child(header('Running'));
             for (const a of running) {
+                const background = a.attributes?.phase === 'background';
                 this.actor.add_child(this._row(a.compact?.leading?.icon ?? null, a.attributes?.app ?? a.text,
-                    a.attributes?.count ?? null, a.leading?.progress ?? 0, a.onPress));
+                    background ? 'In the background' : a.attributes?.count ?? null,
+                    background ? null : a.leading?.progress ?? 0, a.onPress));
             }
         }
         if (done.length) {
