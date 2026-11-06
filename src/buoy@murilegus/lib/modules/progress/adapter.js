@@ -123,10 +123,12 @@ export default {
         if (ev.phase === 'background') {
             return {
                 leading: ev.icon ? {icon: ev.icon} : {icon: 'folder-download-symbolic'},
-                text: `${name} · in background`, trailing: null,
+                // Files reopened mid-operation sends one LauncherEntry, then nothing until it
+                // ends (seen 2026-11-06): no % either way; its own window shows one
+                text: `${name} · ${ev.windowOpen ? 'working' : 'in background'}`, trailing: null,
                 compact: {
                     leading: ev.icon ? {icon: ev.icon} : null, text: name,
-                    subtitle: 'Still working in the background',
+                    subtitle: ev.windowOpen ? 'Progress shows in Files' : 'Still working in the background',
                 },
                 ttl: 0, staleAfter: BACKGROUND_STALE, onPress,
                 attributes: {app: name, count: null, phase: 'background'},

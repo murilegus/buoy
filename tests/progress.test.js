@@ -105,6 +105,12 @@ eq([appSignal(null, 'progress'), appSignal('org.gnome.Nautilus.desktop', null)],
         'compact says so');
     eq([b.ttl, b.staleAfter], [0, BACKGROUND_STALE], 'until done; dimmed if that never comes');
     eq(b.attributes.phase, 'background', 'the tab knows the phase');
+    const w = adapter.progress({
+        id: 'org.gnome.Nautilus.desktop', slug: 'nautilus', name: 'Files', icon: 'org.gnome.Nautilus',
+        progress: 0.57, count: 0, countVisible: false, phase: 'background', windowOpen: true, focus: () => {},
+    }, null);
+    eq([w.text, w.trailing, w.compact.subtitle], ['Files · working', null, 'Progress shows in Files'],
+        'reopened: Files does not report to the launcher again, so no % — its own window has it');
     eq(BACKGROUND_STALE, 10 * 60 * 1000, 'stale after 10 minutes');
 }
 

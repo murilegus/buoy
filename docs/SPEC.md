@@ -770,7 +770,9 @@ the % and the file rows show size only.
     "All file operations have been completed" (`transfer-complete`). Buoy reads both (it
     leaves them shown; banners are the notifications module's call): the pill becomes
     "Files · in background" — no ring, no %, since no number comes any more — and
-    `transfer-complete` gives "Files · Done".
+    `transfer-complete` gives "Files · Done". Reopened, Files reports once more and then
+    stops again, so the pill stays without % and says "Files · working" while its window
+    is open (its own window shows the progress). Minimized, Files keeps reporting.
   - Not in M3: Firefox (no signal), Files outside Ubuntu (it only posts the notification
     "N file operations active" while its window is closed —
     `nautilus-progress-persistence-handler.c`; that reaches Buoy with M4 notifications).

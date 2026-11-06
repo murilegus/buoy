@@ -38,7 +38,8 @@ const UNITY = 'com.canonical.Unity';
 export class LauncherEntrySource extends Source {
     enable(stack, registry = null, settings = null) {
         super.enable(stack, registry, settings);
-        this._apps = new Map();     // appId → {state, sender, id (stack)}
+        this._apps = new Map();     // appId → {state, sender, id (stack), background}
+        this._watched = new Set();  // Shell.App whose windows-changed we follow
         const bus = Gio.DBus.session;
         this._unityId = Gio.bus_own_name_on_connection(bus, UNITY, Gio.BusNameOwnerFlags.ALLOW_REPLACEMENT,
             null, null);
@@ -76,6 +77,7 @@ export class LauncherEntrySource extends Source {
             return;
         if (what === 'background') {
             entry.background = true;
+            this._watchWindows(appId);
             this._act(appId, 'update');
             return;
         }
@@ -86,16 +88,30 @@ export class LauncherEntrySource extends Source {
         this._act(appId, transition({...prev, progress: 1}, entry.state));
     }
 
+    // While in the background the pill says whether the app's window is open again.
+    _watchWindows(appId) {
+        const app = Shell.AppSystem.get_default().lookup_app(appId);
+        if (!app || this._watched.has(app))
+            return;
+        this._watched.add(app);
+        app.connectObject('windows-changed', () => {
+            if (this._apps?.get(appId)?.background)
+                this._act(appId, 'update');
+        }, this);
+    }
+
     _update(sender, appId, props) {
         if (!sender || !appId || !this._stack)
             return;
         const entry = this._apps.get(appId);
         const state = applyUpdate(entry?.state, props);
         const what = transition(entry?.state, state);
-        // a real change means the app reports again (Files' window reopened): no longer in
-        // the background; a repeat of the last value (Files sends one as it finishes in the
-        // background) changes nothing (transition() null)
-        this._apps.set(appId, {...entry, state, sender, background: !!entry?.background && what === null});
+        // once in the background it stays there until the end: Files sends a late value as
+        // its window closes and one more when it is reopened, then nothing (seen
+        // 2026-11-06) — no number from LauncherEntry is current any more. A new start
+        // (hidden, then shown again) is a new operation.
+        const background = !!entry?.background && (what === null || what === 'update');
+        this._apps.set(appId, {...entry, state, sender, background});
         this._act(appId, what);
     }
 
@@ -126,6 +142,7 @@ export class LauncherEntrySource extends Source {
             id: appId, slug: slugOf(appId), name, icon,
             progress: entry.state.progress, count: entry.state.count, countVisible: entry.state.countVisible,
             phase: phaseOf(what, entry), focus: focusOf(app),
+            windowOpen: (app?.get_n_windows() ?? 0) > 0,
         });
         if (!a) {
             this._end(entry);
@@ -143,6 +160,9 @@ export class LauncherEntrySource extends Source {
     }
 
     disable() {
+        for (const app of this._watched ?? [])
+            app.disconnectObject(this);
+        this._watched = null;
         Main.messageTray.disconnectObject(this);
         for (const s of Main.messageTray.getSources())
             s.disconnectObject(this);
