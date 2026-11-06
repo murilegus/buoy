@@ -512,7 +512,13 @@ function dimMascots(actor) {
     }
 }
 
-function dimStale(box) {
+/**
+ * Dims an actor as the pills dim a stale activity (grey text and icons, Bu at 40 %): for
+ * a module's tab.js, so its rows match the pill (the Claude Code tab, 2026-11-07).
+ *
+ * @param {Clutter.Actor} box
+ */
+export function dimStale(box) {
     box.add_style_class_name('buoy-stale');
     dimMascots(box);
 }
@@ -688,10 +694,13 @@ export function iconProps(icon) {
  * @param {'minimal'|'compact'|'expanded'} [opts.size]  the tier whose sizes it takes
  * @param {boolean} [opts.leading]  the leading zone: Bu may be drawn
  * @param {?object} [opts.activity]  its activity (Bu's animation follows it)
+ * @param {boolean} [opts.stale]  the activity is stale: Bu takes `stale`
  * @returns {?Clutter.Actor}
  */
-export function buildElement(value, {size = 'minimal', leading = false, activity = null} = {}) {
-    return makeElement(element(value, {leading}), size, activity);
+export function buildElement(value, {size = 'minimal', leading = false, activity = null, stale = false} = {}) {
+    const e = element(value, {leading});
+    // a stale activity's Bu is `stale`, as on its pill (presentation.js leadingAndLight)
+    return makeElement(stale && e?.type === 'mascot' ? {...e, pose: 'stale'} : e, size, activity);
 }
 
 function makeElement(e, mode, activity = null) {

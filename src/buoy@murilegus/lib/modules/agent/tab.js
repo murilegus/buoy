@@ -2,7 +2,7 @@ import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {EmptyState, buildElement} from '../../kit/present.js';
+import {EmptyState, buildElement, dimStale} from '../../kit/present.js';
 
 /**
  * The Claude Code tab (CODING-AGENTS.md §2, Ethan 2026-11-07): every session the island
@@ -47,7 +47,6 @@ export class AgentsTab {
     _row(a, ask, {name, doing}) {
         const box = new St.BoxLayout({
             style_class: 'buoy-agents-entry', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
-            ...a.isStale ? {opacity: 140} : {},
         });
         const button = new St.Button({
             style_class: 'buoy-agents-row', can_focus: true, x_expand: true,
@@ -63,7 +62,7 @@ export class AgentsTab {
             });
         }
         const line = new St.BoxLayout({style_class: 'buoy-agents-line', x_expand: true});
-        const bu = buildElement(ask ? ask.leading : a.leading, {leading: true, activity: a});
+        const bu = buildElement(ask ? ask.leading : a.leading, {leading: true, activity: a, stale: a.isStale && !ask});
         if (bu)
             line.add_child(bu);
         const text = new St.BoxLayout({
@@ -82,6 +81,10 @@ export class AgentsTab {
         }
         button.set_child(line);
         box.add_child(button);
+        // stale as on its pill: grey text, Bu `stale` at 40 % (kit dimStale); a prompt
+        // waiting is never stale
+        if (a.isStale && !ask)
+            dimStale(line);
         if (ask)
             box.add_child(this._buttons(ask));
         return box;
