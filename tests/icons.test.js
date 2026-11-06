@@ -1,4 +1,4 @@
-// The daypart and weather icons: 19 colour SVGs from scripts/icons.py, shown at 20 px in
+// The daypart and weather icons: 19 colour SVGs from scripts/icons.js, shown at 20 px in
 // the idle pill and 40 px in the hover card, always on black. Checks the technical
 // contract (16 grid, flat, nothing loaded at runtime), the palette (none of the status
 // light colours), and that the family shares its parts (one cloud, one horizon…).

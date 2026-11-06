@@ -21,8 +21,8 @@ src/buoy@murilegus/
 │                           quick feedback, tabs — kit/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
 │                           2026-11-04), Windows (corners, 2026-11-04)
 ├── schemas/                GSettings: the one source of every key, its summary and range
-├── icons/                  the daypart and weather colour SVGs (one family, scripts/icons.py is the
-│                           source; docs/icons.png the sheet; 2026-11-06) and the lock-key symbolics
+├── icons/                  the daypart and weather colour SVGs (one family, scripts/icons.js is the
+│                           source and draws docs/icons.png; 2026-11-06) and the lock-key symbolics
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
     │   ├── activity.js     contract (APPLE.md §B1), validate + normalise
