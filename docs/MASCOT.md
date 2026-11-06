@@ -72,7 +72,7 @@ replacement for the light in every state.
   holds still while the user is away (Mutter idle monitor, a signal) and when
   `org.gnome.desktop.interface enable-animations` is off. The lamp never blinks.
   - **Away** (2026-11-04) is the same as for the eyes (§ Eyes): no input for
-    `mascot-rest-after` seconds (10–600, default 60; General page, Ethan) on the core
+    `mascot-rest-after` seconds (10–600, default 60, Ethan; out of prefs until something draws Bu on the pill, 2026-11-06) on the core
     idle monitor, an UNINHIBITABLE watch, back on the user-active watch. The watches and
     the settings signal exist only while a moving Bu is mapped; a new value applies at
     once.

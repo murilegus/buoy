@@ -432,15 +432,20 @@ export default class BuoyPreferences extends ExtensionPreferences {
 
     // --- Modules ------------------------------------------------------------------------
 
+    // One group per way a module shows (kit/settings.js MODULE_GROUPS, 2026-11-06): live
+    // in the pill, quick feedback, tabs, at rest. Group text is markup (no use-markup on
+    // Adw.PreferencesGroup): it is Buoy's own, with nothing to escape.
     _modulesPage(plan, key) {
-        const page = new Adw.PreferencesPage({title: 'Modules', icon_name: 'view-grid-symbolic'});
-        const group = new Adw.PreferencesGroup({
-            title: 'Modules',
+        const page = new Adw.PreferencesPage({
+            title: 'Modules', icon_name: 'view-grid-symbolic',
             description: 'Turning one off removes it and its tab at once.',
         });
-        for (const m of plan.modules)
-            group.add(this._moduleRow(m, key));
-        page.add(group);
+        for (const g of plan.groups) {
+            const group = new Adw.PreferencesGroup({title: g.title, description: g.description});
+            for (const m of g.modules)
+                group.add(this._moduleRow(m, key));
+            page.add(group);
+        }
         return page;
     }
 

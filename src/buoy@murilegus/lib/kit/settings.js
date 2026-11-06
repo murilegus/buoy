@@ -25,7 +25,10 @@ export const PLACES = {
     'idle-content': 'idle',     // Island page, "When idle"
     'expanded-width': 'general',
     'keybind-focus': 'general',
-    'mascot-rest-after': 'general', // Bu is the kit's, not a module's (MASCOT.md)
+    // Bu is the kit's, not a module's (MASCOT.md); hidden until something draws Bu on the
+    // pill (greeting, ask, agents): until then the key changes nothing (rule 9, Ethan
+    // 2026-11-06). Back on the Island page's Pill group with the first of them.
+    'mascot-rest-after': null,
     'apps-hidden': 'apps',
     'apps-plain': 'apps',
     'dev-mode': 'developer',
@@ -222,19 +225,50 @@ export const HIDDEN_MODULES = new Set(['home', 'ask']);
 // so the list is here.
 export const IDLE_PLANS = ['clock'];
 
+// The Modules page in groups, by how a module shows (2026-11-06, Ethan: the list grew
+// past reading). Prefs cannot import a module, so the groups are listed here; the test
+// fails on a shown module in no group or in two, or a group naming a module the schema
+// does not have. A module enters its group with the item that ships it.
+export const MODULE_GROUPS = [
+    {
+        id: 'live', title: 'Live in the Pill',
+        description: 'What stays on the pill while it runs.',
+        modules: ['media', 'notification', 'progress', 'timer'],
+    },
+    {
+        id: 'feedback', title: 'Quick Feedback',
+        description: 'A short flash after something you did.',
+        modules: ['hud', 'input', 'clipboard'],
+    },
+    {
+        id: 'tabs', title: 'Tabs',
+        description: 'A tab of their own, in the strip\'s slot or pinned.',
+        modules: ['calendar'],
+    },
+    {
+        id: 'rest', title: 'At Rest',
+        description: 'What the idle pill can show.',
+        modules: ['clock'],
+    },
+];
+
 // Modules whose tab is standalone (SPEC §2b): their row has "Pin to the strip".
 export const STANDALONE = new Set(['calendar', 'clipboard']);
 
 /**
  * @param {Array<{name: string}>} keys  schema keys, in schema order
  * @returns {object} {general, idle, apps, panel, windows, developer: key names;
- *   modules: [{id, enableKey, keys}]; plans: [{id, enableKey, keys}] (Island page)}
+ *   modules: [{id, enableKey, keys}]; groups: MODULE_GROUPS with those modules, empty
+ *   groups left out (Modules page); plans: [{id, enableKey, keys}] (Island page)}
  * @throws {Error} a key that is neither placed nor a module's, or an `idle-…` key of no plan
  */
 export function planPrefs(keys) {
     const names = keys.map(k => k.name);
     const ids = names.filter(n => n.startsWith('modules-')).map(n => n.slice('modules-'.length));
-    const plan = {general: [], idle: [], apps: [], panel: [], windows: [], developer: [], modules: [], plans: []};
+    const plan = {
+        general: [], idle: [], apps: [], panel: [], windows: [], developer: [], modules: [], plans: [],
+        groups: [],
+    };
     for (const id of IDLE_PLANS) {
         plan.plans.push({
             id,
@@ -270,6 +304,11 @@ export function planPrefs(keys) {
         const place = PLACES[n];
         if (place && place !== 'modules' && !(n in NESTED))
             plan[place].push(n);
+    }
+    for (const g of MODULE_GROUPS) {
+        const modules = g.modules.map(id => plan.modules.find(m => m.id === id)).filter(Boolean);
+        if (modules.length)
+            plan.groups.push({id: g.id, title: g.title, description: g.description, modules});
     }
     return plan;
 }

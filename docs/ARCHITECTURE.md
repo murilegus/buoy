@@ -17,7 +17,8 @@ src/buoy@murilegus/
 ├── glyphs.js               one-colour bitmap tray icons (Electron's white glyphs) tinted like the text (2026-11-04)
 ├── reach.js                the Overview's workspace backgrounds grow under the see-through bar, so closing it ends on the whole wallpaper (2026-11-04)
 ├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
-├── prefs.js                Adw prefs: General, Modules (one row per module), Apps, Panel (clusters,
+├── prefs.js                Adw prefs: Island, Modules (one row per module, in groups: live in the pill,
+│                           quick feedback, tabs, at rest — kit/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
 │                           2026-11-04), Windows (corners, 2026-11-04)
 ├── schemas/                GSettings: the one source of every key, its summary and range
 └── lib/
@@ -193,7 +194,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
 | `progress-folders` | as | folders watched for downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03; M3 and renamed from `transfers-folders` 2026-11-06, rule 9) |
 | `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc (default Super+B, SPEC §2c) |
-| `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60 (MASCOT.md, 2026-11-04); General page, as Bu is the kit's |
+| `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60 (MASCOT.md, 2026-11-04); the kit's, as Bu is. Not in prefs until something draws Bu on the pill (greeting, ask, agents): until then it changes nothing (2026-11-06, Ethan); then on the Island page's Pill group |
 | per-module keys | — | declared by the module |
 
 ## Open for later
