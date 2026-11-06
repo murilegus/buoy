@@ -9,9 +9,10 @@ import {AgentsTab} from './tab.js';
 export default {
     id: 'agent',
     title: 'Claude Code',
-    // Claude Desktop's own icon (hicolor `claude-desktop`, Ethan 2026-11-07); not
-    // installed (the CLI alone), the strip's generic one (kit/home.js)
-    icon: 'claude-desktop',
+    // Claude's tray glyph, the white one for a dark bar, as Claude Desktop installs it
+    // (Ethan 2026-11-07: the tray's mark, not the app icon); not shipped with Buoy, and
+    // without Claude Desktop the strip's generic icon (kit/present.js iconProps)
+    icon: '/usr/lib/claude-desktop/resources/TrayIconLinux-Dark.png',
     // the tab only while a session or a prompt is there (Ethan, 2026-11-07)
     tabWhileLive: true,
     kinds: ['agent', 'ask'],

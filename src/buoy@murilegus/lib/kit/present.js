@@ -662,6 +662,24 @@ function eqGlyph() {
 }
 
 /**
+ * An icon by theme name, or by absolute path to an image another app installed (Claude
+ * Desktop's tray glyph, the Claude Code tab, 2026-11-07); a missing file shows the
+ * generic icon instead.
+ *
+ * @param {string} icon
+ * @returns {object} St.Icon properties
+ */
+export function iconProps(icon) {
+    if (typeof icon === 'string' && icon.startsWith('/')) {
+        return {
+            gicon: new Gio.FileIcon({file: Gio.File.new_for_path(icon)}),
+            fallback_icon_name: 'view-app-grid-symbolic',
+        };
+    }
+    return {icon_name: icon, fallback_icon_name: 'view-app-grid-symbolic'};
+}
+
+/**
  * One element of presentation data as an actor, for a module's tab.js (the Claude Code
  * tab draws Bu and the live elapsed time, 2026-11-07).
  *
@@ -686,7 +704,7 @@ function makeElement(e, mode, activity = null) {
     case 'icon':
         return new St.Icon({
             style_class: 'buoy-icon', icon_size: size.icon,
-            ...e.gicon ? {gicon: e.gicon} : {icon_name: e.icon},
+            ...e.gicon ? {gicon: e.gicon} : iconProps(e.icon),
         });
     case 'art': {
         const icon = new St.Icon({

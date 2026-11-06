@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {EmptyState, FILL, buildExpanded, buildMinimal} from './present.js';
+import {EmptyState, FILL, buildExpanded, buildMinimal, iconProps} from './present.js';
 import {clockTime} from './presentation.js';
 import {planStrip, stripOrder, tabActivities, findTab, HOME} from './tabs.js';
 import {step} from './keys.js';
@@ -226,13 +226,9 @@ export class Home {
 
     _button({icon, label}, accessibleName) {
         const box = new St.BoxLayout({style_class: 'buoy-tab-box'});
-        // an app's own icon may not be installed (Claude Code without Claude Desktop)
-        if (icon) {
-            box.add_child(new St.Icon({
-                icon_name: icon, fallback_icon_name: 'view-app-grid-symbolic', icon_size: 16,
-                y_align: Clutter.ActorAlign.CENTER,
-            }));
-        }
+        // a theme name, or another app's image by path (present.js iconProps)
+        if (icon)
+            box.add_child(new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
         if (label)
             box.add_child(new St.Label({text: label, y_align: Clutter.ActorAlign.CENTER}));
         return new St.Button({

@@ -97,8 +97,9 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   window known (a remote shell, an unknown launcher): the Claude Code tab opens. The kit's
   `pressFirst` (tabs.js `pressTarget`): onPress before the kind's tab, the tab when it
   returns false.
-- **The Claude Code tab** (`tab.js`; its icon Claude Desktop's own, `claude-desktop`, the
-  strip's generic one when only the CLI is installed): one row per session the island
+- **The Claude Code tab** (`tab.js`; its icon Claude's tray glyph, the white one Claude
+  Desktop installs at `/usr/lib/claude-desktop/resources/TrayIconLinux-Dark.png` — read
+  from there, never shipped with Buoy; the strip's generic icon without it): one row per session the island
   shows — Bu in its pose, the session's name, what it is doing, the elapsed time; dimmed
   when stale — and a permission prompt's Deny · Allow · Always under its session's row.
   A row's click brings that session's terminal up and closes the island. In the strip
@@ -281,8 +282,8 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
 - Kit: the `{since}` element (§2); D-Bus `Agent` (DBUS.md, `Version` 2; a source gets the
   `BuoyDBus` in `enable(…, {dbus})` and answers with `setAgent`); `stack.ask` `look` and
   `quiet`, `stack.wake`; a stale activity's Bu takes the pose `stale`; `pressFirst` and
-  `tabWhileLive` (tabs.js); `buildElement` (present.js, for a tab.js); a tab icon falls
-  back to the generic one when its theme lacks it.
+  `tabWhileLive` (tabs.js); `buildElement` (present.js, for a tab.js); an icon may be an
+  absolute path (present.js `iconProps`), and falls back to the generic one when missing.
 - Tests (`tests/agent.test.js`): every row of §3 (pose, title, detail per tool), the run
   > 10 min `party`, stale, two sessions, subagents counted in the parent (no pill),
   priorities 35 / 60 / 90, unknown events ignored; the three replies and the

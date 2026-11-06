@@ -104,7 +104,7 @@ eq(tabFor(act('m', 'media', {expanded: true}), s), tabFor(act('m', 'media', {exp
 
 // --- a tab only while live (Claude Code, 2026-11-07) ---------------------------------
 {
-    const agents = {id: 'agent', kinds: ['agent', 'ask'], tab: class {}, title: 'Claude Code', icon: 'claude-desktop', tabWhileLive: true};
+    const agents = {id: 'agent', kinds: ['agent', 'ask'], tab: class {}, title: 'Claude Code', icon: '/usr/lib/claude-desktop/resources/TrayIconLinux-Dark.png', tabWhileLive: true};
     eq(planStrip([media, agents], []).tabs.map(t => t.id), [HOME, 'media'], 'no session: no Claude Code tab');
     eq(planStrip([media, agents], [act('s', 'agent')]).tabs.map(t => t.id), [HOME, 'media', 'agent'],
         'a session: the tab, after the others in module order');
@@ -112,7 +112,8 @@ eq(tabFor(act('m', 'media', {expanded: true}), s), tabFor(act('m', 'media', {exp
         'a prompt alone: the tab too');
     eq(planStrip([media, agents], [act('q', 'ask', {expanded: true})]).tabs.some(t => t.id === 'kind:ask'), false,
         'its kinds stay claimed while hidden: no stray "Ask" tab');
-    eq(planStrip([media, agents], [act('s', 'agent')]).tabs.at(-1).icon, 'claude-desktop', 'its icon');
+    eq(planStrip([media, agents], [act('s', 'agent')]).tabs.at(-1).icon, '/usr/lib/claude-desktop/resources/TrayIconLinux-Dark.png',
+        'its icon: a path to Claude Desktop\'s tray glyph');
 }
 
 // --- what a click does -------------------------------------------------------------
