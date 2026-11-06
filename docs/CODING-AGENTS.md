@@ -55,7 +55,19 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 ## 2. One pill per session
 
 - **id** `agent:claude:<session_id>`; several sessions are several pills (side by side up
-  to 3, then `+N`, SPEC §2c). Priority as other running activities.
+  to 3, then `+N`, SPEC §2c).
+- **Priority** (kit `PRIORITY`, 2026-11-07): running **35** (with `device`: over a
+  transfer, under a notification); waiting for you (`turn`) **60**, over what is only to
+  look at; a permission prompt **90**, as every ask; done keeps 35 and alerts once.
+- **Subagents** are no pills of their own: they share the parent's `session_id` (only
+  `agent_id` differs); the parent's compact counts them, "Working with 2 subagents", from
+  `SubagentStart` / `SubagentStop`. A session started apart (a new `session_id`) is its
+  own pill.
+- **Claude Desktop** (its Code tab) runs the same `claude` CLI with
+  `--setting-sources=user,project,local` (seen on this machine, CLI 2.1.317, 2026-11-07),
+  so the hooks of `~/.claude/settings.json` run for its sessions too; each is a pill like a
+  terminal's. Sessions are stored in one place (`~/.claude/projects/…`) and can be
+  resumed from either: a resumed session keeps its `session_id`, so its pill.
 - **Name**: "Claude · {project}", the project being the last part of `cwd` (or of
   `CLAUDE_PROJECT_DIR`). The agent's name always leads the text (MASCOT.md: Bu does not
   say which agent it is).
@@ -67,8 +79,8 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   pnpm test", "Edit · src/…/pill.js"), hidden while the screen is shared (§7).
 - **Expanded**: only for a permission prompt (§4).
 - **Starts** on the first `UserPromptSubmit` of a session: a session that is open but
-  idle takes no room. **Ends** on `SessionEnd`, or 2 min after `Stop` if no new prompt
-  came (the next prompt brings it back).
+  idle takes no room. **Ends** on `SessionEnd`, or 30 s after `Stop` if no new prompt
+  came (the next prompt brings it back; Ethan, 2026-11-07).
 
 ## 3. Events → Bu and the pill
 
@@ -84,8 +96,8 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 | `Notification` `permission_prompt` | `ask` | "Needs your OK" | the terminal's own prompt; no buttons (the hook of §4 carries them) |
 | `Notification` `idle_prompt`, `agent_needs_input`, `elicitation_dialog` | `turn` | "Waiting for you" | alert once |
 | `PreCompact` | `compact` | "Compacting" | `PostCompact` → back to `busy` |
-| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done in {n} min" | the pill ends 2 min later |
-| `StopFailure` | `error`, alert | "Stopped with an error" | ends 2 min later |
+| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done in {n} min" | the pill ends 30 s later |
+| `StopFailure` | `error`, alert | "Stopped with an error" | ends 30 s later |
 | no event for 2 min while `busy` / `think` | `stale` | unchanged | the renderer dims it (`staleAfter`) |
 | `SessionEnd` | — | — | `end()` at once |
 
@@ -113,7 +125,10 @@ waiting ask (INDICATORS: the red light when it cannot show).
 
 - **Answered in the terminal**: the next event of that session (any) ends the open ask and
   the hook returns `''`. Whether the terminal shows its own dialog while the hook waits
-  is not documented — to be seen in a real session (§12).
+  is not documented — to be seen in a real session (§12). **Claude Desktop** asks through
+  `--permission-prompt-tool=stdio`; with a prompt tool the hooks reference says the hook
+  and the tool race and the first decision applies — the pill or Desktop's own card,
+  whichever is answered first.
 - **Hook timeout**: the `PermissionRequest` entry gets `timeout` 610 s, just above
   `agent-ask-timeout`, so Buoy always answers before Claude Code gives up.
 - **Not opened** (the red light instead, INDICATORS): fullscreen, Do Not Disturb, the
@@ -139,6 +154,8 @@ Claude Code does not say which terminal runs a session (the hooks reference docu
 - **Focused** = that app's window has focus. GNOME Terminal and Ptyxis run one process
   for all their windows and tabs, so this is per app, not per tab: any window of that
   terminal counts. A terminal in VS Code is VS Code.
+- Claude Desktop's sessions walk up to its window (`claude` → `disclaimer` →
+  `claude-desktop`, seen 2026-11-07): Desktop focused = quiet, as a terminal.
 - Not found (a remote shell, an unknown launcher): never "focused"; the prompt opens as
   normal.
 
@@ -194,12 +211,13 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
 - `modules/agent/` (replaces the stub `modules/ask/`): `index.js` (kinds `agent`, `ask`),
   `adapter.js` (pure: event JSON → `{pose, title, detail, start?, end?, alert?}`, and the
   permission reply), `source.js` (the D-Bus `Agent` calls, one record per session, the
-  2-minute end after `Stop`, stale, the terminal lookup of §6), `hooks.js` (pure: add and
+  30-second end after `Stop`, stale, the terminal lookup of §6), `hooks.js` (pure: add and
   remove Buoy's entries in a settings object), `hooks/claude.js` (the script, at the
   extension's top level: Claude Code runs it).
 - Kit: the `{since}` element (§2); D-Bus `Agent` (DBUS.md, `Version` 2).
 - Tests (`tests/agent.test.js`): every row of §3 (pose, title, detail per tool), the run
-  > 10 min `party`, stale, two sessions, unknown events ignored; the three replies and the
+  > 10 min `party`, stale, two sessions, subagents counted in the parent (no pill),
+  priorities 35 / 60 / 90, unknown events ignored; the three replies and the
   timeout reply, Always only with suggestions; the project name from `cwd`; privacy —
   prompt never in the output, details hidden when sharing; `hooks.js` — install into an
   empty, a missing and a busy file, idempotent, uninstall leaves others untouched.
@@ -215,4 +233,7 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
   `permission_suggestions` shape) against the live hooks reference.
 - What the terminal shows while a `PermissionRequest` hook waits, and which answer wins.
 - What Claude Code does when a `PermissionRequest` hook times out.
-- That a hook's parent process is Claude Code (for `ppid`, §6).
+- That a hook's parent process is Claude Code (for `ppid`, §6), in a terminal and in
+  Claude Desktop.
+- That `PermissionRequest` hooks run in Claude Desktop's sessions (prompt tool `stdio`)
+  and race its card as documented.
