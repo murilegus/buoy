@@ -373,12 +373,16 @@ export class Pill {
         if (this._destroyed)
             return;
         const rest = this.currentShape();
-        const press = this._s.press(this.restShape());
+        // from the compact when it is open: the bar's press shape (32 + 4 px) would squash
+        // it under its content (a click raising a session's terminal, 2026-11-07)
+        const press = this._compact
+            ? {...rest, w: rest.w + 8, h: rest.h + 4}
+            : this._s.press(this.restShape());
         this._morphTo = null;
         this.bg.remove_all_transitions();
         this.bg.set_style(this._bgStyle(press));
         this.bg.ease({
-            x: this.cx - press.w / 2, width: press.w, height: press.h,
+            x: (press.cx ?? this.cx) - press.w / 2, width: press.w, height: press.h,
             duration: 120, mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onStopped: finished => {
                 if (finished)
