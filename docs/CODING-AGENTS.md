@@ -94,7 +94,9 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 - **Expanded**: only for a permission prompt (§4).
 - **Click** on a session's pill (Ethan, 2026-11-07): its terminal — or Claude Desktop —
   comes to the front (the app found in §6, `Shell.App.activate`) and nothing opens. No
-  window known (a remote shell, an unknown launcher): the Claude Code tab opens. The kit's
+  window known (a remote shell, an unknown launcher), or that window already in front (a
+  click from Claude Desktop on its own session; Ethan, 2026-11-07): the Claude Code tab
+  opens. The kit's
   `pressFirst` (tabs.js `pressTarget`): onPress before the kind's tab, the tab when it
   returns false.
 - **The Claude Code tab** (`tab.js`; its icon Claude's tray glyph, the white one Claude

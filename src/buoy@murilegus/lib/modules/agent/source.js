@@ -246,10 +246,11 @@ export class AgentSource extends Source {
     }
 
     // A click on the session's pill or row: its terminal (or Claude Desktop) comes up.
-    // false: no window known, the caller opens the Claude Code tab instead (§2)
+    // false — no window known, or it is in front already (a click from it did nothing to
+    // see, Ethan 2026-11-07) — and the caller opens the Claude Code tab instead (§2)
     _raise(key) {
         const app = this._apps?.get(key);
-        if (!app)
+        if (!app || Shell.WindowTracker.get_default().focus_app === app)
             return false;
         app.activate();
         return true;

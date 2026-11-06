@@ -55,9 +55,11 @@ export class AgentsTab {
             reactive: typeof a.onPress === 'function',
         });
         if (typeof a.onPress === 'function') {
+            // its terminal comes up and the island closes; already in front, the island
+            // closes all the same (the row's own click has nowhere else to go)
             button.connect('clicked', () => {
-                if (a.onPress() !== false)
-                    this._close?.();
+                a.onPress();
+                this._close?.();
             });
         }
         const line = new St.BoxLayout({style_class: 'buoy-agents-line', x_expand: true});
