@@ -17,7 +17,8 @@ jobs:
       - name: Install gjs and GLib tools
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends gjs libglib2.0-bin git ca-certificates
+          # gir1.2-rsvg-2.0: tests/icons.test.js parses the icons with librsvg, as St.Icon does
+          apt-get install -y --no-install-recommends gjs libglib2.0-bin gir1.2-rsvg-2.0 git ca-certificates
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

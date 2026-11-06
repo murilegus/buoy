@@ -3,7 +3,15 @@
 // contract (16 grid, flat, nothing loaded at runtime), the palette (none of the status
 // light colours), and that the family shares its parts (one cloud, one horizon…).
 import GLib from 'gi://GLib';
-import Rsvg from 'gi://Rsvg';
+
+// librsvg is what St.Icon renders with; its typelib may be missing on a bare machine,
+// then only the parse check is skipped (CI installs gir1.2-rsvg-2.0).
+let Rsvg = null;
+try {
+    ({default: Rsvg} = await import('gi://Rsvg'));
+} catch {
+    print('icons: no Rsvg typelib, the librsvg parse check is skipped');
+}
 
 const dir = GLib.build_filenamev([GLib.get_current_dir(), '..', 'src', 'buoy@murilegus', 'icons']);
 const read = name => {
@@ -46,8 +54,10 @@ for (const name of ALL) {
     }
     for (const sw of svg.matchAll(/stroke-width="([\d.]+)"/g))
         ok(Number(sw[1]) >= 1 || /stroke-linejoin|id="bolt"/.test(svg), `${name}: stroke ${sw[1]} is thinner than 1 px`);
-    // librsvg (what St.Icon uses) parses it
-    ok(Rsvg.Handle.new_from_file(`${dir}/${name}.svg`).has_sub(`#${svg.match(/id="([a-z-]+)"/)?.[1] ?? ''}`), `${name}: parses, parts have ids`);
+    const firstId = svg.match(/id="([a-z-]+)"/)?.[1];
+    ok(firstId, `${name}: parts carry ids`);
+    if (Rsvg)
+        ok(Rsvg.Handle.new_from_file(`${dir}/${name}.svg`).has_sub(`#${firstId}`), `${name}: librsvg parses it and finds #${firstId}`);
 }
 
 // One family: the parts are shared drawings
