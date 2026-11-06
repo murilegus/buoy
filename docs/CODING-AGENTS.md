@@ -111,9 +111,9 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 - **Starts** on the first `UserPromptSubmit` of a session: a session that is open but
   idle takes no room. A tool, a subagent or a permission prompt before any prompt was
   seen (the hooks installed mid-run) starts it too, its clock from then. **Ends** on
-  `SessionEnd`, or 2 min after `Stop` if no new prompt came (the activity's `ttl`; the
+  `SessionEnd`, or 5 min after `Stop` if no new prompt came (the activity's `ttl`; the
   pointer on it holds it, as any ttl; the next prompt brings it back; Ethan, 2026-11-07:
-  30 s, then 2 min so the dimmed done is seen).
+  30 s, 2 min, then 5 min).
 - **Stale**: one minute without news dims the pill and Bu takes `stale`, working or done
   alike (Ethan, 2026-11-07). Working, it means nothing came for a minute: a long command
   sends no event until it ends, a crashed session none at all. Waiting for you (`turn`,
@@ -133,7 +133,7 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 | `Notification` `permission_prompt` | `ask` | "Needs your OK" | the terminal's own prompt; no buttons (the hook of §4 carries them) |
 | `Notification` `idle_prompt`, `agent_needs_input`, `elicitation_dialog`, `elicitation_url_dialog` | `turn` | "Waiting for you" | alert once; priority 60; never after `Stop` (the pill is ending). Other types ignored |
 | `PreCompact` | `compact` | "Compacting" | `PostCompact` → `busy` "Working"; a `/compact` between prompts takes no room |
-| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done", "Done in {n} min" from a minute | priority 5; dims after 1 min, ends after 2 |
+| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done", "Done in {n} min" from a minute | priority 5; dims after 1 min, ends after 5 |
 | `StopFailure` | `error`, alert | "Stopped with an error" | the same |
 | no event for 1 min while `busy` / `think` / `compact` | `stale` | unchanged | `staleAfter`: the renderer dims it and draws Bu `stale` (kit, any stale activity led by Bu) |
 | `SessionEnd` | — | — | `end()` at once |

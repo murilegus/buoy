@@ -222,8 +222,8 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq([turn.priority, turn.staleAfter], [PRIORITY.turn, 0], 'waiting for you: 60, never stale');
     const done = agent(last([[ev('UserPromptSubmit')], [ev('Stop'), 4 * MIN]]).rec);
     eq([done.priority, done.ttl, done.staleAfter, done.trailing], [PRIORITY.done, END_AFTER_STOP, DONE_STALE, {text: '4 min'}],
-        'done: under everything, dims after 1 min, ends after 2, the time frozen (Ethan 2026-11-07)');
-    eq([END_AFTER_STOP, DONE_STALE, STALE_MS], [2 * MIN, MIN, MIN], 'ends at 2 min; working or done, dims after 1 min');
+        'done: under everything, dims after 1 min, ends after 5, the time frozen (Ethan 2026-11-07)');
+    eq([END_AFTER_STOP, DONE_STALE, STALE_MS], [5 * MIN, MIN, MIN], 'ends at 5 min; working or done, dims after 1 min');
     eq([PRIORITY.working, PRIORITY.turn, PRIORITY.done, KIT_PRIORITY.agent, KIT_PRIORITY.ask, KIT_PRIORITY.media],
         [35, 60, 5, 35, 90, 10], 'priorities 35 / 60 / 90; done 5, under media\'s 10');
     const fail = agent(last([[ev('UserPromptSubmit')], [ev('StopFailure')]]).rec);
