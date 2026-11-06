@@ -1,8 +1,8 @@
 // Run: gjs -m tests/agent.test.js   (pure: Claude Code's events → the session's pill, the
 // permission reply, Buoy's entries in ~/.claude/settings.json; docs/CODING-AGENTS.md §11)
 import {
-    AGENTS, ALLOW, ALWAYS, DENY, END_AFTER_STOP, PARTY_AFTER, PRIORITY, STALE_MS, TIMEOUT,
-    agent, answered, askOf, durationText, parseEvent, projectOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    AGENTS, ALLOW, ALWAYS, DENY, DONE_STALE, END_AFTER_STOP, PARTY_AFTER, PRIORITY, STALE_MS, TIMEOUT,
+    agent, answered, askOf, durationText, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, commandFor, hooksNote, install, installed, isOurs, uninstall,
@@ -64,31 +64,52 @@ eq([durationText(0), durationText(59_000), durationText(4 * MIN), durationText(6
 
 // --- what a tool is doing (§3), and what a prompt wants (§4) ----------------------------------
 const bash = toolDoing('Bash', {command: 'pnpm test\necho more', description: 'Run tests'}, CWD);
-eq([bash.title, bash.detail, bash.want], ['Running a command', 'Bash · pnpm test', 'Run: pnpm test'],
-    'Bash: the command\'s first line');
-eq([bash.safeTitle, bash.safeDetail, bash.safeWant], ['Running a command', 'Bash', 'Run a command'],
-    'Bash while sharing: no command');
+eq([bash.title, bash.want], ['Running pnpm test', 'Run: pnpm test'], 'Bash: the command\'s first line');
+eq([bash.safeTitle, bash.safeWant], ['Running a command', 'Run a command'], 'Bash while sharing: no command');
 const edit = toolDoing('Edit', {file_path: `${CWD}/src/buoy@murilegus/lib/kit/pill.js`}, CWD);
-eq([edit.title, edit.detail, edit.want, edit.safeTitle, edit.safeWant],
-    ['Editing pill.js', 'Edit · src/…/pill.js', 'Edit: src/…/pill.js', 'Editing a file', 'Edit a file'], 'Edit: the file');
+eq([edit.title, edit.want, edit.safeTitle, edit.safeWant],
+    ['Editing src/…/pill.js', 'Edit: src/…/pill.js', 'Editing a file', 'Edit a file'], 'Edit: the file');
 eq(toolDoing('Write', {file_path: `${CWD}/a.js`}, CWD).title, 'Editing a.js', 'Write edits too');
 eq(toolDoing('NotebookEdit', {notebook_path: `${CWD}/n.ipynb`}, CWD).title, 'Editing n.ipynb', 'a notebook too');
-eq(toolDoing('Read', {file_path: `${CWD}/docs/SPEC.md`}, CWD).title, 'Reading SPEC.md', 'Read: the file');
-eq([toolDoing('Grep', {pattern: 'TODO'}).detail, toolDoing('Glob', {pattern: '**/*.js'}).title],
-    ['Grep · TODO', 'Searching'], 'Grep and Glob search');
+eq(toolDoing('Read', {file_path: `${CWD}/docs/SPEC.md`}, CWD).title, 'Reading docs/SPEC.md', 'Read: the file');
+eq([toolDoing('Grep', {pattern: 'TODO'}).title, toolDoing('Glob', {}).title], ['Searching for TODO', 'Searching'],
+    'Grep and Glob search');
 const fetch = toolDoing('WebFetch', {url: 'https://user:pw@example.com/a?b=1', prompt: 'x'});
-eq([fetch.title, fetch.detail, fetch.want], ['Fetching a page', 'WebFetch · example.com', 'Fetch: example.com'],
+eq([fetch.title, fetch.want, fetch.safeTitle], ['Fetching example.com', 'Fetch: example.com', 'Fetching a page'],
     'WebFetch: the host only, no credentials or path');
-eq(toolDoing('WebSearch', {query: 'gjs dbus'}).title, 'Searching the web', 'WebSearch');
+eq(toolDoing('WebSearch', {query: 'gjs dbus'}).title, 'Searching the web for gjs dbus', 'WebSearch');
 eq([toolDoing('Agent', {description: 'Find the bug'}).title, toolDoing('Task', {}).title],
-    ['Starting a subagent', 'Starting a subagent'], 'Agent (and its old name Task)');
+    ['Starting a subagent: Find the bug', 'Starting a subagent'], 'Agent (and its old name Task)');
 const mcp = toolDoing('mcp__github__create_issue', {title: 'x'});
-eq([mcp.title, mcp.detail, mcp.want], ['Using create_issue', 'github · create_issue', 'Use: github create_issue'],
-    'an MCP tool: server and tool');
-eq(toolDoing('mcp__plugin_tools_github__list', {}).detail, 'tools_github · list', 'a plugin\'s MCP server');
+eq([mcp.title, mcp.want], ['Using github create_issue', 'Use: github create_issue'], 'an MCP tool: server and tool');
+eq(toolDoing('mcp__plugin_tools_github__list', {}).title, 'Using tools_github list', 'a plugin\'s MCP server');
 eq([toolDoing('Frobnicate', {}).title, toolDoing('Frobnicate', {}).want], ['Using Frobnicate', 'Use: Frobnicate'],
     'an unknown tool: its name');
-eq([toolDoing(null, null).title, toolDoing('Bash', null).detail], ['Using a tool', 'Bash'], 'missing fields');
+eq([toolDoing(null, null).title, toolDoing('Bash', null).title], ['Using a tool', 'Running a command'], 'missing fields');
+
+// --- names (§2): sessions of one project share the label; hover tells them apart -----------
+eq([projectOf(`${CWD}/.claude/worktrees/distracted-goldberg-830c29`), worktreeOf(`${CWD}/.claude/worktrees/distracted-goldberg-830c29/src`)],
+    ['buoy', 'distracted-goldberg-830c29'], 'a worktree: the repository\'s name, its slug');
+eq([worktreeOf(CWD), worktreeOf(null)], [null, null], 'no worktree');
+const named = t => nameOf({project: 'buoy', sessionTitle: t, cwd: CWD});
+eq([named('Buoy — Optimization and security check'), named('buoy: weather'), named('Buoy - icons'), named('Buoy implementation')],
+    ['Optimization and security check', 'weather', 'icons', 'implementation'], 'the project\'s name in front is dropped');
+eq([named('Buoyant ideas'), named('Weather icons'), named('Buoy')], ['Buoyant ideas', 'Weather icons', 'Buoy'],
+    'only a whole word; nothing left keeps the title');
+eq(named('x'.repeat(200)).length, 200, 'never cut here: the renderer ellipsizes');
+eq([nameOf({project: 'buoy', cwd: `${CWD}/.claude/worktrees/w1`}), nameOf({project: 'buoy', cwd: CWD})], ['w1', null],
+    'no title: the worktree\'s slug, else none');
+eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktrees/w1`}), 'Weather', 'the title wins');
+{
+    const r = last([[ev('SessionStart', {source: 'startup', session_title: 'Buoy — Weather icons'})], [ev('UserPromptSubmit')]]);
+    const a = agent(r.rec);
+    eq([a.text, a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Weather icons', 'Thinking'],
+        'minimal: the label only; hover: the session\'s name, then what it does');
+    const wt = agent(last([[{...ev('UserPromptSubmit'), cwd: `${CWD}/.claude/worktrees/w1`}]]).rec);
+    eq([wt.text, wt.compact.text], ['Claude · buoy', 'w1'], 'a worktree: the repository\'s label, the slug on hover');
+    const plain = agent(last([[ev('UserPromptSubmit')]]).rec);
+    eq(plain.compact.text, 'Claude · buoy', 'no name: the label');
+}
 
 // --- the session, event by event (§3) --------------------------------------------------------
 {
@@ -106,7 +127,7 @@ eq([toolDoing(null, null).title, toolDoing('Bash', null).detail], ['Using a tool
 }
 {
     const r = last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Bash', tool_input: {command: 'pnpm test'}}), 5000]]);
-    eq([r.rec.pose, r.rec.title, r.rec.detail, r.rec.startedAt], ['busy', 'Running a command', 'Bash · pnpm test', T0],
+    eq([r.rec.pose, r.rec.title, r.rec.startedAt], ['busy', 'Running pnpm test', T0],
         'PreToolUse: busy, by tool; the clock keeps running');
 }
 {
@@ -124,17 +145,16 @@ eq([toolDoing(null, null).title, toolDoing('Bash', null).detail], ['Using a tool
         [ev('SubagentStop', {agent_id: 'a1'})], [ev('SubagentStop', {agent_id: 'a2'})]]);
     eq(rs[1].rec.title, 'Working with a subagent', 'one subagent');
     eq(rs[2].rec.title, 'Working with 2 subagents', 'two subagents: counted');
-    eq([rs[3].rec.title, rs[3].rec.detail], ['Working with 2 subagents', 'Grep · x'],
-        'a subagent\'s tool: the parent still says it works with them, the detail is the tool');
+    eq(rs[3].rec.title, 'Working with 2 subagents', 'a subagent\'s tool: the parent still says it works with them');
     eq([rs[4].rec.title, rs[5].rec.title, rs[5].rec.subagents], ['Working with a subagent', 'Working', 0], 'they stop');
     eq(new Set(rs.map(r => r.rec.id)).size, 1, 'one session, one record');
 }
 {
     const r = last([[ev('UserPromptSubmit')], [ev(ASK_EVENT, {tool_name: 'Bash', tool_input: {command: 'rm -rf build'}})]]);
-    eq([r.rec.pose, r.rec.title, r.rec.detail, r.rec.safeDetail], ['ask', 'Needs your OK', 'Run: rm -rf build', 'Run a command'],
-        'PermissionRequest: ask, what it wants (not the last tool\'s detail)');
+    eq([r.rec.pose, r.rec.title, r.rec.safeTitle], ['ask', 'Needs your OK · Run: rm -rf build', 'Needs your OK · Run a command'],
+        'PermissionRequest: ask, what it wants');
     const back = answered(r.rec, T0 + 5);
-    eq([back.pose, back.title, back.detail, agent(back).staleAfter], ['busy', 'Working', null, STALE_MS],
+    eq([back.pose, back.title, agent(back).staleAfter], ['busy', 'Working', STALE_MS],
         'the prompt over without news: back to work, so it can go stale');
     const idle = last([[ev('UserPromptSubmit')]]).rec;
     eq(answered(idle, T0), idle, 'not asking: unchanged');
@@ -193,19 +213,22 @@ eq([toolDoing(null, null).title, toolDoing('Bash', null).detail], ['Using a tool
     const rec = last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Edit', tool_input: {file_path: `${CWD}/src/a/b/c.js`}})]]).rec;
     const a = agent({...rec, shared: false});
     eq([a.text, a.leading, a.trailing], ['Claude · buoy', {mascot: 'busy'}, {since: T0}], 'minimal: Bu, the name, the elapsed time');
-    eq([a.compact.text, a.compact.subtitle], ['Editing c.js', 'Edit · src/…/c.js'], 'compact: what it does, the detail');
-    eq([a.priority, a.staleAfter, a.ttl], [PRIORITY.working, STALE_MS, 0], 'working: 35, stale after 2 min, no end');
+    eq([a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Editing src/…/c.js'], 'compact: which session, what it does');
+    eq([a.priority, a.staleAfter, a.ttl], [PRIORITY.working, STALE_MS, 0], 'working: 35, stale after 1 min, no end');
     const s = agent({...rec, shared: true});
-    eq([s.compact.text, s.compact.subtitle], ['Editing a file', 'Edit'], 'sharing the screen: no file name (§7)');
+    eq([s.compact.text, s.compact.subtitle], ['Claude · buoy', 'Editing a file'], 'sharing the screen: no file name (§7)');
     if (JSON.stringify(s).includes('c.js'))
         throw new Error('sharing: the path appears nowhere');
     const turn = agent({...last([[ev('UserPromptSubmit')], [ev('Notification', {notification_type: 'idle_prompt'})]]).rec});
     eq([turn.priority, turn.staleAfter], [PRIORITY.turn, 0], 'waiting for you: 60, never stale');
     const done = agent(last([[ev('UserPromptSubmit')], [ev('Stop'), 4 * MIN]]).rec);
-    eq([done.priority, done.ttl, done.trailing, done.staleAfter], [PRIORITY.working, END_AFTER_STOP, {text: '4 min'}, 0],
-        'done: 35, ends 30 s later, the time frozen');
-    eq([PRIORITY.working, PRIORITY.turn, KIT_PRIORITY.agent, KIT_PRIORITY.ask], [35, 60, 35, 90],
-        'priorities 35 / 60 / 90 (§2)');
+    eq([done.priority, done.ttl, done.staleAfter, done.trailing], [PRIORITY.done, END_AFTER_STOP, DONE_STALE, {text: '4 min'}],
+        'done: under everything, dims after 1 min, ends after 2, the time frozen (Ethan 2026-11-07)');
+    eq([END_AFTER_STOP, DONE_STALE, STALE_MS], [2 * MIN, MIN, MIN], 'ends at 2 min; working or done, dims after 1 min');
+    eq([PRIORITY.working, PRIORITY.turn, PRIORITY.done, KIT_PRIORITY.agent, KIT_PRIORITY.ask, KIT_PRIORITY.media],
+        [35, 60, 5, 35, 90, 10], 'priorities 35 / 60 / 90; done 5, under media\'s 10');
+    const fail = agent(last([[ev('UserPromptSubmit')], [ev('StopFailure')]]).rec);
+    eq([fail.priority, fail.ttl], [PRIORITY.done, END_AFTER_STOP], 'stopped with an error: the same');
     // stale: Bu `stale`, dimmed (the renderer)
     const plan = planMinimal({...a, isStale: true});
     eq([plan.leading.pose, plan.stale], ['stale', true], 'stale: Bu stale, dimmed');
@@ -231,9 +254,12 @@ eq([toolDoing(null, null).title, toolDoing('Bash', null).detail], ['Using a tool
     const rec = last([[ev('UserPromptSubmit')], [req]]).rec;
     const q = askOf(rec, req);
     eq([q.question, q.options], ['Claude · buoy needs your OK', [DENY, ALLOW, ALWAYS]], 'Deny · Allow · Always');
-    eq([q.look.expanded.center, q.look.compact.subtitle, q.look.compact.transport, q.look.leading],
-        [{title: 'Claude · buoy needs your OK', subtitle: 'Run: pnpm test'}, 'Run: pnpm test', true, {mascot: 'ask'}],
+    eq([q.look.expanded.center, q.look.compact.text, q.look.compact.subtitle, q.look.compact.transport, q.look.leading],
+        [{title: 'Claude · buoy needs your OK', subtitle: 'Run: pnpm test'}, 'Claude · buoy', 'Run: pnpm test', true, {mascot: 'ask'}],
         'the ask: Bu ask, what it wants, the buttons in the compact');
+    const titled = {...rec, sessionTitle: 'Buoy — Weather icons'};
+    eq([askOf(titled, req).look.compact.text, askOf(titled, req).look.expanded.center.subtitle],
+        ['Weather icons', 'Weather icons · Run: pnpm test'], 'a named session: which one asks');
     eq(askOf(rec, req, {shared: true}).look.compact.subtitle, 'Run a command', 'sharing: no command');
     const plain = ev(ASK_EVENT, {tool_name: 'Bash', tool_input: {command: 'ls'}});
     eq(askOf(rec, plain).options, [DENY, ALLOW], 'no suggestion: no Always');

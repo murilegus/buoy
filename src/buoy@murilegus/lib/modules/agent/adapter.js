@@ -17,14 +17,20 @@ import {sinceText} from '../../kit/presentation.js';
 /** The agents this module knows, by the `source` the hook sends (CODING-AGENTS.md §1). */
 export const AGENTS = {claude: 'Claude'};
 
-/** A session's pill ends this long after `Stop` when no new prompt came (§2, Ethan). */
-export const END_AFTER_STOP = 30 * 1000;
-/** No event for this long while working → stale: the renderer dims it, Bu `stale` (§3). */
-export const STALE_MS = 2 * 60 * 1000;
+/** A session's pill ends this long after `Stop` when no new prompt came (§2; Ethan:
+ * 30 s, then 2 min, 2026-11-07). */
+export const END_AFTER_STOP = 2 * 60 * 1000;
+/** No news for this long → stale: the renderer dims it, Bu `stale` (§3). Working or done
+ * alike (Ethan, 2026-11-07: one minute for both; was 2 min while working). */
+export const STALE_MS = 60 * 1000;
+/** The done pill dims after the same minute. */
+export const DONE_STALE = STALE_MS;
 /** A run longer than this ends with `party` before `done` (§3). */
 export const PARTY_AFTER = 10 * 60 * 1000;
-/** Priorities (§2): working and done; waiting for you. The permission prompt is 90 (kit ask). */
-export const PRIORITY = {working: 35, turn: 60};
+/** Priorities (§2): working; waiting for you; done, under everything else while it lingers
+ * (Ethan, 2026-11-07: any other activity takes the centre). The permission prompt is 90
+ * (kit ask). */
+export const PRIORITY = {working: 35, turn: 60, done: 5};
 
 /** The buttons, in order (§4). Always only when Claude Code sent a suggestion. */
 export const DENY = 'Deny', ALLOW = 'Allow', ALWAYS = 'Always';
@@ -54,13 +60,49 @@ export function parseEvent(text) {
     return ev;
 }
 
+const WORKTREE = /\/\.claude\/worktrees\/([^/]+)/;
+
 /**
  * @param {*} cwd
- * @returns {?string} the project: the last part of the working directory
+ * @returns {?string} the project: the last part of the working directory; for a Claude
+ *   Code worktree (`<repo>/.claude/worktrees/<slug>`), the repository's
  */
 export function projectOf(cwd) {
-    const parts = (str(cwd) ?? '').split('/').filter(Boolean);
+    const dir = (str(cwd) ?? '').split(WORKTREE)[0];
+    const parts = dir.split('/').filter(Boolean);
     return parts.at(-1) ?? null;
+}
+
+/**
+ * @param {*} cwd
+ * @returns {?string} the worktree's slug, when the session runs in a Claude Code worktree
+ */
+export function worktreeOf(cwd) {
+    return WORKTREE.exec(str(cwd) ?? '')?.[1] ?? null;
+}
+
+/**
+ * The session's own name for the compact (§2, Ethan 2026-11-07: sessions of one project
+ * share "Claude · buoy"; hover tells them apart): its title when Claude Code sent one,
+ * without the project's name in front ("Buoy — Optimization" → "Optimization"), else its
+ * worktree's slug, else null. Never cut here: the renderer ellipsizes.
+ *
+ * @param {object} rec
+ * @returns {?string}
+ */
+export function nameOf(rec) {
+    const title = str(rec?.sessionTitle);
+    if (title) {
+        const project = str(rec.project);
+        if (project && title.toLowerCase().startsWith(project.toLowerCase())) {
+            const rest = title.slice(project.length);
+            const m = /^\s*[—–:-]?\s*(\S.*)$/u.exec(rest);
+            if (m && (rest.startsWith(' ') || /^[—–:-]/u.test(rest)))
+                return m[1];
+        }
+        return title;
+    }
+    return worktreeOf(rec?.cwd);
 }
 
 /**
@@ -85,7 +127,6 @@ export function shortPath(path, cwd) {
     return `${lead}${parts[0]}/…/${parts.at(-1)}`;
 }
 
-const baseName = path => str(path)?.split('/').filter(Boolean).at(-1) ?? null;
 const firstLine = text => str(text)?.split('\n')[0].trim() ?? null;
 
 function hostOf(url) {
@@ -103,49 +144,43 @@ const EDITS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
 const COMMANDS = new Set(['Bash', 'PowerShell', 'Monitor']);
 
 /**
- * What a tool call is doing, in the compact's words (§3) and, for a permission prompt,
- * what it wants (§4). The `safe…` forms carry no command, path or URL (§7: shown while
- * the screen is shared).
+ * What a tool call is doing, in one line of the compact (§3), and for a permission prompt
+ * what it wants (§4). The `safe…` forms carry no command, path or URL (§7: shown while the
+ * screen is shared).
  *
  * @param {*} name  tool_name
  * @param {*} input  tool_input
  * @param {*} [cwd]
- * @returns {{title: string, safeTitle: string, detail: ?string, safeDetail: string,
- *   want: string, safeWant: string}}
+ * @returns {{title: string, safeTitle: string, want: string, safeWant: string}}
+ *   title "Running pnpm test", "Editing src/…/pill.js"; want "Run: pnpm test"
  */
 export function toolDoing(name, input, cwd = null) {
     const tool = str(name) ?? 'a tool';
     const i = isPlain(input) ? input : {};
-    const with_ = (title, safeTitle, what, want, safeWant) => ({
-        title, safeTitle,
-        detail: what ? `${tool} · ${what}` : tool, safeDetail: tool,
+    const with_ = (doing, safeTitle, what, want, safeWant, sep = ' ') => ({
+        title: what ? `${doing}${sep}${what}` : safeTitle, safeTitle,
         want: what ? `${want}: ${what}` : safeWant, safeWant,
     });
     if (COMMANDS.has(tool))
-        return with_('Running a command', 'Running a command', firstLine(i.command), 'Run', 'Run a command');
-    if (EDITS.has(tool)) {
-        const file = i.file_path ?? i.notebook_path;
-        const b = baseName(file);
-        return with_(b ? `Editing ${b}` : 'Editing a file', 'Editing a file', shortPath(file, cwd), 'Edit', 'Edit a file');
-    }
-    if (tool === 'Read') {
-        const b = baseName(i.file_path);
-        return with_(b ? `Reading ${b}` : 'Reading a file', 'Reading a file', shortPath(i.file_path, cwd), 'Read', 'Read a file');
-    }
+        return with_('Running', 'Running a command', firstLine(i.command), 'Run', 'Run a command');
+    if (EDITS.has(tool))
+        return with_('Editing', 'Editing a file', shortPath(i.file_path ?? i.notebook_path, cwd), 'Edit', 'Edit a file');
+    if (tool === 'Read')
+        return with_('Reading', 'Reading a file', shortPath(i.file_path, cwd), 'Read', 'Read a file');
     if (tool === 'Grep' || tool === 'Glob')
-        return with_('Searching', 'Searching', str(i.pattern), 'Search', 'Search the files');
+        return with_('Searching for', 'Searching', str(i.pattern), 'Search', 'Search the files');
     if (tool === 'WebFetch')
-        return with_('Fetching a page', 'Fetching a page', hostOf(i.url), 'Fetch', 'Fetch a page');
+        return with_('Fetching', 'Fetching a page', hostOf(i.url), 'Fetch', 'Fetch a page');
     if (tool === 'WebSearch')
-        return with_('Searching the web', 'Searching the web', str(i.query), 'Search', 'Search the web');
+        return with_('Searching the web for', 'Searching the web', str(i.query), 'Search', 'Search the web');
     if (tool === 'Agent' || tool === 'Task')
-        return with_('Starting a subagent', 'Starting a subagent', str(i.description), 'Start', 'Start a subagent');
+        return with_('Starting a subagent', 'Starting a subagent', str(i.description), 'Start', 'Start a subagent', ': ');
     const mcp = mcpOf(tool);
     if (mcp) {
-        const r = with_(`Using ${mcp.tool}`, `Using ${mcp.tool}`, null, '', `Use: ${mcp.server} ${mcp.tool}`);
-        return {...r, detail: `${mcp.server} · ${mcp.tool}`, safeDetail: `${mcp.server} · ${mcp.tool}`};
+        const t = `Using ${mcp.server} ${mcp.tool}`;
+        return {title: t, safeTitle: t, want: `Use: ${mcp.server} ${mcp.tool}`, safeWant: `Use: ${mcp.server} ${mcp.tool}`};
     }
-    return with_(`Using ${tool}`, `Using ${tool}`, null, '', `Use: ${tool}`);
+    return {title: `Using ${tool}`, safeTitle: `Using ${tool}`, want: `Use: ${tool}`, safeWant: `Use: ${tool}`};
 }
 
 /**
@@ -167,7 +202,7 @@ export function newRecord(source, ev) {
     return {
         id: ev.session_id, source, cwd: str(ev.cwd), project: projectOf(ev.cwd),
         shown: false, startedAt: 0, finishedAt: 0, lastAt: 0,
-        pose: 'think', title: 'Thinking', safeTitle: 'Thinking', detail: null, safeDetail: null,
+        pose: 'think', title: 'Thinking', safeTitle: 'Thinking', sessionTitle: null,
         subagents: 0, stopped: false,
     };
 }
@@ -195,6 +230,8 @@ export function step(rec, ev, now, source = 'claude') {
     let r = rec ?? newRecord(source, ev);
     if (str(ev.cwd))
         r = {...r, cwd: str(ev.cwd), project: projectOf(ev.cwd)};
+    if (str(ev.session_title))                    // SessionStart, when the session has one
+        r = {...r, sessionTitle: str(ev.session_title)};
     const out = (next, {show = next.shown, end = false, alert = false} = {}) =>
         ({rec: {...next, lastAt: now}, show, end, alert});
     const none = () => ({rec: r, show: false, end: false, alert: false});
@@ -207,15 +244,13 @@ export function step(rec, ev, now, source = 'claude') {
     case 'UserPromptSubmit':
         // the prompt itself is never kept (§7)
         r = working(set('think', 'Thinking'), now);
-        return out({...r, detail: null, safeDetail: null, subagents: 0});
+        return out({...r, subagents: 0});
     case 'PreToolUse': {
         const d = toolDoing(ev.tool_name, ev.tool_input, r.cwd);
         r = working(r, now);
-        if (sub && r.subagents > 0) {
-            // the subagent's tools: the parent still says it works with them (§2)
-            return out({...r, pose: 'busy', detail: d.detail, safeDetail: d.safeDetail});
-        }
-        return out({...r, pose: 'busy', title: d.title, safeTitle: d.safeTitle, detail: d.detail, safeDetail: d.safeDetail});
+        if (sub && r.subagents > 0)
+            return out({...r, pose: 'busy'});    // the parent still says it works with them (§2)
+        return out({...r, pose: 'busy', title: d.title, safeTitle: d.safeTitle});
     }
     case 'PostToolUse':
         if (!r.shown || r.stopped)
@@ -240,7 +275,7 @@ export function step(rec, ev, now, source = 'claude') {
     case 'PermissionRequest': {
         const d = toolDoing(ev.tool_name, ev.tool_input, r.cwd);
         r = working(r, now);
-        return out({...set('ask', 'Needs your OK'), detail: d.want, safeDetail: d.safeWant});
+        return out(set('ask', `Needs your OK · ${d.want}`, `Needs your OK · ${d.safeWant}`));
     }
     case 'Notification': {
         const type = ev.notification_type;
@@ -269,14 +304,14 @@ export function step(rec, ev, now, source = 'claude') {
         const took = r.startedAt ? now - r.startedAt : 0;
         const pose = took > PARTY_AFTER ? 'party' : 'done';
         const title = took >= 60000 ? `Done in ${durationText(took)}` : 'Done';
-        return out({...set(pose, title), detail: null, safeDetail: null, subagents: 0, stopped: true, finishedAt: now},
+        return out({...set(pose, title), subagents: 0, stopped: true, finishedAt: now},
             {alert: true});
     }
     case 'StopFailure': {
         if (!r.shown)
             return none();
         return out({
-            ...set('error', 'Stopped with an error'), detail: null, safeDetail: null, subagents: 0,
+            ...set('error', 'Stopped with an error'), subagents: 0,
             stopped: true, finishedAt: now,
         }, {alert: true});
     }
@@ -298,7 +333,7 @@ export function step(rec, ev, now, source = 'claude') {
 export function answered(rec, now) {
     if (rec?.pose !== 'ask')
         return rec;
-    return {...rec, pose: 'busy', title: 'Working', safeTitle: 'Working', detail: null, safeDetail: null, lastAt: now};
+    return {...rec, pose: 'busy', title: 'Working', safeTitle: 'Working', lastAt: now};
 }
 
 /**
@@ -309,7 +344,7 @@ export function answered(rec, now) {
  * @returns {object}
  */
 export function agent(rec) {
-    const name = `${AGENTS[rec.source] ?? 'Agent'} · ${rec.project ?? 'session'}`;
+    const label = labelOf(rec);
     const shared = rec.shared === true;
     const pose = rec.pose;
     let trailing = null;
@@ -317,21 +352,40 @@ export function agent(rec) {
         trailing = {since: rec.startedAt};
     else if (rec.finishedAt && rec.startedAt)
         trailing = {text: durationText(rec.finishedAt - rec.startedAt)};
-    const waits = pose === 'turn' || pose === 'ask';
+    let priority = PRIORITY.working;
+    if (rec.stopped)
+        priority = PRIORITY.done;
+    else if (pose === 'turn' || pose === 'ask')
+        priority = PRIORITY.turn;
+    let staleAfter = 0;
+    if (rec.stopped)
+        staleAfter = DONE_STALE;
+    else if (WORKING.has(pose))
+        staleAfter = STALE_MS;
     return {
-        text: name,
+        text: label,
         leading: {mascot: pose},
         trailing,
+        // hover: which session (its name, or the label), then what it is doing (§2)
         compact: {
             leading: {mascot: pose},
-            text: shared ? rec.safeTitle : rec.title,
-            subtitle: (shared ? rec.safeDetail : rec.detail) ?? name,
+            text: nameOf(rec) ?? label,
+            subtitle: shared ? rec.safeTitle : rec.title,
         },
-        priority: waits ? PRIORITY.turn : PRIORITY.working,
-        staleAfter: WORKING.has(pose) ? STALE_MS : 0,
+        priority,
+        staleAfter,
         ttl: rec.stopped ? END_AFTER_STOP : 0,
-        attributes: {project: rec.project ?? '', title: shared ? rec.safeTitle : rec.title, pose},
+        attributes: {project: rec.project ?? '', name: nameOf(rec) ?? '', title: shared ? rec.safeTitle : rec.title, pose},
     };
+}
+
+/**
+ * @param {object} rec
+ * @returns {string} what the minimal pill says: "Claude · buoy" (§2; the agent first,
+ *   MASCOT.md: Bu does not say which agent it is)
+ */
+export function labelOf(rec) {
+    return `${AGENTS[rec?.source] ?? 'Agent'} · ${rec?.project ?? 'session'}`;
 }
 
 /**
@@ -345,18 +399,19 @@ export function agent(rec) {
  *   presentation (kit stack.ask `look`)
  */
 export function askOf(rec, ev, {shared = false} = {}) {
-    const name = `${AGENTS[rec.source] ?? 'Agent'} · ${rec.project ?? 'session'}`;
+    const label = labelOf(rec);
+    const name = nameOf(rec);
     const d = toolDoing(ev.tool_name, ev.tool_input, rec.cwd);
     const want = shared ? d.safeWant : d.want;
     const options = suggestionOf(ev) ? [DENY, ALLOW, ALWAYS] : [DENY, ALLOW];
-    const question = `${name} needs your OK`;
+    const question = `${label} needs your OK`;
     return {
         question,
         options,
         look: {
             leading: {mascot: 'ask'},
-            compact: {leading: {mascot: 'ask'}, text: 'Needs your OK', subtitle: want, transport: true},
-            expanded: {leading: {mascot: 'ask'}, center: {title: question, subtitle: want}},
+            compact: {leading: {mascot: 'ask'}, text: name ?? label, subtitle: want, transport: true},
+            expanded: {leading: {mascot: 'ask'}, center: {title: question, subtitle: name ? `${name} · ${want}` : want}},
             minimalAction: false,
         },
     };

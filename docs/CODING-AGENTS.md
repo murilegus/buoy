@@ -61,7 +61,9 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   to 3, then `+N`, SPEC §2c).
 - **Priority** (kit `PRIORITY`, 2026-11-07): running **35** (with `device`: over a
   transfer, under a notification); waiting for you (`turn`) **60**, over what is only to
-  look at; a permission prompt **90**, as every ask; done keeps 35 and alerts once.
+  look at; a permission prompt **90**, as every ask. Done (and stopped with an error)
+  alerts once, then drops to **5**, under every other kind (media is 10), so anything else
+  takes the centre while it lingers (Ethan, 2026-11-07).
 - **Subagents** are no pills of their own: they share the parent's `session_id` (only
   `agent_id` differs); the parent's compact counts them, "Working with 2 subagents", from
   `SubagentStart` / `SubagentStop`. A session started apart (a new `session_id`) is its
@@ -71,22 +73,36 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   so the hooks of `~/.claude/settings.json` run for its sessions too; each is a pill like a
   terminal's. Sessions are stored in one place (`~/.claude/projects/…`) and can be
   resumed from either: a resumed session keeps its `session_id`, so its pill.
-- **Name**: "Claude · {project}", the project being the last part of `cwd` (or of
-  `CLAUDE_PROJECT_DIR`). The agent's name always leads the text (MASCOT.md: Bu does not
-  say which agent it is).
+- **Label**: "Claude · {project}", the project being the last part of `cwd` — for a
+  Claude Code worktree (`<repo>/.claude/worktrees/<slug>`) the repository's. The agent's
+  name always leads the text (MASCOT.md: Bu does not say which agent it is). Sessions of
+  one project share it in the minimal pill: no number there (Ethan, 2026-11-07).
+- **The session's name**, on hover only: its title when Claude Code sends one
+  (`session_title` on `SessionStart`, when the session has a title: Claude Desktop names
+  every session, the CLI after `/rename`), without the project's name in front ("Buoy —
+  Optimization and security check" → "Optimization and security check"); else its
+  worktree's slug; else the label. Titles seen on this machine are 4–44 characters; none
+  is cut by Buoy, the renderer ellipsizes. Whether the field arrives is to be seen in a
+  real session (§13).
 - **Minimal**: Bu (the pose, §3) · "Claude · buoy" · elapsed since the prompt, "4 min"
   (a new kit element `{since}`, the twin of `{until}`: "<1 min", "4 min", "1 h 5 min";
   read every 20 s only while shown, so the text changes within 20 s of the minute).
   Done freezes it: the run's length.
-- **Compact** (hover): title — what it is doing ("Thinking", "Running a command",
-  "Editing pill.js", "Waiting for you", "Done"); subtitle — the tool's detail ("Bash ·
-  pnpm test", "Edit · src/…/pill.js"), hidden while the screen is shared (§7).
+- **Compact** (hover): title — which session (its name, else the label); subtitle — what
+  it is doing, in one line ("Thinking", "Running pnpm test", "Editing src/…/pill.js",
+  "Fetching example.com", "Waiting for you", "Done in 4 min"); commands, paths and URLs
+  give way to "Running a command", "Editing a file"… while the screen is shared (§7).
 - **Expanded**: only for a permission prompt (§4).
 - **Starts** on the first `UserPromptSubmit` of a session: a session that is open but
   idle takes no room. A tool, a subagent or a permission prompt before any prompt was
   seen (the hooks installed mid-run) starts it too, its clock from then. **Ends** on
-  `SessionEnd`, or 30 s after `Stop` if no new prompt came (the activity's `ttl`; the
-  pointer on it holds it, as any ttl; the next prompt brings it back; Ethan, 2026-11-07).
+  `SessionEnd`, or 2 min after `Stop` if no new prompt came (the activity's `ttl`; the
+  pointer on it holds it, as any ttl; the next prompt brings it back; Ethan, 2026-11-07:
+  30 s, then 2 min so the dimmed done is seen).
+- **Stale**: one minute without news dims the pill and Bu takes `stale`, working or done
+  alike (Ethan, 2026-11-07). Working, it means nothing came for a minute: a long command
+  sends no event until it ends, a crashed session none at all. Waiting for you (`turn`,
+  `ask`) never dims.
 
 ## 3. Events → Bu and the pill
 
@@ -94,17 +110,17 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 |---|---|---|---|
 | `SessionStart` | — | — | remembered (cwd, model), nothing shown |
 | `UserPromptSubmit` | `think` | "Thinking" | surfaces the pill; the elapsed time restarts |
-| `PreToolUse` | `busy` | by tool: "Running a command", "Editing {file}", "Reading {file}", "Searching", "Fetching a page", "Searching the web", "Starting a subagent" (`Agent`, once `Task`), "Using {tool}" (MCP: the tool, its server in the detail) | inside a subagent (`agent_id`): the title keeps the count, the detail is its tool |
+| `PreToolUse` | `busy` | by tool: "Running {command}", "Editing {path}", "Reading {path}", "Searching for {pattern}", "Fetching {host}", "Searching the web for {query}", "Starting a subagent: {description}" (`Agent`, once `Task`), "Using {server} {tool}" (MCP), "Using {tool}" | the compact's subtitle; inside a subagent (`agent_id`) the parent keeps "Working with N subagents" |
 | `PostToolUse` | `busy` | unchanged | clears an `error` |
 | `PostToolUseFailure` | `error` | "Something failed" | until the next event |
 | `SubagentStart` / `SubagentStop` | `busy` | "Working with a subagent", "… with 2 subagents"; "Working" when the last stops | the parent keeps working |
-| `PermissionRequest` | `ask` | "Needs your OK", detail what it wants ("Run: pnpm test") | §4; after the prompt, with no other news: `busy` "Working" (so it can go stale) |
+| `PermissionRequest` | `ask` | "Needs your OK · Run: pnpm test" | §4; after the prompt, with no other news: `busy` "Working" (so it can go stale) |
 | `Notification` `permission_prompt` | `ask` | "Needs your OK" | the terminal's own prompt; no buttons (the hook of §4 carries them) |
 | `Notification` `idle_prompt`, `agent_needs_input`, `elicitation_dialog`, `elicitation_url_dialog` | `turn` | "Waiting for you" | alert once; priority 60; never after `Stop` (the pill is ending). Other types ignored |
 | `PreCompact` | `compact` | "Compacting" | `PostCompact` → `busy` "Working"; a `/compact` between prompts takes no room |
-| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done", "Done in {n} min" from a minute | the pill ends 30 s later |
-| `StopFailure` | `error`, alert | "Stopped with an error" | ends 30 s later |
-| no event for 2 min while `busy` / `think` / `compact` | `stale` | unchanged | `staleAfter`: the renderer dims it and draws Bu `stale` (kit, any stale activity led by Bu) |
+| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done", "Done in {n} min" from a minute | priority 5; dims after 1 min, ends after 2 |
+| `StopFailure` | `error`, alert | "Stopped with an error" | the same |
+| no event for 1 min while `busy` / `think` / `compact` | `stale` | unchanged | `staleAfter`: the renderer dims it and draws Bu `stale` (kit, any stale activity led by Bu) |
 | `SessionEnd` | — | — | `end()` at once |
 
 Poses and lamp colours: MASCOT.md § Poses and § Agents. The `ask` lamp is red as every
@@ -121,8 +137,10 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
   open prompt per session: a second one ends the first without an answer.
 - **Expanded content**: title "Claude · {project} needs your OK"; subtitle what it wants:
   "Run: pnpm test", "Edit: src/…/pill.js", "Fetch: example.com", "Use: {mcp_server}
-  {tool}" — the command or path on one line, ellipsized; buttons **Deny · Allow ·
-  Always** (Always only when Claude Code sent `permission_suggestions`).
+  {tool}" — the command or path on one line, ellipsized, after the session's name when it
+  has one ("Weather icons · Run: pnpm test"); buttons **Deny · Allow · Always** (Always
+  only when Claude Code sent `permission_suggestions`). Its compact: the session's name
+  (else the label), what it wants, the buttons.
 - **The answer** (Buoy builds the stdout, the script prints it):
 
   | Button | stdout |
@@ -300,6 +318,8 @@ install / remove / a partly installed and a non-JSON file.
 
 Still to see in a real Claude Code session (Ethan's machine):
 
+- Whether `SessionStart` carries `session_title` for Claude Desktop's sessions and after
+  `/rename` (§2).
 - What the terminal shows while a `PermissionRequest` hook waits, and which answer wins.
 - That a terminal answer drops the waiting hook (the pill's ask ends at once) or sends
   the same call's result (it ends with it).
