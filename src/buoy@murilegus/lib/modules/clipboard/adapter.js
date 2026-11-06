@@ -12,6 +12,22 @@
 /** Copied is the shortest feedback (SPEC §2e: ~1 s). */
 export const TTL = 1000;
 
+// Owners that are not a copy made here, by their GType name (mutter core/):
+//   MetaSelectionSourceMemory  Shell set it (st_clipboard_set_content): a screenshot,
+//                              Looking Glass, a clipboard-manager extension restoring
+//   MetaSelectionSourceRemote  another machine's clipboard through RemoteDesktop:
+//                              mutter-devkit syncing the host's (mdk-session.c, at start
+//                              and on each host copy), gnome-remote-desktop's RDP/VNC
+const NOT_HERE = new Set(['MetaSelectionSourceMemory', 'MetaSelectionSourceRemote']);
+
+/**
+ * @param {*} typeName  the new owner's GType name
+ * @returns {boolean} a copy made by an app on this machine (Wayland or X11 client)
+ */
+export function copiedHere(typeName) {
+    return typeof typeName === 'string' && typeName !== '' && !NOT_HERE.has(typeName);
+}
+
 // KeePassXC, KDE's and other password managers offer this with the secret (value
 // "secret"): the clipboard is not read and nothing of it shows
 const SECRET = 'x-kde-passwordManagerHint';

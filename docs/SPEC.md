@@ -577,7 +577,12 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   `Gio.BytesIcon`, nothing written) and "Image"; text → the snippet on one line
   (whitespace collapsed, the source hands at most 500 characters), ellipsized at pill 1's
   widest (`wide`). Only the clipboard: PRIMARY changes with every selection and is
-  ignored. Emptied text (a password manager clearing it) shows nothing. The app is the
+  ignored. Emptied text (a password manager clearing it) shows nothing. Silent too for a
+  `Meta.SelectionSourceRemote` — another machine's clipboard through RemoteDesktop:
+  mutter-devkit syncs the host's at start and on every host copy (`mdk/mdk-session.c`;
+  Ethan saw it flash as `pnpm dev` opened, 2026-11-06), gnome-remote-desktop the RDP/VNC
+  client's. A clipboard-manager extension restoring its last item sets a Memory owner:
+  silent as well. The app is the
   focused one, so `apps-hidden` and profiles apply (hide a password manager by name);
   a window without a `.desktop` counts as `system`. `clipboard-show-preview` off: "Copied"
   alone and the clipboard is not read. Click → Home (no tab of its kind).

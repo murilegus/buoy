@@ -4,7 +4,7 @@ import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import {Source} from '../../kit/source.js';
-import {contentOf, filesMime, filesOf, imageMime} from './adapter.js';
+import {contentOf, copiedHere, filesMime, filesOf, imageMime} from './adapter.js';
 
 const ID = 'clipboard';
 const PREVIEW_KEY = 'clipboard-show-preview';
@@ -22,8 +22,11 @@ const SNIPPET = 500;
  *   new owner (null: cleared, e.g. the app quit).
  * - Silent when Shell set it itself: the owner is a MetaSelectionSourceMemory
  *   (st-clipboard.c st_clipboard_set_content → meta_selection_source_memory_new) — a
- *   screenshot (its notification is the feedback), Looking Glass, later the Clipboard
- *   tab's own paste.
+ *   screenshot (its notification is the feedback), Looking Glass, a clipboard-manager
+ *   extension restoring its last item, later the Clipboard tab's own paste. Silent too
+ *   for a MetaSelectionSourceRemote: another machine's clipboard through RemoteDesktop —
+ *   mutter-devkit syncs the host's at start and on every host copy (mdk/mdk-session.c),
+ *   gnome-remote-desktop the RDP/VNC client's (adapter.js copiedHere, 2026-11-06).
  * - What it is comes from the owner's mimetypes (adapter.js contentOf); the content is
  *   read through St.Clipboard only to show it, and only with `clipboard-show-preview`
  *   on. A password manager's secret is never read. Nothing is kept (history is M5).
@@ -43,7 +46,9 @@ export class ClipboardSource extends Source {
     _changed(type, owner) {
         if (type !== Meta.SelectionType.SELECTION_CLIPBOARD || !owner || !this._stack)
             return;
-        if (owner instanceof Meta.SelectionSourceMemory)
+        // Wayland and remote sources are private types: GJS names their wrapper class
+        // after the real GType, so read it from there
+        if (!copiedHere(owner.constructor.$gtype?.name ?? null))
             return;
         const serial = ++this._serial;    // a later copy wins over a read still running
         const mimetypes = owner.get_mimetypes() ?? [];

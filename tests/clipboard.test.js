@@ -1,6 +1,6 @@
 // Run: gjs -m tests/clipboard.test.js   (no Shell needed; adapters are pure)
 import adapter, {
-    TTL, contentOf, imageMime, filesMime, filesOf, oneLine, filesText,
+    TTL, contentOf, imageMime, filesMime, filesOf, oneLine, filesText, copiedHere,
 } from '../src/buoy@murilegus/lib/modules/clipboard/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {validate, FEEDBACK} from '../src/buoy@murilegus/lib/kit/activity.js';
@@ -10,6 +10,13 @@ function eq(actual, expected, msg) {
     if (a !== e)
         throw new Error(`${msg}: expected ${e}, got ${a}`);
 }
+
+// --- whose copy: only an app's on this machine -----------------------------------------------
+eq([copiedHere('MetaSelectionSourceWayland'), copiedHere('MetaSelectionSourceX11')], [true, true],
+    'a Wayland or X11 app copied');
+eq(copiedHere('MetaSelectionSourceMemory'), false, 'Shell set it (screenshot, a clipboard-manager extension)');
+eq(copiedHere('MetaSelectionSourceRemote'), false, 'another machine (mutter-devkit host sync, RDP/VNC)');
+eq([copiedHere(''), copiedHere(null)], [false, false], 'unknown owner: nothing');
 
 // --- what was copied, by mimetype ------------------------------------------------------------
 eq(contentOf(['text/plain;charset=utf-8', 'UTF8_STRING']), 'text', 'text from a GTK app');
