@@ -1,7 +1,8 @@
 # Bu — Buoy's mascot (decided 2026-11-03)
 
-Bu is the buoy itself: a small pixel float with a lamp on its head, and **the lamp is the
-buoy light** (SPEC §2a-i, INDICATORS). Bu gives the light a body; it adds no new idea.
+Bu, the first syllable of Buoy ("boo"; the name is said "BOO-ee", 2026-11-06), is the
+buoy itself: a small pixel float with a lamp on its head, and **the lamp is the buoy
+light** (SPEC §2a-i, INDICATORS). Bu gives the light a body; it adds no new idea.
 
 Bu is not an assistant face. It never talks, never follows the pointer, never glows, and
 never moves while the island is idle (SPEC §0, §8; ARCHITECTURE rule 8). Its job is to
