@@ -102,6 +102,20 @@ eq(tabFor(act('d', 'deploy', {expanded: true}), strip2), 'kind:deploy', 'unclaim
 eq(tabFor(act('m', 'media', {expanded: true}), s), tabFor(act('m', 'media', {expanded: true}), s),
     'no memory: the same context always gives the same tab');
 
+// --- a tab only while live (Claude Code, 2026-11-07) ---------------------------------
+{
+    const agents = {id: 'agent', kinds: ['agent', 'ask'], tab: class {}, title: 'Claude Code', icon: '/usr/lib/claude-desktop/resources/TrayIconLinux-Dark.png', tabWhileLive: true};
+    eq(planStrip([media, agents], []).tabs.map(t => t.id), [HOME, 'media'], 'no session: no Claude Code tab');
+    eq(planStrip([media, agents], [act('s', 'agent')]).tabs.map(t => t.id), [HOME, 'media', 'agent'],
+        'a session: the tab, after the others in module order');
+    eq(planStrip([media, agents], [act('q', 'ask', {expanded: true})]).tabs.map(t => t.id), [HOME, 'media', 'agent'],
+        'a prompt alone: the tab too');
+    eq(planStrip([media, agents], [act('q', 'ask', {expanded: true})]).tabs.some(t => t.id === 'kind:ask'), false,
+        'its kinds stay claimed while hidden: no stray "Ask" tab');
+    eq(planStrip([media, agents], [act('s', 'agent')]).tabs.at(-1).icon, '/usr/lib/claude-desktop/resources/TrayIconLinux-Dark.png',
+        'its icon: a path to Claude Desktop\'s tray glyph');
+}
+
 // --- what a click does -------------------------------------------------------------
 const playing = act('m', 'media', {expanded: true});
 const osd = Object.assign(act('v', 'osd'), {onPress: () => {}});
@@ -119,6 +133,12 @@ eq(pressTarget(Object.assign(act('x', 'osd'), {onPress: 'nope'}), s), {tab: HOME
     'a non-function onPress is ignored');
 eq(pressTarget(Object.assign(act('t', 'timer'), {onPress: () => {}}), s), {tab: 'timer', press: false},
     'a kind with a tab opens it even with onPress');
+eq(pressTarget(Object.assign(act('t', 'timer'), {onPress: () => {}, pressFirst: true}), s), {tab: 'timer', press: true},
+    'pressFirst: onPress first, its tab named for when onPress does nothing (CODING-AGENTS.md §2)');
+eq(pressTarget(Object.assign(act('t', 'timer'), {pressFirst: true}), s), {tab: 'timer', press: false},
+    'pressFirst without onPress: the tab');
+eq(pressTarget(Object.assign(act('t', 'timer'), {onPress: () => {}, pressFirst: true}), s, {badge: true}),
+    {tab: HOME, press: false}, 'the badge still wins');
 
 // --- a kind tab's activities --------------------------------------------------------
 const list = [act('a', 'media', {expanded: true}), act('b', 'osd'), act('c', 'media'), act('d', 'media', {expanded: true})];

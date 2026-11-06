@@ -14,6 +14,9 @@ import {slugOf} from './registry.js';
  *   End(s id) → b
  *   Schedule(a{sv} activity, x startAt) → s id   startAt: ms since the epoch
  *   Ask(s id, s question, as options, a{sv} opts) → s choice   '' when ended
+ *   Agent(s source, s event) → s reply        a coding agent's hook event, as its JSON
+ *                                             text; the reply is what the hook prints
+ *                                             ('' but for a permission prompt)
  *   signal Action(s id, s action)             a button of the activity was pressed
  *   property Version u
  *
@@ -21,10 +24,11 @@ import {slugOf} from './registry.js';
  */
 
 export const PATH = '/org/gnome/Shell/Extensions/Buoy';
-export const VERSION = 1;
+export const VERSION = 2;
 const PREFIX = 'dbus:';
 const MAX_LIVE = 32;          // activities from D-Bus at once
 const MAX_BYTES = 16 * 1024;  // one activity, as JSON
+const MAX_EVENT = 256 * 1024; // one hook event (a large Write's content rides along)
 
 const IFACE = `<node>
   <interface name="org.gnome.Shell.Extensions.Buoy">
@@ -54,7 +58,12 @@ const IFACE = `<node>
       <arg type="a{sv}" name="opts" direction="in"/>
       <arg type="s" name="choice" direction="out"/>
     </method>
-    <signal name="Action">
+    <method name="Agent">
+      <arg type="s" name="source" direction="in"/>
+      <arg type="s" name="event" direction="in"/>
+      <arg type="s" name="reply" direction="out"/>
+    </method>
+        <signal name="Action">
       <arg type="s" name="id"/>
       <arg type="s" name="action"/>
     </signal>
@@ -137,6 +146,18 @@ export class BuoyDBus {
         this._impl = null;
         this._live = new Set();   // internal ids surfaced from D-Bus
         this._seq = 0;
+        this._agent = null;
+    }
+
+    /**
+     * Who answers `Agent` (the agent module's source while it runs; CODING-AGENTS.md §1).
+     * Without one, every call returns '' at once: the hook goes on as without Buoy.
+     *
+     * @param {?function(string, string, {sender: string}): (string|Promise<string>)} fn
+     *   source, event JSON, the caller's unique bus name → the reply
+     */
+    setAgent(fn) {
+        this._agent = fn;
     }
 
     export() {
@@ -145,6 +166,7 @@ export class BuoyDBus {
     }
 
     unexport() {
+        this._agent = null;
         this._impl?.unexport();
         this._impl = null;
         this._live.clear();
@@ -230,6 +252,28 @@ export class BuoyDBus {
         this._stack.ask(PREFIX + id, question, options, {
             app: slugOf(o.app), timeoutMs: o.timeoutMs ?? 0, fallback: o.fallback ?? null,
         }).then(choice => invocation.return_value(new GLib.Variant('(s)', [choice ?? ''])));
+        return undefined;
+    }
+
+    AgentAsync([source, event], invocation) {
+        const done = reply => invocation.return_value(new GLib.Variant('(s)', [typeof reply === 'string' ? reply : '']));
+        if (typeof source !== 'string' || !/^[a-z][\w-]{0,31}$/.test(source))
+            return invocation.return_gerror(invalid('source: a name like "claude"'));
+        if (typeof event !== 'string' || event.length > MAX_EVENT)
+            return invocation.return_gerror(invalid(`event: JSON text, at most ${MAX_EVENT} bytes`));
+        if (!this._agent)
+            return done('');
+        let reply;
+        try {
+            reply = this._agent(source, event, {sender: invocation.get_sender()});
+        } catch (e) {
+            console.warn(`Buoy: agent event: ${e.message}`);
+            return done('');
+        }
+        Promise.resolve(reply).then(done, e => {
+            console.warn(`Buoy: agent event: ${e.message}`);
+            done('');
+        });
         return undefined;
     }
 

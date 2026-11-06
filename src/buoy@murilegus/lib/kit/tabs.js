@@ -7,7 +7,8 @@
  *
  * - Home is always first.
  * - A kind tab per enabled module with kinds, in module order (SPEC §6), always shown,
- *   running or not (2026-11-02). Until the module ships `tab.js` it shows its activities'
+ *   running or not (2026-11-02) — unless the module says `tabWhileLive`: then only while
+ *   one of its activities is (Claude Code, 2026-11-07, Ethan). Until the module ships `tab.js` it shows its activities'
  *   own expanded views, or nothing. Modules whose kinds are all feedback for your own
  *   action (osd, copied: SPEC §2b) have no tab, unless one of their activities brings an
  *   expanded presentation. Kinds no module claims (D-Bus callers) get a tab while one of
@@ -37,7 +38,8 @@ const iconName = v => typeof v === 'string' && v.trim() ? v.trim() : null;
 const hasExpanded = a => planExpanded(a) !== null;
 
 /**
- * @param {object[]} modules  enabled modules, in order: {id, kinds, tab?, title?, icon?}
+ * @param {object[]} modules  enabled modules, in order: {id, kinds, tab?, title?, icon?,
+ *   tabWhileLive?}
  * @param {object[]} list  visible activities (stack order)
  * @param {object} [opts]
  * @param {string} [opts.slot]  `tabs-slot`
@@ -55,6 +57,8 @@ export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
         if (!m.kinds?.length)
             continue;
         m.kinds.forEach(k => claimed.add(k));
+        if (m.tabWhileLive && !list.some(a => m.kinds.includes(a.kind)))
+            continue;
         // feedback-only: a kind tab only while one of its activities brings an expanded
         // view, and never when its tab.js is the standalone one
         if (!feedbackOnly(m) || (!m.tab && shown(m.kinds))) {
@@ -99,8 +103,10 @@ export function tabFor(activity, strip) {
  * What a click on a pill (or Enter on the ringed one) does (SPEC §2b, INDICATORS.md):
  * idle, the +N badge and the amber missed line open Home; a pill opens the tab of its
  * kind; a pill whose kind has no tab runs its own onPress if it has one, else opens Home.
- * The missed line wins because it is what the pill shows: Home is where it is seen
- * (2026-11-04).
+ * An activity with `pressFirst` runs its onPress even when its kind has a tab, and opens
+ * the tab only when onPress returns false (an agent's session: its terminal first,
+ * CODING-AGENTS.md §2, 2026-11-07). The missed line wins because it is what the pill
+ * shows: Home is where it is seen (2026-11-04).
  *
  * @param {?object} activity  null = the idle pill
  * @param {object} strip  planStrip() result
@@ -113,7 +119,8 @@ export function pressTarget(activity, strip, {badge = false, missed = false} = {
     if (!activity || badge || missed)
         return {tab: HOME, press: false};
     const tab = tabFor(activity, strip);
-    return {tab, press: tab === HOME && typeof activity.onPress === 'function'};
+    const can = typeof activity.onPress === 'function';
+    return {tab, press: can && (tab === HOME || activity.pressFirst === true)};
 }
 
 /**

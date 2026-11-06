@@ -376,7 +376,11 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   kind its activity's icon, else a generic one.
 - Where you open from decides the tab: idle → Home; the `+N` badge → Home; a pill (minimal or
   its compact) → the tab of its kind (`kind → module → tab`); kinds without a tab (osd, copied) → the
-  activity's `onPress` if it has one (e.g. raise the player), else Home. Tabs can be
+  activity's `onPress` if it has one (e.g. raise the player), else Home. An activity with
+  `pressFirst` runs its `onPress` before its kind's tab, which opens only when `onPress`
+  does nothing (an agent's session: its terminal, else the Claude Code tab; 2026-11-07).
+  A module with `tabWhileLive` has its kind tab only while one of its activities is
+  there (Claude Code, 2026-11-07); every other kind tab is always shown. Tabs can be
   switched inside expanded, but the next open follows context again — the last tab is not
   remembered. While open the strip follows the stack: a tab whose last activity ends
   goes back to Home.

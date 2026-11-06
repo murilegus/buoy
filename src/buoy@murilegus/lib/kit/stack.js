@@ -7,13 +7,14 @@ import {FEEDBACK, validate} from './activity.js';
  *
  *   surface(activity) → id · update(id, patch, {alert}) · end(id, {dismissal})
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
- *   answer(id, choice) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool)
+ *   answer(id, choice) · wake(id) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool)
  *   seeMissed() · openMissed(id, at) · clearMissed()
  *   has(id) · get(id) · hold(id, held)
  *
  * Rules:
  *   - every activity goes through validate(); priority defaults from activity.js PRIORITY
- *   - highest priority shows; ties → most recently surfaced; the newest feedback (osd,
+ *   - highest priority shows; ties → a fresh one before a stale one (2026-11-07), then the
+ *     most recently surfaced; the newest feedback (osd,
  *     copied) goes first unless an ask is on top, and covers pill 1 only (pillWindow)
  *   - end removes immediately; ttl (capped at 8 h by validate) ends it; ttl 0 = until ended;
  *     hold(id, true) — the pointer on its pill — pauses the ttl, hold(id, false) gives it
@@ -22,7 +23,9 @@ import {FEEDBACK, validate} from './activity.js';
  *   - style 'transient' asks the island to open expanded and ends when it collapses
  *   - alert (on surface, or update(..., {alert: true})) is one-shot; a covered activity's
  *     alert brings it up for ALERT_MS, then the real top returns
- *   - apps-hidden is a filter: hidden activities stay live but never reach the island
+ *   - apps-hidden is a filter: hidden activities stay live but never reach the island;
+ *     so is an activity's own `hidden: true` (an agent's session while its ask stands for
+ *     it, CODING-AGENTS.md §4, 2026-11-07): live, timed, never drawn, never missed
  *   - while unseen (fullscreen, away, DND) an ending activity goes to the missed history
  *     (last 5), except osd/copied (feedback for your own action) and ask (red light)
  *   - while unseen the island gets no alert and no expand: an ask must not open in a
@@ -43,6 +46,8 @@ export const ALERT_MS = 2000;
 const MAX_DELAY = 2 ** 31 - 1;          // GLib timeouts are 32-bit ms; longer waits re-arm
 const MISSED_MAX = 5;
 const NOT_MISSABLE = new Set([...FEEDBACK, 'ask']);
+// What an asker may set on its ask's look (ask() `look`); the rest is the stack's
+const ASK_LOOK = ['leading', 'trailing', 'compact', 'expanded', 'minimalAction', 'keyline'];
 
 /**
  * Which activities get a pill (SPEC §2c, §2e): the first `cap` in order, except that
@@ -164,7 +169,7 @@ export class ActivityStack {
             this._asks.delete(id);
             ask.resolve(null);
         }
-        if (this._unseen && !this._hidden.has(a.app) && !NOT_MISSABLE.has(a.kind))
+        if (this._unseen && !this._hidden.has(a.app) && a.hidden !== true && !NOT_MISSABLE.has(a.kind))
             this._recordMissed(a);
         this._render();
         return true;
@@ -202,23 +207,56 @@ export class ActivityStack {
      * @param {object} [opts]
      * @param {string} [opts.app]  slug of the asking app
      * @param {number} [opts.timeoutMs]  0 = wait forever
-     * @param {?string} [opts.fallback]  answer on timeout (ask module: 10 min → deny)
+     * @param {?string} [opts.fallback]  answer on timeout (agent module: 10 min → deny)
+     * @param {object} [opts.look]  how it looks beyond the question: `leading`, `trailing`,
+     *   `compact`, `expanded`, `minimalAction`, `keyline` (presentation data; Bu leading,
+     *   CODING-AGENTS.md §4)
+     * @param {boolean} [opts.quiet]  never jumps open nor alerts: it waits in its pill,
+     *   answered from the compact or a click (the asker's own window is focused, §6)
      * @returns {Promise<?string>}
      */
-    ask(id, question, options, {app = 'system', timeoutMs = 0, fallback = null} = {}) {
+    ask(id, question, options, {app = 'system', timeoutMs = 0, fallback = null, look = {}, quiet = false} = {}) {
         if (!options?.length)
             throw new Error(`ask(${id}) needs at least one option`);
         this._settle(id, null);
+        const own = {};
+        for (const k of ASK_LOOK) {
+            if (look && k in look)
+                own[k] = look[k];
+        }
         return new Promise(resolve => {
             this._asks.set(id, {resolve, options, dismissed: false});
             this.surface({
-                id, kind: 'ask', app, text: question, alert: true, expanded: true,
+                id, kind: 'ask', app, text: question, alert: !quiet, expanded: true, ...own, quiet: !!quiet,
                 actions: options.map(o => ({id: o, label: o})),
                 onAction: choice => this.answer(id, choice), // present.js buttons
             });
             if (timeoutMs > 0)
                 this._arm(id, 'ask', timeoutMs, () => this._settle(id, fallback));
         });
+    }
+
+    /**
+     * A quiet ask speaks up: it opens as an ask arriving would (CODING-AGENTS.md §4: the
+     * asker's window lost the focus). On top it opens expanded; covered, it alerts, which
+     * brings it up; unseen, it opens when seen again.
+     *
+     * @param {string} id
+     * @returns {boolean} it was a quiet ask
+     */
+    wake(id) {
+        const a = this._items.get(id);
+        if (!this._asks.has(id) || !a?.quiet)
+            return false;
+        a.quiet = false;
+        if (this._unseen)
+            return true;
+        const list = this._visibleList();
+        if (list[0]?.id === id)
+            this._island.render(list, {alert: null, expand: id});
+        else
+            this._render({changed: id, alert: id});
+        return true;
     }
 
     answer(id, choice) {
@@ -254,7 +292,7 @@ export class ActivityStack {
         const back = this._unseen && !unseen;
         this._unseen = !!unseen;
         const top = back ? this._visibleList()[0] : null;
-        if (top && (top.kind === 'ask' || top.style === 'transient'))
+        if (top && !top.quiet && (top.kind === 'ask' || top.style === 'transient'))
             this._island.render(this._visibleList(), {alert: null, expand: top.id});
         this._updateLight();
     }
@@ -437,14 +475,14 @@ export class ActivityStack {
     }
 
     _visible(a) {
-        return !this._hidden.has(a.app) && !this._asks.get(a.id)?.dismissed;
+        return a.hidden !== true && !this._hidden.has(a.app) && !this._asks.get(a.id)?.dismissed;
     }
 
     // Every visible activity, highest priority first (ties → most recent); an alerted
     // activity brought up by _promote() goes first.
     _visibleList() {
         const list = [...this._items.values()].filter(a => this._visible(a))
-            .sort((a, b) => b.priority - a.priority || b._seq - a._seq);
+            .sort((a, b) => b.priority - a.priority || Number(a.isStale) - Number(b.isStale) || b._seq - a._seq);
         const promoted = list.find(a => a.id === this._promoted);
         if (promoted)
             return [promoted, ...list.filter(a => a !== promoted)];
@@ -486,7 +524,8 @@ export class ActivityStack {
                 alert: shown.includes(alert) ? alert : null,
                 // transient (APPLE.md A3) and ask (all options are only in expanded)
                 // open expanded when they reach the centre pill
-                expand: (top.style === 'transient' || top.kind === 'ask') && top.id !== prevPrimary &&
+                // a quiet ask waits in its pill (ask() `quiet`)
+                expand: (top.style === 'transient' || top.kind === 'ask') && !top.quiet && top.id !== prevPrimary &&
                     !this._unseen ? top.id : null,
             });
         }

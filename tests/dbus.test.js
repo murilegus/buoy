@@ -217,6 +217,32 @@ async function main() {
     await rejects(call('Ask', '(ssasa{sv})', ['q4', '?', [], asv({})]), /options/, 'Ask needs options');
     await rejects(call('Ask', '(ssasa{sv})', ['q5', '?', ['A'], asv({fallback: 'B'})]), /fallback/, 'fallback must be an option');
 
+    // Agent (CODING-AGENTS.md §1): '' with no agent module; the module's reply otherwise
+    eq(VERSION, 2, 'Version 2: Agent');
+    eq(await call('Agent', '(ss)', ['claude', '{"hook_event_name":"Stop"}']), [''], 'no agent module: an empty reply at once');
+    const seen = [];
+    api.setAgent((source, text, info) => {
+        seen.push([source, text, info.sender === null || typeof info.sender === 'string']);
+        return text.includes('Permission') ? new Promise(r => GLib.timeout_add(0, 50, () => {
+            r('{"decision":"allow"}');
+            return GLib.SOURCE_REMOVE;
+        })) : '';
+    });
+    eq(await call('Agent', '(ss)', ['claude', '{"hook_event_name":"Stop"}']), [''], 'a report: empty');
+    eq(await call('Agent', '(ss)', ['claude', '{"hook_event_name":"PermissionRequest"}']), ['{"decision":"allow"}'],
+        'a permission prompt: the module\'s answer, when it comes');
+    eq(seen.map(x => [x[0], x[2]]), [['claude', true], ['claude', true]],
+        'source, the event text and the caller\'s bus name (null on this peer-to-peer test connection)');
+    api.setAgent(() => {
+        throw new Error('boom');
+    });
+    eq(await call('Agent', '(ss)', ['claude', '{}']), [''], 'a failing module: empty, never a D-Bus error');
+    api.setAgent(() => Promise.reject(new Error('later boom')));
+    eq(await call('Agent', '(ss)', ['claude', '{}']), [''], 'a failing answer: empty');
+    await rejects(call('Agent', '(ss)', ['Bad Name', '{}']), /source/, 'a source is a short name');
+    await rejects(call('Agent', '(ss)', ['claude', 'x'.repeat(300 * 1024)]), /event/, 'an event is at most 256 KiB');
+    api.setAgent(null);
+
     // limit: only the D-Bus activities live now count
     await call('End', '(s)', ['1']);
     for (let i = 0; i < 32; i++)

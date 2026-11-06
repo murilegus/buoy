@@ -356,12 +356,11 @@ export class Island {
     _activate(pill, badge = false) {
         const a = pill.activity;
         const {tab, press} = pressTarget(a, this._strip(), {badge, missed: pill.showingMissed});
-        if (press) {
-            a.onPress();
+        // onPress returning false did nothing (pressFirst: no window to bring up): the tab
+        if (press && a.onPress() !== false)
             pill.pulse();
-        } else {
+        else
             this._openPill(pill, 'user', tab);
-        }
     }
 
     /** The amber light's compact (pill.js, on the centre pill): rows with their tab's icon. */

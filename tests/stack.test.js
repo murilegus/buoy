@@ -357,6 +357,44 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.top.id, 'far', 'far schedule fires on time');
 }
 
+// --- ties: a fresh one before a stale one (2026-11-07) -----------------------------------
+{
+    const {clock, island, stack} = setup();
+    stack.surface({id: 'old', kind: 'agent', priority: 5, staleAfter: 1000});
+    clock.advance(1000);                         // old is stale now
+    stack.surface({id: 'mid', kind: 'agent', priority: 5});
+    stack.surface({id: 'new', kind: 'agent', priority: 5, staleAfter: 1000});
+    eq(island.list.map(a => a.id), ['new', 'mid', 'old'], 'same priority: the stale one goes last');
+    stack.update('old', {text: 'news'});         // an update clears stale
+    eq(island.list.map(a => a.id), ['new', 'mid', 'old'], 'fresh again: by when it was surfaced');
+    clock.advance(1000);
+    eq(island.list.map(a => a.id)[0], 'mid', 'stale ones yield to a fresh one');
+    stack.surface({id: 'hi', kind: 'agent', priority: 60, staleAfter: 1});
+    clock.advance(1);
+    eq(island.list.map(a => a.id)[0], 'hi', 'stale never beats a higher priority');
+}
+
+// --- an activity's own `hidden` (CODING-AGENTS.md §4) ------------------------------------
+{
+    const {island, stack} = setup();
+    stack.surface({id: 's', kind: 'agent', text: 'session', ttl: 5000});
+    stack.update('s', {hidden: true});
+    eq([stack.has('s'), stack.top], [true, null], 'hidden: live, not drawn');
+    eq(island.list.length, 0, 'the island shows nothing');
+    stack.setUnseen(true);
+    stack.end('s');
+    eq(stack.missed.length, 0, 'ended while unseen and hidden: never missed (nothing was on screen for it)');
+}
+{
+    const {clock, island, stack} = setup();
+    stack.surface({id: 's', kind: 'agent', text: 'session', ttl: 5000});
+    stack.update('s', {hidden: true});
+    stack.update('s', {hidden: false});
+    eq(island.list.map(a => a.id), ['s'], 'shown again');
+    clock.advance(5000);
+    eq(stack.has('s'), false, 'its ttl ran meanwhile');
+}
+
 // --- ask --------------------------------------------------------------------
 {
     const {island, stack} = setup();
@@ -388,11 +426,51 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     stack.top.onAction('Allow');
     eq([await b, stack.top?.id ?? null], ['Allow', null], 'pressing an action button answers the ask');
 
+    // look: how the asker's ask looks; quiet: it waits in its pill (CODING-AGENTS.md §4, §6)
+    const l = stack.ask('l', 'Claude · buoy needs your OK', ['Deny', 'Allow'], {
+        look: {leading: {mascot: 'ask'}, compact: {text: 'Needs your OK', transport: true}, kind: 'x', actions: [], text: 'no'},
+    });
+    eq([stack.top.leading, stack.top.compact.text, stack.top.kind, stack.top.text, stack.top.actions.length],
+        [{mascot: 'ask'}, 'Needs your OK', 'ask', 'Claude · buoy needs your OK', 2],
+        'look sets leading and compact; kind, text and buttons stay the stack\'s');
+    stack.end('l');
+    eq(await l, null, 'ended');
     const s1 = stack.ask('s', 'one?', ['a']);
     const s2 = stack.ask('s', 'two?', ['b']);
     eq(await s1, null, 're-asking the same id settles the old ask with null');
     stack.answer('s', 'b');
     eq(await s2, 'b', 'new ask answered');
+}
+{
+    const {island, stack} = setup();
+    const q = stack.ask('quiet', 'Allow?', ['Deny', 'Allow'], {quiet: true});
+    eq(island.log.at(-1), 'show quiet', 'a quiet ask: no alert, not opened');
+    eq([stack.top.id, stack.light], ['quiet', 'off'], 'it waits in its pill, shown, so no red light');
+    const before = island.log.length;
+    stack.setUnseen(true);
+    stack.setUnseen(false);
+    eq(island.log.slice(before).filter(l => l.includes('expand')), [], 'seen again: still not opened');
+    eq(stack.wake('quiet'), true, 'a quiet ask wakes');
+    eq(island.log.at(-1), 'show quiet expand', 'on top: it opens expanded, as an ask arriving');
+    eq(stack.wake('quiet'), false, 'once');
+    stack.answer('quiet', 'Allow');
+    eq(await q, 'Allow', 'answered from its pill');
+    eq([stack.wake('nope'), stack.wake('call')], [false, false], 'unknown or not an ask: nothing');
+}
+{
+    const {island, stack} = setup();
+    const q = stack.ask('quiet', 'Allow?', ['Deny', 'Allow'], {quiet: true});
+    stack.surface({id: 'call', kind: 'call'});        // 95: over the ask
+    stack.setUnseen(true);
+    const before = island.log.length;
+    stack.wake('quiet');
+    eq(island.log.slice(before).filter(l => l.includes('quiet')), [], 'unseen: nothing opens now');
+    stack.end('call');
+    const seenAt = island.log.length;
+    stack.setUnseen(false);
+    eq(island.log.slice(seenAt).includes('show quiet expand'), true, 'seen again: the woken ask opens');
+    stack.end('quiet');
+    eq(await q, null, 'ended');
 }
 {
     const {island, stack} = setup();

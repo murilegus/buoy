@@ -12,7 +12,7 @@ import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
 import {ART_CODE, ART_DECLARATIONS, artRadius, effectBox} from './rounded.js';
-import {livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, untilText} from './presentation.js';
+import {element, livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, sinceText, untilText} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
@@ -298,8 +298,9 @@ export function progressBar(value) {
  * @param {Clutter.Actor} actor
  * @param {function():void} update  called now, on (un)map, then each second
  * @param {function():boolean} [running]  keep ticking
+ * @param {number} [every]  seconds between two updates
  */
-export function tick(actor, update, running = () => true) {
+export function tick(actor, update, running = () => true, every = 1) {
     let id = 0;
     const stop = () => {
         if (id)
@@ -309,7 +310,7 @@ export function tick(actor, update, running = () => true) {
     const sync = () => {
         if (actor.mapped && running()) {
             if (!id) {
-                id = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
+                id = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, every, () => {
                     update();
                     if (running())
                         return GLib.SOURCE_CONTINUE;
@@ -373,6 +374,16 @@ function untilLabel(at) {
     tick(l, () => {
         l.text = untilText(at, Date.now());
     }, () => Date.now() < at);
+    return l;
+}
+
+// The time since `at` (an agent's run, CODING-AGENTS.md §2): its text changes once a
+// minute, so it is read every 20 s while shown, never off screen.
+function sinceLabel(at) {
+    const l = label('', 'buoy-label');
+    tick(l, () => {
+        l.text = sinceText(at, Date.now());
+    }, () => true, 20);
     return l;
 }
 
@@ -501,7 +512,13 @@ function dimMascots(actor) {
     }
 }
 
-function dimStale(box) {
+/**
+ * Dims an actor as the pills dim a stale activity (grey text and icons, Bu at 40 %): for
+ * a module's tab.js, so its rows match the pill (the Claude Code tab, 2026-11-07).
+ *
+ * @param {Clutter.Actor} box
+ */
+export function dimStale(box) {
     box.add_style_class_name('buoy-stale');
     dimMascots(box);
 }
@@ -650,6 +667,42 @@ function eqGlyph() {
     return box;
 }
 
+/**
+ * An icon by theme name, or by absolute path to an image another app installed (Claude
+ * Desktop's tray glyph, the Claude Code tab, 2026-11-07); a missing file shows the
+ * generic icon instead.
+ *
+ * @param {string} icon
+ * @returns {object} St.Icon properties
+ */
+export function iconProps(icon) {
+    if (typeof icon === 'string' && icon.startsWith('/')) {
+        return {
+            gicon: new Gio.FileIcon({file: Gio.File.new_for_path(icon)}),
+            fallback_icon_name: 'view-app-grid-symbolic',
+        };
+    }
+    return {icon_name: icon, fallback_icon_name: 'view-app-grid-symbolic'};
+}
+
+/**
+ * One element of presentation data as an actor, for a module's tab.js (the Claude Code
+ * tab draws Bu and the live elapsed time, 2026-11-07).
+ *
+ * @param {*} value  an adapter's leading / trailing value
+ * @param {object} [opts]
+ * @param {'minimal'|'compact'|'expanded'} [opts.size]  the tier whose sizes it takes
+ * @param {boolean} [opts.leading]  the leading zone: Bu may be drawn
+ * @param {?object} [opts.activity]  its activity (Bu's animation follows it)
+ * @param {boolean} [opts.stale]  the activity is stale: Bu takes `stale`
+ * @returns {?Clutter.Actor}
+ */
+export function buildElement(value, {size = 'minimal', leading = false, activity = null, stale = false} = {}) {
+    const e = element(value, {leading});
+    // a stale activity's Bu is `stale`, as on its pill (presentation.js leadingAndLight)
+    return makeElement(stale && e?.type === 'mascot' ? {...e, pose: 'stale'} : e, size, activity);
+}
+
 function makeElement(e, mode, activity = null) {
     if (!e)
         return null;
@@ -660,7 +713,7 @@ function makeElement(e, mode, activity = null) {
     case 'icon':
         return new St.Icon({
             style_class: 'buoy-icon', icon_size: size.icon,
-            ...e.gicon ? {gicon: e.gicon} : {icon_name: e.icon},
+            ...e.gicon ? {gicon: e.gicon} : iconProps(e.icon),
         });
     case 'art': {
         const icon = new St.Icon({
@@ -680,6 +733,8 @@ function makeElement(e, mode, activity = null) {
         return label(e.text, 'buoy-label');
     case 'until':
         return untilLabel(e.at);
+    case 'since':
+        return sinceLabel(e.at);
     }
     return null;
 }

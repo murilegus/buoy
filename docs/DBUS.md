@@ -10,7 +10,7 @@ run: [`docs/examples/dbus/`](examples/dbus/).
 | Destination | `org.gnome.Shell` (Buoy runs inside the Shell) |
 | Object | `/org/gnome/Shell/Extensions/Buoy` |
 | Interface | `org.gnome.Shell.Extensions.Buoy` |
-| Version | property `Version` (u), now `1`; it goes up when a method or key changes |
+| Version | property `Version` (u), now `2` (`Agent`, 2026-11-07); it goes up when a method or key changes |
 
 ## Methods
 
@@ -21,6 +21,7 @@ run: [`docs/examples/dbus/`](examples/dbus/).
 | `End(s id)` | `b found` | removes it at once |
 | `Schedule(a{sv} activity, x startAt)` | `s id` | shows it at `startAt`, ms since the epoch, with an alert |
 | `Ask(s id, s question, as options, a{sv} opts)` | `s choice` | a question with one button per option; replies when one is pressed, `opts.fallback` after `opts.timeoutMs`, `''` when it is ended or Buoy is disabled. `opts.app` names the asker |
+| `Agent(s source, s event)` | `s reply` | a coding agent's hook event, its JSON as text (`source` `claude`; Buoy's own hook script sends it, [CODING-AGENTS.md](CODING-AGENTS.md)); `''` for a report, the hook's stdout for a permission prompt (when answered), `''` at once while the agent module is off. At most 256 KiB |
 
 Signal `Action(s id, s action)`: a button of one of your activities was pressed
 (`actions` below). Watch it with `gdbus monitor` (`examples/dbus/actions.sh`).

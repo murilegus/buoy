@@ -9,8 +9,10 @@ export class Source {
      * @param {ActivityStack} stack
      * @param {Registry} [registry]  builds an event into an activity (adapter, overrides)
      * @param {Gio.Settings} [settings]  Buoy's; a source reads its module's `<id>-…` keys
+     * @param {object} [_opts]  {dbus}: kit/dbus.js BuoyDBus, for a source that answers one
+     *   of its methods (agent: `Agent`, 2026-11-07)
      */
-    enable(stack, registry = null, settings = null) {
+    enable(stack, registry = null, settings = null, _opts = {}) {
         this._stack = stack;
         this._registry = registry;
         this._settings = settings;
