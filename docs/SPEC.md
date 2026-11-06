@@ -453,41 +453,16 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   their position 1–9 (Deny · Allow · Always → D · 2 · 3). Ignored while another popup
   holds the keyboard.
 
-### 2d. Greeting (decided 2026-11-03)
+### 2d. Greeting (decided 2026-11-03; moments 2026-11-06)
 
-Once a day, the first time the island appears, it opens expanded and says hello.
+Buoy says hello when the machine starts or wakes from a long sleep (expanded: Bu on the
+left, the greeting, the time and date and the weather taking the rest), welcome back on a new login,
+and see you soon when the session ends (minimal, or compact with a note) — every time,
+not once a day. The greeting depends on the moment, the part of the day, the weekday,
+the user's birthday and the world's holidays (by time zone). **[GREETING.md](GREETING.md)
+is the reference**: moments and how they are detected, every line and its priority,
+sizes, Bu's poses, special days, weather, settings and tests.
 
-- **When.** On the first enable of a local day: login, or the first unlock/resume on a
-  new day (Shell disables extensions on lock and re-enables them on unlock — Buoy has no
-  `session-modes`, so it runs only in `user`, `ui/extensionSystem.js`). State:
-  `greeting-last-day` (s, `YYYY-MM-DD`), written only once the greeting has really shown.
-  Not shown while a fullscreen window has focus; then the next enable that day tries
-  again.
-- **What.** A transient activity, kind `greeting`, from the `greeting` module. It opens
-  expanded like any stack open (no keyboard grab, §2), stays ~8 s (held while hovered),
-  click outside closes it early, then it ends and the idle content takes over. Any real
-  activity that surfaces meanwhile interrupts it (transient rules); the day still counts.
-  `greeting-style = expanded | minimal | off`, default `expanded`; `minimal` shows only the
-  first line in the pill for 4 s.
-- **Expanded content**, three lines, the greeting large:
-  ```
-  Good morning, Ethan.
-  Today is Tuesday, 3 November 2026.
-  Ho Chi Minh City: 32 °C, cloudy, light breeze.
-  ```
-  (vi: "Chào buổi sáng, Ethan. Hôm nay thứ Ba, ngày 3/11/2026. Nhiệt độ ở TP.HCM hiện tại
-  là 32 °C, có mây, gió nhẹ.") Date in the locale's long form; weather = location name,
-  current temperature, condition, wind in words (calm · light breeze · breezy · strong
-  wind, by Beaufort). Strings go through gettext with the localisation item (M5).
-- **Weather source.** GNOME's own client (`misc/weather.js` `WeatherClient`, the location
-  the clock popover uses), read by the greeting's `source.js` — not through the `weather`
-  module (rule 1). Not a client of its own: the date menu's, as the weather plan does
-  (2026-11-06: WeatherClient has no destroy, so one made by Buoy would outlive disable
-  with its Geoclue client and handlers). At login it waits up to ~3 s for the first update; without one the
-  weather line is left out, and filled in place if data arrives while open. No location or
-  offline → two lines.
-- **Name.** `greeting-name` (s); empty = `GLib.get_real_name()`, falling back to the user
-  name. Prefs shows it prefilled so a short name is one edit away.
 - **Dayparts** — `kit/daypart.js`, shared with the clock plan's icons and `auto`'s
   `ctx.daypart`: `dawn · morning · noon · afternoon · evening · night`, starts from
   `daypart-starts` (ai, hours, default `[5, 7, 11, 13, 18, 22]`, wrapping past midnight).
@@ -498,9 +473,6 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   Greetings: dawn and morning → "Good morning", noon → "Good day" (vi "Chào buổi trưa"),
   afternoon → "Good afternoon", evening → "Good evening", night → "Still up" (vi
   "Khuya rồi").
-- The adapter builds all text from `{daypart, name, date, weather?}`; pure, no truncation.
-- **Bu waves** (2026-11-03): the expanded greeting's leading is `{mascot: 'wave'}` — two
-  frames for ~2 s, then `idle` (`MASCOT.md`).
 
 ### 2e. Feedback: minimal only (decided 2026-11-05, Ethan)
 
@@ -639,7 +611,12 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
   tab (2026-11-06, Ethan; kit `EmptyState`). It grows to the cap too when a list empties
   while open.
 - Now playing (one row) — MPRIS. Hidden when nothing plays.
-- Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu).
+- Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu). Every account in Settings → Online
+  Accounts (Google, Microsoft 365, Exchange, Nextcloud, WebDAV) syncs in by itself: GOA
+  registers its calendars with EDS and Shell's calendar server watches every selected
+  source (`calendar-sources.c`); a calendar unticked in GNOME Calendar stays out. Buoy
+  never talks to those services; prefs offers "Online Accounts" (Settings' `launch-panel`)
+  (2026-11-06, Ethan).
 - Weather — reuse `ui/weather.js` (same GWeather location as dateMenu).
 - Up next — today's events from the same calendar source.
 - Timer — current pomodoro/stopwatch or `--:--`.
@@ -723,7 +700,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    feedback (§2e).
 3. **home** — the expanded Home above.
 4. **appname** — left cluster.
-5. **greeting** — once a day, expanded hello with date and weather (§2d).
+5. **greeting** — hello at start and wake, welcome back, see you soon; by part of day, weekday, birthday and holidays (§2d, GREETING.md).
 6. **idle `auto`** — the smart stack over the `clock`, `weather`, `next-event` plans (§2a-iii).
 7. **notifications** (moved here from §6b 2026-11-06, Ethan) — a compact with the notification's own actions
    (Reply / Mark as read / Open); DND toggle. A **notifications tab** lists the history

@@ -27,7 +27,7 @@ and in GNOME's icon language, so a pill that switches between plans never change
 |---|---|---|
 | Brand | extension icon, README, EGO screenshots, prefs About page (M3 About, waving, 2026-11-04); empty states ("Nothing going on" in Home, the empty Notifications tab) | M3 release |
 | Agents | the **leading** of every agent activity (Claude Code, Codex, any D-Bus caller that sends `{mascot}`); the pose follows the agent's lifecycle (§ Agents). The agent's name is always the first word of the text, since Bu does not say which agent it is | M3 `ask`, M4 agent activity |
-| Greeting | leading of the expanded greeting (SPEC §2d), `wave` once | M3 greeting |
+| Greeting | leading of every greeting (GREETING.md §6): `wave` for 5 s at start, wake, welcome back and leaving; `party` on a birthday or celebration; `done` for a good weekend; `sleep` for good night; `busy` while updating | M3 greeting |
 | Idle plan `mascot` | Bu's eyes in the idle pill (§ Eyes), module off by default | M4 |
 
 Not: the pills of other modules (app icons and art stay), and not as a
@@ -120,7 +120,7 @@ replacement for the light in every state.
 | `ask` | hand up | an agent asks for permission (`ask()`) | red `#E24B4A` | — |
 | `done` | pleased | the agent finished | `#97C459` | — |
 | `busy` | working | a tool is running | `#85B7EB` | loop, bobs into the water |
-| `wave` | waving | greeting | `#FAC775` | once, then `idle` |
+| `wave` | waving | greeting | `#FAC775` | once, then `idle`; a greeting holds it 5 s (GREETING.md §6, 2026-11-06) |
 | `think` | thinking | prompt received, no tool yet | `#AFA9EC` | loop, thought dots |
 | `turn` | your turn | the agent waits for you to type | foreground | — |
 | `error` | sinking | a tool or the turn failed | `#5F5E5A` | — |
