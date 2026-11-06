@@ -347,9 +347,8 @@ events too, not only `SessionStart`, and the adapter takes it from any event. Wh
 `PermissionRequest` hook waits, the terminal shows its own dialog too (CLI, default
 mode); Deny in the pill wins: the dialog goes and the transcript says "Denied by
 PermissionRequest hook · Reason: Denied in Buoy". While a session asks, its prompt's pill
-is its only pill, and after the answer the session's pill is back ("Done").
+is its only pill, and after the answer the session's pill is back ("Done"). Answered
+"Yes" in the terminal first, the pill's prompt ended by itself and the command ran.
 
 Still to see in a real Claude Code session:
-- That an answer in the terminal first drops the waiting hook (the pill's ask ends at
-  once) or sends the same call's result (it ends with it).
 - That `PermissionRequest` hooks run in Claude Desktop's sessions and race its card.
