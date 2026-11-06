@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {progressBar} from '../../kit/present.js';
+import {EmptyState, progressBar} from '../../kit/present.js';
 import {clockTime} from '../../kit/presentation.js';
 import {downloadedDetail} from './adapter.js';
 import {doneHistory, downloadHistory} from './history.js';
@@ -56,7 +56,7 @@ export class TransfersTab {
         }
         const downloaded = downloadHistory.list(now);
         if (!running.length && !done.length && !downloaded.length) {
-            this.actor.add_child(new St.Label({text: 'No transfers', style_class: 'buoy-transfers-empty'}));
+            this.actor.add_child(new EmptyState('No transfers'));
             return;
         }
         if (running.length) {

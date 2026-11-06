@@ -4,7 +4,7 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
-import {marquee, tick} from '../../kit/present.js';
+import {EmptyState, marquee, tick} from '../../kit/present.js';
 import {livePosition, mediaTimes} from '../../kit/presentation.js';
 
 /**
@@ -51,7 +51,7 @@ export class MediaTab {
         this.actor.destroy_all_children();
         const a = this._current;
         if (!a) {
-            this.actor.add_child(new St.Label({text: 'Nothing playing', style_class: 'buoy-media-empty'}));
+            this.actor.add_child(new EmptyState('Nothing playing'));
             return;
         }
         if (this._list.length > 1)

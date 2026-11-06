@@ -242,6 +242,43 @@ function meter(kind, value, size) {
     return area;
 }
 
+/** Set on the actor whose content height an empty state fills (Home's body view). */
+export const FILL = Symbol('buoy-fill');
+
+/**
+ * A tab or list with nothing in it (2026-11-06, Ethan): one colour everywhere, the text
+ * centred both ways, and as tall as the body allows — the panel opens at its full
+ * expanded height instead of a thin strip. Its natural height is the content height Home
+ * sets on its body view (`view[FILL]`), less the padding and borders of the actors in
+ * between, so it fits exactly and never scrolls. Outside Home (no FILL above) it is as
+ * tall as its text.
+ */
+export const EmptyState = GObject.registerClass(
+class EmptyState extends St.Bin {
+    /** @param {string} text */
+    _init(text) {
+        super._init({
+            style_class: 'buoy-empty', x_expand: true, y_expand: true,
+            child: new St.Label({text, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER}),
+        });
+    }
+
+    vfunc_get_preferred_height(forWidth) {
+        const [min, nat] = super.vfunc_get_preferred_height(forWidth);
+        let between = 0;
+        for (let p = this.get_parent(); p; p = p.get_parent()) {
+            if (p[FILL] > 0)
+                return [min, Math.max(nat, p[FILL] - between)];
+            if (p instanceof St.Widget) {
+                const node = p.get_theme_node();
+                between += node.get_vertical_padding() +
+                    node.get_border_width(St.Side.TOP) + node.get_border_width(St.Side.BOTTOM);
+            }
+        }
+        return [min, nat];
+    }
+});
+
 /**
  * The kit's thin bar (the compact's), filling the width it is given; for a module's
  * tab.js (Transfers rows). setValue(v) moves it.

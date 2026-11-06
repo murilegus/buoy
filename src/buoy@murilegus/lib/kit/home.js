@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {buildExpanded, buildMinimal} from './present.js';
+import {EmptyState, FILL, buildExpanded, buildMinimal} from './present.js';
 import {clockTime} from './presentation.js';
 import {planStrip, stripOrder, tabActivities, findTab, HOME} from './tabs.js';
 import {step} from './keys.js';
@@ -85,6 +85,7 @@ export class Home {
         this._body.set_style(`max-height: ${Math.max(0, maxHeight - STRIP_H)}px;`);
         // the scrolled child must be St.Scrollable; tab bodies of any kind go inside it
         this._view = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        this._view[FILL] = Math.max(0, maxHeight - STRIP_H);   // an empty tab fills it (EmptyState)
         this._body.set_child(this._view);
         // the strip on the left, ⚙ (prefs, SPEC §3) on the right of the same row
         this._header = new St.BoxLayout({style_class: 'buoy-panel-header', x_expand: true});
@@ -108,7 +109,11 @@ export class Home {
             this._fitLater = global.compositor.get_laters().add(Meta.LaterType.BEFORE_REDRAW, () => {
                 this._fitLater = 0;
                 const chrome = Math.ceil(this._column.height - this._body.height);
-                this._body.set_style(`max-height: ${Math.max(0, this._maxHeight - chrome)}px;`);
+                const room = Math.max(0, this._maxHeight - chrome);
+                this._body.set_style(`max-height: ${room}px;`);
+                const node = this._body.get_theme_node();
+                this._view[FILL] = Math.max(0, room - node.get_vertical_padding());
+                this._view.queue_relayout();
                 return GLib.SOURCE_REMOVE;
             });
         });
@@ -324,6 +329,8 @@ export class Home {
             if (view)
                 box.add_child(view);
         }
+        if (!box.get_n_children())
+            box.add_child(new EmptyState(`No ${tab.label.toLowerCase()}`));
         return box;
     }
 
@@ -348,7 +355,7 @@ export class Home {
         }
         if (!this._list.length) {
             if (!this._missed.length)
-                box.add_child(new St.Label({text: 'Nothing going on', style_class: 'buoy-home-empty'}));
+                box.add_child(new EmptyState('Nothing going on'));
             return box;
         }
         for (const a of this._list) {

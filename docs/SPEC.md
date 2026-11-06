@@ -614,7 +614,11 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
 - **Until the M3 blocks** (2026-11-02): Home lists every visible activity (the full list,
   also behind `+N`), each row its minimal view; a row opens that activity's tab. Nothing
   running → "Nothing going on" with Bu (`idle`, or `missed` while history has entries). The panel's height fits its content up to the expanded cap;
-  beyond that the tab body scrolls (no blur, scrollbar only when needed).
+  beyond that the tab body scrolls (no blur, scrollbar only when needed). An empty tab or
+  list ("Nothing going on", "Nothing playing", "No transfers", "No notifications"…) opens
+  the panel at the full cap instead, its text centred both ways, in one colour for every
+  tab (2026-11-06, Ethan; kit `EmptyState`). It grows to the cap too when a list empties
+  while open.
 - Now playing (one row) — MPRIS. Hidden when nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu).
 - Weather — reuse `ui/weather.js` (same GWeather location as dateMenu).
