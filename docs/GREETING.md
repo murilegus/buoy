@@ -63,17 +63,19 @@ How the moments are told apart (all read at `enable`, nothing polled):
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│            Good morning, Ethan.                                  │
-│   [Bu]     It's 07:42 on Friday, 6 November 2026.                │
-│            ☁ Ho Chi Minh City: 28 °C, partly cloudy, light breeze.│
+│        Good morning, Ethan.                                      │
+│ [Bu]   It's 07:42 on Friday, 6 November 2026.                    │
+│        ☁ Ho Chi Minh City: 28 °C, partly cloudy, light breeze.   │
 └──────────────────────────────────────────────────────────────────┘
-   ¼ width      ¾ width
+ leading   center (grows)
 ```
 
-- **Layout.** Bu takes the left quarter, as tall as the text block: 80 px for three lines,
-  60 px for two (a multiple of his 10 cells, MASCOT.md: whole pixels). The text takes the
-  other three quarters, left-aligned, vertically centred with Bu. Expanded width as any
-  activity (SPEC §4); height fits the text.
+- **Layout.** The expanded presentation's own regions (APPLE.md B2): Bu in `leading`, the
+  three lines in `center`, which takes all the width left (`grow: 'center'`, the default);
+  no `trailing`. Bu is as tall as the text block — 80 px for three lines, 60 px for two
+  (a multiple of his 10 cells, MASCOT.md: whole pixels) — and centred with it. Ethan,
+  2026-11-07: Bu on the left and more room for the words; no fixed column ratio. Expanded
+  width as any activity (SPEC §4); height fits the text.
 - **Line 1 — the greeting**, large (the expanded title, larger than other titles). Chosen
   by §3.
 - **Line 2 — when**: "It's 07:42 on Friday, 6 November 2026." The time in GNOME's format
@@ -143,7 +145,7 @@ The first rule that applies wins for the title; at most one subtitle, rain first
 |---|---|---|---|
 | **minimal** | one line of at most ~24 characters (fits pill 1 at rest) | 20 px | the line |
 | **compact** | a title and one subtitle, or a line too long for minimal | 40 px | title over subtitle |
-| **expanded** | Start and Wake (§2), unless `greeting-style = minimal` | 80 / 60 px, ¼ of the width | three or two lines |
+| **expanded** | Start and Wake (§2), unless `greeting-style = minimal` | 80 / 60 px, in `leading` | three or two lines in `center`, which grows |
 
 Poses (MASCOT.md § Poses): `wave` plays for 5 s (Ethan, 2026-11-06; MASCOT's `once` is
 ~2 s, so the greeting asks for longer), then `idle`. `party` plays once, then `done`.
@@ -235,9 +237,10 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
   the size from `{moment, now, daypart, weekday, name, special?, weather?, rain?, longDay?,
   intro?}`), `holidays.js` (data + `specialDay(date, region, birthday)`, pure), `source.js`
   (the moments of §1, the weather wait, the InjectionManager on `_confirm`).
-- Kit: `kit/weather.js` / `kit/weatherclient.js` shared with the weather plan; the
-  expanded leading may ask Bu to fill the text block's height (§2); a pill that is
-  expanded still reports hover to the stack (hover holds its ttl).
+- Kit: `kit/weather.js` / `kit/weatherclient.js` shared with the weather plan; an
+  expanded `{mascot}` leading may be as tall as the text block beside it (80 / 60 px
+  instead of the fixed 50, §2) — the regions and their `grow` are unchanged; a pill that
+  is expanded still reports hover to the stack (hover holds its ttl).
 - Tests (`tests/greeting.test.js`): every row of §3–§5 and its priority; each daypart;
   weekdays and weekends; 01:00 vs dawn; sizes (24 characters, long names stay whole —
   the renderer ellipsizes); no weather, rain, snow, storm; Beaufort words; holidays —

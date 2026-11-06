@@ -456,7 +456,7 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
 ### 2d. Greeting (decided 2026-11-03; moments 2026-11-06)
 
 Buoy says hello when the machine starts or wakes from a long sleep (expanded: Bu on the
-left quarter, the greeting, the time and date, the weather), welcome back on a new login,
+left, the greeting, the time and date and the weather taking the rest), welcome back on a new login,
 and see you soon when the session ends (minimal, or compact with a note) — every time,
 not once a day. The greeting depends on the moment, the part of the day, the weekday,
 the user's birthday and the world's holidays (by time zone). **[GREETING.md](GREETING.md)
