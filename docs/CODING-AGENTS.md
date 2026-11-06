@@ -318,6 +318,16 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
 - In a real Claude Code session (Ethan's machine): install from prefs, run a session,
   answer a permission in the pill and in the terminal.
 
+### The fragile part
+
+The click's Claude Desktop path (§2) leans on three things Desktop never documented: its
+session files (`local_<uuid>.json` with `cliSessionId`), `lastPrimaryCodeSession.id` in
+`claude_desktop_config.json`, and the `claude://code/continue?session=` route. Kept on
+purpose (Ethan, 2026-11-07: it does what a click is expected to do), and each failure
+falls back to bringing Desktop up — silently, so the jump to the session is simply gone.
+After a Desktop update, check this first: two Desktop sessions, click each pill from
+another app and from inside Desktop.
+
 ## 12. extensions.gnome.org
 
 The review guidelines (gjs.guide, "Scripts and Binaries", read 2026-11-07): external
