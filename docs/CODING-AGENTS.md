@@ -334,10 +334,15 @@ screen shared, a focused "terminal" (a GTK window whose child ran the hook) and 
 app taking the focus from it (the ask opened), prefs
 install / remove / a partly installed and a non-JSON file.
 
-Still to see in a real Claude Code session (Ethan's machine):
+Seen on Ethan's machine (2026-11-07, Claude Desktop and the CLI in a terminal): the
+hooks installed from prefs; a session's pill, its compact and the Claude Code tab;
+`session_title` arrives for a Desktop session ("Buoy — Implementation" on hover); a click
+from the session's own window opens the tab; a long command (`sleep 90` in a terminal
+session) dims the working pill after a minute and its result brings it back.
 
-- Whether `SessionStart` carries `session_title` for Claude Desktop's sessions and after
-  `/rename` (§2).
+Still to see in a real Claude Code session:
+
+- Whether the CLI sends `session_title` after `/rename` (§2).
 - What the terminal shows while a `PermissionRequest` hook waits, and which answer wins.
 - That a terminal answer drops the waiting hook (the pill's ask ends at once) or sends
   the same call's result (it ends with it).
