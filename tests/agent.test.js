@@ -213,6 +213,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq([a.text, a.leading, a.trailing], ['Claude · buoy', {mascot: 'busy'}, {since: T0}], 'minimal: Bu, the name, the elapsed time');
     eq([a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Editing src/…/c.js'], 'compact: which session, what it does');
     eq([a.priority, a.staleAfter, a.ttl], [PRIORITY.working, STALE_MS, 0], 'working: 35, stale after 1 min, no end');
+    eq(a.pressFirst, true, 'a click brings the terminal up first, else the tab (§2)');
     const s = agent({...rec, shared: true});
     eq([s.compact.text, s.compact.subtitle], ['Claude · buoy', 'Editing a file'], 'sharing the screen: no file name (§7)');
     if (JSON.stringify(s).includes('c.js'))

@@ -364,6 +364,8 @@ export function agent(rec) {
         priority,
         staleAfter,
         ttl: rec.stopped ? END_AFTER_STOP : 0,
+        // a click brings its terminal up first; without one, the Claude Code tab (§2)
+        pressFirst: true,
         attributes: {project: rec.project ?? '', name: nameOf(rec) ?? '', title: shared ? rec.safeTitle : rec.title, pose},
     };
 }

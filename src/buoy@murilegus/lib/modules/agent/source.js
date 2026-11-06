@@ -113,6 +113,8 @@ export class AgentSource extends Source {
         const a = this._registry.build(KIND, rec.source, {...rec, shared: this._shared});
         if (!a)
             return;
+        const key = `${rec.source}:${rec.id}`;
+        a.onPress = () => this._raise(key);
         if (this._stack.has(a.id))
             this._stack.update(a.id, a, {alert});
         else
@@ -241,6 +243,16 @@ export class AgentSource extends Source {
                     resolve();
                 });
         });
+    }
+
+    // A click on the session's pill or row: its terminal (or Claude Desktop) comes up.
+    // false: no window known, the caller opens the Claude Code tab instead (§2)
+    _raise(key) {
+        const app = this._apps?.get(key);
+        if (!app)
+            return false;
+        app.activate();
+        return true;
     }
 
     // Its window has the focus and `agent-quiet-focused` is on: nothing jumps open (§6)

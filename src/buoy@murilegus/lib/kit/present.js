@@ -12,7 +12,7 @@ import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
 import {ART_CODE, ART_DECLARATIONS, artRadius, effectBox} from './rounded.js';
-import {livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, sinceText, untilText} from './presentation.js';
+import {element, livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, sinceText, untilText} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
@@ -659,6 +659,21 @@ function eqGlyph() {
         still();
     });
     return box;
+}
+
+/**
+ * One element of presentation data as an actor, for a module's tab.js (the Claude Code
+ * tab draws Bu and the live elapsed time, 2026-11-07).
+ *
+ * @param {*} value  an adapter's leading / trailing value
+ * @param {object} [opts]
+ * @param {'minimal'|'compact'|'expanded'} [opts.size]  the tier whose sizes it takes
+ * @param {boolean} [opts.leading]  the leading zone: Bu may be drawn
+ * @param {?object} [opts.activity]  its activity (Bu's animation follows it)
+ * @returns {?Clutter.Actor}
+ */
+export function buildElement(value, {size = 'minimal', leading = false, activity = null} = {}) {
+    return makeElement(element(value, {leading}), size, activity);
 }
 
 function makeElement(e, mode, activity = null) {

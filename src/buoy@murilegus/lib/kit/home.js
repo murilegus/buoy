@@ -226,8 +226,13 @@ export class Home {
 
     _button({icon, label}, accessibleName) {
         const box = new St.BoxLayout({style_class: 'buoy-tab-box'});
-        if (icon)
-            box.add_child(new St.Icon({icon_name: icon, icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
+        // an app's own icon may not be installed (Claude Code without Claude Desktop)
+        if (icon) {
+            box.add_child(new St.Icon({
+                icon_name: icon, fallback_icon_name: 'view-app-grid-symbolic', icon_size: 16,
+                y_align: Clutter.ActorAlign.CENTER,
+            }));
+        }
         if (label)
             box.add_child(new St.Label({text: label, y_align: Clutter.ActorAlign.CENTER}));
         return new St.Button({

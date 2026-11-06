@@ -92,6 +92,19 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   "Fetching example.com", "Waiting for you", "Done in 4 min"); commands, paths and URLs
   give way to "Running a command", "Editing a file"… while the screen is shared (§7).
 - **Expanded**: only for a permission prompt (§4).
+- **Click** on a session's pill (Ethan, 2026-11-07): its terminal — or Claude Desktop —
+  comes to the front (the app found in §6, `Shell.App.activate`) and nothing opens. No
+  window known (a remote shell, an unknown launcher): the Claude Code tab opens. The kit's
+  `pressFirst` (tabs.js `pressTarget`): onPress before the kind's tab, the tab when it
+  returns false.
+- **The Claude Code tab** (`tab.js`; its icon Claude Desktop's own, `claude-desktop`, the
+  strip's generic one when only the CLI is installed): one row per session the island
+  shows — Bu in its pose, the session's name, what it is doing, the elapsed time; dimmed
+  when stale — and a permission prompt's Deny · Allow · Always under its session's row.
+  A row's click brings that session's terminal up and closes the island. In the strip
+  only while a session or a prompt is there (kit `tabWhileLive`, Ethan 2026-11-07). Kind
+  `ask` is the module's too, so a click on a prompt's pill opens this tab, and other
+  callers' `Ask()` get a row of their own there.
 - **Starts** on the first `UserPromptSubmit` of a session: a session that is open but
   idle takes no room. A tool, a subagent or a permission prompt before any prompt was
   seen (the hooks installed mid-run) starts it too, its clock from then. **Ends** on
@@ -258,7 +271,8 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
 
 ## 11. Code and tests
 
-- `modules/agent/` (replaces the stub `modules/ask/`): `index.js` (kinds `agent`, `ask`),
+- `modules/agent/` (replaces the stub `modules/ask/`): `tab.js` (the Claude Code tab),
+  `index.js` (kinds `agent`, `ask`; `tabWhileLive`),
   `adapter.js` (pure: event JSON → `{pose, title, detail, start?, end?, alert?}`, and the
   permission reply), `source.js` (the D-Bus `Agent` calls, one record per session, the
   30-second end after `Stop`, stale, the terminal lookup of §6), `hooks.js` (pure: add and
@@ -266,7 +280,9 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
   extension's top level: Claude Code runs it).
 - Kit: the `{since}` element (§2); D-Bus `Agent` (DBUS.md, `Version` 2; a source gets the
   `BuoyDBus` in `enable(…, {dbus})` and answers with `setAgent`); `stack.ask` `look` and
-  `quiet`, `stack.wake`; a stale activity's Bu takes the pose `stale`.
+  `quiet`, `stack.wake`; a stale activity's Bu takes the pose `stale`; `pressFirst` and
+  `tabWhileLive` (tabs.js); `buildElement` (present.js, for a tab.js); a tab icon falls
+  back to the generic one when its theme lacks it.
 - Tests (`tests/agent.test.js`): every row of §3 (pose, title, detail per tool), the run
   > 10 min `party`, stale, two sessions, subagents counted in the parent (no pill),
   priorities 35 / 60 / 90, unknown events ignored; the three replies and the
