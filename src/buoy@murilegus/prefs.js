@@ -436,10 +436,9 @@ export default class BuoyPreferences extends ExtensionPreferences {
     // in the pill, quick feedback, tabs, at rest. Group text is markup (no use-markup on
     // Adw.PreferencesGroup): it is Buoy's own, with nothing to escape.
     _modulesPage(plan, key) {
-        const page = new Adw.PreferencesPage({
-            title: 'Modules', icon_name: 'view-grid-symbolic',
-            description: 'Turning one off removes it and its tab at once.',
-        });
+        // no page-wide line: it stood alone above the groups (Ethan 2026-11-06); a switch
+        // says enough
+        const page = new Adw.PreferencesPage({title: 'Modules', icon_name: 'view-grid-symbolic'});
         for (const g of plan.groups) {
             const group = new Adw.PreferencesGroup({title: g.title, description: g.description});
             for (const m of g.modules)
