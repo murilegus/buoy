@@ -448,9 +448,21 @@ export default class BuoyPreferences extends ExtensionPreferences {
         return page;
     }
 
-    // One idle plan: its own keys inside. Its module's switch stays on Modules; while the
-    // module is off the plan does not exist (rule 6), so the row says where to turn it on.
+    // One idle plan: its own keys inside. A module that is only this plan (clock) has its
+    // switch here, like a Modules row (2026-11-06, Ethan). A module that is more keeps
+    // its switch on Modules; while it is off the plan does not exist (rule 6), so the row
+    // says where to turn it on.
     _planRow(p, key) {
+        if (p.ownSwitch) {
+            const k = key(p.enableKey);
+            const row = textRow(Adw.ExpanderRow, {
+                title: k.get_summary(), subtitle: k.get_description(), show_enable_switch: true,
+            });
+            this._settings.bind(p.enableKey, row, 'enable-expansion', Gio.SettingsBindFlags.DEFAULT);
+            for (const name of p.keys)
+                row.add_row(this._row(key(name)));
+            return row;
+        }
         const title = p.enableKey ? key(p.enableKey).get_summary() : p.id;
         const row = textRow(Adw.ExpanderRow, {title});
         for (const name of p.keys)

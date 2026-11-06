@@ -245,12 +245,9 @@ export const MODULE_GROUPS = [
         description: 'A tab of their own, in the strip\'s slot or pinned.',
         modules: ['calendar'],
     },
-    {
-        id: 'rest', title: 'At Rest',
-        description: 'What the idle pill can show.',
-        modules: ['clock'],
-    },
 ];
+// An idle plan's module that is nothing else (clock) is in no group: its switch is on
+// its plan's row, on the Island page.
 
 // Modules whose tab is standalone (SPEC §2b): their row has "Pin to the strip".
 export const STANDALONE = new Set(['calendar', 'clipboard']);
@@ -259,7 +256,8 @@ export const STANDALONE = new Set(['calendar', 'clipboard']);
  * @param {Array<{name: string}>} keys  schema keys, in schema order
  * @returns {object} {general, idle, apps, panel, windows, developer: key names;
  *   modules: [{id, enableKey, keys}]; groups: MODULE_GROUPS with those modules, empty
- *   groups left out (Modules page); plans: [{id, enableKey, keys}] (Island page)}
+ *   groups left out (Modules page); plans: [{id, enableKey, keys, ownSwitch}] (Island
+ *   page; ownSwitch: the plan's row carries its module's switch)}
  * @throws {Error} a key that is neither placed nor a module's, or an `idle-…` key of no plan
  */
 export function planPrefs(keys) {
@@ -269,22 +267,28 @@ export function planPrefs(keys) {
         general: [], idle: [], apps: [], panel: [], windows: [], developer: [], modules: [], plans: [],
         groups: [],
     };
+    // A module that is only an idle plan (no keys of its own, no tab): its switch sits on
+    // its plan's row on the Island page, not on Modules (2026-11-06, Ethan). One that is
+    // more (calendar later: an activity, a tab and a plan) keeps its row on Modules.
+    const ownKeys = id => names.filter(n => n.startsWith(`${id}-`) && !(n in PLACES));
+    const planOnly = id => IDLE_PLANS.includes(id) && !ownKeys(id).length && !STANDALONE.has(id);
     for (const id of IDLE_PLANS) {
+        const enableKey = names.includes(`modules-${id}`) ? `modules-${id}` : null;
         plan.plans.push({
-            id,
-            enableKey: names.includes(`modules-${id}`) ? `modules-${id}` : null,
+            id, enableKey,
             keys: names.filter(n => n.startsWith(`idle-${id}-`)),
+            ownSwitch: enableKey !== null && planOnly(id),
         });
     }
     for (const id of ids) {
-        if (HIDDEN_MODULES.has(id))
+        if (HIDDEN_MODULES.has(id) || planOnly(id))
             continue;
         plan.modules.push({
             id,
             enableKey: `modules-${id}`,
             // a key placed by name wins over the prefix (clock-defaults-applied is not
             // the clock module's)
-            keys: names.filter(n => n.startsWith(`${id}-`) && !(n in PLACES)),
+            keys: ownKeys(id),
             standalone: STANDALONE.has(id),
             sample: SAMPLES[id] ?? null,
         });

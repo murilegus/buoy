@@ -89,9 +89,16 @@ eq(schema.get_key('cluster-radius').get_range().recursiveUnpack(), ['range', [0,
     'radius stops at 16: half the 32 px cluster, a pill');
 eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [16, 17],
     'radius 16 (a pill, like the island) and opacity 17 % by default, a panel button\'s hover (2026-11-04)');
-eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'calendar', 'input', 'clipboard', 'clock'],
-    'Modules: schema order, without the modules that ship nothing yet');
-eq(plan.modules.find(m => m.id === 'clock').keys, [], 'clock: a switch-only row on Modules (rule 9)');
+eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'calendar', 'input', 'clipboard'],
+    'Modules: schema order, without the modules that ship nothing yet, nor a module that is only an idle plan');
+eq(plan.plans.find(p => p.id === 'clock').ownSwitch, true,
+    'clock: its switch on its plan row on the Island page, not on Modules (2026-11-06, Ethan)');
+{
+    // a plan whose module is more than the plan (calendar later: its own keys, a tab)
+    const more = planPrefs([{name: 'modules-clock'}, {name: 'idle-clock-style'}, {name: 'clock-alerts'}]);
+    eq([more.modules.map(m => m.id), more.plans[0].ownSwitch], [['clock'], false],
+        'a module with keys of its own besides its plan keeps its switch on Modules');
+}
 
 // --- Modules page in groups (2026-11-06, Ethan) ------------------------------------------
 {
@@ -109,11 +116,10 @@ eq(plan.modules.find(m => m.id === 'clock').keys, [], 'clock: a switch-only row 
         ['live', ['media', 'notification', 'progress', 'timer']],
         ['feedback', ['hud', 'input', 'clipboard']],
         ['tabs', ['calendar']],
-        ['rest', ['clock']],
-    ], 'live in the pill · quick feedback · tabs · at rest');
+    ], 'live in the pill · quick feedback · tabs (the idle plans are on the Island page)');
     eq(plan.groups.flatMap(g => g.modules).length, plan.modules.length, 'every shown module in a group, once');
     const hidden = planPrefs(order.filter(n => n !== 'modules-calendar').map(name => ({name})));
-    eq(hidden.groups.map(g => g.id), ['live', 'feedback', 'rest'], 'a group with no module left is not drawn');
+    eq(hidden.groups.map(g => g.id), ['live', 'feedback'], 'a group with no module left is not drawn');
 }
 eq([...Object.values(plan).flat()].includes('mascot-rest-after'), false,
     'Bu rests after: hidden until something draws Bu on the pill (rule 9, 2026-11-06)');
@@ -125,8 +131,8 @@ eq(plan.idle, ['idle-content'], 'When idle: idle-content');
 eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['none', 'clock']],
     'idle-content: none or a plan (auto comes with the smart stack)');
 eq(schema.get_key('idle-content').get_default_value().unpack(), 'clock', 'the clock until auto lands (Ethan)');
-eq(plan.plans, [{id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style']}],
-    'Plans: the clock with its own key');
+eq(plan.plans, [{id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style'], ownSwitch: true}],
+    'Plans: the clock with its own key and its module\'s switch');
 eq(schema.get_key('idle-clock-style').get_range().recursiveUnpack(), ['enum', ['icon-time', 'time', 'icon', 'seconds']],
     'clock styles, SPEC §2a');
 for (const name of order.filter(n => n.startsWith('idle-') && n !== 'idle-content')) {
