@@ -84,25 +84,14 @@ export function worktreeOf(cwd) {
 /**
  * The session's own name for the compact (§2, Ethan 2026-11-07: sessions of one project
  * share "Claude · buoy"; hover tells them apart): its title when Claude Code sent one,
- * without the project's name in front ("Buoy — Optimization" → "Optimization"), else its
- * worktree's slug, else null. Never cut here: the renderer ellipsizes.
+ * whole (Ethan: the project's name in front stays), else its worktree's slug, else null.
+ * Never cut here: the renderer ellipsizes.
  *
  * @param {object} rec
  * @returns {?string}
  */
 export function nameOf(rec) {
-    const title = str(rec?.sessionTitle);
-    if (title) {
-        const project = str(rec.project);
-        if (project && title.toLowerCase().startsWith(project.toLowerCase())) {
-            const rest = title.slice(project.length);
-            const m = /^\s*[—–:-]?\s*(\S.*)$/u.exec(rest);
-            if (m && (rest.startsWith(' ') || /^[—–:-]/u.test(rest)))
-                return m[1];
-        }
-        return title;
-    }
-    return worktreeOf(rec?.cwd);
+    return str(rec?.sessionTitle) ?? worktreeOf(rec?.cwd);
 }
 
 /**

@@ -79,9 +79,8 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   one project share it in the minimal pill: no number there (Ethan, 2026-11-07).
 - **The session's name**, on hover only: its title when Claude Code sends one
   (`session_title` on `SessionStart`, when the session has a title: Claude Desktop names
-  every session, the CLI after `/rename`), without the project's name in front ("Buoy —
-  Optimization and security check" → "Optimization and security check"); else its
-  worktree's slug; else the label. Titles seen on this machine are 4–44 characters; none
+  every session, the CLI after `/rename`), whole — "Buoy — Optimization and security
+  check" as it is (Ethan, 2026-11-07); else its worktree's slug; else the label. Titles seen on this machine are 4–44 characters; none
   is cut by Buoy, the renderer ellipsizes. Whether the field arrives is to be seen in a
   real session (§13).
 - **Minimal**: Bu (the pose, §3) · "Claude · buoy" · elapsed since the prompt, "4 min"
@@ -138,7 +137,7 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
 - **Expanded content**: title "Claude · {project} needs your OK"; subtitle what it wants:
   "Run: pnpm test", "Edit: src/…/pill.js", "Fetch: example.com", "Use: {mcp_server}
   {tool}" — the command or path on one line, ellipsized, after the session's name when it
-  has one ("Weather icons · Run: pnpm test"); buttons **Deny · Allow · Always** (Always
+  has one ("Buoy — Weather icons · Run: pnpm test"); buttons **Deny · Allow · Always** (Always
   only when Claude Code sent `permission_suggestions`). Its compact: the session's name
   (else the label), what it wants, the buttons.
 - **The answer** (Buoy builds the stdout, the script prints it):

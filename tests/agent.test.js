@@ -92,10 +92,8 @@ eq([projectOf(`${CWD}/.claude/worktrees/distracted-goldberg-830c29`), worktreeOf
     ['buoy', 'distracted-goldberg-830c29'], 'a worktree: the repository\'s name, its slug');
 eq([worktreeOf(CWD), worktreeOf(null)], [null, null], 'no worktree');
 const named = t => nameOf({project: 'buoy', sessionTitle: t, cwd: CWD});
-eq([named('Buoy — Optimization and security check'), named('buoy: weather'), named('Buoy - icons'), named('Buoy implementation')],
-    ['Optimization and security check', 'weather', 'icons', 'implementation'], 'the project\'s name in front is dropped');
-eq([named('Buoyant ideas'), named('Weather icons'), named('Buoy')], ['Buoyant ideas', 'Weather icons', 'Buoy'],
-    'only a whole word; nothing left keeps the title');
+eq([named('Buoy — Optimization and security check'), named('Weather icons'), named('  Buoy  ')],
+    ['Buoy — Optimization and security check', 'Weather icons', 'Buoy'], 'the title whole (Ethan), trimmed');
 eq(named('x'.repeat(200)).length, 200, 'never cut here: the renderer ellipsizes');
 eq([nameOf({project: 'buoy', cwd: `${CWD}/.claude/worktrees/w1`}), nameOf({project: 'buoy', cwd: CWD})], ['w1', null],
     'no title: the worktree\'s slug, else none');
@@ -103,7 +101,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
 {
     const r = last([[ev('SessionStart', {source: 'startup', session_title: 'Buoy — Weather icons'})], [ev('UserPromptSubmit')]]);
     const a = agent(r.rec);
-    eq([a.text, a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Weather icons', 'Thinking'],
+    eq([a.text, a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Buoy — Weather icons', 'Thinking'],
         'minimal: the label only; hover: the session\'s name, then what it does');
     const wt = agent(last([[{...ev('UserPromptSubmit'), cwd: `${CWD}/.claude/worktrees/w1`}]]).rec);
     eq([wt.text, wt.compact.text], ['Claude · buoy', 'w1'], 'a worktree: the repository\'s label, the slug on hover');
@@ -259,7 +257,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
         'the ask: Bu ask, what it wants, the buttons in the compact');
     const titled = {...rec, sessionTitle: 'Buoy — Weather icons'};
     eq([askOf(titled, req).look.compact.text, askOf(titled, req).look.expanded.center.subtitle],
-        ['Weather icons', 'Weather icons · Run: pnpm test'], 'a named session: which one asks');
+        ['Buoy — Weather icons', 'Buoy — Weather icons · Run: pnpm test'], 'a named session: which one asks');
     eq(askOf(rec, req, {shared: true}).look.compact.subtitle, 'Run a command', 'sharing: no command');
     const plain = ev(ASK_EVENT, {tool_name: 'Bash', tool_input: {command: 'ls'}});
     eq(askOf(rec, plain).options, [DENY, ALLOW], 'no suggestion: no Always');
