@@ -9,8 +9,8 @@
  *   secret  a password manager marked it (`x-kde-passwordManagerHint`): never read
  */
 
-/** Copied is the shortest feedback (SPEC §2e: ~1 s). */
-export const TTL = 1000;
+/** As long as the other feedback (SPEC §2e; 1 s read too short, Ethan 2026-11-06). */
+export const TTL = 1500;
 
 // Owners that are not a copy made here, by their GType name (mutter core/):
 //   MetaSelectionSourceMemory  Shell set it (st_clipboard_set_content): a screenshot,
@@ -136,7 +136,8 @@ export default {
         case 'secret':
             return pill('dialog-password-symbolic', 'Copied · hidden');
         case 'image':
-            return pill(ev.image ? {art: ev.image, icon: 'image-x-generic-symbolic'} : 'image-x-generic-symbolic', 'Image');
+            return pill(ev.image ? {art: ev.image, icon: 'image-x-generic-symbolic'} : 'image-x-generic-symbolic',
+                'Copied image');
         case 'files': {
             const text = filesText(ev.files ?? []);
             return text ? pill(COPY, text) : null;

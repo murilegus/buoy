@@ -60,8 +60,8 @@ const copied = ev => adapter.copied({id: 'clipboard', ...ev}, null);
     const p = copied({what: 'text', text: 'npm install\n  --save buoy'});
     eq([p.leading, p.text, p.trailing], ['edit-copy-symbolic', 'npm install --save buoy', null], 'text: copy icon + snippet');
     eq([p.ttl, p.sizeHint, p.compact, p.expanded, p.onPress], [TTL, 'wide', null, null, null],
-        '1 s, as wide as pill 1 gets, no compact, no expanded, click → Home');
-    eq(TTL, 1000, 'copied is 1 s');
+        '1.5 s, as wide as pill 1 gets, no compact, no expanded, click → Home');
+    eq(TTL, 1500, 'copied stays 1.5 s, as the other feedback');
     eq(FEEDBACK.has('copied'), true, 'a feedback kind (pill 1, never missed)');
     const m = planMinimal(validate({id: 'copied:x:clipboard', kind: 'copied', ...p}));
     eq([m.leading.type, m.leading.icon, m.text], ['icon', 'edit-copy-symbolic', 'npm install --save buoy'], 'planned');
@@ -70,7 +70,7 @@ const copied = ev => adapter.copied({id: 'clipboard', ...ev}, null);
 {
     const thumb = new class FakeBytesIcon {}();
     const p = copied({what: 'image', image: thumb});
-    eq(p.text, 'Image', 'an image says so');
+    eq(p.text, 'Copied image', 'an image: its thumbnail and "Copied image"');
     eq(p.leading.art, thumb, 'with its thumbnail as art');
     const m = planMinimal(validate({id: 'copied:x:clipboard', kind: 'copied', ...p}));
     eq([m.leading.type, m.leading.gicon === thumb, m.leading.fallback], ['art', true, 'image-x-generic-symbolic'],

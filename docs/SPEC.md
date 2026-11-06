@@ -553,7 +553,7 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   pill it covers comes back in place when it ends, and the side pills keep their
   activities and the `+N` its count (`stack.js` `pillWindow`; they slide only as pill 1's
   width changes). The newest feedback covers an older one. Under an `ask` it is pill 2.
-- **ttl** ~1.5 s (copied 1 s). A repeat updates the same activity and restarts the ttl, so
+- **ttl** ~1.5 s (copied too since 2026-11-06, Ethan: 1 s read too short). A repeat updates the same activity and restarts the ttl, so
   holding the volume key keeps one pill and only its bar moves. Hover holds it: the
   pointer on any pill pauses its ttl, and leaving gives it a fresh one (`stack.hold`).
 - **While Home is open** feedback shows as a row in Now for its ttl (the pill is the
@@ -574,7 +574,7 @@ Once a day, the first time the island appears, it opens expanded and says hello.
   a password manager's secret (`x-kde-passwordManagerHint`, KeePassXC and KDE's) →
   "Copied · hidden", never read; files (`x-special/gnome-copied-files`, `text/uri-list`)
   → the name, or "3 items"; an image → its thumbnail as art (the PNG bytes as a
-  `Gio.BytesIcon`, nothing written) and "Image"; text → the snippet on one line
+  `Gio.BytesIcon`, nothing written) and "Copied image" (2026-11-06); text → the snippet on one line
   (whitespace collapsed, the source hands at most 500 characters), ellipsized at pill 1's
   widest (`wide`). Only the clipboard: PRIMARY changes with every selection and is
   ignored. Emptied text (a password manager clearing it) shows nothing. Silent too for a

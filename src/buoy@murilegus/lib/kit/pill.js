@@ -39,6 +39,8 @@ export class Pill {
         this._island = island;
         this.id = null;
         this.activity = null;
+        this._pendingIn = undefined; // content waiting for the old to fade out (_setContent)
+        this._fadingIn = null;       // content fading in
         this.role = 'centre';
         this.cx = 0;
         this.light = 'off';
@@ -130,7 +132,7 @@ export class Pill {
         }
         if (this._compact && !this._hasCompact())
             this._stopCompact();     // its compact went away in this update
-        this._setContent(this._restingContent(), !same);
+        this._setContent(this._restingContent(), same ? 'follow' : true);
         // A pill that appears (or changes activity) under a resting pointer is hovered
         // without an enter event: look again, so its compact still opens.
         if (!same)
@@ -422,25 +424,54 @@ export class Pill {
 
     // fade: cross-fade between activities; without it the new content replaces the
     // old one at once (updates of the same activity, light, compact, expand/collapse).
+    /**
+     * @param {?Clutter.Actor} actor  the new content
+     * @param {boolean|string} fade  true: cross-fade (another activity in this pill);
+     *   false: at once (expand, compact, the same activity's update); 'follow': at once,
+     *   unless a cross-fade is under way — then the newer content takes the place of the
+     *   one in it. The idle plan's setIdle reconfigures the pill the same frame an
+     *   activity leaves it; swapping at once there cut the fade off and the clock popped
+     *   in, one frame at the old place (2026-11-06, Ethan: after a short copy).
+     */
     _setContent(actor, fade) {
         const old = this.content.child;
         if (old === actor)
             return;
-        if (!fade) {
-            old?.remove_all_transitions();
+        const fadingOut = this._pendingIn !== undefined;
+        const fadingIn = this._fadingIn !== null && old === this._fadingIn;
+        if (fade === 'follow' && fadingOut) {
+            this._pendingIn?.destroy();         // never parented
+            this._pendingIn = actor;
+            return;
+        }
+        if (fade === 'follow' && fadingIn) {
+            const opacity = old.opacity;        // go on from where the fade is
+            this._dropContent(old);
+            if (actor)
+                this._fadeIn(actor, opacity);
+            return;
+        }
+        if (fadingOut) {                        // any other swap ends a fade under way
+            this._pendingIn?.destroy();
+            this._pendingIn = undefined;
+        }
+        if (!fade || fade === 'follow') {
+            this._dropContent(old);
             this.content.set_child(actor);
-            old?.destroy();
             return;
         }
         if (old) {
+            this._pendingIn = actor;
             old.ease({
                 opacity: 0, duration: 100,
                 onComplete: () => {
                     if (this.content.child === old)
                         this.content.set_child(null);
                     old.destroy();
-                    if (actor && !this._destroyed)
-                        this._fadeIn(actor);
+                    const next = this._pendingIn;
+                    this._pendingIn = undefined;
+                    if (next && !this._destroyed)
+                        this._fadeIn(next);
                 },
             });
         } else if (actor) {
@@ -448,15 +479,31 @@ export class Pill {
         }
     }
 
-    _fadeIn(actor) {
-        actor.opacity = 0;
+    _dropContent(old) {
+        if (!old)
+            return;
+        old.remove_all_transitions();
+        if (this._fadingIn === old)
+            this._fadingIn = null;
+        if (this.content.child === old)
+            this.content.set_child(null);
+        old.destroy();
+    }
+
+    _fadeIn(actor, from = 0) {
+        actor.opacity = from;
+        this._fadingIn = actor;
         this.content.set_child(actor);
+        const done = () => {
+            if (this._fadingIn === actor)
+                this._fadingIn = null;
+        };
         // Easing an actor that has never been allocated makes Clutter warn ("needs an
         // allocation"): start the fade on its first allocation instead. One-shot handler,
         // gone with the actor; no timer to clean up.
         const id = actor.connect('notify::allocation', () => {
             actor.disconnect(id);
-            actor.ease({opacity: 255, duration: 200, delay: 100});
+            actor.ease({opacity: 255, duration: 200, delay: from ? 0 : 100, onStopped: done});
         });
     }
 
@@ -660,6 +707,9 @@ export class Pill {
             this._compactId = 0;
         }
         this._clearGrace();
+        this._pendingIn?.destroy();      // waiting for a fade, never parented
+        this._pendingIn = undefined;
+        this._fadingIn = null;
         this.bg.destroy();
         this.content.destroy();
     }
