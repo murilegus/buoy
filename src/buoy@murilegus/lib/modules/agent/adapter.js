@@ -61,13 +61,27 @@ export function parseEvent(text) {
 }
 
 const WORKTREE = /\/\.claude\/worktrees\/([^/]+)/;
+// Claude Desktop's sessions opened on no folder run in one of its own:
+// ~/.config/Claude/scratch-workspaces/<id>/<id>/scratch-2026-11-06-38687f (seen 2026-11-07)
+const SCRATCH = /\/scratch-workspaces\//;
+
+/**
+ * @param {*} cwd
+ * @returns {boolean} a Claude Desktop session on no folder (its scratch workspace)
+ */
+export function isScratch(cwd) {
+    return SCRATCH.test(str(cwd) ?? '');
+}
 
 /**
  * @param {*} cwd
  * @returns {?string} the project: the last part of the working directory; for a Claude
- *   Code worktree (`<repo>/.claude/worktrees/<slug>`), the repository's
+ *   Code worktree (`<repo>/.claude/worktrees/<slug>`), the repository's; none for a Claude
+ *   Desktop scratch workspace
  */
 export function projectOf(cwd) {
+    if (isScratch(cwd))
+        return null;                  // its folder's name means nothing to you (§2)
     const dir = (str(cwd) ?? '').split(WORKTREE)[0];
     const parts = dir.split('/').filter(Boolean);
     return parts.at(-1) ?? null;
@@ -358,7 +372,7 @@ export function agent(rec) {
         // hover: which session (its name, or the label), then what it is doing (§2)
         compact: {
             leading: {mascot: pose},
-            text: nameOf(rec) ?? label,
+            text: hoverName(rec),
             subtitle: shared ? rec.safeTitle : rec.title,
         },
         priority,
@@ -372,11 +386,22 @@ export function agent(rec) {
 
 /**
  * @param {object} rec
- * @returns {string} what the minimal pill says: "Claude · buoy" (§2; the agent first,
- *   MASCOT.md: Bu does not say which agent it is)
+ * @returns {string} what the minimal pill says: "Claude · buoy", or "Claude" alone with no
+ *   project (a Desktop scratch session) (§2; the agent first, MASCOT.md: Bu does not say
+ *   which agent it is)
  */
 export function labelOf(rec) {
-    return `${AGENTS[rec?.source] ?? 'Agent'} · ${rec?.project ?? 'session'}`;
+    const who = AGENTS[rec?.source] ?? 'Agent';
+    return rec?.project ? `${who} · ${rec.project}` : who;
+}
+
+/**
+ * @param {object} rec
+ * @returns {string} the compact's title: the session's name, else "New session" for a
+ *   Desktop session on no folder, else the label (§2)
+ */
+export function hoverName(rec) {
+    return nameOf(rec) ?? (isScratch(rec?.cwd) ? 'New session' : labelOf(rec));
 }
 
 /**
@@ -401,7 +426,7 @@ export function askOf(rec, ev, {shared = false} = {}) {
         options,
         look: {
             leading: {mascot: 'ask'},
-            compact: {leading: {mascot: 'ask'}, text: name ?? label, subtitle: want, transport: true},
+            compact: {leading: {mascot: 'ask'}, text: hoverName(rec), subtitle: want, transport: true},
             expanded: {leading: {mascot: 'ask'}, center: {title: question, subtitle: name ? `${name} · ${want}` : want}},
             minimalAction: false,
         },

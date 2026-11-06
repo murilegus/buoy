@@ -77,6 +77,11 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   Claude Code worktree (`<repo>/.claude/worktrees/<slug>`) the repository's. The agent's
   name always leads the text (MASCOT.md: Bu does not say which agent it is). Sessions of
   one project share it in the minimal pill: no number there (Ethan, 2026-11-07).
+  A Claude Desktop session opened on no folder runs in Desktop's own scratch workspace
+  (`~/.config/Claude/scratch-workspaces/<id>/<id>/scratch-2026-11-06-38687f`): no project,
+  so the label is "Claude" alone and the hover says "New session" until the session has
+  a title (Ethan, 2026-11-07). Moved to a folder, its next event names the project
+  ("Claude · buoy", seen 2026-11-07).
 - **The session's name**, on hover only: its title when Claude Code sends one
   (`session_title`, on `SessionStart` and later events once the session has a title:
   Claude Desktop names every session, the CLI after `/rename` — both seen 2026-11-07), whole — "Buoy — Optimization and security
@@ -349,7 +354,9 @@ mode); Deny in the pill wins: the dialog goes and the transcript says "Denied by
 PermissionRequest hook · Reason: Denied in Buoy". While a session asks, its prompt's pill
 is its only pill, and after the answer the session's pill is back ("Done"). Answered
 "Yes" in the terminal first, the pill's prompt ended by itself and the command ran. Allow
-from the Claude Code tab's row: "Allowed by PermissionRequest hook", and the command ran.
+from the Claude Code tab's row: "Allowed by PermissionRequest hook", and the command ran. A
+Claude Desktop session's prompt shows in the pill beside Desktop's own card (the hook
+runs there too).
 
 Still to see in a real Claude Code session:
-- That `PermissionRequest` hooks run in Claude Desktop's sessions and race its card.
+- Whether an answer on Desktop's card ends the pill's prompt, and the reverse.

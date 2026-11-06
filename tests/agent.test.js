@@ -2,7 +2,7 @@
 // permission reply, Buoy's entries in ~/.claude/settings.json; docs/CODING-AGENTS.md §11)
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DONE_STALE, END_AFTER_STOP, PARTY_AFTER, PRIORITY, STALE_MS, TIMEOUT,
-    agent, answered, askOf, durationText, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    agent, answered, askOf, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, commandFor, hooksNote, install, installed, isOurs, uninstall,
@@ -98,6 +98,21 @@ eq(named('x'.repeat(200)).length, 200, 'never cut here: the renderer ellipsizes'
 eq([nameOf({project: 'buoy', cwd: `${CWD}/.claude/worktrees/w1`}), nameOf({project: 'buoy', cwd: CWD})], ['w1', null],
     'no title: the worktree\'s slug, else none');
 eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktrees/w1`}), 'Weather', 'the title wins');
+{
+    // a Claude Desktop session on no folder (2026-11-07)
+    const SCR = '/home/ethan/.config/Claude/scratch-workspaces/bf15abeb/3f22371f/scratch-2026-11-06-38687f';
+    eq([isScratch(SCR), isScratch(CWD), projectOf(SCR), worktreeOf(SCR)], [true, false, null, null],
+        'a scratch workspace: no project, no worktree');
+    const fresh = agent(last([[{...ev('UserPromptSubmit'), cwd: SCR}]]).rec);
+    eq([fresh.text, fresh.compact.text], ['Claude', 'New session'], 'minimal "Claude"; hover "New session" until it has a title');
+    const titled = agent(last([[{...ev('SessionStart', {session_title: 'Permission test'}), cwd: SCR}], [{...ev('UserPromptSubmit'), cwd: SCR}]]).rec);
+    eq([titled.text, titled.compact.text], ['Claude', 'Permission test'], 'with a title: the title on hover');
+    const moved = last([[{...ev('UserPromptSubmit'), cwd: SCR}], [ev('PreToolUse', {tool_name: 'Read', tool_input: {}})]]).rec;
+    eq(agent(moved).text, 'Claude · buoy', 'moved to a folder: its next event names the project');
+    const req = {...ev(ASK_EVENT, {tool_name: 'mcp__ccd_directory__change_directory', tool_input: {}}), cwd: SCR};
+    const q = askOf(last([[{...ev('UserPromptSubmit'), cwd: SCR}], [req]]).rec, req);
+    eq([q.question, q.look.compact.text], ['Claude needs your OK', 'New session'], 'its prompt: the same names');
+}
 {
     const r = last([[ev('SessionStart', {source: 'startup', session_title: 'Buoy — Weather icons'})], [ev('UserPromptSubmit')]]);
     const a = agent(r.rec);
