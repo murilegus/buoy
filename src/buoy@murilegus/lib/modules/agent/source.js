@@ -117,7 +117,7 @@ export class AgentSource extends Source {
         if (!a)
             return;
         const key = `${rec.source}:${rec.id}`;
-        a.onPress = () => this._raise(key);
+        a.onPress = opts => this._raise(key, opts);
         // its prompt's pill stands for it meanwhile: one pill per session (§4, Ethan)
         a.hidden = this._asks?.has(key) ?? false;
         if (this._stack.has(a.id))
@@ -251,14 +251,19 @@ export class AgentSource extends Source {
         });
     }
 
-    // A click on the session's pill or row: its terminal (or Claude Desktop) comes up.
-    // false — no window known, or it is in front already (a click from it did nothing to
-    // see, Ethan 2026-11-07) — and the caller opens the Claude Code tab instead (§2)
-    _raise(key) {
+    // A click on the session's pill (or its compact): its terminal — or its very session
+    // in Claude Desktop (a deep link, desktopSessionUri) — comes up. false — no window
+    // known, or that app is in front already (Ethan 2026-11-07: a click from it did
+    // nothing to see, Desktop included) — and the caller opens the Claude Code tab (§2).
+    // A row of that tab passes {row: true}: then always that session, so from inside
+    // Desktop the tab is how you switch to another of its sessions.
+    _raise(key, {row = false} = {}) {
         const app = this._apps?.get(key);
         if (!app)
             return false;
-        // Claude Desktop shows one session at a time: open this one (Ethan, 2026-11-07)
+        if (!row && Shell.WindowTracker.get_default().focus_app === app)
+            return false;
+        // Claude Desktop shows one session at a time: open this one
         if (app.get_id() === DESKTOP_APP) {
             const uri = desktopSessionUri(this._sessions?.get(key)?.id);
             if (uri) {
@@ -270,8 +275,6 @@ export class AgentSource extends Source {
                 }
             }
         }
-        if (Shell.WindowTracker.get_default().focus_app === app)
-            return false;
         app.activate();
         return true;
     }

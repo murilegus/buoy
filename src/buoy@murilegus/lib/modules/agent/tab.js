@@ -58,7 +58,7 @@ export class AgentsTab {
             // its terminal comes up and the island closes; already in front, the island
             // closes all the same (the row's own click has nowhere else to go)
             button.connect('clicked', () => {
-                a.onPress();
+                a.onPress({row: true});      // that session, even from its own app
                 this._close?.();
             });
         }
