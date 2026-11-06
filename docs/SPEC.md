@@ -240,7 +240,7 @@ for several pills.
 | **Idle** | no activity | `IDLE` 120×32 r16; content per `idle-content` (§2a) | hover → +10 % width, +2 height, and with the amber light the missed list as a compact; press → +16 % pulse; **click → open Home** |
 | **Minimal** | one or more activities | pill 1 (highest priority) at screen centre, content-fit; up to two side pills to its right, each a fixed 120×32, as many as fit before the system cluster (§2c) | hover a pill 300 ms → its compact; **click → that activity's tab**, Home on the `+N` badge or while the missed list shows (2026-11-04) |
 | **Compact** | the pointer rests on a pill | the hovered pill grows in place: top edge kept, width 0.72 × expanded (content-fit, ≥ 240), height 56 for one row, 88 with a bar, content-fit up to 120 for rows (§4) | the activity's compact content (media: transport and seek bar), or the amber missed list instead (INDICATORS.md); its buttons run their action, a click elsewhere on it = the pill's click; never takes the keyboard; collapses 200 ms after the pointer leaves |
-| **Expanded** | opened from idle, minimal or compact by a click; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open); clicks inside do nothing, buttons run their action (decided 2026-11-01) |
+| **Expanded** | opened from idle, minimal or compact by a click; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open), at once; clicks inside do nothing, buttons run their action (decided 2026-11-01) |
 
 Rules:
 - Pill closed = live activities only, no UI chrome. Expanded = Notchy-style panel.
@@ -680,8 +680,15 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 ## 5. Motion
 
 - Background actor eases `x / width / height`; content fades (100 ms out, 200 ms in).
-- `EASE_OUT_BACK`, 380 ms shape · 200 ms hover · 120/250 ms press.
-- Compact (2026-11-05): a pill growing into its compact is a shape morph (380 ms) and
+- `EASE_OUT_BACK`, 460 ms shape (into the compact too) · 360 ms out of the compact · 240 ms
+  size (a longer text) · 120/300 ms
+  press · 360 ms merge (2026-11-06, Ethan: a fifth slower than the first 380/200/250/300).
+- A long shrink bounces at most 12 px (2026-11-06, Ethan): EASE_OUT_BACK goes ~10 % of a
+  move past its end, which on expanded → minimal (560 → 168 px) cut 39 px into the text.
+  A shrink whose bounce would pass 12 px shrinks to 12 px short of its size (70 % of the
+  time, ease-out cubic), then settles out to it (ease-in-out); shorter shrinks (compact →
+  minimal, ~120 px) and every grow keep Clutter's own (`kit/shapes.js` `shrinkStop`).
+- Compact (2026-11-05): a pill growing into its compact is a shape morph (460 ms) and
   grows by far more than 25 %, so it uncovers its content as expanded does (below);
   neighbour pills fade where they stand (100 ms out, 200 ms in).
 - Border radius snaps at transition start.

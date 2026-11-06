@@ -5,14 +5,25 @@ import St from 'gi://St';
 
 import {buildCompact, buildExpanded, buildIdle, buildMinimal, buildMissedCompact} from './present.js';
 import {planCompact, planExpanded, keyline} from './presentation.js';
-import {compactCx} from './shapes.js';
+import {compactCx, shrinkStop} from './shapes.js';
 
 const PAD = 14;          // content + 2·PAD = pill width (shapes add 28)
 const COMPACT_DELAY = 300;  // ms of hover before the pill grows into its compact (SPEC §2)
 const COMPACT_GRACE = 200;  // ms the compact stays after the pointer leaves it (SPEC §2c)
-const MERGE_MS = 300;    // side pills sliding into / out of an expanded one (SPEC §2c)
+const MERGE_MS = 360;    // side pills sliding into / out of an expanded one (SPEC §2c)
 const MORPH_MODE = Clutter.AnimationMode.EASE_OUT_BACK;
+// The morphs' durations, a fifth slower than the first ones (380 / 200 / 250, merge 300;
+// 2026-11-06, Ethan: the back-out read hurried): a shape (expand, collapse, into the
+// compact), a size (out of the compact, a longer text), the press's settle
+const SHAPE_MS = 460;
+const SIZE_MS = 240;
+// out of the compact: a little quicker than into it (SHAPE_MS), not snapped (Ethan, 2026-11-06)
+const COMPACT_OUT_MS = 360;
+const PRESS_MS = 300;
 const REVEAL_FROM = 0.8; // the bg grows by more than this ratio: it uncovers the content
+// A long shrink (pill.js _morph, shapes.js shrinkStop): its share of the time to reach the
+// turning point, then it settles out to its size
+const SHRINK_TURN = 0.7;
 
 /**
  * One pill on the island: a background that morphs and a content actor on top, bound
@@ -244,7 +255,7 @@ export class Pill {
         this._resetContentTransform();
     }
 
-    morph(shape = this.currentShape(), duration = 380) {
+    morph(shape = this.currentShape(), duration = SHAPE_MS) {
         this._morph(shape, duration);
     }
 
@@ -264,14 +275,35 @@ export class Pill {
         this.bg.remove_transition('x');
         this.bg.remove_transition('width');
         this.bg.remove_transition('height');
+        const done = finished => {
+            if (finished)
+                this._collapsing = false;
+        };
+        const stop = shrinkStop(from, shape);
+        if (!stop) {
+            this.bg.ease({x, width: shape.w, height: shape.h, duration, mode: MORPH_MODE, onStopped: done});
+            this._followBg(from, shape, duration);
+            return;
+        }
+        // A long shrink: EASE_OUT_BACK would bounce ~10 % of it past the size, into the
+        // text. Shrink to just short of it (at most SHRINK_BOUNCE px), then settle out —
+        // the same overshoot-and-return, bounded (2026-11-06, Ethan)
+        const turn = Math.round(duration * SHRINK_TURN);
+        const cx = shape.cx ?? this.cx;
         this.bg.ease({
-            x, width: shape.w, height: shape.h, duration, mode: MORPH_MODE,
+            x: cx - stop.w / 2, width: stop.w, height: stop.h, duration: turn,
+            mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
             onStopped: finished => {
-                if (finished)
-                    this._collapsing = false;
+                const heading = this._morphTo;
+                if (!finished || this._destroyed || heading?.x !== x || heading.w !== shape.w || heading.h !== shape.h)
+                    return;     // stopped or sent elsewhere meanwhile
+                this.bg.ease({
+                    x, width: shape.w, height: shape.h, duration: duration - turn,
+                    mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD, onStopped: done,
+                });
             },
         });
-        this._followBg(from, shape, duration);
+        this._followBg(from, {...stop, cx}, turn);
     }
 
     // The content sits at its final place at once and never scales (SPEC §5). While the
@@ -350,7 +382,7 @@ export class Pill {
             duration: 120, mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onStopped: finished => {
                 if (finished)
-                    this._morph(rest, 250);
+                    this._morph(rest, PRESS_MS);
             },
         });
     }
@@ -367,7 +399,7 @@ export class Pill {
         this._dropCompact();          // the panel replaces the compact's content
         this._setContent(panel ?? buildExpanded(this.activity), false);
         this._layoutContent();
-        this._morph(this.currentShape(), 380); // fades the content in with the reveal
+        this._morph(this.currentShape(), SHAPE_MS); // fades the content in with the reveal
     }
 
     collapse() {
@@ -381,7 +413,7 @@ export class Pill {
         this._setContent(this._restingContent(), false);
         this._layoutContent();
         this._collapsing = true;
-        this._morph(this.currentShape(), 380);
+        this._morph(this.currentShape(), SHAPE_MS);
         this._fadeContent();
     }
 
@@ -531,7 +563,7 @@ export class Pill {
         });
     }
 
-    _applyContentSize(duration = 200) {
+    _applyContentSize(duration = SIZE_MS) {
         if (!this.expanded) {
             // natural size, not the allocation: another relayout may already be queued
             // (an icon finished loading). The content has been allocated once by now,
@@ -632,7 +664,7 @@ export class Pill {
             }
         }
         if (!this._compact)
-            this._morph(this.currentShape(), 200);
+            this._morph(this.currentShape(), SIZE_MS);
     }
 
     // The amber light's compact (INDICATORS.md): on the centre pill, while amber.
@@ -645,7 +677,7 @@ export class Pill {
             return;
         this._compact = true;
         this._island._compactShown(this, true);
-        this._swapResting(380);       // a shape morph that uncovers its content (SPEC §5)
+        this._swapResting(SHAPE_MS);  // a shape morph that uncovers its content (SPEC §5)
     }
 
     _clearGrace() {
@@ -672,18 +704,18 @@ export class Pill {
     _stopCompact() {
         if (!this._dropCompact() || this.expanded)
             return;
-        this._swapResting();
+        this._swapResting(COMPACT_OUT_MS);
         // _applyContentSize morphs an activity's pill back; the idle pill (its compact is
         // the amber Missed list) is left to the island at rest, which does not move it:
         // without this its bg stayed at the compact's size around the clock (2026-11-06)
         if (!this.activity)
-            this._morph(this.currentShape(), 200);
+            this._morph(this.currentShape(), COMPACT_OUT_MS);
     }
 
     // Compact in or out: a content of another size. Measure and place it now, before
     // this frame paints; waiting for notify::width (next frame) showed the new text for
     // one frame at the old place, unclipped, before the bg started to uncover it.
-    _swapResting(duration = 200) {
+    _swapResting(duration = SIZE_MS) {
         this._setContent(this._restingContent(), false);
         this._applyContentSize(duration);
     }

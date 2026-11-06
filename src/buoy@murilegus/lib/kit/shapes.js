@@ -91,3 +91,31 @@ function compactH(need) {
 export function compactCx(cx, w, containerW) {
     return Math.round(clamp(cx, GAP + w / 2, containerW - GAP - w / 2));
 }
+
+// --- the morph's bounce ------------------------------------------------------------------
+
+/** EASE_OUT_BACK goes this share of a move past its end (Clutter's constant 1.70158). */
+export const BACK_SHARE = 0.1;
+/** The most a shrinking pill may bounce past its size, in px (2026-11-06, Ethan). */
+export const SHRINK_BOUNCE = 12;
+
+/**
+ * Where a long shrink turns round: EASE_OUT_BACK would go 10 % of the move past its end,
+ * which on expanded → minimal (hundreds of px) cut into the text (2026-11-06, Ethan). A
+ * shrink whose bounce would pass `maxPx` stops this far short instead, then settles out to
+ * its size (pill.js two-step morph); one whose bounce is small enough keeps Clutter's.
+ *
+ * @param {{w: number, h: number}} from
+ * @param {{w: number, h: number}} to
+ * @param {number} [maxPx]
+ * @returns {?{w: number, h: number}} the size it shrinks to first, or null (Clutter's own)
+ */
+export function shrinkStop(from, to, maxPx = SHRINK_BOUNCE) {
+    const dw = from.w - to.w, dh = from.h - to.h;
+    const d = Math.max(dw, dh);
+    // a hair over (a 120 px compact → minimal is 12.0 px): keep Clutter's
+    if (!(d > 0) || d * BACK_SHARE <= maxPx + 0.05)
+        return null;
+    const k = maxPx / d;
+    return {w: to.w - Math.max(0, dw) * k, h: to.h - Math.max(0, dh) * k};
+}

@@ -1,5 +1,5 @@
 // Run: gjs -m tests/shapes.test.js   (pure; no Shell needed)
-import {shapesFor, compactCx, COMPACT_MIN, COMPACT_H, GAP, OVERSHOOT, PILL_GAP} from '../src/buoy@murilegus/lib/kit/shapes.js';
+import {shapesFor, compactCx, COMPACT_MIN, COMPACT_H, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop} from '../src/buoy@murilegus/lib/kit/shapes.js';
 
 const PANEL_H = 40; // Buoy's panel height (stylesheet.css)
 
@@ -152,6 +152,21 @@ eq(shapesFor({width: 1920}, PANEL_H, {}).expanded.w, 560, 'empty opts = derived'
     const a = shapesFor({width: 1920}, PANEL_H);
     a.idle.w = 1;
     eq(shapesFor({width: 1920}, PANEL_H).idle.w, 120, 'results are not shared');
+}
+
+// --- the morph's bounce (2026-11-06: expanded → minimal bounced into its text) ----------------
+{
+    eq([BACK_SHARE, SHRINK_BOUNCE], [0.1, 12], 'Clutter\'s back goes 10 % past; a shrink at most 12 px');
+    // measured in headless Shell: 560×133 → 168×32 went down to 129×22 (39 px past, under the text)
+    const stop = shrinkStop({w: 560, h: 133}, {w: 168, h: 32});
+    eq(Math.round((168 - stop.w) * 10) / 10, 12, 'the long collapse turns 12 px short of its width');
+    eq(Math.round((32 - stop.h) * 10) / 10, 3.1, 'and its height in the same proportion (101 of 392 px)');
+    eq(shrinkStop({w: 360, h: 56}, {w: 240, h: 32}), null, 'compact → minimal (120 px): Clutter\'s own bounce, 12 px');
+    eq(shrinkStop({w: 300, h: 32}, {w: 240, h: 32}), null, 'a short shrink: Clutter\'s own');
+    eq([shrinkStop({w: 240, h: 32}, {w: 560, h: 133}), shrinkStop({w: 240, h: 32}, {w: 240, h: 32})], [null, null],
+        'growing or not moving: Clutter\'s own (a grow bounces outward)');
+    const tall = shrinkStop({w: 240, h: 300}, {w: 240, h: 56});
+    eq([tall.w, Math.round((56 - tall.h) * 10) / 10], [240, 12], 'a shrink in height only: its height turns 12 px short');
 }
 
 console.log('shapes: ok');
