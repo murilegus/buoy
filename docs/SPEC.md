@@ -714,8 +714,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 4. **power / bluetooth** — charging, low battery, device connected with its battery.
 5. **calendar** — Up next in Home; alert 5 min before with Join when the event has
    a meeting link.
-6. **downloads / eject** — finished downloads named in the Transfers tab (§6c);
-   mount-added with one-tap eject.
+6. **eject** — mount-added with one-tap eject (downloads moved to v0.1, §6c, 2026-11-06).
 7. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
 8. **several pills** — pill 1 plus up to two 120 px side pills (§2c).
@@ -764,7 +763,9 @@ the % and the file rows show size only.
   - Not in M3: Firefox (no signal), Files outside Ubuntu (it only posts the notification
     "N file operations active" while its window is closed —
     `nautilus-progress-persistence-handler.c`; that reaches Buoy with M4 notifications).
-- **M4, `downloads`.** Each `.part` / `.crdownload` in a watched folder is its own
+- **M3, `downloads`** (moved from M4 2026-11-06, Ethan: on GNOME neither browser sends
+  LauncherEntry — Chrome loads libunity only on Unity/KDE — so this is their only way in).
+  Each `.part` / `.crdownload` in a watched folder is its own
   **Running** row from the moment it appears (name, size, speed; the ring only per the
   exception above) — this is how Firefox shows up at all. Renamed to its final name, it
   moves to a **Downloaded** group: file type icon, file name, folder · app · time. A
