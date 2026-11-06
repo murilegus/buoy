@@ -346,7 +346,8 @@ in a CLI session shows on hover at once ("TrungPT's home"): the title rides on l
 events too, not only `SessionStart`, and the adapter takes it from any event. While the
 `PermissionRequest` hook waits, the terminal shows its own dialog too (CLI, default
 mode); Deny in the pill wins: the dialog goes and the transcript says "Denied by
-PermissionRequest hook · Reason: Denied in Buoy".
+PermissionRequest hook · Reason: Denied in Buoy". While a session asks, its prompt's pill
+is its only pill, and after the answer the session's pill is back ("Done").
 
 Still to see in a real Claude Code session:
 - That an answer in the terminal first drops the waiting hook (the pill's ask ends at
