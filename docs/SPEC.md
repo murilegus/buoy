@@ -730,7 +730,11 @@ What the tab can show is bounded by its sources, so it grows in two steps. Check
 2026-11-03 against Nautilus upstream, Ubuntu's packaging and the installed binaries:
 `com.canonical.Unity.LauncherEntry` comes from **Files on Ubuntu only** (Ubuntu's
 `12_unity_launcher_support.patch` via `libunity`; upstream Nautilus sends none) and from
-**Chrome** (`libunity.so.9`); **Firefox sends none** (only `_NET_WM_XAPP_PROGRESS`, an X11
+**Chrome** (`libunity.so.9`) — **but only on Unity or KDE**: Chrome dlopens libunity by
+`XDG_CURRENT_DESKTOP`, and on GNOME (Ubuntu's `ubuntu:GNOME` too) it never loads it
+(checked 2026-11-06: a real Chrome download sent nothing under `ubuntu:GNOME`, and 57
+updates to "Done" under `Unity`). On GNOME, Chrome's downloads reach Buoy only through the
+`.crdownload` watch below. **Firefox sends none** (only `_NET_WM_XAPP_PROGRESS`, an X11
 window hint). Transmission not checked yet.
 
 **Ring only when the source gives a fraction.** No total, no percentage — Buoy never
