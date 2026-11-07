@@ -622,7 +622,7 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
   beyond that the tab body scrolls (no blur, scrollbar only when needed). An empty tab or
   list ("Nothing going on", "Nothing playing", "No transfers", "No notifications"…) opens
   the panel at the full cap instead, its text centred both ways, in one colour for every
-  tab (2026-11-06, Ethan; kit `EmptyState`). It grows to the cap too when a list empties
+  tab (2026-11-06, Ethan; kit `EmptyState`), with Bu over it in a pose that fits (MASCOT.md, 2026-11-07). It grows to the cap too when a list empties
   while open.
 - Now playing (one row) — MPRIS. Hidden when nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu). Every account in Settings → Online

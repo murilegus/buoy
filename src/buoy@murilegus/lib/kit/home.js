@@ -334,7 +334,7 @@ export class Home {
                 box.add_child(view);
         }
         if (!box.get_n_children())
-            box.add_child(new EmptyState(`No ${tab.label.toLowerCase()}`));
+            box.add_child(new EmptyState(`No ${tab.label.toLowerCase()}`, {pose: 'idle'}));
         return box;
     }
 
@@ -359,7 +359,7 @@ export class Home {
         }
         if (!this._list.length) {
             if (!this._missed.length)
-                box.add_child(new EmptyState('Nothing going on'));
+                box.add_child(new EmptyState('Nothing going on', {pose: 'idle'}));
             return box;
         }
         for (const a of this._list) {

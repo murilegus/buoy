@@ -246,8 +246,8 @@ function meter(kind, value, size) {
 export const FILL = Symbol('buoy-fill');
 
 /**
- * A tab or list with nothing in it (2026-11-06, Ethan): one colour everywhere, the text
- * centred both ways, and as tall as the body allows — the panel opens at its full
+ * A tab or list with nothing in it (2026-11-06, Ethan): one colour everywhere, Bu over
+ * the text in a pose that fits (2026-11-07), centred both ways, and as tall as the body allows — the panel opens at its full
  * expanded height instead of a thin strip. Its natural height is the content height Home
  * sets on its body view (`view[FILL]`), less the padding and borders of the actors in
  * between, so it fits exactly and never scrolls. Outside Home (no FILL above) it is as
@@ -258,10 +258,13 @@ class EmptyState extends St.Bin {
     /**
      * @param {string} text
      * @param {object} [opts]
-     * @param {?Clutter.Actor} [opts.above]  shown over the text (the Notifications tab's
-     *   sleeping Bu, 2026-11-07)
+     * @param {?string} [opts.pose]  Bu over the text in this pose (MASCOT.md, empty
+     *   states; 2026-11-07, Ethan: every empty tab has Bu)
+     * @param {?Clutter.Actor} [opts.above]  any other actor over the text
      */
-    _init(text, {above = null} = {}) {
+    _init(text, {pose = null, above = null} = {}) {
+        if (pose && !above)
+            above = buildElement({mascot: pose}, {size: 'compact', leading: true});
         const words = new St.Label({text, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER});
         let child = words;
         if (above) {

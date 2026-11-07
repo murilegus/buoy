@@ -7,7 +7,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
-import {EmptyState, buildElement, tick} from '../../kit/present.js';
+import {EmptyState, tick} from '../../kit/present.js';
 import {agoText} from '../../kit/presentation.js';
 import {SharingWatch} from '../../kit/sharing.js';
 import {actionIndex, buttonsOf, countText, rowText, stackGroups} from './adapter.js';
@@ -134,9 +134,7 @@ export class NotificationsTab {
         }
         this.actor.add_child(this._listBar(missed, total));
         if (!total) {
-            this.actor.add_child(new EmptyState('All caught up', {
-                above: buildElement({mascot: 'sleep'}, {size: 'compact', leading: true}),
-            }));
+            this.actor.add_child(new EmptyState('All caught up', {pose: 'sleep'}));
             return;
         }
         for (const g of groups)
