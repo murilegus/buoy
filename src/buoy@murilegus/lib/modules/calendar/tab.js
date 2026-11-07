@@ -27,6 +27,12 @@ import {isWeekend, monthDays, monthTitle, pickedTitle, stepDay, weekdayInitials}
  * has one range, its calendar's). A row opens the calendar app as the date menu's event list
  * does (ui/dateMenu.js EventsSection vfunc_clicked) and closes the island. No calendar at
  * all: Bu says so, with a button to Settings → Online Accounts.
+ *
+ * Loading: a new range makes Shell's source drop its events at once and get them back a
+ * moment later (ui/calendar.js `_loadEvents(true)`: clear, `changed`, then the server's
+ * EventsAddedOrUpdated — 21 ms apart with a local calendar, longer with an online one).
+ * The empty day shows at once (Bu asleep) and the events replace it when they come
+ * (2026-11-08, Ethan: Bu first, the data after).
  */
 export class CalendarTab {
     /** @param {{close?: function():void}} [kit]  close(): the island, after an action */
@@ -42,6 +48,7 @@ export class CalendarTab {
         this._reader.ensureToday();
         this._render();
     }
+
 
     /** The kit's update with this module's activities: it has none. */
     update() {}
@@ -180,12 +187,13 @@ export class CalendarTab {
         const now = Date.now();
         const today = dayStart(now);
         const box = new St.BoxLayout({
-            style_class: 'buoy-calendar-events', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
+            style_class: 'buoy-calendar-events', orientation: Clutter.Orientation.VERTICAL,
+            x_expand: true, y_expand: true,
         });
         box.add_child(new St.Label({text: pickedTitle(this._picked, now), style_class: 'buoy-calendar-day-title'}));
         if (this._picked === today) {
             const {today: rows, upcoming} = agenda(this._reader.eventsIn(today, dayStart(now, 7)), now);
-            this._rows(box, rows.filter(e => !e.past), 'Nothing else today');
+            this._rows(box, rows.filter(e => !e.past), 'Nothing else today', !upcoming.length);
             for (const g of upcoming) {
                 box.add_child(header(g.label));
                 this._rows(box, g.events);
@@ -193,13 +201,14 @@ export class CalendarTab {
             return box;
         }
         const events = this._reader.eventsIn(this._picked, dayStart(this._picked, 1));
-        this._rows(box, dayRows(events, this._picked, now), 'No events');
+        this._rows(box, dayRows(events, this._picked, now), 'No events', true);
         return box;
     }
 
-    _rows(box, rows, none = null) {
+    // `fill`: the empty state is all the list shows, so Bu takes the space under the title
+    _rows(box, rows, none = null, fill = false) {
         if (!rows.length && none)
-            box.add_child(restingBu(none));
+            box.add_child(restingBu(none, fill));
         rows.forEach(e => box.add_child(this._row(e)));
     }
 
@@ -269,12 +278,16 @@ export class CalendarTab {
     }
 }
 
-// Nothing on the picked day: Bu asleep over the words (2026-11-08, Ethan), the list's
-// own size — not EmptyState, which fills the panel
-function restingBu(text) {
+// Nothing on the picked day: Bu asleep over the words (2026-11-08, Ethan), in the list —
+// not EmptyState, which fills the panel
+// `fill`: centred in the space under the title, from the title's text edge (2026-11-08)
+function restingBu(text, fill = false) {
     const box = new St.BoxLayout({
         style_class: 'buoy-calendar-none', orientation: Clutter.Orientation.VERTICAL,
-        x_align: Clutter.ActorAlign.CENTER,
+        // the column's width, so its padding-left (the title's) moves the centre; Bu and
+        // the words centre inside
+        x_expand: true, x_align: Clutter.ActorAlign.FILL,
+        y_expand: fill, y_align: fill ? Clutter.ActorAlign.CENTER : Clutter.ActorAlign.START,
     });
     const bu = buildElement({mascot: 'sleep'}, {size: 'compact', leading: true});
     bu.x_align = Clutter.ActorAlign.CENTER;
