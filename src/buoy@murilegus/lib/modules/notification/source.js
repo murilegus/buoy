@@ -37,7 +37,10 @@ const REPLACE_KEY = 'notification-replace-banners';
  *   menu's own count, `unseenCount` less the queue (ui/dateMenu.js MessagesIndicator) —
  *   the buoy light is amber (stack.flagMissed), until the tab or GNOME's list shows them.
  *   Watched on each source's `notify::count` and the queue, as the date menu does.
- * - No timer of its own: the pill's 6 s are its ttl.
+ * - No timer of its own: the pill's 6 s are its ttl. When they run out, the app's transient
+ *   notifications go, as GNOME's banner destroys one when it hides (ui/messageTray.js
+ *   `_hideNotificationCompleted`: EXPIRED) — Shell's screenshot and screencast notices
+ *   among them (§7).
  */
 export class NotificationSource extends Source {
     enable(stack, registry = null, settings = null) {
@@ -220,6 +223,7 @@ export class NotificationSource extends Source {
             actions: n.actions.map(x => x.label),
             activate: () => this._activate(pill, n),
             onAction: id => this._act(pill, n, id),
+            expire: () => this._expire(pill),
         });
         pill.shown = n;
         const live = this._live(pill);
@@ -249,6 +253,12 @@ export class NotificationSource extends Source {
             return;
         }
         n.actions[actionIndex(id)]?.activate();
+    }
+
+    // The pill's ttl ran out: its transient notifications are done, as a banner's would be.
+    _expire(pill) {
+        pill.list.filter(n => n.isTransient)
+            .forEach(n => n.destroy(MessageTray.NotificationDestroyedReason.EXPIRED));
     }
 
     _redrawAll() {

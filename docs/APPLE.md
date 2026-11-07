@@ -134,6 +134,7 @@ D-Bus API ──────────────────────┘ 
   onPress, onExpand, actions: [{id, label, icon}],  // ≤ 1 in minimal, ≤ 3 compact/expanded (HIG)
   minimalAction: true,                 // false: no button in minimal, the compact has them (media)
   onAction(id, value?)                 // a button was pressed (ask: answers it); a tab may pass a value (seek)
+  onExpire()                           // its ttl ended it (not end()): a transient notification goes (2026-11-08)
   compact: {leading, text, subtitle, trailing, transport, progress, rows}  // the hover tier (Buoy's
                                        // own; was `peek`); transport = ≤3 actions; progress 0..1 or
                                        // live {position, length, at, playing} (ms), which runs with
