@@ -108,14 +108,26 @@
     </key>
     <key name="idle-content" type="s">
       <choices>
+        <choice value="auto"/>
         <choice value="none"/>
         <choice value="clock"/>
         <choice value="weather"/>
         <choice value="calendar"/>
       </choices>
-      <default>'clock'</default>
+      <default>'auto'</default>
       <summary>Show</summary>
-      <description>Nothing keeps only the light.</description>
+      <description>Automatic shows what matters now; Nothing keeps only the light.</description>
+    </key>
+    <key name="idle-auto-plans" type="as">
+      <default>['calendar', 'weather', 'clock']</default>
+      <summary>Plans in the stack</summary>
+      <description>The idle plans Automatic may show, in the order that breaks a tie.</description>
+    </key>
+    <key name="idle-auto-interval" type="i">
+      <range min="2" max="30"/>
+      <default>5</default>
+      <summary>Switch every</summary>
+      <description>Minutes between turns when plans matter equally.</description>
     </key>
     <key name="idle-clock-style" type="s">
       <choices>

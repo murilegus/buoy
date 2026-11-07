@@ -23,6 +23,8 @@ export const PAGES = ['general', 'modules', 'apps', 'panel'];
 // test fails on a key nobody placed.
 export const PLACES = {
     'idle-content': 'idle',     // Island page, "When idle"
+    'idle-auto-interval': 'idle', // Island page, under Show (SPEC §2a-iii)
+    'idle-auto-plans': null,    // the plan rows' switches and order: FEATURES M3 "Prefs: Island page"
     'expanded-width': 'general',
     'keybind-focus': 'general',
     // the kit's rule for every waiting activity (2026-11-07, Ethan; was media's
@@ -199,7 +201,7 @@ export function switchValue(entry, active) {
 // choice shows as its value with a capital.
 export const CHOICE_LABELS = {
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
-    'idle-content': {'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event'},
+    'idle-content': {'auto': 'Automatic', 'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event'},
     'idle-clock-style': {
         'icon-time': 'Icon & time', 'time': 'Time', 'icon': 'Icon', 'seconds': 'With seconds',
     },

@@ -17,6 +17,7 @@ import {actionForKey, step} from './keys.js';
 const MAX_PILLS = 3;       // SPEC §2c
 const CLUSTER_MARGIN = 12; // keep side pills this far from the system cluster
 const ALERT_HOVER = 1000;  // an alert still hovered at its end stays open this much longer
+const SCROLL_GAP_MS = 400; // one plan per scroll gesture on the idle pill (auto)
 
 /**
  * The island (SPEC §2): one to three pills side by side in the top bar centre. The
@@ -82,6 +83,7 @@ export class Island {
         // the idle pill starts or stops being on screen, so its clock runs only then
         this.idle = null;
         this.onIdleShown = null;
+        this.onIdleScroll = null;   // (step) → handled: kit/idle.js in `auto`
         this._idleShown = false;
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
@@ -170,12 +172,41 @@ export class Island {
      * idle pill shows it at once, without a fade (one change, SPEC §2a).
      *
      * @param {?object} data
+     * @param {object} [opts]
+     * @param {boolean} [opts.fade]  cross-fade: `auto` switched plans (SPEC §2a-iii)
      */
-    setIdle(data) {
+    setIdle(data, {fade = false} = {}) {
         this.idle = data;
         const pill = this._pills[0];
         if (pill && pill.id === null && !this._open && !this._destroyed)
-            pill.configure(null, this._roleOf(pill));
+            pill.configure(null, {...this._roleOf(pill), fade});
+    }
+
+    // Scroll on the idle pill (SPEC §2a-iii): the next / previous plan in `auto`. A
+    // touchpad's smooth scroll sends many events: one step per SCROLL_GAP_MS. Anything else
+    // goes on to the panel (its workspace scroll).
+    _onPillScroll(pill, ev) {
+        if (pill.id !== null || this._open || !this.onIdleScroll)
+            return Clutter.EVENT_PROPAGATE;
+        let dirStep = 0;
+        const dir = ev.get_scroll_direction();
+        if (dir === Clutter.ScrollDirection.UP || dir === Clutter.ScrollDirection.LEFT) {
+            dirStep = -1;
+        } else if (dir === Clutter.ScrollDirection.DOWN || dir === Clutter.ScrollDirection.RIGHT) {
+            dirStep = 1;
+        } else if (dir === Clutter.ScrollDirection.SMOOTH) {
+            const [dx, dy] = ev.get_scroll_delta();
+            dirStep = Math.sign(Math.abs(dy) >= Math.abs(dx) ? dy : dx);
+        }
+        if (!dirStep)
+            return Clutter.EVENT_STOP;
+        const now = GLib.get_monotonic_time() / 1000;
+        if (now - (this._scrollAt ?? 0) < SCROLL_GAP_MS)
+            return Clutter.EVENT_STOP;
+        if (!this.onIdleScroll(dirStep))
+            return Clutter.EVENT_PROPAGATE;
+        this._scrollAt = now;
+        return Clutter.EVENT_STOP;
     }
 
     /** The idle pill is on screen: no activity, not expanded, the island not hidden. */
@@ -673,6 +704,7 @@ export class Island {
         this._destroyed = true;
         this._syncIdleShown();      // tells the idle plan to stop its clock
         this.onIdleShown = null;
+        this.onIdleScroll = null;
         if (this._layoutLater) {
             global.compositor.get_laters().remove(this._layoutLater);
             this._layoutLater = 0;

@@ -132,7 +132,7 @@ eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
     'clock-defaults-applied stays hidden: placed by name, not taken by the clock module\'s prefix');
 
 // --- Island page (ARCHITECTURE rule 9, 2026-11-04) ------------------------------------------
-eq(plan.idle, ['idle-content'], 'When idle: idle-content');
+eq(plan.idle, ['idle-content', 'idle-auto-interval'], 'When idle: Show, then Switch every (auto)');
 {
     const plans = [{id: 'clock', enableKey: 'modules-clock'}, {id: 'free', enableKey: null}];
     const on = v => k => ({'modules-clock': v})[k];
@@ -141,11 +141,17 @@ eq(plan.idle, ['idle-content'], 'When idle: idle-content');
     eq([idleOffNote('none', plans, on(false)), idleOffNote('free', plans, on(false))], [null, null],
         'Nothing, or a plan with no module switch: nothing to say');
 }
-eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['none', 'clock', 'weather', 'calendar']],
+eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['auto', 'none', 'clock', 'weather', 'calendar']],
     'idle-content: none or a plan (auto comes with the smart stack)');
 eq(IDLE_PLANS.filter(id => id !== 'none').every(id => schema.get_key('idle-content').range_check(new GLib.Variant('s', id))),
     true, 'every plan can be chosen in Show');
-eq(schema.get_key('idle-content').get_default_value().unpack(), 'clock', 'the clock until auto lands (Ethan)');
+eq(schema.get_key('idle-content').get_default_value().unpack(), 'auto', 'Automatic by default, now that it has landed');
+eq(schema.get_key('idle-auto-plans').get_default_value().deepUnpack(), ['calendar', 'weather', 'clock'],
+    'the stack: every plan, the next event first in a tie');
+eq([schema.get_key('idle-auto-interval').get_range().recursiveUnpack(), schema.get_key('idle-auto-interval').get_default_value().unpack()],
+    [['range', [2, 30]], 5], 'Switch every: 2–30 minutes, 5 by default (SPEC §2a-iii)');
+eq(choiceLabel('idle-content', 'auto'), 'Automatic', 'Show: Automatic');
+eq(idleOffNote('auto', plan.plans, () => false), null, 'Automatic names no module: nothing to say');
 eq(plan.plans, [
     {id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style'], ownSwitch: true},
     {id: 'weather', enableKey: 'modules-weather', keys: ['idle-weather-automatic', 'idle-weather-refresh'], ownSwitch: true},
@@ -223,7 +229,9 @@ eq(schema.get_key('idle-weather-automatic').get_default_value().unpack(), true, 
 }
 eq(schema.get_key('idle-clock-style').get_range().recursiveUnpack(), ['enum', ['icon-time', 'time', 'icon', 'seconds']],
     'clock styles, SPEC §2a');
-for (const name of order.filter(n => n.startsWith('idle-') && n !== 'idle-content')) {
+// idle-content and the stack's own idle-auto-… keys are the page's; every other idle- key
+// is a plan's
+for (const name of order.filter(n => n.startsWith('idle-') && n !== 'idle-content' && !n.startsWith('idle-auto-'))) {
     const under = plan.plans.filter(p => p.keys.includes(name));
     eq(under.length, 1, `${name}: under exactly one plan on the Island page`);
     eq(name.startsWith(`idle-${under[0].id}-`), true, `${name}: under its own plan`);
