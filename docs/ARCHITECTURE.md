@@ -74,7 +74,7 @@ src/buoy@murilegus/
             │               (no wall clock), `relevance(ctx)` for `auto` (SPEC §2a-iii);
             │               ctx = {now, clock, starts, data}
             ├── feed.js     the Shell side of an idle plan with data of its own (optional;
-            │               weather, 2026-11-06): index.js `feed`, `new Feed(onChanged)` →
+            │               weather 2026-11-06, calendar 2026-11-08): index.js `feed`, `new Feed(onChanged)` →
             │               {state, shown(shown, opts), destroy()}; `state` is the plan's
             │               `ctx.data`. Made by kit/idle.js while its plan is the one in use,
             │               told when the idle pill shows so it fetches only then (rule 8)
@@ -82,7 +82,10 @@ src/buoy@murilegus/
 ```
 
 A module may keep more pure files beside these when they are worth testing alone
-(weather's `read.js`: GWeather.Info → the plan's state, tested with a fake info).
+(weather's `read.js`: GWeather.Info → the plan's state, tested with a fake info; calendar's
+`agenda.js` and `month.js`: which event is next, its words, the tab's days and month) and a
+Shell-side reader its feed and tab share (calendar's `events.js`: the date menu's event
+source, 2026-11-08).
 
 ### Module kinds
 
@@ -98,7 +101,7 @@ A standalone tab never surfaces activities; if it needs to, it becomes a source 
 v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` (the copied flash) and `clipboard` (the Clipboard tab; one module 2026-11-05, apart again 2026-11-07, Ethan: two switches), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `agent` (Claude Code's sessions and permission prompts; was the stub `ask`, 2026-11-07); `notification`,
 `timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
 roadmap items, so their tabs show from v0.1 (2026-11-02);
-`greeting` (2026-11-03); idle plans `clock`, `weather`, `calendar`; standalone tabs `calendar`, `clipboard` (stub `tab.js`, in that order, 2026-11-02).
+idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone tabs `calendar` (the month and the picked day's events, 2026-11-08), `clipboard` (stub `tab.js`, in that order, 2026-11-02). `greeting` moved to M4 (2026-11-08).
 
 ## Data flow
 

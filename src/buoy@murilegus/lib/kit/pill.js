@@ -207,8 +207,9 @@ export class Pill {
     // --- shapes -------------------------------------------------------------------
 
     restShape() {
+        // idle: the idle size, wider only for a plan that needs it (content-fit as minimal)
         if (!this.activity)
-            return this._s.idle;
+            return this._contentW > this._s.idle.w - 2 * PAD ? this._s.minimal(this._contentW) : this._s.idle;
         if (this.role === 'side')
             return this._s.side;
         return this._s.minimal(this._contentW, this.activity.sizeHint);
@@ -436,7 +437,7 @@ export class Pill {
         if (compact)
             return compact;
         if (!this.activity)
-            return buildIdle({width: this._s.idle.w - 2 * PAD, light, plan: this._island.idle});
+            return buildIdle({width: this._s.idle.w - 2 * PAD, maxWidth: this._s.minimal(Infinity).w - 2 * PAD, light, plan: this._island.idle});
         if (this.role === 'side')
             return buildMinimal(this.activity, {maxWidth: this._s.side.w - 2 * PAD, more: this.more, side: true});
         const capW = this._s.minimal(Infinity, this.activity.sizeHint).w;

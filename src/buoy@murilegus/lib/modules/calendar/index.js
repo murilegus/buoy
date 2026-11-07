@@ -1,8 +1,11 @@
+// The calendar (FEATURES M3 "calendar"): the date menu's events, from every calendar EDS
+// knows. The next-event idle plan (SPEC §2a, `idle-content` 'calendar') with its feed, and
+// the Calendar tab (Today and the week ahead) — a standalone tab, in the slot until another
+// is chosen (SPEC §2b). The meeting alert with Join is M4.
+import idle from './idle.js';
+import {CalendarFeed} from './feed.js';
 import {CalendarTab} from './tab.js';
 
-// Standalone tab for now, the first one (SPEC §2b, 2026-11-02): in the slot until another
-// is chosen. The next-event activity (M4) and the idle plan (SPEC §2a) come later; with a
-// kind it would move to the kind tabs.
 export default {
     id: 'calendar',
     title: 'Calendar',
@@ -10,6 +13,7 @@ export default {
     kinds: [],
     source: null,
     adapter: {},
-    idle: null,
+    idle,
+    feed: CalendarFeed,
     tab: CalendarTab,
 };

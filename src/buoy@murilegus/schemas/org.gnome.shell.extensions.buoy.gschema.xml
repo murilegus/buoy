@@ -59,7 +59,7 @@
     <key name="modules-calendar" type="b">
       <default>true</default>
       <summary>Calendar</summary>
-      <description>The Calendar tab, in the strip's slot unless another is chosen.</description>
+      <description>Today and the week ahead in the Calendar tab, and the next event as an idle plan.</description>
     </key>
     <key name="modules-input" type="b">
       <default>true</default>
@@ -111,6 +111,7 @@
         <choice value="none"/>
         <choice value="clock"/>
         <choice value="weather"/>
+        <choice value="calendar"/>
       </choices>
       <default>'clock'</default>
       <summary>Show</summary>
