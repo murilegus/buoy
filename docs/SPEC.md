@@ -724,8 +724,11 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 4. **appname** — left cluster.
 5. **greeting** — hello at start and wake, welcome back, see you soon; by part of day, weekday, birthday and holidays (§2d, GREETING.md).
 6. **idle `auto`** — the smart stack over the `clock`, `weather`, `next-event` plans (§2a-iii).
-7. **notifications** (moved here from §6b 2026-11-06, Ethan) — a compact with the notification's own actions
-   (Reply / Mark as read / Open); DND toggle. A **notifications tab** lists the history
+7. **notifications** (moved here from §6b 2026-11-06, Ethan; the reference is
+   NOTIFICATIONS.md, 2026-11-07) — GNOME's banner becomes a pill where GNOME would show one
+   (`notification-replace-banners`, default on), a compact with the notification's own
+   actions (Reply / Mark as read / Open) and ×; DND is GNOME's own switch, followed as it is;
+   the toggle comes with the tab. A **notifications tab** lists the history
    (2026-11-02, replaces the clock popover's list): read from `Main.messageTray`
    (`getSources()` + `source-added`, each source's `notifications` +
    `notification-added`), the same data the stock message list uses — no store of our

@@ -19,7 +19,12 @@
     <key name="modules-notification" type="b">
       <default>true</default>
       <summary>Notifications</summary>
-      <description>The Notifications tab (notifications in the pill come later).</description>
+      <description>Notifications in the pill, with their own buttons.</description>
+    </key>
+    <key name="notification-replace-banners" type="b">
+      <default>true</default>
+      <summary>Hide GNOME's banners</summary>
+      <description>Off, GNOME shows its own.</description>
     </key>
     <key name="modules-hud" type="b">
       <default>true</default>
