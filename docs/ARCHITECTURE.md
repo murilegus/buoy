@@ -28,7 +28,7 @@ src/buoy@murilegus/
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
     │   ├── activity.js     contract (APPLE.md §B1), validate + normalise
-    │   ├── stack.js        surface / update / end / schedule / ask; priority across apps;
+    │   ├── stack.js        surface / update / end / schedule / ask; the pill order (PRIORITY.md);
     │   │                   ttl, stale, transient, alert; apps.hidden filter; missed history;
     │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
     │   ├── presentation.js presentation data → render plan; pure, unit-tested (2026-11-01)

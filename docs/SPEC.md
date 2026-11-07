@@ -254,7 +254,9 @@ Rules:
   — a paused player, a coding agent done or waiting for you — ends when nothing new
   happens for that long; every update starts the wait again, the pointer on its pill
   holds it. A permission prompt nobody answers is denied after the same wait.
-- Highest priority shows; ties → most recent, a fresh one before a stale one (2026-11-07). Feedback (§2e) and transient interrupt, then
+- **Which pill is first: [PRIORITY.md](PRIORITY.md)** (2026-11-07, Ethan): by state
+  (needs you › running › waiting), then the kind's priority, then fresh before stale,
+  then the newest. Feedback (§2e) and transient interrupt, then
   the previous returns. Transient is Apple's `style: 'transient'` (greeting, a picker): it
   opens expanded; feedback never does (2026-11-05: the two were mixed up here).
 - Alert (2026-11-01): the shown activity opens expanded for ~2 s (stays while hovered),
