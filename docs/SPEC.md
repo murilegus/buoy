@@ -304,16 +304,19 @@ idle `none` keeps the full 120 px.
 ### 2a-i. The buoy light (left edge slot, idle, minimal and compact)
 
 Static, never blinking. Off (faint grey, idle `none` only) · **amber** = something ended while you were
-away / fullscreen (missed history: hover names it, opening Home turns it off — 2026-11-03) · **red** = something
+away / fullscreen (missed history: hover names it, opening Home turns it off — 2026-11-03), or GNOME's
+notifications nobody has seen (off once the Notifications tab or GNOME's list shows them —
+2026-11-08, NOTIFICATIONS.md §2) · **red** = something
 is waiting for your answer (an `ask` while DND). Red › amber. Shown in idle, minimal
 **and** compact — it is a separate slot, so it never competes with the app icon; `present.js`
 nudges the leading zone inward when the light is on. Hidden only while expanded, where
 Home already lists what was missed.
 
-**Bu carries the light** (2026-11-03): when a pill's leading is Bu (`{mascot}`, agent
-activities and the greeting), the edge slot is not drawn — Bu's lamp is the light. It
-shows the stack's amber/red when there is one, otherwise the pose's own colour
-(INDICATORS § Bu's lamp). One light per pill, never two.
+**Bu's lamp is not the light** (2026-11-08, Ethan; it was from 2026-11-03): a pill Bu
+leads (`{mascot}`, agent activities and the greeting) draws the edge dot like any other,
+and Bu's lamp keeps its pose's colour (INDICATORS § Bu's lamp) — the lamp is too small to
+read as the light, and an amber that stayed while notifications were unseen hid the
+agent's colour.
 
 ### 2a-ii. Privacy dot (right edge slot, idle, minimal and compact)
 
@@ -612,17 +615,17 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
   activated system notification does; an icon-only × empties it (its "Clear" label
   dropped 2026-11-06, Ethan, as in the Transfers tab).
   Showing Home turns the amber light off; the list stays until cleared or pushed out by
-  newer ones. The running activities follow under "Now". In M4 the notifications tab
-  carries the same group ("Missed while away") above the system's own list; a missed
-  notification there points to the real one, never a copy, and Buoy posts no
-  notifications of its own.
+  newer ones. The running activities follow under "Now". The notifications tab has its
+  own "Missed while away": the notifications nobody saw (NOTIFICATIONS.md §6, 2026-11-07,
+  replacing the plan to move this section there — notifications never reach the stack's
+  missed history); Buoy posts no notifications of its own.
 - **Until the M3 blocks** (2026-11-02): Home lists every visible activity (the full list,
   also behind `+N`), each row its minimal view; a row opens that activity's tab. Nothing
   running → "Nothing going on" with Bu (`idle`, or `missed` while history has entries). The panel's height fits its content up to the expanded cap;
   beyond that the tab body scrolls (no blur, scrollbar only when needed). An empty tab or
   list ("Nothing going on", "Nothing playing", "No transfers", "No notifications"…) opens
   the panel at the full cap instead, its text centred both ways, in one colour for every
-  tab (2026-11-06, Ethan; kit `EmptyState`). It grows to the cap too when a list empties
+  tab (2026-11-06, Ethan; kit `EmptyState`), with Bu over it in a pose that fits (MASCOT.md, 2026-11-07). It grows to the cap too when a list empties
   while open.
 - Now playing (one row) — MPRIS. Hidden when nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu). Every account in Settings → Online

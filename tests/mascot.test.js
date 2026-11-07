@@ -100,14 +100,12 @@ eq(poseName('toString'), null, 'no prototype names');
 eq(Object.keys(POSES).filter(moves).sort(), ['busy', 'party', 'think', 'wave'], 'four poses move');
 
 // --- lamp rule (INDICATORS § Bu's lamp) -------------------------------------------------
-eq(lampColour('busy', 'off'), '#85B7EB', 'no light: the pose\'s own colour');
-eq(lampColour('busy', null), '#85B7EB', 'no light (side pill): the pose\'s colour');
-eq(lampColour('busy', 'missed'), LIGHT_LAMPS.missed, 'amber wins over the pose');
-eq(lampColour('done', 'waiting'), LIGHT_LAMPS.waiting, 'red wins over the pose');
-eq(lampColour('ask', 'missed'), '#EF9F27', 'amber wins even over ask');
-eq(lampColour('turn', 'off'), FOREGROUND, 'turn: foreground = the body colour');
+eq(lampColour('busy'), '#85B7EB', 'the pose\'s own colour');
+eq(lampColour('busy', 'missed'), '#85B7EB', 'the stack\'s amber never reaches the lamp (2026-11-08)');
+eq(lampColour('done', 'waiting'), '#97C459', 'nor its red');
+eq(lampColour('turn'), FOREGROUND, 'turn: foreground = the body colour');
 eq(FOREGROUND, '#F1EFE8', 'foreground is the body colour');
-eq(lampColour('nope', 'off'), POSES.idle.lamp, 'unknown pose: idle\'s lamp');
+eq(lampColour('nope'), POSES.idle.lamp, 'unknown pose: idle\'s lamp');
 eq(LIGHT_LAMPS, {missed: '#EF9F27', waiting: '#E24B4A'}, 'amber and red are INDICATORS\' state colours');
 for (const [pose, p] of Object.entries(POSES)) {
     if (pose !== 'missed')
@@ -164,28 +162,30 @@ eq(element({mascot: 'busy', art: '/a.png'}, {leading: true}).type, 'mascot', 'ma
 
 const agent = {kind: 'agent', leading: {mascot: 'think'}, text: 'Claude · thinking', trailing: {mascot: 'busy'}};
 let c = planMinimal(agent, {light: 'missed'});
-eq(c.leading, {type: 'mascot', pose: 'think', light: 'missed'}, 'minimal: Bu carries the amber light');
-eq(c.light, null, 'minimal: no edge slot when Bu leads');
+eq(c.leading, {type: 'mascot', pose: 'think'}, 'minimal: Bu leads, its lamp the pose\'s (2026-11-08)');
+eq(c.light, 'missed', 'minimal: the amber light is the edge dot, as on any pill');
 eq(c.trailing, null, 'minimal: no Bu in trailing');
 c = planMinimal(agent, {light: 'waiting'});
-eq([c.leading.light, c.light], ['waiting', null], 'minimal: red too');
+eq([c.leading, c.light], [{type: 'mascot', pose: 'think'}, 'waiting'], 'minimal: red on the edge too');
 c = planMinimal(agent, {light: 'off'});
-eq([c.leading.light, c.light], [null, null], 'minimal, light off: the pose\'s lamp, no slot');
+eq(c.light, null, 'minimal, light off: no slot');
 c = planMinimal(agent, {});
-eq([c.leading.light, c.light], [null, null], 'minimal, no light (side pill): the pose\'s lamp');
+eq(c.light, null, 'minimal, no light (side pill): no slot');
+eq(planMinimal({...agent, isStale: true}, {light: 'missed'}).leading, {type: 'mascot', pose: 'stale'},
+    'stale: Bu stale, the light still on the edge');
 c = planMinimal({kind: 'x', leading: 'a-symbolic', text: 't'}, {light: 'missed'});
 eq(c.light, 'missed', 'any other leading keeps the edge slot');
 c = planMinimal({kind: 'x', leading: {mascot: 'nope', icon: 'a-symbolic'}, text: 't'}, {light: 'missed'});
 eq([c.leading.type, c.light], ['icon', 'missed'], 'a fallen-back icon keeps the edge slot');
 
 const pk = planCompact({...agent, compact: {leading: {mascot: 'ask'}, text: 'Allow?'}}, {light: 'missed'});
-eq([pk.leading, pk.light], [{type: 'mascot', pose: 'ask', light: 'missed'}, null], 'compact: Bu carries the light');
+eq([pk.leading, pk.light], [{type: 'mascot', pose: 'ask'}, 'missed'], 'compact: the edge dot, Bu its own lamp');
 
 const ex = planExpanded({...agent, expanded: true});
-eq(ex.leading, {type: 'mascot', pose: 'think', light: null}, 'expanded: Bu leads, the pose\'s lamp (no light there)');
+eq(ex.leading, {type: 'mascot', pose: 'think'}, 'expanded: Bu leads, the pose\'s lamp (no light there)');
 eq(ex.trailing, null, 'expanded: no Bu in trailing');
 eq(planExpanded({...agent, expanded: {leading: {mascot: 'wave'}, center: {title: 'Hi'}}}).leading,
-    {type: 'mascot', pose: 'wave', light: null}, 'expanded leading region may be Bu');
+    {type: 'mascot', pose: 'wave'}, 'expanded leading region may be Bu');
 eq(planExpanded({...agent, expanded: {trailing: {mascot: 'wave'}, center: {title: 'Hi'}}}).trailing, null,
     'expanded trailing region may not');
 

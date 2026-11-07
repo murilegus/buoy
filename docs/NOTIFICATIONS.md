@@ -48,6 +48,14 @@ notification GNOME would have shown leaves the queue as a pill instead — marke
 its sound played, as the banner would have. No banner is built. Off: the original runs
 and GNOME shows its banner; Buoy shows no pill (the tab still lists everything, §6).
 
+**Held, still unseen** (2026-11-08): Shell takes a notification out of the queue in the
+same call that queued it unless it holds the queue — full screen, busy, the lock screen.
+One that waited (2 s or more, stamped on the tray's `queue-changed`) still shows as a
+pill when the screen is back and plays its sound, but is not marked seen: it came while
+nobody could look, and its pill is a 6 s glance shared with the app's others, not
+GNOME's banner that waits for the user to be active. The tab counts it as missed (§6).
+GNOME's own banner would have marked it seen; with replacement off, GNOME decides.
+
 Why not `Main.messageTray.bannerBlocked`: Shell sets it itself, to false, each time the
 date menu closes (`ui/panel.js`), and while blocked the queue only fills. The override is
 the one place that sees exactly the banners.
@@ -83,8 +91,16 @@ pill's content instead of adding a pill.
   A GTK replacement arrives in the same call as the old one's end, so the pill waits for
   the end of that call before ending (no flicker).
 - **Missed:** GNOME holds banners while full-screen, so no pill appears while the island
-  is hidden; the queue shows when it is back (as GNOME's banners do). The missed light
-  stays with Buoy's own activities.
+  is hidden; the queue shows when it is back (as GNOME's banners do), still unseen (§1),
+  so the tab counts it.
+- **The amber light** (2026-11-08, Ethan): on while GNOME's list holds notifications
+  nobody has seen — the date menu's own count, `unseenCount` less the queue
+  (`ui/dateMenu.js` `MessagesIndicator._updateCount`), so a notification about to show is
+  not counted: one that came during Do Not Disturb, past a full queue, or held while full
+  screen. It goes off when they are seen (the tab, or GNOME's list), not when Home is
+  shown: the source flags it (`stack.flagMissed`), apart from the stack's missed history.
+  GNOME hides its own dot during Do Not Disturb; Buoy's light stays, since that is when
+  notifications are missed.
 
 ## 3. The compact (hover): a card
 
@@ -150,14 +166,69 @@ for an `ask` while Do Not Disturb is SPEC §2a-i's (FEATURES "Buoy light").
   (GNOME's list keeps it, and no banner shows either).
 - The lock screen shows no banner (§1), so no pill.
 
-## 6. Next: the Notifications tab (step 2)
+## 6. The Notifications tab (step 2)
 
-The tab lists Shell's own notifications (`getSources()` + `source-added`, each source's
-`notifications` + `notification-added`): no store of Buoy's. Grouped by app, newest
-first; each row its icon, title, body, time, the actions and ×; a row's click activates.
-Dismissing here or in GNOME's list removes it from both. "Clear all" at the top, with the
-Do Not Disturb switch. Home's Missed group moves to the top of this tab ("Missed while
-away"), each missed notification pointing to the real one (SPEC §3).
+The tab lists Shell's own notifications — `Main.messageTray.getSources()`, each source's
+`notifications`, kept live with `source-added` / `source-removed` and each source's
+`notification-added` / `notification-removed` while the tab is open: the same objects
+GNOME's list shows, no store of Buoy's. Redesigned the same day (Ethan, 2026-11-07: the
+first flat list "too dull"): cards in app stacks.
+
+```
+List                                             An app's view (a stack clicked)
+┌ ● 2 missed  5 notifications   [☾ DND] [Clear] ┐ ┌ ‹ Telegram · 3              [Dismiss all] ┐
+│ ┌───────────────────────────────────────────┐ │ │ ┌───────────────────────────────────────┐ │
+│ │ [logo] Telegram · now ●                3  │ │ │ │ [avatar] now                          │ │
+│ │        Lan                                │ │ │ │          Minh                          │ │
+│ │        Lunch at 12? Let's try…            │ │ │ │          Sent you a photo              │ │
+│ └───────────────────────────────────────────┘ │ │ └───────────────────────────────────────┘ │
+│   └─────────────────────────────────────┘     │ │ ┌───────────────────────────────────────┐ │
+│ ┌───────────────────────────────────────────┐ │ │ │ [logo] now      [Reply] [Read]  ✕     │ │  ← hover
+│ │ [logo] Calculator · 12 min                │ │ │ │        Lan                            │ │
+└───────────────────────────────────────────────┘ └───────────────────────────────────────────┘
+```
+
+- **The tab's icon:** GNOME's bell, with a dot at its top right while the list has any
+  notification (2026-11-08, Ethan). The kit draws it over the icon (a module's `badge()`,
+  `kit/tabs.js`): small, in the icon's own grey (white on the open tab; no amber: one
+  look with the strip), ringed in the strip's colour so it reads as cut out of the bell,
+  as Yaru's `message-indicator-symbolic` (the bell with a dot Ubuntu's top bar shows;
+  GNOME's own is a bare dot). Not that icon itself (Ethan: one look on every theme). Read when the strip is planned, so only while the island is
+  open; the tab asks for it again after Clear or ×.
+- **The bar:** "N missed" (amber, with the light's dot) when some were unseen, "N
+  notifications", a Do Not Disturb chip lit with the accent while on (GNOME's own
+  `show-banners`, inverted, as the quick toggle `ui/status/doNotDisturb.js`; either
+  changes the other) and Clear. In an app's view: ‹ the app · N (back) and Dismiss all.
+- **A stack per app** (as the pill, §2), the app with the newest notification first: its
+  newest notification as a card, one or two thin layers under it and the count when it
+  holds more. A click on a stack of several opens the app's view; on a single one it is
+  the card's click.
+- **A card:** a dark grey rounded tile (#1c1c1e, r 16) — the app's logo 32, "app · time"
+  ("now", "3 min", re-read each minute) over a bold title and one line of body, an amber
+  dot when it was unseen. On hover (or keyboard focus) its own actions (the first two)
+  and × take the right side, in place of the count; a stack's × dismisses the app's
+  notifications. A click activates it and closes the island (as a clicked notification
+  goes, SPEC §3); an action runs and closes it too.
+- **Icons** (Ethan, 2026-11-07): a stack shows the app's logo; the app's view shows what
+  the notification brings — its picture (a chat's avatar, a thumbnail: `image-data` /
+  `image-path`, a GTK bytes icon), else its own icon when it differs from the app's, else
+  the logo.
+- **Missed while away:** the notifications nobody has seen — Shell's `acknowledged` false:
+  they came while Do Not Disturb was on, the banner queue was full (GNOME keeps three),
+  or they waited in it while full screen, busy or locked (§1). Opening the tab marks them seen, as GNOME's list does
+  once it is shown (`ui/messageList.js` `vfunc_map`); their dot stays until the tab
+  closes. One that arrives while the tab is open is in sight: seen at once, and no pill
+  for it. (Decided 2026-11-07, replacing SPEC §3's 2026-11-03 plan of moving Home's Missed
+  section here: notifications never reach the stack's missed history — Shell holds
+  banners while full screen or busy, and Shell's `acknowledged` already says which were
+  seen — and Home's Missed keeps the other kinds.)
+- **Dismiss syncs both ways:** × destroys Shell's notification (DISMISSED), so GNOME's
+  list loses it; one dismissed in GNOME's list (or withdrawn by the app) leaves the tab
+  at once. **Clear** destroys every one (GNOME's Clear closes every message,
+  `ui/messageList.js` clear()).
+- **Empty:** Bu asleep over "All caught up" (the kit's EmptyState, which takes an actor
+  above its text), with the Do Not Disturb chip still on top.
+- **Shared screen:** cards name the app and "New notification", no picture (§5).
 
 ## 7. Next: Shell's screenshot notice (step 3)
 
@@ -167,8 +238,8 @@ Files", Delete (to the Trash) and a click that opens it (SPEC §2e).
 
 ## 8. Steps
 
-1. **The pill** (this branch): §1–§5; `notification-replace-banners`.
-2. **The tab**: §6.
+1. **The pill** (merged 2026-11-07, #143): §1–§5; `notification-replace-banners`.
+2. **The tab** (built 2026-11-07): §6.
 3. **The screenshot notice**: §7.
 
 ## 9. Settings

@@ -587,6 +587,42 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     const lights = island.log.filter(l => l.startsWith('light'));
     eq(lights, ['light missed', 'light waiting', 'light missed', 'light off'], 'setLight only on change');
 }
+// --- a source's own unseen: flagMissed keeps the amber light (2026-11-08) -------
+{
+    const {island, stack} = setup();
+    stack.flagMissed('notification', true);
+    eq([stack.light, island.light, stack.missed], ['missed', 'missed', []], 'flagged: amber, nothing in the history');
+    stack.seeMissed();
+    eq(stack.light, 'missed', 'Home seeing its history leaves the flag on');
+    stack.clearMissed();
+    eq(stack.light, 'missed', 'clearing the history leaves it too');
+    stack.flagMissed('other', true);
+    stack.flagMissed('notification', false);
+    eq(stack.light, 'missed', 'one flag of two off: still amber');
+    stack.flagMissed('other', false);
+    eq(stack.light, 'off', 'every flag off: off');
+    stack.flagMissed('notification', false);
+    eq(stack.light, 'off', 'off twice: no error, still off');
+
+    stack.flagMissed('notification', true);
+    const p = stack.ask('q', '?', ['ok']);
+    stack.setUnseen(true);
+    eq(stack.light, 'waiting', 'red › a flag\'s amber');
+    stack.answer('q', 'ok');
+    await p;
+    eq(stack.light, 'missed', 'answered: back to the flag\'s amber');
+
+    stack.setUnseen(true);
+    stack.surface({id: 'copy', kind: 'progress'});
+    stack.end('copy');
+    stack.flagMissed('notification', false);
+    eq(stack.light, 'missed', 'flag off, the history\'s own still amber');
+    stack.seeMissed();
+    eq(stack.light, 'off', 'then Home seen: off');
+    const lights = island.log.filter(l => l.startsWith('light'));
+    eq(lights, ['light missed', 'light off', 'light missed', 'light waiting', 'light missed', 'light off'],
+        'setLight only on change');
+}
 {
     const {clock, stack} = setup({hiddenApps: ['spotify']});
     stack.setUnseen(true);

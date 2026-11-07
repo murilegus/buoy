@@ -1,6 +1,7 @@
 // Run: gjs -m tests/notification.test.js   (no Shell needed; adapters are pure)
 import adapter, {
-    TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, sharedLine, cardText,
+    TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, sharedLine, cardText, stackGroups, countText, rowText,
+    HELD_MS, waitedInQueue,
 } from '../src/buoy@murilegus/lib/modules/notification/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {validate, tierOf} from '../src/buoy@murilegus/lib/kit/activity.js';
@@ -136,5 +137,35 @@ eq(shownElsewhere('org.gnome.Nautilus', 'transfer-complete', true), true, 'Files
 eq(shownElsewhere('org.gnome.Nautilus', 'progress', false), false, 'progress module off: a notification as any');
 eq(shownElsewhere('org.gnome.Nautilus', 'other', true), false, 'Files\' other notifications');
 eq(shownElsewhere('firefox', 'progress', true), false, 'another app\'s id "progress"');
+
+// --- held in GNOME's queue (§1): shown, but still missed --------------------------------
+eq(HELD_MS, 2000, 'two seconds in the queue is waiting');
+eq(waitedInQueue(1000, 1000), false, 'taken in the call that queued it: not held');
+eq(waitedInQueue(1000, 2999), false, 'just under: not held');
+eq(waitedInQueue(1000, 3000), true, 'two seconds: held');
+eq(waitedInQueue(1000, 600000), true, 'a film later: held');
+eq([waitedInQueue(undefined, 5000), waitedInQueue(null, 5000), waitedInQueue(NaN, 5000)], [false, false, false],
+    'never stamped (queued before Buoy enabled): not held, seen as before');
+eq(waitedInQueue(5000, NaN), false, 'no clock: not held');
+
+// --- the tab's stacks (§6) --------------------------------------------------------------
+{
+    const it = (app, at, missed = false) => ({app, appName: app.toUpperCase(), at, missed});
+    const {groups, missed, total} = stackGroups([
+        it('mail', 10), it('chat', 30), it('mail', 50, true), it('chat', 20), it('power', 40, true), it('mail', 25),
+    ]);
+    eq(groups.map(g => g.app), ['mail', 'power', 'chat'], 'apps by their newest notification');
+    eq(groups.map(g => g.items.map(i => i.at)), [[50, 25, 10], [40], [30, 20]], 'newest first inside: the face first');
+    eq(groups.map(g => g.missed), [1, 1, 0], 'unseen per stack');
+    eq([missed, total], [2, 6], 'unseen and total');
+    eq(groups[0].appName, 'MAIL', 'a stack keeps the app\'s name');
+    eq(stackGroups([]), {groups: [], missed: 0, total: 0}, 'nothing: empty');
+    eq(stackGroups([it('a', 5), it('a', 5)]).groups[0].items.length, 2, 'same time: both kept');
+}
+eq([countText(1), countText(5), countText(0)], ['1 notification', '5 notifications', '0 notifications'], 'countText');
+eq(rowText({title: 'Lan', body: '<b>Hi</b>', markup: true, appName: 'Telegram'}), {title: 'Lan', body: 'Hi'}, 'row: title over body');
+eq(rowText({title: '', body: 'Hi', appName: 'Telegram'}), {title: 'Hi', body: null}, 'row: the body as title');
+eq(rowText({title: 'Lan', body: 'Hi', appName: 'Telegram'}, true), {title: 'Telegram', body: 'New notification'},
+    'row on a shared screen: the app, nothing of the message');
 
 print('notification: ok');

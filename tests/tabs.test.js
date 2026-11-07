@@ -161,4 +161,18 @@ eq(stripOrder({tabs: [{id: HOME}, {id: 'media'}], slot: {id: 'calendar'}, more: 
     [HOME, 'media', 'calendar'], 'tabs then the slot; ⋯ is not walked');
 eq(stripOrder({tabs: [{id: HOME}], slot: null, more: []}), [HOME], 'no slot: Home alone');
 
+// --- a module's badge: the tab's dot (2026-11-08) ----------------------------------
+{
+    let has = true;
+    const notes = {id: 'notification', kinds: ['notification'], badge: () => has};
+    const pad = {id: 'pad', kinds: [], tab: true, badge: () => true};
+    eq(planStrip([notes], []).tabs[1].badge, true, 'badge() true: the kind tab has a dot');
+    has = false;
+    eq('badge' in planStrip([notes], []).tabs[1], false, 'badge() false: no field (the shape stays)');
+    eq(planStrip([pad], [], {slot: 'pad'}).slot.badge, true, 'a standalone tab too');
+    eq('badge' in planStrip([{...notes, badge: () => 'yes'}], []).tabs[1], false, 'only a true badge');
+    eq('badge' in planStrip([{...notes, badge: true}], []).tabs[1], false, 'not a function: none');
+    eq('badge' in planStrip([notes], []).tabs[0], false, 'Home never');
+}
+
 print('tabs: ok');

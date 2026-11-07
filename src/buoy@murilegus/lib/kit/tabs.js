@@ -37,16 +37,22 @@ const title = id => id.charAt(0).toUpperCase() + id.slice(1);
 const iconName = v => typeof v === 'string' && v.trim() ? v.trim() : null;
 const hasExpanded = a => planExpanded(a) !== null;
 
+function badgeOf(m) {
+    return typeof m.badge === 'function' && m.badge() === true ? {badge: true} : {};
+}
+
 /**
  * @param {object[]} modules  enabled modules, in order: {id, kinds, tab?, title?, icon?,
- *   tabWhileLive?}
+ *   tabWhileLive?, badge?}; `badge()` true: the tab's icon carries a dot (the
+ *   Notifications tab while GNOME's list has some, 2026-11-08)
  * @param {object[]} list  visible activities (stack order)
  * @param {object} [opts]
  * @param {string} [opts.slot]  `tabs-slot`
  * @param {string[]} [opts.pinned]  `tabs-pinned`
- * @returns {object} {tabs, slot, more}: tabs = [{id, type, label, icon, kinds}] (icon
- *   always set: module `icon`, else a generic one), type 'home' | 'kind' | 'standalone';
- *   slot = the slot's tab or null; more = every standalone tab for ⋯ (empty: no ⋯)
+ * @returns {object} {tabs, slot, more}: tabs = [{id, type, label, icon, kinds, badge?}]
+ *   (icon always set: module `icon`, else a generic one; `badge: true` only when set),
+ *   type 'home' | 'kind' | 'standalone'; slot = the slot's tab or null; more = every
+ *   standalone tab for ⋯ (empty: no ⋯)
  */
 export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
     const tabs = [{id: HOME, type: 'home', label: 'Home', icon: 'go-home-symbolic', kinds: []}];
@@ -64,7 +70,7 @@ export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
         if (!feedbackOnly(m) || (!m.tab && shown(m.kinds))) {
             tabs.push({
                 id: m.id, type: 'kind', label: m.title ?? title(m.id),
-                icon: m.icon ?? GENERIC_ICON, kinds: [...m.kinds],
+                icon: m.icon ?? GENERIC_ICON, kinds: [...m.kinds], ...badgeOf(m),
             });
         }
     }
@@ -79,7 +85,10 @@ export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
 
     const standalone = modules
         .filter(m => m.tab && (!m.kinds?.length || feedbackOnly(m)) && m.id !== HOME)
-        .map(m => ({id: m.id, type: 'standalone', label: m.title ?? title(m.id), icon: m.icon ?? GENERIC_ICON, kinds: []}));
+        .map(m => ({
+            id: m.id, type: 'standalone', label: m.title ?? title(m.id), icon: m.icon ?? GENERIC_ICON, kinds: [],
+            ...badgeOf(m),
+        }));
     tabs.push(...standalone.filter(t => pinned.includes(t.id)));
     const free = standalone.filter(t => !pinned.includes(t.id));
     const slotTab = free.find(t => t.id === slot) ?? free[0] ?? null;

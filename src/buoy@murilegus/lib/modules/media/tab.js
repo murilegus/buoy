@@ -57,7 +57,7 @@ export class MediaTab {
         this.actor.destroy_all_children();
         const a = this._current;
         if (!a) {
-            this.actor.add_child(new EmptyState('Nothing playing'));
+            this.actor.add_child(new EmptyState('Nothing playing', {pose: 'idle'}));
             return;
         }
         if (this._list.length > 1)

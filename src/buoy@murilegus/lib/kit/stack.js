@@ -36,7 +36,9 @@ import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
  *     hidden pill, where any click in the fullscreen app would collapse it; only the red
  *     light. Seen again, an ask or transient on top opens as if it had just arrived
  *   - light: 'waiting' (an unanswered ask is not visible) › 'missed' › 'off'; 'missed'
- *     lasts until the history is seen (Home shows it) or cleared, not as long as it exists
+ *     lasts until the history is seen (Home shows it) or cleared, not as long as it exists,
+ *     or while a source flags something of its own unseen (flagMissed: GNOME's
+ *     notifications nobody has seen, docs/NOTIFICATIONS.md §2, 2026-11-08)
  *
  * The island (renderer) receives render(list, {alert, expand}) — every visible activity,
  * centre pill first; it shows the first `island.capacity` (side-by-side, SPEC §2c) — and
@@ -118,6 +120,7 @@ export class ActivityStack {
         this._unseen = false;
         this._missed = [];
         this._missedNew = false;     // something was missed since the history was last seen
+        this._flags = new Set();     // sources with something unseen of their own (flagMissed)
         this._seq = 0;
         this._shown = null;           // id of the centre pill
         this._shownIds = [];          // ids of every pill the island shows
@@ -322,6 +325,22 @@ export class ActivityStack {
         const top = back ? this._visibleList()[0] : null;
         if (top && !top.quiet && (top.kind === 'ask' || top.style === 'transient'))
             this._island.render(this._visibleList(), {alert: null, expand: top.id});
+        this._updateLight();
+    }
+
+    /**
+     * A source's own unseen things keep the amber light on, outside the missed history:
+     * the light follows the flag, not Home (GNOME's notifications nobody has seen, which
+     * the Notifications tab lists and marks seen).
+     *
+     * @param {string} key  the source's, one flag each
+     * @param {boolean} on
+     */
+    flagMissed(key, on) {
+        if (on)
+            this._flags.add(key);
+        else
+            this._flags.delete(key);
         this._updateLight();
     }
 
@@ -589,7 +608,7 @@ export class ActivityStack {
     }
 
     _updateLight() {
-        let light = this._missedNew ? 'missed' : 'off';
+        let light = this._missedNew || this._flags.size ? 'missed' : 'off';
         for (const [id, ask] of this._asks) {
             if (this._unseen || ask.dismissed || !this._shownIds.includes(id)) {
                 light = 'waiting';

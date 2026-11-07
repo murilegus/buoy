@@ -31,7 +31,7 @@ export class AgentsTab {
         const askOf = s => asks.find(q => q.id === `${s.id}:ask`) ?? null;
         const own = new Set(sessions.map(askOf).filter(Boolean));
         if (!sessions.length && asks.length === own.size) {
-            this.actor.add_child(new EmptyState('No Claude Code sessions'));
+            this.actor.add_child(new EmptyState('No Claude Code sessions', {pose: 'idle'}));
             return;
         }
         // a prompt whose session is hidden behind it (source.js) or another caller's

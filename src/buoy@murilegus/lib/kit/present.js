@@ -246,8 +246,8 @@ function meter(kind, value, size) {
 export const FILL = Symbol('buoy-fill');
 
 /**
- * A tab or list with nothing in it (2026-11-06, Ethan): one colour everywhere, the text
- * centred both ways, and as tall as the body allows — the panel opens at its full
+ * A tab or list with nothing in it (2026-11-06, Ethan): one colour everywhere, Bu over
+ * the text in a pose that fits (2026-11-07), centred both ways, and as tall as the body allows — the panel opens at its full
  * expanded height instead of a thin strip. Its natural height is the content height Home
  * sets on its body view (`view[FILL]`), less the padding and borders of the actors in
  * between, so it fits exactly and never scrolls. Outside Home (no FILL above) it is as
@@ -255,12 +255,28 @@ export const FILL = Symbol('buoy-fill');
  */
 export const EmptyState = GObject.registerClass(
 class EmptyState extends St.Bin {
-    /** @param {string} text */
-    _init(text) {
-        super._init({
-            style_class: 'buoy-empty', x_expand: true, y_expand: true,
-            child: new St.Label({text, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER}),
-        });
+    /**
+     * @param {string} text
+     * @param {object} [opts]
+     * @param {?string} [opts.pose]  Bu over the text in this pose (MASCOT.md, empty
+     *   states; 2026-11-07, Ethan: every empty tab has Bu)
+     * @param {?Clutter.Actor} [opts.above]  any other actor over the text
+     */
+    _init(text, {pose = null, above = null} = {}) {
+        if (pose && !above)
+            above = buildElement({mascot: pose}, {size: 'compact', leading: true});
+        const words = new St.Label({text, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER});
+        let child = words;
+        if (above) {
+            child = new St.BoxLayout({
+                style_class: 'buoy-empty-stack', orientation: Clutter.Orientation.VERTICAL,
+                x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER,
+            });
+            above.x_align = Clutter.ActorAlign.CENTER;
+            child.add_child(above);
+            child.add_child(words);
+        }
+        super._init({style_class: 'buoy-empty', x_expand: true, y_expand: true, child});
     }
 
     vfunc_get_preferred_height(forWidth) {
@@ -526,12 +542,12 @@ export function dimStale(box) {
 const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
 
 /**
- * One St.DrawingArea painting Bu's grid in MASCOT.md's palette; the lamp in the stack's
- * amber/red or the pose's colour (kit/mascot.js lampColour). A moving pose swaps two
+ * One St.DrawingArea painting Bu's grid in MASCOT.md's palette; the lamp in the pose's
+ * colour (kit/mascot.js lampColour). A moving pose swaps two
  * frames every 500 ms with one timer, only while mapped and not held still; gone on
  * unmap, destroy, and with it on pose change and disable (the content is rebuilt).
  *
- * @param {object} e  {type: 'mascot', pose, light}
+ * @param {object} e  {type: 'mascot', pose}
  * @param {number} size  px, a multiple of 10
  * @param {?object} activity  for where the pose started (id and surface)
  * @returns {St.DrawingArea}
@@ -584,7 +600,7 @@ function mascot(e, size, activity) {
         const [w] = area.get_surface_size();
         const cell = w / GRID;
         cr.setAntialias(Cairo.Antialias.NONE);  // crisp cells (MASCOT.md: no partial opacity)
-        for (const c of cells(shown.frame, lampColour(shown.pose, e.light))) {
+        for (const c of cells(shown.frame, lampColour(shown.pose))) {
             cr.setSourceRGB(...rgb(c.colour));
             cr.rectangle(c.x * cell, c.y * cell, c.w * cell, cell);
             cr.fill();

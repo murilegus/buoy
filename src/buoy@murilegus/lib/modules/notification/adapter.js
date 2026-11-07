@@ -78,6 +78,23 @@ export function actionIndex(id) {
     return m ? Number(m[1]) : null;
 }
 
+/** A notification that sat this long in GNOME's queue waited for the screen (§1). */
+export const HELD_MS = 2000;
+
+/**
+ * Shell takes a notification out of its queue in the same call that put it there, unless
+ * it holds the queue: a full-screen window, a busy session, the lock screen (§1). One that
+ * waited shows as a pill when the screen is back but stays unseen, so the tab counts it
+ * as missed (§6).
+ *
+ * @param {*} queuedAt  when it entered the queue, monotonic ms; unknown: not held
+ * @param {number} now  monotonic ms
+ * @returns {boolean} it waited in the queue
+ */
+export function waitedInQueue(queuedAt, now) {
+    return Number.isFinite(queuedAt) && Number.isFinite(now) && now - queuedAt >= HELD_MS;
+}
+
 // GTK notification ids Files posts for its operations: the Transfers pill shows them
 // (FEATURES M3 "progress", §10)
 const FILES_APP = 'org.gnome.Nautilus';
@@ -113,6 +130,60 @@ export function cardText(title, body, app) {
     if (title)
         return {title, body: body || null};
     return {title: body || app, body: null};
+}
+
+/**
+ * The Notifications tab's stacks (§6): one per app, the app with the newest notification
+ * first, newest first inside — the first item is the stack's face. Ties keep the given
+ * order.
+ *
+ * @param {{app: string, appName: string, at: number, missed: boolean}[]} items  one per
+ *   notification in Shell's list; `missed`: unseen when the tab opened
+ * @returns {{groups: {app: string, appName: string, items: object[], missed: number}[],
+ *   missed: number, total: number}}
+ */
+export function stackGroups(items) {
+    const newest = (a, b) => b.at - a.at;
+    const byApp = new Map();
+    for (const i of items) {
+        if (!byApp.has(i.app))
+            byApp.set(i.app, {app: i.app, appName: i.appName, items: [], missed: 0});
+        const g = byApp.get(i.app);
+        g.items.push(i);
+        if (i.missed)
+            g.missed++;
+    }
+    const groups = [...byApp.values()];
+    groups.forEach(g => g.items.sort(newest));
+    groups.sort((a, b) => b.items[0].at - a.items[0].at);
+    return {groups, missed: items.filter(i => i.missed).length, total: items.length};
+}
+
+/**
+ * @param {number} n
+ * @returns {string} the tab bar's count: "1 notification", "5 notifications"
+ */
+export function countText(n) {
+    return n === 1 ? '1 notification' : `${n} notifications`;
+}
+
+/**
+ * A tab row's two lines (§6): as the card's, one line each; on a shared screen the app is
+ * named and nothing of the message (§5).
+ *
+ * @param {object} n
+ * @param {*} n.title
+ * @param {*} n.body
+ * @param {boolean} [n.markup]
+ * @param {*} n.appName
+ * @param {boolean} [shared]
+ * @returns {{title: string, body: ?string}}
+ */
+export function rowText({title, body, markup = false, appName}, shared = false) {
+    const app = plainText(appName) || 'Notification';
+    if (shared)
+        return {title: app, body: sharedLine(1)};
+    return cardText(plainText(title), plainText(body, markup), app);
 }
 
 export default {

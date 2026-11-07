@@ -56,7 +56,7 @@ export class TransfersTab {
         }
         const downloaded = downloadHistory.list(now);
         if (!running.length && !done.length && !downloaded.length) {
-            this.actor.add_child(new EmptyState('No transfers'));
+            this.actor.add_child(new EmptyState('No transfers', {pose: 'done'}));
             return;
         }
         if (running.length) {

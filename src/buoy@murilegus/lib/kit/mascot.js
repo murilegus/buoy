@@ -21,7 +21,7 @@ export const PALETTE = Object.freeze({
 /** The lamp's `foreground` (pose `turn`): the body colour, as Bu sits only on black. */
 export const FOREGROUND = PALETTE.B;
 
-/** The stack's light wins over the pose (INDICATORS § Bu's lamp). */
+/** INDICATORS' state colours: in the lamp only as the `missed` / `ask` poses' own. */
 export const LIGHT_LAMPS = Object.freeze({missed: '#EF9F27', waiting: '#E24B4A'});
 
 /** Frames swap every 500 ms; `once` poses play two swaps of both frames (~2 s). */
@@ -273,16 +273,13 @@ export function moves(pose) {
 }
 
 /**
- * The lamp is the buoy light (SPEC §2a-i): the stack's amber/red win over the pose,
- * otherwise the pose's own colour.
+ * The lamp is the pose's own colour. The stack's amber/red is the pill's edge dot, never
+ * the lamp (SPEC §2a-i, 2026-11-08, Ethan: the lamp is too small to read as the light).
  *
  * @param {string} pose  one of POSES
- * @param {?string} light  the stack's light shown on this pill: 'missed' | 'waiting' | other
  * @returns {string} '#rrggbb'
  */
-export function lampColour(pose, light) {
-    if (Object.hasOwn(LIGHT_LAMPS, light ?? ''))
-        return LIGHT_LAMPS[light];
+export function lampColour(pose) {
     const own = POSES[pose]?.lamp ?? POSES.idle.lamp;
     return own === 'foreground' ? FOREGROUND : own;
 }
