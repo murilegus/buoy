@@ -1,7 +1,7 @@
 // Run: gjs -m tests/clipboard.test.js   (no Shell needed; adapters are pure)
 import adapter, {
     TTL, contentOf, imageMime, filesMime, filesOf, oneLine, filesText, copiedHere,
-} from '../src/buoy@murilegus/lib/modules/clipboard/adapter.js';
+} from '../src/buoy@murilegus/lib/modules/copied/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {validate, FEEDBACK} from '../src/buoy@murilegus/lib/kit/activity.js';
 
@@ -55,7 +55,7 @@ eq([oneLine(''), oneLine(' \n '), oneLine(null)], ['', '', ''], 'nothing');
 }
 
 // --- the pill (SPEC §2e: minimal only, ~1 s, pill 1's widest) ---------------------------------
-const copied = ev => adapter.copied({id: 'clipboard', ...ev}, null);
+const copied = ev => adapter.copied({id: 'copied', ...ev}, null);
 {
     const p = copied({what: 'text', text: 'Copied text\n  shows here'});
     eq([p.leading, p.text, p.trailing], ['edit-copy-symbolic', 'Copied text shows here', null], 'text: copy icon + snippet');

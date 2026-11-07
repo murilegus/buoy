@@ -372,12 +372,12 @@ export const MODULE_GROUPS = [
     {
         id: 'feedback', title: 'Quick Feedback',
         description: 'A short flash after something you did.',
-        modules: ['hud', 'input', 'clipboard'],
+        modules: ['hud', 'input', 'copied'],
     },
     {
         id: 'tabs', title: 'Tabs',
         description: 'A tab of their own, in the strip\'s slot or pinned.',
-        modules: ['calendar'],
+        modules: ['calendar', 'clipboard'],
     },
 ];
 // An idle plan's module that is nothing else (clock) is in no group: its switch is on
@@ -537,7 +537,7 @@ export const SAMPLES = {
     input: {
         kind: 'input', app: 'buoy', leading: 'input-keyboard-symbolic', text: 'EN · English (US)',
     },
-    clipboard: {
+    copied: {
         kind: 'copied', app: 'buoy', leading: 'edit-copy-symbolic', text: 'Copied text shows here',
         sizeHint: 'wide',
     },

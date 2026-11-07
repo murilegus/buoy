@@ -372,7 +372,7 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   [Calendar] · ⋯; Notifications, Transfers and Timer are stub modules until their
   roadmap items); until it ships `tab.js` the tab shows its activities' expanded
   views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied;
-  §2e) have no kind tab; a feedback-only module's own `tab.js` (clipboard's history) is a
+  §2e) have no kind tab; a module with only a `tab.js` (Clipboard, 2026-11-07) is a
   standalone tab, in the slot and ⋯ (2026-11-05). Kinds no module claims (D-Bus callers) get a tab while one of their
   activities has an expanded presentation, after the module tabs.
 - **Strip look** (2026-11-02, after Notchy): one rounded group hugging its tabs; the
@@ -486,7 +486,7 @@ sizes, Bu's poses, special days, weather, settings and tests.
 ### 2e. Feedback: minimal only (decided 2026-11-05, Ethan)
 
 - **What.** A confirmation of something you just did: `osd` from `hud`, the input source
-  from `input`, and `copied` from `clipboard` (GNOME shows nothing on copy; Buoy does).
+  from `input`, and `copied` from `copied` (GNOME shows nothing on copy; Buoy does).
 - **input** (2026-11-05; named `layout` until then — it covers IBus input methods too): the
   input source you switch to, xkb or IBus, as Shell's indicator
   names it — the IBus engine's `InputMode` symbol when it has one (Bamboo's V / E), else
@@ -545,10 +545,13 @@ sizes, Bu's poses, special days, weather, settings and tests.
   volume, brightness and backlight are icon + bar (`wide`); Caps Lock and the input source are
   icon + a short word; copied is icon + the snippet or an image thumbnail, ellipsized at
   pill 1's widest.
-- **Clipboard** (2026-11-05, was two modules, `copied` and `clipboard`): one `clipboard`
-  module. Its `source.js` listens to `Meta.Selection` `owner-changed` (mutter
-  `meta-selection.c`; no polling) and surfaces `copied`; with `clipboard-history` on it
-  also keeps the history its standalone tab shows (FEATURES M5). Off, nothing is stored.
+- **Copied and Clipboard** (one `clipboard` module 2026-11-05; two again 2026-11-07,
+  Ethan: in prefs the flash is "Copied" under Quick Feedback with Show what was copied,
+  the tab is "Clipboard" under Tabs with Pin to the strip, each with its own switch,
+  `modules-copied` and `modules-clipboard`). `copied`'s `source.js` listens to
+  `Meta.Selection` `owner-changed` (mutter `meta-selection.c`; no polling) and surfaces
+  `copied`; the Clipboard tab's history (FEATURES M5) will watch the clipboard on its own,
+  with `clipboard-history` on. Off, nothing is stored.
   `copied` skips a clipboard Shell set itself — the new owner is a
   `Meta.SelectionSourceMemory` (`st-clipboard.c` `st_clipboard_set_content` →
   `meta_selection_source_memory_new`): a screenshot, or a row the Clipboard tab put back;

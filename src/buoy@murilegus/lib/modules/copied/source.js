@@ -6,8 +6,8 @@ import St from 'gi://St';
 import {Source} from '../../kit/source.js';
 import {contentOf, copiedHere, filesMime, filesOf, imageMime} from './adapter.js';
 
-const ID = 'clipboard';
-const PREVIEW_KEY = 'clipboard-show-preview';
+const ID = 'copied';
+const PREVIEW_KEY = 'copied-show-preview';
 // The snippet is one line ellipsized at pill 1's widest: a few hundred characters are
 // plenty, and a label is never handed a megabyte that was copied
 const SNIPPET = 500;
@@ -28,7 +28,7 @@ const SNIPPET = 500;
  *   mutter-devkit syncs the host's at start and on every host copy (mdk/mdk-session.c),
  *   gnome-remote-desktop the RDP/VNC client's (adapter.js copiedHere, 2026-11-06).
  * - What it is comes from the owner's mimetypes (adapter.js contentOf); the content is
- *   read through St.Clipboard only to show it, and only with `clipboard-show-preview`
+ *   read through St.Clipboard only to show it, and only with `copied-show-preview`
  *   on. A password manager's secret is never read. Nothing is kept (history is M5).
  * - The app is the focused one (the copy came from its window): apps-hidden and profiles
  *   apply to it, so a password manager can be hidden by name too.
