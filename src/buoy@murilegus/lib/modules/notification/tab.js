@@ -7,38 +7,47 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
-import {EmptyState, tick} from '../../kit/present.js';
+import {EmptyState, buildElement, tick} from '../../kit/present.js';
 import {agoText} from '../../kit/presentation.js';
 import {SharingWatch} from '../../kit/sharing.js';
-import {buttonsOf, actionIndex, rowText, tabGroups} from './adapter.js';
+import {actionIndex, buttonsOf, countText, rowText, stackGroups} from './adapter.js';
 import {appIdOf, msOf} from './source.js';
 
-const ICON = 24;
+const ICON = 32;
 const BANNERS = 'org.gnome.desktop.notifications';
 
 /**
- * The Notifications tab (docs/NOTIFICATIONS.md §6): Shell's own notifications, the same
- * objects as GNOME's list — `Main.messageTray.getSources()` and each source's
- * `notifications`, followed while the tab is open (`source-added` / `source-removed`,
- * `notification-added` / `notification-removed`; a change re-draws once, on idle).
+ * The Notifications tab (docs/NOTIFICATIONS.md §6, redesigned 2026-11-07): Shell's own
+ * notifications, the same objects as GNOME's list — `Main.messageTray.getSources()` and
+ * each source's `notifications`, followed while the tab is open (`source-added` /
+ * `source-removed`, `notification-added` / `notification-removed`; a change re-draws once,
+ * on idle).
  *
- *   top       Do Not Disturb, a toggle (GNOME's `show-banners`, inverted) · Clear
- *   Missed    the notifications nobody had seen when the tab opened (`acknowledged`
- *             false: DND, a full banner queue); opening marks them seen, as GNOME's list
- *             does when shown (ui/messageList.js vfunc_map)
- *   by app    one group per app, newest app first; header × dismisses the group
+ *   bar     "N missed" (amber) · "N notifications" · Do Not Disturb · Clear; in an app's
+ *           view: ‹ the app · N · Dismiss all
+ *   list    one stack per app, newest app first: its newest notification as a card, one
+ *           or two thin layers under it and the count when it holds more
+ *   app     a stack clicked open: every card of that app
+ *   card    the app's logo 32 (in an app's view what the notification brings: its picture
+ *           — a chat's avatar —, else its own icon, else the logo), app · time over a bold
+ *           title and one line of body, an amber dot when it was unseen; on hover its own
+ *           actions and × take the right side
  *
- * A row's click activates the notification and closes the island; an action runs it
- * and closes the island; × dismisses it (destroy, DISMISSED) — GNOME's list follows, and
- * one gone from there leaves here. Shared screen: the app's name, no message (§5).
+ * Unseen = `acknowledged` false when the tab opened (DND, a full banner queue); opening
+ * marks them seen, as GNOME's list does when shown (ui/messageList.js vfunc_map), and one
+ * arriving while the tab is open is seen at once (no pill: it is in sight). A card's
+ * click activates it and closes the island (a stack of several opens instead); an action
+ * runs and closes it; × dismisses (destroy, DISMISSED) — GNOME's list follows, and one
+ * gone from there leaves here. Shared screen: the app's name, no message (§5).
  */
 export class NotificationsTab {
     /** @param {{close?: function():void}} [kit]  close(): the island, after an action */
     constructor({close = null} = {}) {
         this._close = close;
         this._redrawId = 0;
+        this._app = null;            // the stack opened, by app id
         this.actor = new St.BoxLayout({
-            style_class: 'buoy-notifications-tab', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
+            style_class: 'buoy-ntab', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
         });
         this._banners = new Gio.Settings({schema_id: BANNERS});
         this._banners.connectObject('changed::show-banners', () => this._redraw(), this);
@@ -57,7 +66,7 @@ export class NotificationsTab {
             }, this);
         tray.getSources().forEach(src => this._watch(src));
 
-        // seen once shown: kept in Missed until the tab closes
+        // seen once shown: marked as unseen until the tab closes
         this._missed = new Set(this._all().filter(n => !n.acknowledged));
         this._missed.forEach(n => {
             n.acknowledged = true;
@@ -108,122 +117,184 @@ export class NotificationsTab {
 
     _render() {
         this.actor.destroy_all_children();
-        const all = this._all();
-        this.actor.add_child(this._top(all));
-        if (!all.length) {
-            this.actor.add_child(new EmptyState('No notifications'));
-            return;
-        }
-        const shared = this._sharing.shared;
-        const items = all.map(n => ({
-            n, app: appIdOf(n.source), appName: n.source?.title ?? '',
+        const items = this._all().map(n => ({
+            n, app: appIdOf(n.source), appName: n.source?.title || 'Notification',
             at: msOf(n.datetime), missed: this._missed.has(n),
         }));
-        const {missed, groups} = tabGroups(items);
-        if (missed.length) {
-            this.actor.add_child(header(`Missed while away · ${missed.length}`, {lit: true}));
-            for (const i of missed)
-                this.actor.add_child(this._row(i, shared, {withApp: true}));
+        const {groups, missed, total} = stackGroups(items);
+        const open = this._app ? groups.find(g => g.app === this._app) : null;
+        if (!open)
+            this._app = null;
+
+        if (open) {
+            this.actor.add_child(this._appBar(open));
+            for (const i of open.items)
+                this.actor.add_child(this._card(i, {withApp: false, avatar: true}));
+            return;
         }
-        for (const g of groups) {
-            const icon = g.items[0].n.source?.icon ?? null;
-            this.actor.add_child(header(g.appName || 'Notification', {
-                icon, clearName: `Dismiss ${g.appName}`,
-                onClear: () => g.items.forEach(i => dismiss(i.n)),
+        this.actor.add_child(this._listBar(missed, total));
+        if (!total) {
+            this.actor.add_child(new EmptyState('All caught up', {
+                above: buildElement({mascot: 'sleep'}, {size: 'compact', leading: true}),
             }));
-            for (const i of g.items)
-                this.actor.add_child(this._row(i, shared));
+            return;
         }
+        for (const g of groups)
+            this.actor.add_child(this._stack(g));
     }
 
-    _top(all) {
-        const box = new St.BoxLayout({style_class: 'buoy-notif-top', x_expand: true});
-        // a toggle, lit while on (Shell's Switch draws from the menu theme: a bare dot here)
-        const on = !this._banners.get_boolean('show-banners');
-        const dndContent = new St.BoxLayout({style_class: 'buoy-notif-dnd-line'});
-        dndContent.add_child(new St.Icon({
-            icon_name: on ? 'notifications-disabled-symbolic' : 'preferences-system-notifications-symbolic',
-            icon_size: 16, y_align: Clutter.ActorAlign.CENTER,
-        }));
-        dndContent.add_child(new St.Label({text: 'Do Not Disturb', y_align: Clutter.ActorAlign.CENTER}));
-        const dnd = new St.Button({
-            style_class: 'buoy-notif-dnd', can_focus: true, accessible_name: 'Do Not Disturb',
-            toggle_mode: true, checked: on, child: dndContent, y_align: Clutter.ActorAlign.CENTER,
+    // --- the bar -------------------------------------------------------------------------
+
+    _listBar(missed, total) {
+        const bar = new St.BoxLayout({style_class: 'buoy-ntab-bar', x_expand: true});
+        if (missed) {
+            const chip = new St.BoxLayout({style_class: 'buoy-nchip buoy-nchip-missed', y_align: Clutter.ActorAlign.CENTER});
+            chip.add_child(new St.Widget({style_class: 'buoy-ndot', y_align: Clutter.ActorAlign.CENTER}));
+            chip.add_child(new St.Label({text: `${missed} missed`, y_align: Clutter.ActorAlign.CENTER}));
+            bar.add_child(chip);
+        }
+        if (total)
+            bar.add_child(new St.Label({text: countText(total), style_class: 'buoy-ntab-count', y_align: Clutter.ActorAlign.CENTER}));
+        bar.add_child(new St.Widget({x_expand: true}));
+        bar.add_child(this._dnd());
+        if (total)
+            bar.add_child(chipButton('Clear', null, () => this._all().forEach(dismiss)));
+        return bar;
+    }
+
+    _appBar(g) {
+        const bar = new St.BoxLayout({style_class: 'buoy-ntab-bar', x_expand: true});
+        const back = new St.BoxLayout({style_class: 'buoy-nback-line'});
+        back.add_child(new St.Icon({icon_name: 'go-previous-symbolic', icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
+        back.add_child(new St.Label({text: `${g.appName} · ${g.items.length}`, y_align: Clutter.ActorAlign.CENTER}));
+        const button = new St.Button({
+            style_class: 'buoy-nback', can_focus: true, accessible_name: 'Back', child: back,
+            y_align: Clutter.ActorAlign.CENTER,
         });
-        dnd.connect('clicked', () => {
+        button.connect('clicked', () => {
+            this._app = null;
+            this._render();
+        });
+        bar.add_child(button);
+        bar.add_child(new St.Widget({x_expand: true}));
+        bar.add_child(chipButton('Dismiss all', null, () => g.items.forEach(i => dismiss(i.n))));
+        return bar;
+    }
+
+    // Do Not Disturb: GNOME's `show-banners`, inverted, as the quick toggle
+    // (ui/status/doNotDisturb.js); lit while on
+    _dnd() {
+        const on = !this._banners.get_boolean('show-banners');
+        const b = chipButton('Do Not Disturb', on ? 'weather-clear-night-symbolic' : 'notifications-disabled-symbolic', () => {
             this._banners.set_boolean('show-banners', !this._banners.get_boolean('show-banners'));
         });
-        box.add_child(dnd);
-        box.add_child(new St.Widget({x_expand: true}));
-        if (all.length) {
-            const clear = new St.Button({
-                style_class: 'buoy-notif-clear', can_focus: true, label: 'Clear',
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-            clear.connect('clicked', () => this._all().forEach(dismiss));
-            box.add_child(clear);
-        }
+        b.toggle_mode = true;
+        b.checked = on;
+        return b;
+    }
+
+    // --- stacks and cards ----------------------------------------------------------------
+
+    // An app's newest card; under it one or two thin layers when it holds more. A click
+    // on a stack of several opens it (the app's view); on one, the card's own click.
+    _stack(g) {
+        const more = g.items.length - 1;
+        const box = new St.BoxLayout({style_class: 'buoy-nstack', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        box.add_child(this._card(g.items[0], {
+            count: more ? g.items.length : 0,
+            missedDot: g.missed > 0,
+            onOpen: more ? () => {
+                this._app = g.app;
+                this._render();
+            } : null,
+        }));
+        if (more)
+            box.add_child(new St.Widget({style_class: 'buoy-nghost', x_expand: true}));
+        if (more > 1)
+            box.add_child(new St.Widget({style_class: 'buoy-nghost2', x_expand: true}));
         return box;
     }
 
-    // picture or icon · title over body · time · ×; the notification's own actions under it
-    _row({n, appName}, shared, {withApp = false} = {}) {
+    _card({n, appName, missed}, {withApp = true, avatar = false, count = 0, missedDot = missed, onOpen = null} = {}) {
+        const shared = this._sharing.shared;
         const text = rowText({title: n.title, body: n.body, markup: n.useBodyMarkup === true, appName}, shared);
+        const card = new St.BoxLayout({
+            style_class: 'buoy-ncard', x_expand: true, reactive: true, track_hover: true,
+        });
+
+        const main = new St.BoxLayout({style_class: 'buoy-ncard-main', x_expand: true});
+        main.add_child(cardIcon(n, avatar && !shared));
         const col = new St.BoxLayout({
-            style_class: 'buoy-notif-text', orientation: Clutter.Orientation.VERTICAL,
+            style_class: 'buoy-ncard-text', orientation: Clutter.Orientation.VERTICAL,
             x_expand: true, y_align: Clutter.ActorAlign.CENTER,
         });
-        col.add_child(label(withApp && !shared ? `${text.title} · ${appName}` : text.title, 'buoy-notif-title'));
-        if (text.body)
-            col.add_child(label(text.body, 'buoy-notif-body'));
-        const content = new St.BoxLayout({style_class: 'buoy-notif-line', x_expand: true});
-        content.add_child(new St.Icon({
-            icon_size: ICON, y_align: Clutter.ActorAlign.CENTER,
-            gicon: (!shared && n.gicon) || n.source?.icon || null,
-            fallback_icon_name: 'preferences-system-notifications-symbolic',
-        }));
-        content.add_child(col);
+        const meta = new St.BoxLayout({style_class: 'buoy-ncard-meta'});
         const at = msOf(n.datetime);
-        const time = label('', 'buoy-notif-time');
+        const time = label('', 'buoy-ncard-time');
         tick(time, () => {
-            time.text = agoText(at, Date.now());
+            time.text = withApp ? `${appName} · ${agoText(at, Date.now())}` : agoText(at, Date.now());
         }, () => true, 20);
-        content.add_child(time);
-
-        const row = new St.Button({
-            style_class: 'buoy-notif-row', can_focus: true, x_expand: true, child: content,
+        meta.add_child(time);
+        if (missedDot)
+            meta.add_child(new St.Widget({style_class: 'buoy-ndot', y_align: Clutter.ActorAlign.CENTER}));
+        col.add_child(meta);
+        col.add_child(label(text.title, 'buoy-ncard-title'));
+        if (text.body)
+            col.add_child(label(text.body, 'buoy-ncard-body'));
+        main.add_child(col);
+        const press = new St.Button({
+            style_class: 'buoy-ncard-press', can_focus: true, x_expand: true, child: main,
             accessible_name: text.title,
         });
-        row.connect('clicked', () => {
+        press.connect('clicked', () => {
+            if (onOpen) {
+                onOpen();
+                return;
+            }
             n.activate();
             this._close?.();
         });
-        const close = new St.Button({
-            style_class: 'buoy-notif-close', can_focus: true, accessible_name: 'Dismiss',
+        card.add_child(press);
+
+        // the count at rest; on hover (or focus inside) the actions and × in its place
+        const badge = count ? label(String(count), 'buoy-ncount') : null;
+        const acts = new St.BoxLayout({style_class: 'buoy-ncard-acts', y_align: Clutter.ActorAlign.CENTER, visible: false});
+        if (!onOpen) {
+            for (const b of buttonsOf(n.actions.map(a => a.label)).slice(0, 2)) {
+                acts.add_child(chipButton(b.label, null, () => {
+                    n.actions[actionIndex(b.id)]?.activate();
+                    this._close?.();
+                }));
+            }
+        }
+        const x = new St.Button({
+            style_class: 'buoy-nclose', can_focus: true,
+            accessible_name: onOpen ? `Dismiss ${appName}` : 'Dismiss',
             child: new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}),
             y_align: Clutter.ActorAlign.CENTER,
         });
-        close.connect('clicked', () => dismiss(n));
-        const line = new St.BoxLayout({style_class: 'buoy-notif-row-line', x_expand: true});
-        line.add_child(row);
-        line.add_child(close);
-
-        const buttons = buttonsOf(n.actions.map(a => a.label));
-        if (!buttons.length)
-            return line;
-        const box = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
-        box.add_child(line);
-        const acts = new St.BoxLayout({style_class: 'buoy-notif-actions'});
-        for (const b of buttons) {
-            const button = new St.Button({style_class: 'buoy-action', can_focus: true, label: b.label});
-            button.connect('clicked', () => {
-                n.actions[actionIndex(b.id)]?.activate();
-                this._close?.();
-            });
-            acts.add_child(button);
+        x.connect('clicked', () => {
+            if (onOpen)
+                this._all().filter(m => appIdOf(m.source) === appIdOf(n.source)).forEach(dismiss);
+            else
+                dismiss(n);
+        });
+        acts.add_child(x);
+        if (badge)
+            card.add_child(badge);
+        card.add_child(acts);
+        const sync = () => {
+            const shown = card.hover || card.contains(global.stage.key_focus);
+            acts.visible = shown;
+            if (badge)
+                badge.visible = !shown;
+        };
+        card.connect('notify::hover', sync);
+        for (const b of [press, x, ...acts.get_children()]) {
+            b.connect('key-focus-in', sync);
+            b.connect('key-focus-out', sync);
         }
-        box.add_child(acts);
-        return box;
+        return card;
     }
 }
 
@@ -231,25 +302,35 @@ function dismiss(n) {
     n.destroy(MessageTray.NotificationDestroyedReason.DISMISSED);
 }
 
-// A group's title: the light for Missed, the app's icon for an app; × at its end
-function header(text, {lit = false, icon = null, clearName = null, onClear = null} = {}) {
-    const box = new St.BoxLayout({style_class: 'buoy-notif-header', x_expand: true});
-    if (lit)
-        box.add_child(new St.Widget({style_class: 'buoy-light buoy-light-missed', y_align: Clutter.ActorAlign.CENTER}));
-    if (icon)
-        box.add_child(new St.Icon({gicon: icon, icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
-    box.add_child(new St.Label({text, y_align: Clutter.ActorAlign.CENTER}));
-    if (onClear) {
-        box.add_child(new St.Widget({x_expand: true}));
-        const clear = new St.Button({
-            style_class: 'buoy-transfers-clear', can_focus: true, accessible_name: clearName,
-            child: new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}),
-            y_align: Clutter.ActorAlign.CENTER,
-        });
-        clear.connect('clicked', () => onClear());
-        box.add_child(clear);
+// A stack shows its app's logo; an app's view what the notification brings of its own
+// (Ethan, 2026-11-07): its picture (a chat's avatar, a thumbnail: image-data / image-path,
+// a GTK bytes icon), else its own icon when it differs from the app's, else the logo
+function cardIcon(n, avatar) {
+    const logo = n.source?.icon ?? null;
+    let gicon = logo;
+    if (avatar && n.gicon) {
+        const themed = n.gicon instanceof Gio.ThemedIcon;
+        if (!themed || !logo || !n.gicon.equal(logo))
+            gicon = n.gicon;
     }
-    return box;
+    return new St.Icon({
+        style_class: 'buoy-ncard-icon', icon_size: ICON, y_align: Clutter.ActorAlign.CENTER,
+        gicon: gicon ?? n.gicon ?? null,
+        fallback_icon_name: 'preferences-system-notifications-symbolic',
+    });
+}
+
+function chipButton(text, icon, onClick) {
+    const box = new St.BoxLayout({style_class: 'buoy-nchip-line'});
+    if (icon)
+        box.add_child(new St.Icon({icon_name: icon, icon_size: 14, y_align: Clutter.ActorAlign.CENTER}));
+    box.add_child(new St.Label({text, y_align: Clutter.ActorAlign.CENTER}));
+    const b = new St.Button({
+        style_class: 'buoy-nchip', can_focus: true, accessible_name: text, child: box,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    b.connect('clicked', () => onClick());
+    return b;
 }
 
 function label(text, styleClass) {

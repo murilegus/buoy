@@ -370,28 +370,39 @@
 .buoy-agents-buttons { spacing: 6px; padding: 0 8px 6px; }
 .buoy-agents-buttons .buoy-action { padding: 4px 12px; }
 
-/* The Notifications tab (NOTIFICATIONS.md §6), as the Transfers tab's rows */
-.buoy-notifications-tab { spacing: 2px; padding: 0 2px 4px; }
-.buoy-notif-top { padding: 2px 4px 4px; spacing: 8px; }
-.buoy-notif-dnd { padding: 4px 12px; border-radius: 999px; color: #fff; background-color: rgba(255, 255, 255, 0.12); }
-.buoy-notif-dnd:hover { background-color: rgba(255, 255, 255, 0.2); }
-.buoy-notif-dnd:checked { background-color: -st-accent-color; color: -st-accent-fg-color; }
-.buoy-notif-dnd:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
-.buoy-notif-dnd-line { spacing: 8px; }
-.buoy-notif-clear { padding: 4px 12px; border-radius: 999px; color: #fff; background-color: rgba(255, 255, 255, 0.12); }
-.buoy-notif-clear:hover { background-color: rgba(255, 255, 255, 0.2); }
-.buoy-notif-header { spacing: 8px; padding: 8px 8px 2px; font-size: 12px; color: rgba(255, 255, 255, 0.55); }
-.buoy-notif-row-line { spacing: 2px; }
-.buoy-notif-row { padding: 6px 8px; border-radius: 12px; }
-.buoy-notif-row:hover { background-color: rgba(255, 255, 255, 0.08); }
-.buoy-notif-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
-.buoy-notif-line { spacing: 12px; }
-.buoy-notif-text { spacing: 2px; }
-.buoy-notif-title { color: #fff; }
-.buoy-notif-body { color: rgba(255, 255, 255, 0.55); font-size: 12px; }
-.buoy-notif-time { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
-.buoy-notif-close { padding: 6px; border-radius: 99px; color: rgba(255, 255, 255, 0.7); }
-.buoy-notif-close:hover { background-color: rgba(255, 255, 255, 0.12); color: #fff; }
-.buoy-notif-close:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
-.buoy-notif-actions { spacing: 6px; padding: 0 8px 4px 44px; }
-.buoy-notif-actions .buoy-action { padding: 4px 12px; font-size: 12px; }
+/* The Notifications tab (NOTIFICATIONS.md §6, redesigned 2026-11-07): cards in app stacks */
+.buoy-ntab { spacing: 8px; padding: 0 2px 8px; }
+.buoy-ntab-bar { spacing: 8px; padding: 0 2px; }
+.buoy-ntab-count { color: rgba(255, 255, 255, 0.55); font-size: 12px; }
+.buoy-nchip { padding: 4px 10px; border-radius: 999px; color: #ddd; background-color: #1f1f1f; font-size: 12px; }
+.buoy-nchip:hover { background-color: #2c2c2e; color: #fff; }
+.buoy-nchip:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-nchip:checked { background-color: -st-accent-color; color: -st-accent-fg-color; }
+.buoy-nchip-line { spacing: 5px; }
+.buoy-nchip-missed { color: #EF9F27; background-color: #2a1f0c; spacing: 5px; }
+.buoy-ndot { width: 7px; height: 7px; border-radius: 4px; background-color: #EF9F27; }
+.buoy-nback { padding: 4px 10px 4px 4px; border-radius: 999px; color: #ddd; }
+.buoy-nback:hover { background-color: #1f1f1f; color: #fff; }
+.buoy-nback-line { spacing: 6px; }
+.buoy-nstack { spacing: 0; }
+.buoy-ncard { background-color: #1c1c1e; border-radius: 16px; padding: 0 10px 0 0; spacing: 8px; }
+.buoy-ncard:hover { background-color: #2a2a2d; }
+.buoy-ncard-press { padding: 9px 0 9px 12px; border-radius: 16px; }
+.buoy-ncard-press:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-ncard-main { spacing: 10px; }
+.buoy-ncard-icon { border-radius: 9px; }
+.buoy-ncard-text { spacing: 1px; }
+.buoy-ncard-meta { spacing: 6px; }
+.buoy-ncard-time { color: #8e8e93; font-size: 11px; }
+.buoy-ncard-title { color: #fff; font-size: 13px; font-weight: bold; }
+.buoy-ncard-body { color: #b0b0b5; font-size: 12px; }
+.buoy-ncount { color: #8e8e93; background-color: #2c2c2e; border-radius: 999px; padding: 1px 7px; font-size: 11px; }
+.buoy-ncard-acts { spacing: 6px; }
+.buoy-ncard-acts .buoy-nchip { background-color: #3a3a3c; color: #fff; }
+.buoy-ncard-acts .buoy-nchip:hover { background-color: #48484a; }
+.buoy-nclose { width: 22px; height: 22px; border-radius: 11px; background-color: #3a3a3c; color: #ccc; }
+.buoy-nclose:hover { background-color: #48484a; color: #fff; }
+.buoy-nclose:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-nghost { height: 6px; margin: 0 10px; background-color: #141416; border-radius: 0 0 12px 12px; }
+.buoy-nghost2 { height: 5px; margin: 0 20px; background-color: #0e0e10; border-radius: 0 0 10px 10px; }
+.buoy-empty-stack { spacing: 8px; }

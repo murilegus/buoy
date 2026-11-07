@@ -255,12 +255,25 @@ export const FILL = Symbol('buoy-fill');
  */
 export const EmptyState = GObject.registerClass(
 class EmptyState extends St.Bin {
-    /** @param {string} text */
-    _init(text) {
-        super._init({
-            style_class: 'buoy-empty', x_expand: true, y_expand: true,
-            child: new St.Label({text, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER}),
-        });
+    /**
+     * @param {string} text
+     * @param {object} [opts]
+     * @param {?Clutter.Actor} [opts.above]  shown over the text (the Notifications tab's
+     *   sleeping Bu, 2026-11-07)
+     */
+    _init(text, {above = null} = {}) {
+        const words = new St.Label({text, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER});
+        let child = words;
+        if (above) {
+            child = new St.BoxLayout({
+                style_class: 'buoy-empty-stack', orientation: Clutter.Orientation.VERTICAL,
+                x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER,
+            });
+            above.x_align = Clutter.ActorAlign.CENTER;
+            child.add_child(above);
+            child.add_child(words);
+        }
+        super._init({style_class: 'buoy-empty', x_expand: true, y_expand: true, child});
     }
 
     vfunc_get_preferred_height(forWidth) {

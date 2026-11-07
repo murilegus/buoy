@@ -116,26 +116,38 @@ export function cardText(title, body, app) {
 }
 
 /**
- * The Notifications tab's order (§6): the unseen first, then one group per app — the app
- * with the newest notification first, newest first inside. Ties keep the given order.
+ * The Notifications tab's stacks (§6): one per app, the app with the newest notification
+ * first, newest first inside — the first item is the stack's face. Ties keep the given
+ * order.
  *
  * @param {{app: string, appName: string, at: number, missed: boolean}[]} items  one per
  *   notification in Shell's list; `missed`: unseen when the tab opened
- * @returns {{missed: object[], groups: {app: string, appName: string, items: object[]}[]}}
+ * @returns {{groups: {app: string, appName: string, items: object[], missed: number}[],
+ *   missed: number, total: number}}
  */
-export function tabGroups(items) {
+export function stackGroups(items) {
     const newest = (a, b) => b.at - a.at;
-    const missed = items.filter(i => i.missed).sort(newest);
     const byApp = new Map();
-    for (const i of items.filter(x => !x.missed)) {
+    for (const i of items) {
         if (!byApp.has(i.app))
-            byApp.set(i.app, {app: i.app, appName: i.appName, items: []});
-        byApp.get(i.app).items.push(i);
+            byApp.set(i.app, {app: i.app, appName: i.appName, items: [], missed: 0});
+        const g = byApp.get(i.app);
+        g.items.push(i);
+        if (i.missed)
+            g.missed++;
     }
     const groups = [...byApp.values()];
     groups.forEach(g => g.items.sort(newest));
     groups.sort((a, b) => b.items[0].at - a.items[0].at);
-    return {missed, groups};
+    return {groups, missed: items.filter(i => i.missed).length, total: items.length};
+}
+
+/**
+ * @param {number} n
+ * @returns {string} the tab bar's count: "1 notification", "5 notifications"
+ */
+export function countText(n) {
+    return n === 1 ? '1 notification' : `${n} notifications`;
 }
 
 /**
