@@ -128,12 +128,24 @@ export class CalendarTab {
                 button.add_style_class_name('buoy-calendar-today');
             if (d.day === this._picked)
                 button.add_style_class_name('buoy-calendar-picked');
-            const box = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_align: Clutter.ActorAlign.CENTER});
-            box.add_child(new St.Label({text: String(d.date).padStart(2, '0'), x_align: Clutter.ActorAlign.CENTER}));
-            const dot = new St.Widget({style_class: 'buoy-calendar-dot', x_align: Clutter.ActorAlign.CENTER});
+            // the number at the circle's centre; the dot over its bottom edge, out of the
+            // layout, so it never lifts the number
+            const cell = new St.Widget({
+                layout_manager: new Clutter.BinLayout(), x_expand: true, y_expand: true,
+                x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL,
+            });
+            cell.add_child(new St.Label({
+                text: String(d.date).padStart(2, '0'),
+                x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER,
+            }));
+            // BinLayout honours an align only on a child that expands (clutter-bin-layout.c)
+            const dot = new St.Widget({
+                style_class: 'buoy-calendar-dot', x_expand: true, y_expand: true,
+                x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.END,
+            });
             dot.opacity = this._reader.hasEvents(d.day) ? 255 : 0;
-            box.add_child(dot);
-            button.set_child(box);
+            cell.add_child(dot);
+            button.set_child(cell);
             button.connect('clicked', () => this._pick(d.day));
             layout.attach(button, i % 7, 1 + Math.floor(i / 7), 1, 1);
         });

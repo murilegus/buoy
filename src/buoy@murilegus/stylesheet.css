@@ -433,7 +433,7 @@
 /* after picked: today stays filled in the accent, picked or not */
 .buoy-calendar-today, .buoy-calendar-today:hover { background-color: -st-accent-color; color: -st-accent-fg-color; font-weight: 700; }
 .buoy-calendar-today .buoy-calendar-dot { background-color: -st-accent-fg-color; }
-.buoy-calendar-dot { width: 4px; height: 4px; border-radius: 2px; background-color: -st-accent-color; margin-top: 1px; }
+.buoy-calendar-dot { width: 4px; height: 4px; border-radius: 2px; background-color: -st-accent-color; margin-bottom: 1px; }
 .buoy-calendar-list { padding-top: 2px; }
 .buoy-calendar-events { spacing: 6px; padding-right: 4px; }
 .buoy-calendar-day-title { color: #fff; font-weight: 700; padding: 2px 4px 2px; }
