@@ -688,7 +688,8 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 1. **media** — MPRIS (2026-11-05, Ethan): one pill per player from the moment it plays.
    Minimal: art + title · artist + equaliser while playing (its four bars grow from their
    middle, up and down at once, while the pill is on screen, wherever it shows — side pill, Home's Now; still with
-   animations off; 2026-11-05, Ethan), ⏸ when paused, no button; a
+   animations off; 2026-11-05, Ethan), paused its bars stopped low, a near flat line
+   through the middle (2026-11-07, Ethan; was ⏸), no button; a
    paused pill goes after `media-hide-paused-after` (5 min). Compact (hover): art 40,
    title / artist · app (a title too long for the compact scrolls right to left: 2 s at
    the start, 30 px/s, two copies 40 px apart so each loop ends where it began; still and

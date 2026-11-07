@@ -596,6 +596,9 @@ function mascot(e, size, activity) {
 
 // Each bar: its height at rest and the range and half-period it swings through while
 // playing. Unequal periods keep the four out of step, so the motion never visibly repeats.
+// Paused: every bar at 2 px of its 12, a near flat line through the middle
+const EQ_PAUSED = 2 / 12;
+
 const EQ_BARS = [
     {rest: 0.5, from: 0.25, to: 1, ms: 430},
     {rest: 0.85, from: 0.45, to: 1, ms: 610},
@@ -611,11 +614,24 @@ const EQ_BARS = [
  * off (St.Settings enable-animations), they stand at rest and no transition exists. An
  * activity shows it only while playing (ARCHITECTURE rule 8: this is an activity, not
  * idle). Unlike Bu it does not rest after `mascot-rest-after`: music plays without input.
+ * Paused (`eq-paused`): the same bars stopped low, a near flat line through the middle,
+ * with no transition and nothing connected (2026-11-07, Ethan).
  *
+ * @param {object} [opts]
+ * @param {boolean} [opts.paused]
  * @returns {St.BoxLayout}
  */
-function eqGlyph() {
+function eqGlyph({paused = false} = {}) {
     const box = new St.BoxLayout({style_class: 'buoy-eq', y_align: Clutter.ActorAlign.CENTER});
+    if (paused) {
+        for (let i = 0; i < EQ_BARS.length; i++) {
+            box.add_child(new St.Widget({
+                style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.CENTER,
+                pivot_point: new Graphene.Point({x: 0.5, y: 0.5}), scale_y: EQ_PAUSED,
+            }));
+        }
+        return box;
+    }
     const bars = EQ_BARS.map(b => {
         const bar = new St.Widget({
             style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.CENTER,
@@ -724,7 +740,7 @@ function makeElement(e, mode, activity = null) {
         return ART_RADIUS[mode] ? roundArt(icon, size.art, ART_RADIUS[mode]) : icon;
     }
     case 'glyph':
-        return eqGlyph();
+        return eqGlyph({paused: e.name === 'eq-paused'});
     case 'ring':
         return meter('ring', e.value, size.ring);
     case 'bar':

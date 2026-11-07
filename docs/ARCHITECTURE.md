@@ -148,7 +148,8 @@ fields and order: [PROFILES.md](PROFILES.md).
    Bu's moving poses are not idle content: they swap two frames every 500 ms only while
    their activity's pill is mapped, and hold still after `mascot-rest-after` (60 s)
    without input and with animations off (`MASCOT.md` § Drawing rules, 2026-11-04).
-   The media equaliser moves only while it is mapped (playing: paused shows ⏸), one
+   The media equaliser moves only while it is mapped and playing (paused, its bars stand
+   low and still: the `eq-paused` glyph, 2026-11-07), one
    endless `scale-y` transition per bar, none unmapped or with animations off; it does
    not rest without input, since music plays untouched (2026-11-05, Ethan). So does a
    compact or Media-tab title too long for its width: it scrolls only while it is mapped

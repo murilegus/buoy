@@ -1,5 +1,5 @@
 // Run: gjs -m tests/media.test.js   (no Shell needed; adapters are pure)
-import adapter, {transport, liveOf, ICON, PAUSED_ICON, DEFAULT_HIDE_AFTER} from '../src/buoy@murilegus/lib/modules/media/adapter.js';
+import adapter, {transport, liveOf, ICON, PAUSED_ICON, PAUSED_EQ, DEFAULT_HIDE_AFTER} from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
 import {planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/presentation.js';
 
@@ -22,7 +22,7 @@ const p = adapter.media(track, null);
 eq(p.text, 'Monument Valley · Lumen Coast', 'title · artist');
 eq(p.leading, {art: 'https://i.scdn.co/image/ab', icon: ICON}, 'art with the generic icon behind it');
 eq(p.trailing, 'eq', 'playing: the equaliser');
-eq(adapter.media({...track, status: 'Paused'}, null).trailing, PAUSED_ICON, 'paused: ⏸');
+eq(adapter.media({...track, status: 'Paused'}, null).trailing, PAUSED_EQ, 'paused: the equaliser stopped low (was ⏸)');
 eq(planMinimal(p).action, null, 'no button in minimal');
 eq(planMinimal(p, {side: true}).text, null, 'side pill: art + glyph only');
 eq([p.onPress, p.onAction], [raise, onAction], 'click raises the player; buttons go to the source');
@@ -72,7 +72,7 @@ eq(q.text, 'Ad', 'ad text');
 eq(q.trailing, {until: 35000}, 'counts down to at + length − position');
 eq(q.actions.map(a => a.id), ['playpause'], 'nothing to skip');
 eq([q.compact.text, q.compact.subtitle, q.compact.transport], ['Advertisement', 'Spotify', false], 'ad compact');
-eq(spotify.media({...ad, status: 'Paused'}, null).trailing, PAUSED_ICON, 'a paused ad: no countdown');
+eq(spotify.media({...ad, status: 'Paused'}, null).trailing, PAUSED_EQ, 'a paused ad: no countdown');
 eq(spotify.media(track, null).text, 'Monument Valley · Lumen Coast', 'a song through the override: unchanged');
 
 // ARCHITECTURE rule 11: no measurements anywhere in adapter output

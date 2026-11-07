@@ -47,7 +47,9 @@ const LIGHTS = new Set(['off', 'missed', 'waiting']);
 
 // INDICATORS.md: state colours belong to the light/dot slots, never to a keyline.
 const RESERVED = new Set(['#ef9f27', '#e24b4a', '#f0997b', '#5dcaa5', '#3a3a3a']);
-const GLYPHS = new Set(['eq']);
+// 'eq' the moving equaliser; 'eq-paused' its bars stopped low, a near flat line (media
+// paused, 2026-11-07, Ethan: replaced ⏸)
+const GLYPHS = new Set(['eq', 'eq-paused']);
 const REGIONS = ['leading', 'center', 'trailing'];
 
 const isPlain = v => v !== null && typeof v === 'object' &&

@@ -1,7 +1,8 @@
 /**
  * Media (FEATURES M3 "media", SPEC §6, 2026-11-05). Pure: event → presentation data.
  *
- *   minimal   art · "title · artist" · equaliser while playing, ⏸ when paused; no button
+ *   minimal   art · "title · artist" · equaliser while playing, its bars stopped low when
+ *             paused (2026-11-07, Ethan: was ⏸); no button
  *             (Ethan: the transport lives in the compact). A side pill keeps art + glyph.
  *   compact   art 40 · title / artist · app · ⏮ ⏯ ⏭ (only those the player can) · the
  *             position, live, with elapsed and remaining; display only
@@ -17,6 +18,8 @@
 
 export const ICON = 'audio-x-generic-symbolic';
 export const PAUSED_ICON = 'media-playback-pause-symbolic';
+/** The minimal pill's trailing while paused: the equaliser stopped low (kit glyph). */
+export const PAUSED_EQ = 'eq-paused';
 export const DEFAULT_HIDE_AFTER = 5 * 60 * 1000;
 
 const str = v => typeof v === 'string' && v.trim() ? v.trim() : '';
@@ -62,7 +65,7 @@ export default {
             },
             leading: art,
             text: artist ? `${title} · ${artist}` : title,    // a profile `title` is the registry's
-            trailing: playing ? 'eq' : PAUSED_ICON,
+            trailing: playing ? 'eq' : PAUSED_EQ,
             ttl: playing ? 0 : hideAfter,
             compact: ev.compactOnHover === false ? null : {
                 leading: art, text: title,
