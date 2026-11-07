@@ -6,7 +6,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {WindowCorners} from './corners.js';
 import {applyGnomeDefaults, reworkPanel, setClusterBackground, setContrast, setLeftEmpty} from './panel.js';
-import {GNOME_CLOCK, GNOME_DOCK, GNOME_WEATHER} from './lib/kit/settings.js';
+import {GNOME_CLOCK, GNOME_DOCK, GNOME_WEATHER, lingerMs} from './lib/kit/settings.js';
 import {Island} from './lib/kit/island.js';
 import {IdleContent} from './lib/kit/idle.js';
 import {setMascotRest} from './lib/kit/present.js';
@@ -88,6 +88,10 @@ export default class BuoyExtension extends Extension {
         this._island.onCapacityChanged = () => this._stack?.refresh();
         // the pointer on a pill holds its ttl (SPEC §2e)
         this._island.onHold = (id, held) => this._stack?.hold(id, held);
+        // one wait for every activity that only waits (kit activity.js DEFAULT_LINGER)
+        const linger = () => this._stack.setLinger(lingerMs(this._settings.get_string('activity-linger')));
+        linger();
+        this._lingerId = this._settings.connect('changed::activity-linger', linger);
         this._hiddenId = this._settings.connect('changed::apps-hidden',
             () => this._stack.setHiddenApps(slugs('apps-hidden')));
         // Fullscreen (FEATURES M1): Shell hides top chrome on a monitor with a fullscreen
@@ -187,11 +191,11 @@ export default class BuoyExtension extends Extension {
         this._active = null;
         this._dbus?.unexport();
         this._dbus = null;
-        for (const id of [this._hiddenId, this._plainId, this._modulesId, this._widthId, this._restId, this._devId, this._backgroundId]) {
+        for (const id of [this._lingerId, this._hiddenId, this._plainId, this._modulesId, this._widthId, this._restId, this._devId, this._backgroundId]) {
             if (id)
                 this._settings.disconnect(id);
         }
-        this._hiddenId = this._plainId = this._modulesId = this._widthId = this._restId = this._devId = this._backgroundId = 0;
+        this._lingerId = this._hiddenId = this._plainId = this._modulesId = this._widthId = this._restId = this._devId = this._backgroundId = 0;
         if (this._visibleId) {
             this._island.actor.disconnect(this._visibleId);
             this._visibleId = 0;

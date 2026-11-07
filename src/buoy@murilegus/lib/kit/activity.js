@@ -16,6 +16,14 @@ export const FEEDBACK = new Set(['osd', 'input', 'copied']);
 const EIGHT_HOURS = 8 * 60 * 60 * 1000;
 
 /**
+ * How long an activity that only waits stays without news (`linger: true`: a paused
+ * player, a coding agent done or waiting for you) — one rule for every module
+ * (2026-11-07, Ethan): `activity-linger`, 5 min by default. The stack ends it then; each
+ * update is news and starts the wait again.
+ */
+export const DEFAULT_LINGER = 5 * 60 * 1000;
+
+/**
  * @param {object} a  activity as built by an adapter (needs `id` and `kind`)
  * @returns {object} the activity with contract defaults filled in, ttl capped at 8 h
  */
@@ -28,6 +36,7 @@ export function validate(a) {
         state: {},
         priority: PRIORITY[a.kind] ?? 0,
         staleAfter: 0,
+        linger: false,
         style: 'standard',
         alert: false,
         keyline: null,

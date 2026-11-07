@@ -6,6 +6,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Source} from '../../kit/source.js';
 import {appOfBusName} from '../../kit/apps.js';
+import {lingerMs} from '../../kit/settings.js';
 import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, parseEvent, reply, settles, step} from './adapter.js';
 
 const KIND = 'agent';
@@ -160,7 +161,9 @@ export class AgentSource extends Source {
         this._settleAsk(key);
         const askId = `${this._activityId(rec)}:ask`;
         const {question, options, look} = askOf(rec, ev, {shared: this._shared});
-        const minutes = this._settings?.get_int('agent-ask-timeout') ?? 10;
+        // no answer within `activity-linger` (5 min) → deny: the one rule for what waits
+        // (Ethan 2026-11-07; was `agent-ask-timeout`, 10 min)
+        const waitMs = lingerMs(this._settings?.get_string('activity-linger'));
         const quiet = this._quiet(key);
         const entry = {event: ev, askId, watch: 0, focusId: 0};
         this._asks.set(key, entry);
@@ -176,7 +179,7 @@ export class AgentSource extends Source {
                 });
         }
         const asked = this._stack.ask(askId, question, options, {
-            app: rec.source, timeoutMs: minutes * 60 * 1000, fallback: TIMEOUT, look, quiet,
+            app: rec.source, timeoutMs: waitMs, fallback: TIMEOUT, look, quiet,
         });
         // quiet while its terminal is focused; another app focused, it opens (Ethan
         // 2026-11-07). Watched only while such an ask waits.

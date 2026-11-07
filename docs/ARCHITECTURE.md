@@ -216,7 +216,8 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `progress-folders` | as | folders watched for downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03; M3 and renamed from `transfers-folders` 2026-11-06, rule 9) |
 | `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc (default Super+B, SPEC §2c) |
 | `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60 (MASCOT.md, 2026-11-04); the kit's, as Bu is. On the Island page's Pill group since Claude Code's sessions draw Bu (2026-11-07; hidden before: nothing drew Bu, 2026-11-06, Ethan) |
-| `agent-ask-timeout`, `agent-quiet-focused` | — | declared by the agent module (CODING-AGENTS.md §9): minutes before an unanswered permission prompt is denied, 1–30, default 10; no jump open while the session's terminal is focused, default `true`. Whether Claude Code's hooks are installed lives in `~/.claude/settings.json`, not in a key |
+| `activity-linger` | s | `5m` \| `10m` \| `20m` \| `30m`, default `5m`: how long an activity that only waits (`linger`: a paused player, an agent done or waiting for you) stays without news, and how long a permission prompt waits before Deny (SPEC §2, 2026-11-07, Ethan; replaces `media-hide-paused-after` and `agent-ask-timeout`); Island page, Pill group |
+| `agent-quiet-focused` | — | declared by the agent module (CODING-AGENTS.md §9): no jump open while the session's terminal is focused, default `true`. Whether Claude Code's hooks are installed lives in `~/.claude/settings.json`, not in a key |
 | per-module keys | — | declared by the module |
 
 ## Open for later

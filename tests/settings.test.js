@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {MAX_FOLDERS as progressMaxFolders} from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
-import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, weatherNote, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER} from
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, weatherNote, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER, lingerMs} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -47,8 +47,8 @@ for (const name of order) {
 
 // --- every key has a place --------------------------------------------------------------
 const plan = planPrefs(order.map(name => ({name})));
-eq(plan.general, ['expanded-width', 'keybind-focus', 'mascot-rest-after'],
-    'Island page, Pill group: the pill\'s own keys, in schema order; Bu rests after is back with Claude Code (2026-11-07)');
+eq(plan.general, ['expanded-width', 'keybind-focus', 'activity-linger', 'mascot-rest-after'],
+    'Island page, Pill group: the pill\'s own keys, in schema order; Bu rests after is back with Claude Code, the wait for every waiting pill joins it (2026-11-07)');
 eq(plan.apps, ['apps-hidden', 'apps-plain'], 'Apps page');
 eq(plan.developer, ['dev-mode'], 'Developer group');
 eq(plan.windows, ['window-corners', 'window-corners-radius'], 'Windows page: the corners switch, then its radius (SPEC §1a)');
@@ -258,6 +258,16 @@ eq(p2.modules.map(m => [m.id, m.keys]), [['media', ['media-compact-on-hover']]],
     'a module\'s own key lives in its row; a hidden module\'s key is hidden with it');
 throws(() => planPrefs([{name: 'window-shadows'}]), 'a key nobody placed fails loudly');
 throws(() => planPrefs([{name: 'mediaish'}]), 'a prefix match needs the dash');
+
+// --- activity-linger: one wait for every waiting pill (2026-11-07, Ethan) ---------------
+{
+    const [kind2, values] = schema.get_key('activity-linger').get_range().recursiveUnpack();
+    eq([kind2, values, schema.get_key('activity-linger').get_default_value().unpack()],
+        ['enum', ['5m', '10m', '20m', '30m'], '5m'], '5, 10, 20 or 30 minutes; 5 by default');
+    eq(['5m', '10m', '20m', '30m', 'nope', null].map(lingerMs), [300000, 600000, 1200000, 1800000, 300000, 300000],
+        'in ms; anything else 5 min');
+    eq(['5m', '30m'].map(v => choiceLabel('activity-linger', v)), ['5 minutes', '30 minutes'], 'the drop-down\'s words');
+}
 
 // --- choice keys: prefs offers exactly the schema's choices, in order ------------------
 const [kind, choices] = schema.get_key('cluster-background').get_range().recursiveUnpack();

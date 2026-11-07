@@ -1,5 +1,5 @@
 // Run: gjs -m tests/media.test.js   (no Shell needed; adapters are pure)
-import adapter, {transport, liveOf, ICON, PAUSED_ICON, PAUSED_EQ, DEFAULT_HIDE_AFTER} from '../src/buoy@murilegus/lib/modules/media/adapter.js';
+import adapter, {transport, liveOf, ICON, PAUSED_ICON, PAUSED_EQ} from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
 import {planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/presentation.js';
 
@@ -27,11 +27,10 @@ eq(planMinimal(p).action, null, 'no button in minimal');
 eq(planMinimal(p, {side: true}).text, null, 'side pill: art + glyph only');
 eq([p.onPress, p.onAction], [raise, onAction], 'click raises the player; buttons go to the source');
 
-// --- paused pills go after hideAfter (ttl), playing ones stay ----------------------------
-eq(p.ttl, 0, 'playing: until it stops');
-eq(adapter.media({...track, status: 'Paused'}, null).ttl, DEFAULT_HIDE_AFTER, 'paused: 5 min by default');
-eq(DEFAULT_HIDE_AFTER, 300000, '5 minutes');
-eq(adapter.media({...track, status: 'Paused', hideAfter: 60000}, null).ttl, 60000, 'paused: the setting');
+// --- paused pills wait (the kit's linger, 2026-11-07), playing ones stay -------------------
+eq([p.ttl ?? 0, p.linger], [0, false], 'playing: until it stops');
+eq([adapter.media({...track, status: 'Paused'}, null).linger, adapter.media({...track, status: 'Paused'}, null).ttl ?? 0], [true, 0],
+    'paused: it waits (the kit ends it after activity-linger), no ttl of its own');
 
 // --- transport: only what the player can -------------------------------------------------
 eq(transport(track).map(a => a.id), ['prev', 'playpause', 'next'], 'all three');

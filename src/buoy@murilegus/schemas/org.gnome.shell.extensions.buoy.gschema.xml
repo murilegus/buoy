@@ -16,12 +16,6 @@
       <summary>Controls on hover</summary>
       <description>The pill grows into the track, its buttons and position.</description>
     </key>
-    <key name="media-hide-paused-after" type="i">
-      <range min="1" max="60"/>
-      <default>5</default>
-      <summary>Hide paused after</summary>
-      <description>Minutes a paused player keeps its pill.</description>
-    </key>
     <key name="modules-notification" type="b">
       <default>true</default>
       <summary>Notifications</summary>
@@ -76,12 +70,6 @@
       <default>true</default>
       <summary>Claude Code</summary>
       <description>Your Claude Code sessions in the pill, and their permission prompts.</description>
-    </key>
-    <key name="agent-ask-timeout" type="i">
-      <range min="1" max="30"/>
-      <default>10</default>
-      <summary>Deny after (minutes)</summary>
-      <description>A permission prompt nobody answers is denied then.</description>
     </key>
     <key name="agent-quiet-focused" type="b">
       <default>true</default>
@@ -183,6 +171,17 @@
       <default>[5, 7, 11, 13, 18, 22]</default>
       <summary>Parts of the day</summary>
       <description>Start hours of dawn, morning, noon, afternoon, evening and night, 0–23, in that order; one part wraps past midnight. Anything else uses the defaults.</description>
+    </key>
+    <key name="activity-linger" type="s">
+      <choices>
+        <choice value="5m"/>
+        <choice value="10m"/>
+        <choice value="20m"/>
+        <choice value="30m"/>
+      </choices>
+      <default>'5m'</default>
+      <summary>Waiting pills go after</summary>
+      <description>Paused or done pills, and unanswered asks.</description>
     </key>
     <key name="mascot-rest-after" type="i">
       <range min="10" max="600"/>

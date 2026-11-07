@@ -249,7 +249,12 @@ Rules:
 - A tab strip exists only inside Expanded (Home · Media · Timer · …). Pill never shows tabs.
 - Activity ends → removed immediately. `ttl` for short-lived ones (feedback §2e,
   notifications).
-- Highest priority shows; ties → most recent. Feedback (§2e) and transient interrupt, then
+- **What only waits goes after `activity-linger`** (5, 10, 20 or 30 minutes; 5 by
+  default; one rule for every module, 2026-11-07, Ethan): an activity marked `linger`
+  — a paused player, a coding agent done or waiting for you — ends when nothing new
+  happens for that long; every update starts the wait again, the pointer on its pill
+  holds it. A permission prompt nobody answers is denied after the same wait.
+- Highest priority shows; ties → most recent, a fresh one before a stale one (2026-11-07). Feedback (§2e) and transient interrupt, then
   the previous returns. Transient is Apple's `style: 'transient'` (greeting, a picker): it
   opens expanded; feedback never does (2026-11-05: the two were mixed up here).
 - Alert (2026-11-01): the shown activity opens expanded for ~2 s (stays while hovered),
@@ -690,7 +695,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    middle, up and down at once, while the pill is on screen, wherever it shows — side pill, Home's Now; still with
    animations off; 2026-11-05, Ethan), paused its bars stopped low, a near flat line
    through the middle (4 · 6 · 4 · 2 px, 2026-11-07, Ethan; was ⏸), no button; a
-   paused pill goes after `media-hide-paused-after` (5 min). Compact (hover): art 40,
+   paused pill waits (`linger`) and goes after `activity-linger` (5 min, §2). Compact (hover): art 40,
    title / artist · app (a title too long for the compact scrolls right to left: 2 s at
    the start, 30 px/s, two copies 40 px apart so each loop ends where it began; still and
    ellipsized with animations off; 2026-11-05, Ethan), ⏮ ⏯ ⏭, the position running with elapsed and remaining —

@@ -8,8 +8,8 @@ import {Source} from '../../kit/source.js';
 
 /**
  * Media players (FEATURES M3 "media"). Each MPRIS player is one activity from the moment
- * it plays, kept while paused until `media-hide-paused-after` (its ttl); Stopped or gone
- * ends it.
+ * it plays, kept while paused until `activity-linger` passes without news (the kit's
+ * `linger`); Stopped or gone ends it.
  *
  * GNOME's own MprisPlayer (ui/mpris.js) reads the track, the status and drives
  * play/pause, next and previous; it validates broken metadata. Its interface has none
@@ -254,7 +254,6 @@ export class MprisSource extends Source {
             shuffle: typeof p.extra?.Shuffle === 'boolean' ? p.extra.Shuffle : null,
             loop: LOOPS.includes(p.extra?.LoopStatus) ? p.extra.LoopStatus : null,
             ad: String(meta.trackId ?? '').startsWith('/com/spotify/ad/') || title === 'Advertisement',
-            hideAfter: (this._settings?.get_int('media-hide-paused-after') ?? 5) * 60 * 1000,
             compactOnHover: this._settings?.get_boolean('media-compact-on-hover') ?? true,
             raise: () => p.act('raise'),
             onAction: (id, value) => p.act(id, value),

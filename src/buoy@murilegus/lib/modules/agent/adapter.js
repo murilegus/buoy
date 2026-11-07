@@ -17,9 +17,6 @@ import {sinceText} from '../../kit/presentation.js';
 /** The agents this module knows, by the `source` the hook sends (CODING-AGENTS.md §1). */
 export const AGENTS = {claude: 'Claude'};
 
-/** A session's pill ends this long after `Stop` when no new prompt came (§2; Ethan,
- * 2026-11-07: 30 s, 2 min, then 5 min). */
-export const END_AFTER_STOP = 5 * 60 * 1000;
 /** No news for this long → stale: the renderer dims it, Bu `stale` (§3). Working or done
  * alike (Ethan, 2026-11-07: one minute for both; was 2 min while working). */
 export const STALE_MS = 60 * 1000;
@@ -34,7 +31,7 @@ export const PRIORITY = {working: 35, turn: 60, done: 5};
 
 /** The buttons, in order (§4). Always only when Claude Code sent a suggestion. */
 export const DENY = 'Deny', ALLOW = 'Allow', ALWAYS = 'Always';
-/** The ask's fallback after `agent-ask-timeout`: not a button, so never pressed. */
+/** The ask's fallback after `activity-linger`: not a button, so never pressed. */
 export const TIMEOUT = '\u0000timeout';
 
 const WORKING = new Set(['think', 'busy', 'compact']);
@@ -377,7 +374,9 @@ export function agent(rec) {
         },
         priority,
         staleAfter,
-        ttl: rec.stopped ? END_AFTER_STOP : 0,
+        // done, or waiting for you: it only waits — the kit ends it after `activity-linger`
+        // (5 min) without news, as every waiting activity (§2, Ethan 2026-11-07)
+        linger: rec.stopped || pose === 'turn',
         // a click brings its terminal up first; without one, the Claude Code tab (§2)
         pressFirst: true,
         attributes: {project: rec.project ?? '', name: nameOf(rec) ?? '', title: shared ? rec.safeTitle : rec.title, pose},

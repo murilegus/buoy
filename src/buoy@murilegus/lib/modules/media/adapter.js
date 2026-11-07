@@ -8,11 +8,11 @@
  *             position, live, with elapsed and remaining; display only
  *   expanded  the stack's own view (alert): art, title, artist, transport
  *
- * Paused, the pill goes after `media-hide-paused-after` minutes (the event's
- * `hideAfter`, ms) through its ttl; playing again clears it.
+ * Paused, the pill waits (`linger`): the kit ends it after `activity-linger` (5 min)
+ * without news, one rule for every waiting activity (2026-11-07); playing again clears it.
  *
  * The event (source.js): {id, title, artist, album, art, appName, status, canPrev,
- * canNext, canSeek, position, length, at (ms), shuffle, loop, ad, hideAfter,
+ * canNext, canSeek, position, length, at (ms), shuffle, loop, ad,
  * compactOnHover, raise(), onAction(id, value?)}.
  */
 
@@ -20,7 +20,6 @@ export const ICON = 'audio-x-generic-symbolic';
 export const PAUSED_ICON = 'media-playback-pause-symbolic';
 /** The minimal pill's trailing while paused: the equaliser stopped low (kit glyph). */
 export const PAUSED_EQ = 'eq-paused';
-export const DEFAULT_HIDE_AFTER = 5 * 60 * 1000;
 
 const str = v => typeof v === 'string' && v.trim() ? v.trim() : '';
 const num = v => typeof v === 'number' && Number.isFinite(v) ? v : null;
@@ -56,7 +55,6 @@ export default {
         const artist = str(ev.artist);
         const app = str(ev.appName);
         const art = {art: str(ev.art) || null, icon: ICON};
-        const hideAfter = num(ev.hideAfter) ?? DEFAULT_HIDE_AFTER;
         return {
             attributes: {title, artist, album: str(ev.album), art: art.art, app},
             state: {
@@ -66,7 +64,8 @@ export default {
             leading: art,
             text: artist ? `${title} · ${artist}` : title,    // a profile `title` is the registry's
             trailing: playing ? 'eq' : PAUSED_EQ,
-            ttl: playing ? 0 : hideAfter,
+            // paused, it only waits: the kit ends it after `activity-linger` (5 min)
+            linger: !playing,
             compact: ev.compactOnHover === false ? null : {
                 leading: art, text: title,
                 subtitle: [artist, app].filter(Boolean).join(' · ') || null,
