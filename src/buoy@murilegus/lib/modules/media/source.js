@@ -46,6 +46,13 @@ class Player {
         this._key = '';              // status + track: a change re-reads the position
         this._cancel = new Gio.Cancellable();
         this.mpris = new MprisPlayer(busName);
+        // its app, known before the first click (2026-11-07, Ethan: the first Open was
+        // refused focus while this was looked up); null: asked again on a click
+        this._app = null;
+        appOfBusName(busName).then(({app}) => {
+            if (!this._cancel.is_cancelled())
+                this._app ??= app;
+        });
         this.mpris.connectObject(
             'changed', () => this._changed(),
             'notify::can-play', () => this._onChange(this), this);
@@ -121,11 +128,13 @@ class Player {
     // whichever tab it showed. Now: the app from the player's bus pid (kit/apps.js),
     // activated by Shell (always allowed), then the player's own Raise(): a browser then
     // switches to the playing tab itself (Firefox does; Chrome cannot: CanRaise false).
-    async _raise() {
+    async _raise(time) {
         this._app ??= (await appOfBusName(this.busName)).app;   // none yet: asked again next time
         if (this._cancel.is_cancelled())
             return;
-        this._app?.activate();
+        // the click's own timestamp (shell-app.c shell_app_activate_full: 0 would mean
+        // "now", and after the await above there is no event any more)
+        this._app?.activate_full(-1, time);
         Gio.DBus.session.call(this.busName, PATH, 'org.mpris.MediaPlayer2', 'Raise', null, null,
             Gio.DBusCallFlags.NONE, -1, this._cancel, (conn, res) => {
                 try {
@@ -150,7 +159,9 @@ class Player {
             this.mpris.playPause();
             break;
         case 'raise':
-            this._raise();
+            // the click's time, read now: Shell.App.activate after an await would take
+            // a stale one and Mutter would refuse the focus (Firefox "is ready")
+            this._raise(global.get_current_time());
             break;
         case 'shuffle':
             if (typeof this.extra?.Shuffle === 'boolean')
