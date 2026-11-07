@@ -44,7 +44,7 @@ src/buoy@murilegus/
     │   ├── rounded.js      which windows get round top corners, where the arcs fall, the shader; pure (2026-11-04)
     │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
     │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
-    │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
+    │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()` (pure; kit/idle.js runs the one timer while idle, 2026-11-08)
     │   ├── mascot.js       Bu: 13 pose grids, lamp rule, frame timing, pure; MASCOT.md is the source (2026-11-03; eyes data with M4)
     │   ├── registry.js     app-id normalisation table; adapter resolution
     │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)

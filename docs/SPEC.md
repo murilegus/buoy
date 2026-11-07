@@ -290,8 +290,8 @@ surfaces an activity; it is replaced the instant any activity surfaces; nothing 
 while idle — no looping or continuous motion; a change of idle content (the clock's
 minute, `auto` switching plans) is one transition (§5), then stillness (clarified
 2026-11-03). Each plan's own settings sit under it on the prefs **Island** page (2026-11-04,
-ARCHITECTURE rule 9). Until `auto` lands, `idle-content` defaults to `clock` (Ethan,
-2026-11-04); with a plan the grey "off" light is not drawn, amber and red still are.
+ARCHITECTURE rule 9). `idle-content` defaults to `auto` (2026-11-08, when it landed; it was
+`clock` until then, Ethan, 2026-11-04); with a plan the grey "off" light is not drawn, amber and red still are.
 
 Pill structure is the same in every state: `[light] leading · text · trailing [dot]`.
 The two edge slots are Buoy's own status layers; the three zones between them belong to
@@ -363,6 +363,14 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   click → Home, as in every idle state.
 - **Motion.** A switch is one content transition (fade out 100 ms / in 200 ms, plus the
   width morph if the plan is wider), then nothing until the next switch.
+- **Built** (2026-11-08): `kit/smartstack.js` (pure: `choose`, `scrollTo`, `stackOrder`,
+  `intervalMs`) and `kit/idle.js`. Between turns a re-rank (a feed's change, the wall
+  clock's minute) keeps the shown plan while it is still among the highest; ties move on
+  only at a turn. While `auto` is on, every plan of the stack has its feed and is told that
+  the pill shows (the weather asks on its own interval meanwhile), and the wall clock runs
+  whatever plan shows. A scroll steps once per gesture (400 ms apart: a touchpad sends many
+  events) and only on the idle pill; with `auto` off it goes on to the panel's workspace
+  scroll. `idle-auto-plans` defaults to `['calendar', 'weather', 'clock']`.
 - **Later plans** (news, exchange rate, stocks): each its own module, off by default,
   fetching through Soup at most every 30 min and only while it is in `idle-auto-plans`;
   they are why `auto` is a ranked stack rather than a fixed rotation.

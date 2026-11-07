@@ -84,6 +84,7 @@ export class Pill {
             a.connect('notify::hover', () => this._hoverChanged());
             a.connect('button-press-event', (_a, ev) => island._onPillPress(this, ev));
             a.connect('button-release-event', (_a, ev) => island._onPillRelease(this, ev));
+            a.connect('scroll-event', (_a, ev) => island._onPillScroll(this, ev));
         }
     }
 
@@ -128,8 +129,10 @@ export class Pill {
      * @param {string} [opts.role]  'centre' | 'side'
      * @param {string} [opts.light]  buoy light (drawn on the centre pill only)
      * @param {number} [opts.more]  +N on this pill (the last one)
+     * @param {boolean} [opts.fade]  cross-fade though the activity is the same (the idle
+     *   pill switching plans in `auto`, SPEC §2a-iii)
      */
-    configure(activity, {role = 'centre', light = 'off', more = 0} = {}) {
+    configure(activity, {role = 'centre', light = 'off', more = 0, fade = false} = {}) {
         const same = (activity?.id ?? null) === this.id;
         if (!same)
             this._stopCompact();
@@ -143,7 +146,7 @@ export class Pill {
         }
         if (this._compact && !this._hasCompact())
             this._stopCompact();     // its compact went away in this update
-        this._setContent(this._restingContent(), same ? 'follow' : true);
+        this._setContent(this._restingContent(), same && !fade ? 'follow' : true);
         // A pill that appears (or changes activity) under a resting pointer is hovered
         // without an enter event: look again, so its compact still opens.
         if (!same)
