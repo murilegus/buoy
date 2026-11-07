@@ -61,7 +61,7 @@ src/buoy@murilegus/
             │               keys, 2026-11-05)
             ├── adapter.js  default presentation for this module's kinds
             ├── tab.js      content for its tab in expanded (optional): export a class,
-            │               `new Tab({close})` → {actor, destroy(), update?(activities)}; a kind
+            │               `new Tab({close, from})` → {actor, destroy(), update?(activities)} (`from`: the activity whose pill opened it, 2026-11-07); a kind
             │               tab's `update` gets its kind's activities at once and on each
             │               change (2026-11-05); built on first selection, destroyed when
             │               expanded closes; `close()` closes the island after an action

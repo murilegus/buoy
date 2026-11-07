@@ -432,6 +432,9 @@ export class Island {
         if (tab) {
             this._home = new Home({
                 modules: this.tabs.modules, list: this._list, tab,
+                // the activity whose pill opened it: its tab shows that one first (the
+                // Media tab's chip, 2026-11-07, Ethan)
+                from: pill.activity?.id ?? null,
                 maxHeight: this._s.expanded.h, settings: this.tabs.settings(),
                 onSlot: id => this.tabs.onSlot?.(id),
                 // close first: the prefs window must get the keyboard the grab holds

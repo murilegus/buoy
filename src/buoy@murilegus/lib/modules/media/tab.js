@@ -22,13 +22,19 @@ const ART = 72;
 
 export class MediaTab {
     /** @param {{close?: function():void}} [kit]  close(): the island, after "Open <app>" */
-    constructor({close = null} = {}) {
+    /**
+     * @param {object} [kit]
+     * @param {function():void} [kit.close]  the island, after an action
+     * @param {?string} [kit.from]  the activity whose pill opened the island: its chip is
+     *   chosen (a click on Firefox's pill shows Firefox, not the first player; 2026-11-07)
+     */
+    constructor({close = null, from = null} = {}) {
         this._close = close;
         this.actor = new St.BoxLayout({
             style_class: 'buoy-media-tab', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
         });
         this._list = [];
-        this._chosen = null;     // the chip the user picked, by activity id
+        this._chosen = from;     // the chip shown: the pill it was opened from, then the user's pick
         this._dragging = false;
         this._pending = false;   // a list came during a drag: render after it
     }

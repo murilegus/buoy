@@ -43,13 +43,16 @@ export class Home {
      * @param {function():void} [opts.onMissedSeen]  Home was shown with that section
      * @param {function(object):void} [opts.onMissedOpen]  one of its rows was opened
      * @param {function():void} [opts.onMissedClear]  its × was clicked
+     * @param {?string} [opts.from]  the activity whose pill opened it; a tab.js gets it as
+     *   `from` (the Media tab shows that player first)
      */
     constructor({
-        modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null, onClose = null,
+        modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null, onClose = null, from = null,
         missed = [], onMissedSeen = null, onMissedOpen = null, onMissedClear = null,
     }) {
         this._modules = modules;
         this._list = list;
+        this._from = from;           // the activity id whose pill opened Home, or null
         this._missed = missed;
         this._onMissedSeen = onMissedSeen;
         this._onMissedOpen = onMissedOpen;
@@ -338,7 +341,7 @@ export class Home {
     _moduleTab(id) {
         let tab = this._tabs.get(id);
         if (!tab) {
-            tab = new (this._module(id).tab)({close: () => this._onClose?.()});
+            tab = new (this._module(id).tab)({close: () => this._onClose?.(), from: this._from});
             this._tabs.set(id, tab);
             const t = findTab(this._strip, id);
             if (t?.type === 'kind')
