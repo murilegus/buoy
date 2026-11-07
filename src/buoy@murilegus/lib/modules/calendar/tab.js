@@ -13,8 +13,9 @@ import {isWeekend, monthDays, monthTitle, pickedTitle, stepDay, weekdayInitials}
 /**
  * The Calendar tab (FEATURES M3 "calendar"; a standalone tab, SPEC §2b; two sides,
  * 2026-11-08, Ethan): the month on the left to pick a day — the month's name in the accent
- * and the year in grey, ‹ › at its right, weekends dimmed, other months' days left blank,
- * today filled in the accent, the picked day lit, an accent dot under a day with events —
+ * and the year in grey, ‹ › at its right, every date in two figures (the columns line up),
+ * weekends dimmed, the months around in grey (a click goes there), today a circle filled
+ * in the accent, the picked day lit, an accent dot under a day with events —
  * and the picked day under its title ("Today, 8 November") on the right: each event a card,
  * a dot, its title, its time at the end. Today picked: what is left of today, then the
  * week ahead (SPEC §3 "Up next"); another day: that day's. ‹ › move the picked day a
@@ -115,22 +116,20 @@ export class CalendarTab {
             text: d, style_class: 'buoy-calendar-weekday', x_align: Clutter.ActorAlign.CENTER,
         }), i, 0, 1, 1));
         monthDays(this._year, this._month, {weekStart}).forEach((d, i) => {
-            if (!d.inMonth) {           // other months' days: blank, the grid keeps its place
-                layout.attach(new St.Widget({style_class: 'buoy-calendar-day'}), i % 7, 1 + Math.floor(i / 7), 1, 1);
-                return;
-            }
             const button = new St.Button({
                 style_class: 'buoy-calendar-day', can_focus: true,
                 accessible_name: pickedTitle(d.day, now),
             });
-            if (isWeekend(d.day))
+            if (!d.inMonth)
+                button.add_style_class_name('buoy-calendar-other');
+            else if (isWeekend(d.day))
                 button.add_style_class_name('buoy-calendar-weekend');
             if (d.day === today)
                 button.add_style_class_name('buoy-calendar-today');
             if (d.day === this._picked)
                 button.add_style_class_name('buoy-calendar-picked');
             const box = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_align: Clutter.ActorAlign.CENTER});
-            box.add_child(new St.Label({text: String(d.date), x_align: Clutter.ActorAlign.CENTER}));
+            box.add_child(new St.Label({text: String(d.date).padStart(2, '0'), x_align: Clutter.ActorAlign.CENTER}));
             const dot = new St.Widget({style_class: 'buoy-calendar-dot', x_align: Clutter.ActorAlign.CENTER});
             dot.opacity = this._reader.hasEvents(d.day) ? 255 : 0;
             box.add_child(dot);

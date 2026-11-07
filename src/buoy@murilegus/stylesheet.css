@@ -424,10 +424,11 @@
 .buoy-calendar-arrow:hover { background-color: rgba(255, 255, 255, 0.2); }
 .buoy-calendar-arrow:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-calendar-weekday { font-size: 11px; color: rgba(255, 255, 255, 0.45); width: 30px; padding-bottom: 2px; text-align: center; }
-.buoy-calendar-day { width: 30px; height: 26px; border-radius: 99px; color: #fff; font-size: 12px; font-feature-settings: "tnum"; }
+.buoy-calendar-day { width: 26px; height: 26px; margin: 0 2px; border-radius: 13px; color: #fff; font-size: 12px; font-feature-settings: "tnum"; }
 .buoy-calendar-day:hover { background-color: rgba(255, 255, 255, 0.12); }
 .buoy-calendar-day:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
-.buoy-calendar-weekend { color: rgba(255, 255, 255, 0.5); }
+.buoy-calendar-weekend { color: rgba(255, 255, 255, 0.55); }
+.buoy-calendar-other { color: rgba(255, 255, 255, 0.28); }
 .buoy-calendar-picked { background-color: rgba(255, 255, 255, 0.2); }
 /* after picked: today stays filled in the accent, picked or not */
 .buoy-calendar-today, .buoy-calendar-today:hover { background-color: -st-accent-color; color: -st-accent-fg-color; font-weight: 700; }
