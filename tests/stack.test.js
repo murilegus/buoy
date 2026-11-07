@@ -249,6 +249,47 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.top.id, 'media:spotify', 'ttl 0 = until the source ends it');
     eq(clock.pending, 0, 'ttl 0 arms no timer');
 }
+// --- onExpire: only when the ttl ends it (2026-11-08) ----------------------------
+{
+    const {clock, stack} = setup();
+    const log = [];
+    const n = id => ({id, kind: 'notification', ttl: 1000, onExpire: () => log.push(`${id} ${stack.top?.id ?? 'none'}`)});
+    stack.surface(n('a'));
+    clock.advance(1000);
+    eq(log, ['a none'], 'ttl ran out: onExpire once, after the end');
+    stack.surface(n('b'));
+    stack.end('b');
+    clock.advance(5000);
+    eq(log, ['a none'], 'end(): no onExpire');
+    stack.surface(n('c'));
+    stack.hold('c', true);
+    clock.advance(5000);
+    eq(log, ['a none'], 'held: no expiry');
+    stack.hold('c', false);
+    clock.advance(1000);
+    eq(log, ['a none', 'c none'], 'let go: expires after the whole ttl again');
+    stack.surface(n('d'));
+    clock.advance(600);
+    stack.update('d', {ttl: 1000});
+    clock.advance(600);
+    eq(log.length, 2, 'an update with ttl restarts it: not yet');
+    clock.advance(400);
+    eq(log.at(-1), 'd none', 'then it expires');
+    stack.surface({id: 'e', kind: 'osd', ttl: 500});
+    clock.advance(500);
+    eq([log.length, stack.top], [3, null], 'no onExpire: ends as before');
+    const boom = () => {
+        throw new Error('boom');
+    };
+    stack.surface({...n('f'), onExpire: boom});
+    let threw = false;
+    try {
+        clock.advance(1000);
+    } catch {
+        threw = true;
+    }
+    eq([threw, stack.top], [true, null], 'a throwing onExpire: the activity is already gone');
+}
 {
     const {clock, stack} = setup();
     stack.surface({id: 'o', kind: 'osd', ttl: 1000});

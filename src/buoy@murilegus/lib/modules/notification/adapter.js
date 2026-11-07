@@ -4,7 +4,7 @@
  * Notification and Source and passes plain fields plus the callbacks that act on them.
  *
  * Event: {id, title, body, markup, appName, appIcon, icon, image, at, count, critical,
- *         shared, actions, activate, onAction}
+ *         shared, actions, activate, onAction, expire}
  *   title, body  the notification's; body may be absent (a profile's `hideBody`)
  *   markup       the body is Pango markup (the freedesktop daemon's `useBodyMarkup`)
  *   appName      the source's title ("Firefox", "System")
@@ -17,6 +17,7 @@
  *   shared       the screen is shared or recorded (§5): only the app is named
  *   actions      the notification's action labels, in its order
  *   activate()   the banner's click; onAction(id) a button: `a<i>` an action, `dismiss` ×
+ *   expire()     the pill's 6 s ran out (its `onExpire`): what the banner's hide does
  */
 
 /** How long a notification's pill stays (§2), held while hovered (the kit's hold). */
@@ -219,6 +220,7 @@ export default {
             pressFirst: true,
             onPress: ev.activate ?? null,
             onAction: ev.onAction ?? null,
+            onExpire: ev.expire ?? null,
             attributes: {title, body, app},
         };
     },

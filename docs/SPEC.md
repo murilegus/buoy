@@ -577,7 +577,10 @@ sizes, Bu's poses, special days, weather, settings and tests.
   focused one, so `apps-hidden` and profiles apply (hide a password manager by name);
   a window without a `.desktop` counts as `system`. `clipboard-show-preview` off: "Copied"
   alone and the clipboard is not read. Click → Home (no tab of its kind).
-- **Screenshot** (2026-11-05): not feedback but a `notification`, from Shell's own
+- **Screenshot** (2026-11-05; settled 2026-11-08, NOTIFICATIONS.md §7: step 1's pill and
+  card already show it — the thumbnail, "Show in Files", a click opens it — so the extras
+  below (~3 s, thumbnail minimal, Delete) are dropped, and it goes when its pill ends, as
+  GNOME's transient banner): not feedback but a `notification`, from Shell's own
   "Screenshot captured" (`ui/screenshot.js` `_storeScreenshot`: the PNG goes to the
   clipboard, then a transient notification with the thumbnail, "Show in Files" and
   activate → open the file), presented by the notification module's override for Shell's

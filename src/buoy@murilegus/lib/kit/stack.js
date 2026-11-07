@@ -18,6 +18,8 @@ import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
  *     surfaced; the newest feedback (osd,
  *     copied) goes first unless an ask is on top, and covers pill 1 only (pillWindow)
  *   - end removes immediately; ttl (capped at 8 h by validate) ends it; ttl 0 = until ended;
+ *     an activity's `onExpire()` runs after its ttl ended it, never on end() (GNOME's
+ *     transient notifications go when their banner would have, 2026-11-08)
  *     hold(id, true) — the pointer on its pill — pauses the ttl, hold(id, false) gives it
  *     a fresh one (SPEC §2e: hover holds feedback)
  *   - staleAfter ms without update → `isStale`; update clears it
@@ -149,7 +151,7 @@ export class ActivityStack {
         this._wrapExpand(a, activity.onExpand);
         this._items.set(a.id, a);
         if (a.ttl > 0 && !this._held.has(a.id))
-            this._arm(a.id, 'ttl', a.ttl, () => this.end(a.id));
+            this._arm(a.id, 'ttl', a.ttl, () => this._expire(a.id));
         this._armStale(a);
         this._armLinger(a);
         this._render({changed: a.id, alert: a.alert ? a.id : null});
@@ -171,7 +173,7 @@ export class ActivityStack {
         if ('ttl' in patch && !this._held.has(id)) {
             this._disarm(id, 'ttl');
             if (a.ttl > 0)
-                this._arm(id, 'ttl', a.ttl, () => this.end(id));
+                this._arm(id, 'ttl', a.ttl, () => this._expire(id));
         }
         this._armStale(a);
         this._armLinger(a);
@@ -402,7 +404,7 @@ export class ActivityStack {
         } else {
             this._held.delete(id);
             if (a.ttl > 0)
-                this._arm(id, 'ttl', a.ttl, () => this.end(id));
+                this._arm(id, 'ttl', a.ttl, () => this._expire(id));
             this._armLinger(a);
         }
     }
@@ -451,6 +453,14 @@ export class ActivityStack {
     }
 
     // --- internals ----------------------------------------------------------
+
+    // The ttl ran out: end it, then tell its owner (`onExpire`).
+    _expire(id) {
+        const a = this._items.get(id);
+        if (!this.end(id))
+            return;
+        a?.onExpire?.();
+    }
 
     // Remove without rendering or history (replacement, end). Leaves _asks alone:
     // ask() registers the question before surface() replaces any old activity.

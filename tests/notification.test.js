@@ -79,6 +79,10 @@ eq(build({appIcon: null}).leading, 'preferences-system-notifications-symbolic', 
     eq(c.card.header, {icon: {type: 'icon', icon: 'org.telegram.desktop'}, text: 'Telegram', at: 1000}, 'plan: the header');
     eq(c.actions.map(x => x.id), ['a0', 'a1'], 'plan: the row of its own actions');
 }
+{
+    const expire = () => 'gone';
+    eq([build({expire}).onExpire, build({}).onExpire], [expire, null], 'expire → onExpire (what the banner\'s hide does)');
+}
 eq(build({}).compact.card.picture, null, 'no picture and no own icon: none (the app\'s is in the header)');
 {
     const image = {fake: 'Gio.FileIcon'};

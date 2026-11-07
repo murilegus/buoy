@@ -2,9 +2,9 @@
 
 The reference for showing the desktop's notifications on Buoy: the pill that replaces
 GNOME's banner, its compact with the notification's own buttons, Do Not Disturb, what
-hides while the screen is shared, and (next) the Notifications tab and Shell's
-screenshot notice. FEATURES M3 "notifications" points here. Decided with Ethan,
-2026-11-07; built in three steps (§8).
+hides while the screen is shared, the Notifications tab and Shell's screenshot notice.
+FEATURES M3 "notifications" points here. Decided with Ethan, 2026-11-07; built in three
+steps (§8).
 
 Shell source read for this (gnome-50): `ui/messageTray.js` (MessageTray, Source,
 Notification, `_onNotificationRequestBanner`, `_updateState`, `_showNotification`,
@@ -230,17 +230,32 @@ List                                             An app's view (a stack clicked)
   above its text), with the Do Not Disturb chip still on top.
 - **Shared screen:** cards name the app and "New notification", no picture (§5).
 
-## 7. Next: Shell's screenshot notice (step 3)
+## 7. Shell's screenshot notice (step 3)
 
-"Screenshot captured" / "Screencast recorded" (`ui/screenshot.js`) through an override of
-that notification: pill 1 ~3 s, never missed, thumbnail minimal; compact with "Show in
-Files", Delete (to the Trash) and a click that opens it (SPEC §2e).
+"Screenshot captured" / "Screencast recorded" (`ui/screenshot.js` `_storeScreenshot`,
+`_showNotification`) are ordinary notifications, so step 1 already shows them: the pill
+("Screen Capture", the title), the card with the thumbnail (the notification's `gicon`),
+"Show in Files" (Shell's own action) and a click that opens the file (its `activated`).
+Decided 2026-11-08 (Ethan, seeing it): that is enough — no override of its own. The
+2026-11-05 extras are dropped: a ~3 s pill (it keeps the 6 s of any notification), the
+thumbnail in minimal (the app's icon), and Delete.
+
+**Transient notifications go when their pill ends.** Shell sends both with
+`isTransient: true`; GNOME destroys such a notification when its banner hides
+(`ui/messageTray.js` `_hideNotificationCompleted`: EXPIRED), so it never stays in the
+list. The pill skips the banner, so its ttl does the same: the stack calls the
+activity's `onExpire()` when the ttl ends it (never on `end()`), and the source destroys
+the app's transient notifications (EXPIRED). A freedesktop notification with the
+`transient` hint is the same (`ui/notificationDaemon.js`). Hovering holds the pill, and
+the notification with it; × and a click end it as before. Never missed either way: it is
+gone before the tab could count it.
 
 ## 8. Steps
 
 1. **The pill** (merged 2026-11-07, #143): §1–§5; `notification-replace-banners`.
-2. **The tab** (built 2026-11-07): §6.
-3. **The screenshot notice**: §7.
+2. **The tab** (merged 2026-11-08, #144): §6.
+3. **The screenshot notice** (2026-11-08): §7 — step 1 shows it; transient notifications
+   now go when their pill ends.
 
 ## 9. Settings
 
