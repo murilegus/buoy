@@ -190,10 +190,10 @@ List                                             An app's view (a stack clicked)
 
 - **The tab's icon:** GNOME's bell, with a dot at its top right while the list has any
   notification (2026-11-08, Ethan). The kit draws it over the icon (a module's `badge()`,
-  `kit/tabs.js`): amber, the buoy light's colour, ringed in the strip's colour so it
-  reads as cut out of the bell, as Yaru's `message-indicator-symbolic` (the bell with a
-  dot Ubuntu's top bar shows; GNOME's own is a bare dot). Not that icon itself (Ethan:
-  one look on every theme). Read when the strip is planned, so only while the island is
+  `kit/tabs.js`): small, in the icon's own grey (white on the open tab; no amber: one
+  look with the strip), ringed in the strip's colour so it reads as cut out of the bell,
+  as Yaru's `message-indicator-symbolic` (the bell with a dot Ubuntu's top bar shows;
+  GNOME's own is a bare dot). Not that icon itself (Ethan: one look on every theme). Read when the strip is planned, so only while the island is
   open; the tab asks for it again after Clear or ×.
 - **The bar:** "N missed" (amber, with the light's dot) when some were unseen, "N
   notifications", a Do Not Disturb chip lit with the accent while on (GNOME's own

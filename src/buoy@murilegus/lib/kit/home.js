@@ -24,7 +24,7 @@ function badged(glyph) {
         // BinLayout places it by its align; nudged out by a translation, which leaves
         // the layout alone (a negative CSS margin overflows St's preferred width)
         x_align: Clutter.ActorAlign.END, y_align: Clutter.ActorAlign.START,
-        translation_x: 3, translation_y: -3,
+        translation_x: 2, translation_y: -2,
     }));
     return bin;
 }
