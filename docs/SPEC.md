@@ -704,7 +704,14 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    ellipsized with animations off; 2026-11-05, Ethan), ⏮ ⏯ ⏭, the position running with elapsed and remaining —
    display only. Tab Media: players as chips, art, title (scrolling
    like the compact's when long) / artist / album, "Open app",
-   a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. Art in minimal and compact has corners
+   a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. "Open app" brings the player's window up
+   (Shell activates the app found from the player's bus pid), then asks the player itself
+   to come forward (MPRIS `Raise()`). **Firefox** then switches to the tab that plays.
+   **Chrome (and Chromium) cannot**: its MPRIS player says `CanRaise` false and sends no
+   `DesktopEntry`, so Buoy brings Chrome's window up on whichever tab it shows — the
+   playing tab is not reachable from outside Chrome (2026-11-07, seen on Ethan's machine).
+   One MPRIS player per browser: its most recent playing tab, so two playing tabs in one
+   browser are one pill. Art in minimal and compact has corners
    inside the pill's: the pill's radius less the art's inset across, the content padding
    (24 − 14 = 10 on the compact's 40; minimal 16 − 14 = 2, raised to 6, under which a
    20 px art reads square); in expanded and the tab it stays square (2026-11-05, Ethan). No volume in the tab: per-app volume and
