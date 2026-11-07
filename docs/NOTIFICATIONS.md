@@ -92,7 +92,15 @@ pill's content instead of adding a pill.
   the end of that call before ending (no flicker).
 - **Missed:** GNOME holds banners while full-screen, so no pill appears while the island
   is hidden; the queue shows when it is back (as GNOME's banners do), still unseen (§1),
-  so the tab counts it. The missed light stays with Buoy's own activities.
+  so the tab counts it.
+- **The amber light** (2026-11-08, Ethan): on while GNOME's list holds notifications
+  nobody has seen — the date menu's own count, `unseenCount` less the queue
+  (`ui/dateMenu.js` `MessagesIndicator._updateCount`), so a notification about to show is
+  not counted: one that came during Do Not Disturb, past a full queue, or held while full
+  screen. It goes off when they are seen (the tab, or GNOME's list), not when Home is
+  shown: the source flags it (`stack.flagMissed`), apart from the stack's missed history.
+  GNOME hides its own dot during Do Not Disturb; Buoy's light stays, since that is when
+  notifications are missed.
 
 ## 3. The compact (hover): a card
 
@@ -180,6 +188,11 @@ List                                             An app's view (a stack clicked)
 └───────────────────────────────────────────────┘ └───────────────────────────────────────────┘
 ```
 
+- **The tab's icon:** GNOME's bell, with a dot at its top right while the list has any
+  notification (2026-11-08, Ethan). No theme here ships a bell with a dot, so the kit
+  draws one over the icon (a module's `badge()`, `kit/tabs.js`), ringed in the strip's
+  colour; read when the strip is planned, so only while the island is open, and the tab
+  asks for it again after Clear or ×.
 - **The bar:** "N missed" (amber, with the light's dot) when some were unseen, "N
   notifications", a Do Not Disturb chip lit with the accent while on (GNOME's own
   `show-banners`, inverted, as the quick toggle `ui/status/doNotDisturb.js`; either

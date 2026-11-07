@@ -11,6 +11,24 @@ import {step} from './keys.js';
 const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edge
 const STRIP_H = 60; // first guess for the strip + panel padding; measured once laid out
 
+// what the strip draws: its tabs and their dots
+const stripKey = strip => strip.tabs.map(t => `${t.id}${t.badge ? '•' : ''}`).join();
+
+// A tab's icon with a dot at its top right (the Notifications tab while GNOME's list has
+// some, 2026-11-08), as GNOME's date menu shows its message indicator.
+function badged(glyph) {
+    const bin = new St.Widget({layout_manager: new Clutter.BinLayout(), y_align: Clutter.ActorAlign.CENTER});
+    bin.add_child(glyph);
+    bin.add_child(new St.Widget({
+        style_class: 'buoy-tab-dot',
+        // BinLayout places it by its align; nudged out by a translation, which leaves
+        // the layout alone (a negative CSS margin overflows St's preferred width)
+        x_align: Clutter.ActorAlign.END, y_align: Clutter.ActorAlign.START,
+        translation_x: 4, translation_y: -3,
+    }));
+    return bin;
+}
+
 /**
  * The panel a click opens (SPEC §2b, §3): the tab strip and the selected tab's body.
  * Built per open and destroyed when expanded closes, so the next open follows context
@@ -103,7 +121,10 @@ export class Home {
         this._header.add_child(prefs);
         this._column.add_child(this._header);
         this._column.add_child(this._body);
-        this.actor.connect('destroy', () => this._destroyTabs());
+        this.actor.connect('destroy', () => {
+            this._gone = true;
+            this._destroyTabs();
+        });
         // The body takes what the cap leaves after the strip and padding (font scaling
         // changes them). notify::allocation fires inside Clutter's allocation: measure
         // just before the next redraw instead, once.
@@ -136,15 +157,26 @@ export class Home {
      */
     update(list) {
         this._list = list;
-        const before = this._strip.tabs.map(t => t.id).join();
+        const before = stripKey(this._strip);
         this._plan();
         if (this._menu)
             return;                  // the menu lists standalone tabs: the list changes nothing
         if (!findTab(this._strip, this._current))
             this.select(HOME);       // its last activity ended
-        else if (before !== this._strip.tabs.map(t => t.id).join() || this._isLive(this._current))
+        else if (before !== stripKey(this._strip) || this._isLive(this._current))
             this.select(this._current);
         this._feedTabs();
+    }
+
+    // A tab's badge may change without a new list (the Notifications tab cleared): the
+    // strip is planned again and redrawn when it changed; the body stays.
+    _refreshStrip() {
+        if (this._menu || this._gone)
+            return;
+        const before = stripKey(this._strip);
+        this._plan();
+        if (before !== stripKey(this._strip))
+            this._renderStrip();
     }
 
     // Kind tabs with a tab.js keep their actor: hand them their activities instead.
@@ -221,17 +253,19 @@ export class Home {
     // The slot looks like any other tab (no ▾, 2026-11-02); ⋯ changes what sits in it.
     _tabButton(tab, id) {
         const active = id === this._current;
-        const button = this._button({icon: tab.icon, label: active ? tab.label : null}, tab.label);
+        const button = this._button({icon: tab.icon, label: active ? tab.label : null, badge: tab.badge}, tab.label);
         button.checked = active;
         button.connect('clicked', () => this.select(id));
         return button;
     }
 
-    _button({icon, label}, accessibleName) {
+    _button({icon, label, badge = false}, accessibleName) {
         const box = new St.BoxLayout({style_class: 'buoy-tab-box'});
         // a theme name, or another app's image by path (present.js iconProps)
-        if (icon)
-            box.add_child(new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
+        if (icon) {
+            const glyph = new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER});
+            box.add_child(badge ? badged(glyph) : glyph);
+        }
         if (label)
             box.add_child(new St.Label({text: label, y_align: Clutter.ActorAlign.CENTER}));
         return new St.Button({
@@ -341,7 +375,10 @@ export class Home {
     _moduleTab(id) {
         let tab = this._tabs.get(id);
         if (!tab) {
-            tab = new (this._module(id).tab)({close: () => this._onClose?.(), from: this._from});
+            tab = new (this._module(id).tab)({
+                close: () => this._onClose?.(), from: this._from,
+                refreshStrip: () => this._refreshStrip(),
+            });
             this._tabs.set(id, tab);
             const t = findTab(this._strip, id);
             if (t?.type === 'kind')

@@ -1,4 +1,4 @@
-import {NotificationSource} from './source.js';
+import {NotificationSource, hasNotifications} from './source.js';
 import adapter from './adapter.js';
 import {NotificationsTab} from './tab.js';
 
@@ -9,6 +9,9 @@ export default {
     id: 'notification',
     title: 'Notifications',
     icon: 'preferences-system-notifications-symbolic',
+    // the bell carries a dot while GNOME's list has some (2026-11-08); read when the
+    // strip is planned, so only while the island is open
+    badge: hasNotifications,
     kinds: ['notification'],
     source: NotificationSource,
     adapter,

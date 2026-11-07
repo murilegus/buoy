@@ -33,6 +33,10 @@ const REPLACE_KEY = 'notification-replace-banners';
  *   queue is stamped on the tray's `queue-changed`.
  * - The screen shared or recorded (kit/sharing.js): the text hides (§5), watched only
  *   while a pill is up.
+ * - Unseen (§2): while GNOME's list holds notifications nobody has seen — the date
+ *   menu's own count, `unseenCount` less the queue (ui/dateMenu.js MessagesIndicator) —
+ *   the buoy light is amber (stack.flagMissed), until the tab or GNOME's list shows them.
+ *   Watched on each source's `notify::count` and the queue, as the date menu does.
  * - No timer of its own: the pill's 6 s are its ttl.
  */
 export class NotificationSource extends Source {
@@ -53,14 +57,27 @@ export class NotificationSource extends Source {
         });
         // emitted after each push, before Shell's `_updateState` (ui/messageTray.js
         // `_onNotificationRequestBanner`)
-        tray.connectObject('queue-changed', () => this._stamp(tray), this);
+        tray.connectObject(
+            'queue-changed', () => {
+                this._stamp(tray);
+                this._countLater();
+            },
+            'source-added', (_t, src) => this._watchCount(src),
+            'source-removed', (_t, src) => {
+                src.disconnectObject(this);
+                this._countLater();
+            }, this);
         this._stamp(tray);
+        tray.getSources().forEach(src => this._watchCount(src));
+        this._countLater();
     }
 
     disable() {
         this._injections?.clear();
         this._injections = null;
         Main.messageTray.disconnectObject(this);
+        Main.messageTray.getSources().forEach(src => src.disconnectObject(this));
+        this._stack?.flagMissed(KIND, false);
         this._queuedAt = null;
         for (const [app, pill] of this._pills ?? [])
             this._drop(app, pill);
@@ -68,6 +85,24 @@ export class NotificationSource extends Source {
         this._sharing?.stop();
         this._sharing = null;
         super.disable();
+    }
+
+    _watchCount(src) {
+        src.connectObject('notify::count', () => this._countLater(), this);
+        this._countLater();
+    }
+
+    // After the current call: a new notification is counted unseen before Shell's queue
+    // takes it (ui/messageTray.js Source.addNotification), so the light would blink.
+    _countLater() {
+        if (this._countPending)
+            return;
+        this._countPending = true;
+        Promise.resolve().then(() => {
+            this._countPending = false;
+            if (this._stack)
+                this._stack.flagMissed(KIND, unseenCount(Main.messageTray) > 0);
+        });
     }
 
     _replacing() {
@@ -226,6 +261,21 @@ export class NotificationSource extends Source {
 
 function monotonicMs() {
     return GLib.get_monotonic_time() / 1000;
+}
+
+/**
+ * @param {MessageTray.MessageTray} tray
+ * @returns {number} notifications nobody has seen, as the date menu counts them (ui/dateMenu.js
+ *   MessagesIndicator `_updateCount`): the queue's are about to show
+ */
+function unseenCount(tray) {
+    const unseen = tray.getSources().reduce((sum, src) => sum + src.unseenCount, 0);
+    return Math.max(0, unseen - tray.queueCount);
+}
+
+/** @returns {boolean} GNOME's list has notifications (the tab's bell has a dot) */
+export function hasNotifications() {
+    return Main.messageTray.getSources().some(src => src.notifications.length > 0);
 }
 
 // MessageTray `_updateState`'s own test for showing the next banner now.

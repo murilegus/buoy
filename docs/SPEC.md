@@ -304,7 +304,9 @@ idle `none` keeps the full 120 px.
 ### 2a-i. The buoy light (left edge slot, idle, minimal and compact)
 
 Static, never blinking. Off (faint grey, idle `none` only) · **amber** = something ended while you were
-away / fullscreen (missed history: hover names it, opening Home turns it off — 2026-11-03) · **red** = something
+away / fullscreen (missed history: hover names it, opening Home turns it off — 2026-11-03), or GNOME's
+notifications nobody has seen (off once the Notifications tab or GNOME's list shows them —
+2026-11-08, NOTIFICATIONS.md §2) · **red** = something
 is waiting for your answer (an `ask` while DND). Red › amber. Shown in idle, minimal
 **and** compact — it is a separate slot, so it never competes with the app icon; `present.js`
 nudges the leading zone inward when the light is on. Hidden only while expanded, where

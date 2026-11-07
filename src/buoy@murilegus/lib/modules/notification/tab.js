@@ -41,9 +41,13 @@ const BANNERS = 'org.gnome.desktop.notifications';
  * gone from there leaves here. Shared screen: the app's name, no message (§5).
  */
 export class NotificationsTab {
-    /** @param {{close?: function():void}} [kit]  close(): the island, after an action */
-    constructor({close = null} = {}) {
+    /**
+     * @param {{close?: function():void, refreshStrip?: function():void}} [kit]  close():
+     *   the island, after an action; refreshStrip(): the tab's dot may have changed
+     */
+    constructor({close = null, refreshStrip = null} = {}) {
         this._close = close;
+        this._refreshStrip = refreshStrip;
         this._redrawId = 0;
         this._app = null;            // the stack opened, by app id
         this.actor = new St.BoxLayout({
@@ -86,6 +90,7 @@ export class NotificationsTab {
         this._banners.disconnectObject(this);
         this._sharing.stop();
         this._close = null;
+        this._refreshStrip = null;
     }
 
     _watch(src) {
@@ -111,6 +116,7 @@ export class NotificationsTab {
         this._redrawId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
             this._redrawId = 0;
             this._render();
+            this._refreshStrip?.();     // the bell's dot: some left, or none
             return GLib.SOURCE_REMOVE;
         });
     }
