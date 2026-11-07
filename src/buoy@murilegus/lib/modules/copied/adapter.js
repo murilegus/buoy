@@ -5,7 +5,7 @@
  * Pure: the source reads the clipboard's mimetypes and content and asks what they are.
  *
  * Event: {id, what: 'text'|'image'|'files'|'secret'|'hidden', text?, files?, image?}
- *   hidden  `clipboard-show-preview` off: nothing was read, the pill only says so
+ *   hidden  `copied-show-preview` off: nothing was read, the pill only says so
  *   secret  a password manager marked it (`x-kde-passwordManagerHint`): never read
  */
 

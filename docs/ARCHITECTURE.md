@@ -86,14 +86,14 @@ A module may keep more pure files beside these when they are worth testing alone
 
 | Type | Has | Example |
 |---|---|---|
-| **source module** | `kinds` + `source.js` + `adapter.js`, optionally `tab.js`, `apps/` | media, hud, progress, agent (Claude Code: kind `agent`, its asks through the kit's `ask`), clipboard (feedback `copied` + its standalone tab) |
+| **source module** | `kinds` + `source.js` + `adapter.js`, optionally `tab.js`, `apps/` | media, hud, progress, agent (Claude Code: kind `agent`, its asks through the kit's `ask`), copied (feedback `copied`) |
 | **idle plan** | `idle.js` (optionally also a source module) | clock, weather, calendar, mascot |
 | **standalone tab** | `tab.js` only, `kinds: []` | launcher; also the tab of a feedback-only module (`clipboard`, SPEC §2b) |
 
 One module may combine the first two (calendar: next-event activity + idle plan + tab).
 A standalone tab never surfaces activities; if it needs to, it becomes a source module.
 
-v0.1 modules: `media`, `hud`, `home`, `progress`, `clipboard` (its `copied` feedback; `copied` folded in, 2026-11-05), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `agent` (Claude Code's sessions and permission prompts; was the stub `ask`, 2026-11-07); `notification`,
+v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` (the copied flash) and `clipboard` (the Clipboard tab; one module 2026-11-05, apart again 2026-11-07, Ethan: two switches), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `agent` (Claude Code's sessions and permission prompts; was the stub `ask`, 2026-11-07); `notification`,
 `timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
 roadmap items, so their tabs show from v0.1 (2026-11-02);
 `greeting` (2026-11-03); idle plans `clock`, `weather`, `calendar`; standalone tabs `calendar`, `clipboard` (stub `tab.js`, in that order, 2026-11-02).

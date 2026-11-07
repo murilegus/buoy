@@ -88,15 +88,20 @@
       <summary>Quiet in its terminal</summary>
       <description>While its terminal is focused, a session's pill does not open on its own.</description>
     </key>
-    <key name="modules-clipboard" type="b">
+    <key name="modules-copied" type="b">
       <default>true</default>
-      <summary>Clipboard</summary>
-      <description>A short flash of what you copied, and the Clipboard tab.</description>
+      <summary>Copied</summary>
+      <description>A short flash of what you copied.</description>
     </key>
-    <key name="clipboard-show-preview" type="b">
+    <key name="copied-show-preview" type="b">
       <default>true</default>
       <summary>Show what was copied</summary>
       <description>The text, the file names or a thumbnail of the image. Off, the pill only says Copied and the clipboard is not read.</description>
+    </key>
+    <key name="modules-clipboard" type="b">
+      <default>true</default>
+      <summary>Clipboard</summary>
+      <description>The Clipboard tab, in the strip's slot unless another is chosen.</description>
     </key>
     <key name="modules-clock" type="b">
       <default>true</default>
