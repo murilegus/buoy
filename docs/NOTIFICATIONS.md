@@ -150,14 +150,54 @@ for an `ask` while Do Not Disturb is SPEC §2a-i's (FEATURES "Buoy light").
   (GNOME's list keeps it, and no banner shows either).
 - The lock screen shows no banner (§1), so no pill.
 
-## 6. Next: the Notifications tab (step 2)
+## 6. The Notifications tab (step 2)
 
-The tab lists Shell's own notifications (`getSources()` + `source-added`, each source's
-`notifications` + `notification-added`): no store of Buoy's. Grouped by app, newest
-first; each row its icon, title, body, time, the actions and ×; a row's click activates.
-Dismissing here or in GNOME's list removes it from both. "Clear all" at the top, with the
-Do Not Disturb switch. Home's Missed group moves to the top of this tab ("Missed while
-away"), each missed notification pointing to the real one (SPEC §3).
+The tab lists Shell's own notifications — `Main.messageTray.getSources()`, each source's
+`notifications`, kept live with `source-added` / `source-removed` and each source's
+`notification-added` / `notification-removed` while the tab is open: the same objects
+GNOME's list shows, no store of Buoy's.
+
+```
+┌ [🔕 Do Not Disturb]                                                   Clear ┐
+│ ● Missed while away · 2                                                     │
+│   ✉ Lan · Telegram           Lunch at 12?                           3 min  ✕ │
+│   ⚠ Battery low · Power      5% left                               12 min  ✕ │
+│ Telegram                                                                ✕   │
+│   [pic] Minh                 Sent you a photo                        now   ✕ │
+│         [ Reply ] [ Mark as Read ]                                           │
+│ Calculator                                                              ✕   │
+│   …                                                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Top row:** a Do Not Disturb toggle, lit while on (GNOME's own `show-banners`,
+  inverted, as the quick toggle `ui/status/doNotDisturb.js`; either changes the other)
+  and "Clear" when there is something to clear.
+- **Missed while away:** the notifications nobody has seen — Shell's `acknowledged`
+  false: they came while Do Not Disturb was on, or the banner queue was full, so neither
+  a banner nor a pill showed them. Newest first, each with its app's name. Opening the tab
+  marks them seen, as GNOME's list does once it is shown (`ui/messageList.js`
+  `vfunc_map`); they stay in this group until the tab closes, then join their app's. One
+  that arrives while the tab is open is in sight: seen at once, and no pill for it.
+  (Decided 2026-11-07, replacing SPEC §3's 2026-11-03 plan of moving Home's Missed
+  section here: notifications never reach the stack's missed history — Shell holds
+  banners while full screen or busy, so no pill ends unseen — and Home's Missed keeps
+  the other kinds.)
+- **By app:** one group per app (as the pill, §2), the app with the newest notification
+  first, newest first inside; a header with the app's icon and name and an icon-only ×
+  that dismisses the group.
+- **A row:** the picture or icon (24), the title over the body (one line each), the time
+  ("now", "3 min", re-read each minute), an icon-only ×; the notification's own actions
+  (up to 3) under it, small. A click on the row activates it and closes the island (as a
+  clicked notification goes, SPEC §3); an action runs it and closes the island too.
+- **Dismiss syncs both ways:** × destroys Shell's notification (DISMISSED), so GNOME's
+  list loses it; one dismissed in GNOME's list (or withdrawn by the app) leaves the tab
+  at once.
+- **Clear** destroys every notification listed (GNOME's Clear button closes every
+  message, `ui/messageList.js` clear()).
+- **Empty:** "No notifications" (the kit's EmptyState), with the switch still on top.
+- **Shared screen:** the tab names the app and "New notification" instead of title and
+  body (§5).
 
 ## 7. Next: Shell's screenshot notice (step 3)
 
@@ -167,8 +207,8 @@ Files", Delete (to the Trash) and a click that opens it (SPEC §2e).
 
 ## 8. Steps
 
-1. **The pill** (this branch): §1–§5; `notification-replace-banners`.
-2. **The tab**: §6.
+1. **The pill** (merged 2026-11-07, #143): §1–§5; `notification-replace-banners`.
+2. **The tab** (built 2026-11-07): §6.
 3. **The screenshot notice**: §7.
 
 ## 9. Settings

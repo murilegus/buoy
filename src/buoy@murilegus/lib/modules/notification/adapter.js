@@ -115,6 +115,48 @@ export function cardText(title, body, app) {
     return {title: body || app, body: null};
 }
 
+/**
+ * The Notifications tab's order (§6): the unseen first, then one group per app — the app
+ * with the newest notification first, newest first inside. Ties keep the given order.
+ *
+ * @param {{app: string, appName: string, at: number, missed: boolean}[]} items  one per
+ *   notification in Shell's list; `missed`: unseen when the tab opened
+ * @returns {{missed: object[], groups: {app: string, appName: string, items: object[]}[]}}
+ */
+export function tabGroups(items) {
+    const newest = (a, b) => b.at - a.at;
+    const missed = items.filter(i => i.missed).sort(newest);
+    const byApp = new Map();
+    for (const i of items.filter(x => !x.missed)) {
+        if (!byApp.has(i.app))
+            byApp.set(i.app, {app: i.app, appName: i.appName, items: []});
+        byApp.get(i.app).items.push(i);
+    }
+    const groups = [...byApp.values()];
+    groups.forEach(g => g.items.sort(newest));
+    groups.sort((a, b) => b.items[0].at - a.items[0].at);
+    return {missed, groups};
+}
+
+/**
+ * A tab row's two lines (§6): as the card's, one line each; on a shared screen the app is
+ * named and nothing of the message (§5).
+ *
+ * @param {object} n
+ * @param {*} n.title
+ * @param {*} n.body
+ * @param {boolean} [n.markup]
+ * @param {*} n.appName
+ * @param {boolean} [shared]
+ * @returns {{title: string, body: ?string}}
+ */
+export function rowText({title, body, markup = false, appName}, shared = false) {
+    const app = plainText(appName) || 'Notification';
+    if (shared)
+        return {title: app, body: sharedLine(1)};
+    return cardText(plainText(title), plainText(body, markup), app);
+}
+
 export default {
     notification(ev) {
         const app = plainText(ev.appName) || 'Notification';

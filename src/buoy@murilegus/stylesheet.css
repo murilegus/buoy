@@ -369,3 +369,29 @@
 .buoy-agents-time { color: rgba(255, 255, 255, 0.55); font-size: 12px; font-feature-settings: "tnum"; }
 .buoy-agents-buttons { spacing: 6px; padding: 0 8px 6px; }
 .buoy-agents-buttons .buoy-action { padding: 4px 12px; }
+
+/* The Notifications tab (NOTIFICATIONS.md §6), as the Transfers tab's rows */
+.buoy-notifications-tab { spacing: 2px; padding: 0 2px 4px; }
+.buoy-notif-top { padding: 2px 4px 4px; spacing: 8px; }
+.buoy-notif-dnd { padding: 4px 12px; border-radius: 999px; color: #fff; background-color: rgba(255, 255, 255, 0.12); }
+.buoy-notif-dnd:hover { background-color: rgba(255, 255, 255, 0.2); }
+.buoy-notif-dnd:checked { background-color: -st-accent-color; color: -st-accent-fg-color; }
+.buoy-notif-dnd:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-notif-dnd-line { spacing: 8px; }
+.buoy-notif-clear { padding: 4px 12px; border-radius: 999px; color: #fff; background-color: rgba(255, 255, 255, 0.12); }
+.buoy-notif-clear:hover { background-color: rgba(255, 255, 255, 0.2); }
+.buoy-notif-header { spacing: 8px; padding: 8px 8px 2px; font-size: 12px; color: rgba(255, 255, 255, 0.55); }
+.buoy-notif-row-line { spacing: 2px; }
+.buoy-notif-row { padding: 6px 8px; border-radius: 12px; }
+.buoy-notif-row:hover { background-color: rgba(255, 255, 255, 0.08); }
+.buoy-notif-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-notif-line { spacing: 12px; }
+.buoy-notif-text { spacing: 2px; }
+.buoy-notif-title { color: #fff; }
+.buoy-notif-body { color: rgba(255, 255, 255, 0.55); font-size: 12px; }
+.buoy-notif-time { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+.buoy-notif-close { padding: 6px; border-radius: 99px; color: rgba(255, 255, 255, 0.7); }
+.buoy-notif-close:hover { background-color: rgba(255, 255, 255, 0.12); color: #fff; }
+.buoy-notif-close:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-notif-actions { spacing: 6px; padding: 0 8px 4px 44px; }
+.buoy-notif-actions .buoy-action { padding: 4px 12px; font-size: 12px; }

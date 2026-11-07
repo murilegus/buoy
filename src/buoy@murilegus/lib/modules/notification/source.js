@@ -154,7 +154,7 @@ export class NotificationSource extends Source {
             appIcon: src?.icon ?? null,
             icon: themed ? own : null,
             image: own && !themed ? own : null,
-            at: (n.datetime?.to_unix() ?? 0) * 1000 || Date.now(),
+            at: msOf(n.datetime) || Date.now(),
             count: pill.list.length,
             critical: n.urgency === MessageTray.Urgency.CRITICAL,
             shared: this._sharing.shared,
@@ -213,7 +213,16 @@ function mayShowNow(tray, n) {
  *   else the source's title ("System", a notify-send name) — the generic policy's id is
  *   the same `generic` for every such source
  */
-function appIdOf(src) {
+export function appIdOf(src) {
     const id = src.policy instanceof MessageTray.NotificationApplicationPolicy ? src.policy.id : null;
     return typeof id === 'string' && id ? id : src.title || 'system';
+}
+
+/**
+ * @param {?GLib.DateTime} dt  a notification's `datetime`
+ * @returns {number} ms since the epoch, to the microsecond (two in one second keep their
+ *   order), 0 when unknown
+ */
+export function msOf(dt) {
+    return dt ? dt.to_unix_usec() / 1000 : 0;
 }

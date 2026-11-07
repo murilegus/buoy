@@ -1,6 +1,6 @@
 // Run: gjs -m tests/notification.test.js   (no Shell needed; adapters are pure)
 import adapter, {
-    TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, sharedLine, cardText,
+    TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, sharedLine, cardText, tabGroups, rowText,
 } from '../src/buoy@murilegus/lib/modules/notification/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {validate, tierOf} from '../src/buoy@murilegus/lib/kit/activity.js';
@@ -136,5 +136,23 @@ eq(shownElsewhere('org.gnome.Nautilus', 'transfer-complete', true), true, 'Files
 eq(shownElsewhere('org.gnome.Nautilus', 'progress', false), false, 'progress module off: a notification as any');
 eq(shownElsewhere('org.gnome.Nautilus', 'other', true), false, 'Files\' other notifications');
 eq(shownElsewhere('firefox', 'progress', true), false, 'another app\'s id "progress"');
+
+// --- the tab's order (§6) ----------------------------------------------------------------
+{
+    const it = (app, at, missed = false) => ({app, appName: app.toUpperCase(), at, missed});
+    const {missed, groups} = tabGroups([
+        it('mail', 10), it('chat', 30), it('mail', 50, true), it('chat', 20), it('power', 40, true), it('mail', 25),
+    ]);
+    eq(missed.map(i => [i.app, i.at]), [['mail', 50], ['power', 40]], 'the unseen first, newest first');
+    eq(groups.map(g => g.app), ['chat', 'mail'], 'apps by their newest notification');
+    eq(groups.map(g => g.items.map(i => i.at)), [[30, 20], [25, 10]], 'newest first inside a group');
+    eq(groups[0].appName, 'CHAT', 'a group keeps the app\'s name');
+    eq(tabGroups([]), {missed: [], groups: []}, 'nothing: empty');
+    eq(tabGroups([it('a', 5), it('a', 5)]).groups[0].items.length, 2, 'same time: both kept');
+}
+eq(rowText({title: 'Lan', body: '<b>Hi</b>', markup: true, appName: 'Telegram'}), {title: 'Lan', body: 'Hi'}, 'row: title over body');
+eq(rowText({title: '', body: 'Hi', appName: 'Telegram'}), {title: 'Hi', body: null}, 'row: the body as title');
+eq(rowText({title: 'Lan', body: 'Hi', appName: 'Telegram'}, true), {title: 'Telegram', body: 'New notification'},
+    'row on a shared screen: the app, nothing of the message');
 
 print('notification: ok');

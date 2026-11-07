@@ -612,10 +612,10 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
   activated system notification does; an icon-only × empties it (its "Clear" label
   dropped 2026-11-06, Ethan, as in the Transfers tab).
   Showing Home turns the amber light off; the list stays until cleared or pushed out by
-  newer ones. The running activities follow under "Now". In M4 the notifications tab
-  carries the same group ("Missed while away") above the system's own list; a missed
-  notification there points to the real one, never a copy, and Buoy posts no
-  notifications of its own.
+  newer ones. The running activities follow under "Now". The notifications tab has its
+  own "Missed while away": the notifications nobody saw (NOTIFICATIONS.md §6, 2026-11-07,
+  replacing the plan to move this section there — notifications never reach the stack's
+  missed history); Buoy posts no notifications of its own.
 - **Until the M3 blocks** (2026-11-02): Home lists every visible activity (the full list,
   also behind `+N`), each row its minimal view; a row opens that activity's tab. Nothing
   running → "Nothing going on" with Bu (`idle`, or `missed` while history has entries). The panel's height fits its content up to the expanded cap;
