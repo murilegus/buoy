@@ -48,6 +48,10 @@ bad({text: 'x'}, /kind is required/, 'no kind');
 bad({kind: 'ask'}, /Ask/, 'ask is reserved for Ask()');
 bad({kind: 'Progress!'}, /kind/, 'kind name');
 bad({kind: 'progress', colour: 1}, /unknown key "colour"/, 'unknown key');
+eq(check({kind: 'deploy', needsYou: true, linger: false}), {kind: 'deploy', needsYou: true, linger: false},
+    'needsYou and linger: the pill order\'s tiers (Version 3)');
+bad({kind: 'deploy', needsYou: 'yes'}, /needsYou: true or false/, 'needsYou is a boolean');
+bad({kind: 'deploy', linger: 1}, /linger: true or false/, 'linger is a boolean');
 bad({kind: 'progress', onAction: 'x'}, /unknown key "onAction"/, 'callbacks cannot come over D-Bus');
 eq(check({kind: 'progress', compact: {text: 'a'}}), {kind: 'progress', compact: {text: 'a'}}, 'the hover tier is `compact`');
 bad({kind: 'progress', peek: {text: 'a'}}, /unknown key "peek"/, 'the old `peek` name is gone (2026-11-05)');
@@ -218,7 +222,7 @@ async function main() {
     await rejects(call('Ask', '(ssasa{sv})', ['q5', '?', ['A'], asv({fallback: 'B'})]), /fallback/, 'fallback must be an option');
 
     // Agent (CODING-AGENTS.md §1): '' with no agent module; the module's reply otherwise
-    eq(VERSION, 2, 'Version 2: Agent');
+    eq(VERSION, 3, 'Version 3: Agent (2), needsYou and linger (3)');
     eq(await call('Agent', '(ss)', ['claude', '{"hook_event_name":"Stop"}']), [''], 'no agent module: an empty reply at once');
     const seen = [];
     api.setAgent((source, text, info) => {

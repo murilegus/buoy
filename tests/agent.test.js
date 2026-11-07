@@ -1,14 +1,14 @@
 // Run: gjs -m tests/agent.test.js   (pure: Claude Code's events → the session's pill, the
 // permission reply, Buoy's entries in ~/.claude/settings.json; docs/CODING-AGENTS.md §11)
 import {
-    AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, PRIORITY, STALE_MS, TIMEOUT,
+    AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
     agent, answered, askOf, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, commandFor, hooksNote, install, installed, isOurs, uninstall,
 } from '../src/buoy@murilegus/lib/modules/agent/hooks.js';
 import {Registry} from '../src/buoy@murilegus/lib/kit/registry.js';
-import {PRIORITY as KIT_PRIORITY} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {PRIORITY as KIT_PRIORITY, SETTLE_MS, tierOf, validate} from '../src/buoy@murilegus/lib/kit/activity.js';
 import {planCompact, planExpanded, planMinimal} from '../src/buoy@murilegus/lib/kit/presentation.js';
 
 function eq(actual, expected, msg) {
@@ -227,7 +227,8 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     const a = agent({...rec, shared: false});
     eq([a.text, a.leading, a.trailing], ['Claude · buoy', {mascot: 'busy'}, {since: T0}], 'minimal: Bu, the name, the elapsed time');
     eq([a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Editing src/…/c.js'], 'compact: which session, what it does');
-    eq([a.priority, a.staleAfter, a.ttl ?? 0], [PRIORITY.working, STALE_MS, 0], 'working: 35, stale after 1 min, no end');
+    eq([a.priority, a.needsYou, a.staleAfter, a.ttl ?? 0], [undefined, false, STALE_MS, 0],
+        'working: no priority of its own (the kind\'s 35), stale after 1 min, no end');
     eq(a.pressFirst, true, 'a click brings the terminal up first, else the tab (§2)');
     eq(a.linger, false, 'working: it does not wait, it never lingers out');
     const s = agent({...rec, shared: true});
@@ -235,15 +236,18 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     if (JSON.stringify(s).includes('c.js'))
         throw new Error('sharing: the path appears nowhere');
     const turn = agent({...last([[ev('UserPromptSubmit')], [ev('Notification', {notification_type: 'idle_prompt'})]]).rec});
-    eq([turn.priority, turn.staleAfter, turn.linger], [PRIORITY.turn, 0, true], 'waiting for you: 60, never stale, lingers out');
+    eq([turn.needsYou, turn.staleAfter, turn.linger], [true, 0, true], 'waiting for you: needs you, never stale, lingers out');
     const done = agent(last([[ev('UserPromptSubmit')], [ev('Stop'), 4 * MIN]]).rec);
-    eq([done.priority, done.linger, done.ttl ?? 0, done.staleAfter, done.trailing], [PRIORITY.done, true, 0, DONE_STALE, {text: '4 min'}],
-        'done: under everything, waits (the kit ends it after activity-linger), dims after 1 min, the time frozen');
-    eq([DONE_STALE, STALE_MS], [MIN, MIN], 'working or done, dims after 1 min');
-    eq([PRIORITY.working, PRIORITY.turn, PRIORITY.done, KIT_PRIORITY.agent, KIT_PRIORITY.ask, KIT_PRIORITY.media],
-        [35, 60, 5, 35, 90, 10], 'priorities 35 / 60 / 90; done 5, under media\'s 10');
+    eq([done.needsYou, done.linger, done.ttl ?? 0, done.staleAfter, done.trailing], [false, true, 0, DONE_STALE, {text: '4 min'}],
+        'done: waits (ends after activity-linger), dims after 10 s, the time frozen');
+    eq([DONE_STALE, SETTLE_MS, STALE_MS], [10000, 10000, MIN], 'done dims (and steps back) after 10 s; working after 1 min');
+    eq([KIT_PRIORITY.agent, KIT_PRIORITY.ask, KIT_PRIORITY.media], [35, 90, 10], 'the kinds\' priorities');
+    // the tiers (docs/PRIORITY.md): through the kit, as the stack ranks them
+    const v = (x, stale) => ({...validate({id: 'x', kind: 'agent', ...x}), isStale: stale});
+    eq([tierOf(v(a, false)), tierOf(v(turn, false)), tierOf(v(done, false)), tierOf(v(done, true)), tierOf(v(a, true))],
+        [2, 1, 2, 3, 2], 'working 2; waiting for you 1; done keeps 2 until it dims, then 3; working stale stays 2');
     const fail = agent(last([[ev('UserPromptSubmit')], [ev('StopFailure')]]).rec);
-    eq([fail.priority, fail.linger], [PRIORITY.done, true], 'stopped with an error: the same');
+    eq([fail.needsYou, fail.linger, fail.staleAfter], [false, true, DONE_STALE], 'stopped with an error: the same');
     // stale: Bu `stale`, dimmed (the renderer)
     const plan = planMinimal({...a, isStale: true});
     eq([plan.leading.pose, plan.stale], ['stale', true], 'stale: Bu stale, dimmed');

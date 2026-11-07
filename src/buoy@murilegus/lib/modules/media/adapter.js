@@ -16,6 +16,8 @@
  * compactOnHover, raise(), onAction(id, value?)}.
  */
 
+import {SETTLE_MS} from '../../kit/activity.js';
+
 export const ICON = 'audio-x-generic-symbolic';
 export const PAUSED_ICON = 'media-playback-pause-symbolic';
 /** The minimal pill's trailing while paused: the equaliser stopped low (kit glyph). */
@@ -64,8 +66,10 @@ export default {
             leading: art,
             text: artist ? `${title} · ${artist}` : title,    // a profile `title` is the registry's
             trailing: playing ? 'eq' : PAUSED_EQ,
-            // paused, it only waits: the kit ends it after `activity-linger` (5 min)
+            // paused, it only waits: the kit ends it after `activity-linger` (5 min), and
+            // it dims after SETTLE_MS and steps behind what plays (docs/PRIORITY.md §2)
             linger: !playing,
+            staleAfter: playing ? 0 : SETTLE_MS,
             compact: ev.compactOnHover === false ? null : {
                 leading: art, text: title,
                 subtitle: [artist, app].filter(Boolean).join(' · ') || null,

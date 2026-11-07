@@ -24,6 +24,29 @@ const EIGHT_HOURS = 8 * 60 * 60 * 1000;
 export const DEFAULT_LINGER = 5 * 60 * 1000;
 
 /**
+ * How long a waiting activity keeps its place before it dims and steps back to the
+ * waiting tier (docs/PRIORITY.md §2): its `staleAfter` (agent done, a paused player).
+ */
+export const SETTLE_MS = 10 * 1000;
+
+/** Kinds that always need you (PRIORITY.md §2): tier 1 whatever the adapter says. */
+const NEEDS_YOU = new Set(['ask', 'call']);
+
+/**
+ * The activity's tier (docs/PRIORITY.md §2, 2026-11-07): 1 needs you, 2 running,
+ * 3 waiting. `needsYou` (or kind ask / call) wins; `linger` counts only once the activity
+ * is stale, so a waiting one keeps its place until it dims.
+ *
+ * @param {object} a  a validated activity, with the stack's `isStale`
+ * @returns {1|2|3}
+ */
+export function tierOf(a) {
+    if (a.needsYou === true || NEEDS_YOU.has(a.kind))
+        return 1;
+    return a.linger === true && a.isStale === true ? 3 : 2;
+}
+
+/**
  * @param {object} a  activity as built by an adapter (needs `id` and `kind`)
  * @returns {object} the activity with contract defaults filled in, ttl capped at 8 h
  */
@@ -37,6 +60,7 @@ export function validate(a) {
         priority: PRIORITY[a.kind] ?? 0,
         staleAfter: 0,
         linger: false,
+        needsYou: false,
         style: 'standard',
         alert: false,
         keyline: null,

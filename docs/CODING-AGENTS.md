@@ -59,13 +59,14 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 
 - **id** `agent:claude:<session_id>`; several sessions are several pills (side by side up
   to 3, then `+N`, SPEC §2c).
-- **Priority** (kit `PRIORITY`, 2026-11-07): running **35** (with `device`: over a
-  transfer, under a notification); waiting for you (`turn`) **60**, over what is only to
-  look at; a permission prompt **90**, as every ask. Done (and stopped with an error)
-  alerts once, then drops to **5**, under every other kind (media is 10), so anything else
-  takes the centre while it lingers (Ethan, 2026-11-07). Among sessions of one priority
-  the one that finished last leads (re-surfaced on `Stop`), and a stale one goes after a
-  fresh one (kit: ties → fresh before stale).
+- **Order** ([PRIORITY.md](PRIORITY.md), 2026-11-07): the adapter sets no priority, only
+  facts. Working is tier 2 at the kind's **35** (with `device`: over a transfer, under a
+  notification). Waiting for you (`turn`) sets `needsYou`: tier 1, over everything that
+  only runs. A permission prompt is an `ask`: tier 1 at **90**. Done (and stopped with an
+  error) alerts once and keeps its place until it dims after **10 s** (`SETTLE_MS`); then,
+  being `linger`, it steps back to tier 3 behind whatever runs. Among sessions in one
+  tier the one that finished last leads (re-surfaced on `Stop`), and a stale one goes
+  after a fresh one.
 - **Subagents** are no pills of their own: they share the parent's `session_id` (only
   `agent_id` differs); the parent's compact counts them, "Working with 2 subagents", from
   `SubagentStart` / `SubagentStop`. A session started apart (a new `session_id`) is its
@@ -134,10 +135,10 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   activity); the pointer on it holds it, the next prompt brings it back (Ethan,
   2026-11-07: 30 s, 2 min, 5 min, then the common rule). So does a session waiting for
   you (`turn`).
-- **Stale**: one minute without news dims the pill and Bu takes `stale`, working or done
-  alike (Ethan, 2026-11-07). Working, it means nothing came for a minute: a long command
-  sends no event until it ends, a crashed session none at all. Waiting for you (`turn`,
-  `ask`) never dims.
+- **Stale**: working, one minute without news dims the pill and Bu takes `stale` — nothing
+  came for a minute: a long command sends no event until it ends, a crashed session none
+  at all; it stays in tier 2. Done, it dims after 10 s and steps back with it
+  (PRIORITY.md; was one minute, 2026-11-07). Waiting for you (`turn`, `ask`) never dims.
 
 ## 3. Events → Bu and the pill
 
@@ -151,9 +152,9 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 | `SubagentStart` / `SubagentStop` | `busy` | "Working with a subagent", "… with 2 subagents"; "Working" when the last stops | the parent keeps working |
 | `PermissionRequest` | `ask` | "Needs your OK · Run: pnpm test" | §4; after the prompt, with no other news: `busy` "Working" (so it can go stale) |
 | `Notification` `permission_prompt` | `ask` | "Needs your OK" | the terminal's own prompt; no buttons (the hook of §4 carries them) |
-| `Notification` `idle_prompt`, `agent_needs_input`, `elicitation_dialog`, `elicitation_url_dialog` | `turn` | "Waiting for you" | alert once; priority 60; never after `Stop` (the pill is ending). Other types ignored |
+| `Notification` `idle_prompt`, `agent_needs_input`, `elicitation_dialog`, `elicitation_url_dialog` | `turn` | "Waiting for you" | alert once; `needsYou` (tier 1); never after `Stop` (the pill is ending). Other types ignored |
 | `PreCompact` | `compact` | "Compacting" | `PostCompact` → `busy` "Working"; a `/compact` between prompts takes no room |
-| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done", "Done in {n} min" from a minute | priority 5; dims after 1 min, ends after `activity-linger` (5 min) |
+| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done", "Done in {n} min" from a minute | keeps its place 10 s, then dims and steps back (PRIORITY.md); ends after `activity-linger` (5 min) |
 | `StopFailure` | `error`, alert | "Stopped with an error" | the same |
 | no event for 1 min while `busy` / `think` / `compact` | `stale` | unchanged | `staleAfter`: the renderer dims it and draws Bu `stale` (kit, any stale activity led by Bu) |
 | `SessionEnd` | — | — | `end()` at once |

@@ -25,7 +25,7 @@ silently ignored.
 | `icon` | string | icon name; replaces the left element of the pill |
 | `title` | string | template for the pill's text, over the event's fields: `"{artist} — {title}"`; an unknown field is empty |
 | `hideBody` | boolean | the event's `body` never reaches the adapter (notification text) |
-| `priority` | number 0–100 | replaces the kind's default (media 10, progress 30, osd 60, notification 70, ask 90 …) |
+| `priority` | number 0–100 | replaces the kind's default (media 10, progress 30, osd 60, notification 70, ask 90 …) inside the activity's tier: it never lifts a waiting one over a running one ([PRIORITY.md](PRIORITY.md)) |
 | `ttl` | number, ms | how long the activity lives; still capped at 8 h |
 | `replace` | list | `{field, pattern, with, flags?}` regex replace on a string field, in order, before the adapter; `with` may use `$1` |
 | `skip` | object | `{field, pattern, flags?}` events whose field matches surface nothing |
