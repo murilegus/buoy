@@ -78,6 +78,23 @@ export function actionIndex(id) {
     return m ? Number(m[1]) : null;
 }
 
+/** A notification that sat this long in GNOME's queue waited for the screen (§1). */
+export const HELD_MS = 2000;
+
+/**
+ * Shell takes a notification out of its queue in the same call that put it there, unless
+ * it holds the queue: a full-screen window, a busy session, the lock screen (§1). One that
+ * waited shows as a pill when the screen is back but stays unseen, so the tab counts it
+ * as missed (§6).
+ *
+ * @param {*} queuedAt  when it entered the queue, monotonic ms; unknown: not held
+ * @param {number} now  monotonic ms
+ * @returns {boolean} it waited in the queue
+ */
+export function waitedInQueue(queuedAt, now) {
+    return Number.isFinite(queuedAt) && Number.isFinite(now) && now - queuedAt >= HELD_MS;
+}
+
 // GTK notification ids Files posts for its operations: the Transfers pill shows them
 // (FEATURES M3 "progress", §10)
 const FILES_APP = 'org.gnome.Nautilus';

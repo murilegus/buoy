@@ -1,6 +1,7 @@
 // Run: gjs -m tests/notification.test.js   (no Shell needed; adapters are pure)
 import adapter, {
     TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, sharedLine, cardText, stackGroups, countText, rowText,
+    HELD_MS, waitedInQueue,
 } from '../src/buoy@murilegus/lib/modules/notification/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {validate, tierOf} from '../src/buoy@murilegus/lib/kit/activity.js';
@@ -136,6 +137,16 @@ eq(shownElsewhere('org.gnome.Nautilus', 'transfer-complete', true), true, 'Files
 eq(shownElsewhere('org.gnome.Nautilus', 'progress', false), false, 'progress module off: a notification as any');
 eq(shownElsewhere('org.gnome.Nautilus', 'other', true), false, 'Files\' other notifications');
 eq(shownElsewhere('firefox', 'progress', true), false, 'another app\'s id "progress"');
+
+// --- held in GNOME's queue (§1): shown, but still missed --------------------------------
+eq(HELD_MS, 2000, 'two seconds in the queue is waiting');
+eq(waitedInQueue(1000, 1000), false, 'taken in the call that queued it: not held');
+eq(waitedInQueue(1000, 2999), false, 'just under: not held');
+eq(waitedInQueue(1000, 3000), true, 'two seconds: held');
+eq(waitedInQueue(1000, 600000), true, 'a film later: held');
+eq([waitedInQueue(undefined, 5000), waitedInQueue(null, 5000), waitedInQueue(NaN, 5000)], [false, false, false],
+    'never stamped (queued before Buoy enabled): not held, seen as before');
+eq(waitedInQueue(5000, NaN), false, 'no clock: not held');
 
 // --- the tab's stacks (§6) --------------------------------------------------------------
 {

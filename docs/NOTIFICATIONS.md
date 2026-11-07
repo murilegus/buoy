@@ -48,6 +48,14 @@ notification GNOME would have shown leaves the queue as a pill instead — marke
 its sound played, as the banner would have. No banner is built. Off: the original runs
 and GNOME shows its banner; Buoy shows no pill (the tab still lists everything, §6).
 
+**Held, still unseen** (2026-11-08): Shell takes a notification out of the queue in the
+same call that queued it unless it holds the queue — full screen, busy, the lock screen.
+One that waited (2 s or more, stamped on the tray's `queue-changed`) still shows as a
+pill when the screen is back and plays its sound, but is not marked seen: it came while
+nobody could look, and its pill is a 6 s glance shared with the app's others, not
+GNOME's banner that waits for the user to be active. The tab counts it as missed (§6).
+GNOME's own banner would have marked it seen; with replacement off, GNOME decides.
+
 Why not `Main.messageTray.bannerBlocked`: Shell sets it itself, to false, each time the
 date menu closes (`ui/panel.js`), and while blocked the queue only fills. The override is
 the one place that sees exactly the banners.
@@ -83,8 +91,8 @@ pill's content instead of adding a pill.
   A GTK replacement arrives in the same call as the old one's end, so the pill waits for
   the end of that call before ending (no flicker).
 - **Missed:** GNOME holds banners while full-screen, so no pill appears while the island
-  is hidden; the queue shows when it is back (as GNOME's banners do). The missed light
-  stays with Buoy's own activities.
+  is hidden; the queue shows when it is back (as GNOME's banners do), still unseen (§1),
+  so the tab counts it. The missed light stays with Buoy's own activities.
 
 ## 3. The compact (hover): a card
 
@@ -191,14 +199,14 @@ List                                             An app's view (a stack clicked)
   `image-path`, a GTK bytes icon), else its own icon when it differs from the app's, else
   the logo.
 - **Missed while away:** the notifications nobody has seen — Shell's `acknowledged` false:
-  they came while Do Not Disturb was on, or the banner queue was full, so neither a
-  banner nor a pill showed them. Opening the tab marks them seen, as GNOME's list does
+  they came while Do Not Disturb was on, the banner queue was full (GNOME keeps three),
+  or they waited in it while full screen, busy or locked (§1). Opening the tab marks them seen, as GNOME's list does
   once it is shown (`ui/messageList.js` `vfunc_map`); their dot stays until the tab
   closes. One that arrives while the tab is open is in sight: seen at once, and no pill
   for it. (Decided 2026-11-07, replacing SPEC §3's 2026-11-03 plan of moving Home's Missed
   section here: notifications never reach the stack's missed history — Shell holds
-  banners while full screen or busy, so no pill ends unseen — and Home's Missed keeps
-  the other kinds.)
+  banners while full screen or busy, and Shell's `acknowledged` already says which were
+  seen — and Home's Missed keeps the other kinds.)
 - **Dismiss syncs both ways:** × destroys Shell's notification (DISMISSED), so GNOME's
   list loses it; one dismissed in GNOME's list (or withdrawn by the app) leaves the tab
   at once. **Clear** destroys every one (GNOME's Clear closes every message,

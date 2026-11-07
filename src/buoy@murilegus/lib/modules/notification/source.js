@@ -1,4 +1,5 @@
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
@@ -6,7 +7,7 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 
 import {Source} from '../../kit/source.js';
 import {SharingWatch} from '../../kit/sharing.js';
-import {DISMISS, actionIndex, shownElsewhere} from './adapter.js';
+import {DISMISS, actionIndex, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
 const REPLACE_KEY = 'notification-replace-banners';
@@ -27,6 +28,9 @@ const REPLACE_KEY = 'notification-replace-banners';
  *   notification gone from the list (any reason) leaves the pill to the app's previous
  *   one, or ends it — after the current call, since a GTK app's replacement comes in the
  *   same call as the old one's end (ui/notificationDaemon.js addNotification).
+ * - Held: one that waited in Shell's queue (full screen, busy, locked) shows when the
+ *   screen is back but stays unseen, so the tab counts it as missed (§1). Its time in the
+ *   queue is stamped on the tray's `queue-changed`.
  * - The screen shared or recorded (kit/sharing.js): the text hides (§5), watched only
  *   while a pill is up.
  * - No timer of its own: the pill's 6 s are its ttl.
@@ -37,6 +41,7 @@ export class NotificationSource extends Source {
         // app id → {key, list (alive, oldest first), seen, shown, id}
         this._pills = new Map();
         this._serial = 0;
+        this._queuedAt = new WeakMap();
         this._sharing = new SharingWatch(() => this._redrawAll());
         this._injections = new InjectionManager();
         // the tray is a singleton, called through `tray` (as hud's `osd`)
@@ -46,11 +51,17 @@ export class NotificationSource extends Source {
                 return original.call(tray);
             return this._takeQueue(tray);
         });
+        // emitted after each push, before Shell's `_updateState` (ui/messageTray.js
+        // `_onNotificationRequestBanner`)
+        tray.connectObject('queue-changed', () => this._stamp(tray), this);
+        this._stamp(tray);
     }
 
     disable() {
         this._injections?.clear();
         this._injections = null;
+        Main.messageTray.disconnectObject(this);
+        this._queuedAt = null;
         for (const [app, pill] of this._pills ?? [])
             this._drop(app, pill);
         this._pills = null;
@@ -69,16 +80,29 @@ export class NotificationSource extends Source {
     // rest back.
     _takeQueue(tray) {
         const queue = tray._notificationQueue;
+        const now = monotonicMs();
         do {
             const n = queue.shift();
             tray.emit('queue-changed');
-            this._take(n);
+            this._take(n, waitedInQueue(this._queuedAt.get(n), now));
         } while (queue.length && mayShowNow(tray, queue[0]));
     }
 
-    _take(n) {
-        // what the banner does when it shows (`_updateShowingNotification`)
-        n.acknowledged = true;
+    // When it entered the queue, once: an update already queued keeps its first time.
+    _stamp(tray) {
+        const now = monotonicMs();
+        for (const n of tray._notificationQueue) {
+            if (!this._queuedAt.has(n))
+                this._queuedAt.set(n, now);
+        }
+    }
+
+    _take(n, held = false) {
+        this._queuedAt.delete(n);
+        // what the banner does when it shows (`_updateShowingNotification`); one that
+        // waited while nobody could see it stays unseen (§1)
+        if (!held)
+            n.acknowledged = true;
         n.playSound();
         if (!n.source)
             return;
@@ -198,6 +222,10 @@ export class NotificationSource extends Source {
                 this._show(app, {anew: false});
         }
     }
+}
+
+function monotonicMs() {
+    return GLib.get_monotonic_time() / 1000;
 }
 
 // MessageTray `_updateState`'s own test for showing the next banner now.
