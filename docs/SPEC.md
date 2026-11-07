@@ -312,10 +312,11 @@ is waiting for your answer (an `ask` while DND). Red › amber. Shown in idle, m
 nudges the leading zone inward when the light is on. Hidden only while expanded, where
 Home already lists what was missed.
 
-**Bu carries the light** (2026-11-03): when a pill's leading is Bu (`{mascot}`, agent
-activities and the greeting), the edge slot is not drawn — Bu's lamp is the light. It
-shows the stack's amber/red when there is one, otherwise the pose's own colour
-(INDICATORS § Bu's lamp). One light per pill, never two.
+**Bu's lamp is not the light** (2026-11-08, Ethan; it was from 2026-11-03): a pill Bu
+leads (`{mascot}`, agent activities and the greeting) draws the edge dot like any other,
+and Bu's lamp keeps its pose's colour (INDICATORS § Bu's lamp) — the lamp is too small to
+read as the light, and an amber that stayed while notifications were unseen hid the
+agent's colour.
 
 ### 2a-ii. Privacy dot (right edge slot, idle, minimal and compact)
 

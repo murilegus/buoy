@@ -1,8 +1,9 @@
 # Bu — Buoy's mascot (decided 2026-11-03)
 
 Bu, the first syllable of Buoy ("boo"; the name is said "BOO-ee", 2026-11-06), is the
-buoy itself: a small pixel float with a lamp on its head, and **the lamp is the buoy
-light** (SPEC §2a-i, INDICATORS). Bu gives the light a body; it adds no new idea.
+buoy itself: a small pixel float with a lamp on its head. The lamp shows the pose; the
+buoy light stays the pill's edge dot (SPEC §2a-i, INDICATORS; until 2026-11-08 the lamp
+was the light). Bu adds no new idea.
 
 Bu is not an assistant face. It never talks, never follows the pointer, never glows, and
 never moves while the island is idle (SPEC §0, §8; ARCHITECTURE rule 8). Its job is to
@@ -60,10 +61,11 @@ replacement for the light in every state.
   the pill, too small to tell amber from green. It sits straight on the round body where
   the neck was; the grids below, `kit/mascot.js` and every preview in `docs/mascot/`
   changed together.
-- **The lamp is the light.** When a pill's leading is Bu, the left edge slot is not drawn.
-  If the stack's light is `missed` or `waiting`, the lamp shows that colour whatever the
-  pose (an `ask` waiting elsewhere still reads red); otherwise it shows the pose's own
-  colour. Amber and red appear only with their INDICATORS meanings (`missed`, `ask`).
+- **The lamp is the pose's.** It shows the pose's own colour, always; the stack's
+  amber/red is the pill's edge dot, drawn on a pill Bu leads as on any other (2026-11-08,
+  Ethan: the lamp is too small to read as the light — before, it took the light's colour
+  and the edge slot was not drawn). Amber and red appear in the lamp only as the `missed`
+  and `ask` poses' own colours.
 - **Motion, only with an activity.** Four poses move: `busy` and `think` loop while their
   activity is visible; `wave` and `party` play once (~2 s) and settle on `done` / `idle`.
   Every move is **two frames swapped every 500 ms** — two repaints a second of a 20 px

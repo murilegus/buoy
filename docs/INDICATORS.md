@@ -31,11 +31,12 @@ Not states: the clock plan's daypart icons (SPEC §2a, 2026-11-04) are pale gold
 `#FAC775` and peach `#F5C4B3` beside the light, never amber or red; `tests/clock.test.js`
 checks the files.
 
-### Bu's lamp (2026-11-03)
+### Bu's lamp (2026-11-03; 2026-11-08)
 
-When a pill's leading is Bu (`MASCOT.md`), Bu's lamp **is** the light and the edge slot is
-not drawn. Amber/red keep exactly the meanings above and win over the pose. Otherwise the
-lamp shows its pose's colour — chosen by the kit, never by a module; static, never
+Bu's lamp shows its pose's colour, always. The buoy light is the pill's edge dot on a pill
+Bu leads too: amber/red never reach the lamp (2026-11-08, Ethan: the lamp is too small to
+read as the light; it replaced the 2026-11-03 rule "the lamp is the light, no edge slot").
+The lamp's colour is — chosen by the kit, never by a module; static, never
 blinking; never another colour from this file, except amber for `missed` and red for `ask`.
 This rule is the lamp's: the rest of Bu (body, stripe, water…) is MASCOT.md's fixed
 palette, none of which is a state colour here (2026-11-03).

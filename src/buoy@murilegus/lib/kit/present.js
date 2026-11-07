@@ -542,12 +542,12 @@ export function dimStale(box) {
 const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
 
 /**
- * One St.DrawingArea painting Bu's grid in MASCOT.md's palette; the lamp in the stack's
- * amber/red or the pose's colour (kit/mascot.js lampColour). A moving pose swaps two
+ * One St.DrawingArea painting Bu's grid in MASCOT.md's palette; the lamp in the pose's
+ * colour (kit/mascot.js lampColour). A moving pose swaps two
  * frames every 500 ms with one timer, only while mapped and not held still; gone on
  * unmap, destroy, and with it on pose change and disable (the content is rebuilt).
  *
- * @param {object} e  {type: 'mascot', pose, light}
+ * @param {object} e  {type: 'mascot', pose}
  * @param {number} size  px, a multiple of 10
  * @param {?object} activity  for where the pose started (id and surface)
  * @returns {St.DrawingArea}
@@ -600,7 +600,7 @@ function mascot(e, size, activity) {
         const [w] = area.get_surface_size();
         const cell = w / GRID;
         cr.setAntialias(Cairo.Antialias.NONE);  // crisp cells (MASCOT.md: no partial opacity)
-        for (const c of cells(shown.frame, lampColour(shown.pose, e.light))) {
+        for (const c of cells(shown.frame, lampColour(shown.pose))) {
             cr.setSourceRGB(...rgb(c.colour));
             cr.rectangle(c.x * cell, c.y * cell, c.w * cell, cell);
             cr.fill();

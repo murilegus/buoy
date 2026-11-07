@@ -35,9 +35,9 @@
  * keeps leading + trailing, so the short value that matters belongs in `trailing`.
  *
  * The buoy light (SPEC §2a-i) is the pill's left edge slot: grey `off` only in idle,
- * `missed` (amber) / `waiting` (red) in idle, minimal and compact, never in expanded. When Bu
- * leads, Bu's lamp is the light: no edge slot, and the mascot element carries `light`
- * (amber/red, or null for the pose's own colour, kit/mascot.js lampColour).
+ * `missed` (amber) / `waiting` (red) in idle, minimal and compact, never in expanded — on
+ * every pill, Bu's too: Bu's lamp keeps its pose's colour (2026-11-08, Ethan: the lamp is
+ * too small to read as the light).
  *
  * Measurements from adapters (`size`, `width`, …) are ignored (ARCHITECTURE rule 11).
  * Text is never truncated here; the renderer ellipsizes.
@@ -166,14 +166,14 @@ export function lightSlot(light, {idle}) {
     return l === 'off' && !idle ? null : l;
 }
 
-// The leading zone, and where the light goes: Bu carries amber/red in its lamp (no edge
-// slot); anything else leaves the light to the edge slot. A stale activity's Bu is `stale`.
+// The leading zone and the light's edge slot, the same with Bu leading (its lamp is the
+// pose's, 2026-11-08). A stale activity's Bu is `stale`.
 function leadingAndLight(v, light, {stale = false} = {}) {
     const leading = element(v, {leading: true});
     const slot = lightSlot(light, {idle: false});
-    if (leading?.type !== 'mascot')
-        return {leading, light: slot};
-    return {leading: {...leading, ...stale ? {pose: 'stale'} : {}, light: slot}, light: null};
+    if (leading?.type === 'mascot' && stale)
+        return {leading: {...leading, pose: 'stale'}, light: slot};
+    return {leading, light: slot};
 }
 
 /**
@@ -359,7 +359,7 @@ function rows(list) {
 }
 
 function region(r, name) {
-    if (isPlain(r) && 'mascot' in r)  // Bu leads only; no light in expanded: the pose's lamp
+    if (isPlain(r) && 'mascot' in r)  // Bu leads only
         return name === 'leading' ? leadingAndLight(r, null).leading : element(r);
     if (isPlain(r)) {
         if (r.transport === true)
