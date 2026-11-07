@@ -37,12 +37,19 @@ The first is pill 1 at the centre, the next two the side pills (SPEC §2c), the 
 |---|---|---|
 | **1. Needs you** | `needsYou: true`; kinds `ask` and `call` always | a permission prompt, a D-Bus `Ask()`, a call, an agent waiting for your answer (`turn`) |
 | **2. Running** | neither flag | music playing, a timer, a transfer, an agent at work, a notification, a device just plugged |
-| **3. Waiting** | `linger: true` | a paused player, an agent done or stopped with an error |
+| **3. Waiting** | `linger: true`, **once stale** | a paused player, an agent done or stopped with an error |
 
+- **A waiting activity steps back when it dims, not before** (Ethan, 2026-11-07). Until
+  its `staleAfter` passes it ranks as running, so "Done" or a just-paused track keeps
+  the centre for a moment; then it dims and goes to tier 3 in the same step, one change
+  on screen rather than two. Waiting activities use a short `staleAfter`: **10 s**
+  (`SETTLE_MS` in `kit/activity.js`; agent done, a paused player). A running activity
+  that goes stale (an agent with no news for 1 min) stays in tier 2, behind the fresh
+  ones (§1.3).
 - `needsYou` wins over `linger`: an agent waiting for you lingers (it ends after
   `activity-linger` without news, SPEC §2) and still sits in tier 1.
-- `linger` already means "ends after `activity-linger`"; the same flag now also says
-  "behind what runs". One fact, two effects.
+- `linger` already means "ends after `activity-linger`"; with stale it now also says
+  "behind what runs". The adapter sets facts (it waits, when it dims); the kit ranks.
 - A tier is never set by a number: no priority, however high, lifts a waiting activity
   over a running one.
 
@@ -86,18 +93,22 @@ They change what is drawn for a moment, not the ranking.
 
 - `kit/stack.js`: rank by tier, then priority, then fresh, then recent (§1); `ask` and
   `call` are tier 1 by kind; `needsYou` validated in `kit/activity.js`.
+- `kit/activity.js`: `SETTLE_MS` 10 s; the tier is `needsYou` → 1, `linger` and stale
+  → 3, else 2 (a stale activity's re-render moves it, as the stack already re-renders on
+  stale).
 - Agent adapter: `turn` and the permission prompt's session set `needsYou`; drop
-  `PRIORITY.turn` 60 and `PRIORITY.done` 5 (done is `linger`, so tier 3 by itself).
-- Media adapter: nothing new (paused is already `linger`): a paused player falls behind
-  one that plays.
+  `PRIORITY.turn` 60 and `PRIORITY.done` 5; done `staleAfter` 10 s (was 1 min).
+- Media adapter: paused sets `staleAfter` 10 s (it is already `linger`): a paused
+  player keeps its place 10 s, then dims behind one that plays.
 - Media source: a player that starts playing again is surfaced anew (§1.4).
 - D-Bus: `needsYou`, `linger` (`Version` 3); DBUS.md, PROFILES.md say "inside its tier".
 - SPEC §2 and §2c: the scattered ordering sentences point here.
 
 ## 7. Tests
 
-- Tiers: a waiting activity of priority 100 under a running one of 10; a `needsYou` of
-  priority 10 over a running notification of 70; `needsYou` + `linger` in tier 1.
+- Tiers: a waiting activity of priority 100 under a running one of 10 once stale, over
+  it before; a `needsYou` of priority 10 over a running notification of 70; `needsYou`
+  + `linger` in tier 1; a running stale one stays in tier 2.
 - Inside a tier: priority, then fresh before stale, then the newest.
 - Re-surfaced on a state change: a player playing again leads a paused one; an agent
   that just stopped leads one that stopped earlier.
