@@ -273,18 +273,6 @@ function unseenCount(tray) {
     return Math.max(0, unseen - tray.queueCount);
 }
 
-/**
- * Ubuntu's session loads Yaru's Shell icons (`/usr/share/gnome-shell/modes/ubuntu.json`
- * `iconsResourceName`, read by Ubuntu's `ui/main.js` `_loadIcons`), where the date menu's
- * `message-indicator-symbolic` is a bell with a dot — the icon the top bar shows. GNOME's
- * own is a bare dot, so elsewhere the strip draws its dot over the bell.
- *
- * @returns {?string} the theme's bell with a dot, or null
- */
-export function bellWithDot() {
-    return /(^|\/)Yaru\//.test(Main.sessionMode.iconsResourceName ?? '') ? 'message-indicator-symbolic' : null;
-}
-
 /** @returns {boolean} GNOME's list has notifications (the tab's bell has a dot) */
 export function hasNotifications() {
     return Main.messageTray.getSources().some(src => src.notifications.length > 0);

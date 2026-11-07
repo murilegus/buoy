@@ -278,9 +278,10 @@
 .buoy-tab:checked { padding: 6px 14px; color: #fff; background-color: rgba(255, 255, 255, 0.2); }
 .buoy-tab:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-tab.buoy-more:checked { padding: 6px 9px; } /* the menu hangs from its edge */
-/* the tab's dot (a module's badge) at the icon's top right: white, ringed in the tab's
-   background so it reads as cut out of the icon */
-.buoy-tab-dot { width: 6px; height: 6px; border-radius: 5px; border: 1.5px solid #1f1f1f; background-color: #fff; }
+/* the tab's dot (a module's badge) at the icon's top right, as Yaru's bell with a dot:
+   amber (the buoy light's), ringed in the tab's background so it reads as cut out of the
+   icon (2026-11-08, Ethan) */
+.buoy-tab-dot { width: 7px; height: 7px; border-radius: 5px; border: 1.5px solid #1f1f1f; background-color: #EF9F27; }
 .buoy-tab:hover .buoy-tab-dot { border-color: #2c2c2c; }
 .buoy-tab:checked .buoy-tab-dot { border-color: #424242; }
 .buoy-home-list { spacing: 2px; }

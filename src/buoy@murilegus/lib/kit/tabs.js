@@ -37,20 +37,14 @@ const title = id => id.charAt(0).toUpperCase() + id.slice(1);
 const iconName = v => typeof v === 'string' && v.trim() ? v.trim() : null;
 const hasExpanded = a => planExpanded(a) !== null;
 
-// A module's badge: its own icon for it when it has one (the theme's bell with a dot),
-// else a dot the strip draws over the icon.
 function badgeOf(m) {
-    if (typeof m.badge !== 'function' || m.badge() !== true)
-        return {};
-    const icon = typeof m.badgeIcon === 'function' ? iconName(m.badgeIcon()) : null;
-    return icon ? {icon} : {badge: true};
+    return typeof m.badge === 'function' && m.badge() === true ? {badge: true} : {};
 }
 
 /**
  * @param {object[]} modules  enabled modules, in order: {id, kinds, tab?, title?, icon?,
- *   tabWhileLive?, badge?, badgeIcon?}; `badge()` true: the tab's icon carries a dot (the
- *   Notifications tab while GNOME's list has some, 2026-11-08) — `badgeIcon()`'s icon
- *   instead when it gives one (Yaru's bell with a dot)
+ *   tabWhileLive?, badge?}; `badge()` true: the tab's icon carries a dot (the
+ *   Notifications tab while GNOME's list has some, 2026-11-08)
  * @param {object[]} list  visible activities (stack order)
  * @param {object} [opts]
  * @param {string} [opts.slot]  `tabs-slot`
