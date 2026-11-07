@@ -1,5 +1,5 @@
 // Run: gjs -m tests/shapes.test.js   (pure; no Shell needed)
-import {shapesFor, compactCx, COMPACT_MIN, COMPACT_H, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop} from '../src/buoy@murilegus/lib/kit/shapes.js';
+import {shapesFor, compactCx, COMPACT_MIN, COMPACT_H, CARD_MAX_H, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop} from '../src/buoy@murilegus/lib/kit/shapes.js';
 
 const PANEL_H = 40; // Buoy's panel height (stylesheet.css)
 
@@ -9,7 +9,7 @@ function eq(actual, expected, msg) {
         throw new Error(`${msg}: expected ${e}, got ${a}`);
 }
 
-eq([GAP, OVERSHOOT, PILL_GAP, COMPACT_MIN, COMPACT_H], [4, 20, 8, 240, [56, 88, 120]], 'constants');
+eq([GAP, OVERSHOOT, PILL_GAP, COMPACT_MIN, COMPACT_H, CARD_MAX_H], [4, 20, 8, 240, [56, 88, 120], 160], 'constants');
 
 // --- derivation per monitor width ------------------------------------------
 // expanded width = 28 % of the monitor, clamped to [560, 760], snapped to even px;
@@ -61,6 +61,13 @@ for (const c of CASES) {
     eq(s.compact(300, 82).h, 98, `${at} a title and 3 rows: content-fit (82 + 16)`);
     eq(s.compact(300, 81).h, 98, `${at} content-fit heights are even`);
     eq(s.compact(300, 200).h, 120, `${at} taller content stops at 120`);
+    // a card (a notification, NOTIFICATIONS.md §3): content-fit up to 160, never under 56
+    const card = {card: true};
+    eq(s.compact(c.compactMax - 28, 134, card), {w: c.compactMax, h: 150, r: 24}, `${at} card: full width, content-fit (134 + 16)`);
+    eq(s.compact(c.compactMax - 28, 59, card).h, 76, `${at} card: a short one is not rounded up to 88`);
+    eq(s.compact(c.compactMax - 28, 300, card).h, CARD_MAX_H, `${at} card stops at 160`);
+    eq(s.compact(c.compactMax - 28, 10, card).h, 56, `${at} card never under 56`);
+    eq(s.compact(300, 200, {card: false}).h, 120, `${at} not a card: 120 still`);
 
     // where a compact opens: on its pill, shifted only to stay GAP inside the screen
     const W = s.container.w, cw = c.compactMax;

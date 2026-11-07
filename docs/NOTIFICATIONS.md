@@ -86,22 +86,47 @@ pill's content instead of adding a pill.
   is hidden; the queue shows when it is back (as GNOME's banners do). The missed light
   stays with Buoy's own activities.
 
-## 3. The compact (hover)
+## 3. The compact (hover): a card
+
+The compact of the other kinds (a leading, one title, one subtitle, buttons beside them,
+56 / 88 / 120 px) is too tight for a message (Ethan, 2026-11-07: "at least like GNOME's
+banner"). A notification's compact is a **card** — GNOME's banner layout inside the
+island's black: a kit shape (`compact.card`, `kit/presentation.js` planCard,
+`kit/present.js`), the first user; the screenshot notice (§7) and later a phone message or
+a calendar alert may use it too.
+
+```
+┌──────────────────────────────────────────────┐
+│ ✉ Telegram · now                          ✕  │  header
+│ ┌──┐ Lan                                     │  title, one line
+│ │  │ Lunch at 12? Let's try the new place on │  body, up to 2 lines
+│ └──┘ Le Loi and Nguyen Hue…                  │
+│ [     Reply     ] [   Mark as Read   ]       │  actions, equal widths
+└──────────────────────────────────────────────┘
+```
 
 | Part | What it shows |
 |---|---|
-| leading (40) | the notification's own picture when it has one (an avatar, a thumbnail: a file or image icon, rounded as art), else its icon, else the app's |
-| title | the notification's title, else the app's name |
-| subtitle | the body on one line (markup removed: the freedesktop body may carry `<b>`, `<a>`…); the app's name when the title already is the body |
-| buttons | the notification's own actions, at most 2 (in the app's order), then × |
+| header | the app's icon (16), its name, the time since it came ("now", then "3 min", "1 h"; re-read once a minute while shown), × at the end |
+| picture (40, left) | the notification's own picture (an avatar, a thumbnail: a file or image icon, rounded as art), else its own icon; nothing when it has neither |
+| title | the notification's title, one line; the body's start when it has no title, the app's name when it has neither |
+| body | the body (markup removed: the freedesktop body may carry `<b>`, `<a>`…), wrapped, at most 2 lines, then … |
+| actions | the notification's own actions, at most 3 (in the app's order), in a row of equal widths; no row without actions |
 
+- **Size:** the compact's full width (0.72 × expanded: 404 px at 1920, 516 at 2560, 548
+  at 3440), the height of its content up to **160 px** (the other compacts keep 56 / 88
+  / ≤ 120; SPEC §4). Header, a title and one line with no picture and no actions measure
+  ~76 px; picture, 2 lines and actions ~150.
+- A click anywhere on the card but a button activates the notification (§2).
 - The **actions** are the app's: Reply / Mark as Read / Open / Delete, whatever it sent.
   A press runs Shell's `Action.activate()` (the app gets its `ActionInvoked` or its GTK
   action, with an activation token so its window may come up) — and the notification
-  goes, unless it is `resident`, as in GNOME's banner.
+  goes, unless it is `resident`, as in GNOME's banner. **Reply** opens the app where you
+  answer: GNOME's banner has no inline reply in Shell 50 (the freedesktop spec has no
+  text field; KDE's `inline-reply` is not GNOME's); neither has Buoy.
 - **×** dismisses it from GNOME's list too (`destroy(DISMISSED)`, the banner's close).
-- GNOME's banner has no inline reply in Shell 50; neither has Buoy.
-- Three actions sent: the first two show. GNOME's list (and the tab, §6) has all.
+- More than three actions sent: the first three show. GNOME's list (and the tab, §6) has
+  all.
 
 ## 4. Do Not Disturb
 
@@ -116,12 +141,12 @@ for an `ask` while Do Not Disturb is SPEC §2a-i's (FEATURES "Buoy light").
 
 - **Screen shared or recorded** (Shell's own indicators, `ui/status/remoteAccess.js`
   ScreenSharingIndicator / ScreenRecordingIndicator `visible`, the same watch the agent
-  module uses, `kit/sharing.js`): the pill's text is the app's name, the compact's title
-  the app's name and its subtitle "New notification" (or "N notifications"); no picture.
-  The actions stay: their labels are the app's, not the message. Watched only while a
-  notification pill is up; a change re-draws it at once.
+  module uses, `kit/sharing.js`): the pill's text is the app's name; the card keeps its
+  header (app, time, ×) and says "New notification" (or "N notifications") as its title,
+  with no body and no picture. The actions stay: their labels are the app's, not the
+  message. Watched only while a notification pill is up; a change re-draws it at once.
 - **Profiles** (PROFILES.md): `hideBody` keeps the body from the adapter for that app
-  (the compact shows the app's name instead); `skip` drops a notification from the pill
+  (the card shows the title alone); `skip` drops a notification from the pill
   (GNOME's list keeps it, and no banner shows either).
 - The lock screen shows no banner (§1), so no pill.
 

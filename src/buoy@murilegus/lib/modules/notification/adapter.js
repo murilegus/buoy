@@ -3,14 +3,15 @@
  * the moment GNOME would have shown its banner, as a pill. Pure: the source reads Shell's
  * Notification and Source and passes plain fields plus the callbacks that act on them.
  *
- * Event: {id, title, body, markup, appName, appIcon, icon, image, count, critical, shared,
- *         actions, activate, onAction}
+ * Event: {id, title, body, markup, appName, appIcon, icon, image, at, count, critical,
+ *         shared, actions, activate, onAction}
  *   title, body  the notification's; body may be absent (a profile's `hideBody`)
  *   markup       the body is Pango markup (the freedesktop daemon's `useBodyMarkup`)
  *   appName      the source's title ("Firefox", "System")
  *   appIcon      the source's icon (a Gio.Icon or an icon name), the pill's leading
  *   icon         the notification's own themed icon, or null
  *   image        its own picture (an avatar, a thumbnail: a file or bytes icon), or null
+ *   at           when it came, ms since the epoch (the card's "now", "3 min")
  *   count        this pill's notifications still in GNOME's list, 1 and up
  *   critical     Urgency.CRITICAL: it needs you (no ttl)
  *   shared       the screen is shared or recorded (§5): only the app is named
@@ -20,8 +21,8 @@
 
 /** How long a notification's pill stays (§2), held while hovered (the kit's hold). */
 export const TTL = 6000;
-/** Of the notification's own actions, the compact shows the first two, then × (§3). */
-export const MAX_OWN_ACTIONS = 2;
+/** Of the notification's own actions, the card shows the first three (§3); × is its header's. */
+export const MAX_OWN_ACTIONS = 3;
 export const DISMISS = 'dismiss';
 
 const ICON = 'preferences-system-notifications-symbolic';
@@ -54,18 +55,17 @@ export function plainText(text, markup = false) {
 }
 
 /**
- * The compact's buttons (§3): the first two of the notification's own actions, then ×.
+ * The card's buttons (§3): the notification's own actions, the first three. × is the
+ * card's header (`close`), not one of them.
  *
  * @param {*} labels  the action labels, in the notification's order
- * @returns {{id: string, label?: string, icon?: string}[]} ids `a<i>` (i its index in
- *   the notification's list) and `dismiss`
+ * @returns {{id: string, label: string}[]} ids `a<i>`, i its index in the notification's list
  */
 export function buttonsOf(labels) {
-    const own = (Array.isArray(labels) ? labels : [])
+    return (Array.isArray(labels) ? labels : [])
         .map((label, i) => ({id: `a${i}`, label: plainText(label)}))
         .filter(b => b.label)
         .slice(0, MAX_OWN_ACTIONS);
-    return [...own, {id: DISMISS, icon: 'window-close-symbolic'}];
 }
 
 /**
@@ -101,6 +101,20 @@ export function sharedLine(count) {
     return count > 1 ? `${count} notifications` : 'New notification';
 }
 
+/**
+ * The card's title and body (§3): the title; with none, the body takes its place.
+ *
+ * @param {string} title  plain
+ * @param {string} body  plain, on one line
+ * @param {string} app
+ * @returns {{title: string, body: ?string}}
+ */
+export function cardText(title, body, app) {
+    if (title)
+        return {title, body: body || null};
+    return {title: body || app, body: null};
+}
+
 export default {
     notification(ev) {
         const app = plainText(ev.appName) || 'Notification';
@@ -109,17 +123,10 @@ export default {
         const body = shared ? '' : plainText(ev.body, ev.markup === true);
         const count = Number.isInteger(ev.count) && ev.count > 0 ? ev.count : 1;
         const appIcon = ev.appIcon ?? ICON;
-        const ownIcon = ev.icon ?? appIcon;
-        let leading = ownIcon;
+        let picture = ev.icon ?? null;
         if (!shared && ev.image)
-            leading = {art: ev.image, icon: ownIcon};
-        let subtitle;
-        if (shared)
-            subtitle = sharedLine(count);
-        else if (title && body)
-            subtitle = body;
-        else
-            subtitle = title || body ? app : null;
+            picture = {art: ev.image, icon: ev.icon ?? appIcon};
+        const text = shared ? {title: sharedLine(count), body: null} : cardText(title, body, app);
         const critical = ev.critical === true;
         // every output sets the same fields: an update merges (stack.update), so nothing
         // of the app's previous notification may stay
@@ -127,7 +134,12 @@ export default {
             text: title || body || app,
             leading: appIcon,
             trailing: count > 1 ? {text: String(count)} : null,
-            compact: {leading, text: title || body || app, subtitle, transport: true},
+            compact: {
+                card: {
+                    icon: appIcon, app, at: Number.isFinite(ev.at) ? ev.at : null,
+                    picture, title: text.title, body: text.body, close: DISMISS,
+                },
+            },
             expanded: null,
             actions: buttonsOf(ev.actions),
             minimalAction: false,

@@ -1,7 +1,7 @@
 // Run: gjs -m tests/presentation.test.js   (pure: presentation data → render plan)
 import {
     element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, planMissed, clockTime,
-    MAX_ACTIONS, MAX_ROWS, livePosition, mediaTimes, sinceText, untilText,
+    MAX_ACTIONS, MAX_ROWS, livePosition, mediaTimes, sinceText, untilText, agoText,
 } from '../src/buoy@murilegus/lib/kit/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
@@ -219,6 +219,32 @@ eq(planMinimal({text: 't'}, {light: 'off'}).light, null, 'minimal drops the off 
 eq(planCompact({text: 't'}), null, 'no compact field → no compact');
 eq(planCompact({text: 't', compact: true}), null, 'compact must be an object');
 eq(planCompact({compact: {}}), null, 'empty compact → no compact');
+
+// --- a card (NOTIFICATIONS.md §3) ----------------------------------------------------------
+{
+    const actions = [{id: 'a0', label: 'Reply'}, {id: 'a1', label: 'Read'}, {id: 'a2', label: 'Delete'}, {id: 'a3', label: 'More'}];
+    const p = planCompact({
+        compact: {
+            card: {
+                icon: 'mail-unread-symbolic', app: ' Mail ', at: 5000, picture: {art: '/a.png', icon: 'x'},
+                title: 'Lan', body: 'Lunch?', close: 'dismiss',
+            },
+        },
+        actions, keyline: '#3b82f6', isStale: false,
+    }, {light: 'missed'});
+    eq(p.card.header, {icon: {type: 'icon', icon: 'mail-unread-symbolic'}, text: 'Mail', at: 5000}, 'card header: icon, trimmed name, time');
+    eq([p.card.title, p.card.body, p.card.close], ['Lan', 'Lunch?', 'dismiss'], 'card text and close');
+    eq(p.card.picture, {type: 'art', src: '/a.png', fallback: 'x'}, 'card picture: art');
+    eq(p.actions.map(a => a.id), ['a0', 'a1', 'a2'], 'card actions: at most 3, in a row');
+    eq([p.light, p.keyline, p.stale], ['missed', '#3b82f6', false], 'card light, keyline, stale');
+    eq([p.leading, p.text, p.subtitle, p.trailing, p.rows, p.tall], [null, null, null, null, [], false],
+        'card plan keeps the compact fields empty');
+}
+eq(planCompact({compact: {card: {icon: 'x'}}}), null, 'a card with no name, title or body: none');
+eq(planCompact({compact: {card: {app: 'Mail', at: 'soon', picture: {text: 'no'}}}}).card,
+    {header: {icon: null, text: 'Mail', at: null}, title: null, body: null, picture: null, close: null},
+    'bad time, a text picture, no close: dropped');
+eq(planCompact({compact: {card: {title: 'T'}}, actions: 'x'}).actions, [], 'card without actions: no row');
 {
     const acts = [{id: 'prev', icon: 'p-symbolic'}, {id: 'pp', icon: 'q-symbolic'},
         {id: 'next', icon: 'n-symbolic'}, {id: 'x', label: 'X'}];
@@ -277,6 +303,8 @@ eq(element({until: 31000}), {type: 'until', at: 31000}, 'a live countdown elemen
 eq(untilText(31000, 1500), '0:30', 'what is left, rounded');
 eq(untilText(1000, 5000), '0:00', 'never negative');
 eq(element({since: 5000}), {type: 'since', at: 5000}, 'a live elapsed time element (CODING-AGENTS.md §2)');
+eq([agoText(0, 0), agoText(0, 59_999), agoText(0, 60_000), agoText(0, 3_900_000), agoText(9000, 1000)],
+    ['now', 'now', '1 min', '1 h 5 min', 'now'], 'agoText: now for the first minute, then as since');
 eq([sinceText(0, 59_999), sinceText(0, 60_000), sinceText(0, 4 * 60_000 + 59_000), sinceText(0, 3_900_000),
     sinceText(0, 7_200_000), sinceText(9000, 1000)],
 ['<1 min', '1 min', '4 min', '1 h 5 min', '2 h', '<1 min'], 'since: whole minutes, hours past 60, never negative');

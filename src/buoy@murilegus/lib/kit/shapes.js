@@ -20,6 +20,9 @@ const radius = h => Math.floor(h / 2);         // never more than half the heigh
 // up to 120 when rows need more (a title and 3 rows measure ~82 px); radius 24.
 export const COMPACT_MIN = 240;
 export const COMPACT_H = Object.freeze([56, 88, 120]);
+// A card (a notification, NOTIFICATIONS.md §3, 2026-11-07): full width, content-fit up to
+// this — a header, a picture beside a title and 2 lines, a row of buttons measure ~150.
+export const CARD_MAX_H = 160;
 const COMPACT_PAD = 14;                             // each side, as the pill's content
 const COMPACT_VPAD = 8;                             // top and bottom
 
@@ -59,9 +62,12 @@ export function shapesFor(monitor, panelH, opts = {}) {
             h, r: radius(h),
         }),
         // compact from its content's natural size; the island places it (top edge kept)
-        compact: (contentW, contentH) => ({
+        // (`card`: a card's height, NOTIFICATIONS.md §3)
+        compact: (contentW, contentH, {card = false} = {}) => ({
             w: clamp(evenUp(Math.ceil(contentW) + 2 * COMPACT_PAD), COMPACT_MIN, compactMax),
-            h: compactH(Math.ceil(contentH) + 2 * COMPACT_VPAD),
+            h: card
+                ? clamp(evenUp(Math.ceil(contentH) + 2 * COMPACT_VPAD), COMPACT_H[0], CARD_MAX_H)
+                : compactH(Math.ceil(contentH) + 2 * COMPACT_VPAD),
             r: 24,
         }),
         compactMax,

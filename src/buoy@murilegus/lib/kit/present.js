@@ -12,7 +12,7 @@ import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
 import {ART_CODE, ART_DECLARATIONS, artRadius, effectBox} from './rounded.js';
-import {element, livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, sinceText, untilText} from './presentation.js';
+import {agoText, element, livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, sinceText, untilText} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
@@ -932,7 +932,89 @@ function indented(actor, p, minWidth = 0) {
  */
 export function buildCompact(activity, {maxWidth = 0, light} = {}) {
     const p = planCompact(activity, {light});
-    return p ? compactBox(p, activity, maxWidth) : null;
+    if (!p)
+        return null;
+    return p.card ? cardBox(p, activity, maxWidth) : compactBox(p, activity, maxWidth);
+}
+
+// A card (NOTIFICATIONS.md §3, 2026-11-07): GNOME's banner layout in the island's black —
+// header (icon 16, app, time, ×), picture 40 beside a title and a body of up to 2 lines,
+// then the buttons in a row of equal widths. The compact's full width; pill.js gives it
+// up to CARD_MAX_H. A click on it but a button is the pill's click (island.js).
+function cardBox(p, activity, maxWidth) {
+    const c = p.card;
+    const box = new St.BoxLayout({style_class: 'buoy-card', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+    if (maxWidth > 0)
+        box.set_style(`width: ${maxWidth}px;`);
+
+    const header = new St.BoxLayout({style_class: 'buoy-card-header', x_expand: true});
+    addAll(header, [
+        lightDot(p.light),
+        makeElement(c.header.icon, 'minimal'),
+        c.header.text ? label(c.header.text, 'buoy-card-app') : null,
+        c.header.at !== null ? agoLabel(c.header.at) : null,
+        new St.Widget({x_expand: true}),
+        c.close ? closeButton(c.close, activity) : null,
+    ]);
+    box.add_child(header);
+
+    const lines = new St.BoxLayout({
+        style_class: 'buoy-card-lines', orientation: Clutter.Orientation.VERTICAL,
+        x_expand: true, y_align: Clutter.ActorAlign.START,
+    });
+    addAll(lines, [
+        c.title ? label(c.title, 'buoy-card-title') : null,
+        c.body ? wrapped(c.body, 'buoy-card-body') : null,
+    ]);
+    const main = new St.BoxLayout({style_class: 'buoy-card-main', x_expand: true});
+    addAll(main, [
+        c.picture ? makeElement(c.picture, 'compact', activity) : null,
+        lines.get_n_children() ? lines : null,
+    ]);
+    if (main.get_n_children())
+        box.add_child(main);
+
+    if (p.actions.length) {
+        const row = new St.BoxLayout({style_class: 'buoy-card-actions', x_expand: true});
+        row.layout_manager.homogeneous = true;      // equal widths, as GNOME's banner
+        for (const a of p.actions) {
+            const b = actionButton(a, activity);
+            b.x_expand = true;
+            row.add_child(b);
+        }
+        box.add_child(row);
+    }
+    return box;
+}
+
+// Wrapped and ellipsized at its CSS max-height (MAX_CARD_LINES lines): Clutter.Text gives
+// Pango the allocated height when it both wraps and ellipsizes (clutter-text.c
+// clutter_text_create_layout), so the last line that fits ends in …
+function wrapped(text, styleClass) {
+    const l = new St.Label({text, style_class: styleClass, x_expand: true});
+    l.clutter_text.line_wrap = true;
+    l.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+    l.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+    return l;
+}
+
+// "· now", "· 3 min": re-read while shown, as `since` (NOTIFICATIONS.md §3)
+function agoLabel(at) {
+    const l = label('', 'buoy-card-time');
+    tick(l, () => {
+        l.text = `· ${agoText(at, Date.now())}`;
+    }, () => true, 20);
+    return l;
+}
+
+function closeButton(id, activity) {
+    const button = new St.Button({
+        style_class: 'buoy-card-close', can_focus: true, accessible_name: 'Dismiss',
+        child: new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}),
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    button.connect('clicked', () => activity.onAction?.(id));
+    return button;
 }
 
 /**

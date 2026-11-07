@@ -154,6 +154,7 @@ export class NotificationSource extends Source {
             appIcon: src?.icon ?? null,
             icon: themed ? own : null,
             image: own && !themed ? own : null,
+            at: (n.datetime?.to_unix() ?? 0) * 1000 || Date.now(),
             count: pill.list.length,
             critical: n.urgency === MessageTray.Urgency.CRITICAL,
             shared: this._sharing.shared,
