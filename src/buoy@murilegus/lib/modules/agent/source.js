@@ -5,11 +5,12 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Source} from '../../kit/source.js';
+import {appOfBusName} from '../../kit/apps.js';
+import {lingerMs} from '../../kit/settings.js';
 import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, parseEvent, reply, settles, step} from './adapter.js';
 
 const KIND = 'agent';
 const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
-const MAX_WALK = 32;            // parents walked up from the hook to a window (§6)
 
 /**
  * Coding agents' sessions in the pill (docs/CODING-AGENTS.md): the hook script calls
@@ -160,7 +161,9 @@ export class AgentSource extends Source {
         this._settleAsk(key);
         const askId = `${this._activityId(rec)}:ask`;
         const {question, options, look} = askOf(rec, ev, {shared: this._shared});
-        const minutes = this._settings?.get_int('agent-ask-timeout') ?? 10;
+        // no answer within `activity-linger` (5 min) → deny: the one rule for what waits
+        // (Ethan 2026-11-07; was `agent-ask-timeout`, 10 min)
+        const waitMs = lingerMs(this._settings?.get_string('activity-linger'));
         const quiet = this._quiet(key);
         const entry = {event: ev, askId, watch: 0, focusId: 0};
         this._asks.set(key, entry);
@@ -176,7 +179,7 @@ export class AgentSource extends Source {
                 });
         }
         const asked = this._stack.ask(askId, question, options, {
-            app: rec.source, timeoutMs: minutes * 60 * 1000, fallback: TIMEOUT, look, quiet,
+            app: rec.source, timeoutMs: waitMs, fallback: TIMEOUT, look, quiet,
         });
         // quiet while its terminal is focused; another app focused, it opens (Ethan
         // 2026-11-07). Watched only while such an ask waits.
@@ -239,21 +242,10 @@ export class AgentSource extends Source {
     // --- the session's window (§6) ------------------------------------------------------
 
     // undefined: not known yet (asked again with the next event); null: no window found
-    _lookUpApp(key, sender) {
-        return new Promise(resolve => {
-            Gio.DBus.session.call('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus',
-                'GetConnectionUnixProcessID', new GLib.Variant('(s)', [sender]), new GLib.VariantType('(u)'),
-                Gio.DBusCallFlags.NONE, 1000, null, (conn, res) => {
-                    try {
-                        const [pid] = conn.call_finish(res).deepUnpack();
-                        if (this._sessions?.has(key))
-                            this._apps.set(key, appOfProcess(pid));
-                    } catch {
-                        // gone already: the next event asks again
-                    }
-                    resolve();
-                });
-        });
+    async _lookUpApp(key, sender) {
+        const {pid, app} = await appOfBusName(sender);
+        if (pid && this._sessions?.has(key))
+            this._apps.set(key, app);
     }
 
     // A click on the session's pill (or its compact): its terminal — or its very session
@@ -377,35 +369,3 @@ function desktopShownSession() {
     }
 }
 
-/**
- * The app owning a window of `pid` or of one of its parents (§6): GNOME Terminal and
- * Ptyxis run every window in one process, the shell and Claude Code under it.
- *
- * @param {number} pid
- * @returns {?Shell.App}
- */
-function appOfProcess(pid) {
-    const tracker = Shell.WindowTracker.get_default();
-    for (let i = 0, p = pid; i < MAX_WALK && p > 1; i++) {
-        const app = tracker.get_app_from_pid(p);
-        if (app)
-            return app;
-        p = parentOf(p);
-    }
-    return null;
-}
-
-/**
- * @param {number} pid
- * @returns {number} its parent's pid, 0 when unknown
- */
-export function parentOf(pid) {
-    try {
-        const [, bytes] = GLib.file_get_contents(`/proc/${pid}/stat`);
-        // "pid (comm) state ppid …": comm may hold spaces and parentheses
-        const text = new TextDecoder().decode(bytes);
-        return Number(text.slice(text.lastIndexOf(')') + 2).split(' ')[1]) || 0;
-    } catch {
-        return 0;
-    }
-}

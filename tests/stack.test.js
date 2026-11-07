@@ -1,6 +1,6 @@
 // Run: gjs -m tests/stack.test.js   (no Shell; fake clock + fake island)
 import {ActivityStack, ALERT_MS, pillWindow} from '../src/buoy@murilegus/lib/kit/stack.js';
-import {PRIORITY} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {DEFAULT_LINGER, PRIORITY} from '../src/buoy@murilegus/lib/kit/activity.js';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -355,6 +355,38 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.top.id, 'past', 'far schedule (beyond a 32-bit ms timer) not early');
     clock.advance(1);
     eq(stack.top.id, 'far', 'far schedule fires on time');
+}
+
+// --- linger: what only waits ends after activity-linger without news (2026-11-07) ----------
+{
+    const {clock, stack} = setup();
+    eq(DEFAULT_LINGER, 5 * 60 * 1000, '5 min by default');
+    stack.surface({id: 'w', kind: 'media', linger: true});
+    clock.advance(DEFAULT_LINGER - 1);
+    eq(stack.has('w'), true, 'still there just before');
+    stack.update('w', {text: 'news'});
+    clock.advance(DEFAULT_LINGER - 1);
+    eq(stack.has('w'), true, 'an update is news: the wait starts again');
+    clock.advance(1);
+    eq(stack.has('w'), false, 'then it ends');
+    stack.surface({id: 'p', kind: 'media', linger: true});
+    stack.update('p', {linger: false});
+    clock.advance(DEFAULT_LINGER * 2);
+    eq(stack.has('p'), true, 'playing again: it no longer waits');
+    stack.setLinger(60000);
+    stack.surface({id: 'q', kind: 'agent', linger: true});
+    stack.hold('q', true);
+    clock.advance(120000);
+    eq(stack.has('q'), true, 'the pointer on it holds it');
+    stack.hold('q', false);
+    clock.advance(59999);
+    eq(stack.has('q'), true, 'let go: a whole wait again');
+    clock.advance(1);
+    eq(stack.has('q'), false, 'setLinger: 1 min');
+    stack.setLinger(0);
+    stack.surface({id: 'r', kind: 'agent', linger: true});
+    clock.advance(60000);
+    eq(stack.has('r'), false, 'a bad value keeps the last one');
 }
 
 // --- ties: a fresh one before a stale one (2026-11-07) -----------------------------------

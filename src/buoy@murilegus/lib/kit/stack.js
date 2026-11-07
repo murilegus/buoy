@@ -1,6 +1,6 @@
 import GLib from 'gi://GLib';
 
-import {FEEDBACK, validate} from './activity.js';
+import {DEFAULT_LINGER, FEEDBACK, validate} from './activity.js';
 
 /**
  * ActivityStack: which activity is on the island right now (APPLE.md §B1, SPEC §2).
@@ -20,6 +20,9 @@ import {FEEDBACK, validate} from './activity.js';
  *     hold(id, true) — the pointer on its pill — pauses the ttl, hold(id, false) gives it
  *     a fresh one (SPEC §2e: hover holds feedback)
  *   - staleAfter ms without update → `isStale`; update clears it
+ *   - `linger: true` (it only waits: paused, done, waiting for you) → it ends after
+ *     setLinger(ms) (`activity-linger`, 5 min) without an update; each update starts the
+ *     wait again; the pointer on its pill holds it, as a ttl (2026-11-07)
  *   - style 'transient' asks the island to open expanded and ends when it collapses
  *   - alert (on surface, or update(..., {alert: true})) is one-shot; a covered activity's
  *     alert brings it up for ALERT_MS, then the real top returns
@@ -108,6 +111,16 @@ export class ActivityStack {
         this._more = 0;               // visible activities beyond them (+N)
         this._promoted = null;        // covered activity brought up by an alert
         this._light = 'off';
+        this._lingerMs = DEFAULT_LINGER;
+    }
+
+    /**
+     * @param {number} ms  `activity-linger`: how long a waiting activity stays without news;
+     *   applies from each activity's next surface or update
+     */
+    setLinger(ms) {
+        if (Number.isFinite(ms) && ms > 0)
+            this._lingerMs = ms;
     }
 
     // --- lifecycle ----------------------------------------------------------
@@ -122,6 +135,7 @@ export class ActivityStack {
         if (a.ttl > 0 && !this._held.has(a.id))
             this._arm(a.id, 'ttl', a.ttl, () => this.end(a.id));
         this._armStale(a);
+        this._armLinger(a);
         this._render({changed: a.id, alert: a.alert ? a.id : null});
         return a.id;
     }
@@ -144,6 +158,7 @@ export class ActivityStack {
                 this._arm(id, 'ttl', a.ttl, () => this.end(id));
         }
         this._armStale(a);
+        this._armLinger(a);
         this._render({changed: id, alert: alert || patch.alert === true ? id : null});
         return true;
     }
@@ -351,10 +366,12 @@ export class ActivityStack {
         if (held) {
             this._held.add(id);
             this._disarm(id, 'ttl');
+            this._disarm(id, 'linger');
         } else {
             this._held.delete(id);
             if (a.ttl > 0)
                 this._arm(id, 'ttl', a.ttl, () => this.end(id));
+            this._armLinger(a);
         }
     }
 
@@ -406,7 +423,7 @@ export class ActivityStack {
     // Remove without rendering or history (replacement, end). Leaves _asks alone:
     // ask() registers the question before surface() replaces any old activity.
     _drop(id) {
-        for (const what of ['ttl', 'stale', 'ask', 'promote'])
+        for (const what of ['ttl', 'stale', 'linger', 'ask', 'promote'])
             this._disarm(id, what);
         this._items.delete(id);
         this._held.delete(id);
@@ -433,6 +450,13 @@ export class ActivityStack {
                     this.end(a.id);
             }
             : own;
+    }
+
+    // A waiting activity's end, from now: every surface and update is news
+    _armLinger(a) {
+        this._disarm(a.id, 'linger');
+        if (a.linger === true && !this._held.has(a.id))
+            this._arm(a.id, 'linger', this._lingerMs, () => this.end(a.id));
     }
 
     _armStale(a) {

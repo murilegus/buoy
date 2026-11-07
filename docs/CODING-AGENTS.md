@@ -129,9 +129,11 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 - **Starts** on the first `UserPromptSubmit` of a session: a session that is open but
   idle takes no room. A tool, a subagent or a permission prompt before any prompt was
   seen (the hooks installed mid-run) starts it too, its clock from then. **Ends** on
-  `SessionEnd`, or 5 min after `Stop` if no new prompt came (the activity's `ttl`; the
-  pointer on it holds it, as any ttl; the next prompt brings it back; Ethan, 2026-11-07:
-  30 s, 2 min, then 5 min).
+  `SessionEnd`, or after `Stop` once `activity-linger` (5 min by default) passes with no
+  new prompt: done, it only waits (kit `linger`, SPEC §2: one rule for every waiting
+  activity); the pointer on it holds it, the next prompt brings it back (Ethan,
+  2026-11-07: 30 s, 2 min, 5 min, then the common rule). So does a session waiting for
+  you (`turn`).
 - **Stale**: one minute without news dims the pill and Bu takes `stale`, working or done
   alike (Ethan, 2026-11-07). Working, it means nothing came for a minute: a long command
   sends no event until it ends, a crashed session none at all. Waiting for you (`turn`,
@@ -151,7 +153,7 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 | `Notification` `permission_prompt` | `ask` | "Needs your OK" | the terminal's own prompt; no buttons (the hook of §4 carries them) |
 | `Notification` `idle_prompt`, `agent_needs_input`, `elicitation_dialog`, `elicitation_url_dialog` | `turn` | "Waiting for you" | alert once; priority 60; never after `Stop` (the pill is ending). Other types ignored |
 | `PreCompact` | `compact` | "Compacting" | `PostCompact` → `busy` "Working"; a `/compact` between prompts takes no room |
-| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done", "Done in {n} min" from a minute | priority 5; dims after 1 min, ends after 5 |
+| `Stop` | `done`, alert; `party` first when the run took > 10 min | "Done", "Done in {n} min" from a minute | priority 5; dims after 1 min, ends after `activity-linger` (5 min) |
 | `StopFailure` | `error`, alert | "Stopped with an error" | the same |
 | no event for 1 min while `busy` / `think` / `compact` | `stale` | unchanged | `staleAfter`: the renderer dims it and draws Bu `stale` (kit, any stale activity led by Bu) |
 | `SessionEnd` | — | — | `end()` at once |
@@ -185,7 +187,7 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
   | Allow | `{"hookSpecificOutput": {"hookEventName": "PermissionRequest", "decision": {"behavior": "allow"}}}` |
   | Always | the same with `"updatedPermissions": [<the first of permission_suggestions, unchanged>]` — Claude Code's own suggestion, kept where it says (usually the project's `.claude/settings.local.json`) |
   | Deny | `{… "decision": {"behavior": "deny", "message": "Denied in Buoy"}}` |
-  | timeout (`agent-ask-timeout`, 10 min) | Deny, message "No answer in Buoy" (seen with 1 min, 2026-11-07) |
+  | timeout (`activity-linger`, 5 min; was its own 10 min) | Deny, message "No answer in Buoy" (seen with 1 min, 2026-11-07) |
   | answered in the terminal first, ended, Buoy disabled | `''` — no decision: Claude Code's own flow stands |
 
 - **Answered elsewhere** (the terminal, Desktop's card): the ask ends and the hook returns
@@ -201,7 +203,7 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
   the hooks reference says the hooks run alongside the host and whichever decides first
   applies — the pill or Desktop's own card.
 - **Hook timeout**: the `PermissionRequest` entry gets `timeout` 1810 s, above the longest
-  `agent-ask-timeout` (30 min), so Buoy always answers before Claude Code gives up.
+  `activity-linger` (30 min), so Buoy always answers before Claude Code gives up.
 - **Not opened** (the red light instead, INDICATORS): fullscreen, Do Not Disturb, the
   island hidden. **Not jumping open** while the session's terminal is focused (§6,
   `agent-quiet-focused`): the ask is `quiet` — no alert, no expand, also not when the
@@ -224,7 +226,7 @@ own.
 Claude Code does not say which terminal runs a session (the hooks reference documents
 `cwd`, `session_id`, `CLAUDE_PROJECT_DIR`, no window or TTY). Buoy finds it:
 
-- Buoy asks the bus for the hook's pid (`GetConnectionUnixProcessID` of the caller, while
+- Buoy asks the bus for the hook's pid (kit `apps.js`: `GetConnectionUnixProcessID` of the caller, while
   the hook is still connected: the reply waits for it, a few ms in the background) and
   walks `/proc/<pid>/stat` up the parents (hook → `sh -c` → Claude Code → shell →
   terminal; a handful of reads, once per session) until Shell knows a window of that pid
@@ -283,7 +285,7 @@ my Claude Code sessions", its subtitle the state ("Hooks installed in
 | Key | Type | Default | Prefs | Meaning |
 |---|---|---|---|---|
 | `modules-agent` | b | true | Modules, row "Claude Code" | the module (replaces the stub `modules-ask`) |
-| `agent-ask-timeout` | i | 10 | in the row, "Deny after (minutes)", 1–30 | no answer → Deny (was `ask-timeout`) |
+| `activity-linger` | s | `5m` | the Island page's Pill group, "Waiting pills go after": 5, 10, 20, 30 min | the kit's, not the module's: no answer → Deny after it; a done or waiting session ends after it (was `agent-ask-timeout`, 10 min) |
 | `agent-quiet-focused` | b | true | in the row, "Quiet in its terminal" | §6: no jump open while the terminal is focused |
 
 The hooks' presence is in `~/.claude/settings.json`, not in a key (§8).

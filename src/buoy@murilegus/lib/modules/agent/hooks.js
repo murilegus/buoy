@@ -19,7 +19,7 @@ export const REPORTS = [
 /** The one event that waits for an answer (§4). */
 export const ASK_EVENT = 'PermissionRequest';
 /**
- * Seconds Claude Code waits for the permission hook: above the longest `agent-ask-timeout`
+ * Seconds Claude Code waits for the permission hook: above the longest `activity-linger`
  * (30 min), so Buoy always answers first — Deny on its own timeout.
  */
 export const ASK_HOOK_TIMEOUT = 30 * 60 + 10;

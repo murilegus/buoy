@@ -22,6 +22,7 @@ for (const empty of [null, undefined, '', '  ', false, 0, {}, {icon: ''}, {art: 
 eq(element('audio-x-generic-symbolic'), {type: 'icon', icon: 'audio-x-generic-symbolic'}, 'string = icon name');
 eq(element('eq'), {type: 'glyph', name: 'eq'}, '"eq" is the equaliser glyph');
 eq(element({icon: 'eq'}), {type: 'glyph', name: 'eq'}, '{icon: "eq"} too');
+eq(element('eq-paused'), {type: 'glyph', name: 'eq-paused'}, '"eq-paused": the equaliser stopped low');
 eq(element({art: 'file:///a.png', icon: 'audio-x-generic-symbolic'}),
     {type: 'art', src: 'file:///a.png', fallback: 'audio-x-generic-symbolic'}, 'art with icon fallback');
 eq(element({art: '/tmp/a.png'}), {type: 'art', src: '/tmp/a.png', fallback: null}, 'art without fallback');

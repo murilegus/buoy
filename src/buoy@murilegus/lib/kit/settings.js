@@ -25,6 +25,9 @@ export const PLACES = {
     'idle-content': 'idle',     // Island page, "When idle"
     'expanded-width': 'general',
     'keybind-focus': 'general',
+    // the kit's rule for every waiting activity (2026-11-07, Ethan; was media's
+    // `media-hide-paused-after`)
+    'activity-linger': 'general',
     // Bu is the kit's, not a module's (MASCOT.md); hidden while nothing drew Bu on the pill
     // (rule 9, Ethan 2026-11-06), back on the Island page's Pill group with the first that
     // does: Claude Code's sessions (2026-11-07)
@@ -201,6 +204,7 @@ export const CHOICE_LABELS = {
         'icon-time': 'Icon & time', 'time': 'Time', 'icon': 'Icon', 'seconds': 'With seconds',
     },
     'idle-weather-refresh': {'30m': 'Every 30 minutes', '1h': 'Every hour'},
+    'activity-linger': {'5m': '5 minutes', '10m': '10 minutes', '20m': '20 minutes', '30m': '30 minutes'},
 };
 
 /**
@@ -320,6 +324,15 @@ export function withPlace(list, place, keyOf, max = 5) {
     const key = keyOf(place);
     const rest = (Array.isArray(list) ? list : []).filter(p => keyOf(p) !== key);
     return [place, ...rest].slice(0, max);
+}
+
+/**
+ * @param {*} value  `activity-linger`: '5m' | '10m' | '20m' | '30m' (Ethan, 2026-11-07)
+ * @returns {number} ms; 5 min for anything else
+ */
+export function lingerMs(value) {
+    const m = /^(5|10|20|30)m$/.exec(String(value ?? ''));
+    return (m ? Number(m[1]) : 5) * 60 * 1000;
 }
 
 /**

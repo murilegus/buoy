@@ -1,7 +1,7 @@
 // Run: gjs -m tests/agent.test.js   (pure: Claude Code's events → the session's pill, the
 // permission reply, Buoy's entries in ~/.claude/settings.json; docs/CODING-AGENTS.md §11)
 import {
-    AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, END_AFTER_STOP, PARTY_AFTER, PRIORITY, STALE_MS, TIMEOUT,
+    AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, PRIORITY, STALE_MS, TIMEOUT,
     agent, answered, askOf, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
@@ -227,22 +227,23 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     const a = agent({...rec, shared: false});
     eq([a.text, a.leading, a.trailing], ['Claude · buoy', {mascot: 'busy'}, {since: T0}], 'minimal: Bu, the name, the elapsed time');
     eq([a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Editing src/…/c.js'], 'compact: which session, what it does');
-    eq([a.priority, a.staleAfter, a.ttl], [PRIORITY.working, STALE_MS, 0], 'working: 35, stale after 1 min, no end');
+    eq([a.priority, a.staleAfter, a.ttl ?? 0], [PRIORITY.working, STALE_MS, 0], 'working: 35, stale after 1 min, no end');
     eq(a.pressFirst, true, 'a click brings the terminal up first, else the tab (§2)');
+    eq(a.linger, false, 'working: it does not wait, it never lingers out');
     const s = agent({...rec, shared: true});
     eq([s.compact.text, s.compact.subtitle], ['Claude · buoy', 'Editing a file'], 'sharing the screen: no file name (§7)');
     if (JSON.stringify(s).includes('c.js'))
         throw new Error('sharing: the path appears nowhere');
     const turn = agent({...last([[ev('UserPromptSubmit')], [ev('Notification', {notification_type: 'idle_prompt'})]]).rec});
-    eq([turn.priority, turn.staleAfter], [PRIORITY.turn, 0], 'waiting for you: 60, never stale');
+    eq([turn.priority, turn.staleAfter, turn.linger], [PRIORITY.turn, 0, true], 'waiting for you: 60, never stale, lingers out');
     const done = agent(last([[ev('UserPromptSubmit')], [ev('Stop'), 4 * MIN]]).rec);
-    eq([done.priority, done.ttl, done.staleAfter, done.trailing], [PRIORITY.done, END_AFTER_STOP, DONE_STALE, {text: '4 min'}],
-        'done: under everything, dims after 1 min, ends after 5, the time frozen (Ethan 2026-11-07)');
-    eq([END_AFTER_STOP, DONE_STALE, STALE_MS], [5 * MIN, MIN, MIN], 'ends at 5 min; working or done, dims after 1 min');
+    eq([done.priority, done.linger, done.ttl ?? 0, done.staleAfter, done.trailing], [PRIORITY.done, true, 0, DONE_STALE, {text: '4 min'}],
+        'done: under everything, waits (the kit ends it after activity-linger), dims after 1 min, the time frozen');
+    eq([DONE_STALE, STALE_MS], [MIN, MIN], 'working or done, dims after 1 min');
     eq([PRIORITY.working, PRIORITY.turn, PRIORITY.done, KIT_PRIORITY.agent, KIT_PRIORITY.ask, KIT_PRIORITY.media],
         [35, 60, 5, 35, 90, 10], 'priorities 35 / 60 / 90; done 5, under media\'s 10');
     const fail = agent(last([[ev('UserPromptSubmit')], [ev('StopFailure')]]).rec);
-    eq([fail.priority, fail.ttl], [PRIORITY.done, END_AFTER_STOP], 'stopped with an error: the same');
+    eq([fail.priority, fail.linger], [PRIORITY.done, true], 'stopped with an error: the same');
     // stale: Bu `stale`, dimmed (the renderer)
     const plan = planMinimal({...a, isStale: true});
     eq([plan.leading.pose, plan.stale], ['stale', true], 'stale: Bu stale, dimmed');
@@ -339,7 +340,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(empty.hooks.Stop, [{hooks: [{type: 'command', command: cmd, async: true}]}], 'a report runs in the background');
     eq(empty.hooks[ASK_EVENT], [{hooks: [{type: 'command', command: cmd, timeout: ASK_HOOK_TIMEOUT}]}],
         'the permission hook waits, past the longest ask timeout');
-    eq(ASK_HOOK_TIMEOUT > 30 * 60, true, 'longer than agent-ask-timeout\'s 30 min');
+    eq(ASK_HOOK_TIMEOUT > 30 * 60, true, 'longer than activity-linger\'s 30 min');
     eq(install(null, cmd), empty, 'a missing file: the same');
     eq(install(install({}, cmd), cmd), empty, 'idempotent');
     eq(installed(empty), 'all', 'installed');

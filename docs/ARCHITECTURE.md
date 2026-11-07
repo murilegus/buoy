@@ -47,6 +47,7 @@ src/buoy@murilegus/
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
     │   ├── mascot.js       Bu: 13 pose grids, lamp rule, frame timing, pure; MASCOT.md is the source (2026-11-03; eyes data with M4)
     │   ├── registry.js     app-id normalisation table; adapter resolution
+    │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
     │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
     │   └── shapes.js
     └── modules/            FEATURES — one self-contained folder each
@@ -60,7 +61,7 @@ src/buoy@murilegus/
             │               keys, 2026-11-05)
             ├── adapter.js  default presentation for this module's kinds
             ├── tab.js      content for its tab in expanded (optional): export a class,
-            │               `new Tab({close})` → {actor, destroy(), update?(activities)}; a kind
+            │               `new Tab({close, from})` → {actor, destroy(), update?(activities)} (`from`: the activity whose pill opened it, 2026-11-07); a kind
             │               tab's `update` gets its kind's activities at once and on each
             │               change (2026-11-05); built on first selection, destroyed when
             │               expanded closes; `close()` closes the island after an action
@@ -148,7 +149,8 @@ fields and order: [PROFILES.md](PROFILES.md).
    Bu's moving poses are not idle content: they swap two frames every 500 ms only while
    their activity's pill is mapped, and hold still after `mascot-rest-after` (60 s)
    without input and with animations off (`MASCOT.md` § Drawing rules, 2026-11-04).
-   The media equaliser moves only while it is mapped (playing: paused shows ⏸), one
+   The media equaliser moves only while it is mapped and playing (paused, its bars stand
+   low and still: the `eq-paused` glyph, 2026-11-07), one
    endless `scale-y` transition per bar, none unmapped or with animations off; it does
    not rest without input, since music plays untouched (2026-11-05, Ethan). So does a
    compact or Media-tab title too long for its width: it scrolls only while it is mapped
@@ -214,7 +216,8 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `progress-folders` | as | folders watched for downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03; M3 and renamed from `transfers-folders` 2026-11-06, rule 9) |
 | `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc (default Super+B, SPEC §2c) |
 | `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60 (MASCOT.md, 2026-11-04); the kit's, as Bu is. On the Island page's Pill group since Claude Code's sessions draw Bu (2026-11-07; hidden before: nothing drew Bu, 2026-11-06, Ethan) |
-| `agent-ask-timeout`, `agent-quiet-focused` | — | declared by the agent module (CODING-AGENTS.md §9): minutes before an unanswered permission prompt is denied, 1–30, default 10; no jump open while the session's terminal is focused, default `true`. Whether Claude Code's hooks are installed lives in `~/.claude/settings.json`, not in a key |
+| `activity-linger` | s | `5m` \| `10m` \| `20m` \| `30m`, default `5m`: how long an activity that only waits (`linger`: a paused player, an agent done or waiting for you) stays without news, and how long a permission prompt waits before Deny (SPEC §2, 2026-11-07, Ethan; replaces `media-hide-paused-after` and `agent-ask-timeout`); Island page, Pill group |
+| `agent-quiet-focused` | — | declared by the agent module (CODING-AGENTS.md §9): no jump open while the session's terminal is focused, default `true`. Whether Claude Code's hooks are installed lives in `~/.claude/settings.json`, not in a key |
 | per-module keys | — | declared by the module |
 
 ## Open for later
