@@ -12,7 +12,7 @@ const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edg
 const STRIP_H = 60; // first guess for the strip + panel padding; measured once laid out
 
 // what the strip draws: its tabs and their dots
-const stripKey = strip => strip.tabs.map(t => `${t.id}${t.badge ? '•' : ''}`).join();
+const stripKey = strip => strip.tabs.map(t => `${t.id} ${t.icon}${t.badge ? ' •' : ''}`).join();
 
 // A tab's icon with a dot at its top right (the Notifications tab while GNOME's list has
 // some, 2026-11-08), as GNOME's date menu shows its message indicator.

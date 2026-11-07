@@ -173,6 +173,15 @@ eq(stripOrder({tabs: [{id: HOME}], slot: null, more: []}), [HOME], 'no slot: Hom
     eq('badge' in planStrip([{...notes, badge: () => 'yes'}], []).tabs[1], false, 'only a true badge');
     eq('badge' in planStrip([{...notes, badge: true}], []).tabs[1], false, 'not a function: none');
     eq('badge' in planStrip([notes], []).tabs[0], false, 'Home never');
+    has = true;
+    const bell = {...notes, icon: 'bell', badgeIcon: () => 'bell-dot'};
+    eq([planStrip([bell], []).tabs[1].icon, 'badge' in planStrip([bell], []).tabs[1]], ['bell-dot', false],
+        'badgeIcon(): its icon instead of the drawn dot');
+    eq([planStrip([{...bell, badgeIcon: () => null}], []).tabs[1].icon, planStrip([{...bell, badgeIcon: () => null}], []).tabs[1].badge],
+        ['bell', true], 'badgeIcon() null: the drawn dot');
+    eq(planStrip([{...bell, badgeIcon: () => '  '}], []).tabs[1].badge, true, 'a blank icon: the drawn dot');
+    has = false;
+    eq(planStrip([bell], []).tabs[1].icon, 'bell', 'no badge: the plain icon, badgeIcon unused');
 }
 
 print('tabs: ok');
