@@ -11,7 +11,7 @@ import {
     planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
     donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote, weatherNote, placeLabel,
-    searchPlaces, withPlace, WEATHER_UNITS,
+    searchPlaces, withPlace, WEATHER_UNITS, PLAN_LINES,
 } from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
@@ -639,20 +639,29 @@ export default class BuoyPreferences extends ExtensionPreferences {
             return row;
         }
         const title = p.enableKey ? key(p.enableKey).get_summary() : p.id;
-        const row = textRow(Adw.ExpanderRow, {title});
+        // a plan with keys opens to them; one without (the next event) is a plain row
+        const row = textRow(p.keys.length ? Adw.ExpanderRow : Adw.ActionRow, {title});
         for (const name of p.keys)
             row.add_row(this._row(key(name)));
         if (p.enableKey) {
             const sync = () => {
                 const on = this._settings.get_boolean(p.enableKey);
                 row.sensitive = on;
-                row.subtitle = on ? '' : 'Turn on in Modules';
-                if (!on)
+                row.subtitle = on ? PLAN_LINES[p.id] ?? '' : 'Turn on in Modules';
+                if (!on && p.keys.length)
                     row.expanded = false;
             };
             this._ids.push(this._settings.connect(`changed::${p.enableKey}`, sync));
             sync();
         }
+        return row;
+    }
+
+    // The calendars are every one EDS knows: Online Accounts adds Google, Microsoft 365,
+    // Nextcloud… with no code of Buoy's (SPEC §3, 2026-11-06, Ethan)
+    _accountsRow() {
+        const row = new Adw.ButtonRow({title: 'Online Accounts', end_icon_name: 'adw-external-link-symbolic'});
+        row.connect('activated', () => launchPanel('online-accounts'));
         return row;
     }
 
@@ -664,6 +673,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
             row.add_row(this._row(key(name)));
         if (m.id === 'agent')
             row.add_row(this._claudeHooksRow(m.enableKey));
+        if (m.id === 'calendar')
+            row.add_row(this._accountsRow());
         if (m.standalone)
             row.add_row(this._pinRow(m.id));
         if (m.sample) {

@@ -141,7 +141,7 @@ eq(plan.idle, ['idle-content'], 'When idle: idle-content');
     eq([idleOffNote('none', plans, on(false)), idleOffNote('free', plans, on(false))], [null, null],
         'Nothing, or a plan with no module switch: nothing to say');
 }
-eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['none', 'clock', 'weather']],
+eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['none', 'clock', 'weather', 'calendar']],
     'idle-content: none or a plan (auto comes with the smart stack)');
 eq(IDLE_PLANS.filter(id => id !== 'none').every(id => schema.get_key('idle-content').range_check(new GLib.Variant('s', id))),
     true, 'every plan can be chosen in Show');
@@ -149,7 +149,10 @@ eq(schema.get_key('idle-content').get_default_value().unpack(), 'clock', 'the cl
 eq(plan.plans, [
     {id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style'], ownSwitch: true},
     {id: 'weather', enableKey: 'modules-weather', keys: ['idle-weather-automatic', 'idle-weather-refresh'], ownSwitch: true},
-], 'Plans: the clock, then the weather, each with its own key and its module\'s switch');
+    {id: 'calendar', enableKey: 'modules-calendar', keys: [], ownSwitch: false},
+], 'Plans: the clock, the weather, then the next event; calendar keeps its switch on Modules (it has a tab)');
+eq(plan.modules.some(m => m.id === 'calendar' && m.standalone), true, 'calendar: a row on Modules, a standalone tab');
+eq(choiceLabel('idle-content', 'calendar'), 'Next Event', 'Show: Next Event');
 eq(plan.modules.some(m => m.id === 'weather'), false, 'weather is only a plan: no row on Modules');
 eq(schema.get_key('idle-weather-refresh').get_range().recursiveUnpack(), ['enum', ['30m', '1h']],
     'weather refresh: 30 min or 1 h, SPEC §2a');

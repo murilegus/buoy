@@ -261,20 +261,23 @@ class EmptyState extends St.Bin {
      * @param {?string} [opts.pose]  Bu over the text in this pose (MASCOT.md, empty
      *   states; 2026-11-07, Ethan: every empty tab has Bu)
      * @param {?Clutter.Actor} [opts.above]  any other actor over the text
+     * @param {?Clutter.Actor} [opts.below]  an actor under the text (a button that helps:
+     *   the Calendar tab's "Add an Online Account", 2026-11-08)
      */
-    _init(text, {pose = null, above = null} = {}) {
+    _init(text, {pose = null, above = null, below = null} = {}) {
         if (pose && !above)
             above = buildElement({mascot: pose}, {size: 'compact', leading: true});
         const words = new St.Label({text, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER});
         let child = words;
-        if (above) {
+        if (above || below) {
             child = new St.BoxLayout({
                 style_class: 'buoy-empty-stack', orientation: Clutter.Orientation.VERTICAL,
                 x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER,
             });
-            above.x_align = Clutter.ActorAlign.CENTER;
-            child.add_child(above);
-            child.add_child(words);
+            for (const a of [above, words, below].filter(Boolean)) {
+                a.x_align = Clutter.ActorAlign.CENTER;
+                child.add_child(a);
+            }
         }
         super._init({style_class: 'buoy-empty', x_expand: true, y_expand: true, child});
     }
@@ -1053,14 +1056,20 @@ export function buildMissedCompact(plan, {maxWidth = 0} = {}) {
  * edge as in minimal.
  *
  * @param {object} opts
- * @param {number} opts.width  inner width of the idle pill
+ * @param {number} opts.width  inner width of the idle pill: the least it takes
+ * @param {number} [opts.maxWidth]  the most a plan's content may take (the minimal cap)
  * @param {string} [opts.light]
  * @param {?object} [opts.plan]  the idle plan's presentation data
  * @returns {Clutter.Actor}
  */
-export function buildIdle({width, light, plan = null}) {
+export function buildIdle({width, maxWidth = 0, light, plan = null}) {
     const p = planIdle({light, plan});
-    const box = new St.BoxLayout({style_class: 'buoy-idle', width, y_align: Clutter.ActorAlign.CENTER});
+    // at least the idle size; a plan with more to say (the next event's title) grows the
+    // pill up to the minimal cap, where its text ellipsizes and its trailing stays
+    // (2026-11-08)
+    const box = new St.BoxLayout({style_class: 'buoy-idle', min_width: width, y_align: Clutter.ActorAlign.CENTER});
+    if (maxWidth > width)
+        box.set_style(`max-width: ${maxWidth}px;`);
     if (!plan) {
         addAll(box, [lightDot(p.light)]);
         return box;

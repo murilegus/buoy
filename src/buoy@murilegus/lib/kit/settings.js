@@ -199,7 +199,7 @@ export function switchValue(entry, active) {
 // choice shows as its value with a capital.
 export const CHOICE_LABELS = {
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
-    'idle-content': {'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather'},
+    'idle-content': {'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event'},
     'idle-clock-style': {
         'icon-time': 'Icon & time', 'time': 'Time', 'icon': 'Icon', 'seconds': 'With seconds',
     },
@@ -357,7 +357,11 @@ export const HIDDEN_MODULES = new Set(['home']);
 // Idle plans, in the Island page's order (ARCHITECTURE rule 9): each one's
 // `idle-<id>-…` keys sit under it there, never on Modules. Prefs cannot import a module,
 // so the list is here.
-export const IDLE_PLANS = ['clock', 'weather'];
+export const IDLE_PLANS = ['clock', 'weather', 'calendar'];
+
+// A plan row's line on the Island page when its module's switch is elsewhere (Modules):
+// what it shows, since it has no keys to open to
+export const PLAN_LINES = Object.freeze({calendar: 'Today\'s next event, from your calendars.'});
 
 // The Modules page in groups, by how a module shows (2026-11-06, Ethan: the list grew
 // past reading). Prefs cannot import a module, so the groups are listed here; the test
