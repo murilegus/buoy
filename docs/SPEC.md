@@ -728,7 +728,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    feedback (§2e).
 3. **home** — the expanded Home above.
 4. **appname** — left cluster.
-5. **greeting** — hello at start and wake, welcome back, see you soon; by part of day, weekday, birthday and holidays (§2d, GREETING.md).
+5. ~~greeting~~ — moved after v0.1 (§6b), 2026-11-08, Ethan.
 6. **idle `auto`** — the smart stack over the `clock`, `weather`, `next-event` plans (§2a-iii).
 7. **notifications** (moved here from §6b 2026-11-06, Ethan; the reference is
    NOTIFICATIONS.md, 2026-11-07) — GNOME's banner becomes a pill where GNOME would show one
@@ -762,6 +762,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 10. **Sound tab** (2026-11-05, Ethan) — a standalone tab, Notchy's mixer: every app playing
     sound with its own volume slider, and the output device (GNOME's, for everything),
     from Shell's mixer (`ui/status/volume.js` `getMixerControl`). Not in the Media tab.
+11. **greeting** (moved from v0.1 2026-11-08, Ethan; FEATURES M4) — hello at start and
+    wake, welcome back, see you soon; by part of day, weekday, birthday and holidays
+    (§2d, GREETING.md).
 
 ## 6c. Transfers tab (decided 2026-11-03)
 

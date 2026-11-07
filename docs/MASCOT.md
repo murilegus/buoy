@@ -28,7 +28,7 @@ and in GNOME's icon language, so a pill that switches between plans never change
 |---|---|---|
 | Brand | extension icon, README, EGO screenshots, prefs About page (M3 About, waving, 2026-11-04); empty states — every empty tab, Bu over its line (kit `EmptyState` `pose`, 2026-11-07, Ethan): Home "Nothing going on", Media "Nothing playing", Claude Code, a stub kind tab ("No timer") and the not-yet-built Calendar / Clipboard ("Coming soon") `idle`; Notifications "All caught up" `sleep`; Transfers "No transfers" `done` | M3 release |
 | Agents | the **leading** of every agent activity (Claude Code, Codex, any D-Bus caller that sends `{mascot}`); the pose follows the agent's lifecycle (§ Agents). The agent's name is always the first word of the text, since Bu does not say which agent it is | M3 "Claude Code: ask + agent activity" (merged 2026-11-07) |
-| Greeting | leading of every greeting (GREETING.md §6): `wave` for 5 s at start, wake, welcome back and leaving; `party` on a birthday or celebration; `done` for a good weekend; `sleep` for good night; `busy` while updating | M3 greeting |
+| Greeting | leading of every greeting (GREETING.md §6): `wave` for 5 s at start, wake, welcome back and leaving; `party` on a birthday or celebration; `done` for a good weekend; `sleep` for good night; `busy` while updating | M4 greeting |
 | Idle plan `mascot` | Bu's eyes in the idle pill (§ Eyes), module off by default | M4 |
 
 Not: the pills of other modules (app icons and art stay), and not as a
