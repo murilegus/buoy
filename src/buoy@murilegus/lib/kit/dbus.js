@@ -24,7 +24,7 @@ import {slugOf} from './registry.js';
  */
 
 export const PATH = '/org/gnome/Shell/Extensions/Buoy';
-export const VERSION = 2;
+export const VERSION = 3;
 const PREFIX = 'dbus:';
 const MAX_LIVE = 32;          // activities from D-Bus at once
 const MAX_BYTES = 16 * 1024;  // one activity, as JSON
@@ -100,6 +100,9 @@ const CHECKS = {
     ttl: v => isNum(v) && v >= 0 || 'milliseconds, 0 or more',
     staleAfter: v => isNum(v) && v >= 0 || 'milliseconds, 0 or more',
     style: v => ['standard', 'transient'].includes(v) || '"standard" or "transient"',
+    // the pill order's tiers (docs/PRIORITY.md, Version 3)
+    needsYou: v => typeof v === 'boolean' || 'true or false',
+    linger: v => typeof v === 'boolean' || 'true or false',
     alert: v => typeof v === 'boolean' || 'true or false',
     keyline: v => typeof v === 'string' || 'a colour like "#5e5ce6"',
     sizeHint: v => ['normal', 'wide'].includes(v) || '"normal" or "wide"',

@@ -285,7 +285,11 @@ export class MprisSource extends Source {
             return;
         }
         const id = this._ids.get(p.busName);
-        if (id && this._stack.update(id, a))
+        // playing again is news for good: surfaced anew, it counts as the newest
+        // (docs/PRIORITY.md §1.4) and leads a player paused before it
+        const again = status === 'Playing' && p.shownStatus === 'Paused';
+        p.shownStatus = status;
+        if (id && !again && this._stack.update(id, a))
             return;
         // A pill starts only when playing: a player left paused (at login, or after its
         // paused ttl ran out) shows nothing until it plays again.

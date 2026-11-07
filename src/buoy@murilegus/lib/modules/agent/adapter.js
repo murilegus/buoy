@@ -12,6 +12,7 @@
  * Field names checked against code.claude.com/docs/en/hooks on 2026-11-07 (§12).
  */
 
+import {SETTLE_MS} from '../../kit/activity.js';
 import {sinceText} from '../../kit/presentation.js';
 
 /** The agents this module knows, by the `source` the hook sends (CODING-AGENTS.md §1). */
@@ -20,14 +21,10 @@ export const AGENTS = {claude: 'Claude'};
 /** No news for this long → stale: the renderer dims it, Bu `stale` (§3). Working or done
  * alike (Ethan, 2026-11-07: one minute for both; was 2 min while working). */
 export const STALE_MS = 60 * 1000;
-/** The done pill dims after the same minute. */
-export const DONE_STALE = STALE_MS;
+/** Done, it dims after SETTLE_MS (10 s) and steps back with it (docs/PRIORITY.md §2). */
+export const DONE_STALE = SETTLE_MS;
 /** A run longer than this ends with `party` before `done` (§3). */
 export const PARTY_AFTER = 10 * 60 * 1000;
-/** Priorities (§2): working; waiting for you; done, under everything else while it lingers
- * (Ethan, 2026-11-07: any other activity takes the centre). The permission prompt is 90
- * (kit ask). */
-export const PRIORITY = {working: 35, turn: 60, done: 5};
 
 /** The buttons, in order (§4). Always only when Claude Code sent a suggestion. */
 export const DENY = 'Deny', ALLOW = 'Allow', ALWAYS = 'Always';
@@ -352,11 +349,6 @@ export function agent(rec) {
         trailing = {since: rec.startedAt};
     else if (rec.finishedAt && rec.startedAt)
         trailing = {text: durationText(rec.finishedAt - rec.startedAt)};
-    let priority = PRIORITY.working;
-    if (rec.stopped)
-        priority = PRIORITY.done;
-    else if (pose === 'turn' || pose === 'ask')
-        priority = PRIORITY.turn;
     let staleAfter = 0;
     if (rec.stopped)
         staleAfter = DONE_STALE;
@@ -372,7 +364,9 @@ export function agent(rec) {
             text: hoverName(rec),
             subtitle: shared ? rec.safeTitle : rec.title,
         },
-        priority,
+        // no priority of its own (docs/PRIORITY.md): the kind's 35; waiting for you is
+        // tier 1, done steps back when it dims
+        needsYou: !rec.stopped && (pose === 'turn' || pose === 'ask'),
         staleAfter,
         // done, or waiting for you: it only waits — the kit ends it after `activity-linger`
         // (5 min) without news, as every waiting activity (§2, Ethan 2026-11-07)

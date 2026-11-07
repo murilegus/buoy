@@ -31,6 +31,8 @@ eq([p.onPress, p.onAction], [raise, onAction], 'click raises the player; buttons
 eq([p.ttl ?? 0, p.linger], [0, false], 'playing: until it stops');
 eq([adapter.media({...track, status: 'Paused'}, null).linger, adapter.media({...track, status: 'Paused'}, null).ttl ?? 0], [true, 0],
     'paused: it waits (the kit ends it after activity-linger), no ttl of its own');
+eq([adapter.media({...track, status: 'Paused'}, null).staleAfter, p.staleAfter], [10000, 0],
+    'paused: dims after 10 s and steps behind what plays (PRIORITY.md); playing never stale');
 
 // --- transport: only what the player can -------------------------------------------------
 eq(transport(track).map(a => a.id), ['prev', 'playpause', 'next'], 'all three');

@@ -1,6 +1,6 @@
 import GLib from 'gi://GLib';
 
-import {DEFAULT_LINGER, FEEDBACK, validate} from './activity.js';
+import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
 
 /**
  * ActivityStack: which activity is on the island right now (APPLE.md §B1, SPEC §2).
@@ -13,8 +13,9 @@ import {DEFAULT_LINGER, FEEDBACK, validate} from './activity.js';
  *
  * Rules:
  *   - every activity goes through validate(); priority defaults from activity.js PRIORITY
- *   - highest priority shows; ties → a fresh one before a stale one (2026-11-07), then the
- *     most recently surfaced; the newest feedback (osd,
+ *   - the order is docs/PRIORITY.md's (2026-11-07): tier (needs you › running › waiting,
+ *     activity.js tierOf), then priority, then fresh before stale, then the most recently
+ *     surfaced; the newest feedback (osd,
  *     copied) goes first unless an ask is on top, and covers pill 1 only (pillWindow)
  *   - end removes immediately; ttl (capped at 8 h by validate) ends it; ttl 0 = until ended;
  *     hold(id, true) — the pointer on its pill — pauses the ttl, hold(id, false) gives it
@@ -42,6 +43,18 @@ import {DEFAULT_LINGER, FEEDBACK, validate} from './activity.js';
  * optionally setLight(light). alert/expand carry an activity id or null. No Shell import: timers come from `clock`, so the
  * whole thing runs under plain gjs in tests.
  */
+
+/**
+ * The pill order (docs/PRIORITY.md §1): tier, priority, fresh before stale, newest.
+ *
+ * @param {object} a
+ * @param {object} b
+ * @returns {number}
+ */
+export function order(a, b) {
+    return tierOf(a) - tierOf(b) || b.priority - a.priority ||
+        Number(a.isStale) - Number(b.isStale) || b._seq - a._seq;
+}
 
 /** How long an alert keeps an activity up / expanded (SPEC §2c: ~2 s). */
 export const ALERT_MS = 2000;
@@ -502,11 +515,11 @@ export class ActivityStack {
         return a.hidden !== true && !this._hidden.has(a.app) && !this._asks.get(a.id)?.dismissed;
     }
 
-    // Every visible activity, highest priority first (ties → most recent); an alerted
+    // Every visible activity in the pill order (docs/PRIORITY.md, `order`); an alerted
     // activity brought up by _promote() goes first.
     _visibleList() {
         const list = [...this._items.values()].filter(a => this._visible(a))
-            .sort((a, b) => b.priority - a.priority || Number(a.isStale) - Number(b.isStale) || b._seq - a._seq);
+            .sort(order);
         const promoted = list.find(a => a.id === this._promoted);
         if (promoted)
             return [promoted, ...list.filter(a => a !== promoted)];

@@ -1,6 +1,6 @@
 // Run: gjs -m tests/stack.test.js   (no Shell; fake clock + fake island)
 import {ActivityStack, ALERT_MS, pillWindow} from '../src/buoy@murilegus/lib/kit/stack.js';
-import {DEFAULT_LINGER, PRIORITY} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {DEFAULT_LINGER, PRIORITY, SETTLE_MS, tierOf} from '../src/buoy@murilegus/lib/kit/activity.js';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -389,6 +389,32 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.has('r'), false, 'a bad value keeps the last one');
 }
 
+// --- the pill order: tiers first (docs/PRIORITY.md, 2026-11-07) ----------------------------
+{
+    const {clock, island, stack} = setup({}, 10);      // every one shown: the whole order
+    const ids = () => island.list.map(a => a.id);
+    stack.surface({id: 'play', kind: 'media'});                                          // 10
+    stack.surface({id: 'paused', kind: 'media', linger: true, staleAfter: SETTLE_MS, priority: 100});
+    eq(ids(), ['paused', 'play'], 'a waiting one keeps its place until it dims, whatever its priority');
+    clock.advance(SETTLE_MS);
+    eq(ids(), ['play', 'paused'], 'dimmed: it steps behind what runs, in the same step');
+    stack.surface({id: 'note', kind: 'notification'});                                   // 70
+    stack.surface({id: 'turn', kind: 'agent', needsYou: true, linger: true, priority: 10});
+    eq(ids()[0], 'turn', 'needs you (priority 10) over a running notification (70); needsYou wins over linger');
+    stack.surface({id: 'work', kind: 'agent', staleAfter: 1000});
+    clock.advance(1000);
+    eq(ids().indexOf('work') < ids().indexOf('paused'), true, 'a running stale one stays in tier 2, before the waiting');
+    eq(ids().indexOf('note') < ids().indexOf('work'), true, 'inside tier 2: fresh before stale');
+    const q = stack.ask('q', 'Allow?', ['Deny', 'Allow']);
+    eq(ids()[0], 'q', 'an ask is tier 1 by kind');
+    stack.end('q');
+    await q;
+    stack.update('paused', {text: 'news'});
+    eq(ids().indexOf('paused') < ids().indexOf('play'), true, 'news: fresh again, it ranks as running');
+    eq([tierOf({kind: 'call'}), tierOf({kind: 'x', linger: true}), tierOf({kind: 'x', linger: true, isStale: true})], [1, 2, 3],
+        'tierOf: call 1; waiting 2 until stale, then 3');
+}
+
 // --- ties: a fresh one before a stale one (2026-11-07) -----------------------------------
 {
     const {clock, island, stack} = setup();
@@ -720,7 +746,8 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     stack.ask('q', 'Allow?', ['Deny', 'Allow']);
     eq([lastRender(island), stack.light], ['show call|q alert:q', 'off'], 'an ask in a side pill alerts in place, visible: no red light');
     eq(island.info.expand, null, 'an ask in a side pill does not auto-open (only the centre does)');
-    stack.surface(media('m', {priority: 92}));
+    // another that needs you, ranked higher (a media of 92 can no longer: PRIORITY.md tiers)
+    stack.surface({id: 'm', kind: 'deploy', needsYou: true, priority: 92});
     eq([lastRender(island), stack.light], ['show call|m +1', 'waiting'], 'pushed out of the shown pills → red light');
     stack.end('call');
     eq(lastRender(island), 'show m|q', 'ask back in a side pill');

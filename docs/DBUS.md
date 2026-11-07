@@ -10,7 +10,7 @@ run: [`docs/examples/dbus/`](examples/dbus/).
 | Destination | `org.gnome.Shell` (Buoy runs inside the Shell) |
 | Object | `/org/gnome/Shell/Extensions/Buoy` |
 | Interface | `org.gnome.Shell.Extensions.Buoy` |
-| Version | property `Version` (u), now `2` (`Agent`, 2026-11-07); it goes up when a method or key changes |
+| Version | property `Version` (u), now `3` (`Agent` 2, `needsYou` / `linger` 3; 2026-11-07); it goes up when a method or key changes |
 
 ## Methods
 
@@ -45,7 +45,9 @@ carry. `kind` is required; everything else is optional. An unknown key is an err
 | `actions` | aa{sv} | `[{'id', 'label'?, 'icon'?}]`: 1 shown in minimal, 3 in compact and expanded; pressed → `Action` |
 | `compact` | a{sv} | what hover shows, the compact tier (SPEC §2; was `peek` until 2026-11-05): `{'leading', 'text', 'trailing', 'transport'}` |
 | `attributes`, `state` | a{sv} | your data; profiles read `attributes` like an event |
-| `priority` | number 0–100 | across all apps; default by kind (progress 30, notification 70 …) |
+| `priority` | number 0–100 | inside its tier ([PRIORITY.md](PRIORITY.md)), across all apps; default by kind (progress 30, notification 70 …) |
+| `needsYou` | b | it needs you: tier 1, over everything that only runs (Version 3) |
+| `linger` | b | it only waits: it ends after the user's `activity-linger` without news, and once stale it steps behind what runs (Version 3) |
 | `ttl`, `staleAfter` | number, ms | ends after `ttl` (8 h at most); dims after `staleAfter` without an update |
 | `style` | s | `standard` or `transient` (opens expanded, ends when closed) |
 | `alert` | b | expand briefly when it appears |
