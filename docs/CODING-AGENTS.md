@@ -224,7 +224,7 @@ own.
 Claude Code does not say which terminal runs a session (the hooks reference documents
 `cwd`, `session_id`, `CLAUDE_PROJECT_DIR`, no window or TTY). Buoy finds it:
 
-- Buoy asks the bus for the hook's pid (`GetConnectionUnixProcessID` of the caller, while
+- Buoy asks the bus for the hook's pid (kit `apps.js`: `GetConnectionUnixProcessID` of the caller, while
   the hook is still connected: the reply waits for it, a few ms in the background) and
   walks `/proc/<pid>/stat` up the parents (hook → `sh -c` → Claude Code → shell →
   terminal; a handful of reads, once per session) until Shell knows a window of that pid

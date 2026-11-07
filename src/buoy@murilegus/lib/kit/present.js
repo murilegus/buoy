@@ -596,8 +596,9 @@ function mascot(e, size, activity) {
 
 // Each bar: its height at rest and the range and half-period it swings through while
 // playing. Unequal periods keep the four out of step, so the motion never visibly repeats.
-// Paused: every bar at 2 px of its 12, a near flat line through the middle
-const EQ_PAUSED = 2 / 12;
+// Paused: the bars stopped low, 4 · 6 · 4 · 2 px of their 12 (Ethan, 2026-11-07: a
+// near flat line, each a little different, 2 px apart)
+const EQ_PAUSED = [4, 6, 4, 2].map(px => px / 12);
 
 const EQ_BARS = [
     {rest: 0.5, from: 0.25, to: 1, ms: 430},
@@ -624,10 +625,10 @@ const EQ_BARS = [
 function eqGlyph({paused = false} = {}) {
     const box = new St.BoxLayout({style_class: 'buoy-eq', y_align: Clutter.ActorAlign.CENTER});
     if (paused) {
-        for (let i = 0; i < EQ_BARS.length; i++) {
+        for (const scale of EQ_PAUSED) {
             box.add_child(new St.Widget({
                 style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.CENTER,
-                pivot_point: new Graphene.Point({x: 0.5, y: 0.5}), scale_y: EQ_PAUSED,
+                pivot_point: new Graphene.Point({x: 0.5, y: 0.5}), scale_y: scale,
             }));
         }
         return box;

@@ -2,6 +2,8 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {MprisPlayer} from 'resource:///org/gnome/shell/ui/mpris.js';
+
+import {appOfBusName} from '../../kit/apps.js';
 import {Source} from '../../kit/source.js';
 
 /**
@@ -113,6 +115,25 @@ class Player {
             });
     }
 
+    // The player comes up, on its playing tab (2026-11-07, Ethan): Shell's MprisPlayer.raise
+    // activates the app from `DesktopEntry`, else calls Raise() — Chrome sends neither a
+    // DesktopEntry nor CanRaise, so nothing came up, and Firefox's window came up on
+    // whichever tab it showed. Now: the app from the player's bus pid (kit/apps.js),
+    // activated by Shell (always allowed), then the player's own Raise(): a browser then
+    // switches to the playing tab itself (Firefox does; Chrome cannot: CanRaise false).
+    async _raise() {
+        this._app ??= (await appOfBusName(this.busName)).app;   // none yet: asked again next time
+        if (this._cancel.is_cancelled())
+            return;
+        this._app?.activate();
+        Gio.DBus.session.call(this.busName, PATH, 'org.mpris.MediaPlayer2', 'Raise', null, null,
+            Gio.DBusCallFlags.NONE, -1, this._cancel, (conn, res) => {
+                try {
+                    conn.call_finish(res);
+                } catch {}           // CanRaise false or gone: the app came up all the same
+            });
+    }
+
     /**
      * @param {string} id  prev | playpause | next | raise | shuffle | loop | seek
      * @param {number} [value]  seek: the position, ms
@@ -129,7 +150,7 @@ class Player {
             this.mpris.playPause();
             break;
         case 'raise':
-            this.mpris.raise();
+            this._raise();
             break;
         case 'shuffle':
             if (typeof this.extra?.Shuffle === 'boolean')

@@ -47,6 +47,7 @@ src/buoy@murilegus/
     │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()`, one timer while idle (2026-11-03)
     │   ├── mascot.js       Bu: 13 pose grids, lamp rule, frame timing, pure; MASCOT.md is the source (2026-11-03; eyes data with M4)
     │   ├── registry.js     app-id normalisation table; adapter resolution
+    │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
     │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
     │   └── shapes.js
     └── modules/            FEATURES — one self-contained folder each
