@@ -26,6 +26,10 @@
  *         progress a bar under them — 0..1, or live `{position, length, at, playing}` (ms;
  *         `at` when position was read) which runs with the elapsed and remaining times —
  *         rows up to 3 `{icon?, text, detail?}`
+ *   compact.card: {icon, app, at, picture, title, body, close} — a card instead (a
+ *         notification, NOTIFICATIONS.md §3, 2026-11-07): a header (icon, app name, the time
+ *         since `at`, × running action `close`), a picture, a title, a body of up to 2
+ *         lines, then the activity's actions (≤ 3) in a row; full width, up to 160 tall
  *
  * Minimal is one set of data for every pill (APPLE §B3): a side pill drops `text` and
  * keeps leading + trailing, so the short value that matters belongs in `trailing`.
@@ -224,6 +228,8 @@ export function planCompact(p, {light} = {}) {
     if (!isPlain(p.compact))
         return null;
     const c = p.compact;
+    if (isPlain(c.card))
+        return planCard(c.card, p, light);
     const lead = leadingAndLight(c.leading, light, {stale: p.isStale === true});
     const plan = {
         leading: lead.leading,
@@ -242,6 +248,33 @@ export function planCompact(p, {light} = {}) {
         !plan.tall)
         return null;
     return plan;
+}
+
+/** A card's body: at most this many lines, then … (present.js, via its max height). */
+export const MAX_CARD_LINES = 2;
+
+// compact.card (NOTIFICATIONS.md §3): the plan keeps the compact's fields (empty) so code
+// reading any compact plan finds them; `card` holds what the card draws.
+function planCard(c, p, light) {
+    const header = {icon: element(c.icon), text: str(c.app), at: isNum(c.at) ? c.at : null};
+    const title = str(c.title);
+    const body = str(c.body);
+    if (!header.text && !title && !body)
+        return null;
+    const el = element(c.picture);
+    return {
+        card: {
+            header, title, body,
+            picture: el && el.type !== 'text' ? el : null,
+            close: str(c.close),
+        },
+        leading: null, text: null, subtitle: null, trailing: null,
+        actions: actions(p.actions, MAX_ACTIONS.compact),
+        progress: null, live: null, rows: [], tall: false,
+        keyline: keyline(p.keyline),
+        stale: p.isStale === true,
+        light: lightSlot(light, {idle: false}),
+    };
 }
 
 export const MAX_ROWS = 3;
@@ -294,6 +327,17 @@ export function sinceText(at, now) {
         return `${min} min`;
     const h = Math.floor(min / 60), m = min % 60;
     return m ? `${h} h ${m} min` : `${h} h`;
+}
+
+/**
+ * A card's time (NOTIFICATIONS.md §3): as GNOME's banner, "now" for the first minute.
+ *
+ * @param {number} at  ms since the epoch
+ * @param {number} now
+ * @returns {string} "now", "3 min", "1 h 5 min"
+ */
+export function agoText(at, now) {
+    return now - at < 60000 ? 'now' : sinceText(at, now);
 }
 
 /**

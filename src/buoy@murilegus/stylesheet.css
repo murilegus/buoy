@@ -202,6 +202,21 @@
 .buoy-live-time { color: rgba(255, 255, 255, 0.5); font-size: 11px; font-feature-settings: "tnum"; }
 /* An ask's key (kit/keys.js), shown only while the island holds the keyboard. */
 .buoy-action-face { spacing: 6px; }
+
+/* A card (a notification's compact, NOTIFICATIONS.md §3): GNOME's banner layout */
+.buoy-card { spacing: 6px; }
+.buoy-card-header { spacing: 6px; }
+.buoy-card-app { color: #d0d0d0; font-size: 12px; }
+.buoy-card-time { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+.buoy-card-close { padding: 4px; border-radius: 999px; background-color: rgba(255, 255, 255, 0.12); }
+.buoy-card-close:hover { background-color: rgba(255, 255, 255, 0.24); }
+.buoy-card-main { spacing: 10px; }
+.buoy-card-lines { spacing: 2px; }
+.buoy-card-title { font-size: 14px; font-weight: bold; }
+/* two lines (presentation.js MAX_CARD_LINES): Pango keeps whole lines within it */
+.buoy-card-body { color: #cfcfcf; font-size: 13px; max-height: 2.8em; }
+.buoy-card-actions { spacing: 6px; }
+.buoy-card-actions .buoy-action { padding: 6px 12px; border-radius: 999px; }
 .buoy-key {
     font-size: 11px;
     font-weight: bold;

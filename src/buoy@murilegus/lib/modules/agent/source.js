@@ -2,10 +2,9 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
 
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-
 import {Source} from '../../kit/source.js';
 import {appOfBusName} from '../../kit/apps.js';
+import {SharingWatch} from '../../kit/sharing.js';
 import {lingerMs} from '../../kit/settings.js';
 import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, parseEvent, reply, settles, step} from './adapter.js';
 
@@ -24,7 +23,7 @@ const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
  *   then /proc/<pid>/stat up the parents until Shell knows a window of that pid — once
  *   per session. Focused = that app has the focus: then nothing jumps open.
  * - The screen shared or recorded (Shell's own indicators, ui/status/remoteAccess.js
- *   ScreenSharingIndicator / ScreenRecordingIndicator `visible`): commands, paths and URLs
+ *   ScreenSharingIndicator / ScreenRecordingIndicator `visible`, kit/sharing.js): commands, paths and URLs
  *   are hidden (§7). Watched only while a session is shown.
  * - A waiting permission hook that goes away (Claude Code answered in the terminal, the
  *   session was interrupted) leaves the bus: its ask ends, no answer.
@@ -42,8 +41,7 @@ export class AgentSource extends Source {
         this._sessions = new Map();     // `${source}:${session_id}` → record
         this._asks = new Map();         // same key → {event, askId, watch}
         this._apps = new Map();         // same key → Shell.App, or null: none (looked up once)
-        this._shared = false;
-        this._sharing = [];
+        this._sharing = new SharingWatch(() => this._sharingChanged());
         this._dbus = dbus;
         dbus?.setAgent((source, text, info) => this.event(source, text, info));
     }
@@ -119,7 +117,7 @@ export class AgentSource extends Source {
         if (!this._registry)
             return;
         this._watchSharing(true);
-        const a = this._registry.build(KIND, rec.source, {...rec, shared: this._shared});
+        const a = this._registry.build(KIND, rec.source, {...rec, shared: this._sharing.shared});
         if (!a)
             return;
         const key = `${rec.source}:${rec.id}`;
@@ -160,7 +158,7 @@ export class AgentSource extends Source {
     _ask(key, rec, ev, sender) {
         this._settleAsk(key);
         const askId = `${this._activityId(rec)}:ask`;
-        const {question, options, look} = askOf(rec, ev, {shared: this._shared});
+        const {question, options, look} = askOf(rec, ev, {shared: this._sharing.shared});
         // no answer within `activity-linger` (5 min) → deny: the one rule for what waits
         // (Ethan 2026-11-07; was `agent-ask-timeout`, 10 min)
         const waitMs = lingerMs(this._settings?.get_string('activity-linger'));
@@ -289,28 +287,18 @@ export class AgentSource extends Source {
     // --- screen shared or recorded (§7) -------------------------------------------------
 
     _watchSharing(on) {
-        if (on === this._sharing.length > 0)
-            return;
-        if (!on) {
-            this._sharing.forEach(i => i.disconnectObject(this));
-            this._sharing = [];
-            this._shared = false;
-            return;
+        if (on)
+            this._sharing.start();
+        else
+            this._sharing.stop();
+    }
+
+    // the screen started or stopped being shared: re-draw what shows
+    _sharingChanged() {
+        for (const rec of this._sessions?.values() ?? []) {
+            if (this._stack?.has(this._activityId(rec)))
+                this._show(rec);
         }
-        const area = Main.panel.statusArea;
-        this._sharing = [area.screenSharing, area.screenRecording].filter(Boolean);
-        const sync = () => {
-            const shared = this._sharing.some(i => i.visible);
-            if (shared === this._shared)
-                return;
-            this._shared = shared;
-            for (const rec of this._sessions?.values() ?? []) {
-                if (this._stack?.has(this._activityId(rec)))
-                    this._show(rec);
-            }
-        };
-        this._sharing.forEach(i => i.connectObject('notify::visible', sync, this));
-        this._shared = this._sharing.some(i => i.visible);
     }
 }
 
