@@ -23,6 +23,20 @@ once-a-day greeting of 2026-11-03).
 6. **Words in one place.** Every string is in `modules/greeting/adapter.js`, English first;
    Vietnamese and other languages come with gettext (M5 localisation). The adapter is
    pure: it builds every line from plain facts the source hands it.
+7. **Typed in** (2026-11-08, Ethan). A greeting's text types itself in, a character at a
+   time, then stands still: one timer while it types, gone when the last character is in,
+   when the greeting closes and on disable. With animations off
+   (`org.gnome.desktop.interface enable-animations`) the text is there at once. Hover
+   holds the greeting as usual; the typing goes on under the pointer.
+
+## 0. Scope by release (2026-11-08, Ethan)
+
+- **v0.1 (FEATURES M3 "greeting: first run and What's new").** Only §11: Bu's hello the
+  first time Buoy runs, with the basics of using it, and the What's new mechanism that
+  later versions fill. The rest of this file — Start, Wake, Welcome back, Leaving, special
+  days, weather (§1–§10) — is FEATURES M4 "greeting".
+- **Later versions.** Each release adds its notes to the What's new table (§11): what is
+  new and what was fixed, said once after the update.
 
 ## 1. Moments
 
@@ -57,7 +71,8 @@ How the moments are told apart (all read at `enable`, nothing polled):
   session does not wait for Buoy. Best effort: a power button without the dialog,
   `systemctl poweroff` or a crash says nothing.
 - **First install.** `greeting-intro-shown` false → the next Start or Wake is the intro
-  (§3, priority 1); set once it showed.
+  (§3, priority 1); set once it showed. Since v0.1 the intro is §11's first run, shown on
+  the first enable, so a Start or Wake finds it already shown.
 
 ## 2. Start and Wake: the expanded hello
 
@@ -226,7 +241,9 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
 | `greeting-name` | s | `''` | yes, prefilled with the real name | `''` = the real name |
 | `greeting-birthday` | s | `''` | yes, a month and day | `MM-DD`, `''` = none |
 | `greeting-holidays` | s | `auto` | yes | `auto` · `global` · `off` (§7) |
-| `greeting-intro-shown` | b | false | no (bookkeeping) | the intro showed once |
+| `greeting-intro-shown` | b | false | About's "Show Bu's introduction again" sets it false (§11) | the intro showed once (§11) |
+| `greeting-version-seen` | i | 0 | no (bookkeeping) | the last version What's new spoke for (§11) |
+| `prefs-page` | s | `''` | no (bookkeeping) | the prefs page to open, then cleared (`whats-new`, §11) |
 | `greeting-boot` | s | `''` | no (bookkeeping) | the boot of the last Start |
 | `greeting-session` | s | `''` | no (bookkeeping) | the logind session of the last greeting |
 | `greeting-asleep` | i | 0 | no (bookkeeping) | seconds asleep since boot, at the last disable |
@@ -252,3 +269,61 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
 - In the Shell (headless): Start (a new `boot_id` faked in settings), Wake (a faked sleep
   total), Welcome back (another session id), Leaving (the dialog's confirm), fullscreen,
   `off`; the weather filled in place; hover hold; a real activity interrupting.
+
+## 11. First run and What's new (v0.1, 2026-11-08, Ethan)
+
+One mechanism, two cases, read at `enable` against `metadata.json` `version` (EGO's
+integer):
+
+| Case | When | What Bu says |
+|---|---|---|
+| **First run** | `greeting-intro-shown` false (a fresh install) | the intro: who Bu is and the basics of using Buoy — v0.1's "what's new", since everything is |
+| **What's new** | `greeting-version-seen` lower than the running version, the intro already shown | that version's notes: what is new, what was fixed |
+| Neither | the version already seen | nothing |
+
+- **When it shows.** On the first `enable` that finds the case, once the island is on
+  screen: not over a fullscreen window (it waits until the island is seen again, not
+  until the next login), never while the screen is locked (Buoy runs only unlocked).
+  Both keys are written once it showed — the first run sets `greeting-version-seen` to
+  the running version too, so a later update speaks only of what came after it.
+  Updating from EGO then re-logging in is an `enable` like any other: What's new shows
+  then, it does not wait for a Start.
+- **Size.** Expanded, a transient activity (closes on a click outside, any real activity
+  interrupts it, never takes the keyboard), Bu in the leading waving 5 s (`wave`, then
+  `idle`), the lines typed in (principle 7). Held while hovered; it stays until closed or
+  ~12 s after the last line is in, longer than §2's 8 s since there is more to read.
+- **First run's lines.** "Hi, I'm Bu." then the basics, one per line: hover the pill for
+  more; click it for Home; Super+B to reach it from the keyboard; scroll on the idle pill
+  to see what else it can show; ⚙ in Home for settings. The exact words live in
+  `modules/greeting/adapter.js`.
+- **What's new's lines.** "New in Buoy {version}" (`version-name` when `metadata.json` has
+  one, else the number; EGO writes its own counter into `version` on upload, so the
+  comparison follows EGO's releases),
+  then up to 4 lines from the notes, new things first, then fixes; more than that ends
+  with "…and more", and a click on it opens Buoy's prefs on About → What's new (below;
+  2026-11-08, Ethan). Notes are bundled, never fetched (no network, EGO):
+  `modules/greeting/notes.js`, one entry per version `{version, name, added: [], fixed:
+  []}`, written with each release. A version with no entry says nothing and still counts
+  as seen. Skipped versions (an update from v0.1 straight to v0.4): the newest version's
+  notes only, not a list of every release.
+- **About → What's new** (prefs, 2026-11-08, Ethan). A row on the About page opens a
+  subpage with every version's notes, newest first — the running version's on top; for
+  v0.1 that is the introduction. The same `notes.js` (pure data, so prefs may import it,
+  as it does `kit/settings.js`): written once, said by Bu and listed here. To open prefs on
+  that page ("…and more"), the Shell side writes the bookkeeping key `prefs-page` =
+  `whats-new` and opens prefs (`Main.extensionManager.openExtensionPrefs`); prefs reads
+  it when it builds its window, shows the page and clears the key, and an open prefs
+  window follows the key's change. A key, because Shell's `OpenExtensionPrefs` passes
+  nothing else on (`js/dbusServices/extensions/extensionsService.js`: of the options only
+  `modal`).
+- **About → "Show Bu's introduction again"** (prefs, 2026-11-08, Ethan). A button that
+  sets `greeting-intro-shown` back to false; the greeting's source watches that key and
+  shows the first run at once (no wait for the next enable) — over the prefs window, in
+  the pill, as on a fresh install — then sets it true again. GSettings carries it, as
+  every prefs change; no D-Bus of its own. `greeting-version-seen` stays: replaying the
+  intro says nothing about versions.
+- **Tests.** The case from the two keys and the version (fresh install, update, same
+  version, a downgrade says nothing, a version with no notes); the lines for each; the
+  cap and "…and more"; the typing's steps and its end (pure: the text shown after n ms);
+  animations off → whole.
+
