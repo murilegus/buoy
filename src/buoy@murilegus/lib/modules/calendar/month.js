@@ -90,3 +90,31 @@ export function pickedTitle(day, now) {
     const year = d.getFullYear() === new Date(now).getFullYear() ? '' : ` ${d.getFullYear()}`;
     return `${name}, ${d.getDate()} ${MONTHS[d.getMonth()]}${year}`;
 }
+
+/** A day's circle in the grid, px: 1920's panel (the smallest cap) gives the least. */
+export const CELL_MIN = 26;
+export const CELL_MAX = 40;
+/** Its number's size at the least, and at most. */
+export const FONT_MIN = 12;
+export const FONT_MAX = 16;
+
+/**
+ * The grid's day circle for the room its six weeks have (2026-11-08, Ethan: the month
+ * scales with the tab's height, which is the panel's full one): a sixth of it, even (the
+ * number stays on the pixel grid), between CELL_MIN and CELL_MAX.
+ *
+ * @param {*} room  px the six week rows may take
+ * @returns {number} the circle's size, px
+ */
+export function cellSize(room) {
+    const sixth = Number.isFinite(room) ? Math.floor(room / 6) : 0;
+    return Math.min(CELL_MAX, Math.max(CELL_MIN, sixth - (sixth % 2)));
+}
+
+/**
+ * @param {number} cell  cellSize()
+ * @returns {number} the number's font size, px: in step with the circle (12 at 26)
+ */
+export function cellFont(cell) {
+    return Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round(cell * FONT_MIN / CELL_MIN)));
+}

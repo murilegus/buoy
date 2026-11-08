@@ -690,7 +690,8 @@ go when expanded closes; each one's data lives only that long (rule 8).
 - Up next — today's events from the same calendar source (the calendar module's
   `events.js` / `agenda.js`). The month grid is the Calendar tab's, not Home's: the tab
   has the month to pick a day on one side, that day's events on the other — today's and
-  the week ahead when today is picked (2026-11-08, Ethan). What is left of today, at
+  the week ahead when today is picked (2026-11-08, Ethan); the month scales with the tab's
+  height, its circles 26 px at 1920 up to 40 px on large screens (2026-11-08, Ethan). What is left of today, at
   most three, one line each: a bar (the accent for one running), the title, its time at the
   end ("3:00 PM · in 25 min" within 2 h, "5:30 PM · 45 min" later, "Now · until 4:00 PM",
   "All day" last); "+2 more" when there are more; a click opens the Calendar tab. Hidden
