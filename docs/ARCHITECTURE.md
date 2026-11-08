@@ -49,6 +49,7 @@ src/buoy@murilegus/
     │   ├── mascot.js       Bu: 13 pose grids, lamp rule, frame timing, pure; MASCOT.md is the source (2026-11-03; eyes data with M4)
     │   ├── registry.js     app-id normalisation table; adapter resolution
     │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
+    │   ├── files.js        small files read without blocking the Shell: readText, listInfos/listNames, ppidOf (EGO review, 2026-11-09)
     │   ├── sharing.js      the screen shared or recorded, from Shell's indicators (agent, notification; 2026-11-07)
     │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
     │   └── shapes.js
@@ -62,7 +63,7 @@ src/buoy@murilegus/
             │               a dot on its tab's icon (2026-11-08); home: {Block, column,
             │               order} — its block on Home (below, 2026-11-08)
             ├── source.js   watches a system facility, calls stack.surface/update/end;
-            │               `enable(stack, registry, settings)` (settings: its `<id>-…`
+            │               `enable(stack, registry, settings, {dbus, extension})` (settings: its `<id>-…`
             │               keys, 2026-11-05)
             ├── adapter.js  default presentation for this module's kinds
             ├── tab.js      content for its tab in expanded (optional): export a class,

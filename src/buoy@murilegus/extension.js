@@ -52,14 +52,15 @@ export default class BuoyExtension extends Extension {
         background();
         const leftEmpty = () => setLeftEmpty(this._settings.get_string('left-cluster-empty'));
         leftEmpty();
-        this._backgroundId = this._settings.connect('changed', (_s, key) => {
+        // every handler is tied to `this`: disable() drops them with disconnectObject(this)
+        this._settings.connectObject('changed', (_s, key) => {
             if (key === 'cluster-contrast')
                 contrast();
             else if (key.startsWith('cluster-'))
                 background();
             else if (key === 'left-cluster-empty')
                 leftEmpty();
-        });
+        }, this);
 
         this._corners = new WindowCorners(this._settings);
 
@@ -69,10 +70,10 @@ export default class BuoyExtension extends Extension {
             expandedWidth: this._settings.get_int('expanded-width'),
         });
         reposition();
-        this._monitorsId = Main.layoutManager.connect('monitors-changed', reposition);
-        this._widthId = this._settings.connect('changed::expanded-width', reposition);
+        Main.layoutManager.connectObject('monitors-changed', reposition, this);
+        this._settings.connectObject('changed::expanded-width', reposition, this);
         const rest = () => setMascotRest(this._settings.get_int('mascot-rest-after'));
-        this._restId = this._settings.connect('changed::mascot-rest-after', rest);
+        this._settings.connectObject('changed::mascot-rest-after', rest, this);
         rest();
 
         // apps-hidden / apps-plain may name an app any way a source does: slug them
@@ -83,8 +84,8 @@ export default class BuoyExtension extends Extension {
             for (const {file, message} of errors)
                 console.warn(`Buoy: ignoring app profile ${file}: ${message}`);
         });
-        this._plainId = this._settings.connect('changed::apps-plain',
-            () => this._registry.setPlain(slugs('apps-plain')));
+        this._settings.connectObject('changed::apps-plain',
+            () => this._registry.setPlain(slugs('apps-plain')), this);
         this._stack = new ActivityStack(this._island, {hiddenApps: slugs('apps-hidden')});
         // the island fits 2 or 3 pills before the system cluster; the stack re-renders
         this._island.onCapacityChanged = () => this._stack?.refresh();
@@ -93,14 +94,13 @@ export default class BuoyExtension extends Extension {
         // one wait for every activity that only waits (kit activity.js DEFAULT_LINGER)
         const linger = () => this._stack.setLinger(lingerMs(this._settings.get_string('activity-linger')));
         linger();
-        this._lingerId = this._settings.connect('changed::activity-linger', linger);
-        this._hiddenId = this._settings.connect('changed::apps-hidden',
-            () => this._stack.setHiddenApps(slugs('apps-hidden')));
+        this._settings.connectObject('changed::activity-linger', linger,
+            'changed::apps-hidden', () => this._stack.setHiddenApps(slugs('apps-hidden')), this);
         // Fullscreen (FEATURES M1): Shell hides top chrome on a monitor with a fullscreen
         // window (trackFullscreen, ui/layout.js _updateActorVisibility; shown again in the
         // Overview). Hidden is "unseen": endings count as missed, nothing opens.
         const seen = () => this._stack.setUnseen(!this._island.actor.visible);
-        this._visibleId = this._island.actor.connect('notify::visible', seen);
+        this._island.actor.connectObject('notify::visible', seen, this);
         seen();
         this._dbus = new BuoyDBus(this._stack, {registry: this._registry});
         this._dbus.export();
@@ -132,10 +132,10 @@ export default class BuoyExtension extends Extension {
         // idle-content (SPEC §2a): the running modules' idle plans
         this._idle = new IdleContent(this._island, this._settings,
             () => (this._active ?? []).map(a => a.m).filter(m => m.idle));
-        this._modulesId = this._settings.connect('changed', (_s, key) => {
+        this._settings.connectObject('changed', (_s, key) => {
             if (key.startsWith('modules-'))
                 this._syncModules();
-        });
+        }, this);
 
         // Super+B (SPEC §2c). POPUP too, like Shell's own toggles (ui/windowManager.js
         // toggle-quick-settings), so the same key lets go while the island holds it.
@@ -148,7 +148,7 @@ export default class BuoyExtension extends Extension {
             this.reload = this._settings.get_boolean('dev-mode') ? id => reloadModule(this, id) : null;
         };
         devMode();
-        this._devId = this._settings.connect('changed::dev-mode', devMode);
+        this._settings.connectObject('changed::dev-mode', devMode, this);
     }
 
     // _active: every running module, {m, src} (src null without a source); devtools.js
@@ -173,8 +173,10 @@ export default class BuoyExtension extends Extension {
         let src = null;
         if (m.source) {
             src = new m.source();
-            // dbus: the agent module answers D-Bus `Agent` (kit/dbus.js setAgent)
-            src.enable(this._stack, this._registry, this._settings, {dbus: this._dbus});
+            // dbus: the agent module answers D-Bus `Agent` (kit/dbus.js setAgent);
+            // extension: this, for a source that needs Buoy's own metadata or prefs (the
+            // greeting) — not Extension.lookupByURL (EGO review)
+            src.enable(this._stack, this._registry, this._settings, {dbus: this._dbus, extension: this});
         }
         this._active.push({m, src});
     }
@@ -195,15 +197,8 @@ export default class BuoyExtension extends Extension {
         this._active = null;
         this._dbus?.unexport();
         this._dbus = null;
-        for (const id of [this._lingerId, this._hiddenId, this._plainId, this._modulesId, this._widthId, this._restId, this._devId, this._backgroundId]) {
-            if (id)
-                this._settings.disconnect(id);
-        }
-        this._lingerId = this._hiddenId = this._plainId = this._modulesId = this._widthId = this._restId = this._devId = this._backgroundId = 0;
-        if (this._visibleId) {
-            this._island.actor.disconnect(this._visibleId);
-            this._visibleId = 0;
-        }
+        this._settings.disconnectObject(this);
+        this._island?.actor.disconnectObject(this);
         this._stack?.destroy();
         this._stack = null;
         this.stack = null;
@@ -211,10 +206,7 @@ export default class BuoyExtension extends Extension {
         this._registry?.destroy();
         this._registry = null;
 
-        if (this._monitorsId) {
-            Main.layoutManager.disconnect(this._monitorsId);
-            this._monitorsId = 0;
-        }
+        Main.layoutManager.disconnectObject(this);
         this._idle?.destroy();
         this._idle = null;
         if (this._island) {

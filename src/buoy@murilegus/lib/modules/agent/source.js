@@ -4,6 +4,7 @@ import Shell from 'gi://Shell';
 
 import {Source} from '../../kit/source.js';
 import {appOfBusName} from '../../kit/apps.js';
+import {listInfos, readText} from '../../kit/files.js';
 import {SharingWatch} from '../../kit/sharing.js';
 import {lingerMs} from '../../kit/settings.js';
 import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step} from './adapter.js';
@@ -41,6 +42,11 @@ export class AgentSource extends Source {
         this._sessions = new Map();     // `${source}:${session_id}` → record
         this._asks = new Map();         // same key → {event, askId, watch}
         this._apps = new Map();         // same key → Shell.App, or null: none (looked up once)
+        // same key → {uri, shown} for a session in Claude Desktop: its deep link and the
+        // session Desktop shows, read ahead without blocking (kit/files.js) so a click
+        // decides at once (_raise); refreshed on each of its events
+        this._desktop = new Map();
+        this._reads = new Gio.Cancellable();
         this._sharing = new SharingWatch(() => this._sharingChanged());
         this._dbus = dbus;
         dbus?.setAgent((source, text, info) => this.event(source, text, info));
@@ -55,6 +61,9 @@ export class AgentSource extends Source {
             this._stack?.end(this._activityId(rec));
         this._sessions = null;
         this._apps = null;
+        this._reads?.cancel();
+        this._reads = null;
+        this._desktop = null;
         this._watchSharing(false);
         super.disable();
     }
@@ -98,6 +107,8 @@ export class AgentSource extends Source {
         // the session's window, while the hook is still on the bus: the reply waits for it
         // (a report's hook exits right after; a few ms in the background)
         const lookup = sender && this._apps.get(key) === undefined ? this._lookUpApp(key, sender) : null;
+        if (this._apps.get(key)?.get_id() === DESKTOP_APP)
+            this._readDesktop(key);
         // a question (AskUserQuestion) is answered in Claude's own card: no Deny / Allow here,
         // the hook gets no decision at once and the session's pill says it waits
         if (ev.hook_event_name === 'PermissionRequest' && !isQuestion(ev)) {
@@ -151,6 +162,7 @@ export class AgentSource extends Source {
             this._stack.end(this._activityId(rec));
         this._sessions.delete(key);
         this._apps.delete(key);
+        this._desktop.delete(key);
         if (![...this._sessions.values()].some(r => this._stack.has(this._activityId(r))))
             this._watchSharing(false);
     }
@@ -244,8 +256,20 @@ export class AgentSource extends Source {
     // undefined: not known yet (asked again with the next event); null: no window found
     async _lookUpApp(key, sender) {
         const {pid, app} = await appOfBusName(sender);
-        if (pid && this._sessions?.has(key))
+        if (pid && this._sessions?.has(key)) {
             this._apps.set(key, app);
+            if (app?.get_id() === DESKTOP_APP)
+                this._readDesktop(key);
+        }
+    }
+
+    // Claude Desktop's files for this session (§6), ahead of a click
+    async _readDesktop(key) {
+        const reads = this._reads;
+        const id = this._sessions?.get(key)?.id;
+        const [uri, shown] = await Promise.all([desktopSessionUri(id, reads), desktopShownSession(reads)]);
+        if (!reads.is_cancelled() && this._sessions?.has(key))
+            this._desktop.set(key, {uri, shown});
     }
 
     // A click on the session's pill (or its compact): its terminal — or its very session
@@ -260,9 +284,10 @@ export class AgentSource extends Source {
         const front = Shell.WindowTracker.get_default().focus_app === app;
         // Claude Desktop shows one session at a time: open this one
         if (app.get_id() === DESKTOP_APP) {
-            const uri = desktopSessionUri(this._sessions?.get(key)?.id);
+            const {uri = null, shown = null} = this._desktop?.get(key) ?? {};
+            this._readDesktop(key);   // fresh for the next click
             if (uri) {
-                if (!row && front && uri.endsWith(`=${desktopShownSession()}`))
+                if (!row && front && uri.endsWith(`=${shown}`))
                     return false;
                 try {
                     Gio.AppInfo.launch_default_for_uri(uri, global.create_app_launch_context(0, -1));
@@ -308,54 +333,54 @@ const DESKTOP_SESSIONS = ['Claude', 'claude-code-sessions'];
 const MAX_DESKTOP_FILES = 200;
 
 /**
- * Claude Desktop's deep link to a session (adapter.js desktopRoute), read on a click only:
- * its session files, two folders down, the newest first. Null when none is that session.
+ * Claude Desktop's deep link to a session (adapter.js desktopRoute), read ahead of a click
+ * (AgentSource _readDesktop): its session files, two folders down, the newest first. Null
+ * when none is that session.
  *
  * @param {?string} sessionId  the hook's session_id
- * @returns {?string}
+ * @param {?Gio.Cancellable} cancellable
+ * @returns {Promise<?string>}
  */
-function desktopSessionUri(sessionId) {
+async function desktopSessionUri(sessionId, cancellable) {
     if (!sessionId)
         return null;
     const root = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_user_config_dir(), ...DESKTOP_SESSIONS]));
     const files = [];
-    const list = (dir, depth) => {
-        let e;
+    const list = async (dir, depth) => {
+        let infos;
         try {
-            e = dir.enumerate_children('standard::name,standard::type,time::modified', Gio.FileQueryInfoFlags.NONE, null);
+            infos = await listInfos(dir, 'standard::name,standard::type,time::modified', cancellable);
         } catch {
             return;
         }
-        for (let info = e.next_file(null); info && files.length < MAX_DESKTOP_FILES; info = e.next_file(null)) {
+        for (const info of infos) {
+            if (files.length >= MAX_DESKTOP_FILES)
+                return;
             const child = dir.get_child(info.get_name());
             if (info.get_file_type() === Gio.FileType.DIRECTORY && depth < 2)
-                list(child, depth + 1);
+                // eslint-disable-next-line no-await-in-loop -- two levels, a few folders
+                await list(child, depth + 1);
             else if (depth === 2 && /^local_.*\.json$/.test(info.get_name()))
                 files.push({file: child, name: info.get_name(), at: info.get_modification_date_time()?.to_unix() ?? 0});
         }
-        e.close(null);
     };
-    list(root, 0);
+    await list(root, 0);
     files.sort((a, b) => b.at - a.at);
     for (const f of files) {
-        try {
-            const [, bytes] = f.file.load_contents(null);
-            const uri = desktopRoute(f.name, new TextDecoder().decode(bytes), sessionId);
-            if (uri)
-                return uri;
-        } catch {}
+        // eslint-disable-next-line no-await-in-loop -- newest first, stop at the first match
+        const text = await readText(f.file, cancellable);
+        const uri = text === null ? null : desktopRoute(f.name, text, sessionId);
+        if (uri)
+            return uri;
     }
     return null;
 }
 
-/** @returns {?string} the session Claude Desktop shows (adapter.js desktopShown), on a click only */
-function desktopShownSession() {
-    try {
-        const path = GLib.build_filenamev([GLib.get_user_config_dir(), 'Claude', 'claude_desktop_config.json']);
-        const [, bytes] = GLib.file_get_contents(path);
-        return desktopShown(new TextDecoder().decode(bytes));
-    } catch {
-        return null;
-    }
+/**
+ * @param {?Gio.Cancellable} cancellable
+ * @returns {Promise<?string>} the session Claude Desktop shows (adapter.js desktopShown)
+ */
+async function desktopShownSession(cancellable) {
+    const text = await readText(GLib.build_filenamev([GLib.get_user_config_dir(), 'Claude', 'claude_desktop_config.json']), cancellable);
+    return text === null ? null : desktopShown(text);
 }
-

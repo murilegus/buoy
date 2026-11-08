@@ -2,6 +2,8 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
 
+import {ppidOf, readText} from './files.js';
+
 /**
  * Which app's window a bus peer belongs to (2026-11-07): the peer's pid from the bus
  * (`GetConnectionUnixProcessID`), then its parents up `/proc/<pid>/stat` until Shell
@@ -14,31 +16,26 @@ const MAX_WALK = 32;
 
 /**
  * @param {number} pid
- * @returns {number} its parent's pid, 0 when unknown
+ * @returns {Promise<number>} its parent's pid, 0 when unknown (read without blocking the
+ *   Shell, kit/files.js)
  */
-export function parentOf(pid) {
-    try {
-        const [, bytes] = GLib.file_get_contents(`/proc/${pid}/stat`);
-        // "pid (comm) state ppid …": comm may hold spaces and parentheses
-        const text = new TextDecoder().decode(bytes);
-        return Number(text.slice(text.lastIndexOf(')') + 2).split(' ')[1]) || 0;
-    } catch {
-        return 0;
-    }
+export async function parentOf(pid) {
+    return ppidOf(await readText(`/proc/${pid}/stat`));
 }
 
 /**
  * @param {number} pid
- * @returns {?Shell.App} the app owning a window of `pid` or of one of its parents
+ * @returns {Promise<?Shell.App>} the app owning a window of `pid` or of one of its parents
  *   (GNOME Terminal and Ptyxis run every window in one process, shells under it)
  */
-export function appOfPid(pid) {
+export async function appOfPid(pid) {
     const tracker = Shell.WindowTracker.get_default();
     for (let i = 0, p = pid; i < MAX_WALK && p > 1; i++) {
         const app = tracker.get_app_from_pid(p);
         if (app)
             return app;
-        p = parentOf(p);
+        // eslint-disable-next-line no-await-in-loop -- each parent comes from the one before
+        p = await parentOf(p);
     }
     return null;
 }
@@ -57,7 +54,7 @@ export function appOfBusName(name, {bus = Gio.DBus.session} = {}) {
             Gio.DBusCallFlags.NONE, 1000, null, (conn, res) => {
                 try {
                     const [pid] = conn.call_finish(res).deepUnpack();
-                    resolve({pid, app: appOfPid(pid)});
+                    appOfPid(pid).then(app => resolve({pid, app}), () => resolve({pid, app: null}));
                 } catch {
                     resolve({pid: 0, app: null});
                 }

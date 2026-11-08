@@ -279,7 +279,7 @@ class SystemCluster {
 
         this._gesture = new Clutter.ClickGesture();
         this._gesture.set_recognize_on_press(true);
-        this._gesture.connect('recognize', () => quickSettings.menu.toggle());
+        this._gestureId = this._gesture.connect('recognize', () => quickSettings.menu.toggle());
         this.actor.add_action(this._gesture);
 
         const repaint = () => paint(this.actor);
@@ -318,7 +318,9 @@ class SystemCluster {
             this._manager._findMenuForSource = this._ownFind;
         else
             delete this._manager._findMenuForSource; // the prototype's again
+        this._gesture.disconnect(this._gestureId);
         this.actor.remove_action(this._gesture);
+        this._gesture = null;
         const clock = this._clock;
         clock._clickGesture?.set_enabled(this._clockWas.gesture);
         clock.track_hover = this._clockWas.track_hover;
@@ -338,6 +340,9 @@ class SystemCluster {
                 parent.insert_child_at_index(b.container, prev ? parent.get_n_children() : 0);
         });
         this.actor.destroy();
+        this.actor = null;
+        this._qs = this._clock = this._right = this._dot = this._manager = this._ownFind = null;
+        this._home = this._clockWas = null;
     }
 }
 
@@ -519,7 +524,10 @@ class LeftCluster {
         this._ids = [];
         this._menu?.destroy();
         this._menu = null;
+        this._menuManager = null;
         this._wmPrefs = null;
-        this.actor.destroy();
+        this._tracker = null;
+        this.actor.destroy();   // its children (icon, name, extra) and its own signals go with it
+        this.actor = this._icon = this._text = this._extra = this._extraText = null;
     }
 }

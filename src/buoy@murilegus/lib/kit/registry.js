@@ -2,6 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {validate} from './activity.js';
+import {listNames, readText} from './files.js';
 
 /**
  * Turns a source's event into an activity (ARCHITECTURE data flow):
@@ -153,34 +154,37 @@ export function parseProfile(json) {
 
 /**
  * @param {string} dir  ~/.config/buoy/apps
- * @returns {{profiles: Map<string, object>, errors: {file: string, message: string}[]}}
+ * @param {?Gio.Cancellable} [cancellable]
+ * @returns {Promise<{profiles: Map<string, object>, errors: {file: string, message: string}[]}>}
  *   one profile per valid `<app>.json`, keyed by the slug of its name; a missing
- *   directory is no profiles and no error
+ *   directory is no profiles and no error. Read without blocking the Shell (kit/files.js).
  */
-export function loadProfiles(dir) {
+export async function loadProfiles(dir, cancellable = null) {
     const profiles = new Map(), errors = [];
     const folder = Gio.File.new_for_path(dir);
-    let children;
+    let names;
     try {
-        children = folder.enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
+        names = await listNames(folder, cancellable);
     } catch (e) {
-        if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
+        if (!e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
             errors.push({file: dir, message: e.message});
         return {profiles, errors};
     }
-    for (let info = children.next_file(null); info; info = children.next_file(null)) {
-        const file = info.get_name();
+    for (const file of names) {
         if (!file.endsWith('.json'))
             continue;
+        // eslint-disable-next-line no-await-in-loop -- a handful of small files, in order
+        const text = await readText(folder.get_child(file), cancellable);
+        if (text === null) {
+            errors.push({file, message: 'could not be read'});
+            continue;
+        }
         try {
-            const [, bytes] = folder.get_child(file).load_contents(null);
-            profiles.set(slugOf(file.slice(0, -'.json'.length)),
-                parseProfile(JSON.parse(new TextDecoder().decode(bytes))));
+            profiles.set(slugOf(file.slice(0, -'.json'.length)), parseProfile(JSON.parse(text)));
         } catch (e) {
             errors.push({file, message: e.message});
         }
     }
-    children.close(null);
     return {profiles, errors};
 }
 
@@ -260,8 +264,15 @@ export class Registry {
      * @param {function(object[]):void} [onErrors]  bad files, after every load
      */
     watch(dir, onErrors = () => {}) {
-        const load = () => {
-            const {profiles, errors} = loadProfiles(dir);
+        // async (kit/files.js); a newer load wins over one still reading, and destroy()
+        // cancels whatever is in flight
+        this._loads = new Gio.Cancellable();
+        let generation = 0;
+        const load = async () => {
+            const mine = ++generation;
+            const {profiles, errors} = await loadProfiles(dir, this._loads);
+            if (mine !== generation || this._loads?.is_cancelled() !== false)
+                return;
             this._profiles = profiles;
             if (errors.length)
                 onErrors(errors);
@@ -324,6 +335,8 @@ export class Registry {
     }
 
     destroy() {
+        this._loads?.cancel();
+        this._loads = null;
         if (this._monitor) {
             this._monitor.disconnect(this._monitorId);
             this._monitor.cancel();

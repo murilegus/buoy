@@ -49,6 +49,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           NAME: ${{ steps.version.outputs.name }}
+        # two names for the same zip: the fixed one install.sh downloads
+        # (releases/latest/download/<name>), and one with the version for people who keep several
         run: |
+          cp "dist/buoy@murilegus.shell-extension.zip" "dist/buoy@murilegus-v$NAME.shell-extension.zip"
           gh release create "$GITHUB_REF_NAME" "dist/buoy@murilegus.shell-extension.zip" \
+            "dist/buoy@murilegus-v$NAME.shell-extension.zip" \
             --repo "$GITHUB_REPOSITORY" --title "Buoy $NAME" --notes-file "docs/releases/$NAME.md" --verify-tag

@@ -7,6 +7,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {listNames, readText} from '../../kit/files.js';
 import {Source} from '../../kit/source.js';
 import {isFnLockLed, ledOn} from './adapter.js';
 
@@ -79,25 +80,30 @@ export class OsdSource extends Source {
     }
 
     // Read-only and event-driven: a watch on brightness_hw_changed, re-armed by reading it.
-    _watchFnLock() {
-        let name = null;
+    // Finding the LED and its first state is read without blocking the Shell (kit/files.js,
+    // EGO review); disable() cancels it if it is still going.
+    async _watchFnLock() {
+        const reads = this._fnReads = new Gio.Cancellable();
+        let names;
         try {
-            const children = Gio.File.new_for_path(LEDS).enumerate_children('standard::name',
-                Gio.FileQueryInfoFlags.NONE, null);
-            for (let info; !name && (info = children.next_file(null));)
-                name = isFnLockLed(info.get_name()) ? info.get_name() : null;
-            children.close(null);
+            names = await listNames(Gio.File.new_for_path(LEDS), reads);
         } catch {
             return;                       // no LED class: nothing to watch
         }
-        if (!name)
+        const name = names.find(isFnLockLed);
+        if (!name || reads.is_cancelled())
+            return;
+        const first = await readText(`${LEDS}/${name}/brightness`, reads);
+        if (reads.is_cancelled())
             return;
         try {
+            // the stream stays open while the module is on; opening a sysfs attribute does
+            // not wait on a device
             this._fnStream = Gio.File.new_for_path(`${LEDS}/${name}/brightness_hw_changed`).read(null);
         } catch {
             return;                       // the driver gives no change events
         }
-        this._fnOn = ledOn(readFile(`${LEDS}/${name}/brightness`));
+        this._fnOn = ledOn(first);
         this._readFnChange();             // arm: sysfs wakes a reader once per change
         let burst = 0, since = GLib.get_monotonic_time();
         this._fnId = GLibUnix.fd_add_full(GLib.PRIORITY_DEFAULT, this._fnStream.get_fd(),
@@ -120,6 +126,8 @@ export class OsdSource extends Source {
             });
     }
 
+    // On the fd's wake-up only: a sysfs attribute is a few bytes the kernel hands over at
+    // once, and reading it is what re-arms the next wake-up (sysfs_notify)
     _readFnChange() {
         try {
             this._fnStream.seek(0, GLib.SeekType.SET, null);
@@ -207,6 +215,8 @@ export class OsdSource extends Source {
             this._keymap.disconnect(this._keymapId);
         this._keymapId = 0;
         this._keymap = null;
+        this._fnReads?.cancel();
+        this._fnReads = null;
         if (this._fnId)
             GLib.source_remove(this._fnId);
         this._fnId = 0;
@@ -215,14 +225,6 @@ export class OsdSource extends Source {
         if (this._stack?.has(`osd:system:${ID}`))
             this._stack.end(`osd:system:${ID}`);
         super.disable();
-    }
-}
-
-function readFile(path) {
-    try {
-        return new TextDecoder().decode(Gio.File.new_for_path(path).load_contents(null)[1]);
-    } catch {
-        return null;
     }
 }
 

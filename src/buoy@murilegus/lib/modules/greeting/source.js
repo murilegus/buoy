@@ -1,7 +1,6 @@
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {Source} from '../../kit/source.js';
 import {caseOf, noteFor} from './adapter.js';
@@ -26,9 +25,9 @@ const KIND = 'greeting';
  * - No timer of its own: the greeting's time is its ttl, the typing is the kit's.
  */
 export class GreetingSource extends Source {
-    enable(stack, registry = null, settings = null) {
-        super.enable(stack, registry, settings);
-        this._ext = Extension.lookupByURL(import.meta.url);
+    enable(stack, registry = null, settings = null, opts = {}) {
+        super.enable(stack, registry, settings, opts);
+        this._ext = opts.extension ?? null;   // extension.js passes itself (EGO review)
         this._version = this._ext?.metadata?.version ?? 0;
         this._id = null;
         this._cancelSeen = null;
@@ -48,6 +47,7 @@ export class GreetingSource extends Source {
         if (this._id && this._stack?.has(this._id))
             this._stack.end(this._id);
         this._id = null;
+        this._ext = null;
         super.disable();
     }
 
