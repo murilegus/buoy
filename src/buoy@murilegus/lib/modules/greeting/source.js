@@ -95,6 +95,7 @@ export class GreetingSource extends Source {
             case: kind,
             note,
             animations: St.Settings.get().enable_animations,
+            shortcut: this._settings.get_strv('keybind-focus')[0] ?? '',
             onMore: () => this._openWhatsNew(),
         });
         if (a)

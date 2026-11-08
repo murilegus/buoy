@@ -293,7 +293,7 @@ integer):
   `idle`), the lines typed in (principle 7). Held while hovered; it stays until closed or
   ~12 s after the last line is in, longer than §2's 8 s since there is more to read.
 - **First run's lines.** "Hi, I'm Bu." then the basics, one per line: hover the pill for
-  more; click it for Home; Super+B to reach it from the keyboard; scroll on the idle pill
+  more; click it for Home; its keyboard shortcut — the user's own, `keybind-focus` ("Super+B" by default; a changed one is said as set, none leaves the line out, 2026-11-08, Ethan); scroll on the idle pill
   to see what else it can show; ⚙ in Home for settings. The exact words live in
   `modules/greeting/adapter.js`.
 - **What's new's lines.** "New in Buoy {version}" (`version-name` when `metadata.json` has

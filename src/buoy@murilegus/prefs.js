@@ -171,7 +171,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const page = new Adw.PreferencesPage();
         const running = this.metadata.version;
         for (const note of [...notes].reverse()) {
-            const text = linesOf(note, {max: Infinity});
+            const text = linesOf(note, {max: Infinity, shortcut: this._settings.get_strv('keybind-focus')[0] ?? ''});
             const group = new Adw.PreferencesGroup({
                 title: releaseLabel(note, running),
                 description: note.intro ? text.title : '',
