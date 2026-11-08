@@ -86,12 +86,21 @@ export class CalendarTab {
     }
 
     // The six weeks' room: the tab's content height less what the month side takes besides
-    // them (its head, the weekdays, paddings) at the current size
+    // them (its head, the weekdays, paddings) at the current size. The height is the
+    // panel's viewport (the scroll view around the tab, fixed by the expanded shape), read
+    // from its last allocation: `height` gives the natural size while a relayout is queued
+    // (clutter-actor.c clutter_actor_get_height), often so just before a redraw, and the
+    // tab's own height grows with a grid that once overflowed (as the Media tab's art,
+    // 2026-11-08)
     _fit() {
         const side = this._side;
         if (!side || !this.actor.mapped)
             return;
-        const content = this.actor.height - this.actor.get_theme_node().get_vertical_padding();
+        let view = this.actor.get_parent();
+        while (view && !(view instanceof St.ScrollView))
+            view = view.get_parent();
+        const height = (view ?? this.actor).get_allocation_box().get_height();
+        const content = height - this.actor.get_theme_node().get_vertical_padding();
         const [, natural] = side.get_preferred_height(-1);
         const cell = cellSize(content - (natural - 6 * this._cell));
         if (cell === this._cell)
