@@ -206,7 +206,7 @@ export const CHOICE_LABELS = {
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
     'idle-content': {'auto': 'Automatic', 'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event'},
     'idle-clock-style': {
-        'icon-time': 'Icon & time', 'time': 'Time', 'icon': 'Icon', 'seconds': 'With seconds',
+        'icon-text': 'Icon & text', 'icon-time': 'Icon & time', 'icon': 'Icon', 'text': 'Text', 'time': 'Time',
     },
     'idle-weather-refresh': {'30m': 'Every 30 minutes', '1h': 'Every hour'},
     'activity-linger': {'5m': '5 minutes', '10m': '10 minutes', '20m': '20 minutes', '30m': '30 minutes'},

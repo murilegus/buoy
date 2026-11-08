@@ -5,14 +5,22 @@
  * GNOME's wall clock (GnomeDesktop.WallClock, as Shell's lock screen) and calls
  * present() on each of its ticks.
  *
- * Styles (`idle-clock-style`): icon and time · time only · icon only · icon and time
- * with seconds. The time's format (12/24 h, locale) is GNOME's.
+ * Styles (`idle-clock-style`, 2026-11-08, Ethan): icon and the part of the day in words
+ * (the default) · icon and time · icon only · the part of the day in words · time only.
+ * The time is GNOME's own, as Date & Time sets it — 12/24 h (`clock-format`) and seconds
+ * (`clock-show-seconds`, which the wall clock follows) — so no style of its own for
+ * seconds any more.
  */
 
 import {DAYPARTS, daypartAt} from '../../kit/daypart.js';
 
-export const STYLES = Object.freeze(['icon-time', 'time', 'icon', 'seconds']);
-export const DEFAULT_STYLE = 'icon-time';
+export const STYLES = Object.freeze(['icon-text', 'icon-time', 'icon', 'text', 'time']);
+export const DEFAULT_STYLE = 'icon-text';
+
+/** The part of the day in words, as `icon-text` and `text` show it. */
+export const WORDS = Object.freeze({
+    dawn: 'Dawn', morning: 'Morning', noon: 'Noon', afternoon: 'Afternoon', evening: 'Evening', night: 'Night',
+});
 
 /** This plan's own keys (ARCHITECTURE rule 9: shown under it on the Island page). */
 export const keys = Object.freeze(['idle-clock-style']);
@@ -35,14 +43,6 @@ function styleOf(opts) {
 }
 
 /**
- * @param {object} opts  this plan's keys' values
- * @returns {boolean} the wall clock must tick every second
- */
-export function seconds(opts) {
-    return styleOf(opts) === 'seconds';
-}
-
-/**
  * @param {object} ctx
  * @param {Date} ctx.now
  * @param {string} ctx.clock  GNOME's formatted time (WallClock `clock`, time only)
@@ -53,11 +53,17 @@ export function seconds(opts) {
 export function present({now, clock, starts}, opts = {}) {
     const style = styleOf(opts);
     const daypart = daypartAt(now, starts);
-    const text = typeof clock === 'string' && clock.trim() ? clock.trim() : null;
-    const leading = style === 'time' ? null : {art: iconFor(daypart), icon: 'preferences-system-time-symbolic'};
+    const time = typeof clock === 'string' && clock.trim() ? clock.trim() : null;
+    const icon = style.startsWith('icon');
+    const leading = icon ? {art: iconFor(daypart), icon: 'preferences-system-time-symbolic'} : null;
+    let text = null;
+    if (style === 'icon-time' || style === 'time')
+        text = time;
+    else if (style === 'icon-text' || style === 'text')
+        text = WORDS[daypart] ?? null;
     return {
         leading,
-        text: style === 'icon' ? null : text,
+        text,
         daypart,                        // for the accessible name; not drawn
     };
 }
@@ -71,4 +77,4 @@ export function relevance() {
     return {score: 10};
 }
 
-export default {keys, present, seconds, relevance};
+export default {keys, present, relevance};

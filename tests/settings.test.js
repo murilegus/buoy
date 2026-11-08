@@ -242,7 +242,7 @@ eq(schema.get_key('idle-weather-automatic').get_default_value().unpack(), true, 
     eq(withPlace(['a', 'b', 'c', 'd', 'e'], 'z', k), ['z', 'a', 'b', 'c', 'd'], 'five kept');
     eq(withPlace(null, 'z', k), ['z'], 'none before');
 }
-eq(schema.get_key('idle-clock-style').get_range().recursiveUnpack(), ['enum', ['icon-time', 'time', 'icon', 'seconds']],
+eq(schema.get_key('idle-clock-style').get_range().recursiveUnpack(), ['enum', ['icon-text', 'icon-time', 'icon', 'text', 'time']],
     'clock styles, SPEC §2a');
 // idle-content and the stack's own idle-auto-… keys are the page's; every other idle- key
 // is a plan's
