@@ -124,7 +124,17 @@ build_from_source() {
   zip="$root/dist/$ASSET"
 }
 
+# A developer's checkout linked in place (`ln -s …/src/buoy@murilegus`): gnome-extensions
+# install --force and uninstall both delete the folder recursively and follow the link
+# (extensions-tool main.c file_delete_recursively; Shell's misc/fileUtils.js
+# recursivelyDeleteDir), so they would empty the checkout. The script never runs them on one.
+refuse_link() {
+  [ -L "$EXT_DIR" ] || return 0
+  die "$EXT_DIR is a link to $(readlink "$EXT_DIR") (a development checkout); installing over it would delete that folder's files. Remove the link first: rm '$EXT_DIR'"
+}
+
 install_buoy() {
+  refuse_link
   [ "$mode" = update ] || check_shell
   if [ "$source" = 1 ]; then build_from_source
   elif [ -z "$zip" ]; then download
@@ -174,6 +184,7 @@ zip_metadata() {
 # installed. Until Buoy is on extensions.gnome.org this is how it updates; after, the
 # Extensions app (or Extension Manager) updates it from there, the same uuid.
 update_buoy() {
+  refuse_link
   [ -f "$EXT_DIR/metadata.json" ] || die "Buoy is not installed; install it first (without --update)"
   [ -z "$version" ] && [ -z "$zip" ] && [ "$source" = 0 ] || die "--update takes the latest release; use --version, --zip or --from-source without it"
   check_shell
@@ -246,7 +257,7 @@ EOF
 
 uninstall_buoy() {
   need gsettings "it comes with GLib"
-  if [ ! -d "$EXT_DIR" ]; then
+  if [ ! -d "$EXT_DIR" ] && [ ! -L "$EXT_DIR" ]; then
     set_enabled 0
     [ "$purge" = 1 ] && { dconf reset -f "$SCHEMA_PATH" 2>/dev/null || true; }
     say "Buoy is not installed in $EXT_DIR: nothing to remove."
@@ -257,11 +268,19 @@ uninstall_buoy() {
     gjs -m "$tmp/cleanup.js" "$EXT_DIR" || warn "could not check Claude Code's settings"
   fi
   set_enabled 0
-  if command -v gnome-extensions >/dev/null 2>&1 && shell_knows; then
-    gnome-extensions uninstall "$UUID" 2>/dev/null || true
+  if [ -L "$EXT_DIR" ]; then
+    # a linked checkout (refuse_link): only the link goes, the checkout stays
+    local target
+    target="$(readlink "$EXT_DIR")"
+    rm -f "$EXT_DIR"
+    say "Buoy's link is removed; the checkout at $target is untouched."
+  else
+    if command -v gnome-extensions >/dev/null 2>&1 && shell_knows; then
+      gnome-extensions uninstall "$UUID" 2>/dev/null || true
+    fi
+    rm -rf "$EXT_DIR"
+    say "Buoy is removed."
   fi
-  rm -rf "$EXT_DIR"
-  say "Buoy is removed."
   if [ "$purge" = 1 ]; then
     dconf reset -f "$SCHEMA_PATH" 2>/dev/null || warn "could not reset $SCHEMA_PATH (dconf missing?)"
     echo "    Its settings are reset too."
