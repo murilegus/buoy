@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/GNOME_Shell-50-4a86cf?logo=gnome&logoColor=white" alt="GNOME Shell 50">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--2.0-blue" alt="License: GPL-2.0"></a>
   <a href="https://github.com/murilegus/buoy/releases/latest"><img src="https://img.shields.io/github/v/release/murilegus/buoy?label=release" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/extensions.gnome.org-in_review-lightgrey?logo=gnome&logoColor=white" alt="extensions.gnome.org: in review">
 </p>
 
 Islands sit still and wait for you to visit. A buoy floats, stays quiet, and lights
@@ -51,8 +52,9 @@ Everything in it: [release notes](https://github.com/murilegus/buoy/releases/lat
 ### From extensions.gnome.org
 
 Buoy has been submitted to [extensions.gnome.org](https://extensions.gnome.org) and is
-**waiting for review**. Once it is accepted, this will be a single switch in the Extensions
-app, with updates from there. Until then, use one of the ways below.
+**waiting for review**. Its page, `extensions.gnome.org/extension/11684/buoy`, opens to
+everyone once it is accepted; then it installs from there or from the Extensions app, with
+updates from there too. Until then, use one of the ways below.
 
 ### With one command
 

@@ -106,7 +106,7 @@ replacement for the light in every state.
   has no lamp); they are not loaded at runtime. `tests/mascot.test.js` checks each pose
   file cell by cell against its grid and lamp colour. The `stale` preview is dimmed to 40 %, as the renderer
   dims a stale activity.
-  `hello.svg` (README, 2026-11-03) waves `wave.1`/`wave.2` for 5 s at 500 ms (3 s until
+  `hello-icon.png` (480 px, `wave.1` on its `#0b0b0b` tile: the extensions.gnome.org icon, 2026-11-09); `hello.svg` (README, 2026-11-03) waves `wave.1`/`wave.2` for 5 s at 500 ms (3 s until
   2026-11-04, Ethan), then
   rests on `idle` (CSS, once per page load; `prefers-reduced-motion` shows `idle` only).
 - Contract: an adapter (or a D-Bus caller) sets `leading: {mascot: '<pose>', icon?}`
