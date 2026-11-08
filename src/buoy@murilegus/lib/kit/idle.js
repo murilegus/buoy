@@ -176,7 +176,10 @@ export class IdleContent {
         if (!this._clock)
             return;
         this._clock.disconnect(this._clockId);
-        this._clock.run_dispose();  // its timer goes now, not at GC (ui/unlockDialog.js)
+        // run_dispose: GnomeDesktop.WallClock keeps a timer that only its dispose removes;
+        // left to GC it would tick on after the idle pill is gone. Shell's own lock screen
+        // drops its clock the same way (ui/unlockDialog.js UnlockDialogClock _onDestroy).
+        this._clock.run_dispose();
         this._clock = null;
         this._clockId = 0;
     }

@@ -126,9 +126,17 @@ Logs: `journalctl -f -o cat /usr/bin/gnome-shell`.
 
 ## Releasing
 
-1. `version-name` in `metadata.json`, the `version` in `package.json` and the newest entry
-   in `lib/modules/greeting/notes.js` say the same version (`tests/metadata.test.js`
+1. `version-name` in `metadata.json` (`0.1`, or `0.1.1` for a fix release), the `version`
+   in `package.json` (`0.1.0`, `0.1.1`) and the newest entry in
+   `lib/modules/greeting/notes.js` say the same version, and metadata's `version` (the
+   counter `install.sh --update` compares) goes up by one (`tests/metadata.test.js`
    checks); its notes are in `docs/releases/<version-name>.md`.
-2. Tag `v<version-name>` on `main` and push the tag: `.github/workflows/release.yml` runs
+2. Run [Shexli](https://pypi.org/project/shexli/), the static analyser extensions.gnome.org
+   suggests, on the packed zip:
+   `uvx --python 3.12 --with "tree-sitter<0.26" shexli dist/buoy@murilegus.shell-extension.zip`
+   (shexli 0.2.1 crashes with tree-sitter 0.26).
+3. Tag `v<version-name>` on `main` and push the tag: `.github/workflows/release.yml` runs
    `pnpm verify`, `scripts/release-check.sh` and the pack, then publishes the zip on GitHub
-   Releases with those notes. `install.sh` installs from there.
+   Releases with those notes, twice: `buoy@murilegus.shell-extension.zip` (the name
+   `install.sh` downloads) and `buoy@murilegus-v<version-name>.shell-extension.zip`.
+4. Upload that zip to [extensions.gnome.org](https://extensions.gnome.org/upload/).

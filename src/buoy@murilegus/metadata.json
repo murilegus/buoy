@@ -6,8 +6,8 @@
     "50"
   ],
   "settings-schema": "org.gnome.shell.extensions.buoy",
-  "version": 1,
-  "version-name": "0.1",
+  "version": 2,
+  "version-name": "0.1.1",
   "url": "https://github.com/murilegus/buoy",
   "donations": {
     "github": "murilegus"

@@ -16,4 +16,11 @@
  */
 export default Object.freeze([
     Object.freeze({version: 1, name: '0.1', date: '2026-11-08', intro: true, added: [], fixed: []}),
+    Object.freeze({
+        version: 2, name: '0.1.1', date: '2026-11-09', added: [],
+        fixed: [
+            'Files are read in the background: the desktop never waits on them',
+            'Settings clean up after themselves when closed',
+        ],
+    }),
 ]);

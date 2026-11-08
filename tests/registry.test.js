@@ -1,4 +1,5 @@
 // Run: gjs -m tests/registry.test.js   (slugs, profiles, adapter resolution; no Shell)
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {Registry, slugOf, parseProfile, loadProfiles} from '../src/buoy@murilegus/lib/kit/registry.js';
@@ -213,20 +214,28 @@ write('Spotify.json', '{"icon": "x-symbolic"}');
 write('broken.json', '{"title": ');
 write('bad.json', '{"colour": "red"}');
 write('notes.txt', 'not a profile');
-let {profiles, errors} = loadProfiles(dir);
+let {profiles, errors} = await loadProfiles(dir);
 eq([...profiles.keys()].sort(), ['spotify', 'vlc'], 'every valid *.json, keyed by the slug of its name');
 eq(profiles.get('vlc'), {title: '{title}!', priority: 50}, 'parsed profile');
 eq(errors.map(e => e.file).sort(), ['bad.json', 'broken.json'], 'bad files are skipped and reported');
 eq(errors.find(e => e.file === 'bad.json').message.includes('colour'), true, 'with the reason');
-({profiles, errors} = loadProfiles(`${dir}/missing`));
+({profiles, errors} = await loadProfiles(`${dir}/missing`));
 eq([profiles.size, errors.length], [0, 0], 'a missing directory is no profiles, no error');
+// a file that is not a directory cannot be listed: reported, not thrown
+({profiles, errors} = await loadProfiles(`${dir}/notes.txt`));
+eq([profiles.size, errors.length, errors[0]?.file], [0, 1, `${dir}/notes.txt`], 'a path that is not a folder is reported');
+// cancelled (destroy() while loading): no throw, nothing loaded
+const cancelled = new Gio.Cancellable();
+cancelled.cancel();
+({profiles, errors} = await loadProfiles(dir, cancelled));
+eq(profiles.size, 0, 'a cancelled load loads nothing');
 for (const name of ['vlc.json', 'Spotify.json', 'broken.json', 'bad.json', 'notes.txt'])
     GLib.unlink(`${dir}/${name}`);
 GLib.rmdir(dir);
 
 // --- docs/examples/apps: every example loads and does what docs/PROFILES.md says ----------
 const ROOT = GLib.path_get_dirname(GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]));
-({profiles, errors} = loadProfiles(`${ROOT}/docs/examples/apps`));
+({profiles, errors} = await loadProfiles(`${ROOT}/docs/examples/apps`));
 eq(errors, [], 'every example profile is valid (README.md is not a profile)');
 eq([...profiles.keys()].sort(), ['firefox', 'spotify', 'telegram', 'vlc'], 'the examples, by slug');
 r = new Registry();
