@@ -2,6 +2,68 @@
 
 Notes for building and changing Buoy. To install and use it, see the [README](README.md).
 
+## Issues
+
+Search the [open issues](https://github.com/murilegus/buoy/issues) first; an existing one
+can take your details as a comment.
+
+**A bug** — one issue per problem, with:
+
+- Buoy's version (Settings → About, or `gnome-extensions info buoy@murilegus`), your
+  GNOME Shell version (`gnome-shell --version`) and distribution;
+- how you installed it (extensions.gnome.org, `install.sh`, a zip, a clone);
+- what you did, what you expected and what happened instead — the app involved (the
+  player, the browser, Files…) matters for most of the pill;
+- Buoy's lines from GNOME Shell's log:
+  `journalctl -b -o cat /usr/bin/gnome-shell | grep -i buoy`;
+- a screenshot or a short recording when it is about how something looks or moves.
+
+Leave out anything private: notification text, file names, Claude Code prompts.
+
+**An idea** — say what you want to see or do and why, rather than how to build it. Check
+`docs/FEATURES.md` first: it is the roadmap (M0–M5), and many ideas already have a row
+there. `docs/SPEC.md` says what Buoy deliberately is not (no assistant, no blur, nothing
+moving while idle…).
+
+## Pull requests
+
+Open an issue before a large change, so the approach can be agreed before the code.
+
+- **One change per pull request:** one FEATURES.md item, or one fix. Keep the diff to
+  what the change needs; no refactoring of the code around it.
+- **A branch from `main`:** `<type>/<milestone>-<short-slug>`, e.g.
+  `feat/m3-progress-launcherentry` or `fix/m3-calendar-grid`.
+- **Commits:** `<type>(<scope>): <summary>` — types `feat`, `fix`, `docs`, `refactor`,
+  `test`, `chore`; the scope is a module id, `kit`, `panel` or `docs`. The body says what
+  changed and why in a few lines, and ends with `Refs: FEATURES.md M3 "<item>"` when
+  there is one.
+- **Keep the rules** in `docs/ARCHITECTURE.md`: adapters and `apps/*.js` stay pure (no
+  `St`, `Main`, timers or measurements), modules import `kit/` only, nothing polls while
+  the island is closed, nothing animates while idle, no code loaded at runtime. Prefer
+  GNOME Shell's own objects to new proxies; when unsure how Shell or Mutter behaves, read
+  their `gnome-50` source and say which file and function you relied on.
+- **Tests:** pure logic gets `gjs` unit tests in `tests/` — failure paths too, not only the
+  happy one. Anything that touches the island, a source or a tab is also run in GNOME Shell
+  (`pnpm dev`, or `reload('<id>')` with `dev-mode`): exercise it, then disable and enable
+  the extension; no warning or error from `buoy@murilegus` in the log.
+- **`pnpm verify` passes.** The pre-commit hook runs it; don't skip it with `--no-verify`.
+  CI runs it again on Shell 50's gjs.
+- **Docs:** set the item's checkbox in `docs/FEATURES.md` and add a dated note under its
+  row; update SPEC or ARCHITECTURE when a decision changed.
+
+In the pull request:
+
+- **Link the issue** with `Closes #NN` and give it the milestone of its FEATURES section.
+- **What changed** — the whole change, not a list of commits.
+- **Tested** — the unit tests added, and the steps run in the Shell with what happened;
+  say what could not be tested and why.
+- **What to check** — a few steps a reviewer can follow to see it, with a screenshot for
+  anything visible.
+
+Pull requests are squashed on merge.
+
+## The code
+
 Buoy is a pure GNOME Shell 50 extension (GJS): no daemon, no binaries, nothing bundled.
 Start with `docs/ARCHITECTURE.md` (layout and the rules every change keeps),
 `docs/SPEC.md` (what Buoy is and is not) and `docs/FEATURES.md` (the roadmap, M0–M5).
