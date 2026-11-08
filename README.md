@@ -28,6 +28,8 @@ happening underneath.
 
 <p align="center">
   <img src="docs/screenshots/claude-busy@2x.gif" width="206" height="50" alt="The pill while Claude Code works: Bu bobs beside &quot;Claude · buoy, 5 min&quot;">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/claude-busy-hover@2x.gif" width="268" height="74" alt="The same pill under the pointer: Bu bigger, &quot;Claude · buoy&quot; and &quot;Running pnpm test&quot;">
 </p>
 
 ## What's in 0.1
