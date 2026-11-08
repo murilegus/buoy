@@ -101,7 +101,7 @@ A standalone tab never surfaces activities; if it needs to, it becomes a source 
 v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` (the copied flash) and `clipboard` (the Clipboard tab; one module 2026-11-05, apart again 2026-11-07, Ethan: two switches), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `agent` (Claude Code's sessions and permission prompts; was the stub `ask`, 2026-11-07); `notification`,
 `timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
 roadmap items, so their tabs show from v0.1 (2026-11-02);
-idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone tabs `calendar` (the month and the picked day's events, 2026-11-08), `clipboard` (stub `tab.js`, in that order, 2026-11-02). `greeting` moved to M4 (2026-11-08).
+idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone tabs `calendar` (the month and the picked day's events, 2026-11-08), `clipboard` (stub `tab.js`, in that order, 2026-11-02). `greeting`: its first run and What's new in v0.1, the rest in M4 (2026-11-08).
 
 ## Data flow
 
