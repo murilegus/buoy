@@ -270,9 +270,11 @@ class EmptyState extends St.Bin {
         const words = new St.Label({text, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER});
         let child = words;
         if (above || below) {
+            // the stack spans the width: Bu centres on the same width in every tab, not on
+            // a stack as wide as its words (which rounded him a pixel apart, 2026-11-08)
             child = new St.BoxLayout({
                 style_class: 'buoy-empty-stack', orientation: Clutter.Orientation.VERTICAL,
-                x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER,
+                x_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.CENTER,
             });
             for (const a of [above, words, below].filter(Boolean)) {
                 a.x_align = Clutter.ActorAlign.CENTER;
@@ -282,16 +284,28 @@ class EmptyState extends St.Bin {
         super._init({style_class: 'buoy-empty', x_expand: true, y_expand: true, child});
     }
 
+    // The panel's height less what the tab's boxes take (their padding and border), so it
+    // fills the body. Those boxes pad unevenly (Transfers 0 / 4, Media 4 / 6, Home 0 / 0),
+    // which would set Bu and the words a pixel or two apart from tab to tab: the content
+    // moves back by half the difference, both ways, so its centre is the body's in every
+    // tab (2026-11-08, Ethan). A translation: it moves nothing else.
     vfunc_get_preferred_height(forWidth) {
         const [min, nat] = super.vfunc_get_preferred_height(forWidth);
-        let between = 0;
+        const inset = {top: 0, bottom: 0, left: 0, right: 0};
         for (let p = this.get_parent(); p; p = p.get_parent()) {
-            if (p[FILL] > 0)
-                return [min, Math.max(nat, p[FILL] - between)];
+            if (p[FILL] > 0) {
+                const child = this.get_child();
+                if (child) {
+                    child.translation_y = Math.round((inset.bottom - inset.top) / 2);
+                    child.translation_x = Math.round((inset.right - inset.left) / 2);
+                }
+                return [min, Math.max(nat, p[FILL] - inset.top - inset.bottom)];
+            }
             if (p instanceof St.Widget) {
                 const node = p.get_theme_node();
-                between += node.get_vertical_padding() +
-                    node.get_border_width(St.Side.TOP) + node.get_border_width(St.Side.BOTTOM);
+                for (const [side, key] of [[St.Side.TOP, 'top'], [St.Side.BOTTOM, 'bottom'],
+                    [St.Side.LEFT, 'left'], [St.Side.RIGHT, 'right']])
+                    inset[key] += node.get_padding(side) + node.get_border_width(side);
             }
         }
         return [min, nat];
