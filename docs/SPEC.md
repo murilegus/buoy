@@ -357,7 +357,10 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   in tie-break order; default every enabled plan. Prefs page **Island** (2026-11-04, was
   "Idle"): a reorderable list with switches, one row per plan, its own keys under it; a
   plan whose module is off is greyed ("Turn on in Modules"). The Modules switch turns the
-  whole module on or off; the Island switch only puts its plan in the stack. A plan whose module is off does not exist (ARCHITECTURE rule 6).
+  whole module on or off; the Island switch only puts its plan in the stack. A module that
+  is only a plan (clock, weather) has no switch of its own (2026-11-08, Ethan): unused it
+  costs nothing, its feed runs only while its plan is in use; turning its plan on turns it
+  on, should it have been off. "Switch every" shows only with Show on Automatic. A plan whose module is off does not exist (ARCHITECTURE rule 6).
 - **Interaction.** Hover → the shown plan's compact; scroll on the idle pill → next /
   previous plan in the stack (held for one interval, like swiping the Smart Stack);
   click → Home, as in every idle state.

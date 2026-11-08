@@ -364,6 +364,45 @@ export const HIDDEN_MODULES = new Set(['home']);
 // so the list is here.
 export const IDLE_PLANS = ['clock', 'weather', 'calendar'];
 
+/**
+ * @param {*} list  `idle-auto-plans`
+ * @param {string} id
+ * @param {boolean} on
+ * @returns {string[]} the stack with that plan in (at the end, the last to break a tie) or
+ *   out; the others keep their order
+ */
+export function withPlan(list, id, on) {
+    const plans = (Array.isArray(list) ? list : []).filter(p => typeof p === 'string' && p !== id);
+    return on ? [...plans, id] : plans;
+}
+
+/**
+ * A plan dragged onto another (the Island page's tie order, SPEC §2a-iii).
+ *
+ * @param {*} list  `idle-auto-plans`
+ * @param {string} id  the dragged plan
+ * @param {string} before  the plan it was dropped on: it goes in that one's place
+ * @returns {string[]} the new order; unchanged when either is not in the stack
+ */
+export function movePlan(list, id, before) {
+    const plans = Array.isArray(list) ? list.filter(p => typeof p === 'string') : [];
+    if (id === before || !plans.includes(id) || !plans.includes(before))
+        return plans;
+    const rest = plans.filter(p => p !== id);
+    rest.splice(rest.indexOf(before) + (plans.indexOf(id) < plans.indexOf(before) ? 1 : 0), 0, id);
+    return rest;
+}
+
+/**
+ * @param {string[]} ids  the plans (IDLE_PLANS order)
+ * @param {*} list  `idle-auto-plans`
+ * @returns {string[]} the Island page's rows: the stack's plans in its order, then the others
+ */
+export function planRows(ids, list) {
+    const stack = (Array.isArray(list) ? list : []).filter(p => ids.includes(p));
+    return [...new Set(stack), ...ids.filter(p => !stack.includes(p))];
+}
+
 // A plan row's line on the Island page when its module's switch is elsewhere (Modules):
 // what it shows, since it has no keys to open to
 export const PLAN_LINES = Object.freeze({calendar: 'Today\'s next event, from your calendars.'});
@@ -405,8 +444,9 @@ export const STANDALONE = new Set(['calendar', 'clipboard']);
  * @param {Array<{name: string}>} keys  schema keys, in schema order
  * @returns {object} {general, idle, apps, panel, windows, developer: key names;
  *   modules: [{id, enableKey, keys}]; groups: MODULE_GROUPS with those modules, empty
- *   groups left out (Modules page); plans: [{id, enableKey, keys, ownSwitch}] (Island
- *   page; ownSwitch: the plan's row carries its module's switch)}
+ *   groups left out (Modules page); plans: [{id, enableKey, keys, planOnly}] (Island
+ *   page; planOnly: a module that is only this plan, with no row on Modules; every plan
+ *   row's switch is its place in `idle-auto-plans`)}
  * @throws {Error} a key that is neither placed nor a module's, or an `idle-…` key of no plan
  */
 export function planPrefs(keys) {
@@ -423,10 +463,13 @@ export function planPrefs(keys) {
     const planOnly = id => IDLE_PLANS.includes(id) && !ownKeys(id).length && !STANDALONE.has(id);
     for (const id of IDLE_PLANS) {
         const enableKey = names.includes(`modules-${id}`) ? `modules-${id}` : null;
+        // the row's switch is the plan's place in `idle-auto-plans` (2026-11-08, Ethan); a
+        // plan-only module (clock, weather) has no switch of its own anywhere: it costs
+        // nothing unused (its feed runs only while its plan is in use)
         plan.plans.push({
             id, enableKey,
             keys: names.filter(n => n.startsWith(`idle-${id}-`)),
-            ownSwitch: enableKey !== null && planOnly(id),
+            planOnly: enableKey !== null && planOnly(id),
         });
     }
     for (const id of ids) {
