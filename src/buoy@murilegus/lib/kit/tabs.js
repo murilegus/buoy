@@ -43,7 +43,7 @@ function badgeOf(m) {
 
 /**
  * @param {object[]} modules  enabled modules, in order: {id, kinds, tab?, title?, icon?,
- *   tabWhileLive?, badge?}; `badge()` true: the tab's icon carries a dot (the
+ *   tabWhileLive?, noTab?, badge?}; `badge()` true: the tab's icon carries a dot (the
  *   Notifications tab while GNOME's list has some, 2026-11-08)
  * @param {object[]} list  visible activities (stack order)
  * @param {object} [opts]
@@ -63,6 +63,10 @@ export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
         if (!m.kinds?.length)
             continue;
         m.kinds.forEach(k => claimed.add(k));
+        // `noTab`: its activities open on their own and go (the greeting, 2026-11-08): never
+        // a tab, nor one made for its unclaimed kind
+        if (m.noTab)
+            continue;
         if (m.tabWhileLive && !list.some(a => m.kinds.includes(a.kind)))
             continue;
         // feedback-only: a kind tab only while one of its activities brings an expanded

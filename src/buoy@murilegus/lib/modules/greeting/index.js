@@ -8,6 +8,7 @@ export default {
     id: 'greeting',
     title: 'Greeting',
     kinds: ['greeting'],
+    noTab: true,        // it opens on its own and goes: no tab in the strip
     source: GreetingSource,
     adapter,
 };

@@ -175,4 +175,12 @@ eq(stripOrder({tabs: [{id: HOME}], slot: null, more: []}), [HOME], 'no slot: Hom
     eq('badge' in planStrip([notes], []).tabs[0], false, 'Home never');
 }
 
+// --- noTab: a module whose activities open on their own (the greeting, 2026-11-08) ----------
+{
+    const greeting = {id: 'greeting', kinds: ['greeting'], noTab: true};
+    eq(ids(planStrip([media, greeting], [])), [HOME, 'media'], 'no tab for it');
+    eq(ids(planStrip([media, greeting], [act('g', 'greeting', {expanded: {center: {title: 'Hi'}}})])), [HOME, 'media'],
+        'not even while its activity is up with an expanded view');
+}
+
 print('tabs: ok');
