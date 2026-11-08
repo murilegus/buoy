@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting
+    url: https://github.com/murilegus/buoy#troubleshooting
+    about: Nothing in the top bar after installing, the GNOME version, Claude Code sessions not showing — the usual fixes.
+  - name: How to contribute
+    url: https://github.com/murilegus/buoy/blob/main/CONTRIBUTING.md
+    about: What a bug report needs, and how pull requests are made.

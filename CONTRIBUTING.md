@@ -5,7 +5,8 @@ Notes for building and changing Buoy. To install and use it, see the [README](RE
 ## Issues
 
 Search the [open issues](https://github.com/murilegus/buoy/issues) first; an existing one
-can take your details as a comment.
+can take your details as a comment. **New issue** offers two forms, *Bug report* and *Idea*
+(`.github/ISSUE_TEMPLATE/`), which ask for what is below.
 
 **A bug** — one issue per problem, with:
 

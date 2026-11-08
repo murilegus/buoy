@@ -1,0 +1,33 @@
+name: Idea
+description: Something you'd like Buoy to show or do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before writing, check [FEATURES.md](https://github.com/murilegus/buoy/blob/main/docs/FEATURES.md) — the roadmap, where many ideas already have a row — and [SPEC.md](https://github.com/murilegus/buoy/blob/main/docs/SPEC.md), which says what Buoy deliberately is not (no assistant to talk to, no blur, nothing moving while idle…).
+  - type: textarea
+    id: want
+    attributes:
+      label: What you'd like
+      description: What you want to see or do, rather than how to build it.
+      placeholder: When my laptop's battery is low, I'd like the pill to…
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: When does it come up, and what do you do today instead?
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: Apps involved
+      description: If it is about a particular app (a player, a chat app, a browser…).
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: A sketch, a screenshot of something similar, a link.
