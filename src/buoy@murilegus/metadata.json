@@ -1,7 +1,7 @@
 {
   "uuid": "buoy@murilegus",
   "name": "Buoy",
-  "description": "A living pill for the top bar. It grows when music plays, a file copies, a charger connects or a coding agent asks for permission — and shrinks back the moment it is over. Click it for a single home panel. No daemon, no setup.",
+  "description": "A living pill for the top bar. It grows when music plays, a file copies, a charger connects or a coding agent asks for permission — and shrinks back the moment it is over. Click it for a single home panel. No daemon, no setup.\n\nClipboard: when you copy something, Buoy reads it (the text, the file names or a thumbnail of the image) to show it briefly in the pill. Turn \"Show what was copied\" off in its settings and it only says Copied, without reading the clipboard. Nothing is stored or sent anywhere.",
   "shell-version": [
     "50"
   ],

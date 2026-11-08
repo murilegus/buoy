@@ -125,6 +125,10 @@ export default class BuoyPreferences extends ExtensionPreferences {
         // handler ids; `_drops`: other settings' (GNOME Weather's), as functions
         this._ids = [];
         this._drops = [];
+        // the one-shot idle callbacks go with the window too: one left for a closed
+        // window would touch its destroyed rows (EGO review asks every source removed)
+        this._openLater = 0;
+        this._plansLater = 0;
         window.connect('close-request', () => {
             for (const id of this._ids)
                 settings.disconnect(id);
@@ -132,6 +136,11 @@ export default class BuoyPreferences extends ExtensionPreferences {
                 drop();
             this._ids = [];
             this._drops = [];
+            for (const later of ['_openLater', '_plansLater']) {
+                if (this[later])
+                    GLib.source_remove(this[later]);
+                this[later] = 0;
+            }
             return false;
         });
         const schema = settings.settings_schema;
@@ -150,7 +159,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
         // "…and more" in Bu's What's new opens prefs here (GREETING.md §11): the Shell side
         // writes `prefs-page`, since OpenExtensionPrefs passes no page on
         this._ids.push(settings.connect('changed::prefs-page', () => this._openRequested()));
-        GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+        this._openLater = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            this._openLater = 0;
             this._openRequested();
             return GLib.SOURCE_REMOVE;
         });
