@@ -166,6 +166,33 @@ export function present({data: weather} = {}) {
     };
 }
 
+/**
+ * Home's weather block (SPEC §3, 2026-11-08): the same icon and temperature as the pill,
+ * the condition beside it, and the place over the details the compact gives on hover.
+ *
+ * @param {?object} weather  the feed's state (read.js)
+ * @returns {?{leading: (string|object), temp: string, condition: ?string, place: ?string,
+ *   detail: ?string, accessibleName: string}} null while there is no weather (Home leaves
+ *   the block out); `detail` "Feels like 34° · Wind NE 12 km/h · Humidity 75%" (feels
+ *   only when it differs)
+ */
+export function card(weather) {
+    const shown = present({data: weather});
+    if (!shown)
+        return null;
+    const temp = shown.text;
+    const condition = conditionOf(weather.icon ?? ICON);
+    const place = typeof weather.place === 'string' && weather.place.trim() ? weather.place.trim() : null;
+    return {
+        leading: shown.leading,
+        temp,
+        condition,
+        place,
+        detail: shown.compact.subtitle,
+        accessibleName: shown.accessibleName,
+    };
+}
+
 const HOUR = 60 * 60 * 1000;
 
 /**

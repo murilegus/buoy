@@ -5,11 +5,12 @@ import St from 'gi://St';
 
 import {EmptyState, FILL, buildExpanded, buildMinimal, iconProps} from './present.js';
 import {clockTime} from './presentation.js';
-import {planStrip, stripOrder, tabActivities, findTab, HOME} from './tabs.js';
+import {planStrip, stripOrder, tabActivities, findTab, homeChips, homeColumns, HOME} from './tabs.js';
 import {step} from './keys.js';
 
 const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edge
 const STRIP_H = 60; // first guess for the strip + panel padding; measured once laid out
+const CHIP_MAX = 240; // a Home chip ellipsizes past this
 
 // what the strip draws: its tabs and their dots
 const stripKey = strip => strip.tabs.map(t => `${t.id}${t.badge ? '•' : ''}`).join();
@@ -35,8 +36,12 @@ function badged(glyph) {
  * again and a closed island holds none of it. Which tabs exist and where an open
  * starts come from tabs.js; this file only makes the actors.
  *
- *   Home        every visible activity as a row (the full list, also behind +N); a row
- *               opens that activity's tab. Modules add their Home blocks in M3.
+ *   Home        SPEC §3 (2026-11-08, layout A): the Missed section, then a chip for each
+ *               running activity no block covers (a chip opens its tab), then the
+ *               modules' blocks in two columns — Now playing at the start, the weather
+ *               over Up next at the end; a block with nothing to show is left out and a
+ *               column left empty gives the other the full width. Nothing at all →
+ *               "Nothing going on" with Bu.
  *   kind tab    the module's tab.js, or the expanded views of its activities
  *   standalone  a module's tab.js, built on first selection (slot / ⋯ / pinned)
  *
@@ -44,7 +49,15 @@ function badged(glyph) {
  * a kind tab's `update` gets its kind's visible activities, at once and on every change.
  * `close()` closes the island: a tab calls it after an action that brings a window up
  * (open a file, focus an app), as a notification goes once it is clicked (2026-11-06,
- * Ethan). A Home row that runs its activity's onPress closes it the same way.
+ * Ethan). A Home chip that runs its activity's onPress closes it the same way.
+ *
+ * A Home block is a module's `home: {Block, column, order}` (index.js): `new Block({open,
+ * close, changed, settings})` → {actor, ready, update?(activities), refresh?(), destroy()}.
+ * Made the first time Home shows, kept for the rest of the open like a tab.js (its actor
+ * moves between layouts, never rebuilt), destroyed when expanded closes. `ready`: it has
+ * something to show; `changed()`: `ready` flipped, lay Home out again; `update` gets its
+ * module's activities as a kind tab does; `refresh` is called each time Home is laid out
+ * (a time moved); `open(id)` selects a tab; `settings` is Buoy's Gio.Settings.
  */
 export class Home {
     /**
@@ -63,10 +76,11 @@ export class Home {
      * @param {function():void} [opts.onMissedClear]  its × was clicked
      * @param {?string} [opts.from]  the activity whose pill opened it; a tab.js gets it as
      *   `from` (the Media tab shows that player first)
+     * @param {?Gio.Settings} [opts.gsettings]  Buoy's settings, for Home's blocks
      */
     constructor({
         modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null, onClose = null, from = null,
-        missed = [], onMissedSeen = null, onMissedOpen = null, onMissedClear = null,
+        missed = [], onMissedSeen = null, onMissedOpen = null, onMissedClear = null, gsettings = null,
     }) {
         this._modules = modules;
         this._list = list;
@@ -80,6 +94,9 @@ export class Home {
         this._onPrefs = onPrefs;
         this._onClose = onClose;
         this._tabs = new Map();      // module id → tab.js instance, built on first selection
+        this._blocks = new Map();    // module id → {block, column, order}: Home's, built when it first shows
+        this._gsettings = gsettings;
+        this._building = false;      // Home is being laid out: a block's changed() waits
         this._strip = null;
         this._current = null;
         this._menu = null;           // ⋯ menu while it is open, on _menuLayer
@@ -157,6 +174,7 @@ export class Home {
      */
     update(list) {
         this._list = list;
+        this._feedBlocks();          // before Home is laid out again: a block's `ready` may flip
         const before = stripKey(this._strip);
         this._plan();
         if (this._menu)
@@ -177,6 +195,17 @@ export class Home {
         this._plan();
         if (before !== stripKey(this._strip))
             this._renderStrip();
+    }
+
+    // Home's blocks keep their actor too: each gets its module's activities.
+    _feedBlocks() {
+        for (const [id, {block}] of this._blocks)
+            block.update?.(this._ownActivities(id));
+    }
+
+    _ownActivities(id) {
+        const kinds = this._module(id)?.kinds ?? [];
+        return this._list.filter(a => kinds.includes(a.kind));
     }
 
     // Kind tabs with a tab.js keep their actor: hand them their activities instead.
@@ -344,6 +373,12 @@ export class Home {
     // --- body ---------------------------------------------------------------------------
 
     _setBody(actor) {
+        // a block's actor is kept for the rest of this open, wherever Home placed it: out of
+        // the old layout first, which goes
+        for (const {block} of this._blocks.values()) {
+            if (!actor.contains(block.actor))
+                block.actor.get_parent()?.remove_child(block.actor);
+        }
         // a tab.js actor is kept for the rest of this open; anything else is rebuilt
         const kept = new Set([...this._tabs.values()].map(t => t.actor));
         for (const old of this._view.get_children()) {
@@ -388,29 +423,101 @@ export class Home {
     }
 
     _homeBody() {
+        this._building = true;
+        try {
+            return this._buildHome();
+        } finally {
+            this._building = false;
+        }
+    }
+
+    _buildHome() {
         const box = new St.BoxLayout({style_class: 'buoy-home-list', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
-        if (this._missed.length) {
+        const blocks = this._homeBlocks();
+        const columns = homeColumns(blocks.map(([id, b]) => ({id, column: b.column, order: b.order, ready: Boolean(b.block.ready)})));
+        const chips = homeChips(this._list, this._modules);
+        if (this._missed.length)
             this._missedSection(box);
-            if (this._list.length)
-                box.add_child(this._sectionHeader('Now'));
+        if (chips.length)
+            box.add_child(this._chips(chips));
+        if (columns.length)
+            box.add_child(this._columns(columns));
+        if (!box.get_n_children())
+            box.add_child(new EmptyState('Nothing going on', {pose: 'idle'}));
+        return box;
+    }
+
+    // Every enabled module's Home block: made the first time Home shows, refreshed on
+    // every later layout
+    _homeBlocks() {
+        for (const m of this._modules) {
+            const Block = m.home?.Block;
+            if (!Block)
+                continue;
+            const known = this._blocks.get(m.id);
+            if (known) {
+                known.block.refresh?.();
+                continue;
+            }
+            try {
+                const block = new Block({
+                    open: id => this._openTab(id),
+                    close: () => this._onClose?.(),
+                    changed: () => this._blockChanged(),
+                    settings: this._gsettings,
+                });
+                block.update?.(this._ownActivities(m.id));
+                this._blocks.set(m.id, {block, column: m.home.column, order: m.home.order});
+            } catch (e) {
+                console.warn(`Buoy: Home block ${m.id} failed: ${e.message}`);
+            }
         }
-        if (!this._list.length) {
-            if (!this._missed.length)
-                box.add_child(new EmptyState('Nothing going on', {pose: 'idle'}));
-            return box;
+        return [...this._blocks];
+    }
+
+    // A block's `ready` flipped (its data came or went): Home is laid out again
+    _blockChanged() {
+        if (this._gone || this._building || this._menu || this._current !== HOME)
+            return;
+        this._setBody(this._homeBody());
+    }
+
+    // A block opens a tab: the strip's or the slot's at once; one listed only under ⋯ goes
+    // into the slot first, as choosing it there does
+    _openTab(id) {
+        const tab = findTab(this._strip, id);
+        if (!tab || this._gone)
+            return;
+        if (tab.type === 'standalone' && !stripOrder(this._strip).includes(id)) {
+            this._onSlot?.(id);
+            this._settings = {...this._settings, slot: id};
+            this._plan();
         }
-        for (const a of this._list) {
-            const content = buildMinimal(a);
+        this.select(id);
+    }
+
+    // The running activities no block covers, each its pill's content on a chip (wrapping
+    // onto more lines when they do not fit); a chip opens its kind's tab, or runs the
+    // activity's onPress and closes the island
+    _chips(list) {
+        const flow = new St.Widget({
+            style_class: 'buoy-home-chips', x_expand: true,
+            // snap_to_grid off: each chip its own width (clutter-flow-layout.c allocate)
+            layout_manager: new Clutter.FlowLayout({
+                orientation: Clutter.Orientation.HORIZONTAL, snap_to_grid: false,
+                column_spacing: 6, row_spacing: 6,
+            }),
+        });
+        for (const a of list) {
+            const content = buildMinimal(a, {maxWidth: CHIP_MAX});
             if (!content)
                 continue;
             const tabId = this._strip.tabs.find(t => t.type === 'kind' && t.kinds.includes(a.kind))?.id;
-            const row = new St.Button({
-                style_class: 'buoy-home-row', child: content, x_expand: true,
+            const chip = new St.Button({
+                style_class: 'buoy-home-chip', child: content,
                 can_focus: true, reactive: !!tabId || !!a.onPress,
-                x_align: Clutter.ActorAlign.FILL,
             });
-            content.x_expand = true; // St.Button centres a child at its natural width
-            row.connect('clicked', () => {
+            chip.connect('clicked', () => {
                 if (tabId) {
                     this.select(tabId);
                 } else if (a.onPress) {
@@ -418,9 +525,27 @@ export class Home {
                     this._onClose?.();
                 }
             });
-            box.add_child(row);
+            flow.add_child(chip);
         }
-        return box;
+        return flow;
+    }
+
+    // Two columns of equal width (start: Now playing; end: weather, Up next), or one
+    _columns(columns) {
+        const row = new St.BoxLayout({style_class: 'buoy-home-columns', x_expand: true});
+        row.layout_manager.homogeneous = true;
+        for (const ids of columns) {
+            const col = new St.BoxLayout({
+                style_class: 'buoy-home-column', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
+            });
+            for (const id of ids) {
+                const {actor} = this._blocks.get(id).block;
+                actor.get_parent()?.remove_child(actor);    // still in the layout before
+                col.add_child(actor);
+            }
+            row.add_child(col);
+        }
+        return row;
     }
 
     // What ended while the island was hidden (2026-11-03): newest first, at most 5 (the
@@ -482,6 +607,14 @@ export class Home {
         for (const tab of this._tabs.values())
             tab.destroy?.();
         this._tabs.clear();
+        for (const {block} of this._blocks.values()) {
+            try {
+                block.destroy?.();
+            } catch (e) {
+                console.warn(`Buoy: Home block failed to go: ${e.message}`);
+            }
+        }
+        this._blocks.clear();
     }
 
     destroy() {

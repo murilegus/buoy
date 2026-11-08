@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 
 import weather, {
     REFRESH, DEFAULT_REFRESH, keys, ticks, refreshMs, degrees, conditionOf, isWet, windText, present, relevance,
-    ART, artFor,
+    ART, artFor, card,
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
 import {readInfo, nextHour, unitNames} from '../src/buoy@murilegus/lib/modules/weather/read.js';
 import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
@@ -186,5 +186,27 @@ eq(unitNames('default', 'default'), {temperature: 'DEFAULT', speed: 'DEFAULT'},
     'Automatic: the locale\'s (GWeather DEFAULT; Buoy\'s first enable sets °C and km/h where never set)');
 eq([unitNames('invalid', 'x'), unitNames(null, undefined)], [{temperature: 'DEFAULT', speed: 'DEFAULT'},
     {temperature: 'DEFAULT', speed: 'DEFAULT'}], 'invalid or missing: the locale\'s');
+
+// --- Home's weather block (2026-11-08) ------------------------------------------------------
+{
+    const c = card(state);
+    eq(c, {
+        leading: {art: artFor('weather-few-clouds-symbolic'), icon: 'weather-few-clouds-symbolic'},
+        temp: '31°', condition: 'Partly cloudy', place: 'Ho Chi Minh',
+        detail: 'Feels like 35° · Wind NE 12 km/h · Humidity 75%',
+        accessibleName: 'Ho Chi Minh, 31°, Partly cloudy',
+    }, 'Home card: the pill\'s icon and temperature, the condition, the place, the compact\'s details');
+    eq(card({...state, feels: 31.4}).detail, 'Wind NE 12 km/h · Humidity 75%', 'Home card: feels like dropped when equal');
+    eq(card({...state, feels: null, wind: null, humidity: null}).detail, null, 'Home card: no details → none');
+    eq(card({...state, place: null}).place, null, 'Home card: no place → none');
+    eq(card({...state, place: '   '}).place, null, 'Home card: a blank place → none');
+    eq(card({...state, icon: 'weather-nope-symbolic'}).condition, null, 'Home card: an icon without words → no condition');
+    eq(card({...state, icon: null}).condition, 'Cloudy', 'Home card: no icon → the overcast fallback, as the pill');
+    eq(card({...state, temp: -0.3}).temp, '0°', 'Home card: rounded as the pill, never −0°');
+    eq([card(null), card({...state, temp: null}), card({}), card(undefined)], [null, null, null, null],
+        'Home card: no temperature → null (Home leaves the block out)');
+    const long = 'Thành phố Hồ Chí Minh, Việt Nam, a place name far longer than the block';
+    eq(card({...state, place: long}).place, long, 'Home card: a long place is kept whole (the block ellipsizes)');
+}
 
 print('weather: ok');

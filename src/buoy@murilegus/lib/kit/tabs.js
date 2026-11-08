@@ -169,3 +169,38 @@ export function findTab(strip, id) {
 export function stripOrder(strip) {
     return [...strip.tabs.map(t => t.id), ...strip.slot ? [strip.slot.id] : []];
 }
+
+// --- Home's blocks (SPEC §3, 2026-11-08) ---------------------------------------------
+
+/**
+ * The running activities Home shows as chips: those no Home block covers. A module with a
+ * `home` block (media: Now playing) shows its own activities there, so they are not
+ * repeated; every other activity (an agent, a download, a D-Bus caller's) is a chip.
+ *
+ * @param {object[]} list  visible activities (stack order)
+ * @param {object[]} modules  enabled modules (index.js exports)
+ * @returns {object[]} the chips' activities, in stack order
+ */
+export function homeChips(list, modules) {
+    const covered = new Set(modules.filter(m => m.home).flatMap(m => m.kinds ?? []));
+    return list.filter(a => !covered.has(a.kind));
+}
+
+/**
+ * Where Home's blocks go: two columns, `start` (Now playing) and `end` (weather, Up next),
+ * each in its blocks' `order`, then module order; a block with nothing to show is left out,
+ * and a column left empty gives its width to the other (one column, the full width).
+ *
+ * @param {{id: string, column?: string, order?: number, ready: boolean}[]} blocks  in
+ *   module order; `column` 'start' or 'end' (default 'end')
+ * @returns {string[][]} the columns that have blocks, start first: block ids, top to bottom
+ */
+export function homeColumns(blocks) {
+    const sorted = blocks
+        .map((b, i) => ({...b, i, order: Number.isFinite(b.order) ? b.order : 0}))
+        .filter(b => b.ready)
+        .sort((a, b) => a.order - b.order || a.i - b.i);
+    return ['start', 'end']
+        .map(col => sorted.filter(b => (b.column === 'start' ? 'start' : 'end') === col).map(b => b.id))
+        .filter(ids => ids.length);
+}
