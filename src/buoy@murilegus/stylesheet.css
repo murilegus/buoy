@@ -378,6 +378,8 @@
 
 /* The Notifications tab (NOTIFICATIONS.md §6, redesigned 2026-11-07): cards in app stacks */
 .buoy-ntab { spacing: 8px; padding: 0 2px 8px; }
+/* empty: the bar lies over Bu's panel, no bottom padding — Bu sits where he does in every tab */
+.buoy-ntab-empty { padding-bottom: 0; }
 .buoy-ntab-bar { spacing: 8px; padding: 0 2px; }
 .buoy-ntab-count { color: rgba(255, 255, 255, 0.55); font-size: 12px; }
 .buoy-nchip { padding: 4px 10px; border-radius: 999px; color: #ddd; background-color: #1f1f1f; font-size: 12px; }

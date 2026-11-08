@@ -138,11 +138,21 @@ export class NotificationsTab {
                 this.actor.add_child(this._card(i, {withApp: false, avatar: true}));
             return;
         }
-        this.actor.add_child(this._listBar(missed, total));
         if (!total) {
-            this.actor.add_child(new EmptyState('All caught up', {pose: 'sleep'}));
+            // Bu where every empty tab has him: the panel's full height, the bar laid over
+            // its top rather than pushing him down (2026-11-08, Ethan: he jumped between tabs)
+            this.actor.add_style_class_name('buoy-ntab-empty');
+            const over = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true, y_expand: true});
+            over.add_child(new EmptyState('All caught up', {pose: 'sleep'}));
+            const bar = this._listBar(missed, total);
+            // BinLayout aligns only a child that expands (clutter-bin-layout.c)
+            Object.assign(bar, {x_expand: true, y_expand: true, y_align: Clutter.ActorAlign.START});
+            over.add_child(bar);
+            this.actor.add_child(over);
             return;
         }
+        this.actor.remove_style_class_name('buoy-ntab-empty');
+        this.actor.add_child(this._listBar(missed, total));
         for (const g of groups)
             this.actor.add_child(this._stack(g));
     }
