@@ -227,8 +227,8 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     const a = agent({...rec, shared: false});
     eq([a.text, a.leading, a.trailing], ['Claude · buoy', {mascot: 'busy'}, {since: T0}], 'minimal: Bu, the name, the elapsed time');
     eq([a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Editing src/…/c.js'], 'compact: which session, what it does');
-    eq([a.priority, a.needsYou, a.staleAfter, a.ttl ?? 0], [undefined, false, STALE_MS, 0],
-        'working: no priority of its own (the kind\'s 35), stale after 1 min, no end');
+    eq([a.priority, a.needsYou, a.staleAfter, a.ttl ?? 0], [35, false, STALE_MS, 0],
+        'working: the kind\'s 35, set every time (a question raises it), stale after 1 min, no end');
     eq(a.pressFirst, true, 'a click brings the terminal up first, else the tab (§2)');
     eq(a.linger, false, 'working: it does not wait, it never lingers out');
     const s = agent({...rec, shared: true});
@@ -348,15 +348,19 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
         'only AskUserQuestion is a question');
     let r = step(null, ev('UserPromptSubmit', {prompt: 'go'}), 1000).rec;
     const asked = step(r, q, 2000);
-    eq([asked.rec.pose, asked.rec.title, asked.alert], ['turn', QUESTION_TITLE, true],
-        'its PermissionRequest: waiting for your answer, not "needs your OK"');
+    eq([asked.rec.pose, asked.rec.title, asked.alert], ['ask', QUESTION_TITLE, true],
+        'its PermissionRequest: Bu\'s hand up, waiting for your answer');
     r = asked.rec;
     const prompt = step(r, ev('Notification', {notification_type: 'permission_prompt'}), 2100);
-    eq([prompt.show, prompt.rec.pose, prompt.rec.title], [false, 'turn', QUESTION_TITLE],
+    eq([prompt.show, prompt.rec.pose, prompt.rec.title], [false, 'ask', QUESTION_TITLE],
         'the card\'s permission_prompt notification changes nothing');
     const after = step(r, ev('PostToolUse', {tool_name: 'AskUserQuestion', tool_input: {}}), 5000);
-    eq(after.rec.pose === 'turn', false, 'answered (its result): back to work');
-    eq(agent({...asked.rec, shared: false}).needsYou, true, 'it needs you, as a turn');
+    eq(after.rec.pose === 'ask', false, 'answered (its result): back to work');
+    const pill = agent({...asked.rec, shared: false});
+    eq([pill.text, pill.compact.subtitle, pill.needsYou, pill.linger, pill.priority],
+        ['Claude · buoy needs your answer', 'Needs your answer', true, false, 90],
+        'the pill asks as a prompt\'s does: its words, needs you, no linger, the ask\'s 90');
+    eq(agent({...after.rec, shared: false}).priority, 35, 'back to work: the kind\'s 35 again (set every time)');
 }
 
 // --- hooks in ~/.claude/settings.json (§8) ------------------------------------------------

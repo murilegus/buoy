@@ -12,7 +12,7 @@
  * Field names checked against code.claude.com/docs/en/hooks on 2026-11-07 (§12).
  */
 
-import {SETTLE_MS} from '../../kit/activity.js';
+import {PRIORITY, SETTLE_MS} from '../../kit/activity.js';
 import {sinceText} from '../../kit/presentation.js';
 
 /** The agents this module knows, by the `source` the hook sends (CODING-AGENTS.md §1). */
@@ -215,10 +215,11 @@ function subagentTitle(n) {
 
 // A tool that asks the user to pick an answer, not for leave to run (Claude Code's
 // AskUserQuestion: a list of options, answered in its own card): no Deny / Allow in Buoy —
-// the session's pill says it waits for an answer, a click brings the session up
-// (2026-11-08, Ethan: Submit in Claude left the pill asking for an OK)
+// the session's own pill asks, as a prompt does (Bu's hand up, "… needs your answer",
+// the ask's priority: it stops the session the same, Ethan 2026-11-08), and a click brings
+// the session up
 const QUESTION_TOOLS = new Set(['AskUserQuestion']);
-export const QUESTION_TITLE = 'Has a question for you';
+export const QUESTION_TITLE = 'Needs your answer';
 
 /**
  * @param {object} ev  a PermissionRequest
@@ -287,7 +288,7 @@ export function step(rec, ev, now, source = 'claude') {
     case 'PermissionRequest': {
         r = working(r, now);
         if (isQuestion(ev))
-            return out(set('turn', QUESTION_TITLE), {alert: true});
+            return out(set('ask', QUESTION_TITLE), {alert: true});
         const d = toolDoing(ev.tool_name, ev.tool_input, r.cwd);
         return out(set('ask', `Needs your OK · ${d.want}`, `Needs your OK · ${d.safeWant}`));
     }
@@ -362,6 +363,8 @@ export function agent(rec) {
     const label = labelOf(rec);
     const shared = rec.shared === true;
     const pose = rec.pose;
+    // a question waiting in Claude's card: the pill asks as a prompt's does (QUESTION_TITLE)
+    const question = !rec.stopped && pose === 'ask' && rec.title === QUESTION_TITLE;
     let trailing = null;
     if (!rec.stopped && rec.startedAt > 0)
         trailing = {since: rec.startedAt};
@@ -373,7 +376,7 @@ export function agent(rec) {
     else if (WORKING.has(pose))
         staleAfter = STALE_MS;
     return {
-        text: label,
+        text: question ? `${label} needs your answer` : label,
         leading: {mascot: pose},
         trailing,
         // hover: which session (its name, or the label), then what it is doing (§2)
@@ -382,8 +385,9 @@ export function agent(rec) {
             text: hoverName(rec),
             subtitle: shared ? rec.safeTitle : rec.title,
         },
-        // no priority of its own (docs/PRIORITY.md): the kind's 35; waiting for you is
-        // tier 1, done steps back when it dims
+        // the kind's 35 (docs/PRIORITY.md); a question waits as a prompt, at the ask's 90 —
+        // set every time, an update merges; waiting for you is tier 1, done steps back
+        priority: question ? PRIORITY.ask : PRIORITY.agent,
         needsYou: !rec.stopped && (pose === 'turn' || pose === 'ask'),
         staleAfter,
         // done, or waiting for you: it only waits — the kit ends it after `activity-linger`

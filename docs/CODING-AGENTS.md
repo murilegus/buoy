@@ -209,9 +209,11 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
 - **A question is not a permission** (2026-11-08, Ethan). Claude Code's `AskUserQuestion`
   asks the user to pick from options, in Claude's own card: Buoy shows no Deny · Allow
   for it. Its `PermissionRequest` gets no decision at once (the hook prints `''`) and the
-  session's pill turns to `turn`, "Has a question for you" (needs you, a click brings the
-  session up); the card's own `permission_prompt` notification changes nothing; its result
-  sends the session back to work.
+  session's own pill asks as a prompt does — it stops the session the same (Ethan): Bu's
+  hand up (`ask`), "Claude · buoy needs your answer", needs you, the `ask` kind's priority
+  (90) while it stands, no linger; a click brings the session up. The card's own
+  `permission_prompt` notification changes nothing; its result sends the session back
+  to work.
 - **Hook timeout**: the `PermissionRequest` entry gets `timeout` 1810 s, above the longest
   `activity-linger` (30 min), so Buoy always answers before Claude Code gives up.
 - **Not opened** (the red light instead, INDICATORS): fullscreen, Do Not Disturb, the
