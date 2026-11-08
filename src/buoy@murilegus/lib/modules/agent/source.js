@@ -6,7 +6,7 @@ import {Source} from '../../kit/source.js';
 import {appOfBusName} from '../../kit/apps.js';
 import {SharingWatch} from '../../kit/sharing.js';
 import {lingerMs} from '../../kit/settings.js';
-import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, parseEvent, reply, settles, step} from './adapter.js';
+import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step} from './adapter.js';
 
 const KIND = 'agent';
 const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
@@ -98,7 +98,9 @@ export class AgentSource extends Source {
         // the session's window, while the hook is still on the bus: the reply waits for it
         // (a report's hook exits right after; a few ms in the background)
         const lookup = sender && this._apps.get(key) === undefined ? this._lookUpApp(key, sender) : null;
-        if (ev.hook_event_name === 'PermissionRequest') {
+        // a question (AskUserQuestion) is answered in Claude's own card: no Deny / Allow here,
+        // the hook gets no decision at once and the session's pill says it waits
+        if (ev.hook_event_name === 'PermissionRequest' && !isQuestion(ev)) {
             return (lookup ?? Promise.resolve()).then(() =>
                 this._stack && this._sessions?.has(key) ? this._ask(key, this._sessions.get(key), ev, sender) : '');
         }

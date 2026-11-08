@@ -12,7 +12,9 @@ agent needed a priority of its own to step aside. SPEC §2 and §2c point here.
    only waits. Which app it is matters only inside the same state.
 2. **Adapters say the state, not a number.** A module marks an activity `needsYou` or
    `linger`; the kit ranks it. No adapter picks a priority to win or lose (today's
-   agent 60 and 5 go).
+   agent 60 and 5 go). One stand-in (2026-11-08, Ethan): an agent's question in Claude's
+   own card is a prompt Buoy does not draw, so the session's pill takes the `ask` kind's
+   priority while it stands for it, as the prompt itself would.
 3. **Moments are not ranks.** Feedback, an alert, an ask opening are short overlays on
    top of the order; when they pass, the order is what it was.
 
@@ -35,7 +37,7 @@ The first is pill 1 at the centre, the next two the side pills (SPEC §2c), the 
 
 | Tier | Flag the adapter sets | What is in it |
 |---|---|---|
-| **1. Needs you** | `needsYou: true`; kinds `ask` and `call` always | a permission prompt, a D-Bus `Ask()`, a call, an agent waiting for your answer (`turn`) |
+| **1. Needs you** | `needsYou: true`; kinds `ask` and `call` always | a permission prompt, a D-Bus `Ask()`, a call, an agent waiting for your answer (`turn`), an agent's question in Claude's card ("needs your answer", the ask's 90, 2026-11-08) |
 | **2. Running** | neither flag | music playing, a timer, a transfer, an agent at work, a notification, a device just plugged |
 | **3. Waiting** | `linger: true`, **once stale** | a paused player, an agent done or stopped with an error |
 

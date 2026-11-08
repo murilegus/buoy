@@ -203,6 +203,17 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
   real session (§13). **Claude Desktop** asks through `--permission-prompt-tool=stdio`;
   the hooks reference says the hooks run alongside the host and whichever decides first
   applies — the pill or Desktop's own card.
+- **Answered elsewhere, with more** (2026-11-08, Ethan: Submit in Claude left the pill
+  asking for an OK). The tool's result settles the prompt when every field asked for is
+  still in its input — the answer may add some (Desktop's card adds `answers`).
+- **A question is not a permission** (2026-11-08, Ethan). Claude Code's `AskUserQuestion`
+  asks the user to pick from options, in Claude's own card: Buoy shows no Deny · Allow
+  for it. Its `PermissionRequest` gets no decision at once (the hook prints `''`) and the
+  session's own pill asks as a prompt does — it stops the session the same (Ethan): Bu's
+  hand up (`ask`), "Claude · buoy needs your answer", needs you, the `ask` kind's priority
+  (90) while it stands, no linger; a click brings the session up. The card's own
+  `permission_prompt` notification changes nothing; its result sends the session back
+  to work.
 - **Hook timeout**: the `PermissionRequest` entry gets `timeout` 1810 s, above the longest
   `activity-linger` (30 min), so Buoy always answers before Claude Code gives up.
 - **Not opened** (the red light instead, INDICATORS): fullscreen, Do Not Disturb, the
