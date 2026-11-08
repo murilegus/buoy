@@ -1,0 +1,16 @@
+# Dependabot (GitHub, free for public repositories): keeps the actions the workflows pin by
+# commit SHA up to date, once a month, in one pull request. npm is left out on purpose:
+# every npm package here is a development tool (eslint, the test runner); none ships in the
+# extension's zip, so their updates are not worth a pull request each.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: chore(ci)
+    open-pull-requests-limit: 2
