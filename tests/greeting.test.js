@@ -1,5 +1,5 @@
 // Run: gjs -m tests/greeting.test.js   (pure: the first run, What's new, their lines)
-import adapter, {SHOW_MS, MAX_NOTES, MORE, INTRO, caseOf, noteFor, linesOf, buSize, releaseLabel} from '../src/buoy@murilegus/lib/modules/greeting/adapter.js';
+import adapter, {SHOW_MS, MAX_NOTES, MORE, INTRO, caseOf, noteFor, linesOf, buSize, releaseLabel, shortcutText} from '../src/buoy@murilegus/lib/modules/greeting/adapter.js';
 import notes from '../src/buoy@murilegus/lib/modules/greeting/notes.js';
 import {planExpanded, typedSplit, typingMs, TYPE_MS, MAX_LINES} from '../src/buoy@murilegus/lib/kit/presentation.js';
 import {validate, tierOf, PRIORITY} from '../src/buoy@murilegus/lib/kit/activity.js';
@@ -32,7 +32,14 @@ eq(noteFor(many, 3), null, 'a version without notes: none');
 eq(noteFor(null, 1), null, 'no list: none');
 
 // --- lines ----------------------------------------------------------------------------------
-eq(linesOf({intro: true}), {title: 'Hi, I\'m Bu.', lines: [...INTRO.lines], more: false}, 'the intro: who Bu is, then the basics');
+eq(linesOf({intro: true}).lines[2], 'Super+B reaches me from the keyboard.', 'the intro: Super+B by default');
+eq(linesOf({intro: true}, {shortcut: '<Primary><Alt>space'}).lines[2], 'Ctrl+Alt+Space reaches me from the keyboard.',
+    'a changed shortcut: the user\'s own (Ethan)');
+eq(linesOf({intro: true}, {shortcut: ''}).lines, ['Hover me for more.', 'Click me for Home.',
+    'Scroll on me when I rest to see what else I show.', '⚙ in Home opens my settings.'], 'no shortcut: that line goes');
+eq([shortcutText('<Super>b'), shortcutText('<Super><Shift>F5'), shortcutText('<Control>Return'), shortcutText('x')],
+    ['Super+B', 'Super+Shift+F5', 'Ctrl+Return', 'X'], 'shortcuts as people write them');
+eq([shortcutText(''), shortcutText(null), shortcutText('<Super>')], [null, null, null], 'none: null');
 eq(INTRO.lines.length, 5, 'five basics: hover, click, Super+B, scroll, settings');
 eq(INTRO.lines.length <= MAX_LINES, true, 'the intro fits the expanded block');
 eq(linesOf({version: 2, name: '0.2', added: ['Calendar tab', '  Bu  waves '], fixed: ['A crash']}),
@@ -57,13 +64,14 @@ eq(releaseLabel({version: 3, date: '2027-01-05'}, 4), 'Buoy 3 — 5 January 2027
     const first = adapter.greeting({id: 'g', case: 'first-run', animations: true, onMore: () => more++});
     const a = validate({id: 'g', kind: 'greeting', ...first});
     eq([a.style, a.text, a.actions], ['transient', 'Hi, I\'m Bu.', []], 'first run: transient, the hello, no buttons');
-    const typed = typingMs([INTRO.title, ...INTRO.lines], TYPE_MS);
+    const intro = linesOf({intro: true});
+    const typed = typingMs([intro.title, ...intro.lines], TYPE_MS);
     eq(a.ttl, typed + SHOW_MS, 'stays 12 s once the last line is typed in');
     eq(SHOW_MS, 12000, '12 s (Ethan)');
     const ex = planExpanded(a);
     eq(ex.leading, {type: 'mascot', pose: 'wave', hello: true, size: 80}, 'expanded: Bu waving 5 s, 80 px');
     eq([ex.center.type, ex.center.title, ex.center.lines, ex.center.typed, ex.center.hero],
-        ['block', 'Hi, I\'m Bu.', [...INTRO.lines], true, true], 'expanded: the hello large, the basics under it, typed in');
+        ['block', 'Hi, I\'m Bu.', intro.lines, true, true], 'expanded: the hello large, the basics under it, typed in');
     eq(ex.grow, 'center', 'the words take the width');
     eq([PRIORITY.greeting, tierOf(a)], [85, 2], 'above anything running, not needs-you');
     eq(adapter.greeting({case: 'first-run', animations: false}).ttl, SHOW_MS, 'animations off: shown whole, only the 12 s');

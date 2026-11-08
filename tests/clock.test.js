@@ -1,7 +1,7 @@
 // Run: gjs -m tests/clock.test.js   (pure: the clock idle plan)
 import GLib from 'gi://GLib';
 
-import clock, {STYLES, DEFAULT_STYLE, keys, iconFor, seconds, present, relevance} from
+import clock, {STYLES, DEFAULT_STYLE, WORDS, keys, iconFor, present, relevance} from
     '../src/buoy@murilegus/lib/modules/clock/idle.js';
 import {DAYPARTS} from '../src/buoy@murilegus/lib/kit/daypart.js';
 import {planIdle} from '../src/buoy@murilegus/lib/kit/presentation.js';
@@ -19,10 +19,10 @@ function ok(cond, msg) {
 const at = h => new Date(2026, 10, 4, h, 30);
 
 // --- the module's shape ----------------------------------------------------------------
-eq(STYLES, ['icon-time', 'time', 'icon', 'seconds'], 'four styles, SPEC §2a');
-eq(DEFAULT_STYLE, 'icon-time', 'default style');
+eq(STYLES, ['icon-text', 'icon-time', 'icon', 'text', 'time'], 'five styles, icon & text first (2026-11-08, Ethan)');
+eq(DEFAULT_STYLE, 'icon-text', 'default style: icon and the part of the day');
 eq(keys, ['idle-clock-style'], 'its own keys are idle-clock-*');
-eq(Object.keys(clock).sort(), ['keys', 'present', 'relevance', 'seconds'], 'default export: the plan contract');
+eq(Object.keys(clock).sort(), ['keys', 'present', 'relevance'], 'default export: the plan contract (no seconds: GNOME\'s own setting)');
 eq(relevance(), {score: 10}, 'auto: the floor (SPEC §2a-iii)');
 
 // --- one icon per daypart, on disk ----------------------------------------------------
@@ -41,7 +41,8 @@ eq(iconFor('nope'), iconFor('noon'), 'an unknown part: noon\'s icon');
 
 // --- present ---------------------------------------------------------------------------
 const ctx = h => ({now: at(h), clock: ' 21∶30 '});
-eq(present(ctx(21)).text, '21∶30', 'the wall clock\'s text, trimmed');
+eq(present(ctx(21)).text, 'Evening', 'by default: the part of the day in words');
+eq(present(ctx(21), {'idle-clock-style': 'icon-time'}).text, '21∶30', 'icon & time: the wall clock\'s text, trimmed');
 eq(present(ctx(21)).leading.art, iconFor('evening'), '21:30 → evening\'s icon');
 eq(present(ctx(3)).leading.art, iconFor('night'), '3:30 → night');
 eq(present(ctx(5)).leading.art, iconFor('dawn'), '5:30 → dawn');
@@ -52,24 +53,23 @@ eq(present({...ctx(0), starts: [5, 7, 11, 13, 18, 1]}).leading.art, iconFor('eve
 eq(present({...ctx(3), starts: 'bad'}).leading.art, iconFor('night'), 'bad starts: the defaults');
 
 const styled = s => present(ctx(9), {'idle-clock-style': s});
+eq([styled('icon-text').leading !== null, styled('icon-text').text], [true, 'Morning'], 'icon-text: icon and the part of the day');
 eq([styled('icon-time').leading !== null, styled('icon-time').text], [true, '21∶30'], 'icon-time: icon and time');
-eq([styled('time').leading, styled('time').text], [null, '21∶30'], 'time: time only');
 eq([styled('icon').leading !== null, styled('icon').text], [true, null], 'icon: icon only');
-eq([styled('seconds').leading !== null, styled('seconds').text], [true, '21∶30'], 'seconds: icon and time');
-eq(styled('weird').leading !== null && styled('weird').text === '21∶30', true, 'unknown style: the default');
-eq(present({now: at(9), clock: ''}).text, null, 'no clock text yet: no text');
-eq(present({now: at(9), clock: undefined}).text, null, 'missing clock: no text, no throw');
-
-eq(seconds({'idle-clock-style': 'seconds'}), true, 'seconds style ticks every second');
-eq(['icon-time', 'time', 'icon', undefined].map(s => seconds({'idle-clock-style': s})), [false, false, false, false],
-    'other styles tick every minute');
+eq([styled('text').leading, styled('text').text], [null, 'Morning'], 'text: the part of the day only');
+eq([styled('time').leading, styled('time').text], [null, '21∶30'], 'time: time only');
+eq([styled('weird').leading !== null, styled('weird').text], [true, 'Morning'], 'unknown style (the old seconds): the default');
+eq(styled('seconds').text, 'Morning', 'seconds is gone: GNOME\'s clock-show-seconds decides, the default style shows');
+eq(DAYPARTS.map(d => WORDS[d]), ['Dawn', 'Morning', 'Noon', 'Afternoon', 'Evening', 'Night'], 'a word for every part of the day');
+eq(present({now: at(9), clock: ''}, {'idle-clock-style': 'time'}).text, null, 'no clock text yet: no text');
+eq(present({now: at(9), clock: undefined}, {'idle-clock-style': 'icon-time'}).text, null, 'missing clock: no text, no throw');
 
 // --- planIdle with a plan ----------------------------------------------------------------
 eq(planIdle({light: 'off'}), {light: 'off', leading: null, text: null, trailing: null}, 'none: the grey light only');
 let p = planIdle({light: 'off', plan: present(ctx(21))});
 eq(p.light, null, 'a plan shows: no grey light (SPEC §2a: grey only with none)');
 eq(p.leading, {type: 'art', src: iconFor('evening'), fallback: 'preferences-system-time-symbolic'}, 'the icon as art');
-eq(p.text, '21∶30', 'the time');
+eq(p.text, 'Evening', 'the part of the day (the default style)');
 p = planIdle({light: 'missed', plan: present(ctx(21))});
 eq(p.light, 'missed', 'amber still shows beside the clock');
 eq(planIdle({light: 'waiting', plan: present(ctx(21))}).light, 'waiting', 'red too');

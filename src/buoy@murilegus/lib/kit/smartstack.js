@@ -1,16 +1,19 @@
 /**
  * `auto`: the idle pill as a smart stack of idle plans (SPEC §2a-iii, FEATURES M3 "idle
  * auto"). Pure: which plan shows, given each plan's relevance. kit/idle.js asks the plans,
- * keeps the times each was shown, runs the one timer and draws the choice.
+ * runs the one timer and draws the choice.
  *
- * - The highest score shows. Ties take turns: on a turn (the kit's timer) the tied plan
- *   shown longest ago comes next, `idle-auto-plans` order breaking a tie of those; between
- *   turns (a plan's `changed`, the minute) the shown plan stays while it is still among the
- *   highest — a re-rank that picks the same plan changes nothing.
+ * - The idle pill turns (2026-11-08, Ethan: "an idle pill just rotates"): every plan with
+ *   something to show takes its turn, in `idle-auto-plans` order, round, one per turn
+ *   (the kit's timer, `idle-auto-interval`). Between turns (a plan's `changed`, the
+ *   minute) the shown plan stays while it has something to show — a re-rank that picks
+ *   the same plan changes nothing. The first plan shown is the highest scored.
  * - A plan at HOLD or more holds the pill until its score drops: no turn takes it away
- *   (never rotate away from a meeting in 10 minutes). A higher one still wins.
+ *   (never rotate away from a meeting in 10 minutes); the highest of them shows at once.
  * - A plan the user scrolled to stays until the next turn, while it has something to show.
  * - `null` (nothing to show) leaves the stack; nothing to show at all → null.
+ * (Until 2026-11-08 only plans tied at the top took turns, so the weather's 35 kept the
+ * clock's 10 off the pill for good.)
  */
 
 /** A score this high holds the pill (SPEC §2a-iii). */
@@ -30,27 +33,27 @@ export function candidates(plans) {
  * @param {object} opts
  * @param {{id: string, score: ?number}[]} opts.plans  in `idle-auto-plans` order
  * @param {?string} [opts.current]  the plan shown now
- * @param {boolean} [opts.turn]  the timer's turn: ties move on
+ * @param {boolean} [opts.turn]  the timer's turn: the next plan comes
  * @param {?string} [opts.pinned]  scrolled to, until the next turn
- * @param {{[id: string]: number}} [opts.shownAt]  when each plan was last shown (ms); never
- *   shown counts as longest ago
  * @returns {?string} the plan to show
  */
-export function choose({plans, current = null, turn = false, pinned = null, shownAt = {}}) {
+export function choose({plans, current = null, turn = false, pinned = null}) {
     const list = candidates(plans);
     if (!list.length)
         return null;
     if (pinned && !turn && list.some(p => p.id === pinned))
         return pinned;
     const top = Math.max(...list.map(p => p.score));
-    const tied = list.filter(p => p.score === top);
-    const here = tied.find(p => p.id === current);
-    if (here && (!turn || here.score >= HOLD || tied.length === 1))
+    if (top >= HOLD) {                  // held: the highest, the shown one on a tie
+        const held = list.filter(p => p.score === top);
+        return (held.find(p => p.id === current) ?? held[0]).id;
+    }
+    const here = list.find(p => p.id === current);
+    if (!here)                          // the first, or the shown one left: the highest
+        return list.find(p => p.score === top).id;
+    if (!turn)
         return here.id;
-    const when = id => isScore(shownAt[id]) ? shownAt[id] : -Infinity;
-    // the longest ago; stable on ties, so idle-auto-plans order breaks them
-    const others = here ? tied.filter(p => p.id !== current) : tied;
-    return others.reduce((best, p) => when(p.id) < when(best.id) ? p : best).id;
+    return list[(list.indexOf(here) + 1) % list.length].id;
 }
 
 /**

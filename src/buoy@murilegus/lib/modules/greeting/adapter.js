@@ -3,9 +3,10 @@
  * run and What's new"). Pure: which case applies, the lines Bu says, and the activity. Every
  * string Bu says is here (GREETING.md principle 6). Prefs imports it for About → What's new.
  *
- * Event: {id, case, note, animations, onMore}
+ * Event: {id, case, note, animations, shortcut, onMore}
  *   case        'first-run' | 'whats-new' (caseOf)
  *   note        What's new: the running version's entry of notes.js
+ *   shortcut    `keybind-focus`'s first accelerator ("<Super>b"), read when it shows
  *   animations  St.Settings enable-animations: the typing counts in the ttl only then
  *   onMore()    "…and more": open prefs on About → What's new
  */
@@ -18,17 +19,43 @@ export const SHOW_MS = 12000;
 export const MAX_NOTES = 4;
 export const MORE = 'more';
 
-/** The first run: who Bu is, then the basics of using Buoy, one per line. */
+/** The first run: who Bu is, then the basics of using Buoy, one per line. `{shortcut}`:
+ * the user's own (`keybind-focus`, 2026-11-08, Ethan: a changed key, then the intro
+ * replayed, must not say Super+B); no shortcut set → that line goes. */
 export const INTRO = Object.freeze({
     title: 'Hi, I\'m Bu.',
     lines: Object.freeze([
         'Hover me for more.',
         'Click me for Home.',
-        'Super+B reaches me from the keyboard.',
+        '{shortcut} reaches me from the keyboard.',
         'Scroll on me when I rest to see what else I show.',
         '⚙ in Home opens my settings.',
     ]),
 });
+
+const MODIFIERS = {
+    super: 'Super', shift: 'Shift', control: 'Ctrl', primary: 'Ctrl', ctrl: 'Ctrl',
+    alt: 'Alt', meta: 'Meta', hyper: 'Hyper',
+};
+
+/**
+ * @param {*} accel  a GTK accelerator ("<Super>b", "<Primary><Alt>space")
+ * @returns {?string} as people write it ("Super+B", "Ctrl+Alt+Space"); null for none
+ */
+export function shortcutText(accel) {
+    const m = /^((?:<[^>]+>)*)([^<>]+)$/.exec(typeof accel === 'string' ? accel.trim() : '');
+    if (!m)
+        return null;
+    const mods = [...m[1].matchAll(/<([^>]+)>/g)].map(x => MODIFIERS[x[1].toLowerCase()] ?? x[1]);
+    const key = m[2].length === 1 ? m[2].toUpperCase() : m[2][0].toUpperCase() + m[2].slice(1);
+    return [...mods, key].join('+');
+}
+
+// the intro's lines with the user's shortcut, or without its line
+function introLines(shortcut) {
+    const keys = shortcutText(shortcut);
+    return INTRO.lines.filter(l => keys || !l.includes('{shortcut}')).map(l => l.replace('{shortcut}', keys));
+}
 
 const isVersion = v => Number.isInteger(v) && v >= 0;
 
@@ -67,12 +94,13 @@ const clean = list => (Array.isArray(list) ? list : [])
  * @param {object} note  a notes.js entry
  * @param {object} [opts]
  * @param {number} [opts.max]  at most this many note lines (Infinity: every one, About)
+ * @param {string} [opts.shortcut]  `keybind-focus`'s accelerator, for the intro's line
  * @returns {{title: string, lines: string[], more: boolean}} "New in Buoy 0.2", then what
  *   is new, then what was fixed ("Fixed: …"); `more` when some were left out
  */
-export function linesOf(note, {max = MAX_NOTES} = {}) {
+export function linesOf(note, {max = MAX_NOTES, shortcut = '<Super>b'} = {}) {
     if (note?.intro)
-        return {title: INTRO.title, lines: [...INTRO.lines], more: false};
+        return {title: INTRO.title, lines: introLines(shortcut), more: false};
     const name = typeof note?.name === 'string' && note.name ? note.name : String(note?.version ?? '');
     const all = [...clean(note?.added), ...clean(note?.fixed).map(f => `Fixed: ${f}`)];
     return {title: `New in Buoy ${name}`, lines: all.slice(0, max), more: all.length > max};
@@ -110,9 +138,10 @@ export function buSize(lines) {
 
 export default {
     greeting(ev) {
+        const shortcut = typeof ev.shortcut === 'string' ? ev.shortcut : '<Super>b';
         const text = ev.case === 'first-run'
-            ? linesOf({intro: true})
-            : linesOf(ev.note);
+            ? linesOf({intro: true}, {shortcut})
+            : linesOf(ev.note, {shortcut});
         const bu = {mascot: 'wave', hello: true};
         const typing = ev.animations === false ? 0 : typingMs([text.title, ...text.lines], TYPE_MS);
         return {

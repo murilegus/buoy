@@ -22,10 +22,10 @@ import {choose, intervalMs, scrollTo, stackOrder} from './smartstack.js';
  * only while shown. A plan with `ticks: false` runs no wall clock.
  *
  * `auto` (SPEC §2a-iii, 2026-11-08): the plans of `idle-auto-plans` whose modules run form
- * a smart stack (kit/smartstack.js). Each re-rank asks every plan's `relevance(ctx)` and
+ * a smart stack (kit/smartstack.js). Each re-rank asks every plan's `relevance(ctx, opts)` and
  * shows the winner; a switch is one cross-fade (the width morphs with it), then nothing.
- * Re-ranks: a feed's change and the wall clock's minute (the shown plan stays while it is
- * still among the highest), and one turn every `idle-auto-interval`, when ties move on. That
+ * Re-ranks: a feed's change and the wall clock's minute (the shown plan stays while it has
+ * something to show), and one turn every `idle-auto-interval`, when the next plan comes. That
  * timer exists only while the idle pill shows with `auto`: gone on an activity, on expand,
  * on a fullscreen window and on disable. Every plan of the stack has its feed while `auto`
  * is on, told that the pill shows (the weather fetches on its interval meanwhile), and the
@@ -48,7 +48,6 @@ export class IdleContent {
         this._feeds = new Map();        // module id → feed
         this._current = null;           // `auto`: the plan shown
         this._pinned = null;            // `auto`: scrolled to, until the next turn
-        this._shownAt = {};             // `auto`: when each plan last came up (ms)
         this._turnId = 0;
         this._settingsId = settings.connect('changed', (_s, key) => {
             if (key === 'idle-content' || key === 'daypart-starts' || key.startsWith('idle-'))
@@ -218,7 +217,7 @@ export class IdleContent {
         return stack.map(m => {
             let score = null;
             try {
-                score = m.idle.relevance?.(this._ctx(m))?.score ?? null;
+                score = m.idle.relevance?.(this._ctx(m), this._opts(m.idle))?.score ?? null;
             } catch (e) {
                 console.warn(`Buoy: idle plan ${m.id} relevance failed: ${e.message}`);
             }
@@ -245,11 +244,9 @@ export class IdleContent {
         if (this._auto) {
             const id = choose({
                 plans: this._scores(stack), current: this._current, turn,
-                pinned: this._pinned, shownAt: this._shownAt,
+                pinned: this._pinned,
             });
             switched = id !== this._current && this._current !== null;
-            if (id !== this._current && id)
-                this._shownAt[id] = Date.now();
             this._current = id;
             module = stack.find(m => m.id === id) ?? null;
         }

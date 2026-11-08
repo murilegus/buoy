@@ -1,6 +1,7 @@
 import Adw from 'gi://Adw';
 import Cairo from 'cairo';
 import Gdk from 'gi://Gdk';
+import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
@@ -11,7 +12,7 @@ import {
     planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
     donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote, weatherNote, placeLabel,
-    searchPlaces, withPlace, WEATHER_UNITS, PLAN_LINES,
+    searchPlaces, withPlace, WEATHER_UNITS, PLAN_LINES, withPlan, movePlan, planRows,
 } from './lib/kit/settings.js';
 import {slugOf, profileDir} from './lib/kit/registry.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
@@ -170,7 +171,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const page = new Adw.PreferencesPage();
         const running = this.metadata.version;
         for (const note of [...notes].reverse()) {
-            const text = linesOf(note, {max: Infinity});
+            const text = linesOf(note, {max: Infinity, shortcut: this._settings.get_strv('keybind-focus')[0] ?? ''});
             const group = new Adw.PreferencesGroup({
                 title: releaseLabel(note, running),
                 description: note.intro ? text.title : '',
@@ -227,15 +228,23 @@ export default class BuoyPreferences extends ExtensionPreferences {
             const row = this._row(key(name));
             if (name === 'idle-content')
                 this._followPlanSwitches(row, key(name).get_description(), plan.plans);
+            if (name === 'idle-auto-interval')
+                this._onlyWithAuto(row);
             idle.add(row);
         }
         page.add(idle);
 
+        // the smart stack's plans (SPEC §2a-iii): each row's switch puts it in
+        // `idle-auto-plans`, dragging one onto another sets the tie order (2026-11-08)
         const plans = plan.plans.filter(p => p.keys.length || p.enableKey);
         if (plans.length) {
-            const group = new Adw.PreferencesGroup({title: 'Plans'});
-            for (const p of plans)
-                group.add(this._planRow(p, key));
+            const group = new Adw.PreferencesGroup({
+                title: 'Plans',
+                description: 'Automatic shows the one that matters most. Drag to break a tie.',
+            });
+            this._plans = {group, list: plans, key, rows: []};
+            this._fillPlans();
+            this._ids.push(this._settings.connect('changed::idle-auto-plans', () => this._fillPlansLater()));
             page.add(group);
         }
 
@@ -575,10 +584,6 @@ export default class BuoyPreferences extends ExtensionPreferences {
         sync();
     }
 
-    // One idle plan: its own keys inside. A module that is only this plan (clock) has its
-    // switch here, like a Modules row (2026-11-06, Ethan). A module that is more keeps
-    // its switch on Modules; while it is off the plan does not exist (rule 6), so the row
-    // says where to turn it on.
     // The weather plan's place (2026-11-06, Ethan: GNOME Weather is not on Ubuntu, so Buoy
     // picks it): the first of Shell's own `org.gnome.shell.weather` `locations`, which the
     // date menu's client shows. "Use my location" (a row from the schema) has the pill
@@ -682,29 +687,94 @@ export default class BuoyPreferences extends ExtensionPreferences {
         return row;
     }
 
-    _planRow(p, key) {
-        if (p.ownSwitch) {
-            const k = key(p.enableKey);
-            const row = textRow(Adw.ExpanderRow, {
-                title: k.get_summary(), subtitle: k.get_description(), show_enable_switch: true,
-            });
-            this._settings.bind(p.enableKey, row, 'enable-expansion', Gio.SettingsBindFlags.DEFAULT);
-            for (const name of p.keys)
-                row.add_row(this._row(key(name)));
-            if (p.id === 'weather')
-                this._weatherPlace(row, k.get_description());
-            return row;
+    // "Switch every" only matters with Show on Automatic (SPEC §2a-iii)
+    _onlyWithAuto(row) {
+        const sync = () => {
+            row.visible = this._settings.get_string('idle-content') === 'auto';
+        };
+        this._ids.push(this._settings.connect('changed::idle-content', sync));
+        sync();
+    }
+
+    // The plan rows in the stack's order, then the plans out of it (kit/settings.js planRows)
+    _fillPlans() {
+        const {group, list, key, rows} = this._plans;
+        rows.splice(0).forEach(r => group.remove(r));
+        const order = planRows(list.map(p => p.id), this._settings.get_strv('idle-auto-plans'));
+        for (const id of order) {
+            const row = this._planRow(list.find(p => p.id === id), key);
+            rows.push(row);
+            group.add(row);
         }
-        const title = p.enableKey ? key(p.enableKey).get_summary() : p.id;
+    }
+
+    // after the change that asked for it: a switch or a drop rebuilds the rows it is in
+    _fillPlansLater() {
+        if (this._plansLater)
+            return;
+        this._plansLater = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            this._plansLater = 0;
+            if (this._plans)
+                this._fillPlans();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    // One idle plan (SPEC §2a-iii, 2026-11-08, Ethan): its switch is its place in the smart
+    // stack (`idle-auto-plans`), its handle drags it onto another to set the tie order, its
+    // own keys inside. A module that is only this plan (clock, weather) has no switch of its
+    // own: unused it costs nothing, its feed runs only while its plan is in use — turning
+    // the plan on turns such a module on too, should it have been off. A module that is
+    // more (calendar) keeps its switch on Modules; while it is off the plan does not exist
+    // (rule 6), so the row says where to turn it on.
+    _planRow(p, key) {
+        const k = p.enableKey ? key(p.enableKey) : null;
+        const description = p.planOnly ? k.get_description() : PLAN_LINES[p.id] ?? '';
         // a plan with keys opens to them; one without (the next event) is a plain row
-        const row = textRow(p.keys.length ? Adw.ExpanderRow : Adw.ActionRow, {title});
+        const row = textRow(p.keys.length ? Adw.ExpanderRow : Adw.ActionRow, {
+            title: k ? k.get_summary() : p.id, subtitle: description,
+        });
         for (const name of p.keys)
             row.add_row(this._row(key(name)));
-        if (p.enableKey) {
+        if (p.id === 'weather')
+            this._weatherPlace(row, description);
+        if (p.id === 'calendar')
+            row.add_row(this._accountsRow());    // its calendars come from Online Accounts
+
+        const stack = () => this._settings.get_strv('idle-auto-plans');
+        const isOn = () => stack().includes(p.id) && (!p.planOnly || this._settings.get_boolean(p.enableKey));
+        const toggle = new Gtk.Switch({valign: Gtk.Align.CENTER, active: isOn()});
+        toggle.update_property([Gtk.AccessibleProperty.LABEL], [`${row.title} in Automatic`]);
+        toggle.connect('notify::active', () => {
+            if (toggle.active === isOn())
+                return;
+            if (toggle.active && p.planOnly)
+                this._settings.set_boolean(p.enableKey, true);
+            this._settings.set_strv('idle-auto-plans', withPlan(stack(), p.id, toggle.active));
+        });
+        row.add_suffix(toggle);
+
+        // the handle: drag this plan onto another, it takes that one's place
+        const handle = new Gtk.Image({icon_name: 'list-drag-handle-symbolic', css_classes: ['dim-label']});
+        const drag = new Gtk.DragSource({actions: Gdk.DragAction.MOVE});
+        drag.connect('prepare', () => Gdk.ContentProvider.new_for_value(p.id));
+        drag.connect('drag-begin', source => source.set_icon(Gtk.WidgetPaintable.new(row), 0, 0));
+        handle.add_controller(drag);
+        row.add_prefix(handle);
+        const drop = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.MOVE);
+        drop.connect('drop', (_t, id) => {
+            const next = movePlan(stack(), id, p.id);
+            if (next.join() !== stack().join())
+                this._settings.set_strv('idle-auto-plans', next);
+            return true;
+        });
+        row.add_controller(drop);
+
+        if (p.enableKey && !p.planOnly) {
             const sync = () => {
                 const on = this._settings.get_boolean(p.enableKey);
                 row.sensitive = on;
-                row.subtitle = on ? PLAN_LINES[p.id] ?? '' : 'Turn on in Modules';
+                row.subtitle = on ? description : 'Turn on in Modules';
                 if (!on && p.keys.length)
                     row.expanded = false;
             };

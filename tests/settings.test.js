@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {MAX_FOLDERS as progressMaxFolders} from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
-import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, weatherNote, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER, lingerMs} from
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, withPlan, movePlan, planRows, weatherNote, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER, lingerMs} from
     '../src/buoy@murilegus/lib/kit/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
 
@@ -94,12 +94,12 @@ eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'ti
     'Modules: schema order, without the modules that ship nothing yet, nor a module that is only an idle plan');
 eq(plan.modules.find(m => m.id === 'greeting')?.keys, [], 'greeting: its switch alone, its bookkeeping hidden');
 eq(MODULE_GROUPS.find(g => g.modules.includes('greeting'))?.title, 'Bu', 'greeting in the Bu group (2026-11-08)');
-eq(plan.plans.find(p => p.id === 'clock').ownSwitch, true,
+eq(plan.plans.find(p => p.id === 'clock').planOnly, true,
     'clock: its switch on its plan row on the Island page, not on Modules (2026-11-06, Ethan)');
 {
     // a plan whose module is more than the plan (calendar later: its own keys, a tab)
     const more = planPrefs([{name: 'modules-clock'}, {name: 'idle-clock-style'}, {name: 'clock-alerts'}]);
-    eq([more.modules.map(m => m.id), more.plans[0].ownSwitch], [['clock'], false],
+    eq([more.modules.map(m => m.id), more.plans[0].planOnly], [['clock'], false],
         'a module with keys of its own besides its plan keeps its switch on Modules');
 }
 
@@ -156,9 +156,9 @@ eq([schema.get_key('idle-auto-interval').get_range().recursiveUnpack(), schema.g
 eq(choiceLabel('idle-content', 'auto'), 'Automatic', 'Show: Automatic');
 eq(idleOffNote('auto', plan.plans, () => false), null, 'Automatic names no module: nothing to say');
 eq(plan.plans, [
-    {id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style'], ownSwitch: true},
-    {id: 'weather', enableKey: 'modules-weather', keys: ['idle-weather-automatic', 'idle-weather-refresh'], ownSwitch: true},
-    {id: 'calendar', enableKey: 'modules-calendar', keys: [], ownSwitch: false},
+    {id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style'], planOnly: true},
+    {id: 'weather', enableKey: 'modules-weather', keys: ['idle-weather-automatic', 'idle-weather-refresh'], planOnly: true},
+    {id: 'calendar', enableKey: 'modules-calendar', keys: ['idle-calendar-all-day'], planOnly: false},
 ], 'Plans: the clock, the weather, then the next event; calendar keeps its switch on Modules (it has a tab)');
 eq(plan.modules.some(m => m.id === 'calendar' && m.standalone), true, 'calendar: a row on Modules, a standalone tab');
 eq(choiceLabel('idle-content', 'calendar'), 'Next Event', 'Show: Next Event');
@@ -168,6 +168,18 @@ eq(schema.get_key('idle-weather-refresh').get_range().recursiveUnpack(), ['enum'
 eq(schema.get_key('idle-weather-refresh').get_default_value().unpack(), '30m', 'every 30 minutes by default');
 eq(['30m', '1h'].map(v => choiceLabel('idle-weather-refresh', v)), ['Every 30 minutes', 'Every hour'], 'refresh labels');
 eq(choiceLabel('idle-content', 'weather'), 'Weather', 'Show: Weather');
+// the smart stack's plans on the Island page (2026-11-08): a switch each, a drag for the order
+eq([withPlan(['clock'], 'weather', true), withPlan(['calendar', 'clock'], 'calendar', false), withPlan(['clock'], 'clock', true)],
+    [['clock', 'weather'], ['clock'], ['clock']], 'withPlan: on at the end, off out, never twice');
+eq(withPlan(null, 'clock', true), ['clock'], 'withPlan: from nothing');
+eq(movePlan(['calendar', 'weather', 'clock'], 'clock', 'calendar'), ['clock', 'calendar', 'weather'], 'drag up: takes its place');
+eq(movePlan(['calendar', 'weather', 'clock'], 'calendar', 'clock'), ['weather', 'clock', 'calendar'], 'drag down: takes its place');
+eq(movePlan(['calendar', 'weather', 'clock'], 'weather', 'clock'), ['calendar', 'clock', 'weather'], 'one down');
+eq([movePlan(['a', 'b'], 'a', 'a'), movePlan(['a', 'b'], 'x', 'a'), movePlan(['a', 'b'], 'a', 'x')], [['a', 'b'], ['a', 'b'], ['a', 'b']],
+    'onto itself, or a plan out of the stack: unchanged');
+eq(planRows(['clock', 'weather', 'calendar'], ['calendar', 'clock']), ['calendar', 'clock', 'weather'],
+    'rows: the stack in its order, then the others');
+eq(planRows(['clock', 'weather'], ['news', 'weather', 'weather']), ['weather', 'clock'], 'rows: unknown dropped, each once');
 eq(schema.get_key('idle-weather-automatic').get_default_value().unpack(), true, 'Use my location: on by default');
 {
     const note = (automatic, locating, locations) => weatherNote({automatic, locating, locations});
@@ -230,7 +242,7 @@ eq(schema.get_key('idle-weather-automatic').get_default_value().unpack(), true, 
     eq(withPlace(['a', 'b', 'c', 'd', 'e'], 'z', k), ['z', 'a', 'b', 'c', 'd'], 'five kept');
     eq(withPlace(null, 'z', k), ['z'], 'none before');
 }
-eq(schema.get_key('idle-clock-style').get_range().recursiveUnpack(), ['enum', ['icon-time', 'time', 'icon', 'seconds']],
+eq(schema.get_key('idle-clock-style').get_range().recursiveUnpack(), ['enum', ['icon-text', 'icon-time', 'icon', 'text', 'time']],
     'clock styles, SPEC §2a');
 // idle-content and the stack's own idle-auto-… keys are the page's; every other idle- key
 // is a plan's

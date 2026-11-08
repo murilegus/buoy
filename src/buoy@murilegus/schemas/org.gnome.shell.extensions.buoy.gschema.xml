@@ -138,6 +138,11 @@
       <summary>Show</summary>
       <description>Automatic shows what matters now; Nothing keeps only the light.</description>
     </key>
+    <key name="idle-calendar-all-day" type="b">
+      <default>true</default>
+      <summary>All-day events</summary>
+      <description>Shown when nothing with a time is left today.</description>
+    </key>
     <key name="idle-auto-plans" type="as">
       <default>['calendar', 'weather', 'clock']</default>
       <summary>Plans in the stack</summary>
@@ -147,18 +152,19 @@
       <range min="2" max="30"/>
       <default>5</default>
       <summary>Switch every</summary>
-      <description>Minutes between turns when plans matter equally.</description>
+      <description>Minutes before the next plan takes its turn.</description>
     </key>
     <key name="idle-clock-style" type="s">
       <choices>
+        <choice value="icon-text"/>
         <choice value="icon-time"/>
-        <choice value="time"/>
         <choice value="icon"/>
-        <choice value="seconds"/>
+        <choice value="text"/>
+        <choice value="time"/>
       </choices>
-      <default>'icon-time'</default>
+      <default>'icon-text'</default>
       <summary>Style</summary>
-      <description>The time follows Date &amp; Time.</description>
+      <description>The time follows Date &amp; Time: 12 or 24 hours, with seconds or not.</description>
     </key>
     <key name="idle-weather-automatic" type="b">
       <default>true</default>
