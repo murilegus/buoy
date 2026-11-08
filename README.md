@@ -26,7 +26,15 @@ and you look at the water under it: a single home panel with what's going on, no
 assistant to talk to, no setup. Just a mark on the surface telling you what's
 happening underneath.
 
+<p align="center">
+  <img src="docs/screenshots/claude-busy@2x.gif" width="206" height="50" alt="The pill while Claude Code works: Bu bobs beside &quot;Claude · buoy, 5 min&quot;">
+</p>
+
 ## What's in 0.1
+
+<p align="center">
+  <img src="docs/screenshots/overview.png" alt="Buoy's pill: the weather when idle, a track playing, the volume, the hover view with the cover and controls, a Claude Code permission prompt with Deny, Allow and Always, Home with Now playing, the weather and Up next, and the Calendar tab">
+</p>
 
 - **In the pill:** music from any player, file copies and browser downloads, volume,
   brightness and Caps Lock, notifications, and your Claude Code sessions — permission

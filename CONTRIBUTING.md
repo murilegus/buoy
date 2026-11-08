@@ -84,7 +84,8 @@ buoy/
 │   ├── INDICATORS.md     buoy light + privacy dot: colours, meanings, positions
 │   ├── APPLE.md          ActivityKit + HIG research → BuoyKit contract
 │   ├── MASCOT.md         Bu, the mascot: grids, poses, motion (previews in mascot/)
-│   └── releases/         the notes of each release, used as the GitHub release body
+│   ├── releases/         the notes of each release, used as the GitHub release body
+│   └── screenshots/      the README's images, taken in a headless GNOME Shell
 └── src/buoy@murilegus/   the extension — see docs/ARCHITECTURE.md for the tree
 ```
 
