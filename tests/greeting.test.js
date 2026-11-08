@@ -22,7 +22,7 @@ eq([caseOf({introShown: true, versionSeen: 1, version: NaN}), caseOf({introShown
 eq(caseOf({introShown: 'yes', versionSeen: 1, version: 1}), 'first-run', 'only true counts as shown');
 
 // --- notes ----------------------------------------------------------------------------------
-eq(notes[0], {version: 1, name: '0.1', date: null, intro: true, added: [], fixed: []}, 'v0.1: its what\'s new is the intro, no release day yet');
+eq(notes[0], {version: 1, name: '0.1', date: '2026-11-08', intro: true, added: [], fixed: []}, 'v0.1: its what\'s new is the intro, released 8 November 2026');
 eq(notes.every(n => n.date === null || /^\d{4}-\d{2}-\d{2}$/.test(n.date)), true, 'every release day is YYYY-MM-DD or not yet');
 eq(notes.every((n, i) => i === 0 || n.version > notes[i - 1].version), true, 'newest last, versions rising');
 eq(Object.isFrozen(notes) && Object.isFrozen(notes[0]), true, 'notes are frozen data');

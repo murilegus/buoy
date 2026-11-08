@@ -54,4 +54,24 @@ if (meta.donations !== undefined) {
 if (!/^https:\/\/github\.com\/murilegus\/buoy$/.test(meta.url ?? ''))
     throw new Error(`metadata url: ${meta.url} (the About page and EGO link it)`);
 
+// One release, one name everywhere (2026-11-08): metadata's `version-name` is the name of
+// the notes.js entry for its `version`, package.json's version starts with it, and the
+// release has its notes for GitHub (docs/releases/<name>.md, read by release.yml)
+const notes = (await import('../src/buoy@murilegus/lib/modules/greeting/notes.js')).default;
+const name = meta['version-name'];
+if (!/^\d+\.\d+$/.test(name ?? ''))
+    throw new Error(`metadata version-name: ${name} (a name like "0.1")`);
+const note = notes.find(n => n.version === meta.version);
+if (note?.name !== name)
+    throw new Error(`notes.js: version ${meta.version} is named ${note?.name}, metadata says ${name}`);
+if (!/^\d{4}-\d{2}-\d{2}$/.test(note.date ?? ''))
+    throw new Error(`notes.js: version ${meta.version} has no release day`);
+if (notes.at(-1) !== note)
+    throw new Error('notes.js: the running version must be the newest entry');
+const pkg = JSON.parse(read(`${ROOT}/package.json`));
+if (!pkg.version.startsWith(`${name}.`))
+    throw new Error(`package.json version ${pkg.version} does not follow version-name ${name}`);
+if (!GLib.file_test(`${ROOT}/docs/releases/${name}.md`, GLib.FileTest.EXISTS))
+    throw new Error(`docs/releases/${name}.md is missing (the GitHub release's notes)`);
+
 console.log('metadata/schema: ok');
