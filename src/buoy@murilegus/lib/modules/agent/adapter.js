@@ -213,6 +213,21 @@ function subagentTitle(n) {
     return n > 1 ? `Working with ${n} subagents` : 'Working with a subagent';
 }
 
+// A tool that asks the user to pick an answer, not for leave to run (Claude Code's
+// AskUserQuestion: a list of options, answered in its own card): no Deny / Allow in Buoy —
+// the session's pill says it waits for an answer, a click brings the session up
+// (2026-11-08, Ethan: Submit in Claude left the pill asking for an OK)
+const QUESTION_TOOLS = new Set(['AskUserQuestion']);
+export const QUESTION_TITLE = 'Has a question for you';
+
+/**
+ * @param {object} ev  a PermissionRequest
+ * @returns {boolean} it asks the user a question (options to pick), not for permission
+ */
+export function isQuestion(ev) {
+    return QUESTION_TOOLS.has(ev?.tool_name);
+}
+
 /**
  * One hook event applied to a session (CODING-AGENTS.md §3).
  *
@@ -270,14 +285,17 @@ export function step(rec, ev, now, source = 'claude') {
         return out({...r, subagents: n, pose: 'busy', title, safeTitle: title});
     }
     case 'PermissionRequest': {
-        const d = toolDoing(ev.tool_name, ev.tool_input, r.cwd);
         r = working(r, now);
+        if (isQuestion(ev))
+            return out(set('turn', QUESTION_TITLE), {alert: true});
+        const d = toolDoing(ev.tool_name, ev.tool_input, r.cwd);
         return out(set('ask', `Needs your OK · ${d.want}`, `Needs your OK · ${d.safeWant}`));
     }
     case 'Notification': {
         const type = ev.notification_type;
         if (type === 'permission_prompt') {
-            if (!r.shown || r.stopped)
+            // a question's card is no permission prompt: it keeps saying it waits for an answer
+            if (!r.shown || r.stopped || r.title === QUESTION_TITLE)
                 return none();
             return out(set('ask', 'Needs your OK'));
         }
@@ -463,12 +481,21 @@ export function askOf(rec, ev, {shared = false} = {}) {
     };
 }
 
+// every field of `asked` is in `got`, the same (`got` may have more)
+function contains(got, asked) {
+    if (!isPlain(asked))
+        return JSON.stringify(got ?? null) === JSON.stringify(asked ?? null);
+    return isPlain(got) && Object.keys(asked).every(k => JSON.stringify(got[k]) === JSON.stringify(asked[k]));
+}
+
 /**
  * Whether an event means the open permission prompt was answered elsewhere (in the
  * terminal, or Claude Desktop's card, §4). Report hooks run in the background, so one
  * sent before the prompt may arrive after it: a tool's result settles the prompt only
  * when it is the same call (PermissionRequest carries no tool_use_id, so name and
- * input); a new prompt, a stop or the session's end always do. A Notification never
+ * input — every field asked for still there; the answer may add fields, as Claude
+ * Desktop's card adds `answers`, 2026-11-08); a new prompt, a stop or the session's end
+ * always do. A Notification never
  * does (the terminal's own `permission_prompt` comes while the hook waits).
  *
  * @param {object} asked  the PermissionRequest
@@ -479,8 +506,7 @@ export function settles(asked, ev) {
     switch (ev.hook_event_name) {
     case 'PostToolUse':
     case 'PostToolUseFailure':
-        return ev.tool_name === asked.tool_name &&
-            JSON.stringify(ev.tool_input ?? null) === JSON.stringify(asked.tool_input ?? null);
+        return ev.tool_name === asked.tool_name && contains(ev.tool_input, asked.tool_input);
     case 'UserPromptSubmit':
     case 'Stop':
     case 'StopFailure':
