@@ -21,6 +21,10 @@ can take your details as a comment. **New issue** offers two forms, *Bug report*
 
 Leave out anything private: notification text, file names, Claude Code prompts.
 
+**A security problem** — not in a public issue: see [SECURITY.md](SECURITY.md). **An
+accessibility barrier** — a bug like any other: [ACCESSIBILITY.md](ACCESSIBILITY.md) says
+what to include.
+
 **An idea** — say what you want to see or do and why, rather than how to build it. Check
 `docs/FEATURES.md` first: it is the roadmap (M0–M5), and many ideas already have a row
 there. `docs/SPEC.md` says what Buoy deliberately is not (no assistant, no blur, nothing
@@ -52,7 +56,7 @@ Open an issue before a large change, so the approach can be agreed before the co
 - **Docs:** set the item's checkbox in `docs/FEATURES.md` and add a dated note under its
   row; update SPEC or ARCHITECTURE when a decision changed.
 
-In the pull request:
+In the pull request (the template asks for these):
 
 - **Link the issue** with `Closes #NN` and give it the milestone of its FEATURES section.
 - **What changed** — the whole change, not a list of commits.

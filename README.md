@@ -230,6 +230,8 @@ nothing).
 ## Contributing
 
 Bug reports and ideas are welcome in [issues](https://github.com/murilegus/buoy/issues).
-To build and change Buoy, see [CONTRIBUTING.md](CONTRIBUTING.md).
+To build and change Buoy, see [CONTRIBUTING.md](CONTRIBUTING.md). Security problems:
+[SECURITY.md](SECURITY.md). Accessibility: [ACCESSIBILITY.md](ACCESSIBILITY.md). Everyone
+taking part follows the [code of conduct](CODE_OF_CONDUCT.md).
 
 Inspired by Dynamic Island, Notchy and Islet. Licensed under [GPL-2.0](LICENSE).
