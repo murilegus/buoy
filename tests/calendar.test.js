@@ -1,7 +1,7 @@
 // Run: gjs -m tests/calendar.test.js   (no Shell needed: agenda.js and idle.js are pure)
 import {
     HORIZON_DAYS, SOON, dayStart, isAllDay, normalise, nextEvent, relevance, whenText, spanText, relativeText,
-    rangeText, dayLabel, agenda, dayRows, detailText,
+    rangeText, dayLabel, agenda, dayRows, detailText, upNext, upNextDetail, UP_NEXT_MAX, NEAR,
 } from '../src/buoy@murilegus/lib/modules/calendar/agenda.js';
 import {monthDays, weekdayInitials, monthTitle, stepDay, pickedTitle, isWeekend} from '../src/buoy@murilegus/lib/modules/calendar/month.js';
 import plan, {present, ICON, keys, ticks} from '../src/buoy@murilegus/lib/modules/calendar/idle.js';
@@ -182,6 +182,51 @@ eq(isAllDay(ev('z', at(0), at(0))), false, 'zero length at midnight: not all-day
     eq([idle.leading.type, idle.text, idle.trailing?.text ?? idle.trailing], ['icon', 'Design review', '3:00 PM'],
         'the kit draws it as an idle plan');
     eq(Object.keys(p).filter(k => /size|width|height/i.test(k)), [], 'no measurements');
+}
+
+// --- Home's Up next (2026-11-08) -----------------------------------------------------------
+{
+    const now = at(14, 35);
+    const list = [
+        ev('standup', at(9), at(9, 15)),              // over
+        ev('review', at(15), at(16)),                 // in 25 min
+        allDay('holiday', 11),
+        ev('gym', at(17, 30), at(18, 15)),            // later, 45 min
+        ev('call', at(14), at(15)),                   // running
+        ev('late', at(23), at(1, 0, 12)),             // goes past midnight
+        ev('tomorrow', at(9, 0, 12), at(10, 0, 12)),  // another day
+    ];
+    const up = upNext(list, now, {max: 10});
+    eq(up.rows.map(r => r.id), ['call', 'review', 'gym', 'late', 'holiday'],
+        'Up next: running and coming timed events by start, then all-day; over and other days out');
+    eq(up.more, 0, 'Up next: nothing left out under the cap');
+    eq(up.rows.map(r => r.detail), ['Now · until 15:00', '15:00 · in 25 min', '17:30 · 45 min', 'From 23:00', 'All day'],
+        'Up next: each row\'s second line');
+    const capped = upNext(list, now);
+    eq([capped.rows.length, capped.more, UP_NEXT_MAX], [3, 2, 3], 'Up next: at most 3, the rest counted');
+    eq(capped.rows.map(r => r.id), ['call', 'review', 'gym'], 'Up next: the cap keeps the soonest');
+    eq(upNext(list, now, {max: 0}), {rows: [], more: 5}, 'Up next: max 0 → no rows');
+    eq(upNext(list, now, {max: 1.7}).rows.length, 1, 'Up next: a fractional max is floored');
+    eq(upNext([], now), {rows: [], more: 0}, 'Up next: no events → nothing (Home leaves the block out)');
+    eq(upNext(undefined, now), {rows: [], more: 0}, 'Up next: no list → nothing');
+    eq(upNext([ev('standup', at(9), at(9, 15))], now).rows, [], 'Up next: only events already over → nothing');
+    eq(upNext([ev('ping', at(10), at(10))], now).rows, [], 'Up next: a zero-length event already past → out');
+    eq(upNext([ev('ping', at(16), at(16))], now).rows.map(r => r.detail), ['16:00 · in 1 h 25 min'],
+        'Up next: a zero-length event to come stays, with how far away');
+    eq(upNext([ev('x', at(17), at(18))], now).rows[0].detail, '17:00 · 1 h', 'Up next: beyond 2 h → its length, not how far');
+    eq(upNext([ev('x', at(16, 35), at(17))], now).rows[0].detail, '16:35 · in 2 h', 'Up next: exactly 2 h away still says how far');
+    eq(upNext([ev('y', at(22), at(3, 0, 12))], at(23)).rows[0].detail, 'Now · until 03:00',
+        'Up next: running past midnight → until its end, as the tab says');
+    eq(upNext([ev('y', at(22), at(3, 0, 12))], at(19)).rows[0].detail, 'From 22:00',
+        'Up next: to come and past midnight → its range for today');
+    eq(upNext([ev('z', at(20, 0, 10), at(16))], now).rows[0].detail, 'Now · until 16:00',
+        'Up next: began yesterday, running → until its end');
+    const long = 'A very long meeting title that goes on and on past any width the block could give it';
+    eq(upNext([ev('l', at(15), at(16), {title: long})], now).rows[0].title, long, 'Up next: a long title is kept whole (the block ellipsizes)');
+    eq(upNext([ev('u', at(15), at(16), {title: '  '})], now).rows[0].title, 'Untitled event', 'Up next: no title → Untitled event');
+    eq(upNextDetail({allDay: false, now: false, start: at(15), end: at(16), startText: '', endText: '', time: ''}, now), '',
+        'Up next: no start text → the tab\'s line, never "· in"');
+    eq(NEAR, 2 * 60 * MIN, 'Up next: near is 2 h');
 }
 
 print('calendar: ok');

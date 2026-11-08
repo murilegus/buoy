@@ -246,3 +246,47 @@ export function agenda(events, now) {
     }
     return {today: rows(today), upcoming};
 }
+
+/** Home's Up next: at most this many events (SPEC §3, 2026-11-08). */
+export const UP_NEXT_MAX = 3;
+/** An event starting this close says how far away it is ("in 25 min"). */
+export const NEAR = 2 * HOUR;
+
+/**
+ * An Up next row's second line: "3:00 PM · in 25 min" when it starts within 2 h, else as
+ * the tab's (detailText): "Now · until 4:00 PM", "5:30 PM · 45 min", "All day",
+ * "From 11:00 PM".
+ *
+ * @param {object} row  a dayRows row
+ * @param {number} now  ms
+ * @returns {string}
+ */
+export function upNextDetail(row, now) {
+    if (!row.allDay && !row.now && row.start > now && row.start - now <= NEAR && row.startText)
+        return `${row.startText} · in ${spanText(row.start - now)}`;
+    return detailText(row);
+}
+
+/**
+ * Home's Up next (SPEC §3, 2026-11-08): what is left of today — the timed events running
+ * or still to come, by start, then the all-day ones — at most `max`; the ones already over
+ * are left out (the Calendar tab keeps them). Nothing left → no rows, and Home leaves the
+ * block out.
+ *
+ * @param {*} events  events.js's list
+ * @param {number} now  ms
+ * @param {object} [opts]
+ * @param {number} [opts.max]  at most this many rows
+ * @returns {{rows: object[], more: number}} rows: dayRows' plus `detail` (upNextDetail);
+ *   more: how many were left out
+ */
+export function upNext(events, now, {max = UP_NEXT_MAX} = {}) {
+    const left = dayRows(events, dayStart(now), now)
+        .filter(r => !r.past && !(r.end === r.start && r.start < now));
+    const all = [...left.filter(r => !r.allDay), ...left.filter(r => r.allDay)];
+    const n = Math.max(0, Math.floor(max));
+    return {
+        rows: all.slice(0, n).map(r => ({...r, detail: upNextDetail(r, now)})),
+        more: Math.max(0, all.length - n),
+    };
+}

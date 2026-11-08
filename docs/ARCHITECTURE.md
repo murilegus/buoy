@@ -35,7 +35,8 @@ src/buoy@murilegus/
     │   ├── present.js      render plan → St actors. ONLY place content actors are made
     │   ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
     │   ├── pill.js         one pill: content, sizing, hover → compact, morph (2026-11-01; tier names 2026-11-05)
-    │   ├── home.js         the panel a click opens: tab strip + tab body (Home, kind, standalone)
+    │   ├── home.js         the panel a click opens: tab strip + tab body (Home: Missed, chips,
+    │   │                   the modules' blocks in two columns, 2026-11-08; kind, standalone)
     │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
     │   ├── keys.js         keyboard: an ask's keys, ←/→ steps; pure, unit-tested (2026-11-03)
     │   ├── settings.js     prefs: which page each schema key goes to, samples; pure (2026-11-03)
@@ -58,7 +59,8 @@ src/buoy@murilegus/
             │               tab in the strip; tabWhileLive: that tab only while one of its
             │               activities is there (2026-11-07); noTab: never a tab, its
             │               activities open on their own (the greeting, 2026-11-08); badge():
-            │               a dot on its tab's icon (2026-11-08)
+            │               a dot on its tab's icon (2026-11-08); home: {Block, column,
+            │               order} — its block on Home (below, 2026-11-08)
             ├── source.js   watches a system facility, calls stack.surface/update/end;
             │               `enable(stack, registry, settings)` (settings: its `<id>-…`
             │               keys, 2026-11-05)
@@ -69,6 +71,13 @@ src/buoy@murilegus/
             │               change (2026-11-05); built on first selection, destroyed when
             │               expanded closes; `close()` closes the island after an action
             │               that brings a window up (2026-11-06)
+            ├── home.js     its block on Home (optional; media, weather, calendar, SPEC §3,
+            │               2026-11-08): a class, `new Block({open, close, changed,
+            │               settings})` → {actor, ready, update?(activities), refresh?(),
+            │               destroy()}; made the first time Home shows, kept for the open
+            │               (kit/home.js moves its actor between layouts), destroyed when
+            │               expanded closes; `ready` false → left out; `changed()` when
+            │               `ready` flips; column 'start' (Now playing) or 'end'
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
             │               pure: `keys` (its idle-<id>-… keys), `present(ctx, opts)` →
             │               presentation data (its `compact` is the idle pill's hover tier,

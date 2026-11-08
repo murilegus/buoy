@@ -610,23 +610,45 @@ sizes, Bu's poses, special days, weather, settings and tests.
 
 ## 3. Expanded: Home
 
-Single screen, no sub-navigation. Four blocks, each a module that can be off:
+Single screen, no sub-navigation. Blocks, each from a module that can be off (layout A,
+2026-11-08, Ethan; the month grid left for the Calendar tab):
 
 ```
-┌ ⌂ Home · ♪ Media · ⏱ Timer · [ ▣ Clipboard ] · ⋯ ────────────────── ⚙ ┐
-│ [art] title           ⟲ ≡    │ ☁ Weather          ⏱ Timer            │
-│       artist                 │   31° Partly cloudy   --:--            │
-│   ◀◀  ▶  ▶▶                  │   HCMC · H34 L26                       │
-│                              │ UP NEXT                                │
-│ October 2026        ‹ ›      │ ▌Design review 3:00 PM                 │
-│  S  M  T  W  T  F  S         │ ▌Gym 5:30 PM · 45 min                  │
-│  …  calendar grid …          │                                        │
-└──────────────────────────────┴────────────────────────────────────────┘
+┌ ⌂ Home · ♪ · 🔔 · ⤓ · ⏱ · [ ▣ Calendar ] · ⋯ ───────────────────────── ⚙ ┐
+│ ● Missed · 1                                                       ×  │  while any
+│ ⤓ report.pdf → Downloads   Transfers                           2:41 PM │
+│ ( Claude · buoy  <1 min )  ( … )                                       │  chips
+│ ┌ Now playing ───────────────┐ ┌ ☀ 31°  Partly cloudy ──────────────┐ │
+│ │ [art] title                │ │   Ho Chi Minh City · Feels like 34° │ │
+│ │       artist / player      │ └─────────────────────────────────────┘ │
+│ │ ━━━━━━━━━──────────        │ ┌ Up next                    +2 more ┐ │
+│ │      ⏮    ⏯    ⏭          │ │ ▌Design review   3:00 PM · in 25 min│ │
+│ └────────────────────────────┘ │ ▌Gym             5:30 PM · 45 min   │ │
+│                                └─────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────────┘
   strip: Home · kind tabs of enabled modules · one slot for a standalone tab · ⋯ menu · ⚙ prefs
   ⚙ sits alone at the right of the strip row (a round button); it closes the island, then
   opens the extension's prefs window (2026-11-02)
   no system indicators here — they live in the right-hand system cluster (§1)
 ```
+
+Top to bottom (2026-11-08, Ethan):
+
+- the **Missed** section (below), while the missed history has entries;
+- a **chip** for each running activity no block covers — its pill's content on a round
+  chip, wrapping to more lines when they do not fit; a chip opens its kind's tab (or runs
+  the activity's onPress and closes the island). Media's activities are not chips: Now
+  playing shows them. `+N` still opens Home, so every activity is reachable from here;
+- the **blocks**, in two columns of equal width: Now playing at the start; the weather over
+  Up next at the end. A block with nothing to show is left out, never shown empty, and a
+  column left empty gives the other the full width (nothing playing → weather and Up next
+  across). With the Missed rows and chips above, the blocks move down and the body
+  scrolls;
+- nothing at all (no missed, no activity, no block with something to show) → "Nothing
+  going on" with Bu.
+
+The blocks stay for the whole open (their actors move between layouts, never rebuilt) and
+go when expanded closes; each one's data lives only that long (rule 8).
 
 - **Missed** (2026-11-03): while the missed history has entries, Home starts with a
   "Missed · N" section — the last 5, newest first, each row the kind's icon, its text, the
@@ -634,31 +656,48 @@ Single screen, no sub-navigation. Four blocks, each a module that can be off:
   activated system notification does; an icon-only × empties it (its "Clear" label
   dropped 2026-11-06, Ethan, as in the Transfers tab).
   Showing Home turns the amber light off; the list stays until cleared or pushed out by
-  newer ones. The running activities follow under "Now". The notifications tab has its
+  newer ones. The running activities follow as chips (was a "Now" list until the blocks,
+  2026-11-08). The notifications tab has its
   own "Missed while away": the notifications nobody saw (NOTIFICATIONS.md §6, 2026-11-07,
   replacing the plan to move this section there — notifications never reach the stack's
   missed history); Buoy posts no notifications of its own.
-- **Until the M3 blocks** (2026-11-02): Home lists every visible activity (the full list,
-  also behind `+N`), each row its minimal view; a row opens that activity's tab. Nothing
-  running → "Nothing going on" with Bu (`idle`, or `missed` while history has entries). The panel's height fits its content up to the expanded cap;
-  beyond that the tab body scrolls (no blur, scrollbar only when needed). An empty tab or
+- **Until the M3 blocks** (2026-11-02, replaced by the chips and blocks above 2026-11-08):
+  Home listed every visible activity, each row its minimal view. Every tab opens the panel
+  at the full expanded cap (2026-11-08, Ethan; was content-fit up to the cap): a shorter
+  tab leaves room at its foot (Home's blocks stretch into it), a taller one scrolls inside
+  (no blur, scrollbar only when needed). An empty tab or
   list ("Nothing going on", "Nothing playing", "No transfers", "No notifications"…) opens
   the panel at the full cap instead, its text centred both ways, in one colour for every
   tab (2026-11-06, Ethan; kit `EmptyState`), with Bu over it in a pose that fits (MASCOT.md, 2026-11-07). It grows to the cap too when a list empties
   while open.
-- Now playing (one row) — MPRIS. Hidden when nothing plays.
+- Now playing — MPRIS (the media module's activities): the stack's first player — art (a
+  grey tile with a note when it has none), title, artist, the player's name; the position
+  as a thin bar, moving only while shown and playing; the player's own ⏮ ⏯ ⏭. A click
+  anywhere on the card but those buttons opens the Media tab (2026-11-08, Ethan) (the other players, seeking, shuffle, repeat). Hidden when
+  nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu). Every account in Settings → Online
   Accounts (Google, Microsoft 365, Exchange, Nextcloud, WebDAV) syncs in by itself: GOA
   registers its calendars with EDS and Shell's calendar server watches every selected
   source (`calendar-sources.c`); a calendar unticked in GNOME Calendar stays out. Buoy
   never talks to those services; prefs offers "Online Accounts" (Settings' `launch-panel`)
   (2026-11-06, Ethan).
-- Weather — reuse `ui/weather.js` (same GWeather location as dateMenu).
+- Weather — reuse `ui/weather.js` (same GWeather location as dateMenu): the pill's icon
+  and temperature, the condition, then one line with the place and the compact's details
+  (feels like when it differs, wind, humidity). No high / low: GWeather gives the current
+  reading and hourly forecasts from now, not the day's range. A click opens GNOME Weather
+  when it is installed; Ubuntu ships without it, and then the card is not a button. Hidden
+  without a place or a reading.
 - Up next — today's events from the same calendar source (the calendar module's
   `events.js` / `agenda.js`). The month grid is the Calendar tab's, not Home's: the tab
   has the month to pick a day on one side, that day's events on the other — today's and
-  the week ahead when today is picked (2026-11-08, Ethan).
-- Timer — current pomodoro/stopwatch or `--:--`.
+  the week ahead when today is picked (2026-11-08, Ethan). What is left of today, at
+  most three, one line each: a bar (the accent for one running), the title, its time at the
+  end ("3:00 PM · in 25 min" within 2 h, "5:30 PM · 45 min" later, "Now · until 4:00 PM",
+  "All day" last); "+2 more" when there are more; a click opens the Calendar tab. Hidden
+  when nothing is left today.
+- Timer — current pomodoro/stopwatch. Not in v0.1 (2026-11-08, Ethan): the timer module is
+  M4, and a `--:--` with nothing behind it would be a block without an effect (rule 9's
+  spirit); it joins the end column under Up next with its item.
 
 ## 4. Sizes (decided 2026-10-30: derived, not fixed)
 

@@ -114,6 +114,7 @@ export default class BuoyExtension extends Extension {
             }),
             onSlot: id => this._settings.set_string('tabs-slot', id),
             onPrefs: () => this.openPreferences(),
+            gsettings: this._settings,   // Home's blocks read their keys (SPEC §3)
         };
         this._island.missed = {
             list: () => this._stack?.missed ?? [],

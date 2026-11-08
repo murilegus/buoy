@@ -479,6 +479,7 @@ export class Island {
                 onMissedSeen: () => this.missed.seen?.(),
                 onMissedOpen: m => this.missed.open?.(m.id, m.at),
                 onMissedClear: () => this.missed.clear?.(),
+                gsettings: this.tabs.gsettings ?? null,   // Home's blocks (the weather's keys)
             });
         }
         pill.expand(this._home?.actor ?? null);
