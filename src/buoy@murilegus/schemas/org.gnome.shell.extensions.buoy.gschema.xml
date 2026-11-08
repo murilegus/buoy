@@ -138,6 +138,11 @@
       <summary>Show</summary>
       <description>Automatic shows what matters now; Nothing keeps only the light.</description>
     </key>
+    <key name="idle-calendar-all-day" type="b">
+      <default>true</default>
+      <summary>All-day events</summary>
+      <description>Shown when nothing with a time is left today.</description>
+    </key>
     <key name="idle-auto-plans" type="as">
       <default>['calendar', 'weather', 'clock']</default>
       <summary>Plans in the stack</summary>

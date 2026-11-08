@@ -15,8 +15,8 @@ import {nextEvent, whenText, relativeText, rangeText, dayStart, relevance} from 
 
 export const ICON = 'x-office-calendar-symbolic';
 
-/** No keys of its own (ARCHITECTURE rule 9: nothing to show under it on the Island page). */
-export const keys = Object.freeze([]);
+/** Its own keys (ARCHITECTURE rule 9: under its row on the Island page, 2026-11-08). */
+export const keys = Object.freeze(['idle-calendar-all-day']);
 
 /** The wall clock's minute: an event starting or ending changes what the pill says. */
 export const ticks = true;
@@ -25,12 +25,14 @@ export const ticks = true;
  * @param {object} ctx
  * @param {Date} ctx.now
  * @param {?object} ctx.data  the feed's state {hasCalendars, events}
+ * @param {object} [opts]  its keys' values: `idle-calendar-all-day` false leaves all-day
+ *   events out
  * @returns {?object} {leading, text, trailing, compact, accessibleName}; null with nothing
  *   to show today
  */
-export function present({now, data} = {}) {
+export function present({now, data} = {}, opts = {}) {
     const t = now instanceof Date ? now.getTime() : Date.now();
-    const next = nextEvent(data?.events, t);
+    const next = nextEvent(data?.events, t, {allDay: opts['idle-calendar-all-day'] !== false});
     if (!next)
         return null;
     const {event} = next;

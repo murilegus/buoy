@@ -73,7 +73,7 @@ src/buoy@murilegus/
             │               pure: `keys` (its idle-<id>-… keys), `present(ctx, opts)` →
             │               presentation data (its `compact` is the idle pill's hover tier,
             │               2026-11-06), `seconds(opts)` (tick each second), `ticks: false`
-            │               (no wall clock), `relevance(ctx)` for `auto` (SPEC §2a-iii);
+            │               (no wall clock), `relevance(ctx, opts)` for `auto` (SPEC §2a-iii);
             │               ctx = {now, clock, starts, data}
             ├── feed.js     the Shell side of an idle plan with data of its own (optional;
             │               weather 2026-11-06, calendar 2026-11-08): index.js `feed`, `new Feed(onChanged)` →

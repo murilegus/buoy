@@ -158,7 +158,7 @@ eq(idleOffNote('auto', plan.plans, () => false), null, 'Automatic names no modul
 eq(plan.plans, [
     {id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style'], planOnly: true},
     {id: 'weather', enableKey: 'modules-weather', keys: ['idle-weather-automatic', 'idle-weather-refresh'], planOnly: true},
-    {id: 'calendar', enableKey: 'modules-calendar', keys: [], planOnly: false},
+    {id: 'calendar', enableKey: 'modules-calendar', keys: ['idle-calendar-all-day'], planOnly: false},
 ], 'Plans: the clock, the weather, then the next event; calendar keeps its switch on Modules (it has a tab)');
 eq(plan.modules.some(m => m.id === 'calendar' && m.standalone), true, 'calendar: a row on Modules, a standalone tab');
 eq(choiceLabel('idle-content', 'calendar'), 'Next Event', 'Show: Next Event');

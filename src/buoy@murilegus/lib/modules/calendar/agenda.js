@@ -67,9 +67,12 @@ export function normalise(list) {
  *
  * @param {*} events  events.js's list
  * @param {number} now  ms
+ * @param {object} [opts]
+ * @param {boolean} [opts.allDay]  `idle-calendar-all-day`: an all-day event when nothing
+ *   timed is left (true by default)
  * @returns {?{event: object, when: 'soon'|'now'|'later'|'allday'}}
  */
-export function nextEvent(events, now) {
+export function nextEvent(events, now, {allDay = true} = {}) {
     const today = dayStart(now), tomorrow = dayStart(now, 1);
     const list = normalise(events).filter(e => e.start < tomorrow && e.end > today);
     const timed = list.filter(e => !isAllDay(e));
@@ -81,8 +84,8 @@ export function nextEvent(events, now) {
         return {event: running, when: 'now'};
     if (upcoming)
         return {event: upcoming, when: 'later'};
-    const allDay = list.find(isAllDay);
-    return allDay ? {event: allDay, when: 'allday'} : null;
+    const day = allDay ? list.find(isAllDay) : null;
+    return day ? {event: day, when: 'allday'} : null;
 }
 
 /**
@@ -92,11 +95,12 @@ export function nextEvent(events, now) {
  * @param {object} ctx
  * @param {Date} ctx.now
  * @param {?object} ctx.data  the feed's state {hasCalendars, events}
+ * @param {object} [opts]  the plan's keys' values (`idle-calendar-all-day`)
  * @returns {?{score: number}}
  */
-export function relevance({now, data} = {}) {
+export function relevance({now, data} = {}, opts = {}) {
     const t = now instanceof Date ? now.getTime() : Date.now();
-    const next = nextEvent(data?.events, t);
+    const next = nextEvent(data?.events, t, {allDay: opts['idle-calendar-all-day'] !== false});
     if (!next)
         return null;
     if (next.when === 'soon')

@@ -57,6 +57,8 @@ eq(isAllDay(ev('z', at(0), at(0))), false, 'zero length at midnight: not all-day
         'one soon beats one running (90 over 80)');
     eq(nextEvent(clash, at(15, 10)).event.id, 'review', 'two running: the one ending first');
     eq(nextEvent(day, at(19)), {event: normalise(day)[0], when: 'allday'}, 'evening, timed ones over: the all-day one');
+    eq(nextEvent(day, at(19), {allDay: false}), null, 'All-day events off: nothing then');
+    eq(nextEvent(day, at(8), {allDay: false}).event.id, 'standup', 'All-day events off: timed ones as before');
     eq(nextEvent([ev('tomorrow', at(9, 0, 12), at(10, 0, 12))], at(23, 50)), null, 'tomorrow\'s, even 70 min away: none');
     eq(nextEvent([ev('late', at(22, 0, 10), at(1, 0, 11))], at(0, 30)).when, 'now', 'from yesterday into today: running now');
     eq(nextEvent([], at(9)), null, 'nothing: none');
@@ -71,6 +73,8 @@ eq(isAllDay(ev('z', at(0), at(0))), false, 'zero length at midnight: not all-day
         'soon 90 · running 80 · within 2 h 50 · later today 25 · nothing left null');
     eq(relevance({now: new Date(at(18, 1)), data: {events: [ev('c', at(20), at(21))]}}).score, 50, 'exactly 2 h: 50');
     eq(relevance({now: new Date(at(10)), data: {events: [allDay('h', 11)]}}).score, 25, 'only an all-day one: 25');
+    eq(relevance({now: new Date(at(10)), data: {events: [allDay('h', 11)]}}, {'idle-calendar-all-day': false}), null,
+        'All-day events off: an all-day one alone is nothing');
     eq(relevance({now: new Date(at(10)), data: null}), null, 'no data: null');
 }
 
@@ -159,8 +163,8 @@ eq(isAllDay(ev('z', at(0), at(0))), false, 'zero length at midnight: not all-day
 
 // --- the plan ----------------------------------------------------------------------------
 {
-    eq([keys, ticks, plan.present === present, typeof plan.relevance], [[], true, true, 'function'],
-        'no keys, the minute clock, present and relevance');
+    eq([keys, ticks, plan.present === present, typeof plan.relevance], [['idle-calendar-all-day'], true, true, 'function'],
+        'its key All-day events, the minute clock, present and relevance');
     const data = {hasCalendars: true, events: [ev('Design review', at(15), at(16), {startText: '3:00 PM', endText: '4:00 PM'})]};
     const p = present({now: new Date(at(14, 35)), data});
     eq([p.leading, p.text, p.trailing], [ICON, 'Design review', {text: '3:00 PM'}],
@@ -171,6 +175,9 @@ eq(isAllDay(ev('z', at(0), at(0))), false, 'zero length at midnight: not all-day
     eq(present({now: new Date(at(16, 1)), data}), null, 'over and nothing else today: null (only the light)');
     eq(present({now: new Date(at(9)), data: {hasCalendars: false, events: []}}), null, 'no calendars: null');
     eq(present({}), null, 'no ctx: null');
+    const holiday = {hasCalendars: true, events: [allDay('Holiday', 11)]};
+    eq([present({now: new Date(at(10)), data: holiday}).trailing, present({now: new Date(at(10)), data: holiday}, {'idle-calendar-all-day': false})],
+        [{text: 'all day'}, null], 'All-day events: shown by default, off leaves the pill to the light');
     const idle = planIdle({light: 'off', plan: p});
     eq([idle.leading.type, idle.text, idle.trailing?.text ?? idle.trailing], ['icon', 'Design review', '3:00 PM'],
         'the kit draws it as an idle plan');

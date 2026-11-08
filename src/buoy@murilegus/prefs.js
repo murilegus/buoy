@@ -738,6 +738,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
             row.add_row(this._row(key(name)));
         if (p.id === 'weather')
             this._weatherPlace(row, description);
+        if (p.id === 'calendar')
+            row.add_row(this._accountsRow());    // its calendars come from Online Accounts
 
         const stack = () => this._settings.get_strv('idle-auto-plans');
         const isOn = () => stack().includes(p.id) && (!p.planOnly || this._settings.get_boolean(p.enableKey));
