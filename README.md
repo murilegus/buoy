@@ -32,7 +32,9 @@ is not.
 ```
 buoy/
 ├── package.json / jsconfig.json / eslint.config.js   pnpm, types, lint — nothing is bundled
-├── scripts/  link.sh · dev.sh · pack.sh · verify.sh
+├── install.sh  install / update / remove without EGO (curl … | bash, --help)
+├── scripts/  link.sh · dev.sh · pack.sh · verify.sh · release-check.sh
+├── .github/workflows/release.yml   a tag v<version-name> publishes the zip on GitHub
 ├── tests/    gjs unit tests (*.test.js), run by tests/run.sh
 ├── .githooks/pre-commit · .github/workflows/ci.yml   both run `pnpm verify`
 ├── docs/

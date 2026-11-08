@@ -1,5 +1,7 @@
 // Run: gjs -m tests/agent.test.js   (pure: Claude Code's events → the session's pill, the
 // permission reply, Buoy's entries in ~/.claude/settings.json; docs/CODING-AGENTS.md §11)
+import GLib from 'gi://GLib';
+
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
     agent, answered, askOf, isQuestion, QUESTION_TITLE, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
@@ -366,9 +368,28 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
 // --- hooks in ~/.claude/settings.json (§8) ------------------------------------------------
 {
     const cmd = commandFor('/home/e/.local/share/gnome-shell/extensions/buoy@murilegus/hooks/claude.js');
-    eq(cmd, "gjs -m '/home/e/.local/share/gnome-shell/extensions/buoy@murilegus/hooks/claude.js'", 'the command');
-    eq(commandFor("/it's/buoy@murilegus/hooks/claude.js"), "gjs -m '/it'\\''s/buoy@murilegus/hooks/claude.js'",
+    eq(cmd, "if [ -f '/home/e/.local/share/gnome-shell/extensions/buoy@murilegus/hooks/claude.js' ]; " +
+        "then exec gjs -m '/home/e/.local/share/gnome-shell/extensions/buoy@murilegus/hooks/claude.js'; fi", 'the command');
+    eq(commandFor("/it's/buoy@murilegus/hooks/claude.js"),
+        "if [ -f '/it'\\''s/buoy@murilegus/hooks/claude.js' ]; then exec gjs -m '/it'\\''s/buoy@murilegus/hooks/claude.js'; fi",
         'a quote in the path is escaped for sh');
+    // run as Claude Code runs it (sh -c): no script → nothing, exit 0; a script → gjs's status
+    const runStatus = command => {
+        const [, , , status] = GLib.spawn_sync(null, ['sh', '-c', command], null, GLib.SpawnFlags.SEARCH_PATH, null);
+        try {
+            return GLib.spawn_check_wait_status(status) ? 0 : status;
+        } catch (e) {
+            return e.code;
+        }
+    };
+    eq(runStatus(commandFor('/nonexistent/buoy@murilegus/hooks/claude.js')), 0,
+        'Buoy removed, its entries left: the hook does nothing and succeeds');
+    const dir = GLib.dir_make_tmp('buoy-hook-XXXXXX');
+    const script = `${dir}/it's buoy@murilegus.js`;
+    GLib.file_set_contents(script, "import System from 'system'; System.exit(3);");
+    eq(runStatus(commandFor(script)), 3, 'the script there: run by gjs, its exit status kept (a quote and a space in the path)');
+    GLib.unlink(script);
+    GLib.rmdir(dir);
     eq(isOurs({type: 'command', command: cmd}), true, 'ours by the script\'s path');
     eq([isOurs({command: 'my-hook.sh'}), isOurs(null)], [false, false], 'others are not');
 

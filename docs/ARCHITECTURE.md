@@ -115,6 +115,15 @@ v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` (the copied flash) an
 roadmap items, so their tabs show from v0.1 (2026-11-02);
 idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone tabs `calendar` (the month and the picked day's events, 2026-11-08), `clipboard` (stub `tab.js`, in that order, 2026-11-02). `greeting`: its first run and What's new in v0.1, the rest in M4 (2026-11-08).
 
+## Outside the extension (2026-11-08)
+
+`install.sh` (repo root) installs, updates and removes Buoy for one user without EGO, from
+a GitHub release, a zip or a clone; it uses the installed extension's own `hooks.js` and
+`kit/settings.js` (pure) on removal. A tag `v<version-name>` publishes a release
+(`.github/workflows/release.yml`, `scripts/release-check.sh`) with
+`docs/releases/<version-name>.md` as its notes; `tests/metadata.test.js` keeps the version's
+name the same in metadata.json, notes.js and package.json.
+
 ## Data flow
 
 ```

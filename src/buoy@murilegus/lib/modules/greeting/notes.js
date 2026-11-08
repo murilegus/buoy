@@ -15,5 +15,5 @@
  * Newest last.
  */
 export default Object.freeze([
-    Object.freeze({version: 1, name: '0.1', date: null, intro: true, added: [], fixed: []}),
+    Object.freeze({version: 1, name: '0.1', date: '2026-11-08', intro: true, added: [], fixed: []}),
 ]);

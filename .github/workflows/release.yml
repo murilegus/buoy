@@ -1,0 +1,54 @@
+name: Release
+
+# Pushing a tag v<version-name> (v0.1) publishes that version on GitHub: the same checks as
+# CI, the EGO zip (scripts/pack.sh) attached, docs/releases/<name>.md as its notes. The
+# installer (install.sh) downloads the zip from there.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Shell 50's gjs and gnome-extensions (from gnome-shell), as CI
+    container: ubuntu:26.04
+    steps:
+      - name: Install gjs, GLib tools, gnome-extensions and gh
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends gjs libglib2.0-bin gir1.2-rsvg-2.0 git ca-certificates gnome-shell gh
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Cache the pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .pnpm-store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile --store-dir .pnpm-store
+
+      - run: pnpm verify
+
+      - name: The tag names this version, and it has notes
+        id: version
+        run: echo "name=$(scripts/release-check.sh "$GITHUB_REF_NAME")" >> "$GITHUB_OUTPUT"
+
+      - run: pnpm run pack
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/buoy@murilegus.shell-extension.zip" \
+            --repo "$GITHUB_REPOSITORY" --title "Buoy $NAME" --notes-file "docs/releases/$NAME.md" --verify-tag

@@ -28,10 +28,14 @@ const isPlain = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 /**
  * @param {string} path  the script, absolute
- * @returns {string} the hook's command (sh -c), the path single-quoted
+ * @returns {string} the hook's command (sh -c), the path single-quoted. Without the script
+ *   (Buoy removed, its entries left behind) it does nothing and exits 0, so Claude Code
+ *   reports no failing hook on every event (2026-11-08); with it, gjs's own exit status
+ *   (`exec`)
  */
 export function commandFor(path) {
-    return `gjs -m '${path.replaceAll('\'', '\'\\\'\'')}'`;
+    const quoted = `'${path.replaceAll('\'', '\'\\\'\'')}'`;
+    return `if [ -f ${quoted} ]; then exec gjs -m ${quoted}; fi`;
 }
 
 /**
