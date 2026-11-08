@@ -9,43 +9,42 @@ function eq(actual, expected, msg) {
 
 const p = (id, score) => ({id, score});
 
-// --- ranking -----------------------------------------------------------------------------
+// --- the first plan, and what stays between turns ----------------------------------------
 eq(HOLD, 80, 'hold at 80 (SPEC §2a-iii)');
-eq(choose({plans: [p('calendar', 25), p('weather', 35), p('clock', 10)]}), 'weather', 'the highest score shows');
-eq(choose({plans: [p('calendar', 90), p('weather', 75), p('clock', 10)]}), 'calendar', 'a meeting soon beats a rain change');
-eq(choose({plans: [p('calendar', null), p('weather', null), p('clock', 10)]}), 'clock', 'null plans leave: the clock floor');
+eq(choose({plans: [p('calendar', 25), p('weather', 35), p('clock', 10)]}), 'weather', 'the first plan shown: the highest');
+eq(choose({plans: [p('clock', 10), p('mascot', 10)]}), 'clock', 'the first, a tie: idle-auto-plans order');
+eq(choose({plans: [p('calendar', null), p('weather', null), p('clock', 10)]}), 'clock', 'null plans leave: the clock');
 eq(choose({plans: [p('calendar', null), p('weather', null)]}), null, 'nothing to show at all: null');
 eq(choose({plans: []}), null, 'no plans: null');
 eq(choose({plans: [p('a', NaN), p('b', '50'), p('c', 1)]}), 'c', 'only numbers are scores');
 eq(candidates([p('a', 1), null, {id: 3, score: 2}, p('b', null)]).map(x => x.id), ['a'], 'candidates: valid ids and scores');
+eq(choose({plans: [p('weather', 35), p('clock', 10)], current: 'clock'}), 'clock',
+    'between turns the shown plan stays, though lower (a re-rank changes nothing)');
+eq(choose({plans: [p('weather', 35), p('clock', 10)], current: 'gone'}), 'weather', 'the shown plan left: the highest');
 
-// --- ties take turns, only on a turn -------------------------------------------------------
+// --- every plan takes its turn (2026-11-08, Ethan: "an idle pill just rotates") ------------
 {
-    const plans = [p('clock', 10), p('mascot', 10)];
-    eq(choose({plans}), 'clock', 'a tie, nothing shown yet: idle-auto-plans order');
-    eq(choose({plans, current: 'clock'}), 'clock', 'a re-rank between turns keeps the shown one');
-    eq(choose({plans, current: 'clock', turn: true, shownAt: {clock: 100}}), 'mascot', 'a turn: the other tied plan');
-    eq(choose({plans, current: 'mascot', turn: true, shownAt: {clock: 100, mascot: 200}}), 'clock', 'and back');
-    const three = [p('a', 35), p('b', 35), p('c', 35)];
-    eq(choose({plans: three, current: 'a', turn: true, shownAt: {a: 300, b: 100, c: 200}}), 'b', 'the one shown longest ago');
-    eq(choose({plans: three, current: 'a', turn: true, shownAt: {a: 300, c: 200}}), 'b', 'never shown counts as longest ago');
-    eq(choose({plans: three, current: 'a', turn: true, shownAt: {a: 300}}), 'b', 'two never shown: the key\'s order');
-    eq(choose({plans: [p('a', 35), p('b', 10)], current: 'a', turn: true, shownAt: {a: 1}}), 'a', 'alone at the top: a turn changes nothing');
-    eq(choose({plans: [p('a', 35), p('b', 50)], current: 'a'}), 'b', 'a higher one between turns: it shows at once');
-    eq(choose({plans: [p('a', 35), p('b', 35)], current: 'gone', turn: false, shownAt: {a: 5, b: 1}}), 'b',
-        'the shown plan left: the tie shown longest ago');
+    const plans = [p('calendar', 25), p('weather', 35), p('clock', 10)];
+    const order = [];
+    let cur = choose({plans});
+    for (let i = 0; i < 4; i++) {
+        order.push(cur);
+        cur = choose({plans, current: cur, turn: true});
+    }
+    eq(order, ['weather', 'clock', 'calendar', 'weather'], 'a turn: the next in the stack\'s order, round — the weather\'s 35 no longer keeps the clock off');
+    eq(choose({plans: [p('weather', 35), p('calendar', null), p('clock', 10)], current: 'weather', turn: true}), 'clock',
+        'a plan with nothing to show is skipped');
+    eq(choose({plans: [p('weather', 35)], current: 'weather', turn: true}), 'weather', 'alone: a turn changes nothing');
 }
 
 // --- hold ----------------------------------------------------------------------------------
 {
-    const plans = [p('calendar', 90), p('other', 90)];
-    eq(choose({plans, current: 'calendar', turn: true, shownAt: {calendar: 9, other: 1}}), 'calendar',
-        'at 90 it holds through a turn, even tied');
-    eq(choose({plans: [p('calendar', 80), p('x', 80)], current: 'calendar', turn: true}), 'calendar', 'exactly 80 holds');
-    eq(choose({plans: [p('calendar', 79), p('x', 79)], current: 'calendar', turn: true, shownAt: {calendar: 2}}), 'x',
-        '79 does not');
-    eq(choose({plans: [p('calendar', 80), p('x', 90)], current: 'calendar', turn: true}), 'x', 'a higher one still wins over a hold');
-    eq(choose({plans: [p('calendar', 50), p('weather', 75)], current: 'calendar'}), 'weather', 'the score dropped: no hold');
+    eq(choose({plans: [p('calendar', 90), p('clock', 10)], current: 'calendar', turn: true}), 'calendar', 'at 90 it holds through a turn');
+    eq(choose({plans: [p('calendar', 80), p('clock', 10)], current: 'calendar', turn: true}), 'calendar', 'exactly 80 holds');
+    eq(choose({plans: [p('calendar', 79), p('clock', 10)], current: 'calendar', turn: true}), 'clock', '79 does not: its turn passes');
+    eq(choose({plans: [p('weather', 35), p('calendar', 90)], current: 'weather'}), 'calendar', 'a plan reaching 80+ shows at once');
+    eq(choose({plans: [p('calendar', 80), p('x', 90)], current: 'calendar', turn: true}), 'x', 'a higher hold wins');
+    eq(choose({plans: [p('a', 90), p('b', 90)], current: 'b', turn: true}), 'b', 'two held, tied: the shown one stays');
 }
 
 // --- scroll and the pin --------------------------------------------------------------------
@@ -57,8 +56,8 @@ eq(candidates([p('a', 1), null, {id: 3, score: 2}, p('b', null)]).map(x => x.id)
     eq([scrollTo(plans, 'weather', 1), scrollTo(plans, 'weather', -1)], ['calendar', 'x'], 'from a plan not in the stack');
     eq(scrollTo([p('a', null)], 'a', 1), null, 'nothing to scroll to');
     eq(choose({plans, current: 'clock', pinned: 'clock'}), 'clock', 'pinned: stays though lower');
-    eq(choose({plans, current: 'clock', pinned: 'clock', turn: true}), 'calendar', 'the next turn lets go');
-    eq(choose({plans, current: 'clock', pinned: 'weather'}), 'calendar', 'pinned to one with nothing to show: ranked');
+    eq(choose({plans, current: 'clock', pinned: 'clock', turn: true}), 'x', 'the next turn lets go: the next plan comes');
+    eq(choose({plans, current: 'clock', pinned: 'weather'}), 'clock', 'pinned to one with nothing to show: the shown one stays');
 }
 
 // --- the key -------------------------------------------------------------------------------

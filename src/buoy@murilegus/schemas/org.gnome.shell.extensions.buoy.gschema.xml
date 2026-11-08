@@ -152,7 +152,7 @@
       <range min="2" max="30"/>
       <default>5</default>
       <summary>Switch every</summary>
-      <description>Minutes between turns when plans matter equally.</description>
+      <description>Minutes before the next plan takes its turn.</description>
     </key>
     <key name="idle-clock-style" type="s">
       <choices>
