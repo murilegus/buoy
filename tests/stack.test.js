@@ -628,6 +628,31 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     const lights = island.log.filter(l => l.startsWith('light'));
     eq(lights, ['light missed', 'light waiting', 'light missed', 'light off'], 'setLight only on change');
 }
+// --- whenSeen: wait for the island (the greeting, GREETING.md §11) ---------------
+{
+    const {stack} = setup();
+    const log = [];
+    stack.whenSeen(() => log.push('now'));
+    eq(log, ['now'], 'seen already: at once');
+    stack.setUnseen(true);
+    eq(stack.unseen, true, 'unseen getter');
+    stack.whenSeen(() => log.push('a'));
+    const cancel = stack.whenSeen(() => log.push('b'));
+    stack.whenSeen(() => log.push('c'));
+    cancel();
+    stack.setUnseen(true);
+    eq(log, ['now'], 'still unseen: waiting');
+    stack.setUnseen(false);
+    eq(log, ['now', 'a', 'c'], 'seen again: each waiter once, a cancelled one not');
+    stack.setUnseen(true);
+    stack.setUnseen(false);
+    eq(log.length, 3, 'once only');
+    stack.setUnseen(true);
+    stack.whenSeen(() => log.push('d'));
+    stack.destroy();
+    stack.setUnseen(false);
+    eq(log.length, 3, 'destroy drops the waiters');
+}
 // --- a source's own unseen: flagMissed keeps the amber light (2026-11-08) -------
 {
     const {island, stack} = setup();

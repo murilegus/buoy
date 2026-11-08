@@ -56,6 +56,26 @@
       <summary>Timer</summary>
       <description>Timers in the pill, with the Timer tab.</description>
     </key>
+    <key name="modules-greeting" type="b">
+      <default>true</default>
+      <summary>Greeting</summary>
+      <description>Bu says hello the first time, and what is new after an update.</description>
+    </key>
+    <key name="greeting-intro-shown" type="b">
+      <default>false</default>
+      <summary>Introduction shown</summary>
+      <description>Bookkeeping: Bu introduced himself once; About sets it false to show it again.</description>
+    </key>
+    <key name="greeting-version-seen" type="i">
+      <default>0</default>
+      <summary>Version seen</summary>
+      <description>Bookkeeping: the last version What's new spoke for.</description>
+    </key>
+    <key name="prefs-page" type="s">
+      <default>''</default>
+      <summary>Prefs page to open</summary>
+      <description>Bookkeeping: the page prefs opens on, then clears (whats-new).</description>
+    </key>
     <key name="modules-calendar" type="b">
       <default>true</default>
       <summary>Calendar</summary>

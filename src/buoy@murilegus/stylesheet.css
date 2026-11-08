@@ -172,6 +172,9 @@
 .buoy-expanded-top { spacing: 14px; }
 .buoy-block { spacing: 2px; }
 .buoy-title { font-size: 14px; font-weight: 600; }
+/* the greeting's first line (GREETING.md §2: larger than other titles) */
+.buoy-title-hero { font-size: 18px; font-weight: 700; padding-bottom: 4px; }
+.buoy-line { padding-top: 2px; }
 .buoy-subtitle { color: #b8b8b8; }
 .buoy-actions { spacing: 8px; }
 

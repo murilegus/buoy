@@ -120,6 +120,7 @@ export class ActivityStack {
         this._asks = new Map();       // id → {resolve, options, dismissed}
         this._hidden = new Set(hiddenApps);
         this._unseen = false;
+        this._seenWaiters = new Set();   // whenSeen
         this._missed = [];
         this._missedNew = false;     // something was missed since the history was last seen
         this._flags = new Set();     // sources with something unseen of their own (flagMissed)
@@ -321,9 +322,35 @@ export class ActivityStack {
     }
 
     /** @param {boolean} unseen  fullscreen, away or DND: endings now count as missed */
+    /**
+     * Run `fn` once the island is seen: now, or when it comes back (a fullscreen window
+     * left). The greeting waits for it rather than skipping (GREETING.md §11).
+     *
+     * @param {function(): void} fn
+     * @returns {function(): void} cancel
+     */
+    whenSeen(fn) {
+        if (!this._unseen) {
+            fn();
+            return () => {};
+        }
+        this._seenWaiters.add(fn);
+        return () => this._seenWaiters.delete(fn);
+    }
+
+    /** @returns {boolean} the island is not seen (fullscreen, away, DND) */
+    get unseen() {
+        return this._unseen;
+    }
+
     setUnseen(unseen) {
         const back = this._unseen && !unseen;
         this._unseen = !!unseen;
+        if (back) {
+            const waiting = [...this._seenWaiters];
+            this._seenWaiters.clear();
+            waiting.forEach(fn => fn());
+        }
         const top = back ? this._visibleList()[0] : null;
         if (top && !top.quiet && (top.kind === 'ask' || top.style === 'transient'))
             this._island.render(this._visibleList(), {alert: null, expand: top.id});
@@ -442,6 +469,7 @@ export class ActivityStack {
         for (const handle of this._timers.values())
             this._clock.cancel(handle);
         this._timers.clear();
+        this._seenWaiters.clear();
         for (const ask of this._asks.values())
             ask.resolve(null);
         this._asks.clear();

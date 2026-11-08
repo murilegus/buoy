@@ -308,7 +308,9 @@ integer):
   notes only, not a list of every release.
 - **About → What's new** (prefs, 2026-11-08, Ethan). A row on the About page opens a
   subpage with every version's notes, newest first — the running version's on top; for
-  v0.1 that is the introduction. The same `notes.js` (pure data, so prefs may import it,
+  v0.1 that is the introduction. Each version's heading: the running one "Buoy 0.2 — this
+  version", an older one "Buoy 0.1 — 8 November 2026", its release day (`date` in
+  notes.js, written when it ships). The same `notes.js` (pure data, so prefs may import it,
   as it does `kit/settings.js`): written once, said by Bu and listed here. To open prefs on
   that page ("…and more"), the Shell side writes the bookkeeping key `prefs-page` =
   `whats-new` and opens prefs (`Main.extensionManager.openExtensionPrefs`); prefs reads

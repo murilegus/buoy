@@ -9,7 +9,7 @@ import {applyGnomeDefaults, reworkPanel, setClusterBackground, setContrast, setL
 import {GNOME_CLOCK, GNOME_DOCK, GNOME_WEATHER, lingerMs} from './lib/kit/settings.js';
 import {Island} from './lib/kit/island.js';
 import {IdleContent} from './lib/kit/idle.js';
-import {setMascotRest} from './lib/kit/present.js';
+import {forgetStarts, setMascotRest} from './lib/kit/present.js';
 import {ActivityStack} from './lib/kit/stack.js';
 import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
 import {BuoyDBus} from './lib/kit/dbus.js';
@@ -28,10 +28,11 @@ import clipboard from './lib/modules/clipboard/index.js';
 import copied from './lib/modules/copied/index.js';
 import clock from './lib/modules/clock/index.js';
 import weather from './lib/modules/weather/index.js';
+import greeting from './lib/modules/greeting/index.js';
 
 // Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
 // Order is also the tab strip's order (SPEC §2b).
-const MODULES = [media, notification, progress, timer, hud, home, input, agent, calendar, copied, clipboard, clock, weather];
+const MODULES = [media, notification, progress, timer, hud, home, input, agent, calendar, copied, clipboard, clock, weather, greeting];
 
 export default class BuoyExtension extends Extension {
     enable() {
@@ -186,6 +187,7 @@ export default class BuoyExtension extends Extension {
     }
 
     disable() {
+        forgetStarts();         // the next enable's stack counts its surfaces from 1 again
         Main.wm.removeKeybinding('keybind-focus');
         for (const entry of [...this._active ?? []])
             this._stopModule(entry);
