@@ -662,16 +662,18 @@ go when expanded closes; each one's data lives only that long (rule 8).
   replacing the plan to move this section there — notifications never reach the stack's
   missed history); Buoy posts no notifications of its own.
 - **Until the M3 blocks** (2026-11-02, replaced by the chips and blocks above 2026-11-08):
-  Home listed every visible activity, each row its minimal view. The panel's height fits its content up to the expanded cap;
-  beyond that the tab body scrolls (no blur, scrollbar only when needed). An empty tab or
+  Home listed every visible activity, each row its minimal view. Every tab opens the panel
+  at the full expanded cap (2026-11-08, Ethan; was content-fit up to the cap): a shorter
+  tab leaves room at its foot (Home's blocks stretch into it), a taller one scrolls inside
+  (no blur, scrollbar only when needed). An empty tab or
   list ("Nothing going on", "Nothing playing", "No transfers", "No notifications"…) opens
   the panel at the full cap instead, its text centred both ways, in one colour for every
   tab (2026-11-06, Ethan; kit `EmptyState`), with Bu over it in a pose that fits (MASCOT.md, 2026-11-07). It grows to the cap too when a list empties
   while open.
 - Now playing — MPRIS (the media module's activities): the stack's first player — art (a
   grey tile with a note when it has none), title, artist, the player's name; the position
-  as a thin bar, moving only while shown and playing; the player's own ⏮ ⏯ ⏭. A click on
-  the track opens the Media tab (the other players, seeking, shuffle, repeat). Hidden when
+  as a thin bar, moving only while shown and playing; the player's own ⏮ ⏯ ⏭. A click
+  anywhere on the card but those buttons opens the Media tab (2026-11-08, Ethan) (the other players, seeking, shuffle, repeat). Hidden when
   nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu). Every account in Settings → Online
   Accounts (Google, Microsoft 365, Exchange, Nextcloud, WebDAV) syncs in by itself: GOA

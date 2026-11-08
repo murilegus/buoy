@@ -11,10 +11,10 @@ const ART = 56;
 /**
  * Home's Now playing (SPEC §3, 2026-11-08, Ethan: layout A): the first player of the
  * stack — the one the pill shows — as a card in Home's start column: art, title, artist and
- * the player's name (a click opens the Media tab, which has the rest: the other players,
- * seeking, shuffle and repeat), the position as a thin bar, and the player's own
- * transport buttons (its activity's actions). Nothing playing → not ready, and Home leaves
- * the card out.
+ * the player's name, the position as a thin bar, and the player's own
+ * transport buttons (its activity's actions). A click anywhere on the card but those
+ * buttons opens the Media tab, which has the rest: the other players, seeking, shuffle and
+ * repeat. Nothing playing → not ready, and Home leaves the card out.
  *
  * It reads the kit's activities (`update`, kit/home.js) and acts through each one's
  * `onAction`, as the Media tab does. The bar moves once a second only while it is on
@@ -30,10 +30,19 @@ export class MediaHome {
         this._open = open;
         this._changed = changed;
         this._list = [];
-        this.actor = new St.BoxLayout({
-            style_class: 'buoy-home-card buoy-home-media', orientation: Clutter.Orientation.VERTICAL,
+        // the whole card is the button (2026-11-08, Ethan); the transport buttons inside
+        // take their own clicks, as the media controls inside Shell's notification do
+        // (ui/messageList.js Message, an St.Button, and its addMediaControl buttons)
+        this._box = new St.BoxLayout({
+            style_class: 'buoy-home-media', orientation: Clutter.Orientation.VERTICAL,
             x_expand: true, y_expand: true,
         });
+        this.actor = new St.Button({
+            style_class: 'buoy-home-card buoy-home-hit', child: this._box, x_expand: true, y_expand: true,
+            can_focus: true, accessible_name: 'Now playing',
+            x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL,
+        });
+        this.actor.connect('clicked', () => this._open?.('media'));
     }
 
     /** @returns {boolean} a player to show */
@@ -51,16 +60,18 @@ export class MediaHome {
     }
 
     _render() {
-        this.actor.destroy_all_children();
+        this._box.destroy_all_children();
         const a = this._list[0];
         if (!a)
             return;
-        this.actor.add_child(this._track(a));
-        this.actor.add_child(new St.Widget({y_expand: true}));
+        const at = a.attributes ?? {};
+        this.actor.accessible_name = [at.title || a.text, at.artist].filter(Boolean).join(', ') || 'Now playing';
+        this._box.add_child(this._track(a));
+        this._box.add_child(new St.Widget({y_expand: true}));
         const live = a.state?.live;
         if (live?.length > 0)
-            this.actor.add_child(this._position(live));
-        this.actor.add_child(this._transport(a));
+            this._box.add_child(this._position(live));
+        this._box.add_child(this._transport(a));
     }
 
     _track(a) {
@@ -92,13 +103,7 @@ export class MediaHome {
         line(at.artist, 'buoy-home-subtitle');
         line(at.app || a.app, 'buoy-home-meta');
         row.add_child(text);
-        const button = new St.Button({
-            style_class: 'buoy-home-hit', child: row, x_expand: true, can_focus: true,
-            accessible_name: [at.title, at.artist].filter(Boolean).join(', ') || 'Now playing',
-            x_align: Clutter.ActorAlign.FILL,
-        });
-        button.connect('clicked', () => this._open?.('media'));
-        return button;
+        return row;
     }
 
     _position(live) {

@@ -1,5 +1,6 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
@@ -29,6 +30,18 @@ function badged(glyph) {
     }));
     return bin;
 }
+
+// The body's scrolled box: at least as tall as the body allows (`[FILL]`), so every tab
+// opens the panel at its full expanded height (2026-11-08, Ethan; was content-fit up to the
+// cap). Its minimum stays its content's: a taller tab scrolls instead of growing the panel.
+// Children with y_expand share the room left over (Home's blocks).
+const BodyView = GObject.registerClass(
+class BodyView extends St.BoxLayout {
+    vfunc_get_preferred_height(forWidth) {
+        const [min, nat] = super.vfunc_get_preferred_height(forWidth);
+        return [min, Math.max(nat, this[FILL] ?? 0)];
+    }
+});
 
 /**
  * The panel a click opens (SPEC §2b, §3): the tab strip and the selected tab's body.
@@ -122,7 +135,7 @@ export class Home {
         });
         this._body.set_style(`max-height: ${Math.max(0, maxHeight - STRIP_H)}px;`);
         // the scrolled child must be St.Scrollable; tab bodies of any kind go inside it
-        this._view = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        this._view = new BodyView({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
         this._view[FILL] = Math.max(0, maxHeight - STRIP_H);   // an empty tab fills it (EmptyState)
         this._body.set_child(this._view);
         // the strip on the left, ⚙ (prefs, SPEC §3) on the right of the same row
@@ -432,7 +445,10 @@ export class Home {
     }
 
     _buildHome() {
-        const box = new St.BoxLayout({style_class: 'buoy-home-list', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        // y_expand: the blocks take what the full-height body leaves under Missed and chips
+        const box = new St.BoxLayout({
+            style_class: 'buoy-home-list', orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_expand: true,
+        });
         const blocks = this._homeBlocks();
         const columns = homeColumns(blocks.map(([id, b]) => ({id, column: b.column, order: b.order, ready: Boolean(b.block.ready)})));
         const chips = homeChips(this._list, this._modules);
@@ -532,7 +548,7 @@ export class Home {
 
     // Two columns of equal width (start: Now playing; end: weather, Up next), or one
     _columns(columns) {
-        const row = new St.BoxLayout({style_class: 'buoy-home-columns', x_expand: true});
+        const row = new St.BoxLayout({style_class: 'buoy-home-columns', x_expand: true, y_expand: true});
         row.layout_manager.homogeneous = true;
         for (const ids of columns) {
             const col = new St.BoxLayout({
