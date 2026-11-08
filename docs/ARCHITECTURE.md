@@ -94,7 +94,8 @@ src/buoy@murilegus/
 
 A module may keep more pure files beside these when they are worth testing alone
 (weather's `read.js`: GWeather.Info → the plan's state, tested with a fake info; calendar's
-`agenda.js` and `month.js`: which event is next, its words, the tab's days and month) and a
+`agenda.js` and `month.js`: which event is next, its words, the tab's days and month; media's
+`layout.js`: the Media tab's art size and meta line, 2026-11-08) and a
 Shell-side reader its feed and tab share (calendar's `events.js`: the date menu's event
 source, 2026-11-08).
 

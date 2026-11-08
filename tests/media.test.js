@@ -2,6 +2,7 @@
 import adapter, {transport, liveOf, ICON, PAUSED_ICON, PAUSED_EQ} from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
 import {planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/presentation.js';
+import {artSize, metaLine, ART_MIN, ART_MAX} from '../src/buoy@murilegus/lib/modules/media/layout.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -89,5 +90,24 @@ function noMeasures(v, path) {
 }
 noMeasures(p, 'media');
 noMeasures(q, 'spotify ad');
+
+// --- the tab's layout A (layout.js, 2026-11-08): the art as tall as the room ---------------
+eq(artSize(205, 524), 204, '1920 / 1366, one player: the room 205 tall decides, even → 204');
+eq(artSize(173, 524), 172, '1920, two players: the room under the chips (173) → 172');
+eq(artSize(283, 680), 272, '2560: the width caps it (40% of 680 = 272)');
+eq(artSize(305, 720), ART_MAX, 'a room and width past the cap → ART_MAX');
+eq(artSize(150, 900), 150, 'a short room on a wide tab: the room decides');
+eq(artSize(151, 900), 150, 'rounded down to even');
+eq(artSize(40, 524), ART_MIN, 'never under ART_MIN');
+eq(artSize(205, 100), ART_MIN, 'a narrow tab still gets ART_MIN');
+eq(artSize(NaN, 524), ART_MIN, 'no room measured yet → ART_MIN');
+eq(artSize(205, undefined), ART_MIN, 'no width measured yet → ART_MIN');
+eq(metaLine({album: 'Single', app: 'Rhythmbox'}), 'Single · Rhythmbox', 'album · app');
+eq(metaLine({app: 'Firefox'}), 'Firefox', 'no album: the app alone');
+eq(metaLine({album: 'Tides', app: ' '}), 'Tides', 'a blank app is dropped');
+eq(metaLine({}), '', 'neither');
+eq(metaLine(), '', 'no attributes');
+const longAlbum = 'An album title long enough to need the label to ellipsize it on screen';
+eq(metaLine({album: longAlbum, app: 'Spotify'}), `${longAlbum} · Spotify`, 'long text is not cut here (the label ellipsizes)');
 
 console.log('media adapter: ok');
