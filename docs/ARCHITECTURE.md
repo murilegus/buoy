@@ -123,6 +123,8 @@ a GitHub release, a zip or a clone; it uses the installed extension's own `hooks
 (`.github/workflows/release.yml`, `scripts/release-check.sh`) with
 `docs/releases/<version-name>.md` as its notes; `tests/metadata.test.js` keeps the version's
 name the same in metadata.json, notes.js and package.json.
+`README.md` is for people who use Buoy (install, settings, privacy, limits);
+`CONTRIBUTING.md` holds the repository tree, the setup and the release steps (2026-11-08).
 
 ## Data flow
 
