@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Report a security problem
+    url: https://github.com/murilegus/buoy/security/advisories/new
+    about: Privately, not in a public issue — see SECURITY.md.
   - name: Troubleshooting
     url: https://github.com/murilegus/buoy#troubleshooting
     about: Nothing in the top bar after installing, the GNOME version, Claude Code sessions not showing — the usual fixes.
