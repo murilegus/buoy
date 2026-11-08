@@ -241,7 +241,7 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
 | `greeting-name` | s | `''` | yes, prefilled with the real name | `''` = the real name |
 | `greeting-birthday` | s | `''` | yes, a month and day | `MM-DD`, `''` = none |
 | `greeting-holidays` | s | `auto` | yes | `auto` · `global` · `off` (§7) |
-| `greeting-intro-shown` | b | false | no (bookkeeping) | the intro showed once (§11) |
+| `greeting-intro-shown` | b | false | About's "Show Bu's introduction again" sets it false (§11) | the intro showed once (§11) |
 | `greeting-version-seen` | i | 0 | no (bookkeeping) | the last version What's new spoke for (§11) |
 | `prefs-page` | s | `''` | no (bookkeeping) | the prefs page to open, then cleared (`whats-new`, §11) |
 | `greeting-boot` | s | `''` | no (bookkeeping) | the boot of the last Start |
@@ -316,6 +316,12 @@ integer):
   window follows the key's change. A key, because Shell's `OpenExtensionPrefs` passes
   nothing else on (`js/dbusServices/extensions/extensionsService.js`: of the options only
   `modal`).
+- **About → "Show Bu's introduction again"** (prefs, 2026-11-08, Ethan). A button that
+  sets `greeting-intro-shown` back to false; the greeting's source watches that key and
+  shows the first run at once (no wait for the next enable) — over the prefs window, in
+  the pill, as on a fresh install — then sets it true again. GSettings carries it, as
+  every prefs change; no D-Bus of its own. `greeting-version-seen` stays: replaying the
+  intro says nothing about versions.
 - **Tests.** The case from the two keys and the version (fresh install, update, same
   version, a downgrade says nothing, a version with no notes); the lines for each; the
   cap and "…and more"; the typing's steps and its end (pure: the text shown after n ms);
