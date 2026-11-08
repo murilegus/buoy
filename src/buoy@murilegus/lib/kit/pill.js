@@ -641,9 +641,13 @@ export class Pill {
     }
 
     _applyHover() {
-        if (this.expanded || this._destroyed)
+        if (this._destroyed)
             return;
-        this._island._holdHovered(this, this.hovered);   // hover holds its ttl (SPEC §2e)
+        // hover holds its ttl (SPEC §2e) — open too: a greeting being read stays (2026-11-08,
+        // Ethan: hovered, it still closed at 12 s)
+        this._island._holdHovered(this, this.hovered);
+        if (this.expanded)
+            return;
         if (this.hovered) {
             this._clearGrace();
             if (!this._compact && !this._compactId && this._hasCompact()) {
