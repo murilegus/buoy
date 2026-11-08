@@ -1,0 +1,80 @@
+name: Bug report
+description: Something in Buoy doesn't work or looks wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. Please search the [open issues](https://github.com/murilegus/buoy/issues) first — an existing one can take your details as a comment. One problem per issue.
+
+        Leave out anything private: notification text, file names, Claude Code prompts.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Played a track in Spotify
+        2. Hovered the pill
+        3. Expected the cover and controls; the pill stayed small
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - The pill (music, transfers, volume, notifications…)
+        - When nothing is going on (next event, weather, clock)
+        - Home or one of its tabs
+        - The top bar (clusters, tray, rounded corners)
+        - Claude Code
+        - Settings
+        - Installing, updating or removing
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: The app involved
+      description: The player, browser, file manager or other app the pill showed, if any — most of the pill depends on what the app sends.
+      placeholder: Spotify 1.2, Firefox 150, Files…
+  - type: input
+    id: buoy
+    attributes:
+      label: Buoy version
+      description: Settings → About, or `gnome-extensions info buoy@murilegus`
+      placeholder: "0.1"
+    validations:
+      required: true
+  - type: input
+    id: shell
+    attributes:
+      label: GNOME Shell version and distribution
+      description: "`gnome-shell --version`"
+      placeholder: GNOME Shell 50.1, Ubuntu 26.04
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installed from
+      options:
+        - extensions.gnome.org
+        - install.sh (curl … | bash)
+        - A zip from GitHub Releases
+        - A clone (install.sh --from-source or pnpm link)
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Buoy's lines from GNOME Shell's log
+      description: "Run `journalctl -b -o cat /usr/bin/gnome-shell | grep -i buoy` and paste what it prints (it may be empty)."
+      render: text
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshot or recording
+      description: For anything about how something looks or moves. Drag files here.
