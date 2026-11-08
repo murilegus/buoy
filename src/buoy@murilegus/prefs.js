@@ -18,6 +18,8 @@ import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
 import {PATH} from './lib/kit/dbus.js';
 // the one module file prefs imports: pure, no Shell (CODING-AGENTS.md §8)
 import {commandFor, hooksNote, install, installed, uninstall} from './lib/modules/agent/hooks.js';
+import {linesOf, releaseLabel} from './lib/modules/greeting/adapter.js';
+import notes from './lib/modules/greeting/notes.js';
 
 const IFACE = 'org.gnome.Shell.Extensions.Buoy';
 const REPOSITORY = 'https://github.com/murilegus/buoy';
@@ -142,7 +144,61 @@ export default class BuoyPreferences extends ExtensionPreferences {
         window.add(this._appsPage(plan, key));
         window.add(this._panelPage(plan, key));
         window.add(this._windowsPage(plan, key));
-        window.add(this._aboutPage(plan, key));
+        this._about = this._aboutPage(plan, key);
+        window.add(this._about);
+        // "…and more" in Bu's What's new opens prefs here (GREETING.md §11): the Shell side
+        // writes `prefs-page`, since OpenExtensionPrefs passes no page on
+        this._ids.push(settings.connect('changed::prefs-page', () => this._openRequested()));
+        GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            this._openRequested();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _openRequested() {
+        if (this._settings.get_string('prefs-page') !== 'whats-new')
+            return;
+        this._settings.set_string('prefs-page', '');
+        this._window.set_visible_page(this._about);
+        this._window.pop_subpage();
+        this._window.push_subpage(this._whatsNewPage());
+    }
+
+    // About → What's new (GREETING.md §11): every version's notes, the running one first;
+    // v0.1's is the introduction. The same notes.js and words Bu says.
+    _whatsNewPage() {
+        const page = new Adw.PreferencesPage();
+        const running = this.metadata.version;
+        for (const note of [...notes].reverse()) {
+            const text = linesOf(note, {max: Infinity});
+            const group = new Adw.PreferencesGroup({
+                title: releaseLabel(note, running),
+                description: note.intro ? text.title : '',
+            });
+            for (const line of text.lines.length ? text.lines : ['Small fixes.'])
+                group.add(new Adw.ActionRow({title: line, title_lines: 0}));
+            page.add(group);
+        }
+        const view = new Adw.ToolbarView({content: page});
+        view.add_top_bar(new Adw.HeaderBar());
+        return new Adw.NavigationPage({title: 'What\'s New', child: view});
+    }
+
+    // Bu: What's new, and the introduction again (GREETING.md §11)
+    _buGroup() {
+        const group = new Adw.PreferencesGroup({title: 'Bu'});
+        const news = new Adw.ActionRow({
+            title: 'What\'s New', subtitle: 'What each version brought', activatable: true,
+        });
+        news.add_suffix(new Gtk.Image({icon_name: 'go-next-symbolic'}));
+        news.connect('activated', () => this._window.push_subpage(this._whatsNewPage()));
+        group.add(news);
+        const again = new Adw.ButtonRow({title: 'Show Bu\'s Introduction Again'});
+        // Bu says it on the pill at once: the greeting watches the key (GREETING.md §11)
+        again.connect('activated', () => this._settings.set_boolean('greeting-intro-shown', false));
+        this._settings.bind('modules-greeting', again, 'sensitive', Gio.SettingsBindFlags.GET);
+        group.add(again);
+        return group;
     }
 
     // Keys in the order the XML lists them (list_keys() sorts by name).
@@ -210,6 +266,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         box.append(new Gtk.Label({label: `Version ${version}`, css_classes: ['caption', 'dim-label']}));
         head.add(box);
         page.add(head);
+        page.add(this._buGroup());
 
         const repo = this.metadata.url || REPOSITORY;
         const links = new Adw.PreferencesGroup();

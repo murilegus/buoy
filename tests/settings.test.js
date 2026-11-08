@@ -90,8 +90,10 @@ eq(schema.get_key('cluster-radius').get_range().recursiveUnpack(), ['range', [0,
     'radius stops at 16: half the 32 px cluster, a pill');
 eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [16, 17],
     'radius 16 (a pill, like the island) and opacity 17 % by default, a panel button\'s hover (2026-11-04)');
-eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'calendar', 'input', 'agent', 'copied', 'clipboard'],
+eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'greeting', 'calendar', 'input', 'agent', 'copied', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet, nor a module that is only an idle plan');
+eq(plan.modules.find(m => m.id === 'greeting')?.keys, [], 'greeting: its switch alone, its bookkeeping hidden');
+eq(MODULE_GROUPS.find(g => g.modules.includes('greeting'))?.title, 'Bu', 'greeting in the Bu group (2026-11-08)');
 eq(plan.plans.find(p => p.id === 'clock').ownSwitch, true,
     'clock: its switch on its plan row on the Island page, not on Modules (2026-11-06, Ethan)');
 {
@@ -117,7 +119,8 @@ eq(plan.plans.find(p => p.id === 'clock').ownSwitch, true,
         ['live', ['media', 'notification', 'progress', 'timer', 'agent']],
         ['feedback', ['hud', 'input', 'copied']],
         ['tabs', ['calendar', 'clipboard']],
-    ], 'live in the pill · quick feedback · tabs (the idle plans are on the Island page)');
+        ['bu', ['greeting']],
+    ], 'live in the pill · quick feedback · tabs · Bu (the idle plans are on the Island page)');
     eq(plan.groups.flatMap(g => g.modules).length, plan.modules.length, 'every shown module in a group, once');
     // the copied flash and the Clipboard tab apart (2026-11-07, Ethan): each its switch
     const mod = id => plan.modules.find(m => m.id === id);
@@ -126,7 +129,7 @@ eq(plan.plans.find(p => p.id === 'clock').ownSwitch, true,
     eq([mod('clipboard').keys, mod('clipboard').standalone, mod('clipboard').sample], [[], true, null],
         'Clipboard: only Pin to the strip');
     const hidden = planPrefs(order.filter(n => n !== 'modules-calendar' && n !== 'modules-clipboard').map(name => ({name})));
-    eq(hidden.groups.map(g => g.id), ['live', 'feedback'], 'a group with no module left is not drawn');
+    eq(hidden.groups.map(g => g.id), ['live', 'feedback', 'bu'], 'a group with no module left (tabs) is not drawn');
 }
 eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
     'clock-defaults-applied stays hidden: placed by name, not taken by the clock module\'s prefix');

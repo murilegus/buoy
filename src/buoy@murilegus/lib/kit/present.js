@@ -10,9 +10,9 @@ import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
-import {SIZE as GRID, cells, frameAt, lampColour, moves} from './mascot.js';
+import {SIZE as GRID, cells, frameAt, helloAt, lampColour, moves} from './mascot.js';
 import {ART_CODE, ART_DECLARATIONS, artRadius, effectBox} from './rounded.js';
-import {agoText, element, livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, sinceText, untilText} from './presentation.js';
+import {agoText, element, livePosition, mediaTimes, planCompact, planExpanded, planIdle, planMinimal, sinceText, TYPE_MS, typedSplit, untilText} from './presentation.js';
 
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
@@ -552,6 +552,15 @@ const STARTS = new Map();
 const STARTS_MAX = 32;
 const now = () => GLib.get_monotonic_time() / 1000;
 
+/**
+ * Forget when every Bu and typed text started: the stack is made anew on each enable, its
+ * surface counter starts again at 1, and a new activity must not inherit an old one's
+ * start (Bu would not wave, the text would be typed in already). Called on disable.
+ */
+export function forgetStarts() {
+    STARTS.clear();
+}
+
 function startOf(key) {
     if (!STARTS.has(key)) {
         STARTS.set(key, now());
@@ -600,9 +609,13 @@ const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
  */
 function mascot(e, size, activity) {
     const area = new St.DrawingArea({style_class: 'buoy-mascot', y_align: Clutter.ActorAlign.CENTER});
-    area.set_size(size, size);
+    const px = e.size ?? size;      // the adapter's size (expanded greeting), else the mode's
+    area.set_size(px, px);
     const start = startOf(`${activity?.id}\u0000${activity?._seq}\u0000${e.pose}`);
-    const frame = held => frameAt(e.pose, now() - start, {still: held});
+    // `hello`: wave for HELLO_MS, then idle, as the About page (kit/mascot.js helloAt)
+    const frame = held => e.hello
+        ? helloAt(now() - start, {still: held})
+        : frameAt(e.pose, now() - start, {still: held});
     let shown = frame(false);
     let timer = 0, unsubscribe = null;
 
@@ -631,7 +644,7 @@ function mascot(e, size, activity) {
         unsubscribe?.();
         unsubscribe = null;
     };
-    if (moves(e.pose)) {
+    if (moves(e.pose) || e.hello) {
         area.connect('notify::mapped', () => {
             stop();
             if (area.mapped)
@@ -1143,12 +1156,59 @@ function makeRegion(r, activity) {
         style_class: 'buoy-block', orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
     });
-    addAll(box, [
-        r.title ? label(r.title, 'buoy-title') : null,
+    const texts = [
+        r.title ? label(r.title, r.hero ? 'buoy-title buoy-title-hero' : 'buoy-title') : null,
         r.subtitle ? label(r.subtitle, 'buoy-subtitle') : null,
-        r.bar !== null ? meter('bar', r.bar, 0) : null,
-    ]);
+        ...(r.lines ?? []).map(l => label(l, 'buoy-subtitle buoy-line')),
+    ];
+    addAll(box, [...texts, r.bar !== null ? meter('bar', r.bar, 0) : null]);
+    if (r.typed)
+        typeIn(texts.filter(Boolean), activity);
     return box;
+}
+
+// Typed in (GREETING.md principle 7): the labels fill a character at a time, one after
+// another. The text not yet typed is there but transparent (Pango alpha), so the size never
+// moves while it types. How far it got comes from when this activity first showed it, so a
+// rebuild (an update, a re-render) goes on where it was. One timer while mapped and
+// typing; none once all is in, unmapped, destroyed, or with animations off (whole at once).
+function typeIn(labels, activity) {
+    if (!labels.length)
+        return;
+    const texts = labels.map(l => l.text);
+    const total = texts.reduce((n, t) => n + [...t].length, 0);
+    const start = startOf(`${activity?.id}\u0000${activity?._seq}\u0000typed`);
+    const draw = chars => typedSplit(texts, chars).forEach((n, i) => {
+        const all = [...texts[i]];
+        const shown = GLib.markup_escape_text(all.slice(0, n).join(''), -1);
+        const rest = GLib.markup_escape_text(all.slice(n).join(''), -1);
+        labels[i].clutter_text.set_markup(rest ? `${shown}<span alpha="1">${rest}</span>` : shown);
+    });
+    let timer = 0;
+    const stop = () => {
+        if (timer)
+            GLib.source_remove(timer);
+        timer = 0;
+    };
+    const typeStep = () => {
+        const chars = St.Settings.get().enable_animations ? Math.floor((now() - start) / TYPE_MS) : total;
+        draw(Math.min(chars, total));
+        return chars < total;
+    };
+    const area = labels[0];
+    area.connect('notify::mapped', () => {
+        stop();
+        if (!area.mapped || !typeStep())
+            return;
+        timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TYPE_MS, () => {
+            if (typeStep())
+                return GLib.SOURCE_CONTINUE;
+            timer = 0;
+            return GLib.SOURCE_REMOVE;
+        });
+    });
+    area.connect('destroy', stop);
+    typeStep();
 }
 
 /**

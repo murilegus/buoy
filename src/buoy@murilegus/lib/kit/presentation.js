@@ -47,6 +47,37 @@ import {mnemonics} from './keys.js';
 import {poseName} from './mascot.js';
 
 export const MAX_ACTIONS = {minimal: 1, compact: 3, expanded: 3};
+/** An expanded block's extra lines (the greeting's): more would not fit the cap. */
+export const MAX_LINES = 6;
+
+/**
+ * Typed-in text (GREETING.md principle 7): how much of each piece shows `chars`
+ * characters in, the pieces typed one after another.
+ *
+ * @param {string[]} texts
+ * @param {number} chars  characters typed so far
+ * @returns {number[]} for each piece, how many of its characters show
+ */
+export function typedSplit(texts, chars) {
+    let left = Math.max(0, Math.floor(chars));
+    return texts.map(t => {
+        const n = Math.min(left, [...t].length);
+        left -= n;
+        return n;
+    });
+}
+
+/** ms per typed character (GREETING.md principle 7): the kit types at it, adapters time by it. */
+export const TYPE_MS = 28;
+
+/**
+ * @param {string[]} texts
+ * @param {number} msPerChar
+ * @returns {number} ms to type them all
+ */
+export function typingMs(texts, msPerChar) {
+    return texts.reduce((n, t) => n + [...t].length, 0) * msPerChar;
+}
 const LIGHTS = new Set(['off', 'missed', 'waiting']);
 
 // INDICATORS.md: state colours belong to the light/dot slots, never to a keyline.
@@ -97,8 +128,12 @@ export function element(e, {leading = false} = {}) {
         return icon(e);
     if ('mascot' in e) {
         const pose = leading ? poseName(e.mascot) : null;
-        if (pose)
-            return {type: 'mascot', pose};
+        if (pose) {
+            // `hello`: wave for HELLO_MS, then idle (the greeting, GREETING.md §6); `size`:
+            // Bu's px in expanded, a multiple of his 10 cells, 20–100 (as tall as the text)
+            const size = Number.isInteger(e.size) && e.size % 10 === 0 && e.size >= 20 && e.size <= 100 ? e.size : null;
+            return {type: 'mascot', pose, ...e.hello === true ? {hello: true} : {}, ...size ? {size} : {}};
+        }
         return icon(e.icon) ?? (leading ? {type: 'mascot', pose: 'idle'} : null);
     }
     // art: a file path or URI (album art), or a Gio.Icon from the source (a copied image's
@@ -365,8 +400,16 @@ function region(r, name) {
         if (r.transport === true)
             return {type: 'actions'};
         const title = str(r.title), subtitle = str(r.subtitle);
-        if (title || subtitle)
-            return {type: 'block', title, subtitle, bar: isNum(r.progress) ? clamp01(r.progress) : null};
+        // `lines`: more lines under them (the greeting's basics, at most MAX_LINES);
+        // `typed`: the text types itself in (GREETING.md principle 7); `hero`: a larger title
+        const lines = Array.isArray(r.lines) ? r.lines.map(str).filter(Boolean).slice(0, MAX_LINES) : [];
+        if (title || subtitle || lines.length) {
+            return {
+                type: 'block', title, subtitle, bar: isNum(r.progress) ? clamp01(r.progress) : null,
+                ...lines.length ? {lines} : {}, ...r.typed === true ? {typed: true} : {},
+                ...r.hero === true ? {hero: true} : {},
+            };
+        }
     }
     return element(r);
 }

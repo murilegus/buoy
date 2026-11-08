@@ -24,7 +24,10 @@ export const PAGES = ['general', 'modules', 'apps', 'panel'];
 export const PLACES = {
     'idle-content': 'idle',     // Island page, "When idle"
     'idle-auto-interval': 'idle', // Island page, under Show (SPEC §2a-iii)
-    'idle-auto-plans': null,    // the plan rows' switches and order: FEATURES M3 "Prefs: Island page"
+    'idle-auto-plans': null,
+    'prefs-page': null,         // bookkeeping: the page prefs opens on (GREETING.md §11)
+    'greeting-intro-shown': null,   // bookkeeping; About's "Show Bu's introduction again" resets it
+    'greeting-version-seen': null,  // bookkeeping (GREETING.md §11)    // the plan rows' switches and order: FEATURES M3 "Prefs: Island page"
     'expanded-width': 'general',
     'keybind-focus': 'general',
     // the kit's rule for every waiting activity (2026-11-07, Ethan; was media's
@@ -384,6 +387,12 @@ export const MODULE_GROUPS = [
         id: 'tabs', title: 'Tabs',
         description: 'A tab of their own, in the strip\'s slot or pinned.',
         modules: ['calendar', 'clipboard'],
+    },
+    {
+        // a switch for those who would rather Bu kept quiet (2026-11-08, Ethan)
+        id: 'bu', title: 'Bu',
+        description: 'Bu speaking up on his own.',
+        modules: ['greeting'],
     },
 ];
 // An idle plan's module that is nothing else (clock) is in no group: its switch is on

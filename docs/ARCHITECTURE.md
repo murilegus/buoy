@@ -54,9 +54,11 @@ src/buoy@murilegus/
     └── modules/            FEATURES — one self-contained folder each
         └── <id>/
             ├── index.js    export default {id, kinds, source, adapter, tab?,
-            │               title?, icon?, tabWhileLive?}   title/icon: its tab in the
-            │               strip; tabWhileLive: that tab only while one of its activities
-            │               is there (2026-11-07)
+            │               title?, icon?, tabWhileLive?, noTab?, badge?}   title/icon: its
+            │               tab in the strip; tabWhileLive: that tab only while one of its
+            │               activities is there (2026-11-07); noTab: never a tab, its
+            │               activities open on their own (the greeting, 2026-11-08); badge():
+            │               a dot on its tab's icon (2026-11-08)
             ├── source.js   watches a system facility, calls stack.surface/update/end;
             │               `enable(stack, registry, settings)` (settings: its `<id>-…`
             │               keys, 2026-11-05)
