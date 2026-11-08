@@ -81,6 +81,7 @@ buoy/
 ├── .github/workflows/release.yml   a tag v<version-name> publishes the zip on GitHub
 ├── tests/    gjs unit tests (*.test.js), run by tests/run.sh
 ├── .githooks/pre-commit · .github/workflows/ci.yml   both run `pnpm verify`
+├── .github/dependabot.yml   monthly updates of the actions the workflows pin
 ├── docs/
 │   ├── SPEC.md           what Buoy is and is not; v0.1 decisions
 │   ├── ARCHITECTURE.md   module/feature layout, rules, settings model
