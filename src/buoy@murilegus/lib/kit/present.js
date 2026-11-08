@@ -246,6 +246,44 @@ function meter(kind, value, size) {
 export const FILL = Symbol('buoy-fill');
 
 /**
+ * @param {Clutter.Actor} actor
+ * @returns {?{fill: number, top: number, bottom: number, left: number, right: number}}
+ *   the body's content height (`view[FILL]`) and what the boxes between take on each side
+ *   (padding and border); null outside Home
+ */
+function bodyFill(actor) {
+    const inset = {top: 0, bottom: 0, left: 0, right: 0};
+    for (let p = actor.get_parent(); p; p = p.get_parent()) {
+        if (p[FILL] > 0)
+            return {fill: p[FILL], ...inset};
+        if (p instanceof St.Widget) {
+            const node = p.get_theme_node();
+            for (const [side, key] of [[St.Side.TOP, 'top'], [St.Side.BOTTOM, 'bottom'],
+                [St.Side.LEFT, 'left'], [St.Side.RIGHT, 'right']])
+                inset[key] += node.get_padding(side) + node.get_border_width(side);
+        }
+    }
+    return null;
+}
+
+/**
+ * A box exactly as tall as the body allows: a tab that uses the panel's full expanded
+ * height whatever its content, which scrolls inside it (the Calendar tab, 2026-11-08,
+ * Ethan). Its own padding counts in its height, as St's. Outside Home, its natural height.
+ */
+export const FillBox = GObject.registerClass(
+class FillBox extends St.BoxLayout {
+    vfunc_get_preferred_height(forWidth) {
+        const [min, nat] = super.vfunc_get_preferred_height(forWidth);
+        const body = bodyFill(this);
+        if (!body)
+            return [min, nat];
+        const h = Math.max(0, body.fill - body.top - body.bottom);
+        return [Math.min(min, h), h];
+    }
+});
+
+/**
  * A tab or list with nothing in it (2026-11-06, Ethan): one colour everywhere, Bu over
  * the text in a pose that fits (2026-11-07), centred both ways, and as tall as the body allows — the panel opens at its full
  * expanded height instead of a thin strip. Its natural height is the content height Home
@@ -291,24 +329,15 @@ class EmptyState extends St.Bin {
     // tab (2026-11-08, Ethan). A translation: it moves nothing else.
     vfunc_get_preferred_height(forWidth) {
         const [min, nat] = super.vfunc_get_preferred_height(forWidth);
-        const inset = {top: 0, bottom: 0, left: 0, right: 0};
-        for (let p = this.get_parent(); p; p = p.get_parent()) {
-            if (p[FILL] > 0) {
-                const child = this.get_child();
-                if (child) {
-                    child.translation_y = Math.round((inset.bottom - inset.top) / 2);
-                    child.translation_x = Math.round((inset.right - inset.left) / 2);
-                }
-                return [min, Math.max(nat, p[FILL] - inset.top - inset.bottom)];
-            }
-            if (p instanceof St.Widget) {
-                const node = p.get_theme_node();
-                for (const [side, key] of [[St.Side.TOP, 'top'], [St.Side.BOTTOM, 'bottom'],
-                    [St.Side.LEFT, 'left'], [St.Side.RIGHT, 'right']])
-                    inset[key] += node.get_padding(side) + node.get_border_width(side);
-            }
+        const body = bodyFill(this);
+        if (!body)
+            return [min, nat];
+        const child = this.get_child();
+        if (child) {
+            child.translation_y = Math.round((body.bottom - body.top) / 2);
+            child.translation_x = Math.round((body.right - body.left) / 2);
         }
-        return [min, nat];
+        return [min, Math.max(nat, body.fill - body.top - body.bottom)];
     }
 });
 

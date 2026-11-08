@@ -5,7 +5,7 @@ import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
-import {EmptyState, buildElement} from '../../kit/present.js';
+import {EmptyState, FillBox, buildElement} from '../../kit/present.js';
 import {agenda, dayRows, dayStart} from './agenda.js';
 import {EventReader} from './events.js';
 import {isWeekend, monthDays, monthTitle, pickedTitle, stepDay, weekdayInitials} from './month.js';
@@ -43,7 +43,8 @@ export class CalendarTab {
         this._picked = dayStart(now.getTime());
         this._year = now.getFullYear();
         this._month = now.getMonth();
-        this.actor = new St.BoxLayout({style_class: 'buoy-calendar', x_expand: true});
+        // the panel's full expanded height, the list scrolling inside it (2026-11-08)
+        this.actor = new FillBox({style_class: 'buoy-calendar', x_expand: true});
         this._reader = new EventReader(() => this._redraw(), {everyChange: true});
         this._reader.ensureToday();
         this._render();
@@ -81,17 +82,13 @@ export class CalendarTab {
             return;
         }
         const month = this._monthSide();
+        // the list scrolls inside the tab's height (the panel's full one); the month stays
         const list = new St.ScrollView({
-            style_class: 'buoy-calendar-list', x_expand: true,
+            style_class: 'buoy-calendar-list', x_expand: true, y_expand: true,
             hscrollbar_policy: St.PolicyType.NEVER, vscrollbar_policy: St.PolicyType.AUTOMATIC,
             overlay_scrollbars: true,
         });
         list.set_child(this._listSide());
-        // the list scrolls inside the month's height; the month never scrolls away
-        month.connect('notify::height', () => {
-            if (month.height > 0)
-                list.height = month.height;
-        });
         this.actor.add_child(month);
         this.actor.add_child(list);
     }
