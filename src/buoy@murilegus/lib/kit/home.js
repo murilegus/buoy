@@ -231,6 +231,9 @@ export class Home {
     }
 
     select(id) {
+        // a tab that is not in the strip (a kind tab with nothing to show) is no target
+        if (!findTab(this._strip, id))
+            return;
         this._closeMenu(false);
         this._current = id;
         this._renderStrip();
