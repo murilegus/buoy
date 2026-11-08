@@ -243,6 +243,7 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
 | `greeting-holidays` | s | `auto` | yes | `auto` · `global` · `off` (§7) |
 | `greeting-intro-shown` | b | false | no (bookkeeping) | the intro showed once (§11) |
 | `greeting-version-seen` | i | 0 | no (bookkeeping) | the last version What's new spoke for (§11) |
+| `prefs-page` | s | `''` | no (bookkeeping) | the prefs page to open, then cleared (`whats-new`, §11) |
 | `greeting-boot` | s | `''` | no (bookkeeping) | the boot of the last Start |
 | `greeting-session` | s | `''` | no (bookkeeping) | the logind session of the last greeting |
 | `greeting-asleep` | i | 0 | no (bookkeeping) | seconds asleep since boot, at the last disable |
@@ -299,12 +300,22 @@ integer):
   one, else the number; EGO writes its own counter into `version` on upload, so the
   comparison follows EGO's releases),
   then up to 4 lines from the notes, new things first, then fixes; more than that ends
-  with "…and more" and a click on it opens the release page (the project's GitHub
-  releases, `metadata.json` `url`). Notes are bundled, never fetched (no network, EGO):
+  with "…and more", and a click on it opens Buoy's prefs on About → What's new (below;
+  2026-11-08, Ethan). Notes are bundled, never fetched (no network, EGO):
   `modules/greeting/notes.js`, one entry per version `{version, name, added: [], fixed:
   []}`, written with each release. A version with no entry says nothing and still counts
   as seen. Skipped versions (an update from v0.1 straight to v0.4): the newest version's
   notes only, not a list of every release.
+- **About → What's new** (prefs, 2026-11-08, Ethan). A row on the About page opens a
+  subpage with every version's notes, newest first — the running version's on top; for
+  v0.1 that is the introduction. The same `notes.js` (pure data, so prefs may import it,
+  as it does `kit/settings.js`): written once, said by Bu and listed here. To open prefs on
+  that page ("…and more"), the Shell side writes the bookkeeping key `prefs-page` =
+  `whats-new` and opens prefs (`Main.extensionManager.openExtensionPrefs`); prefs reads
+  it when it builds its window, shows the page and clears the key, and an open prefs
+  window follows the key's change. A key, because Shell's `OpenExtensionPrefs` passes
+  nothing else on (`js/dbusServices/extensions/extensionsService.js`: of the options only
+  `modal`).
 - **Tests.** The case from the two keys and the version (fresh install, update, same
   version, a downgrade says nothing, a version with no notes); the lines for each; the
   cap and "…and more"; the typing's steps and its end (pure: the text shown after n ms);
