@@ -3,7 +3,7 @@ import {
     HORIZON_DAYS, SOON, dayStart, isAllDay, normalise, nextEvent, relevance, whenText, spanText, relativeText,
     rangeText, dayLabel, agenda, dayRows, detailText, upNext, upNextDetail, UP_NEXT_MAX, NEAR,
 } from '../src/buoy@murilegus/lib/modules/calendar/agenda.js';
-import {monthDays, weekdayInitials, monthTitle, stepDay, pickedTitle, isWeekend} from '../src/buoy@murilegus/lib/modules/calendar/month.js';
+import {monthDays, weekdayInitials, monthTitle, stepDay, pickedTitle, isWeekend, cellSize, cellFont, CELL_MIN, CELL_MAX} from '../src/buoy@murilegus/lib/modules/calendar/month.js';
 import plan, {present, ICON, keys, ticks} from '../src/buoy@murilegus/lib/modules/calendar/idle.js';
 import {planIdle} from '../src/buoy@murilegus/lib/kit/presentation.js';
 
@@ -228,5 +228,18 @@ eq(isAllDay(ev('z', at(0), at(0))), false, 'zero length at midnight: not all-day
         'Up next: no start text → the tab\'s line, never "· in"');
     eq(NEAR, 2 * 60 * MIN, 'Up next: near is 2 h');
 }
+
+// --- the grid's size for the tab's height (2026-11-08) ---------------------------------------
+eq([CELL_MIN, CELL_MAX], [26, 40], 'grid: circles from 26 to 40 px');
+eq(cellSize(165), 26, 'grid: 1920\'s room (165 px) → 26, as before');
+eq(cellSize(243), 40, 'grid: 2560\'s room (243 px) → 40');
+eq(cellSize(200), 32, 'grid: a sixth, rounded down to even (33 → 32)');
+eq(cellSize(198), 32, 'grid: an even sixth kept');
+eq(cellSize(100), 26, 'grid: never under 26 (the list scrolls; the month keeps its size)');
+eq(cellSize(1000), 40, 'grid: never over 40');
+eq([cellSize(0), cellSize(-50), cellSize(NaN), cellSize(undefined), cellSize(Infinity)], [26, 26, 26, 26, 26],
+    'grid: no room known → the least');
+eq([cellFont(26), cellFont(32), cellFont(40)], [12, 15, 16], 'grid: the number grows with the circle, 12 to 16');
+eq([cellFont(10), cellFont(100)], [12, 16], 'grid: the number stays within 12–16');
 
 print('calendar: ok');

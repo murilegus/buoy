@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
 import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
@@ -8,7 +9,7 @@ import St from 'gi://St';
 import {EmptyState, FillBox, buildElement} from '../../kit/present.js';
 import {agenda, dayRows, dayStart} from './agenda.js';
 import {EventReader} from './events.js';
-import {isWeekend, monthDays, monthTitle, pickedTitle, stepDay, weekdayInitials} from './month.js';
+import {CELL_MIN, cellFont, cellSize, isWeekend, monthDays, monthTitle, pickedTitle, stepDay, weekdayInitials} from './month.js';
 
 /**
  * The Calendar tab (FEATURES M3 "calendar"; a standalone tab, SPEC §2b; two sides,
@@ -45,6 +46,13 @@ export class CalendarTab {
         this._month = now.getMonth();
         // the panel's full expanded height, the list scrolling inside it (2026-11-08)
         this.actor = new FillBox({style_class: 'buoy-calendar', x_expand: true});
+        // the month scales with the tab's height (2026-11-08, Ethan): the circles take a
+        // sixth of what the head and weekdays leave (month.js cellSize), measured once the
+        // tab has its height and again when it changes (Home sets the body's room after its
+        // first layout); laid out just before the next redraw, never inside an allocation
+        this._cell = CELL_MIN;
+        this._fitLater = 0;
+        this.actor.connect('notify::height', () => this._fitLaterOnce());
         this._reader = new EventReader(() => this._redraw(), {everyChange: true});
         this._reader.ensureToday();
         this._render();
@@ -58,10 +66,38 @@ export class CalendarTab {
         if (this._redrawId)
             GLib.source_remove(this._redrawId);
         this._redrawId = 0;
+        if (this._fitLater)
+            global.compositor.get_laters().remove(this._fitLater);
+        this._fitLater = 0;
         this._reader?.destroy();
         this._reader = null;
         this._close = null;
         this.actor.destroy();
+    }
+
+    _fitLaterOnce() {
+        if (this._fitLater)
+            return;
+        this._fitLater = global.compositor.get_laters().add(Meta.LaterType.BEFORE_REDRAW, () => {
+            this._fitLater = 0;
+            this._fit();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    // The six weeks' room: the tab's content height less what the month side takes besides
+    // them (its head, the weekdays, paddings) at the current size
+    _fit() {
+        const side = this._side;
+        if (!side || !this.actor.mapped)
+            return;
+        const content = this.actor.height - this.actor.get_theme_node().get_vertical_padding();
+        const [, natural] = side.get_preferred_height(-1);
+        const cell = cellSize(content - (natural - 6 * this._cell));
+        if (cell === this._cell)
+            return;
+        this._cell = cell;
+        this._render();
     }
 
     // A recurring event's instances come in one signal each: draw once
@@ -77,6 +113,7 @@ export class CalendarTab {
 
     _render() {
         this.actor.destroy_all_children();
+        this._side = null;
         if (!this._reader?.state.hasCalendars) {
             this.actor.add_child(new EmptyState('No calendars', {pose: 'idle', below: this._accountsButton()}));
             return;
@@ -91,6 +128,7 @@ export class CalendarTab {
         list.set_child(this._listSide());
         this.actor.add_child(month);
         this.actor.add_child(list);
+        this._side = month;
     }
 
     // ‹ November › over the weekday heads and six weeks of days
@@ -116,14 +154,22 @@ export class CalendarTab {
 
         const layout = new Clutter.GridLayout();
         const grid = new St.Widget({style_class: 'buoy-calendar-grid', layout_manager: layout});
-        weekdayInitials(weekStart).forEach((d, i) => layout.attach(new St.Label({
-            text: d, style_class: 'buoy-calendar-weekday', x_align: Clutter.ActorAlign.CENTER,
-        }), i, 0, 1, 1));
+        // the day's circle and number at the size the tab's height allows (_fit)
+        const px = this._cell, size = `width: ${px}px; height: ${px}px; border-radius: ${px / 2}px; ` +
+            `font-size: ${cellFont(px)}px;`;
+        weekdayInitials(weekStart).forEach((d, i) => {
+            const weekday = new St.Label({
+                text: d, style_class: 'buoy-calendar-weekday', x_align: Clutter.ActorAlign.CENTER,
+            });
+            weekday.set_style(`width: ${px + 4}px;`);   // the circle and its 2 px margins
+            layout.attach(weekday, i, 0, 1, 1);
+        });
         monthDays(this._year, this._month, {weekStart}).forEach((d, i) => {
             const button = new St.Button({
                 style_class: 'buoy-calendar-day', can_focus: true,
                 accessible_name: pickedTitle(d.day, now),
             });
+            button.set_style(size);
             if (!d.inMonth)
                 button.add_style_class_name('buoy-calendar-other');
             else if (isWeekend(d.day))
