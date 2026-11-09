@@ -655,14 +655,18 @@ export default class BuoyPreferences extends ExtensionPreferences {
             this._settings.set_boolean('idle-weather-automatic', false);
             search.text = '';
         };
+        // The results go right under the field (#170): add_row appends after the unit rows,
+        // so they are inserted into the expander's own Gtk.ListBox — the field's parent
+        // (adw-expander-row.c `adw_expander_row_add_row` appends there) — after the field.
         search.connect('changed', () => {
             cities ??= citiesOf(world).map(loc => ({loc, ...describe(loc)}));
+            const list = search.get_parent();
             for (const r of shown)
-                row.remove(r);
-            shown = searchPlaces(cities, search.text).map(c => {
+                list.remove(r);
+            shown = searchPlaces(cities, search.text).map((c, i) => {
                 const r = new Adw.ActionRow({title: c.name, subtitle: placeLabel({...c, name: null}), activatable: true});
                 r.connect('activated', () => pick(c.loc));
-                row.add_row(r);
+                list.insert(r, search.get_index() + 1 + i);
                 return r;
             });
         });
