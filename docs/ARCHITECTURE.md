@@ -132,7 +132,7 @@ bilingual: `page.md` in English and `page.vi.md` in Vietnamese side by side; a d
 written and decided in Vietnamese first, the other docs keep English as their source (they are
 not translated yet: Ethan wants them made shorter first). `mkdocs.yml` (repo root) builds the
 site with MkDocs Material and mkdocs-static-i18n — only in CI (`.github/workflows/docs.yml` →
-GitHub Pages; versions in `docs/requirements.txt`), never part of the extension or of
+GitHub Pages; versions in `requirements-docs.txt`, beside `mkdocs.yml`), never part of the extension or of
 `package.json`. The design lives in `docs/design/`:
 
 ```

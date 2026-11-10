@@ -36,7 +36,6 @@ exclude_docs: |
   *.js
   *.sh
   render/
-  requirements.txt
 
 plugins:
   - search
