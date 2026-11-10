@@ -1,6 +1,7 @@
 # The docs site (docs/ARCHITECTURE.md, "The docs and their site"). Built only in CI
 # (.github/workflows/docs.yml → GitHub Pages), never part of the extension. Preview locally:
-#   uvx --from mkdocs-material --with mkdocs-static-i18n mkdocs serve
+#   uvx --with-requirements requirements-docs.txt --from mkdocs mkdocs serve
+#   (the pinned versions; http://127.0.0.1:8000, the Vietnamese site under /vi/)
 # Every page may have a Vietnamese twin, page.vi.md beside page.md; a page that has only one
 # language shows in that language's site.
 site_name: Buoy
