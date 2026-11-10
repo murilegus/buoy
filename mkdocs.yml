@@ -27,7 +27,10 @@ theme:
 
 markdown_extensions:
   - tables
-  - toc: {permalink: true}
+  # anchors keep accents, as GitHub's do, so a link works in both
+  - toc:
+      permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify {kwds: {case: lower}}
   - admonition
   - attr_list
   - md_in_html
