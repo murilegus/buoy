@@ -29,8 +29,8 @@ src/buoy@murilegus/
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
     │   ├── activity.js     contract (CONTRACT.md §1), validate + normalise
-    │   ├── stack.js        surface / update / end / schedule / ask; the pill order (PRIORITY.md);
-    │   │                   ttl, stale, transient, alert; apps.hidden filter; missed history;
+    │   ├── stack.js        pure (no Shell; an injected clock): surface / update / end / schedule / ask; the pill order (PRIORITY.md);
+    │   │                   ttl, stale, transient, alert; `apps-hidden` filter; missed history;
     │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
     │   ├── presentation.js presentation data → render plan; pure, unit-tested (2026-11-01)
     │   ├── present.js      render plan → St actors. ONLY place content actors are made
@@ -115,8 +115,8 @@ One module may combine the first two (calendar: next-event activity + idle plan 
 A standalone tab never surfaces activities; if it needs to, it becomes a source module.
 
 v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` (the copied flash) and `clipboard` (the Clipboard tab; one module 2026-11-05, apart again 2026-11-07, Ethan: two switches), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `agent` (Claude Code's sessions and permission prompts; was the stub `ask`, 2026-11-07); `notification`,
-`timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
-roadmap items, so their tabs show from v0.1 (2026-11-02);
+`timer` is imported as a stub without a source until its roadmap item, so its tab shows
+from v0.1 (2026-11-02);
 idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone tabs `calendar` (the month and the picked day's events, 2026-11-08), `clipboard` (stub `tab.js`, in that order, 2026-11-02). `greeting`: its first run and What's new in v0.1, the rest in M4 (2026-11-08).
 
 ## Outside the extension (2026-11-08)
@@ -126,7 +126,8 @@ a GitHub release, a zip or a clone; it uses the installed extension's own `hooks
 `kit/settings.js` (pure) on removal. A tag `v<version-name>` publishes a release
 (`.github/workflows/release.yml`, `scripts/release-check.sh`) with
 `docs/releases/<version-name>.md` as its notes; `tests/metadata.test.js` keeps the version's
-name the same in metadata.json, notes.js and package.json.
+name the same in metadata.json, notes.js and package.json, and checks that metadata's
+`settings-schema` names the schema (`enable()` throws without it).
 `README.md` is for people who use Buoy (install, settings, privacy, limits);
 `CONTRIBUTING.md` holds the repository tree, the setup and the release steps (2026-11-08).
 
@@ -190,10 +191,13 @@ fields and order: [PROFILES.md](PROFILES.md).
    in two kinds has two small files. No central `apps/<app>/` folder.
 5. **One slug per app** across every source (MPRIS bus name, desktop id, notification
    app name) — the table lives in `kit/registry.js`; modules only see the slug.
-6. **Module off = not imported** (`modules.<id> = false`): no signal connected, no actor
-   created, zero cost. Hiding an app (`apps.hidden`) is a stack filter, not an adapter concern.
+6. **Module off = not imported** (`modules-<id>` false): no signal connected, no actor
+   created, zero cost. Hiding an app (`apps-hidden`) is a stack filter, not an adapter concern.
 7. **No code loaded at runtime** (EGO rule). User customisation is JSON profiles only:
-   icon, title template, hide body, priority, ttl, simple regex. Logic needs a PR.
+   icon, title template, hide body, priority, ttl, simple regex. Logic needs a PR. Also for
+   EGO review: no synchronous file IO in the Shell process (`kit/files.js` reads async);
+   signals tied to their owner with `connectObject` / `disconnectObject`; the Extension object
+   is passed down from `extension.js`, never looked up by URL.
 8. **No polling while closed; no blur; nothing animating while idle.** A source that must
    poll (progress bar position) polls only while its activity is visible. "Animating"
    means looping or continuous motion: a change of idle content (clock minute, `auto`
@@ -216,7 +220,7 @@ fields and order: [PROFILES.md](PROFILES.md).
    own keys are named `<id>-…` and appear inside its row on the Modules page, **except an
    idle plan's**: keys named `idle-<plan>-…` appear on the **Island** page under their
    plan, so what the idle pill shows and how is set in one place (2026-11-04, Ethan). A
-   module that is only an idle plan (clock) has its switch on its plan's row there too and
+   module that is only an idle plan (clock, weather) has its switch on its plan's row there too and
    no row on Modules (2026-11-06, Ethan; was a switch-only row on Modules); a module that
    is more than its plan keeps its row on Modules. Each key has exactly one place: `kit/settings.js` places the rest
    and lists the idle plans (prefs cannot import a module, below), and

@@ -46,7 +46,8 @@ pill, since only expanded shows every option (decided 2026-11-01); `dismiss(id)`
 (red light), any other activity just ends. `ttl: 0` lives until ended; the 8 h cap
 applies to a set `ttl` (`kit/stack.js`, 2026-11-01).
 
-Apple rules kept as code: 8 h cap, end removes from the pill immediately, relevance decides
+`validate()` throws on bad adapter or caller output (the registry, `surface`, `update`,
+`schedule`). Apple rules kept as code: 8 h cap, end removes from the pill immediately, relevance decides
 which shows, stale state renders dimmed, alert = brief expanded, transient ends on outside click.
 
 ## 2. Tiers
@@ -71,14 +72,14 @@ has no room for (media: player choice, the app's volume, shuffle/repeat).
 ## 3. Adapters
 
 ```js
-// lib/apps/default.js — one method per kind, returns presentation data, not actors
+// modules/<id>/adapter.js — one method per kind, returns presentation data, not actors
 media(a)        → { leading: art, text: `${title} · ${artist}`, trailing: eqGlyph, expanded: {...}, actions: [playPause] }
-notification(a) → { leading: appIcon, text: title, trailing: null, ttl: 3000, actions: n.actions.slice(0,1) }
+notification(a) → { leading: appIcon, text: title, trailing: null, ttl: 6000, actions: n.actions.slice(0,1) }
 progress(a)     → { leading: appIcon, text: label, trailing: ring(fraction) }
 osd(a)          → { leading: icon, text: device | word | null, trailing: {bar, label: '62', off?}, ttl: 1500 }
 power(a), timer(a), ask(a) …
 
-// lib/apps/spotify.js — override only what differs
+// modules/media/apps/spotify.js — override only what differs
 export default { media(a) { ...detect 'Advertisement' → text 'Ad', trailing countdown } }
 ```
 
@@ -106,7 +107,7 @@ agent(a) → { leading: {mascot: pose(a.state.event)}, text: `${a.attributes.age
              trailing: {countdown: a.state.elapsed} }   // pose(): MASCOT.md § Agents
 ```
 
-Resolution: `apps/<normalised app>.js[kind]` → `apps/default.js[kind]`. An app that speaks
+Resolution: `modules/<id>/apps/<slug>.js[kind]` → the module's `adapter.js[kind]`. An app that speaks
 the D-Bus API can send its own presentation data and bypass adapters entirely (that is the
 "app adopts ActivityKit" path).
 

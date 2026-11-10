@@ -11,7 +11,8 @@ an AI, drop files, or browse tools. Expanded may host a few tool tabs (off by de
 §2b), but nothing in the pill ever comes from them.
 
 - Pure GNOME Shell extension. Ships on extensions.gnome.org, installs in one click,
-  updates through the Extensions app. No daemon, no binaries, no `curl | bash`.
+  updates through the Extensions app. No daemon, no binaries. `install.sh` is the one way
+  around EGO (README), reading a GitHub release.
 - No polling while closed, no blur, nothing animating while idle.
 - Every feature must be reachable from GNOME Shell's own APIs plus GLib/Gio/Soup.
 
@@ -233,9 +234,7 @@ Three tiers (decided 2026-11-05, Ethan), named by size: **minimal** < **compact*
 - **expanded** — on click, or opened by the stack: the panel with tabs; it carries what
   compact has no room for (media: player choice, the app's volume, shuffle/repeat).
 
-The code uses these names since FEATURES M3 "Three tiers: names in code" (2026-11-05); the
-older notes in FEATURES still say compact for minimal, peek for compact and minimal mode
-for several pills.
+The code uses these names since 2026-11-05 (before: compact for minimal, peek for compact).
 
 | State | When | Shape | Interaction |
 |---|---|---|---|
@@ -305,11 +304,11 @@ idle `none` keeps the full 120 px.
 
 ### 2a-i. The buoy light (left edge slot, idle, minimal and compact)
 
-Static, never blinking. Off (faint grey, idle `none` only) · **amber** = something ended while you were
-away / fullscreen (missed history: hover names it, opening Home turns it off — 2026-11-03), or GNOME's
+Static, never blinking. Off (faint grey, idle `none` only) · **amber** = something ended while the island
+was hidden (fullscreen; away and DND are M4) (missed history: hover names it, opening Home turns it off — 2026-11-03), or GNOME's
 notifications nobody has seen (off once the Notifications tab or GNOME's list shows them —
 2026-11-08, NOTIFICATIONS.md §2) · **red** = something
-is waiting for your answer (an `ask` while DND). Red › amber. Shown in idle, minimal
+is waiting for your answer (an `ask` that could not show). Red › amber. Shown in idle, minimal
 **and** compact — it is a separate slot, so it never competes with the app icon; `present.js`
 nudges the leading zone inward when the light is on. Hidden only while expanded, where
 Home already lists what was missed.
@@ -391,8 +390,7 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   Tabs = modules that ship `tab.js`; Home is always first; order follows §6.
 - **Kind tabs** (decided 2026-11-02): every enabled module with kinds has its tab, always
   shown, running or not (default strip: Home · Media · Notifications · Transfers · Timer ·
-  [Calendar] · ⋯; Notifications, Transfers and Timer are stub modules until their
-  roadmap items); until it ships `tab.js` the tab shows its activities' expanded
+  [Calendar] · ⋯; Timer is a stub module until its roadmap item); until it ships `tab.js` the tab shows its activities' expanded
   views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied;
   §2e) have no kind tab; a module with only a `tab.js` (Clipboard, 2026-11-07) is a
   standalone tab, in the slot and ⋯ (2026-11-05). Kinds no module claims (D-Bus callers) get a tab while one of their
@@ -430,7 +428,7 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   - Standalone tabs are **not pinned by default**: a fresh install shows Home + kind tabs,
     the slot and ⋯. Calendar is the first (2026-11-02; its next-event activity in M4 may make it a kind
     tab), then Clipboard; both on by default, so Calendar sits in the slot until another is
-    chosen, their bodies empty until the M5 item (2026-11-02; was "off by default").
+    chosen, Clipboard's body "Coming soon" until its M5 item (2026-11-02; was "off by default").
   - May use Shell APIs in `tab.js`; still no polling while closed.
   - Likely first ones: Clipboard, Launcher. Not planned: Calculator, Emoji (GNOME search has them).
 
@@ -779,7 +777,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    title / artist · app (a title too long for the compact scrolls right to left: 2 s at
    the start, 30 px/s, two copies 40 px apart so each loop ends where it began; still and
    ellipsized with animations off; 2026-11-05, Ethan), ⏮ ⏯ ⏭, the position running with elapsed and remaining —
-   display only. Tab Media: players as chips, art, title (scrolling
+   display only; no compact when `media-compact-on-hover` ("Controls on hover") is off. Tab Media: players as chips, art, title (scrolling
    like the compact's when long) / artist / album, "Open app",
    a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. Laid out (2026-11-08, Ethan) as the art, a
    square as tall as the tab (at most 40 % of its width, 96–280 px), and a column beside it — title / artist / album · app with ↗
@@ -964,10 +962,10 @@ Buoy is a framework first, features second — see `CONTRACT.md` for the full co
   across apps, ttl and stale state, the three tiers (minimal — one to three pills —,
   compact on hover, expanded with leading/trailing/center/bottom regions), Home, motion, and the
   D-Bus API.
-- **Default adapters** (`lib/apps/default.js`) render every `kind` (media, notification,
+- **Default adapters** (each module's `adapter.js`) render every `kind` (media, notification,
   progress, osd, power, device, timer, ask, attention, copied, phone…) well enough that
   an app Buoy has never heard of still looks right.
-- **Per-app adapters** (`lib/apps/<app>.js`) override only the methods that need to differ
+- **Per-app adapters** (`modules/<id>/apps/<slug>.js`) override only the methods that need to differ
   (Spotify ad countdown, Telegram avatar, Firefox download names). Adapters return
   presentation data, never raw actors; the renderer keeps every app in the same visual
   language.

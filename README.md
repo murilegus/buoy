@@ -128,8 +128,7 @@ Click the pill, then **⚙** in Home — or run `gnome-extensions prefs buoy@mur
   and tune it.
 - **Apps** — per-app tweaks: an app's icon, name, priority or what it shows.
 - **Panel** — the left and right clusters of the top bar.
-- **Windows** — maximized windows under the top bar, and the Dock and Clock settings (the
-  same ones as Ubuntu's Dock and GNOME's Date & Time, synced both ways).
+- **Windows** — maximized windows under the top bar.
 - **About** — the version, Bu, links, and "Support Buoy" when donations are set.
 
 ### Claude Code
