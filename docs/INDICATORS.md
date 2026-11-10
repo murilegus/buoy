@@ -26,16 +26,18 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 | Colour | Token | Meaning | Set by | Cleared by | Shown in |
 |---|---|---|---|---|---|
 | grey `#3a3a3a` | `light-off` | nothing | — | — | idle `none` only |
-| amber `#EF9F27` | `light-missed` | ≥1 activity ended while you were away (idle > N min), the island was hidden (fullscreen), or DND suppressed it; missed history has entries. Not counted (2026-11-01): `osd`, `copied` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, compact |
-| red `#E24B4A` | `light-waiting` | an `ask` activity exists that could not surface (DND, fullscreen, user dismissed) and still has no answer | `stack` when an `ask` is queued but not shown | the ask is answered, times out (→ deny), or is ended by the caller | idle, compact |
+| amber `#EF9F27` | `light-missed` | ≥1 activity ended while the island was hidden (fullscreen; away and DND are M4); missed history has entries. Not counted (2026-11-01): `osd`, `copied`, `input` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, minimal, compact |
+| red `#E24B4A` | `light-waiting` | an `ask` activity exists that could not surface (fullscreen, dismissed) and still has no answer | `stack` when an `ask` is queued but not shown | the ask is answered, times out (→ deny), or is ended by the caller | idle, minimal, compact |
 
 Precedence: red › amber › off. Only one light is drawn.
 
-Not states: the clock plan's daypart icons (SPEC §2a, 2026-11-04) are pale gold
-`#FAC775` and peach `#F5C4B3` beside the light, never amber or red; `tests/clock.test.js`
+Not states: the clock plan's daypart icons (SPEC §2a, 2026-11-04) are yellow
+`#FFD23F` and peach `#FFB889` (palette A) beside the light, never amber or red; `tests/clock.test.js`
 checks the files.
 
-### Bu's lamp (2026-11-03; 2026-11-08)
+### Bu's lamp
+
+*2026-11-03; 2026-11-08.*
 
 Bu's lamp shows its pose's colour, always. The buoy light is the pill's edge dot on a pill
 Bu leads too: amber/red never reach the lamp (2026-11-08, Ethan: the lamp is too small to
@@ -72,8 +74,8 @@ tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Red (waiting) has no compact
 
 | Colour | Token | Meaning | Source | Shown in |
 |---|---|---|---|---|
-| orange `#F0997B` | `dot-mic` | microphone in use by some app | Gvc source-output streams | idle, compact |
-| green `#5DCAA5` | `dot-cam` | camera in use, **or** screen is being shared/recorded | `Shell.CameraMonitor`; screencast / screen-share indicator | idle, compact |
+| orange `#F0997B` | `dot-mic` | microphone in use by some app | Gvc source-output streams | idle, minimal, compact |
+| green `#5DCAA5` | `dot-cam` | camera in use, **or** screen is being shared/recorded | `Shell.CameraMonitor`; screencast / screen-share indicator | idle, minimal, compact |
 
 Precedence when both: green › orange (camera/screen is the more sensitive one), one dot.
 Click → expanded Home with the "in use by …" row (app name, since when, Stop for recordings).

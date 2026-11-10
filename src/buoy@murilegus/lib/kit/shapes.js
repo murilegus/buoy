@@ -71,7 +71,7 @@ export function shapesFor(monitor, panelH, opts = {}) {
             r: 24,
         }),
         compactMax,
-        // h is the cap: expanded fits its content up to this height (APPLE.md B5.4)
+        // h is the cap: expanded fits its content up to this height (CONTRACT.md §5.4)
         expanded: {w: expW, h: expH, r: 28},
         container: {w: containerW, h: expH + 2 * OVERSHOOT},
     };

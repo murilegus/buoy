@@ -1,4 +1,6 @@
-# Architecture (decided 2026-10-30)
+# Architecture
+
+*Decided 2026-10-30.*
 
 Organised **by module/feature** (option B). Alternatives considered: by layer (hard to add
 or switch off a feature), by app (system sources don't belong to an app), satellite
@@ -18,8 +20,9 @@ src/buoy@murilegus/
 ├── reach.js                the Overview's workspace backgrounds grow under the see-through bar, so closing it ends on the whole wallpaper (2026-11-04)
 ├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
 ├── prefs.js                Adw prefs: Island, Modules (one row per module, in groups: live in the pill,
-│                           quick feedback, tabs — kit/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
-│                           2026-11-04), Windows (corners, 2026-11-04)
+│                           quick feedback, tabs, Bu — kit/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
+│                           2026-11-04), Windows (corners, 2026-11-04), About (version, Bu,
+│                           metadata `donations` as "Support Buoy", `dev-mode`)
 ├── schemas/                GSettings: the one source of every key, its summary and range
 ├── hooks/                  claude.js: Claude Code's hook (run by Claude Code, never by Buoy),
 │                           installed from prefs; stdin → D-Bus `Agent` (CODING-AGENTS.md, 2026-11-07)
@@ -27,12 +30,14 @@ src/buoy@murilegus/
 │                           source and draws docs/icons.png; 2026-11-06) and the lock-key symbolics
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
-    │   ├── activity.js     contract (APPLE.md §B1), validate + normalise
-    │   ├── stack.js        surface / update / end / schedule / ask; the pill order (PRIORITY.md);
-    │   │                   ttl, stale, transient, alert; apps.hidden filter; missed history;
+    │   ├── activity.js     contract (CONTRACT.md §1), validate + normalise
+    │   ├── stack.js        pure (no Shell; an injected clock): surface / update / end / schedule / ask; the pill order (PRIORITY.md);
+    │   │                   ttl, stale, transient, alert; `apps-hidden` filter; missed history;
     │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
     │   ├── presentation.js presentation data → render plan; pure, unit-tested (2026-11-01)
     │   ├── present.js      render plan → St actors. ONLY place content actors are made
+    │   │                   (cover art: St.Icon, loaded async, rounded by a Shell.GLSLEffect —
+    │   │                   not a CSS background-image, which St keeps in its texture cache)
     │   ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
     │   ├── pill.js         one pill: content, sizing, hover → compact, morph (2026-11-01; tier names 2026-11-05)
     │   ├── home.js         the panel a click opens: tab strip + tab body (Home: Missed, chips,
@@ -112,18 +117,21 @@ One module may combine the first two (calendar: next-event activity + idle plan 
 A standalone tab never surfaces activities; if it needs to, it becomes a source module.
 
 v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` (the copied flash) and `clipboard` (the Clipboard tab; one module 2026-11-05, apart again 2026-11-07, Ethan: two switches), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `agent` (Claude Code's sessions and permission prompts; was the stub `ask`, 2026-11-07); `notification`,
-`timer` (and `progress`, kinds `progress`) are imported as stubs without a source until their
-roadmap items, so their tabs show from v0.1 (2026-11-02);
+`timer` is imported as a stub without a source until its roadmap item, so its tab shows
+from v0.1 (2026-11-02);
 idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone tabs `calendar` (the month and the picked day's events, 2026-11-08), `clipboard` (stub `tab.js`, in that order, 2026-11-02). `greeting`: its first run and What's new in v0.1, the rest in M4 (2026-11-08).
 
-## Outside the extension (2026-11-08)
+## Outside the extension
+
+*2026-11-08.*
 
 `install.sh` (repo root) installs, updates and removes Buoy for one user without EGO, from
 a GitHub release, a zip or a clone; it uses the installed extension's own `hooks.js` and
 `kit/settings.js` (pure) on removal. A tag `v<version-name>` publishes a release
 (`.github/workflows/release.yml`, `scripts/release-check.sh`) with
 `docs/releases/<version-name>.md` as its notes; `tests/metadata.test.js` keeps the version's
-name the same in metadata.json, notes.js and package.json.
+name the same in metadata.json, notes.js and package.json, and checks that metadata's
+`settings-schema` names the schema (`enable()` throws without it).
 `README.md` is for people who use Buoy (install, settings, privacy, limits);
 `CONTRIBUTING.md` holds the repository tree, the setup and the release steps (2026-11-08).
 
@@ -163,7 +171,9 @@ D-Bus callers send presentation data directly: no adapter, but the registry slug
 and applies the user's profile (Registry.present). API: DBUS.md.
 ```
 
-### App profiles (2026-11-02)
+### App profiles
+
+*2026-11-02.*
 
 `~/.config/buoy/apps/<app>.json`: per-user, data only (rule 7): icon, title template,
 hideBody, priority, ttl, regex replace/skip. The registry applies them for every adapter
@@ -187,10 +197,13 @@ fields and order: [PROFILES.md](PROFILES.md).
    in two kinds has two small files. No central `apps/<app>/` folder.
 5. **One slug per app** across every source (MPRIS bus name, desktop id, notification
    app name) — the table lives in `kit/registry.js`; modules only see the slug.
-6. **Module off = not imported** (`modules.<id> = false`): no signal connected, no actor
-   created, zero cost. Hiding an app (`apps.hidden`) is a stack filter, not an adapter concern.
+6. **Module off = not imported** (`modules-<id>` false): no signal connected, no actor
+   created, zero cost. Hiding an app (`apps-hidden`) is a stack filter, not an adapter concern.
 7. **No code loaded at runtime** (EGO rule). User customisation is JSON profiles only:
-   icon, title template, hide body, priority, ttl, simple regex. Logic needs a PR.
+   icon, title template, hide body, priority, ttl, simple regex. Logic needs a PR. Also for
+   EGO review: no synchronous file IO in the Shell process (`kit/files.js` reads async);
+   signals tied to their owner with `connectObject` / `disconnectObject`; the Extension object
+   is passed down from `extension.js`, never looked up by URL.
 8. **No polling while closed; no blur; nothing animating while idle.** A source that must
    poll (progress bar position) polls only while its activity is visible. "Animating"
    means looping or continuous motion: a change of idle content (clock minute, `auto`
@@ -208,11 +221,12 @@ fields and order: [PROFILES.md](PROFILES.md).
    compact or Media-tab title too long for its width: it scrolls only while it is mapped
    and animations are on, one Clutter.Timeline, translation only (2026-11-05, Ethan).
 9. Every setting is a key in `schemas/…gschema.xml` with a `<summary>` and a
-   `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). A module's
+   `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). No preview
+   key: a module's row has "Show a sample", sent through D-Bus `Surface` like any script. A module's
    own keys are named `<id>-…` and appear inside its row on the Modules page, **except an
    idle plan's**: keys named `idle-<plan>-…` appear on the **Island** page under their
    plan, so what the idle pill shows and how is set in one place (2026-11-04, Ethan). A
-   module that is only an idle plan (clock) has its switch on its plan's row there too and
+   module that is only an idle plan (clock, weather) has its switch on its plan's row there too and
    no row on Modules (2026-11-06, Ethan; was a switch-only row on Modules); a module that
    is more than its plan keeps its row on Modules. Each key has exactly one place: `kit/settings.js` places the rest
    and lists the idle plans (prefs cannot import a module, below), and
@@ -245,9 +259,9 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `modules-<id>` | b | the module runs or not; applies at once (prefs: its row's switch) |
 | `apps-hidden` | as | apps whose activities never surface; any app id, slugged (2026-11-02) |
 | `apps-plain` | as | apps that use the default adapter instead of their override; any app id, slugged |
-| `idle-content` | s | `auto` (default once the smart stack lands, 2026-11-03) \| `none` \| any module's idle plan id; `clock` by default until then (2026-11-04) |
-| `idle-auto-plans` | as | plans `auto` may show, in tie-break order; default every enabled plan |
-| `idle-auto-interval` | i | minutes between `auto` re-ranks while idle; default `5`, 2–30 |
+| `idle-content` | s | `auto` (default) \| `none` \| any module's idle plan id |
+| `idle-auto-plans` | as | plans `auto` may show, in the order they take turns; default `calendar`, `weather`, `clock` |
+| `idle-auto-interval` | i | minutes per turn of `auto` while idle; default `5`, 2–30 |
 | `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`; bad values → defaults. In the schema since M3 daypart, on the Island page once a plan reads it (2026-11-04) |
 | `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only) |
 | `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |

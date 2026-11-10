@@ -279,7 +279,7 @@ ids `progress` and `transfer-complete`) are the Transfers pill already (FEATURES
 
 - Adapter (`tests/notification.test.js`): title / app-name fallback; count from 2;
   critical → `needsYou`, no ttl; markup stripped and whitespace on one line; actions at
-  most 2 then ×, none → × alone; shared → the app's name, no picture, the count line;
+  most 3 then ×, none → × alone; shared → the app's name, no picture, the count line;
   `hideBody` (no body) → the app's name; long text not cut; Files' ids skipped only while
   progress is on.
 - Headless Shell: `notify-send` (freedesktop) with actions and a critical one; a GTK app

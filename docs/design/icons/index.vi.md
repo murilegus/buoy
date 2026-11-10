@@ -12,6 +12,9 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   đối ở 1em, ở cỡ khác hơi mềm nhưng không vỡ. **Chốt** (Ethan, 2026-11-10)
 - Giữ bảng màu A và id từng phần (sun, moon, cloud, rain…), để một tab có thể tách icon thành lớp
   mà chuyển động. **Chốt** (2026-11-06)
+- Brief hiện tại: 20 px trong pill, 40 px trong card hover, luôn trên nền đen; khối phẳng tô
+  đặc, không gradient, không viền, không chữ. Đường chân trời ở y 11 của lưới 16 (không ở đáy),
+  để ở 20 px nó nằm đúng hàng chân chữ của giờ. **Chốt** (Ethan, 2026-11-06)
 
 ## Còn mở
 

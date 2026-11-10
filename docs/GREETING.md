@@ -17,7 +17,7 @@ once-a-day greeting of 2026-11-03).
    Expanded only for a fresh start (§2).
 4. **Out of the way.** Not over a fullscreen window, never takes the keyboard, any real
    activity interrupts it, a click outside closes it. It is a transient activity like any
-   other (SPEC §2, APPLE.md A3).
+   other (SPEC §2, CONTRACT.md §1).
 5. **Bu is the face.** Every greeting leads with Bu (`MASCOT.md`); the pose follows the
    moment (§6). No other icon competes with him.
 6. **Words in one place.** Every string is in `modules/greeting/adapter.js`, English first;
@@ -29,7 +29,9 @@ once-a-day greeting of 2026-11-03).
    (`org.gnome.desktop.interface enable-animations`) the text is there at once. Hover
    holds the greeting as usual; the typing goes on under the pointer.
 
-## 0. Scope by release (2026-11-08, Ethan)
+## 0. Scope by release
+
+*2026-11-08, Ethan.*
 
 - **v0.1 (FEATURES M3 "greeting: first run and What's new").** Only §11: Bu's hello the
   first time Buoy runs, with the basics of using it, and the What's new mechanism that
@@ -85,7 +87,7 @@ How the moments are told apart (all read at `enable`, nothing polled):
  leading   center (grows)
 ```
 
-- **Layout.** The expanded presentation's own regions (APPLE.md B2): Bu in `leading`, the
+- **Layout.** The expanded presentation's own regions (CONTRACT.md §2): Bu in `leading`, the
   three lines in `center`, which takes all the width left (`grow: 'center'`, the default);
   no `trailing`. Bu is as tall as the text block — 80 px for three lines, 60 px for two
   (a multiple of his 10 cells, MASCOT.md: whole pixels) — and centred with it. Ethan,
@@ -235,7 +237,7 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
 
 | Key | Type | Default | Prefs | Meaning |
 |---|---|---|---|---|
-| `modules-greeting` | b | true | Modules, its own row | the module |
+| `modules-greeting` | b | true | Modules, Bu group | the module |
 | `greeting-style` | s | `expanded` | yes | `expanded` · `minimal` · `off` — Start and Wake |
 | `greeting-farewell` | b | true | yes | Leaving lines (§5) |
 | `greeting-name` | s | `''` | yes, prefilled with the real name | `''` = the real name |
@@ -270,7 +272,9 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
   total), Welcome back (another session id), Leaving (the dialog's confirm), fullscreen,
   `off`; the weather filled in place; hover hold; a real activity interrupting.
 
-## 11. First run and What's new (v0.1, 2026-11-08, Ethan)
+## 11. First run and What's new
+
+*V0.1, 2026-11-08, Ethan.*
 
 One mechanism, two cases, read at `enable` against `metadata.json` `version` (EGO's
 integer):

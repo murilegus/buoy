@@ -2,7 +2,7 @@
  * Presentation data → render plan. Pure (no St, no Main), so it runs under plain gjs;
  * present.js turns a plan into actors and is the only place content actors are made.
  *
- * Adapter data (APPLE.md §B1/B3, ARCHITECTURE rule 3):
+ * Adapter data (CONTRACT.md §1/B3, ARCHITECTURE rule 3):
  *   {leading, text, trailing, expanded, actions, keyline, isStale}
  *   leading/trailing: 'icon-name' | Gio.Icon | {art (path, URI or Gio.Icon), icon} | {icon} |
  *   {progress: 0..1}
@@ -17,7 +17,7 @@
  *   expanded: true (= enlarged minimal) | {leading, center, trailing, bottom}
  *             region: an element as above | {title, subtitle, progress} | {transport: true};
  *             any region may carry `priority` (the highest one takes the free width)
- *   actions: [{id, label?, icon?}] — 1 shown in minimal, 3 in compact and expanded (APPLE.md B5.5);
+ *   actions: [{id, label?, icon?}] — 1 shown in minimal, 3 in compact and expanded (CONTRACT.md §5.5);
  *            `minimalAction: false` keeps the minimal pill without a button
  *
  *   compact: {leading, text, subtitle?, trailing, transport?, progress?, rows?} — the hover
@@ -31,7 +31,7 @@
  *         since `at`, × running action `close`), a picture, a title, a body of up to 2
  *         lines, then the activity's actions (≤ 3) in a row; full width, up to 160 tall
  *
- * Minimal is one set of data for every pill (APPLE §B3): a side pill drops `text` and
+ * Minimal is one set of data for every pill (CONTRACT.md §3): a side pill drops `text` and
  * keeps leading + trailing, so the short value that matters belongs in `trailing`.
  *
  * The buoy light (SPEC §2a-i) is the pill's left edge slot: grey `off` only in idle,
@@ -415,7 +415,7 @@ function region(r, name) {
 }
 
 /**
- * Expanded is an enlarged minimal (APPLE.md B2): regions the adapter leaves out fall
+ * Expanded is an enlarged minimal (CONTRACT.md §2): regions the adapter leaves out fall
  * back to the minimal elements; an explicit null keeps a region empty.
  *
  * @param {object} p  presentation data (an activity)

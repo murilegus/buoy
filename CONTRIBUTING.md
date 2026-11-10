@@ -53,8 +53,8 @@ Open an issue before a large change, so the approach can be agreed before the co
   the extension; no warning or error from `buoy@murilegus` in the log.
 - **`pnpm verify` passes.** The pre-commit hook runs it; don't skip it with `--no-verify`.
   CI runs it again on Shell 50's gjs.
-- **Docs:** set the item's checkbox in `docs/FEATURES.md` and add a dated note under its
-  row; update SPEC or ARCHITECTURE when a decision changed.
+- **Docs:** set the item's checkbox in `docs/FEATURES.md` (no notes there: what was done
+  goes in the PR); a decision goes into SPEC, ARCHITECTURE or `docs/design`, with its date.
 
 In the pull request (the template asks for these):
 
@@ -85,9 +85,9 @@ buoy/
 ├── docs/
 │   ├── SPEC.md           what Buoy is and is not; v0.1 decisions
 │   ├── ARCHITECTURE.md   module/feature layout, rules, settings model
-│   ├── FEATURES.md       roadmap M0–M5 with status + scores
+│   ├── FEATURES.md       roadmap M0–M5 with status
 │   ├── INDICATORS.md     buoy light + privacy dot: colours, meanings, positions
-│   ├── APPLE.md          ActivityKit + HIG research → BuoyKit contract
+│   ├── CONTRACT.md       the activity contract: what sources, adapters and D-Bus give
 │   ├── MASCOT.md         Bu, the mascot: grids, poses, motion (previews in mascot/)
 │   ├── releases/         the notes of each release, used as the GitHub release body
 │   └── screenshots/      the README's images, taken in a headless GNOME Shell
@@ -101,6 +101,9 @@ Data flow: `module/source` → `registry.build(kind, app, ev)` → `stack.surfac
 Needs GNOME Shell 50, `gjs`, pnpm (fetches its own Node, see `devEngines` in
 package.json) and, for `pnpm dev`: `sudo apt install mutter-dev-bin inotify-tools`.
 
+eslint-config-gnome is pinned to Shell 50's commit (with eslint 9.38.0), so lint matches
+Shell's own rules.
+
 ```bash
 pnpm install     # also enables the pre-commit hook (core.hooksPath = .githooks)
 pnpm link        # symlink into GNOME + compile the schema
@@ -108,6 +111,7 @@ pnpm dev         # nested shell (mutter devkit) with auto-restart
 pnpm lint
 pnpm test        # gjs unit tests for adapters and the contract — no Shell needed
 pnpm verify      # lint + test + schema: what the pre-commit hook and CI run
+pnpm check       # tsc type check — not part of verify yet
 pnpm run pack    # zip for EGO (`pnpm pack` is pnpm's own tarball command)
 ```
 

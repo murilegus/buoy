@@ -1,4 +1,6 @@
-# D-Bus API (decided 2026-11-03)
+# D-Bus API
+
+*Decided 2026-11-03.*
 
 Scripts and apps that know Buoy send their own pill. They skip the adapters, but not the
 user: the app is slugged and the user's [profile](PROFILES.md) still applies. Examples to
@@ -31,7 +33,7 @@ modules' ids. Omit `id` in `Surface` and one is made up and returned.
 
 ## The activity (`a{sv}`)
 
-The presentation contract of [APPLE.md §B1](APPLE.md), minus the callbacks D-Bus cannot
+The presentation contract of [CONTRACT.md §1](CONTRACT.md), minus the callbacks D-Bus cannot
 carry. `kind` is required; everything else is optional. An unknown key is an error.
 
 | Key | Type | |

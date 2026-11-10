@@ -12,7 +12,9 @@ màu chọn riêng cho một chỗ. Bảng màu chưa thiết kế; dưới đâ
 - Màu nhấn: `-st-accent-color` của GNOME (dấu chọn, ô nhập, vòng focus), không tự chọn. **Chốt**
 - Màu đèn và màu chữ trên thanh theo [INDICATORS](../INDICATORS.md) và SPEC §1 (`cluster-contrast`).
 
-## Hiện trạng (`stylesheet.css`, `main` 2026-11-10)
+## Hiện trạng
+
+*`stylesheet.css`, `main` 2026-11-10.*
 
 **54 giá trị màu khác nhau** trong 497 dòng:
 

@@ -1,5 +1,5 @@
 /**
- * Activity contract (docs/APPLE.md §B1). validate() fills defaults and throws
+ * Activity contract (docs/CONTRACT.md §1). validate() fills defaults and throws
  * on shape errors so a bad adapter fails loudly at the registry, not in the renderer.
  */
 export const KINDS = ['media', 'notification', 'progress', 'osd', 'input', 'power', 'device',

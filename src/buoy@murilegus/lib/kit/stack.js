@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
 
 /**
- * ActivityStack: which activity is on the island right now (APPLE.md §B1, SPEC §2).
+ * ActivityStack: which activity is on the island right now (CONTRACT.md §1, SPEC §2).
  *
  *   surface(activity) → id · update(id, patch, {alert}) · end(id, {dismissal})
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
@@ -32,7 +32,7 @@ import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
  *   - apps-hidden is a filter: hidden activities stay live but never reach the island;
  *     so is an activity's own `hidden: true` (an agent's session while its ask stands for
  *     it, CODING-AGENTS.md §4, 2026-11-07): live, timed, never drawn, never missed
- *   - while unseen (fullscreen, away, DND) an ending activity goes to the missed history
+ *   - while unseen (fullscreen) an ending activity goes to the missed history
  *     (last 5), except osd/copied (feedback for your own action) and ask (red light)
  *   - while unseen the island gets no alert and no expand: an ask must not open in a
  *     hidden pill, where any click in the fullscreen app would collapse it; only the red
@@ -321,7 +321,7 @@ export class ActivityStack {
         this._render();
     }
 
-    /** @param {boolean} unseen  fullscreen, away or DND: endings now count as missed */
+    /** @param {boolean} unseen  the island hidden (fullscreen): endings now count as missed */
     /**
      * Run `fn` once the island is seen: now, or when it comes back (a fullscreen window
      * left). The greeting waits for it rather than skipping (GREETING.md §11).
@@ -338,7 +338,7 @@ export class ActivityStack {
         return () => this._seenWaiters.delete(fn);
     }
 
-    /** @returns {boolean} the island is not seen (fullscreen, away, DND) */
+    /** @returns {boolean} the island is not seen (fullscreen) */
     get unseen() {
         return this._unseen;
     }
@@ -616,7 +616,7 @@ export class ActivityStack {
             const top = list[0];
             this._island.render(list, {
                 alert: shown.includes(alert) ? alert : null,
-                // transient (APPLE.md A3) and ask (all options are only in expanded)
+                // transient (CONTRACT.md §1) and ask (all options are only in expanded)
                 // open expanded when they reach the centre pill
                 // a quiet ask waits in its pill (ask() `quiet`)
                 expand: (top.style === 'transient' || top.kind === 'ask') && !top.quiet && top.id !== prevPrimary &&

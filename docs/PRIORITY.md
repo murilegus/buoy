@@ -66,7 +66,8 @@ The kind's default (`kit/activity.js` `PRIORITY`), unchanged:
 | `calendar` | 25 | | `osd`, `input` | 60 |
 | `progress` | 30 | | `notification` | 70 |
 | `device`, `agent` | 35 | | `phone` | 75 |
-| `power` | 40 | | `ask` | 90 |
+| `power` | 40 | | `greeting` | 85 |
+| | | | `ask` | 90 |
 | | | | `call` | 95 |
 
 - A **profile** (`~/.config/buoy/apps/<app>.json`, PROFILES.md) may set `priority`
@@ -91,7 +92,9 @@ They change what is drawn for a moment, not the ranking.
   ask dismissed into the red light: live, never drawn, so never ranked.
 - Scheduled activities: ranked when they start.
 
-## 6. Changes from what was there (built 2026-11-07)
+## 6. Changes from what was there
+
+*Built 2026-11-07.*
 
 - `kit/stack.js`: rank by tier, then priority, then fresh, then recent (§1); `ask` and
   `call` are tier 1 by kind; `needsYou` validated in `kit/activity.js`.
