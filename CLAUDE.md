@@ -9,7 +9,7 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
 3. `docs/FEATURES.md` — roadmap M0–M5 with status; tasks are referenced as "M1 item N".
 4. `docs/CONTRACT.md` — the activity/presentation contract adapters must return.
 5. `docs/design/` — how Buoy looks (sizes, type, colour), one page per part; the numbers live
-   only in `tokens.vi.md`, the colours only in `colours.vi.md`.
+   only in `tokens.vi.md`, the colours only in `colours/index.vi.md`.
 
 ## How we work
 - **Claude Code writes the code; Ethan reviews.** Work in units of one FEATURES.md item

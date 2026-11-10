@@ -15,7 +15,7 @@ Các thay đổi ở đây chưa có trong code: chúng là các mục redesign 
 | Phần | Nội dung |
 |---|---|
 | [Bảng số](tokens.vi.md) | mọi con số dùng chung: thanh, pill, compact, expanded, bo góc, khoảng, chữ |
-| [Bảng màu](colours.vi.md) | màu CSS được phép dùng (đang mở) |
+| [Bảng màu](colours/index.vi.md) | màu theo vai trò, đèn và chấm, phần theo GNOME |
 | [Pill](pill/index.vi.md) | idle, minimal, pill phụ, đèn ở hai đầu, chữ, độ rộng trên thanh |
 | [Compact](compact/index.vi.md) | dạng hover: phần đầu, nhạc, hàng Claude Code, card thông báo |
 | [Alert và ask](alerts-and-asks/index.vi.md) | alert 5 s, ask có nút, hỏi nhiều câu |
