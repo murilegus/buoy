@@ -145,7 +145,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-/* Content built by kit/present.js. Text 13–14 px, medium or heavier (APPLE.md B5.3);
+/* Content built by kit/present.js. Text 13–14 px, medium or heavier (CONTRACT.md §5.3);
    colour lives in content, the pill stays black. Nothing here animates. */
 .buoy-content {
     color: #fff;
@@ -252,7 +252,7 @@
     background-color: rgba(255, 255, 255, 0.16);
 }
 
-/* staleAfter passed without an update (APPLE.md B1): dimmed */
+/* staleAfter passed without an update (CONTRACT.md §1): dimmed */
 .buoy-stale,
 .buoy-stale StLabel,
 .buoy-stale .buoy-icon,

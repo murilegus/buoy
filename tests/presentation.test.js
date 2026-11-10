@@ -13,7 +13,7 @@ function eq(actual, expected, msg) {
         throw new Error(`${msg}: expected ${e}, got ${a}`);
 }
 
-eq(MAX_ACTIONS, {minimal: 1, compact: 3, expanded: 3}, 'HIG action limits (APPLE.md B5.5) + compact transport');
+eq(MAX_ACTIONS, {minimal: 1, compact: 3, expanded: 3}, 'HIG action limits (CONTRACT.md §5.5) + compact transport');
 
 // --- element ------------------------------------------------------------------
 for (const empty of [null, undefined, '', '  ', false, 0, {}, {icon: ''}, {art: null}, {text: ''}])
@@ -137,7 +137,7 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     eq([e.leading, e.center, e.trailing, e.bottom],
         [{type: 'icon', icon: 'a-symbolic'}, {type: 'block', title: 'Copying 3 files', subtitle: null, bar: null},
             {type: 'ring', value: 0.4}, {type: 'actions'}],
-        'expanded: true = enlarged minimal, same elements and order (APPLE.md B2)');
+        'expanded: true = enlarged minimal, same elements and order (CONTRACT.md §2)');
 }
 {
     const e = planExpanded({
@@ -313,7 +313,7 @@ eq(planMinimal({leading: {mascot: 'busy'}, text: 'x'}).leading.pose, 'busy', 'a 
 eq(planMinimal({leading: 'x-symbolic', text: 'x', isStale: true}).leading, {type: 'icon', icon: 'x-symbolic'},
     'stale changes only Bu');
 
-// --- side pills: leading + trailing, text dropped (SPEC §2c, APPLE §B3) -----------------
+// --- side pills: leading + trailing, text dropped (SPEC §2c, CONTRACT.md §3) -----------------
 {
     const timer = {leading: 'alarm-symbolic', text: 'Tea', trailing: {countdown: 240}};
     eq(planMinimal(timer, {side: true}).text, null, 'side pill drops text');

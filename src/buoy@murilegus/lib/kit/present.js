@@ -17,7 +17,7 @@ import {agoText, element, livePosition, mediaTimes, planCompact, planExpanded, p
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
  * (what to show, limits, fallbacks) comes from presentation.js, which is unit-tested.
- * Sizes here are the renderer's (APPLE.md B5.3: leading ≤ 20 px minimal, 40 compact,
+ * Sizes here are the renderer's (CONTRACT.md §5.3: leading ≤ 20 px minimal, 40 compact,
  * 56 expanded);
  * adapters never send any.
  */
@@ -570,7 +570,7 @@ function startOf(key) {
     return STARTS.get(key);
 }
 
-// A stale activity is dimmed (APPLE §B1): its text and icons turn grey in CSS; Bu's
+// A stale activity is dimmed (CONTRACT.md §1): its text and icons turn grey in CSS; Bu's
 // palette is fixed, so it is dimmed to 40 % as the `stale` preview (MASCOT.md).
 const STALE_OPACITY = 102;
 

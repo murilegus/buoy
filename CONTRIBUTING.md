@@ -87,7 +87,7 @@ buoy/
 │   ├── ARCHITECTURE.md   module/feature layout, rules, settings model
 │   ├── FEATURES.md       roadmap M0–M5 with status
 │   ├── INDICATORS.md     buoy light + privacy dot: colours, meanings, positions
-│   ├── APPLE.md          ActivityKit + HIG research → BuoyKit contract
+│   ├── CONTRACT.md       the activity contract: what sources, adapters and D-Bus give
 │   ├── MASCOT.md         Bu, the mascot: grids, poses, motion (previews in mascot/)
 │   ├── releases/         the notes of each release, used as the GitHub release body
 │   └── screenshots/      the README's images, taken in a headless GNOME Shell

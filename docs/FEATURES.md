@@ -9,7 +9,7 @@ Last updated: 2026-11-10
 ## M0 — Foundation `[x]`
 
 Repo, pnpm, eslint pinned to Shell 50, CI and pre-commit (`pnpm verify`); SPEC, ARCHITECTURE,
-APPLE; the name Buoy, uuid `buoy@murilegus`; `kit/` + `modules/`.
+the activity contract; the name Buoy, uuid `buoy@murilegus`; `kit/` + `modules/`.
 
 ## M1 — Kit `[x]`
 

@@ -225,7 +225,7 @@ square against the screen edge or dock.
 ## 2. Island states
 
 Three tiers (decided 2026-11-05, Ethan), named by size: **minimal** < **compact** <
-**expanded**. Apple's words, not Apple's mapping (APPLE §B2):
+**expanded**. Apple's words, not Apple's mapping (CONTRACT.md §2):
 - **minimal** — resting in the bar: one line, 32 px tall, one to three pills.
 - **compact** — on hover: the hovered pill itself grows in place into a short panel, 56 to
   120 px tall, over the top of windows (and the system cluster, if it must). No Apple
@@ -442,7 +442,7 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
 - **Side pills 2 and 3** share one fixed shape, 120 × 32 (the idle size): leading, a short
   trailing (equaliser, `40%`, `4:59`) and the `+N` badge; their text is dropped. The
   adapter's data is the same for every pill, so the short value that matters goes in
-  `trailing` (APPLE §B3). Their full content is their compact.
+  `trailing` (CONTRACT.md §3). Their full content is their compact.
 - **How many**: as many side pills as fit before the system cluster (12 px margin), at most
   two, re-measured whenever the right cluster resizes. Side pills go before pill 1 is ever
   narrowed. With pill 1 at its widest and a 300 px system cluster: 1366 → one side pill,
@@ -954,11 +954,11 @@ the % and the file rows show size only.
   over D-Bus (`org.gnome.Nautilus.FileOperations2` starts operations, it does not report
   them), and a guess could be wrong.
 
-Roadmap: FEATURES.md (milestones M0–M5 with status). Status marks: INDICATORS.md. Research: APPLE.md (ActivityKit/HIG → BuoyKit). Mascot: MASCOT.md (Bu). Competitor notes (Notchy audit, Isle, Islet, BEHAVIOUR) are kept locally in `docs/notes/` and not committed.
+Roadmap: FEATURES.md (milestones M0–M5 with status). Status marks: INDICATORS.md. Contract: CONTRACT.md. Mascot: MASCOT.md (Bu). Competitor notes (Notchy audit, Isle, Islet, BEHAVIOUR) are kept locally in `docs/notes/` and not committed.
 
 ## 7. BuoyKit (decided 2026-10-30)
 
-Buoy is a framework first, features second — see `APPLE.md` part B for the full contract.
+Buoy is a framework first, features second — see `CONTRACT.md` for the full contract.
 
 - **Core** owns: activity lifecycle (`surface / update / end / schedule / ask`), priority
   across apps, ttl and stale state, the three tiers (minimal — one to three pills —,

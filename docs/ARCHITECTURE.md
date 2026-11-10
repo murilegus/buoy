@@ -28,7 +28,7 @@ src/buoy@murilegus/
 │                           source and draws docs/icons.png; 2026-11-06) and the lock-key symbolics
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import
-    │   ├── activity.js     contract (APPLE.md §B1), validate + normalise
+    │   ├── activity.js     contract (CONTRACT.md §1), validate + normalise
     │   ├── stack.js        surface / update / end / schedule / ask; the pill order (PRIORITY.md);
     │   │                   ttl, stale, transient, alert; apps.hidden filter; missed history;
     │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)

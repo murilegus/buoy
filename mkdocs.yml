@@ -63,7 +63,7 @@ plugins:
                 - MASCOT.md
             - Build on Buoy: &build
                 - ARCHITECTURE.md
-                - APPLE.md
+                - CONTRACT.md
                 - DBUS.md
                 - PROFILES.md
                 - CODING-AGENTS.md

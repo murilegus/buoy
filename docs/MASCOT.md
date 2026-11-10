@@ -37,7 +37,7 @@ replacement for the light in every state.
 ## Drawing rules
 
 - **Grid 10 × 10.** Sizes are multiples of 10 so every cell is whole logical px: **20 px**
-  in minimal (cell 2, APPLE §B5.3 leading ≤ 20), **40 px** in compact (cell 4, ≤ 40,
+  in minimal (cell 2, CONTRACT.md §5.3 leading ≤ 20), **40 px** in compact (cell 4, ≤ 40,
   2026-11-05), **50 px** in expanded headers (≤ 56), 40 px in Home and prefs. HiDPI multiplies whole px; nothing blurs.
 - **A fixed palette, always on dark** (corrected 2026-11-03 to match the reviewed design:
   this table had said "foreground at 35 / 55 / 70 %", which drew grey water and a faded
@@ -84,7 +84,7 @@ replacement for the light in every state.
     update, light change and hover, so `present.js` keeps when each pose was first shown
     per activity surface (id + surface, last 32). An update mid-wave continues the wave; a
     new `Surface` with the same id starts it again.
-- **Stale** is drawn by the renderer as for any stale activity (dimmed, APPLE §B1): the
+- **Stale** is drawn by the renderer as for any stale activity (dimmed, CONTRACT.md §1): the
   text greys in CSS and Bu, whose palette is fixed, is drawn at 40 % opacity, as the
   `stale` preview; the `stale` pose is what Bu looks like while dimmed.
 
@@ -110,7 +110,7 @@ replacement for the light in every state.
   2026-11-04, Ethan), then
   rests on `idle` (CSS, once per page load; `prefers-reduced-motion` shows `idle` only).
 - Contract: an adapter (or a D-Bus caller) sets `leading: {mascot: '<pose>', icon?}`
-  (APPLE §B3). Data only — no actor, no timer, no size (rules 2, 3, 11).
+  (CONTRACT.md §3). Data only — no actor, no timer, no size (rules 2, 3, 11).
 
 ## Poses
 

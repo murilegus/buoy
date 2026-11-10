@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
 
 /**
- * ActivityStack: which activity is on the island right now (APPLE.md §B1, SPEC §2).
+ * ActivityStack: which activity is on the island right now (CONTRACT.md §1, SPEC §2).
  *
  *   surface(activity) → id · update(id, patch, {alert}) · end(id, {dismissal})
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
@@ -616,7 +616,7 @@ export class ActivityStack {
             const top = list[0];
             this._island.render(list, {
                 alert: shown.includes(alert) ? alert : null,
-                // transient (APPLE.md A3) and ask (all options are only in expanded)
+                // transient (CONTRACT.md §1) and ask (all options are only in expanded)
                 // open expanded when they reach the centre pill
                 // a quiet ask waits in its pill (ask() `quiet`)
                 expand: (top.style === 'transient' || top.kind === 'ask') && !top.quiet && top.id !== prevPrimary &&

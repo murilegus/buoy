@@ -17,7 +17,7 @@ once-a-day greeting of 2026-11-03).
    Expanded only for a fresh start (§2).
 4. **Out of the way.** Not over a fullscreen window, never takes the keyboard, any real
    activity interrupts it, a click outside closes it. It is a transient activity like any
-   other (SPEC §2, APPLE.md A3).
+   other (SPEC §2, CONTRACT.md §1).
 5. **Bu is the face.** Every greeting leads with Bu (`MASCOT.md`); the pose follows the
    moment (§6). No other icon competes with him.
 6. **Words in one place.** Every string is in `modules/greeting/adapter.js`, English first;
@@ -85,7 +85,7 @@ How the moments are told apart (all read at `enable`, nothing polled):
  leading   center (grows)
 ```
 
-- **Layout.** The expanded presentation's own regions (APPLE.md B2): Bu in `leading`, the
+- **Layout.** The expanded presentation's own regions (CONTRACT.md §2): Bu in `leading`, the
   three lines in `center`, which takes all the width left (`grow: 'center'`, the default);
   no `trailing`. Bu is as tall as the text block — 80 px for three lines, 60 px for two
   (a multiple of his 10 cells, MASCOT.md: whole pixels) — and centred with it. Ethan,

@@ -6,7 +6,7 @@ import {slugOf} from './registry.js';
 /**
  * org.gnome.Shell.Extensions.Buoy at /org/gnome/Shell/Extensions/Buoy on the Shell's
  * session connection (dest `org.gnome.Shell`): apps and scripts send their own pill
- * (APPLE.md §B: the "app adopts ActivityKit" path) and skip the adapters. The app is
+ * (CONTRACT.md §3: the "app adopts ActivityKit" path) and skip the adapters. The app is
  * slugged and the user's profile applied (Registry.present). Reference: docs/DBUS.md.
  *
  *   Surface(a{sv} activity) → s id            '' when a profile skips it
@@ -83,7 +83,7 @@ function unpack(dict) {
     return out;
 }
 
-// What a caller may send (APPLE.md §B1 minus the callbacks, which D-Bus cannot carry).
+// What a caller may send (CONTRACT.md §1 minus the callbacks, which D-Bus cannot carry).
 const CHECKS = {
     id: v => typeof v === 'string' && /^[\w.:-]{1,64}$/.test(v) || 'letters, digits, . : _ -, up to 64',
     kind: v => typeof v === 'string' && /^[a-z][\w-]{0,31}$/.test(v) || 'a kind name like "progress"',

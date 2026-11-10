@@ -31,7 +31,7 @@ modules' ids. Omit `id` in `Surface` and one is made up and returned.
 
 ## The activity (`a{sv}`)
 
-The presentation contract of [APPLE.md §B1](APPLE.md), minus the callbacks D-Bus cannot
+The presentation contract of [CONTRACT.md §1](CONTRACT.md), minus the callbacks D-Bus cannot
 carry. `kind` is required; everything else is optional. An unknown key is an error.
 
 | Key | Type | |

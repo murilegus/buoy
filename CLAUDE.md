@@ -7,7 +7,7 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
 1. `docs/ARCHITECTURE.md` — layout and the 10 rules. Non-negotiable.
 2. `docs/SPEC.md` — product decisions (what the pill does, idle, tabs, clusters).
 3. `docs/FEATURES.md` — roadmap M0–M5 with status; tasks are referenced as "M1 item N".
-4. `docs/APPLE.md` §B — the activity/presentation contract adapters must return.
+4. `docs/CONTRACT.md` — the activity/presentation contract adapters must return.
 5. `docs/design/` — how Buoy looks (sizes, type, colour), one page per part; the numbers live
    only in `tokens.vi.md`, the colours only in `colours.vi.md`.
 
@@ -16,7 +16,7 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
   (or one milestone when asked). Implement it fully — code, tests, docs status — then
   stop and hand over for review. Do not start the next item until Ethan says so.
 - Before writing, re-read the item's row in FEATURES.md ("done when") and the SPEC, design
-  and APPLE sections it references. If the item is ambiguous or
+  and CONTRACT sections it references. If the item is ambiguous or
   conflicts with a rule, ask one short question first; otherwise proceed without asking.
 - Every change must respect ARCHITECTURE rules 1–11 — especially: adapters/`apps/*.js`
   have no `St`, `Main`, timers or measurements; modules import `kit/` only; no polling
