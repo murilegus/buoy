@@ -3,3 +3,4 @@ dist/
 *.zip
 gschemas.compiled
 .pnpm-store/
+site/

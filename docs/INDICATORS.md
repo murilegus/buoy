@@ -3,6 +3,10 @@
 The reference for every status mark on the pill. One table, stick to it; a new colour or
 position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 
+> **v0.2 redesign:** where the lights sit and how the pill grows around them are decided in
+> [Design](design/index.md) (Pill; in Vietnamese first): pill 1 only, an 8 px dot at the
+> centre of each end circle. Their meaning and colours stay here.
+
 ## Principles
 
 1. **Two edge slots, nothing else.** Left edge = *the buoy light* (about you: what you

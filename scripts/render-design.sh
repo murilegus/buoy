@@ -1,0 +1,38 @@
+#!/bin/sh
+# Redraws every image under docs/design/ from its render script (gjs + cairo, straight at 3×).
+# Design source, not a build step: nothing here runs in CI or ends up in the extension.
+# The images carry Vietnamese labels (x.vi.png); the English ones (x.en.png) come with the
+# English translation of each page (docs/ARCHITECTURE.md, "The docs and their site").
+set -eu
+cd "$(dirname "$0")/../docs/design"
+
+r() { script=$1; out=$2; shift 2; gjs -m "$script" "$out" "$@"; }
+
+# pill
+p=pill/render; i=pill/images
+r $p/anatomy.js $i/anatomy.vi.png
+r $p/weight.js $i/weight.vi.png
+r $p/pad.js $i/pad.vi.png
+r $p/fonts.js $i/fonts.vi.png > /dev/null   # it also prints its measures
+r $p/dots.js $i/dots.vi.png
+r $p/dots.js $i/dots-guides.vi.png guides
+r $p/minimal-media.js $i/minimal-media.vi.png
+r $p/bar.js $i/bar-1920.vi.png 1920
+r $p/bar.js $i/bar-1920-sym.vi.png 1920 sym
+r $p/bar.js $i/bar-1366.vi.png 1366
+r $p/bar.js $i/bar-1366-sym.vi.png 1366 sym
+
+# compact (anatomy-compact.js draws the alerts-and-asks images too)
+c=compact/render
+r $c/anatomy-compact.js compact/images/anatomy-media.vi.png media
+r $c/anatomy-compact.js compact/images/anatomy-rows.vi.png rows
+r $c/anatomy-compact.js compact/images/anatomy-card.vi.png card
+r $c/anatomy-compact.js alerts-and-asks/images/ask.vi.png ask
+r $c/anatomy-compact.js alerts-and-asks/images/question.vi.png question
+r $c/card.js compact/images/card.vi.png
+r $c/body.js compact/images/body.vi.png
+
+# expanded
+r expanded/render/expanded.js expanded/images/expanded.vi.png
+
+echo "docs/design: images redrawn"
