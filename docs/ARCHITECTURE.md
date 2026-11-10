@@ -18,8 +18,9 @@ src/buoy@murilegus/
 ├── reach.js                the Overview's workspace backgrounds grow under the see-through bar, so closing it ends on the whole wallpaper (2026-11-04)
 ├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
 ├── prefs.js                Adw prefs: Island, Modules (one row per module, in groups: live in the pill,
-│                           quick feedback, tabs — kit/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
-│                           2026-11-04), Windows (corners, 2026-11-04)
+│                           quick feedback, tabs, Bu — kit/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
+│                           2026-11-04), Windows (corners, 2026-11-04), About (version, Bu,
+│                           metadata `donations` as "Support Buoy", `dev-mode`)
 ├── schemas/                GSettings: the one source of every key, its summary and range
 ├── hooks/                  claude.js: Claude Code's hook (run by Claude Code, never by Buoy),
 │                           installed from prefs; stdin → D-Bus `Agent` (CODING-AGENTS.md, 2026-11-07)
@@ -33,6 +34,8 @@ src/buoy@murilegus/
     │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
     │   ├── presentation.js presentation data → render plan; pure, unit-tested (2026-11-01)
     │   ├── present.js      render plan → St actors. ONLY place content actors are made
+    │   │                   (cover art: St.Icon, loaded async, rounded by a Shell.GLSLEffect —
+    │   │                   not a CSS background-image, which St keeps in its texture cache)
     │   ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
     │   ├── pill.js         one pill: content, sizing, hover → compact, morph (2026-11-01; tier names 2026-11-05)
     │   ├── home.js         the panel a click opens: tab strip + tab body (Home: Missed, chips,
@@ -208,7 +211,8 @@ fields and order: [PROFILES.md](PROFILES.md).
    compact or Media-tab title too long for its width: it scrolls only while it is mapped
    and animations are on, one Clutter.Timeline, translation only (2026-11-05, Ethan).
 9. Every setting is a key in `schemas/…gschema.xml` with a `<summary>` and a
-   `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). A module's
+   `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). No preview
+   key: a module's row has "Show a sample", sent through D-Bus `Surface` like any script. A module's
    own keys are named `<id>-…` and appear inside its row on the Modules page, **except an
    idle plan's**: keys named `idle-<plan>-…` appear on the **Island** page under their
    plan, so what the idle pill shows and how is set in one place (2026-11-04, Ethan). A
@@ -245,9 +249,9 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `modules-<id>` | b | the module runs or not; applies at once (prefs: its row's switch) |
 | `apps-hidden` | as | apps whose activities never surface; any app id, slugged (2026-11-02) |
 | `apps-plain` | as | apps that use the default adapter instead of their override; any app id, slugged |
-| `idle-content` | s | `auto` (default once the smart stack lands, 2026-11-03) \| `none` \| any module's idle plan id; `clock` by default until then (2026-11-04) |
-| `idle-auto-plans` | as | plans `auto` may show, in tie-break order; default every enabled plan |
-| `idle-auto-interval` | i | minutes between `auto` re-ranks while idle; default `5`, 2–30 |
+| `idle-content` | s | `auto` (default) \| `none` \| any module's idle plan id |
+| `idle-auto-plans` | as | plans `auto` may show, in the order they take turns; default `calendar`, `weather`, `clock` |
+| `idle-auto-interval` | i | minutes per turn of `auto` while idle; default `5`, 2–30 |
 | `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`; bad values → defaults. In the schema since M3 daypart, on the Island page once a plan reads it (2026-11-04) |
 | `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only) |
 | `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |

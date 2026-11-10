@@ -250,7 +250,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         if (plans.length) {
             const group = new Adw.PreferencesGroup({
                 title: 'Plans',
-                description: 'Automatic shows the one that matters most. Drag to break a tie.',
+                description: 'Automatic shows them in turn, in this order. Drag to reorder.',
             });
             this._plans = {group, list: plans, key, rows: []};
             this._fillPlans();

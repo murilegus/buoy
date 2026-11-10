@@ -15,8 +15,8 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
 - **Claude Code writes the code; Ethan reviews.** Work in units of one FEATURES.md item
   (or one milestone when asked). Implement it fully — code, tests, docs status — then
   stop and hand over for review. Do not start the next item until Ethan says so.
-- Before writing, re-read the item's row in FEATURES.md (module, source, settings,
-  "done when") and the SPEC/APPLE sections it references. If the item is ambiguous or
+- Before writing, re-read the item's row in FEATURES.md ("done when") and the SPEC, design
+  and APPLE sections it references. If the item is ambiguous or
   conflicts with a rule, ask one short question first; otherwise proceed without asking.
 - Every change must respect ARCHITECTURE rules 1–11 — especially: adapters/`apps/*.js`
   have no `St`, `Main`, timers or measurements; modules import `kit/` only; no polling
@@ -83,7 +83,8 @@ the happy path, or marking `[x]` without having run it.
 ## Definition of done for a task
 1. The "done when" column in FEATURES.md is true.
 2. `pnpm test` and `pnpm lint` pass; the Testing section above is satisfied.
-3. FEATURES.md checkbox set to `[x]` (or `[~]` with a note if partially blocked).
+3. FEATURES.md checkbox set to `[x]` (or `[~]` with what is left in its row); no notes
+   under rows — what was done goes in the PR, decisions in SPEC / ARCHITECTURE / docs/design.
 4. Docs touched if a decision changed (SPEC/ARCHITECTURE/INDICATORS), with the date.
 5. The handover lists exactly what was tested, how, and what was not testable here.
 

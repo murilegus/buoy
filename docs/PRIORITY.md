@@ -66,7 +66,8 @@ The kind's default (`kit/activity.js` `PRIORITY`), unchanged:
 | `calendar` | 25 | | `osd`, `input` | 60 |
 | `progress` | 30 | | `notification` | 70 |
 | `device`, `agent` | 35 | | `phone` | 75 |
-| `power` | 40 | | `ask` | 90 |
+| `power` | 40 | | `greeting` | 85 |
+| | | | `ask` | 90 |
 | | | | `call` | 95 |
 
 - A **profile** (`~/.config/buoy/apps/<app>.json`, PROFILES.md) may set `priority`

@@ -314,7 +314,7 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
   `index.js` (kinds `agent`, `ask`; `tabWhileLive`),
   `adapter.js` (pure: event JSON → `{pose, title, detail, start?, end?, alert?}`, and the
   permission reply), `source.js` (the D-Bus `Agent` calls, one record per session, the
-  30-second end after `Stop`, stale, the terminal lookup of §6), `hooks.js` (pure: add and
+  end after `Stop` (`activity-linger`), stale, the terminal lookup of §6), `hooks.js` (pure: add and
   remove Buoy's entries in a settings object), `hooks/claude.js` (the script, at the
   extension's top level: Claude Code runs it).
 - Kit: the `{since}` element (§2); D-Bus `Agent` (DBUS.md, `Version` 2; a source gets the

@@ -368,7 +368,7 @@ export const IDLE_PLANS = ['clock', 'weather', 'calendar'];
  * @param {*} list  `idle-auto-plans`
  * @param {string} id
  * @param {boolean} on
- * @returns {string[]} the stack with that plan in (at the end, the last to break a tie) or
+ * @returns {string[]} the stack with that plan in (at the end, the last to take its turn) or
  *   out; the others keep their order
  */
 export function withPlan(list, id, on) {

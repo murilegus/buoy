@@ -134,8 +134,8 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 - **Third-party tray icons** keep GNOME's own per-item hover highlight and colours; Buoy
   never wraps them. Their text and symbolic icons follow the contrast above (dark on a
   light wallpaper, 2026-11-04). Their size is made the same (2026-11-04, Ethan): every tray
-  button is a 32 px square (16 px of content), so each highlight is one 26 px circle,
-  the input-method label ("vi", "en") centred in it too.
+  button is a 32 px square (16 px of content), its hover a fill of the square, the
+  input-method label ("vi", "en") centred in it too.
 - **Right side** (decided 2026-10-30, after the Notchy bar): two different things.
   - **Third-party tray icons** (AppIndicator, input method, screen-record…): bare on the
     wallpaper, each standing alone, GNOME's own order. No cluster background.
@@ -214,7 +214,9 @@ square against the screen edge or dock.
   buffer, and Mutter stops culling windows behind it (`meta-cullable.c`
   `has_active_effects`), so windows under a maximized one are painted again inside the
   damaged area. Only windows on the top edge carry the effect; with the setting off
-  nothing is attached. Measure frame time with ~5 windows behind a maximized one before shipping.
+  nothing is attached. A window restored to exactly the work area gets no `size-changed`,
+  so its corners stay until its next size change. Measured (2026-11-04): one maximized over four floating 1.23 ms a frame
+  (1.00 off), five maximized 1.01 (1.06 off); the GPU side not measured.
 - **Rejected**: two corner caps in top chrome painting a clone of the wallpaper — no
   offscreen and no culling loss, but wrong whenever another window sits behind or is
   raised over the corner, and it would have to hide during every move/maximize
@@ -225,8 +227,8 @@ square against the screen edge or dock.
 Three tiers (decided 2026-11-05, Ethan), named by size: **minimal** < **compact** <
 **expanded**. Apple's words, not Apple's mapping (APPLE §B2):
 - **minimal** — resting in the bar: one line, 32 px tall, one to three pills.
-- **compact** — on hover: the hovered pill itself grows in place into a short panel, 56 or
-  88 px tall, over the top of windows (and the system cluster, if it must). No Apple
+- **compact** — on hover: the hovered pill itself grows in place into a short panel, 56 to
+  120 px tall, over the top of windows (and the system cluster, if it must). No Apple
   equivalent; it replaces the old hover peek, which only swapped a pill's content.
 - **expanded** — on click, or opened by the stack: the panel with tabs; it carries what
   compact has no room for (media: player choice, the app's volume, shuffle/repeat).
@@ -280,7 +282,7 @@ and shrinks when they are off; `auto` and `none` are the kit's own.
 |---|---|---|---|
 | `auto` | the idle plan that matters right now, chosen and rotated by context (§2a-iii) — a smart stack, not a random carousel | core | plan signals + one re-rank timer while idle |
 | `none` | black pill + the **buoy light**: a small amber dot at the leading edge. Off normally; lit when something was missed (§6 missed history) | core | event |
-| `clock` | a *second* clock, styled unlike the one in the right cluster: an icon of the part of the day + the time in bold even figures. Six icons, one per daypart (`kit/daypart.js`, §2d): the sun along an arc over the horizon (dawn and evening half-set in peach `#F5C4B3`, morning/noon/afternoon in pale gold `#FAC775`), then the moon; colour SVGs at 20 px like art and Bu, no state colour (2026-11-04, Ethan). The time is GNOME's: 12/24 h (`clock-format`), locale, and seconds when Date & Time shows them (`clock-show-seconds`). Variants via `idle-clock-style` (2026-11-08, Ethan): icon and the part of the day in words ("Afternoon", the default) · icon and time · icon only · the part of the day in words · time only; the old "with seconds" left for GNOME's own setting | `clock` | GNOME's wall clock (`GnomeDesktop.WallClock`, as the lock screen): a tick on the minute (each second with seconds), right after suspend; it exists only while the idle pill is on screen |
+| `clock` | a *second* clock, styled unlike the one in the right cluster: an icon of the part of the day + the time in bold even figures. Six icons, one per daypart (`kit/daypart.js`, §2d): the sun along an arc over the horizon (dawn and evening half-set in peach `#FFB889`, morning/noon/afternoon in yellow `#FFD23F`; palette A, `scripts/icons.js`), then the moon; colour SVGs at 20 px like art and Bu, no state colour (2026-11-04, Ethan). The time is GNOME's: 12/24 h (`clock-format`), locale, and seconds when Date & Time shows them (`clock-show-seconds`). Variants via `idle-clock-style` (2026-11-08, Ethan): icon and the part of the day in words ("Afternoon", the default) · icon and time · icon only · the part of the day in words · time only; the old "with seconds" left for GNOME's own setting | `clock` | GNOME's wall clock (`GnomeDesktop.WallClock`, as the lock screen): a tick on the minute (each second with seconds), right after suspend; it exists only while the idle pill is on screen |
 | `weather` | condition icon + temperature ("31°", the user's unit, rounded as the date menu's forecast); its compact (hover): "31° · Partly cloudy" over "Feels like 34° · Wind NE 12 km/h · Humidity 75%", each part left out when unknown; the day itself is Home's (§3). Icons are Buoy's own colour SVGs, one per GNOME condition (13, with clear and few-clouds at night), one family with the clock's dayparts (`scripts/icons.js`, palette A: soft blue cloud, yellow sun, teal moon, rain and wind) — GNOME's symbolic icon as fallback (2026-11-06, Ethan: the symbolic ones read flat). **The place** (2026-11-06, Ethan: GNOME Weather is not installed on Ubuntu, and without it Shell's client never locates): the first of `org.gnome.shell.weather` `locations`, the key GNOME Weather and the date menu use. "Use my location" (`idle-weather-automatic`, on by default): each ask first asks Geoclue once as `org.gnome.Shell` (a system app in geoclue.conf: no dialog, bounded by Location Services) and puts the nearest GWeather city first there; Geoclue is stopped right after. Off: a city searched under the plan on the Island page (GWeather's own cities, accents ignored). Location Services off → "Location Services is off" with an Open Settings button (Privacy). **Units** (2026-11-06, Ethan: an en_US session showed °F in Vietnam): GNOME Weather's own keys, `org.gnome.GWeather4` `temperature-unit` / `speed-unit` — GWeather's own default reads only the locale. Buoy's first enable sets them to °C and km/h where the user never chose (`weather-defaults-applied`, like the clock's keys); prefs has Temperature and Wind speed under the plan, shared with GNOME Weather, Automatic last (the locale's). No place or no data → the pill keeps only the light, and the plan's row says why | `weather` | the date menu's own `WeatherClient` (`misc/weather.js`, `dateMenu.js` WeatherSection) — same place, no second client; asked for news only while the idle pill shows it: at once when older than `idle-weather-refresh` (30 min / 1 h), then on that interval (2026-11-06) |
 | `next-event` (`idle-content` `calendar`, "Next Event") | today's next event: the calendar icon, the title, the time at the end ("3:00 PM", "until 4:00 PM" while it runs, "all day"), so a long title ellipsizes and the time stays; the pill grows past the idle size to fit, up to the minimal cap (2026-11-08). Compact: the title over "3:00 PM – 4:00 PM · in 25 min". One starting within 30 min comes before one running; then an all-day event, unless `idle-calendar-all-day` is off (2026-11-08); nothing left today → nothing (only the light). No Join glyph: Shell's calendar server sends only id, title and times (M4 "Meeting in 5 min · Join") | `calendar` | the date menu's event source (`changed`); the wall clock's minute moves it |
 | `mascot` | Bu's eyes in the pill, four modes — idle · sleep · missed · waiting; in `idle` the eyes stroll in pixel steps: look, walk, blink, smile, one beat every few seconds (`idle-mascot-stroll`); asleep after 60 s without input, in power-saver and with animations off (`MASCOT.md` § Eyes, 2026-11-03) | `mascot` (off by default) | light changes, daypart, idle monitor, power profile; one beat timer only while strolling |
@@ -332,10 +334,10 @@ setting `privacy-dot = pill | system | both`, default `pill`.
 Like the iOS Smart Stack or the Windows widgets board: the user does not pick a plan,
 the pill shows what is useful *next* — what to prepare for, what is happening outside.
 
-- **Relevance, predefined.** Every `idle.js` also exports `relevance(ctx)` →
+- **Relevance, predefined.** Every `idle.js` also exports `relevance(ctx, opts)` →
   `{score: 0–100}` or `null` when it has nothing to show. Cheap and synchronous: it reads
   the state the plan already holds; no timers, no I/O (those stay in the plan's source).
-  `ctx` = `{now, daypart}`. Default scores, fixed in code, not user formulas:
+  `ctx` = `{now, clock, starts, data}`, `opts` its keys. Default scores, fixed in code, not user formulas:
 
   | plan | score |
   |---|---|
@@ -359,13 +361,13 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   that exists only while the pill is idle with `auto` — removed the moment an activity
   surfaces, on expand, and on disable. A re-rank that picks the same plan changes nothing.
 - **Interests** (Windows' word): `idle-auto-plans` (as) — which plans the stack may use,
-  in tie-break order; default every enabled plan. Prefs page **Island** (2026-11-04, was
+  in the order they take turns; default `calendar`, `weather`, `clock`. Prefs page **Island** (2026-11-04, was
   "Idle"): a reorderable list with switches, one row per plan, its own keys under it; a
   plan whose module is off is greyed ("Turn on in Modules"). The Modules switch turns the
   whole module on or off; the Island switch only puts its plan in the stack. A module that
   is only a plan (clock, weather) has no switch of its own (2026-11-08, Ethan): unused it
   costs nothing, its feed runs only while its plan is in use; turning its plan on turns it
-  on, should it have been off. "Switch every" shows only with Show on Automatic. A plan whose module is off does not exist (ARCHITECTURE rule 6).
+  on, should it have been off. "Switch every" shows only with Show on Automatic. A plan whose module is off does not exist (ARCHITECTURE rule 6); Show set to it leaves the pill empty, and its row says so ("Clock is off, so the pill shows nothing").
 - **Interaction.** Hover → the shown plan's compact; scroll on the idle pill → next /
   previous plan in the stack (held for one interval, like swiping the Smart Stack);
   click → Home, as in every idle state.
@@ -373,8 +375,7 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   width morph if the plan is wider), then nothing until the next switch.
 - **Built** (2026-11-08): `kit/smartstack.js` (pure: `choose`, `scrollTo`, `stackOrder`,
   `intervalMs`) and `kit/idle.js`. Between turns a re-rank (a feed's change, the wall
-  clock's minute) keeps the shown plan while it is still among the highest; ties move on
-  only at a turn. While `auto` is on, every plan of the stack has its feed and is told that
+  clock's minute) keeps the shown plan while it has something to show. While `auto` is on, every plan of the stack has its feed and is told that
   the pill shows (the weather asks on its own interval meanwhile), and the wall clock runs
   whatever plan shows. A scroll steps once per gesture (400 ms apart: a touchpad sends many
   events) and only on the idle pill; with `auto` off it goes on to the panel's workspace
@@ -460,6 +461,8 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   200 ms after it leaves, and the neighbours fade back. Moving straight onto another pill
   switches at once (no new 300 ms), as Shell's panel menus follow the pointer while one is
   open (`ui/popupMenu.js` `PopupMenuManager`: an ENTER on another source → `_changeMenu`).
+  A pill that appears under a resting pointer opens its compact too; an alert or ask closes
+  another pill's compact.
 - Click on any pill or its compact opens expanded at that pill's tab. On open, pills
   **merge**: the primary grows into the expanded panel, the others slide in and fade
   (300 ms). Close = split again.
@@ -473,9 +476,10 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   Settings → Appearance; an activity's keyline steps aside while it is ringed. Buttons,
   tabs and rows inside keep GNOME's own 2 px accent ring at 80 % (Shell 50 `_drawing.scss`
   `focus_ring`). (2026-11-04, Ethan: was 2 px of white at 55 % inside the border, 3 px in
-  all; 2 px of accent still read heavy on the pill); ←/→ move the ring (no wrap); Enter or Space
+  all; 2 px of accent still read heavy on the pill); ←/→ move the ring (no wrap; it follows its activity and clamps when one ends); Enter or Space
   opens the ringed pill as a click would (its tab, or Home); Esc or `Super+B` again lets
-  go, and so does a click outside the pills. Open: ←/→ walk the tab strip, Esc closes.
+  go, and so does a click outside the pills. Open: ←/→ walk the tab strip, Esc or `Super+B` closes. The key works in the Overview too
+  (NORMAL, OVERVIEW and POPUP modes, as Shell's own toggles).
   An open the stack made (ask, alert) takes no keyboard (§2); `Super+B` takes it for that
   pill, which then stays open like a click-open. With the keyboard, an ask's buttons
   answer to a key printed on them: the first letter of the label (Allow → A, Deny → D,
@@ -510,9 +514,10 @@ sizes, Bu's poses, special days, weather, settings and tests.
   from `input`, and `copied` from `copied` (GNOME shows nothing on copy; Buoy does).
 - **input** (2026-11-05; named `layout` until then — it covers IBus input methods too): the
   input source you switch to, xkb or IBus, as Shell's indicator
-  names it — the IBus engine's `InputMode` symbol when it has one (Bamboo's V / E), else
+  names it — the IBus engine's `InputMode` symbol when it is 1–2 characters (Bamboo's V / E), else
   the short name — then the source's name: "EN · English (US)". It also flashes when an
-  engine switches its own mode. Shell's Super+Space switcher list is replaced too
+  engine switches its own mode; nothing at enable, at IBus startup or when nothing shown
+  changes. Click → Keyboard settings. Shell's Super+Space switcher list is replaced too
   (2026-11-05, Ethan; `input-replace-switcher`, on): a press switches at once to the source
   used before; with Super still held, each Space moves one further along the recent list —
   the pill shows where it landed. Off, GNOME's list returns.
@@ -591,7 +596,7 @@ sizes, Bu's poses, special days, weather, settings and tests.
   client's. A clipboard-manager extension restoring its last item sets a Memory owner:
   silent as well. The app is the
   focused one, so `apps-hidden` and profiles apply (hide a password manager by name);
-  a window without a `.desktop` counts as `system`. `clipboard-show-preview` off: "Copied"
+  a window without a `.desktop` counts as `system`. `copied-show-preview` off: "Copied"
   alone and the clipboard is not read. Click → Home (no tab of its kind).
 - **Screenshot** (2026-11-05; settled 2026-11-08, NOTIFICATIONS.md §7: step 1's pill and
   card already show it — the thumbnail, "Show in Files", a click opens it — so the extras
@@ -599,11 +604,7 @@ sizes, Bu's poses, special days, weather, settings and tests.
   GNOME's transient banner): not feedback but a `notification`, from Shell's own
   "Screenshot captured" (`ui/screenshot.js` `_storeScreenshot`: the PNG goes to the
   clipboard, then a transient notification with the thumbnail, "Show in Files" and
-  activate → open the file), presented by the notification module's override for Shell's
-  screenshot source. Short like feedback: pill 1 for ~3 s, never counted as missed (your
-  own action), minimal = thumbnail 20 + "Screenshot". Unlike feedback it has a compact —
-  thumbnail 40, "Show in Files", Delete (to the Trash), click opens the image — since it
-  leaves a file you may act on. (M4's separate "Screenshot taken" item merged here
+  activate → open the file), shown as any notification (NOTIFICATIONS.md §7). (M4's separate "Screenshot taken" item merged here
   2026-11-06, Ethan; no Copy: Shell already copied it.) One pill per shot: the clipboard side stays quiet (above). A finished screencast
   ("Screencast recorded", same file) is handled the same way; the recording itself is a
   running activity with its timer and stop button (§6b privacy / recording).
@@ -686,12 +687,17 @@ go when expanded closes; each one's data lives only that long (rule 8).
   (feels like when it differs, wind, humidity). No high / low: GWeather gives the current
   reading and hourly forecasts from now, not the day's range. A click opens GNOME Weather
   when it is installed; Ubuntu ships without it, and then the card is not a button. Hidden
-  without a place or a reading.
+  without a place or a reading. Home has its own reader for the open: a stale reading is
+  fetched once.
 - Up next — today's events from the same calendar source (the calendar module's
   `events.js` / `agenda.js`). The month grid is the Calendar tab's, not Home's: the tab
   has the month to pick a day on one side, that day's events on the other — today's and
   the week ahead when today is picked (2026-11-08, Ethan); the month scales with the tab's
-  height, its circles 26 px at 1920 up to 40 px on large screens (2026-11-08, Ethan). What is left of today, at
+  height, its circles 26 px at 1920 up to 40 px on large screens (2026-11-08, Ethan): a sixth of
+  the six weeks' room, even, 26–40, the digits 12–16 px. The month's name in the accent, the
+  year grey, weekends dimmed, today a filled circle, an accent dot on days with events; a
+  day's events as cards (dot · title · time). A row opens the calendar app (the date menu's
+  choice) and closes the island. No calendars → Bu with "Add an Online Account" (Settings). What is left of today, at
   most three, one line each: a bar (the accent for one running), the title, its time at the
   end ("3:00 PM · in 25 min" within 2 h, "5:30 PM · 45 min" later, "Now · until 4:00 PM",
   "All day" last); "+2 more" when there are more; a click opens the Calendar tab. Hidden
@@ -776,7 +782,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    display only. Tab Media: players as chips, art, title (scrolling
    like the compact's when long) / artist / album, "Open app",
    a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. Laid out (2026-11-08, Ethan) as the art, a
-   square as tall as the tab, and a column beside it — title / artist / album · app with ↗
+   square as tall as the tab (at most 40 % of its width, 96–280 px), and a column beside it — title / artist / album · app with ↗
    (Open app) beside them, the slider and transport at the bottom — under a row of the
    players' chips (one per app) when there is more than one; each tab gets its own redesign
    after v0.1. "Open app" brings the player's window up
@@ -790,7 +796,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    inside the pill's: the pill's radius less the art's inset across, the content padding
    (24 − 14 = 10 on the compact's 40; minimal 16 − 14 = 2, raised to 6, under which a
    20 px art reads square); in expanded and the tab it stays square (2026-11-05, Ethan). No volume in the tab: per-app volume and
-   the output device go to a Sound tab (§6b). Spotify ads: "Ad" and their countdown.
+   the output device go to a Sound tab (§6b). Spotify ads: "Ad" and their countdown, no skip.
+   A player that stops or leaves the bus ends its activity; the chosen chip keeps its light
+   face under the pointer.
 2. **hud** — volume / brightness / keyboard backlight / caps lock replace the stock OSD, as
    feedback (§2e).
 3. **home** — the expanded Home above.
@@ -821,13 +829,20 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 3. **timer** — pomodoro + stopwatch, keep-awake, ring in the compact pill.
 4. **power / bluetooth** — charging, low battery, device connected with its battery.
 5. **calendar** — Up next in Home; alert 5 min before with Join when the event has
-   a meeting link.
+   a meeting link. Shell's calendar server sends only id, summary, start and end, so the
+   link is read over EDS's own D-Bus (`CalendarFactory` → `Calendar.GetObjectList`, raw
+   iCalendar: `LOCATION`, `DESCRIPTION`, `URL`, `X-GOOGLE-CONFERENCE`), only for an event
+   about to start; no `gi://ECal` (not installed by default).
 6. **eject** — mount-added with one-tap eject (downloads moved to v0.1, §6c, 2026-11-06).
 7. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
 8. **several pills** — pill 1 plus up to two 120 px side pills (§2c).
 9. **clipboard** — the copied feedback (§2e, v0.1) and, with `clipboard-history`, the
-    Clipboard tab: history, search, pin, paste (M5).
+    Clipboard tab (M5): text, links, colours and images (`St.Clipboard.get_content`);
+    search, pin, delete, clear, 1–9 to paste; a row sets the clipboard, closes the island and
+    pastes (Ctrl+V by Clutter's virtual keyboard, Ctrl+Shift+V for terminals); skips
+    `x-kde-passwordManagerHint`, a pause switch, excluded apps, size and count caps; kept in
+    memory, saved under `~/.cache/buoy/` only if chosen. Layout after Notchy's (2026-11-02).
 10. **Sound tab** (2026-11-05, Ethan) — a standalone tab, Notchy's mixer: every app playing
     sound with its own volume slider, and the output device (GNOME's, for everything),
     from Shell's mixer (`ui/status/volume.js` `getMixerControl`). Not in the Media tab.
@@ -879,8 +894,9 @@ the % and the file rows show size only.
     time, then leaves (2026-11-05: 10 min, at most 5). The pill says "Name · Done" for
     2.5 s first. Done means the progress was hidden at ≥ 99 %; hidden earlier (cancelled)
     or the app leaving the bus ends it without Done.
-  - A click focuses that app's window (`Shell.AppSystem.lookup_app(id).activate()`);
-    there is nothing more to open.
+  - A click on a row or on the pill focuses that app's window
+    (`Shell.AppSystem.lookup_app(id).activate()`), not its tab: there is nothing more to
+    open. The compact's bar is at least 160 px. "In background" dims after 10 min.
   - Files closed mid-operation (2026-11-06, Ethan): it keeps working but stops sending
     LauncherEntry, and posts "N file operations active" (GNotification id `progress`), then
     "All file operations have been completed" (`transfer-complete`). Buoy reads both (it
@@ -898,7 +914,8 @@ the % and the file rows show size only.
   Each `.part` / `.crdownload` in a watched folder is its own
   **Running** row (and pill) once it is written to (name, size, speed; the ring only per
   the exception above) — this is how Firefox shows up at all. A partial file that is
-  never written to while watched (a leftover from a broken download) never shows. Chrome
+  never written to while watched (a leftover from a broken download) never shows. A row
+  with no new bytes for 30 s dims. Chrome
   names the file `Unconfirmed 123456.crdownload` until the download is checked — seen
   2026-11-06 for the whole download (a `.bin` and a `.pdf` from a local server), renamed
   to the real name only at the end; the word is translated — so a `.crdownload` named

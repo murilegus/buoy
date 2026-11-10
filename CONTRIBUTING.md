@@ -53,8 +53,8 @@ Open an issue before a large change, so the approach can be agreed before the co
   the extension; no warning or error from `buoy@murilegus` in the log.
 - **`pnpm verify` passes.** The pre-commit hook runs it; don't skip it with `--no-verify`.
   CI runs it again on Shell 50's gjs.
-- **Docs:** set the item's checkbox in `docs/FEATURES.md` and add a dated note under its
-  row; update SPEC or ARCHITECTURE when a decision changed.
+- **Docs:** set the item's checkbox in `docs/FEATURES.md` (no notes there: what was done
+  goes in the PR); a decision goes into SPEC, ARCHITECTURE or `docs/design`, with its date.
 
 In the pull request (the template asks for these):
 
@@ -85,7 +85,7 @@ buoy/
 ├── docs/
 │   ├── SPEC.md           what Buoy is and is not; v0.1 decisions
 │   ├── ARCHITECTURE.md   module/feature layout, rules, settings model
-│   ├── FEATURES.md       roadmap M0–M5 with status + scores
+│   ├── FEATURES.md       roadmap M0–M5 with status
 │   ├── INDICATORS.md     buoy light + privacy dot: colours, meanings, positions
 │   ├── APPLE.md          ActivityKit + HIG research → BuoyKit contract
 │   ├── MASCOT.md         Bu, the mascot: grids, poses, motion (previews in mascot/)

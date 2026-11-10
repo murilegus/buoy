@@ -235,7 +235,7 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
 
 | Key | Type | Default | Prefs | Meaning |
 |---|---|---|---|---|
-| `modules-greeting` | b | true | Modules, its own row | the module |
+| `modules-greeting` | b | true | Modules, Bu group | the module |
 | `greeting-style` | s | `expanded` | yes | `expanded` · `minimal` · `off` — Start and Wake |
 | `greeting-farewell` | b | true | yes | Leaving lines (§5) |
 | `greeting-name` | s | `''` | yes, prefilled with the real name | `''` = the real name |

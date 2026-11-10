@@ -146,7 +146,7 @@
     <key name="idle-auto-plans" type="as">
       <default>['calendar', 'weather', 'clock']</default>
       <summary>Plans in the stack</summary>
-      <description>The idle plans Automatic may show, in the order that breaks a tie.</description>
+      <description>The idle plans Automatic may show, in the order they take turns.</description>
     </key>
     <key name="idle-auto-interval" type="i">
       <range min="2" max="30"/>

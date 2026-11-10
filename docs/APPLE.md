@@ -193,9 +193,8 @@ beside it, `off` dims both — a muted level, 2026-11-05) · `{countdown}` / `{t
 `{until: ms since the epoch}` (a countdown the renderer runs once a second while shown,
 2026-11-05: a Spotify ad) ·
 **`{mascot: '<pose>', icon?}`** (Bu, added 2026-11-03): one of the 13 poses in
-`MASCOT.md`; an unknown pose falls back to `icon`, else `idle`. When a pill's leading is
-Bu, Bu's lamp is the buoy light: the left edge slot is not drawn, and the lamp shows the
-stack's `missed`/`waiting` colour if there is one, else the pose's (SPEC §2a-i). The pose
+`MASCOT.md`; an unknown pose falls back to `icon`, else `idle`. Bu's lamp always shows
+its pose's colour; the buoy light stays in the left edge slot (INDICATORS). The pose
 is data; frames, the swap timer and colours are the kit's.
 
 **One minimal for every place** (2026-11-05): an adapter returns one `leading · text ·
@@ -242,7 +241,7 @@ Selection → copied · GSConnect notifications → phone · D-Bus API → anyth
 - Adapters for apps that never adopted anything (Apple has none).
 - Priority across apps (Apple only ranks within one app; the system decides across apps).
 - Missed-activity light + short history.
-- Bu, a mascot whose lamp is that light (`MASCOT.md`): one pose set for agents, the
+- Bu, the mascot (`MASCOT.md`): one pose set for agents, the
   greeting and the brand, data-only in the contract.
 
 ### B7. What Apple has that Buoy skips

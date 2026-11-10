@@ -130,7 +130,7 @@ Click the pill, then **⚙** in Home — or run `gnome-extensions prefs buoy@mur
 - **Panel** — the left and right clusters of the top bar.
 - **Windows** — maximized windows under the top bar, and the Dock and Clock settings (the
   same ones as Ubuntu's Dock and GNOME's Date & Time, synced both ways).
-- **About** — the version, Bu, and links.
+- **About** — the version, Bu, links, and "Support Buoy" when donations are set.
 
 ### Claude Code
 
@@ -156,6 +156,9 @@ If Buoy is off or removed, the hooks do nothing and Claude Code carries on as wi
   GNOME Settings.
 - **Album covers** are loaded from the address the music player gives, as GNOME's own media
   controls do.
+- **The clipboard**: when you copy, Buoy reads it (text, file names or an image thumbnail)
+  to show it briefly. Turn "Show what was copied" off and it only says Copied, without
+  reading. Nothing is stored.
 - **Claude Code** talks to Buoy over your session's local D-Bus. The prompt you type is
   never shown, and Buoy keeps no transcript or permission of its own; "Always" writes the
   rule Claude Code suggested into Claude Code's own settings.
