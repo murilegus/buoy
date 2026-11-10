@@ -1,4 +1,6 @@
-# App profiles (decided 2026-11-02)
+# App profiles
+
+*Decided 2026-11-02.*
 
 A profile changes how one app shows up in the pill, without code: a JSON file per app in
 `~/.config/buoy/apps/`. It is yours, not the project's: Buoy ships none, and the

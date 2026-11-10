@@ -178,7 +178,9 @@ Islet (Quickshell, not GNOME), Notchy (macOS, paid).
 - The island holds **activities only**; persistent system status stays in the system
   cluster. (This supersedes the earlier "indicators in the pill" decision.)
 
-### 1a. Windows against the top bar: rounded top corners (decided 2026-11-02; tiled and top edge 2026-11-04)
+### 1a. Windows against the top bar: rounded top corners
+
+*Decided 2026-11-02; tiled and top edge 2026-11-04.*
 
 Floating windows already have round corners (Adwaita `--window-radius`, 15 px in
 libadwaita 1.9 on Ubuntu 26.04), but Adwaita sets it to 0 when maximized or tiled.
@@ -271,7 +273,9 @@ Rules:
   missed (amber light on return), an unanswered ask lights red. Back on screen, an ask or
   transient on top opens as if it had just arrived. Super+B does nothing while hidden.
 
-### 2a. Idle content (decided 2026-10-30)
+### 2a. Idle content
+
+*Decided 2026-10-30.*
 
 Setting `idle-content`, default `auto` (changed from `none` 2026-11-03). Each value is an
 **idle plan** provided by a module (`modules/<id>/idle.js`), so the list grows with modules
@@ -328,7 +332,9 @@ trailing zone inward; adapters never know. Click → expanded Home with "in use 
 GNOME's own indicator in the system cluster is hidden while the `privacy` module is on;
 setting `privacy-dot = pill | system | both`, default `pill`.
 
-### 2a-iii. `auto`: a smart stack of idle plans (decided 2026-11-03)
+### 2a-iii. `auto`: a smart stack of idle plans
+
+*Decided 2026-11-03.*
 
 Like the iOS Smart Stack or the Windows widgets board: the user does not pick a plan,
 the pill shows what is useful *next* — what to prepare for, what is happening outside.
@@ -383,7 +389,9 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   fetching through Soup at most every 30 min and only while it is in `idle-auto-plans`;
   they are why `auto` is a ranked stack rather than a fixed rotation.
 
-### 2b. Tabs (decided 2026-10-30)
+### 2b. Tabs
+
+*Decided 2026-10-30.*
 
 - The tab strip exists only inside expanded, and only when a click opened it; the stack's
   own opens (alert, ask, transient) show the activity's expanded view without a strip.
@@ -432,7 +440,9 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   - May use Shell APIs in `tab.js`; still no polling while closed.
   - Likely first ones: Clipboard, Launcher. Not planned: Calculator, Emoji (GNOME search has them).
 
-### 2c. Several pills (decided 2026-10-30; shapes and hover 2026-11-05)
+### 2c. Several pills
+
+*Decided 2026-10-30; shapes and hover 2026-11-05.*
 
 - **Pill 1** is the highest priority, at screen centre, content-fit as when it is alone
   (120 … 0.6 × expanded, `wide` 0.8; §4). It never narrows because others run
@@ -485,7 +495,9 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   their position 1–9 (Deny · Allow · Always → D · 2 · 3). Ignored while another popup
   holds the keyboard.
 
-### 2d. Greeting (decided 2026-11-03; moments 2026-11-06)
+### 2d. Greeting
+
+*Decided 2026-11-03; moments 2026-11-06.*
 
 Buoy says hello when the machine starts or wakes from a long sleep (expanded: Bu on the
 left, the greeting, the time and date and the weather taking the rest), welcome back on a new login,
@@ -506,7 +518,9 @@ sizes, Bu's poses, special days, weather, settings and tests.
   afternoon → "Good afternoon", evening → "Good evening", night → "Still up" (vi
   "Khuya rồi").
 
-### 2e. Feedback: minimal only (decided 2026-11-05, Ethan)
+### 2e. Feedback: minimal only
+
+*Decided 2026-11-05, Ethan.*
 
 - **What.** A confirmation of something you just did: `osd` from `hud`, the input source
   from `input`, and `copied` from `copied` (GNOME shows nothing on copy; Buoy does).
@@ -704,7 +718,9 @@ go when expanded closes; each one's data lives only that long (rule 8).
   M4, and a `--:--` with nothing behind it would be a block without an effect (rule 9's
   spirit); it joins the end column under Up next with its item.
 
-## 4. Sizes (decided 2026-10-30: derived, not fixed)
+## 4. Sizes
+
+*Decided 2026-10-30: derived, not fixed.*
 
 > **v0.2 redesign:** the new sizes are decided in [Design](design/index.md) (in Vietnamese
 > first). This section describes v0.1, as the code is today; it changes with the M4 redesign
@@ -849,7 +865,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
     wake, welcome back, see you soon; by part of day, weekday, birthday and holidays
     (§2d, GREETING.md).
 
-## 6c. Transfers tab (decided 2026-11-03)
+## 6c. Transfers tab
+
+*Decided 2026-11-03.*
 
 What the tab can show is bounded by its sources, so it grows in two steps. Checked
 2026-11-03 against Nautilus upstream, Ubuntu's packaging and the installed binaries:
@@ -954,7 +972,9 @@ the % and the file rows show size only.
 
 Roadmap: FEATURES.md (milestones M0–M5 with status). Status marks: INDICATORS.md. Contract: CONTRACT.md. Mascot: MASCOT.md (Bu). Competitor notes (Notchy audit, Isle, Islet, BEHAVIOUR) are kept locally in `docs/notes/` and not committed.
 
-## 7. BuoyKit (decided 2026-10-30)
+## 7. BuoyKit
+
+*Decided 2026-10-30.*
 
 Buoy is a framework first, features second — see `CONTRACT.md` for the full contract.
 

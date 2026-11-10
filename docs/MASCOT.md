@@ -1,4 +1,6 @@
-# Bu — Buoy's mascot (decided 2026-11-03)
+# Bu — Buoy's mascot
+
+*Decided 2026-11-03.*
 
 Bu, the first syllable of Buoy ("boo"; the name is said "BOO-ee", 2026-11-06), is the
 buoy itself: a small pixel float with a lamp on its head. The lamp shows the pose; the
@@ -88,7 +90,9 @@ replacement for the light in every state.
   text greys in CSS and Bu, whose palette is fixed, is drawn at 40 % opacity, as the
   `stale` preview; the `stale` pose is what Bu looks like while dimmed.
 
-## Rendering (decided 2026-11-03)
+## Rendering
+
+*Decided 2026-11-03.*
 
 - `kit/mascot.js` holds the grids below as data: pure, no `St`, unit-tested. Pose names
   are a closed set; an unknown pose falls back to the element's `icon`, or `idle`.
@@ -425,7 +429,9 @@ no activity, so the moving and activity poses (`busy`, `think`, `done`, `party`,
   proxy, no daemon = not saving. `_proxy` is private Shell state: check it on every
   Shell release.
 
-### The stroll (decided 2026-11-03)
+### The stroll
+
+*Decided 2026-11-03.*
 
 In mode `idle` only, the eyes follow a fixed script so the pill feels alive. Motion is
 **stepped**, like the pixel Bu: each change is one or a few single frames, never an

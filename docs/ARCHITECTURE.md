@@ -1,4 +1,6 @@
-# Architecture (decided 2026-10-30)
+# Architecture
+
+*Decided 2026-10-30.*
 
 Organised **by module/feature** (option B). Alternatives considered: by layer (hard to add
 or switch off a feature), by app (system sources don't belong to an app), satellite
@@ -119,7 +121,9 @@ v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` (the copied flash) an
 from v0.1 (2026-11-02);
 idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone tabs `calendar` (the month and the picked day's events, 2026-11-08), `clipboard` (stub `tab.js`, in that order, 2026-11-02). `greeting`: its first run and What's new in v0.1, the rest in M4 (2026-11-08).
 
-## Outside the extension (2026-11-08)
+## Outside the extension
+
+*2026-11-08.*
 
 `install.sh` (repo root) installs, updates and removes Buoy for one user without EGO, from
 a GitHub release, a zip or a clone; it uses the installed extension's own `hooks.js` and
@@ -167,7 +171,9 @@ D-Bus callers send presentation data directly: no adapter, but the registry slug
 and applies the user's profile (Registry.present). API: DBUS.md.
 ```
 
-### App profiles (2026-11-02)
+### App profiles
+
+*2026-11-02.*
 
 `~/.config/buoy/apps/<app>.json`: per-user, data only (rule 7): icon, title template,
 hideBody, priority, ttl, regex replace/skip. The registry applies them for every adapter

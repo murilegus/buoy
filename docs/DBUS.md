@@ -1,4 +1,6 @@
-# D-Bus API (decided 2026-11-03)
+# D-Bus API
+
+*Decided 2026-11-03.*
 
 Scripts and apps that know Buoy send their own pill. They skip the adapters, but not the
 user: the app is slugged and the user's [profile](PROFILES.md) still applies. Examples to

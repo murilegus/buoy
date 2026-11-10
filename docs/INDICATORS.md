@@ -35,7 +35,9 @@ Not states: the clock plan's daypart icons (SPEC §2a, 2026-11-04) are yellow
 `#FFD23F` and peach `#FFB889` (palette A) beside the light, never amber or red; `tests/clock.test.js`
 checks the files.
 
-### Bu's lamp (2026-11-03; 2026-11-08)
+### Bu's lamp
+
+*2026-11-03; 2026-11-08.*
 
 Bu's lamp shows its pose's colour, always. The buoy light is the pill's edge dot on a pill
 Bu leads too: amber/red never reach the lamp (2026-11-08, Ethan: the lamp is too small to
