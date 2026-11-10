@@ -104,6 +104,10 @@ pill's content instead of adding a pill.
 
 ## 3. The compact (hover): a card
 
+> **v0.2 redesign:** the card's new layout and sizes are decided in [Design](design/index.md) (in Vietnamese
+> first). This section describes v0.1, as the code is today; it changes with the M4 redesign
+> items (FEATURES).
+
 The compact of the other kinds (a leading, one title, one subtitle, buttons beside them,
 56 / 88 / 120 px) is too tight for a message (Ethan, 2026-11-07: "at least like GNOME's
 banner"). A notification's compact is a **card** — GNOME's banner layout inside the

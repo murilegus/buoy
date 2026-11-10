@@ -127,6 +127,30 @@ name the same in metadata.json, notes.js and package.json.
 `README.md` is for people who use Buoy (install, settings, privacy, limits);
 `CONTRIBUTING.md` holds the repository tree, the setup and the release steps (2026-11-08).
 
+**The docs and their site** (2026-11-10, FEATURES M4 "Design docs and site"). `docs/` is
+bilingual: `page.md` in English and `page.vi.md` in Vietnamese side by side; a design page is
+written and decided in Vietnamese first, the other docs keep English as their source (they are
+not translated yet: Ethan wants them made shorter first). `mkdocs.yml` (repo root) builds the
+site with MkDocs Material and mkdocs-static-i18n — only in CI (`.github/workflows/docs.yml` →
+GitHub Pages; versions in `docs/requirements.txt`), never part of the extension or of
+`package.json`. The design lives in `docs/design/`:
+
+```
+docs/design/
+├── index.vi.md         the units and rules every part follows (em, 56 + 16n, concentric radii)
+├── tokens.vi.md        the one table of numbers: sizes, radii, gaps, type
+├── colours.vi.md       the palette the CSS draws from
+├── render/lib.js       shared by the render scripts: draws at 3×, fits text to its 1× width
+└── <part>/             pill, compact, alerts-and-asks, expanded, tabs, icons, mascot
+    ├── index.vi.md     purpose, anatomy, sizes, states, decisions (date, who), open, code
+    ├── images/         x.vi.png (labels in Vietnamese), x.en.png (English, with the translation);
+    │                   each page links its own (mkdocs-static-i18n serves both as x.png)
+    └── render/         the gjs scripts that draw those images
+```
+
+`scripts/render-design.sh` redraws every image. The render scripts and `render/` folders are
+left out of the site (`exclude_docs`).
+
 ## Data flow
 
 ```

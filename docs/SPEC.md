@@ -702,6 +702,10 @@ go when expanded closes; each one's data lives only that long (rule 8).
 
 ## 4. Sizes (decided 2026-10-30: derived, not fixed)
 
+> **v0.2 redesign:** the new sizes are decided in [Design](design/index.md) (in Vietnamese
+> first). This section describes v0.1, as the code is today; it changes with the M4 redesign
+> items (FEATURES).
+
 All sizes are logical px; HiDPI is handled by St/Clutter. `kit/shapes.js#shapesFor()`
 derives everything from two inputs — the monitor's logical width `W` and the panel
 height — and is recomputed on `monitors-changed` or when `expanded-width` changes.

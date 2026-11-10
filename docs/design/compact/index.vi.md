@@ -1,0 +1,73 @@
+# Compact
+
+Dạng hiện khi rê chuột vào một pill 300 ms, và dạng của card thông báo. Alert và ask cũng dùng cỡ
+này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [Bảng số](../tokens.vi.md).
+
+## Kích thước
+
+- Chiều cao **56 + 16n**, tối đa 152: phần đầu 56, rồi nội dung tính theo dòng 16 — một bậc bằng
+  một dòng chữ, cho mọi compact, không ngoại lệ (trước là 56 / 88 / ≤ 120, card ≤ 160). Nhạc 56,
+  nhạc 88, Claude Code 3 hàng 120, card 136 / 152. **Chốt** (Ethan, 2026-11-10; thay cho 56 + 32n:
+  với bậc 32 mà dòng 16, card 1 dòng và 2 dòng không thể cách nút đều nhau)
+- **Bo 28** cho mọi compact, nên góc trên luôn là hình tròn của phần đầu 56 (trước là 24). **Chốt**
+- Phần đầu 56 = pill idle × 1.75: leading 40, trên dưới 8, hai bên 14. Chữ không phóng theo;
+  phần đầu chứa hai dòng (tiêu đề 1em, phụ đề 0.85em). Nút là hình tròn 32, tâm nằm trên đường
+  giữa phần đầu (y = 28), cùng hàng với leading. **Đề xuất**
+- Rộng 16em … min(28em, 0.72 × expanded): 240 … 404 ở 1920. **Chốt**
+- Không có đèn trong compact ([Pill](../pill/index.vi.md#đèn-ở-hai-đầu-buoy-light-trái-privacy-dot-phải)). **Chốt**
+
+## Nhạc
+
+- Cột dưới leading không bao giờ để trống. **Chốt**
+- Nhạc có thanh tiến trình: **ảnh bìa 72** chiếm cả phần đầu lẫn hàng thanh (8 + 72 + 8 = 88), bo
+  20 (28 − 8, đồng tâm với góc). Nhạc không có thời lượng (radio, luồng trực tiếp): chỉ phần đầu,
+  ảnh 40, cao 56. **Chốt**
+
+![Phần đầu 56 (nhạc không có thanh tiến trình) và nhạc 88 với ảnh bìa 72](images/anatomy-media.vi.png)
+
+## Danh sách hàng (Claude Code, danh sách missed)
+
+- Tối đa 3 hàng; mỗi hàng có icon trạng thái hoặc icon app ở cột dưới leading, chữ thẳng cột với
+  tiêu đề. **Chốt**
+- Cách phần đầu 8, mỗi hàng 16 sát nhau, dưới cùng 8: 56 + 8 + 16 × số hàng + 8 = 88 / 104 /
+  **120**. Icon **14** giữa hàng 16 và giữa cột leading 40 (cách mép leading 13), để các icon
+  không chạm nhau; chữ 0.85em canh giữa hàng, thời gian canh phải theo nút. **Chốt** (Ethan,
+  2026-11-10; đã cân nhắc hàng cách 32 với icon 16, nhưng 3 hàng sẽ cao 152)
+
+![Claude Code với 3 hàng, 120](images/anatomy-rows.vi.png)
+
+## Card thông báo
+
+- Phần đầu giống mọi compact: ảnh đại diện 40, logo app gắn ở góc dưới bên phải; không có ảnh đại
+  diện thì dùng logo app 40, không gắn huy hiệu. Dòng trên là người gửi, dòng dưới là
+  "App · thời gian"; nút × tròn 32. **Chốt**
+- Nội dung tin trải hết bề ngang từ lề trái, tối đa 2 dòng (`MAX_CARD_LINES` giữ 2), mỗi dòng 16,
+  cách phần đầu 8 và cách hàng nút 12. Hàng nút trải hết bề ngang, cách mép 12, cao 32, bo 16
+  (đồng tâm với bo 28). **Chốt**
+- Chiều cao = 56 + 8 + 16 × số dòng + 12 + 32 + 12: **136** khi 1 dòng, **152** khi 2 dòng — cùng
+  khoảng cách ở cả hai. (Trước đây thân ở giữa và chiều cao làm tròn lên bậc 32, nên card 1 dòng
+  cách nút 2, card 2 dòng cách nút 10.) **Chốt** (Ethan, 2026-11-10)
+- Nút cách mép 8 đã cân nhắc và bỏ: nút cao 32 chỉ bo được 16, trong khi đồng tâm với góc 28 ở lề 8
+  cần bo 20. **Chốt** (Ethan, 2026-11-10)
+
+![Card thông báo: 1 dòng 136, 2 dòng 152](images/anatomy-card.vi.png)
+
+![Card: 2 dòng, 1 dòng, không có ảnh đại diện, tin dài cắt ở 2 dòng](images/card.vi.png)
+
+## Phương án đã cân nhắc
+
+Phần thân thụt theo cột chữ (như hiện tại) so với tận dụng cột dưới leading; với nhạc, phương án
+còn lại là thanh trải hết bề ngang.
+
+![Phần thân: thụt vào so với tận dụng cột dưới leading; ảnh bìa 72](images/body.vi.png)
+
+## Chỗ trong code
+
+- `lib/kit/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`
+  24 → 28.
+- `lib/kit/present.js` — bỏ `lightDot` trong `compactBox` và `cardBox`; leading trong ô của nó;
+  ảnh bìa 72 cho compact nhạc; icon từng hàng ở cột leading; card dùng chung phần đầu (ảnh đại
+  diện + huy hiệu), thân và nút trải ngang.
+- `lib/kit/presentation.js` — `MAX_CARD_LINES` giữ 2; `MAX_ROWS` giữ 3.
+- `stylesheet.css` — style hàng và card của compact.
+- SPEC §4 (bảng kích thước); NOTIFICATIONS.md §3 (card).

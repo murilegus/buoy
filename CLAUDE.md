@@ -8,6 +8,8 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
 2. `docs/SPEC.md` — product decisions (what the pill does, idle, tabs, clusters).
 3. `docs/FEATURES.md` — roadmap M0–M5 with status; tasks are referenced as "M1 item N".
 4. `docs/APPLE.md` §B — the activity/presentation contract adapters must return.
+5. `docs/design/` — how Buoy looks (sizes, type, colour), one page per part; the numbers live
+   only in `tokens.vi.md`, the colours only in `colours.vi.md`.
 
 ## How we work
 - **Claude Code writes the code; Ethan reviews.** Work in units of one FEATURES.md item
@@ -33,7 +35,10 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
   `/usr/share/gnome-shell/theme/Yaru/gnome-shell-theme.gresource` (`gresource extract`).
 - Keep diffs reviewable: one item per branch, small commits inside it are fine but the
   handover describes the whole. Do not refactor neighbouring code unless the item needs it.
-- Vietnamese or English in chat, English in code, comments and docs.
+- Vietnamese or English in chat, English in code and comments. `docs/` is bilingual: `page.md`
+  in English, `page.vi.md` in Vietnamese. Design pages are written and decided in Vietnamese
+  first, then translated; the other docs keep English as their source (ARCHITECTURE, "The docs
+  and their site"). Images with words come in two versions, `x.vi.png` and `x.en.png`.
 
 ## Commands
 - `pnpm test` — gjs unit tests (adapters, contract). Run before saying something works.
