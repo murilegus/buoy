@@ -54,6 +54,34 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
 
 ![Card: 2 dòng, 1 dòng, không có ảnh đại diện, tin dài cắt ở 2 dòng](images/card.vi.png)
 
+## Chia sẻ và quay màn hình
+
+Chuyển vào pill của Buoy, thay cho hai nút của GNOME trên thanh (quay: nút đỏ có đồng hồ;
+chia sẻ: nút cam), có nút Dừng, như dưới đây. **Chốt** (Ethan, 2026-11-11)
+
+![Chia sẻ và quay màn hình trên thanh và khi hover](images/screen.vi.png)
+
+- **Hai activity riêng**, kind `screen`: quay màn hình của Shell, và chia sẻ (mỗi lúc có thể có cả
+  hai). Tầng "đang chạy", priority **55**: trước nhạc, tải về, Claude Code đang làm; sau ask, cuộc gọi
+  và các khoảnh khắc ngắn (osd, thông báo). Không phải "cần bạn": không ai chờ câu trả lời.
+- **Chấm đỏ luôn ở pill 1**, dù activity màn hình đang ở pill phụ hay `+N`: chấm nói về cả máy,
+  không thuộc activity nào (như đèn).
+- **Pill:** leading là icon (quay: `record-screen-symbolic` của Shell; chia sẻ:
+  `screen-shared-symbolic`), chữ là đồng hồ chạy từ lúc bắt đầu, `0:42`. Đồng hồ nhảy mỗi giây chỉ
+  khi pill đang hiện, như nút của GNOME (`status/remoteAccess.js`, `ScreenRecordingIndicator`).
+- **Compact khi hover:** chỉ phần đầu 56. Leading 40 nền `fill-2`, icon trắng; tiêu đề "Đang quay
+  màn hình" / "Đang chia sẻ màn hình"; dòng dưới `0:42 · từ 14:03` (`fg-subtle`). Nút Dừng tròn 32,
+  `fill-inverse`, ô vuông đen, tâm y = 28.
+- **Dừng:** quay gọi `Main.screenshotUI.stopScreencast()`; chia sẻ gọi `stop()` trên mọi
+  `MetaRemoteAccessHandle` chưa phải bản ghi, như nút của GNOME. App quay qua portal (handle có
+  `is-recording`): "Ứng dụng đang quay màn hình". Mutter không đưa tên app.
+- **Bấm vào pill:** mở Home, hàng "đang dùng"; không có tab, không mở expanded. Dừng chỉ bằng nút,
+  để không lỡ tay.
+- Mic và camera không thành activity: chỉ chấm, bấm mở Home.
+
+Cần kiểm khi code: Mutter chỉ báo phiên mới (`new-handle`), không có hàm liệt kê phiên đang có, nên
+khi Buoy bật giữa lúc đang chia sẻ thì chưa biết phiên đó.
+
 ## Phương án đã cân nhắc
 
 Phần thân thụt theo cột chữ (như hiện tại) so với tận dụng cột dưới leading; với nhạc, phương án

@@ -81,7 +81,7 @@ plugins:
             - Thiết kế:
                 - design/index.md
                 - Bảng số: design/tokens.md
-                - Bảng màu: design/colours.md
+                - Bảng màu: design/colours/index.md
                 - Pill: design/pill/index.md
                 - Compact: design/compact/index.md
                 - Alert và ask: design/alerts-and-asks/index.md

@@ -147,9 +147,9 @@ GitHub Pages; versions in `requirements-docs.txt`, beside `mkdocs.yml`), never p
 docs/design/
 ├── index.vi.md         the units and rules every part follows (em, 56 + 16n, concentric radii)
 ├── tokens.vi.md        the one table of numbers: sizes, radii, gaps, type
-├── colours.vi.md       the palette the CSS draws from
 ├── render/lib.js       shared by the render scripts: draws at 3×, fits text to its 1× width
-└── <part>/             pill, compact, alerts-and-asks, expanded, tabs, icons, mascot
+└── <part>/             colours (the palette the CSS draws from), pill, compact,
+                        alerts-and-asks, expanded, tabs, icons, mascot
     ├── index.vi.md     purpose, anatomy, sizes, states, decisions (date, who), open, code
     ├── images/         x.vi.png (labels in Vietnamese), x.en.png (English, with the translation);
     │                   each page links its own (mkdocs-static-i18n serves both as x.png)

@@ -37,13 +37,14 @@ pages, Bu, About, greeting first run and What's new, `install.sh`, README, last 
 
 ## M4 — Redesign and "Wow" pack (v0.2) `[ ]`
 
-The design docs first, then the five redesign items in order (the restructure only moves files),
+The design docs first, then the six redesign items in order (the restructure only moves files),
 one branch each, shipped together as 0.2. Sizes are in [docs/design](design/index.md).
 
 | | Item | Done when |
 |---|---|---|
-| [~] | Design docs and site | done: `docs/design` per part (Vietnamese first), tokens, MkDocs site in en and vi built in CI. Left: root docs made shorter, then translated; English design pages and images; the palette |
+| [~] | Design docs and site | done: `docs/design` per part (Vietnamese first), tokens, MkDocs site in en and vi built in CI. Left: root docs made shorter, then translated; English design pages and images |
 | [ ] | Restructure: kit, stylesheet, icons | ARCHITECTURE first; kit in `model/` `services/` `ui/`, `present.js` split by tier; a lint check of the import boundaries; one stylesheet in sections plus each tab's CSS beside its module, loaded by kit (not `@import`); `icons/color` and `icons/symbolic`; `install.sh` of 0.1 still works; nothing visible changes |
+| [ ] | Colours by role | as design/colours: the stylesheet uses only the palette's roles, checked by `tests/palette.test.js`; lights amber `#FF9F0A`, red `#FF453A`; Bu's lamps, stale Bu at 50 %, Bu's tile `#000`; high contrast; INDICATORS and MASCOT updated |
 | [ ] | Sizes in em: the bar and the pill | as design/pill, icons and mascot; nothing clipped at scale 1 and 2, with Large Text and a wide font; SPEC §2, §4 updated |
 | [ ] | Compact and the notification card | as design/compact and alerts-and-asks; SPEC §2, §4 and NOTIFICATIONS §3 updated |
 | [ ] | The lights at the ends | as design/pill; SPEC §2, §2a-i, §2a-ii updated |
@@ -55,7 +56,7 @@ one branch each, shipped together as 0.2. Sizes are in [docs/design](design/inde
 | [ ] | Power | charging, full, low; "18 W — slow"; "full in 42 min" (UPower) |
 | [ ] | Bluetooth device | connected, with its battery |
 | [ ] | USB / phone / webcam plugged | mount with one-tap eject |
-| [ ] | Privacy dot | SPEC §2a-ii: mic / cam+screen, hides GNOME's; recording timer and stop; "in call" with auto-DND |
+| [ ] | Privacy dot | as design/colours (mic purple, camera green, screen red) and design/compact (screen sharing and recording in the pill, with Stop); hides GNOME's indicators; "in call" with auto-DND |
 | [ ] | Meeting in 5 min · Join | SPEC §6b item 5 |
 | [ ] | Timer | pomodoro ring, keep-awake, its tab |
 | [ ] | Idle plan `mascot` | MASCOT.md § Eyes; module off by default; checked with `powertop` on real hardware |

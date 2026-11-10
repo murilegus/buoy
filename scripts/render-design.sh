@@ -8,6 +8,12 @@ cd "$(dirname "$0")/../docs/design"
 
 r() { script=$1; out=$2; shift 2; gjs -m "$script" "$out" "$@"; }
 
+# colours
+r colours/render/roles.js colours/images/roles.vi.png
+r colours/render/contrast.js colours/images/contrast.vi.png
+r colours/render/illustration.js colours/images/illustration.vi.png
+r colours/render/lights.js colours/images/lights.vi.png > /dev/null   # it also prints the contrasts
+
 # pill
 p=pill/render; i=pill/images
 r $p/anatomy.js $i/anatomy.vi.png
@@ -31,6 +37,7 @@ r $c/anatomy-compact.js alerts-and-asks/images/ask.vi.png ask
 r $c/anatomy-compact.js alerts-and-asks/images/question.vi.png question
 r $c/card.js compact/images/card.vi.png
 r $c/body.js compact/images/body.vi.png
+r $c/screen.js compact/images/screen.vi.png
 
 # expanded
 r expanded/render/expanded.js expanded/images/expanded.vi.png
