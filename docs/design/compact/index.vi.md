@@ -12,7 +12,7 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
 - **Bo 28** cho mọi compact, nên góc trên luôn là hình tròn của phần đầu 56 (trước là 24). **Chốt**
 - Phần đầu 56 = pill idle × 1.75: leading 40, trên dưới 8, hai bên 14. Chữ không phóng theo;
   phần đầu chứa hai dòng (tiêu đề 1em, phụ đề 0.85em). Nút là hình tròn 32, tâm nằm trên đường
-  giữa phần đầu (y = 28), cùng hàng với leading. **Đề xuất**
+  giữa phần đầu (y = 28), cùng hàng với leading. **Chốt** (Ethan, 2026-11-11)
 - Rộng 16em … min(28em, 0.72 × expanded): 240 … 404 ở 1920. **Chốt**
 - Không có đèn trong compact ([Pill](../pill/index.vi.md#đèn-ở-hai-đầu-buoy-light-trái-privacy-dot-phải)). **Chốt**
 
@@ -30,11 +30,26 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
 - Tối đa 3 hàng; mỗi hàng có icon trạng thái hoặc icon app ở cột dưới leading, chữ thẳng cột với
   tiêu đề. **Chốt**
 - Cách phần đầu 8, mỗi hàng 16 sát nhau, dưới cùng 8: 56 + 8 + 16 × số hàng + 8 = 88 / 104 /
-  **120**. Icon **14** giữa hàng 16 và giữa cột leading 40 (cách mép leading 13), để các icon
-  không chạm nhau; chữ 0.85em canh giữa hàng, thời gian canh phải theo nút. **Chốt** (Ethan,
-  2026-11-10; đã cân nhắc hàng cách 32 với icon 16, nhưng 3 hàng sẽ cao 152)
+  **120**; chữ 0.85em canh giữa hàng, thời gian canh phải theo nút. **Chốt** (Ethan, 2026-11-10)
+- Icon **16**, đúng bằng hàng, giữa cột leading 40 (cách mép leading 12). **Chốt** (Ethan,
+  2026-11-11; thay icon 14 của 2026-11-10. Đã cân nhắc: khe giữa hàng chỉ giữ nhịp 56 + 16n khi là
+  bội của 16, nên khe 4 hay 8 phải bù riêng ở dưới; khe 16 làm 3 hàng cao 152)
 
 ![Claude Code với 3 hàng, 120](images/anatomy-rows.vi.png)
+
+**Hàng của Claude Code là danh sách việc của Claude.** **Chốt** (Ethan, 2026-11-11)
+
+- Nguồn: tool `TaskCreate` (tên việc, `subject`) và `TaskUpdate` (`status`) qua hook `PreToolUse` /
+  `PostToolUse`; Claude cũng ghi danh sách ở `~/.claude/tasks/<session_id>/<id>.json`, nên Buoy
+  bật lại giữa phiên vẫn đọc được. Thử với Claude Code 2.1.319 (2026-11-11); bản này không còn
+  `TodoWrite`.
+- Ba trạng thái: **xong** ✓, **đang làm** ▶ (đặc), **chờ** ○; việc chờ mờ như stale, cả icon lẫn chữ.
+  Trắng, không màu ([Bảng màu](../colours/index.vi.md)); vẽ bằng code, đứng yên. **Chốt** (Ethan,
+  2026-11-11)
+- Nhiều hơn 3 việc: hiện việc vừa xong, việc đang làm, việc kế tiếp; dòng dưới tiêu đề ghi tiến độ
+  (`buoy · 2 / 5`).
+- Claude không lập danh sách việc: hàng là các bước gần nhất (lời gọi tool), như dòng
+  "Running pnpm test" hiện nay.
 
 ## Card thông báo
 
@@ -53,6 +68,24 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
 ![Card thông báo: 1 dòng 136, 2 dòng 152](images/anatomy-card.vi.png)
 
 ![Card: 2 dòng, 1 dòng, không có ảnh đại diện, tin dài cắt ở 2 dòng](images/card.vi.png)
+
+### Trả lời ngay trong card
+
+**Chốt** (Ethan, 2026-11-11). Chỉ cho nguồn nhận được trả lời: tin nhắn điện thoại qua GSConnect (M4
+"Phone", Reply SMS). Thông báo của app desktop (Slack…) chỉ có nút Reply mở app: GNOME Shell không
+hỗ trợ trả lời ngay trong thông báo (`notificationDaemon.js`, `GetCapabilities` không có
+`inline-reply`).
+
+![Trả lời: card, bấm Reply, đang gõ, đã gửi](images/reply.vi.png)
+
+- Bấm Reply: hàng nút thành **ô nhập một dòng** và nút **Gửi**, cùng cao 32, nên card vẫn 136 / 152.
+- Ô nhập `fill-2`, bo 16 như nút, vòng focus accent 2 px; chữ dài thì cuộn, giữ phần cuối.
+- Gửi tròn 32 ở cuối hàng, mũi tên sang phải: rỗng thì `fill-2`, mũi tên mờ; có chữ thì kem (`fill-inverse`). Enter
+  cũng gửi.
+- Esc hoặc bấm ra ngoài: về hai nút, giữ chữ đã gõ đến khi card đóng. Đang gõ thì compact không thu
+  lại khi chuột rời, và đếm giờ đóng card dừng.
+- Đã gửi: một dòng ✓ "Đã gửi: …" (`fg-subtle`), card đóng sau 2 s. Lỗi: "Không gửi được" và nút
+  Thử lại, chữ còn nguyên.
 
 ## Chia sẻ và quay màn hình
 

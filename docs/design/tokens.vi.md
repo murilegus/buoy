@@ -19,8 +19,8 @@ về đây thay vì chép số. Số px tính cho 1em = 11pt ≈ 14.67 px và l�
 | Idle | rộng theo plan rộng nhất, đo khi chạy: 133 ở 1×, 138 ở 1.25–2× | | Chốt |
 | Chấm đèn | 8, ở tâm hình tròn đầu (cách mép 16) | chỉ trên pill 1 | Chốt |
 | Mỗi đầu nở khi có đèn | 20 = bán kính 16 + nửa chấm 4 | idle 133 → 173 | Chốt |
-| Pill phụ | 133, bằng idle | | Đề xuất |
-| Hover | cộng 0.75em (12) | thay cho × 1.10 | Đề xuất |
+| Pill phụ | 133, bằng idle; tối đa 2, bên phải | | Chốt (Ethan, 2026-11-11) |
+| Hover | rộng cộng 0.75em (12), cao cộng 2 như nay (32 → 34) | thay cho × 1.10 | Chốt (Ethan, 2026-11-11) |
 
 ## Compact
 
@@ -28,13 +28,13 @@ về đây thay vì chép số. Số px tính cho 1em = 11pt ≈ 14.67 px và l�
 |---|---|---|---|
 | Chiều cao | 56 + 16n, tối đa 152 | phần đầu 56, rồi dòng 16 | Chốt |
 | Bo | 28 | | Chốt |
-| Phần đầu | 56: leading 40, trên dưới 8, hai bên 14 | | Đề xuất |
-| Nút tròn | 32, tâm ở y = 28 | | Đề xuất |
+| Phần đầu | 56: leading 40, trên dưới 8, hai bên 14 | | Chốt (Ethan, 2026-11-11) |
+| Nút tròn | 32, tâm ở y = 28 | | Chốt (Ethan, 2026-11-11) |
 | Ảnh bìa (nhạc) | 72, cách mép 8, bo 20 | nhạc 88 | Chốt |
-| Hàng Claude Code | 16, icon 14; trên 8, dưới 8 | 88 / 104 / 120 | Chốt |
+| Hàng (Claude Code, bị lỡ) | 16, icon 16; trên 8, dưới 8 | 88 / 104 / 120 | Chốt (Ethan, 2026-11-11) |
 | Card thông báo | thân cách đầu 8, cách nút 12; nút cách mép 12, cao 32, bo 16 | 136 / 152 | Chốt |
 | Ask | như card | 120 / 136 / 152 | Chốt |
-| Hỏi nhiều lựa chọn | hàng 32 mỗi lựa chọn | tới 280 | Đề xuất |
+| Hỏi nhiều lựa chọn | hàng 32 mỗi lựa chọn | tới 280 | Chốt (Ethan, 2026-11-11) |
 | Rộng | 16em … min(28em, 0.72 × expanded) | 240 … 404 ở 1920 | Chốt |
 
 ## Expanded

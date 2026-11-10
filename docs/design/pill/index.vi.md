@@ -59,7 +59,7 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
   rộng đo từ chữ thật, còn chiều cao (ô, pill, thanh) tính bằng em. Idle ở 1em: 130–151; khi bật
   chữ lớn (1.25): 163–190 × 40.
 - Chừa chỗ theo chữ số rộng nhất của font, đo thật, không mặc định số "8": không phải font nào
-  cũng có số đều (ví dụ Liberation Sans). **Đề xuất**
+  cũng có số đều (ví dụ Liberation Sans: số "1" đậm hẹp hơn 0.4 px). **Chốt** (Ethan, 2026-11-11)
 
 ![Pill idle với sáu font, ở 1em và khi bật chữ lớn](images/fonts.vi.png)
 
@@ -84,8 +84,11 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 - Độ rộng tối đa lấy số nhỏ nhất trong ba giới hạn: theo em (chữ không lớn lên khi màn hình rộng
   hơn), theo một tỷ lệ của expanded (để minimal < compact < expanded), và theo khoảng trống giữa
   hai cụm ([Bảng số](../tokens.vi.md#độ-rộng-tối-đa-trên-thanh)). **Chốt**
-- Pill phụ 2–3 cố định 133, bằng idle (leading, một giá trị ngắn, `+N`). **Đề xuất**
-- Hover: mọi pill cộng cố định 0.75em (12 px), thay cho +10 % (pill 336 sẽ nở tới 34). **Đề xuất**
+- Tối đa **2 pill phụ, bên phải** pill 1 (như SPEC §2c). Đặt hai bên đã cân nhắc: cân hơn và ở 1366
+  vừa 2 pill phụ, nhưng thứ tự ưu tiên không còn đọc theo một chiều. **Chốt** (Ethan, 2026-11-11)
+- Pill phụ 2–3 cố định 133, bằng idle (leading, một giá trị ngắn, `+N`). **Chốt** (Ethan, 2026-11-11)
+- Hover: mọi pill rộng thêm cố định 0.75em (12 px), thay cho +10 % (pill 336 sẽ nở tới 34); chiều
+  cao vẫn cộng 2 như nay (32 → 34, `kit/shapes.js`). **Chốt** (Ethan, 2026-11-11)
 - Hai cụm trên máy Ethan, đo bằng Looking Glass: `Main.panel._leftBox` 93, `_rightBox` 293. Ở
   1920, khoảng trống không bao giờ là giới hạn của pill 1 — giới hạn em và expanded mới là. Pill
   phụ chỉ bên phải còn dư 215 trước `_rightBox`; đặt hai bên thì dư 555 / 355. Buoy đo lại cụm
@@ -93,15 +96,6 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 
 ![1920, pill phụ bên phải (hiện tại)](images/bar-1920.vi.png)
 ![1366, pill phụ bên phải (hiện tại): vừa 1 pill phụ](images/bar-1366.vi.png)
-
-## Còn mở
-
-- **Pill phụ đặt ở hai bên pill 1** thay vì chỉ bên phải: cân hơn, và ở 1366 vừa 2 pill phụ thay
-  vì 1; nhưng thứ tự ưu tiên không còn đọc theo một chiều (Apple luôn để pill tách rời bên phải).
-  SPEC §2c hiện tại: chỉ bên phải.
-
-![1920, pill phụ hai bên](images/bar-1920-sym.vi.png)
-![1366, pill phụ hai bên: vừa 2 pill phụ](images/bar-1366-sym.vi.png)
 
 ## Phương án đã cân nhắc
 

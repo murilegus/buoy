@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC} from '../../render/lib.js';
+import {SCALE as SC, taskState, C, GREY, drawBu} from '../../render/lib.js';
 const R = 28, PAD = 14, LEAD = 40, IND = 12, PW = 340, TX = PAD + LEAD + IND;   // text column at 66
 const W = 1120, colX = [20, 520];
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, 760 * SC);
@@ -18,15 +18,19 @@ function text(t, x, y, pt, wt, col, a = 1, measure = false, wrapW = 0) { font(pt
   const e = L.get_pixel_extents()[1]; const n = L.get_line_count(); L.set_width(-1); return {...e, width: e.width, height: e.height, lines: n}; }
 function rr(x, y, w, h, r) { cr.newSubPath(); cr.arc(x + w - r, y + r, r, -Math.PI / 2, 0); cr.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
   cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI); cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI); cr.closePath(); }
-const W1 = [1, 1, 1], G = [.72, .72, .72], G2 = [.82, .82, .82];
+const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED;   // design/colours: fg-muted
 const right = (t, xr, y, pt, a) => { const e = text(t, 0, 0, pt, 400, W1, a, true); text(t, xr - e.width, y, pt, 400, W1, a); };
 const snap = h => 56 + Math.ceil(Math.max(0, h - 56) / 32) * 32;
 function panel(x, y, h) { rr(x + .5, y + .5, PW - 1, h - 1, R - .5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve(); cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke(); }
 function waste(x, y, h) { cr.setSourceRGBA(1, .35, .35, .18); cr.rectangle(x + PAD, y + 56, LEAD, h - 56 - 10); cr.fill(); }
 function art(x, y, s, r = 10, c = [[.95, .55, .35], [.35, .25, .75]]) { const g = new cairo.LinearGradient(x, y, x + s, y + s); g.addColorStopRGB(0, ...c[0]); g.addColorStopRGB(1, ...c[1]); cr.setSource(g); rr(x, y, s, s, r); cr.fill(); }
-function head(x, y, t1, t2, c, btn = '⏸') { art(x + PAD, y + 8, LEAD, 10, c); text(t1, x + TX, y + 9, 11, 600, W1); text(t2, x + TX, y + 29, 9.5, 400, G);
-  cr.setSourceRGBA(1, 1, 1, .14); cr.arc(x + PW - PAD - 16, y + R, 16, 0, 2 * Math.PI); cr.fill(); const e = text(btn, 0, 0, 10, 400, W1, 1, true); text(btn, x + PW - PAD - 16 - e.width / 2, y + R - e.height / 2, 10, 400, W1); }
-function bar(x, y, x0, x1) { cr.setSourceRGBA(1, 1, 1, .2); rr(x0, y, x1 - x0, 4, 2); cr.fill(); cr.setSourceRGB(1, 1, 1); rr(x0, y, (x1 - x0) * .38, 4, 2); cr.fill();
+function head(x, y, t1, t2, c, btn = '⏸') { if (c === 'bu') drawBu(cr, 'busy', x + PAD, y + 8, 4); else art(x + PAD, y + 8, LEAD, 10, c); text(t1, x + TX, y + 9, 11, 600, W1); text(t2, x + TX, y + 29, 9.5, 400, G);
+  roundBtn(x + PW - PAD - 16, y + R, btn); }
+// the head's button: its main action (⏸ ■) is fill-inverse, cream with a black glyph; × is fill-2
+function roundBtn(cx, cy, btn) { const main = btn !== '×', fg = main ? C.BLACK : W1;
+  if (main) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
+  const e = text(btn, 0, 0, 10, 400, fg, 1, true); text(btn, cx - e.width / 2, cy - e.height / 2, 10, 400, fg); }
+function bar(x, y, x0, x1) { cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(x0, y, x1 - x0, 4, 2); cr.fill(); cr.setSourceRGB(1, 1, 1); rr(x0, y, (x1 - x0) * .38, 4, 2); cr.fill();
   text('1:24', x0, y + 7, 8.5, 400, W1, .5); right('-2:11', x1, y + 7, 8.5, .5); }
 const label = (t, x, y) => text(t, x, y, 9, 600, W1, .85);
 const NOTI = 'Pushed the pill shapes to the branch — can you review the compact and the card before the 3 PM sync?';
@@ -42,24 +46,24 @@ label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 
 { const h = 88, x = colX[1]; label('…hoặc ảnh bìa 72 chiếm cả hai hàng', x, y - 16); panel(x, y, h);
   art(x + 8, y + 8, 72, 20); const tx = x + 8 + 72 + 12;   // inset 8 → r 28 − 8 = 20, concentric
   text('Lumen Coast', tx, y + 10, 11, 600, W1); text('Harbor Lights · Mira Vale', tx, y + 30, 9.5, 400, G);
-  cr.setSourceRGBA(1, 1, 1, .14); cr.arc(x + PW - PAD - 16, y + R, 16, 0, 2 * Math.PI); cr.fill(); text('⏸', x + PW - PAD - 22, y + 19, 10, 400, W1);
+  roundBtn(x + PW - PAD - 16, y + R, '⏸');
   bar(x, y + 60, tx, x + PW - PAD - 6); y += h + 30; }
-// 2) rows
-{ const h = 120, rows = [['✓', 'Edit shapes.js', '12s', [.4, .8, .5]], ['▶', 'Run pnpm test', '4s', [.5, .7, 1]], ['?', 'Waiting for approval', 'now', [.95, .3, .3]]];
-  let x = colX[0]; panel(x, y, h); head(x, y, 'Claude Code', 'buoy · 3 steps', [[.85, .5, .35], [.5, .3, .2]], '■'); waste(x, y, h);
-  rows.forEach(([, a, b], j) => { const ry = y + 60 + j * 17; text(a, x + TX, ry, 9.5, 400, G2); right(b, x + PW - PAD, ry, 9.5, .5); });
-  x = colX[1]; panel(x, y, h); head(x, y, 'Claude Code', 'buoy · 3 steps', [[.85, .5, .35], [.5, .3, .2]], '■');
-  rows.forEach(([g, a, b, c], j) => { const ry = y + 60 + j * 17;
-    cr.setSourceRGBA(...c, .22); cr.arc(x + PAD + LEAD / 2, ry + 8, 7, 0, 2 * Math.PI); cr.fill(); const e = text(g, 0, 0, 7, 700, c, 1, true); text(g, x + PAD + LEAD / 2 - e.width / 2, ry + 8 - e.height / 2, 7, 700, c);
-    text(a, x + TX, ry, 9.5, 400, G2); right(b, x + PW - PAD, ry, 9.5, .5); });
-  text('icon trạng thái mỗi hàng nằm dưới leading', x + PW + 8, y + 76, 8, 400, W1, .6, false, 140); y += h + 22; }
+// 2) rows: Claude's task list (2026-11-11), on the 16 rhythm: 56 + 8 + 3 × 16 + 8 = 120
+{ const h = 120, rows = [['done', 'Edit shapes.js', '12s'], ['doing', 'Run pnpm test', '4s'], ['todo', 'Update the docs', '']];
+  const row = (x, ry, a, b, k) => { const e = text(a, 0, 0, 9.5, 400, G2, 1, true); text(a, x + TX, ry + 8 - e.height / 2, 9.5, 400, G2, k === 'todo' ? .55 : 1);
+    if (b) { const r = text(b, 0, 0, 9.5, 400, W1, .5, true); right(b, x + PW - PAD, ry + 8 - r.height / 2, 9.5, .5); } };
+  let x = colX[0]; panel(x, y, h); head(x, y, 'Claude Code', 'buoy · 2 / 3', 'bu', '■'); waste(x, y, h);
+  rows.forEach(([k, a, b], j) => row(x, y + 64 + j * 16, a, b, k));
+  x = colX[1]; panel(x, y, h); head(x, y, 'Claude Code', 'buoy · 2 / 3', 'bu', '■');
+  rows.forEach(([k, a, b], j) => { const ry = y + 64 + j * 16; taskState(cr, k, x + PAD + LEAD / 2 - 8, ry, 16); row(x, ry, a, b, k); });
+  text('✓ xong · ▶ đang làm · ○ chờ, dưới leading', x + PW + 8, y + 76, 8, 400, W1, .6, false, 140); y += h + 22; }
 // 3) card
 { let x = colX[0];
   const nI = text(NOTI, 0, 0, 9.5, 400, G2, 1, true, PW - PAD - TX).lines, hI = snap(56 + nI * 16 + 6 + 28 + 12);
   panel(x, y, hI); head(x, y, 'Mira Vale', 'Slack · 2 min', CARD, '×'); waste(x, y, hI);
   text(NOTI, x + TX, y + 56, 9.5, 400, G2, 1, false, PW - PAD - TX);
   { const by = y + hI - 12 - 28, bw = (PW - PAD - TX - 8) / 2;
-    ['Reply', 'Mark as read'].forEach((t, k) => { cr.setSourceRGBA(1, 1, 1, .14); rr(x + TX + k * (bw + 8), by, bw, 28, 14); cr.fill();
+    ['Reply', 'Mark as read'].forEach((t, k) => { cr.setSourceRGBA(1, 1, 1, C.FILL2); rr(x + TX + k * (bw + 8), by, bw, 28, 14); cr.fill();
       const e = text(t, 0, 0, 9.5, 600, W1, 1, true); text(t, x + TX + k * (bw + 8) + (bw - e.width) / 2, by + 6, 9.5, 600, W1); }); }
   text(`${nI} dòng · ${hI}`, x + PW + 8, y + 10, 8, 400, W1, .6);
   x = colX[1];
@@ -67,7 +71,7 @@ label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 
   panel(x, y, hF); head(x, y, 'Mira Vale', 'Slack · 2 min', CARD, '×');
   text(NOTI, x + PAD + 2, y + 56, 9.5, 400, G2, 1, false, PW - 2 * PAD - 4);
   { const by = y + hF - 12 - 32, bw = (PW - 24 - 8) / 2;   // inset 12, h 32, r 16 = concentric with r 28
-    ['Reply', 'Mark as read'].forEach((t, k) => { cr.setSourceRGBA(1, 1, 1, .14); rr(x + 12 + k * (bw + 8), by, bw, 32, 16); cr.fill();
+    ['Reply', 'Mark as read'].forEach((t, k) => { cr.setSourceRGBA(1, 1, 1, C.FILL2); rr(x + 12 + k * (bw + 8), by, bw, 32, 16); cr.fill();
       const e = text(t, 0, 0, 9.5, 600, W1, 1, true); text(t, x + 12 + k * (bw + 8) + (bw - e.width) / 2, by + 8, 9.5, 600, W1); });
     cr.setDash([2, 2], 0); cr.setSourceRGBA(1, .45, .45, .6); cr.setLineWidth(1);
     cr.newSubPath(); cr.arc(x + R, y + hF - R, R - .5, Math.PI / 2, Math.PI); cr.stroke(); cr.newSubPath(); cr.arc(x + 12 + 16, by + 16, 16, Math.PI / 2, Math.PI); cr.stroke(); cr.setDash([], 0); }

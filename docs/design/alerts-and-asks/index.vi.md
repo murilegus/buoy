@@ -27,8 +27,8 @@ báo, trong khi alert nhẹ hơn một tin mới). Số dùng chung ở [Bảng 
 
 ## Hỏi nhiều lựa chọn
 
-**Đề xuất** (2026-11-10). Claude Code AskUserQuestion: hiện Buoy chỉ hiện "Needs your answer" và
-để bạn chọn trong card của Claude. Đề xuất này cho Buoy trả lời được, nên đổi quyết định "A question
+**Chốt** (Ethan, 2026-11-11; đề xuất 2026-11-10). Claude Code AskUserQuestion: hiện Buoy chỉ hiện "Needs your answer" và
+để bạn chọn trong card của Claude. Quyết định này cho Buoy trả lời được, nên đổi quyết định "A question
 is not a permission" (CODING-AGENTS.md, 2026-11-08).
 
 - Phần đầu 56 (Bu, câu hỏi 1em, "Claude Code · dự án · 1 / 3" 0.85em).

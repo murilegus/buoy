@@ -6,14 +6,14 @@ import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, LAMPS} from '../../render/lib.js';
 import {POSES, PALETTE, frameAt, cells, lampColour} from '../../../../src/buoy@murilegus/lib/kit/mascot.js';
 const out = ARGV[0];
 const ICONS = `${import.meta.url.replace('file://', '').replace(/docs\/design\/.*/, '')}src/buoy@murilegus/icons`;
 // the lights and dots as decided (design/colours); the lamp of `missed` / `ask` follows the lights
 const STATE = {missed: '#FF9F0A', waiting: '#FF453A', mic: '#BF5AF2', cam: '#30D158'};
 // Bu's lamp, more saturated (design/colours, "Minh hoạ"); `lampColour` is what ships today
-const NEW = {idle: '#C8C6BD', done: '#B4E33D', busy: '#3D9BFF', wave: '#FFE14D', think: '#FF7EB6', compact: '#5AD8F5', error: '#8A8880'};
+const NEW = LAMPS;
 const LAMP = p => ({missed: STATE.missed, ask: STATE.waiting})[p] ?? NEW[p] ?? lampColour(p);
 const OLD = p => ({missed: '#EF9F27', ask: '#E24B4A'})[p] ?? lampColour(p);
 

@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC} from '../../render/lib.js';
+import {SCALE as SC, C} from '../../render/lib.js';
 const out = ARGV[0];
 
 const W = 760, H = 560;
@@ -98,7 +98,7 @@ text('⌘B', 196, 454, {sz: 9, wt: 600, a: .5, centre: true});
 text('border-strong · 28 %', 168, 486, {sz: 7, a: .6});
 text('(phím tắt)', 168, 497, {sz: 7, a: .4});
 // inverse
-const CREAM = [0xF1 / 255, 0xEF / 255, 0xE8 / 255];
+const CREAM = C.CREAM;
 [[CREAM, 'fill-inverse · #F1EFE8'], [[1, 1, 1], 'hover · trắng']].forEach(([c, n], i) => {
     const cx = 330 + i * 80;
     cr.setSourceRGB(...c); cr.arc(cx, 462, 16, 0, 2 * Math.PI); cr.fill();
@@ -115,7 +115,7 @@ text('Ẩn app này', 486, 482, {sz: 9, wt: 500, a: 1});
 text('surface-menu · #1F1F1F', 530, 516, {sz: 7, a: .6, centre: true});
 text('(trắng 12 % đã trộn sẵn trên đen)', 530, 527, {sz: 7, a: .4, centre: true});
 // tint
-const AMBER = [0xEF / 255, 0x9F / 255, 0x27 / 255];
+const AMBER = C.AMBER;
 fill([...AMBER, .16], 606, 446, 120, 30, 15);
 cr.setSourceRGB(...AMBER); cr.arc(622, 461, 3.5, 0, 2 * Math.PI); cr.fill();
 text('2 bị lỡ', 632, 453, {sz: 9, wt: 600, rgb: AMBER, a: 1});

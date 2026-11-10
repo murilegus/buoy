@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC} from '../../render/lib.js';
+import {SCALE as SC, C, GREY, drawBu} from '../../render/lib.js';
 const EW = 560, R = 28, W = 1120, H = 340;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
 const cr = new cairo.Context(surf);
@@ -17,16 +17,14 @@ function text(t, x, y, pt, wt, col, a = 1, measure = false) { const d = Pango.Fo
   L.set_text(t, -1); if (!measure) { cr.setSourceRGBA(...col, a); cr.moveTo(x, y); PangoCairo.show_layout(cr, L); } return L.get_pixel_extents()[1]; }
 function rr(x, y, w, h, r) { cr.newSubPath(); cr.arc(x + w - r, y + r, r, -Math.PI / 2, 0); cr.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
   cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI); cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI); cr.closePath(); }
-const W1 = [1, 1, 1], G = [.72, .72, .72];
+const W1 = C.WHITE, G = GREY.MUTED;
 const right = (t, xr, y, pt, col, a) => { const e = text(t, 0, 0, pt, 400, col, a, true); text(t, xr - e.width, y, pt, 400, col, a); };
 function panel(x, y, w, h) { rr(x + .5, y + .5, w - 1, h - 1, R - .5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve(); cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke(); }
 function guides(x, y, w, ys, col = [.4, .8, 1]) { cr.setDash([2, 3], 0); cr.setSourceRGBA(...col, .45); cr.setLineWidth(1);
   for (const gy of ys) { cr.moveTo(x + 6, y + gy + .5); cr.lineTo(x + w - 6, y + gy + .5); } cr.stroke(); cr.setDash([], 0); }
 function tile(x, y, s, r, c0, c1) { const g = new cairo.LinearGradient(x, y, x + s, y + s); g.addColorStopRGB(0, ...c0); g.addColorStopRGB(1, ...c1); cr.setSource(g); rr(x, y, s, s, r); cr.fill(); }
-// Bu at 50 (10x10 grid, 5 px cells) — a simple stand-in
-const BU = ['..BBBBBB..', '.BBBBBBBB.', 'BBZBBBBZBB', 'BBZBBBBZBB', 'BBBBBBBBBB', 'BBBSSSSBBB', '.BBBBBBBB.', '..BBBBBB..', '..B....B..', '.BB....BB.'];
-function bu(x, y, cell) { BU.forEach((r, j) => [...r].forEach((c, i) => { if (c === '.') return;
-  cr.setSourceRGB(...(c === 'B' ? [.945, .937, .91] : c === 'Z' ? [.27, .27, .25] : [.53, .53, .5])); cr.rectangle(x + i * cell, y + j * cell, cell, cell); cr.fill(); })); }
+// Bu at 50 (5 px cells): the real grids, pose wave as the greeting shows it
+const bu = (x, y, cell) => drawBu(cr, 'wave', x, y, cell);
 
 // A) Home, 560 × 280 = 56 + 7 × 32
 {
@@ -34,10 +32,10 @@ function bu(x, y, cell) { BU.forEach((r, j) => [...r].forEach((c, i) => { if (c 
   text('Home (có tab) — 560 × 280 = 56 + 7×32 (= rộng/2)', x, 8, 9, 600, W1, .85);
   // tab strip: 32 high at 12 from the top = concentric with r 28 (28 − 12 = 16 = 32/2)
   const sx = x + 12, sy = y + 12, tabs = 5, sw = 32 + 4 * 30 + 80;
-  cr.setSourceRGBA(1, 1, 1, .11); rr(sx, sy, sw, 32, 16); cr.fill();
-  cr.setSourceRGBA(1, 1, 1, .2); rr(sx + 3, sy + 3, 82, 26, 13); cr.fill();
+  cr.setSourceRGBA(1, 1, 1, C.FILL2); rr(sx, sy, sw, 32, 16); cr.fill();
+  cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(sx + 3, sy + 3, 82, 26, 13); cr.fill();
   cr.setSourceRGB(1, 1, 1); rr(sx + 14, sy + 9, 14, 14, 3); cr.fill(); text('Home', sx + 34, sy + 7, 9.5, 600, W1);
-  for (let k = 0; k < tabs - 1; k++) { cr.setSourceRGBA(.72, .72, .72, 1); rr(sx + 92 + k * 30, sy + 9, 14, 14, 3); cr.fill(); }
+  for (let k = 0; k < tabs - 1; k++) { cr.setSourceRGBA(1, 1, 1, C.FG_MUTED); rr(sx + 92 + k * 30, sy + 9, 14, 14, 3); cr.fill(); }
   cr.setDash([2, 2], 0); cr.setSourceRGBA(1, .45, .45, .6); cr.arc(x + R, y + R, R - .5, Math.PI, 1.5 * Math.PI); cr.stroke();
   cr.arc(sx + 16, sy + 16, 16, Math.PI, 1.5 * Math.PI); cr.stroke(); cr.setDash([], 0);
   guides(x, y, EW, [56, 88, 120, 152, 184, 216, 248]);
@@ -51,7 +49,7 @@ function bu(x, y, cell) { BU.forEach((r, j) => [...r].forEach((c, i) => { if (c 
 {
   const x = 600, y = 210, h = 88; panel(x, y, 380, h);
   text('Lời chào (greeting, transient, không tab) — 88, chỉ phần đầu', x, 188, 9, 600, W1, .85);
-  cr.setSourceRGBA(1, 1, 1, .06); rr(x + 16, y + 16, 56, 56, 12); cr.fill(); bu(x + 19, y + 19, 5);
+  cr.setSourceRGBA(1, 1, 1, C.FILL1); rr(x + 16, y + 16, 56, 56, 12); cr.fill(); bu(x + 19, y + 19, 5);
   text('Good afternoon, Ethan', x + 88, y + 25, 14, 700, W1);
 }
 // notes
