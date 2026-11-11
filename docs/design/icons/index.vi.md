@@ -71,11 +71,11 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
 ### Icon tự vẽ
 
 - Gravity UI thiếu icon nào thì Buoy **tự vẽ theo cách của Gravity**, cho đủ bộ; không lấy từ bộ
-  khác. Từ nay, mỗi khi thiếu. **Chốt** (Ethan, 2026-11-11)
+  khác. Từ nay về sau, thiếu icon nào cũng vẽ thêm như vậy. **Chốt** (Ethan, 2026-11-11, 2026-11-12)
 - Cách vẽ: lưới 16; nét 1.5 vẽ thành vùng tô (St tô `path` bằng màu chữ); khung bo ngoài = bo trong
   + 1.5, mép ngoài ở .5, mép trong ở số nguyên như `smartphone` của Gravity; đầu nét tròn. SVG ở
   `render/own/`. **Chốt** (Ethan, 2026-11-11)
-- Đầu tiên: pin (bốn mức) và Bluetooth. **Đề xuất**
+- Đầu tiên: pin (bốn mức) và Bluetooth, như hình dưới. **Chốt** (Ethan, 2026-11-12)
 
 ![Icon tự vẽ cạnh icon của Gravity, ở 16 và ở 1× phóng 4](images/own.vi.png)
 
