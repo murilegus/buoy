@@ -48,7 +48,7 @@ one branch each, shipped together as 0.2. Sizes are in [docs/design](design/inde
 | [ ] | Sizes in em: the bar and the pill | as design/pill, icons and mascot; nothing clipped at scale 1 and 2, with Large Text and a wide font; SPEC §2, §4 updated |
 | [ ] | Compact and the notification card | as design/compact and alerts-and-asks; SPEC §2, §4 and NOTIFICATIONS §3 updated |
 | [ ] | The lights at the ends | as design/pill; SPEC §2, §2a-i, §2a-ii updated |
-| [ ] | Expanded on the same rhythm | as design/expanded; SPEC §4 updated |
+| [ ] | Expanded on the same rhythm | as design/expanded and design/home (the main card and the row of tiles); SPEC §3, §4 updated |
 | [ ] | Phone via GSConnect | Grab/Be ride, OTP (30 s), Zalo/Messenger with avatar, call Mute/Reply SMS; adapters in `modules/phone/apps/` |
 | [ ] | Attention on another workspace | click switches workspace and focuses (Mutter `demands-attention`) |
 | [ ] | Headphones / display plugged | choose on the pill; replaces GNOME's jack dialog when on |
@@ -58,7 +58,7 @@ one branch each, shipped together as 0.2. Sizes are in [docs/design](design/inde
 | [ ] | USB / phone / webcam plugged | mount with one-tap eject |
 | [ ] | Privacy dot | as design/colours (mic purple, camera green, screen red) and design/compact (screen sharing and recording in the pill, with Stop); hides GNOME's indicators; "in call" with auto-DND |
 | [ ] | Meeting in 5 min · Join | SPEC §6b item 5 |
-| [ ] | Timer | pomodoro ring, keep-awake, its tab |
+| [ ] | Timer | pomodoro ring, keep-awake, its tab; a start tile in Home's glance (design/home) |
 | [ ] | Idle plan `mascot` | MASCOT.md § Eyes; module off by default; checked with `powertop` on real hardware |
 | [ ] | Print job progress | CUPS notifier |
 | [ ] | Terminal command finished in an unfocused tab | "exit 0 · 48 s", jump |

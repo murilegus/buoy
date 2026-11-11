@@ -1,7 +1,7 @@
 # Design
 
 How Buoy looks: sizes, spacing, radii, type and colour, one page per part (the pill, the
-compact, alerts and asks, expanded, tabs, icons, Bu), with one table of numbers and one colour
+compact, alerts and asks, expanded, Home, tabs, icons, Bu), with one table of numbers and one colour
 palette. The SPEC says what Buoy does and when; these pages say what it looks like.
 
 Design pages are written and decided in Vietnamese first; the English pages follow. Until then

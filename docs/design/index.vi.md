@@ -20,7 +20,8 @@ Các thay đổi ở đây chưa có trong code: chúng là các mục redesign 
 | [Compact](compact/index.vi.md) | dạng hover: phần đầu, nhạc, hàng Claude Code, card thông báo |
 | [Alert và ask](alerts-and-asks/index.vi.md) | alert 5 s, ask có nút, hỏi nhiều câu |
 | [Expanded](expanded/index.vi.md) | bảng mở khi bấm, lời chào |
-| [Tab](tabs/index.vi.md) | thanh tab, Home, từng tab (đang mở) |
+| [Home](home/index.vi.md) | thẻ chính, hàng ô, cách lấp để không bao giờ trống |
+| [Tab](tabs/index.vi.md) | thanh tab, từng tab (đang mở) |
 | [Icon](icons/index.vi.md) | icon buổi trong ngày và thời tiết |
 | [Bu](mascot/index.vi.md) | cỡ của Bu trong mỗi dạng |
 

@@ -107,7 +107,8 @@ chia sẻ: nút cam), có nút Dừng, như dưới đây. **Chốt** (Ethan, 20
 - **Dừng:** quay gọi `Main.screenshotUI.stopScreencast()`; chia sẻ gọi `stop()` trên mọi
   `MetaRemoteAccessHandle` chưa phải bản ghi, như nút của GNOME. App quay qua portal (handle có
   `is-recording`): "Ứng dụng đang quay màn hình". Mutter không đưa tên app.
-- **Bấm vào pill:** mở Home, hàng "đang dùng"; không có tab, không mở expanded. Dừng chỉ bằng nút,
+- **Bấm vào pill:** mở Home, nơi bản ghi là thẻ chính hoặc một ô ([Home](../home/index.vi.md));
+  không có tab riêng. Dừng chỉ bằng nút,
   để không lỡ tay.
 - Mic và camera không thành activity: chỉ chấm, bấm mở Home.
 

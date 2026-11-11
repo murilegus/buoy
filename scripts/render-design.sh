@@ -44,4 +44,7 @@ r icons/render/symbolic.js icons/images/symbolic.vi.png
 # expanded
 r expanded/render/expanded.js expanded/images/expanded.vi.png
 
+# home
+for m in states anatomy fill; do r home/render/home.js home/images/$m.vi.png $m; done
+
 echo "docs/design: images redrawn"
