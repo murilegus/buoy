@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, GREY, drawBu} from '../../render/lib.js';
+import {SCALE as SC, C, GREY, drawBu, icon} from '../../render/lib.js';
 const EW = 560, R = 28, W = 1120, H = 340;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
 const cr = new cairo.Context(surf);
@@ -31,11 +31,13 @@ const bu = (x, y, cell) => drawBu(cr, 'wave', x, y, cell);
   const x = 20, y = 30, h = 280; panel(x, y, EW, h);
   text('Home (có tab) — 560 × 280 = 56 + 7×32 (= rộng/2)', x, 8, 9, 600, W1, .85);
   // tab strip: 32 high at 12 from the top = concentric with r 28 (28 − 12 = 16 = 32/2)
-  const sx = x + 12, sy = y + 12, tabs = 5, sw = 32 + 4 * 30 + 80;
-  cr.setSourceRGBA(1, 1, 1, C.FILL2); rr(sx, sy, sw, 32, 16); cr.fill();
-  cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(sx + 3, sy + 3, 82, 26, 13); cr.fill();
-  cr.setSourceRGB(1, 1, 1); rr(sx + 14, sy + 9, 14, 14, 3); cr.fill(); text('Home', sx + 34, sy + 7, 9.5, 600, W1);
-  for (let k = 0; k < tabs - 1; k++) { cr.setSourceRGBA(1, 1, 1, C.FG_MUTED); rr(sx + 92 + k * 30, sy + 9, 14, 14, 3); cr.fill(); }
+  // the strip as in design/icons: the chosen tab fill-3 24 high at 4, icon 16 + name; the others
+  // icon only at fg-muted, 36 each (Gravity UI)
+  const sx = x + 12, sy = y + 12, others = ['music-note', 'bell-dot', 'calendar', 'smartphone'], sw = 86 + others.length * 36 + 14;
+  cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL2); rr(sx, sy, sw, 32, 16); cr.fill();
+  cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(sx + 4, sy + 4, 80, 24, 12); cr.fill();
+  icon(cr, 'house', sx + 12, sy + 8, 16); text('Home', sx + 34, sy + 7, 9.5, 600, W1);
+  others.forEach((n, k) => icon(cr, n, sx + 96 + k * 36, sy + 8, 16, W1, C.FG_MUTED));
   cr.setDash([2, 2], 0); cr.setSourceRGBA(1, .45, .45, .6); cr.arc(x + R, y + R, R - .5, Math.PI, 1.5 * Math.PI); cr.stroke();
   cr.arc(sx + 16, sy + 16, 16, Math.PI, 1.5 * Math.PI); cr.stroke(); cr.setDash([], 0);
   guides(x, y, EW, [56, 88, 120, 152, 184, 216, 248]);

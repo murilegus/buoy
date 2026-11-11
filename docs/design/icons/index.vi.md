@@ -42,8 +42,9 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
 - Icon symbolic (tab, nút, hàng, leading của các loại không có ảnh) là bộ **Gravity UI**
   (`@gravity-ui/icons` 2.23.0, MIT, lưới 16), ship cùng Buoy. Vẽ thẳng trên lưới 16 nên nét ở 1×;
   bo mềm, hợp chữ trong pill. **Chốt** (Ethan, 2026-11-11)
-- Nút nhạc (lùi, dừng/phát, tiến) và ▶ trong hàng dùng bản `-fill`; còn lại bản thường. **Đề xuất**
-- Tab thông báo khi có tin chưa đọc: `bell-dot` thay `bell`. **Đề xuất**
+- Nút nhạc (lùi, dừng/phát, tiến) và ▶ trong hàng dùng bản `-fill`; còn lại bản thường. **Chốt** (Ethan,
+  2026-11-11)
+- Tab thông báo khi có tin chưa đọc: `bell-dot` thay `bell`. **Chốt** (Ethan, 2026-11-11)
 - Icon theo vai trò:
 
   | Vai trò | Icon |
@@ -52,6 +53,8 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Thiết bị, Hẹn giờ, Tải về, Thêm | `smartphone`, `alarm`, `arrow-down-to-line`, `ellipsis-vertical` |
   | Lùi, dừng, tiến, phát | `backward-step-fill`, `pause-fill`, `forward-step-fill`, `play-fill` |
   | Đóng, cài đặt, xong | `xmark`, `gear`, `check` |
+  | Dừng, việc chờ, gửi | `stop-fill`, `circle`, `arrow-right` |
+  | Quay màn hình, chia sẻ màn hình | `video`, `display-pulse` |
 - **Cỡ 16 ở mọi chỗ**: thanh tab, nút 32, pill, hàng 16 (Claude Code, bị lỡ). **Chốt** (Ethan,
   2026-11-11)
 - **Thanh tab**: cao 32, bo 16. Tab đang chọn: nền `fill-3` cao 24 (cách mép 4), icon 16 và tên

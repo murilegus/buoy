@@ -6,7 +6,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, GREY} from '../../render/lib.js';
+import {SCALE as SC, C, GREY, icon} from '../../render/lib.js';
 const R = 28, PAD = 14, LEAD = 40, TX = PAD + LEAD + 12, PW = 340, W = 760;
 const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED;   // subtitle and body: fg-muted
 const cards = [
@@ -48,7 +48,7 @@ for (const c of cards) {
   text(c.avatar ? 'Mira Vale' : c.title, x + TX, y + 9, 11, 600, W1);
   text(c.avatar ? 'Slack · 2 min' : `${c.app} · now`, x + TX, y + 29, 9.5, 400, G);
   cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(x + PW - PAD - 16, y + R, 16, 0, 2 * Math.PI); cr.fill();
-  { const e = text('×', 0, 0, 11, 400, W1, 1, 0, 0, true); text('×', x + PW - PAD - 16 - e.width / 2, y + R - e.height / 2 - 1, 11, 400, W1); }
+  icon(cr, 'xmark', x + PW - PAD - 16 - 8, y + R - 8, 16, W1);
   // the body: lines of 16 (Pango's spacing makes up the rest of each line), 8 under the head
   const by = y + h - 12 - 32, bw = (PW - 24 - 8) / 2;
   const lh = text('Ag', 0, 0, 9.5, 400, G2, 1, 0, 0, true).height;

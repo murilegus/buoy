@@ -5,6 +5,8 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
+import GLib from 'gi://GLib';
+import Rsvg from 'gi://Rsvg?version=2.0';
 import {frameAt, cells, lampColour} from '../../../src/buoy@murilegus/lib/kit/mascot.js';
 
 export const SCALE = 3;
@@ -46,20 +48,24 @@ export function fit(L, cr, target, features = 'tnum') {
     }
 }
 
-// A task's state in Claude Code's rows (design/compact, 2026-11-11): done ✓, doing ▶ (filled),
-// to do ○ (dimmed), white, in a square of side s at (x, y). Drawn, not taken from the icon theme.
+// A symbolic icon from Buoy's set, Gravity UI (design/icons, 2026-11-11; the SVGs in
+// icons/render/gravity-ui/), in one colour: rendered to a mask at 3×, then filled.
+const GRAVITY = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]),
+    '..', 'icons', 'render', 'gravity-ui']);
+export function icon(cr, name, x, y, s = 16, rgb = [1, 1, 1], a = 1) {
+    const m = new cairo.ImageSurface(cairo.Format.ARGB32, s * SCALE, s * SCALE);
+    const v = new Rsvg.Rectangle(); v.x = 0; v.y = 0; v.width = s * SCALE; v.height = s * SCALE;
+    Rsvg.Handle.new_from_file(`${GRAVITY}/${name}.svg`).render_document(new cairo.Context(m), v);
+    cr.save(); cr.newPath(); cr.scale(1 / SCALE, 1 / SCALE); cr.setSourceRGBA(...rgb, a);
+    cr.maskSurface(m, x * SCALE, y * SCALE); cr.restore();
+}
+
+// A task's state in Claude Code's rows (design/compact, 2026-11-11): done `check`, doing
+// `play-fill`, to do `circle` dimmed (fg-subtle), white, s at (x, y).
+const TASK = {done: ['check', 1], doing: ['play-fill', 1], todo: ['circle', .5]};
 export function taskState(cr, kind, x, y, s = 16) {
-    const lw = s >= 16 ? 1.5 : 1.25;
-    cr.newPath(); cr.save(); cr.translate(x + s / 2, y + s / 2);
-    cr.setSourceRGB(1, 1, 1); cr.setLineWidth(lw); cr.setLineCap(cairo.LineCap.ROUND); cr.setLineJoin(cairo.LineJoin.ROUND);
-    if (kind === 'done') {
-        cr.moveTo(-s * .34, s * .02); cr.lineTo(-s * .1, s * .26); cr.lineTo(s * .36, -s * .26); cr.stroke();
-    } else if (kind === 'doing') {
-        cr.moveTo(-s * .24, -s * .32); cr.lineTo(s * .34, 0); cr.lineTo(-s * .24, s * .32); cr.closePath(); cr.fill();
-    } else {
-        cr.setSourceRGBA(1, 1, 1, .5); cr.arc(0, 0, s * .32, 0, 2 * Math.PI); cr.stroke();
-    }
-    cr.restore(); cr.newPath();
+    const [name, a] = TASK[kind] ?? TASK.todo;
+    icon(cr, name, x, y, s, [1, 1, 1], a);
 }
 
 // Bu from the extension's own grids (kit/mascot.js), with the lamps as decided (design/colours,

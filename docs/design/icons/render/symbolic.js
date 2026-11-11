@@ -4,10 +4,8 @@
 // are Gravity UI's (gravity-ui/, MIT). gjs -m symbolic.js out.png
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
-import Rsvg from 'gi://Rsvg?version=2.0';
-import GLib from 'gi://GLib';
 import cairo from 'cairo';
-import {SCALE as SC, C} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
 const out = ARGV[0];
 
 const W = 760, H = 250, CY = [.4, .85, 1];
@@ -29,14 +27,7 @@ function rr(x, y, w, h, r) {
     cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI); cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI); cr.closePath();
 }
 const fill = (rgba, x, y, w, h, r) => { cr.newPath(); rr(x, y, w, h, r); cr.setSourceRGBA(...rgba); cr.fill(); };
-const GRAVITY = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]), 'gravity-ui']);
-function icon(name, x, y, s, rgb = C.WHITE, a = 1) {
-    const path = `${GRAVITY}/${name}.svg`;
-    const m = new cairo.ImageSurface(cairo.Format.ARGB32, s * SC, s * SC);
-    const v = new Rsvg.Rectangle(); v.x = 0; v.y = 0; v.width = s * SC; v.height = s * SC;
-    Rsvg.Handle.new_from_file(path).render_document(new cairo.Context(m), v);
-    cr.save(); cr.scale(1 / SC, 1 / SC); cr.setSourceRGBA(...rgb, a); cr.maskSurface(m, x * SC, y * SC); cr.restore();
-}
+const icon = (name, x, y, s, rgb = C.WHITE, a = 1) => gicon(cr, name, x, y, s, rgb, a);
 function dim(a, b, y, t, below = false) {
     cr.newPath(); cr.setSourceRGBA(...CY, .9); cr.setLineWidth(.5);
     cr.moveTo(a, y); cr.lineTo(b, y); cr.moveTo(a, y - 2); cr.lineTo(a, y + 2); cr.moveTo(b, y - 2); cr.lineTo(b, y + 2); cr.stroke();

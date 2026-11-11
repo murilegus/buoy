@@ -9,7 +9,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {taskState, C, GREY, drawBu} from '../../render/lib.js';
+import {taskState, icon, C, GREY, drawBu} from '../../render/lib.js';
 
 const SC = 3, W = 700, R = 28, PAD = 14, CW = 340, X = 40;
 const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED, CY = [.4, .85, 1], RD = [1, .5, .5];   // CY, RD: guide marks
@@ -62,12 +62,14 @@ function grad(x, y, s, r, c0, c1) {
     const g = new cairo.LinearGradient(x, y, x + s, y + s); g.addColorStopRGB(0, ...c0); g.addColorStopRGB(1, ...c1);
     cr.setSource(g); rr(x, y, s, s, r); cr.fill();
 }
-// the head's button: its main action (⏸ ■) is fill-inverse, cream with a black glyph; × is fill-2
+// the head's button (design/icons): its main action (⏸ pause-fill, ■ stop-fill) is fill-inverse,
+// cream with a black icon; × (xmark) is fill-2 with a white one; the icon 16 in the middle
+const GLYPH = {'⏸': 'pause-fill', '■': 'stop-fill', '×': 'xmark'};
 function round(cx, cy, glyph) {
-    const main = glyph !== '×', fg = main ? C.BLACK : W1;
-    if (main) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2);
+    const main = glyph !== '×';
+    cr.newPath(); if (main) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2);
     cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
-    const e = text(glyph, 0, 0, 10, 400, fg, 1, 0, true); text(glyph, cx - e.width / 2, cy - e.height / 2, 10, 400, fg);
+    icon(cr, GLYPH[glyph], cx - 8, cy - 8, 16, main ? C.BLACK : W1);
 }
 // a measure: horizontal above (or below) y, vertical right of x
 function dim(a, b, y, t, col = CY, below = false) {
@@ -157,7 +159,7 @@ for (const it of ROWS) {
             if (sel) { cr.setSourceRGBA(1, 1, 1, .08); rr(x + 8, ry, pw - 16, 32, 12); cr.fill(); }
             if (it.multi) {
                 cr.newSubPath();
-                if (sel) { cr.setSourceRGB(...ACC); rr(cx - 8, cy - 8, 16, 16, 4); cr.fill(); const e = text('✓', 0, 0, 8, 700, W1, 1, 0, true); text('✓', cx - e.width / 2, cy - e.height / 2, 8, 700, W1); }
+                if (sel) { cr.setSourceRGB(...ACC); rr(cx - 8, cy - 8, 16, 16, 4); cr.fill(); icon(cr, 'check', cx - 7, cy - 7, 14, W1); }
                 else { cr.setLineWidth(1.25); cr.setSourceRGBA(1, 1, 1, C.FG_SUBTLE); rr(cx - 7, cy - 7, 14, 14, 3.5); cr.stroke(); }
             } else {
                 if (!sel) { cr.newSubPath(); cr.setLineWidth(1.25); cr.setSourceRGBA(1, 1, 1, C.FG_SUBTLE); cr.arc(cx, cy, 7, 0, 2 * Math.PI); cr.stroke(); }
