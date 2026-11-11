@@ -118,7 +118,7 @@ text('(trắng 12 % đã trộn sẵn trên đen)', 530, 527, {sz: 7, a: .4, cen
 const AMBER = C.AMBER;
 fill([...AMBER, .16], 606, 446, 120, 30, 15);
 cr.setSourceRGB(...AMBER); cr.arc(622, 461, 3.5, 0, 2 * Math.PI); cr.fill();
-text('2 bị lỡ', 632, 453, {sz: 9, wt: 600, rgb: AMBER, a: 1});
+text('2 bị nhỡ', 632, 453, {sz: 9, wt: 600, rgb: AMBER, a: 1});
 text('missed-tint · amber 16 %', 666, 486, {sz: 7, a: .6, centre: true});
 text('chữ: light-missed', 666, 497, {sz: 7, a: .4, centre: true});
 

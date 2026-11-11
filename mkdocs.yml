@@ -86,6 +86,7 @@ plugins:
                 - Compact: design/compact/index.md
                 - Alert và ask: design/alerts-and-asks/index.md
                 - Expanded: design/expanded/index.md
+                - Home: design/home/index.md
                 - Tab: design/tabs/index.md
                 - Icon: design/icons/index.md
                 - Bu: design/mascot/index.md

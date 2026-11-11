@@ -4,7 +4,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done (reviewed by Ethan) · `[-
 Top to bottom within a milestone. What an item does lives in SPEC and docs/design; how it was
 done, in its PR. Update this file in the item's PR.
 
-Last updated: 2026-11-10
+Last updated: 2026-11-12
 
 ## M0 — Foundation `[x]`
 
@@ -32,7 +32,7 @@ pages, Bu, About, greeting first run and What's new, `install.sh`, README, last 
 |---|---|---|
 | [~] | Release | 0.1.1 accepted on extensions.gnome.org (in review since 2026-11-09); README badge and wording updated, the overview on the EGO page |
 | [ ] | `daypart-starts` in prefs | a row on the Island page (the clock already reads the key) |
-| [ ] | Home: Now playing on large screens | no empty middle in the card at 2560 and 3440 |
+| [-] | Home: Now playing on large screens | dropped (2026-11-12): the Home redesign (M4, design/home) gives the main card 168 / 200 and the tall form at 2560 and 3440 |
 | [ ] | Field checks | seen with real apps: a Firefox or Thunderbird notification; Spotify and Firefox (https) art; a Google or Microsoft calendar; IBus Bamboo; the red light in fullscreen; a °C locale's Automatic; an EGO update's What's new; Home at 1366 and 2560 |
 
 ## M4 — Redesign and "Wow" pack (v0.2) `[ ]`
@@ -46,19 +46,19 @@ one branch each, shipped together as 0.2. Sizes are in [docs/design](design/inde
 | [ ] | Restructure: kit, stylesheet, icons | ARCHITECTURE first; kit in `model/` `services/` `ui/`, `present.js` split by tier; a lint check of the import boundaries; one stylesheet in sections plus each tab's CSS beside its module, loaded by kit (not `@import`); `icons/color` and `icons/symbolic`; `install.sh` of 0.1 still works; nothing visible changes |
 | [ ] | Colours by role | as design/colours: the stylesheet uses only the palette's roles, checked by `tests/palette.test.js`; lights amber `#FF9F0A`, red `#FF453A`; Bu's lamps, stale Bu at 50 %, Bu's tile `#000`; high contrast; INDICATORS and MASCOT updated |
 | [ ] | Sizes in em: the bar and the pill | as design/pill, icons and mascot; nothing clipped at scale 1 and 2, with Large Text and a wide font; SPEC §2, §4 updated |
-| [ ] | Compact and the notification card | as design/compact and alerts-and-asks; SPEC §2, §4 and NOTIFICATIONS §3 updated |
+| [ ] | Compact and the notification card | as design/compact and alerts-and-asks; a notification arrives as an alert (its card without buttons for 5 s, the buttons on hover, then the pill with its full title); seen only when its card had 5 s while you were present; bursts in turns (1 s each, 2 waiting, same app merged), paused by hover; on a shared screen a burst is one compact, all missed; SPEC §2, §4 and NOTIFICATIONS §2–§3 updated |
 | [ ] | The lights at the ends | as design/pill; SPEC §2, §2a-i, §2a-ii updated |
-| [ ] | Expanded on the same rhythm | as design/expanded; SPEC §4 updated |
+| [ ] | Expanded on the same rhythm | as design/expanded and design/home (the main card and the row of tiles); SPEC §3, §4 updated |
 | [ ] | Phone via GSConnect | Grab/Be ride, OTP (30 s), Zalo/Messenger with avatar, call Mute/Reply SMS; adapters in `modules/phone/apps/` |
 | [ ] | Attention on another workspace | click switches workspace and focuses (Mutter `demands-attention`) |
 | [ ] | Headphones / display plugged | choose on the pill; replaces GNOME's jack dialog when on |
-| [ ] | Buoy light, the rest | red's hover line; away (idle > N min) and DND call `stack.setUnseen()` (INDICATORS) |
+| [ ] | Buoy light, the rest | red's hover line; away (GNOME's session idle, after `idle-delay`), the lock screen and DND call `stack.setUnseen()`; a presence watch (core idle monitor, as Shell's banner) (INDICATORS, design/alerts-and-asks) |
 | [ ] | Power | charging, full, low; "18 W — slow"; "full in 42 min" (UPower) |
 | [ ] | Bluetooth device | connected, with its battery |
 | [ ] | USB / phone / webcam plugged | mount with one-tap eject |
 | [ ] | Privacy dot | as design/colours (mic purple, camera green, screen red) and design/compact (screen sharing and recording in the pill, with Stop); hides GNOME's indicators; "in call" with auto-DND |
 | [ ] | Meeting in 5 min · Join | SPEC §6b item 5 |
-| [ ] | Timer | pomodoro ring, keep-awake, its tab |
+| [ ] | Timer | pomodoro ring, keep-awake, its tab; a start tile in Home's glance (design/home) |
 | [ ] | Idle plan `mascot` | MASCOT.md § Eyes; module off by default; checked with `powertop` on real hardware |
 | [ ] | Print job progress | CUPS notifier |
 | [ ] | Terminal command finished in an unfocused tab | "exit 0 · 48 s", jump |

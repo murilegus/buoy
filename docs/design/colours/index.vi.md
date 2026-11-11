@@ -47,12 +47,12 @@ cho một chỗ.
 | `accent-fg` | `-st-accent-fg-color` | chữ trên nền `accent`. **Chốt** | |
 | `focus-ring` | `accent` 80 %, 2 px vẽ vào trong | focus bàn phím của mọi nút; island đang focus thì viền là `accent` 100 %. **Chốt** | |
 | `light-off` | trắng 20 % | đèn tắt (idle `none`) | `#3a3a3a` |
-| `light-missed` | `#FF9F0A` ([Đèn và chấm](#đèn-và-chấm)) | đèn bị lỡ | `#EF9F27` |
+| `light-missed` | `#FF9F0A` ([Đèn và chấm](#đèn-và-chấm)) | đèn bị nhỡ | `#EF9F27` |
 | `light-waiting` | `#FF453A` | đèn đang chờ | `#E24B4A` |
 | `dot-mic` | `#BF5AF2` ([Riêng tư](#chấm-riêng-tư)) | chấm mic | `#F0997B` |
 | `dot-cam` | `#30D158` | chấm camera | `#5DCAA5` |
 | `dot-screen` | `#FF453A`, như `light-waiting` | chấm chia sẻ hay quay màn hình | `#5DCAA5` |
-| `missed-tint` | `light-missed` 16 % | nền chip "bị lỡ" | `#2a1f0c` |
+| `missed-tint` | `light-missed` 16 % | nền chip "bị nhỡ" | `#2a1f0c` |
 
 Stale không có màu riêng: thanh và cột sóng nhạc của một hoạt động stale dùng `fg-subtle`.
 

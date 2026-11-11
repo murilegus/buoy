@@ -49,13 +49,15 @@ export function fit(L, cr, target, features = 'tnum') {
 }
 
 // A symbolic icon from Buoy's set, Gravity UI (design/icons, 2026-11-11; the SVGs in
-// icons/render/gravity-ui/), in one colour: rendered to a mask at 3×, then filled.
-const GRAVITY = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]),
-    '..', 'icons', 'render', 'gravity-ui']);
+// icons/render/gravity-ui/, Buoy's own in its style in icons/render/own/), in one colour: rendered
+// to a mask at 3×, then filled.
+const ICONS = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]), '..', 'icons', 'render']);
+// Gravity UI's, then the ones Buoy draws in its style where Gravity has none (own/)
+const iconPath = name => ['gravity-ui', 'own'].map(d => `${ICONS}/${d}/${name}.svg`).find(p => GLib.file_test(p, GLib.FileTest.EXISTS));
 export function icon(cr, name, x, y, s = 16, rgb = [1, 1, 1], a = 1) {
     const m = new cairo.ImageSurface(cairo.Format.ARGB32, s * SCALE, s * SCALE);
     const v = new Rsvg.Rectangle(); v.x = 0; v.y = 0; v.width = s * SCALE; v.height = s * SCALE;
-    Rsvg.Handle.new_from_file(`${GRAVITY}/${name}.svg`).render_document(new cairo.Context(m), v);
+    Rsvg.Handle.new_from_file(iconPath(name)).render_document(new cairo.Context(m), v);
     cr.save(); cr.newPath(); cr.scale(1 / SCALE, 1 / SCALE); cr.setSourceRGBA(...rgb, a);
     cr.maskSurface(m, x * SCALE, y * SCALE); cr.restore();
 }

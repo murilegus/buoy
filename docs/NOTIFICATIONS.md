@@ -67,6 +67,41 @@ way the app's pill updates.
 
 ## 2. The pill
 
+> **v0.2 redesign** (2026-11-12, Ethan; the drawings and the full rules in
+> [Design](design/index.md), alerts and asks). This section and §1's "marked seen" describe
+> v0.1, as the code is today. What changes:
+>
+> - **An alert, as GNOME 50's banner** (`ui/messageTray.js` `_showNotification`,
+>   `_expandBanner`): the card opens on the pill for 5 s with the title and up to two lines of
+>   body but no buttons; hovering shows the app's buttons and holds it; then the pill, with the
+>   full title as the app sent it (no per-app rewriting). Critical: buttons at once, it stays.
+>   A shared screen still names only the app (§5).
+> - **Seen only when you were there**: a notification is seen when its card had its 5 s while
+>   you were present, or you hovered or clicked it; only then `acknowledged = true` (v0.1 set it
+>   when the pill showed, even with nobody at the screen). Present: input in the last second
+>   (Shell's `IDLE_TIME`, the core idle monitor). A card that comes while you are idle waits and
+>   starts its 5 s at your next input (`add_user_active_watch`, as Shell's banner), but closes,
+>   missed, when the session turns idle (`idle-delay`) or the screen locks.
+> - **Missed** (the amber light, the Missed list in Home): what came while you were away
+>   (session idle), locked, full screen or in Do Not Disturb; a card cut short by the next one;
+>   ended activities under the same conditions (the stack's history; v0.1 counted full screen
+>   only). Full screen and Do Not Disturb show no card, as GNOME shows no banner. Opening Home
+>   turns the light off; the Missed tile stays until every row is opened or cleared.
+> - **Several at once**: cards in arrival order; consecutive ones from one app merge into one
+>   turn (the newest, "4 messages" on the subtitle); each turn at least 1 s, the last one 5 s;
+>   besides the card at most 2 waiting turns (Shell's `MAX_NOTIFICATIONS_IN_QUEUE` = 3); one
+>   that finds no room gets no card, only its app's pill, and is missed; a critical one jumps
+>   ahead and is never replaced. The card stays open between turns, its content fading (100 ms
+>   out, 200 ms in); afterwards one pill per app as below, ranked by PRIORITY (the newest first).
+> - **Shared or recorded screen**: one notification as §5; a burst is **one compact** (the head
+>   only: the apps' logos stacked, "6 new notifications", "Slack 3 · Telegram 2 · Gmail 1"), 5 s,
+>   later ones only bump the counts; no buttons, a click opens nothing, × only closes it; then one
+>   pill per app, named only. All of it counts as missed: nobody read what was hidden.
+> - **Hover during a burst** pauses it: the card stays, shows its buttons, never changes under the
+>   pointer (a same-app message only bumps the count); timers run only off the card; leaving
+>   resumes after 200 ms (Shell's `HIDE_TIMEOUT`). A card that opens under a resting pointer is
+>   not hovered until the pointer leaves and comes back (`_onNotificationHoverChanged`).
+
 One pill per app (its id: the desktop id, else the name it sends; not per Shell `Source`,
 which notify-send makes once per process): a new notification from the same app replaces the
 pill's content instead of adding a pill.

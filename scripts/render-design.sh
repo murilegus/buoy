@@ -37,11 +37,17 @@ r $c/card.js compact/images/card.vi.png
 r $c/body.js compact/images/body.vi.png
 r $c/screen.js compact/images/screen.vi.png
 r $c/reply.js compact/images/reply.vi.png
+r alerts-and-asks/render/notification.js alerts-and-asks/images/notification.vi.png
+r alerts-and-asks/render/shared.js alerts-and-asks/images/shared.vi.png
 
 # icons
 r icons/render/symbolic.js icons/images/symbolic.vi.png
+r icons/render/own.js icons/images/own.vi.png
 
 # expanded
 r expanded/render/expanded.js expanded/images/expanded.vi.png
+
+# home
+for m in states anatomy fill lists screen; do r home/render/home.js home/images/$m.vi.png $m; done
 
 echo "docs/design: images redrawn"

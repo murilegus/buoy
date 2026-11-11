@@ -31,6 +31,12 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 
 Precedence: red › amber › off. Only one light is drawn.
 
+> **v0.2** (2026-11-12, Ethan; design/alerts-and-asks): amber also covers what ended or came
+> while you were away (GNOME's session idle, after `idle-delay`), the screen locked, or in Do Not
+> Disturb, and notifications that never had their 5 s while you were present (a card cut short,
+> one with no room in a burst). Opening Home turns it off; Home's Missed tile stays until every
+> row is opened or cleared. NOTIFICATIONS §2 has the notification rules.
+
 Not states: the clock plan's daypart icons (SPEC §2a, 2026-11-04) are yellow
 `#FFD23F` and peach `#FFB889` (palette A) beside the light, never amber or red; `tests/clock.test.js`
 checks the files.

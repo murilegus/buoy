@@ -94,7 +94,7 @@ compact(400, 256, {lead: 'display-pulse', title: 'Đang chia sẻ màn hình', s
 notes(400, 322, ['Giống hệt, khác icon và chữ.', 'App quay qua portal (OBS…): "Ứng dụng đang quay màn hình".',
     'Không biết tên app: Mutter không đưa tên', '(MetaRemoteAccessHandle chỉ có is-recording).',
     'Dừng tất cả phiên chia sẻ, như nút của GNOME.']);
-text('Bấm vào pill (không phải nút Dừng): mở Home, hàng "đang dùng". Không có tab riêng, không mở expanded.', 16, 432, {sz: 8, a: .8});
+text('Bấm vào pill (không phải nút Dừng): mở Home, bản ghi là thẻ chính hoặc một ô. Không có tab riêng.', 16, 432, {sz: 8, a: .8});
 text('Không đèn trong compact; chấm đỏ trở lại khi compact thu về pill.', 16, 448, {sz: 8, a: .8});
 text('Mic và camera không thành activity: chỉ chấm (tím, xanh), bấm mở Home.', 16, 464, {sz: 8, a: .8});
 text('Nút của GNOME trên thanh (quay: đỏ, đồng hồ; chia sẻ: cam) ẩn khi module privacy bật.', 16, 480, {sz: 8, a: .8});
