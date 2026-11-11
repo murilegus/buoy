@@ -15,7 +15,8 @@ không mở expanded ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dù
 - Home: phần đầu 56 chứa thanh tab cao 32, cách mép trên 12 (đồng tâm: 28 − 12 = 16, đúng bán kính
   của thanh tab); mỗi hàng 32, nên Home cao 56 + 32n; ở 1920 vừa 7 hàng trong 280. **Chốt**
 - Không có tab (lời chào): phần đầu 88 = 16 + leading 56 + 16, leading bo 12 (đồng tâm); lời
-  chào = 88. **Chốt** (Ethan, 2026-11-10)
+  chào = 88. Bu ở leading đứng thẳng trên nền đen của island, không có ô nền; ô bo 12 chỉ
+  cho ảnh (avatar, logo app). **Chốt** (Ethan, 2026-11-10)
 - Không có đèn trong expanded. **Chốt**
 
 ## Còn mở

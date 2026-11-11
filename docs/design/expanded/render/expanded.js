@@ -49,7 +49,7 @@ const bu = (x, y, cell) => drawBu(cr, 'wave', x, y, cell);
 {
   const x = 600, y = 210, h = 88; panel(x, y, 380, h);
   text('Lời chào (greeting, transient, không tab) — 88, chỉ phần đầu', x, 188, 9, 600, W1, .85);
-  cr.setSourceRGBA(1, 1, 1, C.FILL1); rr(x + 16, y + 16, 56, 56, 12); cr.fill(); bu(x + 19, y + 19, 5);
+  bu(x + 19, y + 19, 5);   // Bu straight on the island's black, no tile (design/colours: Bu only on black)
   text('Good afternoon, Ethan', x + 88, y + 25, 14, 700, W1);
 }
 // notes

@@ -19,11 +19,12 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
   đen chỉ khác 12 % có 7 mức xám (#262626 so với #1f1f1f), và trên hình nền sáng thì nền đen mới
   là thứ tách pill ra. **Chốt** (Ethan, 2026-11-10)
 - Khoảng giữa các phần là **8**, một giá trị cho mọi chỗ: ô leading 24 → chữ, chữ → trailing,
-  trailing → nút. Bu nằm giữa ô 24 nên cách mép pill 8 + 2 = 10 và cách chữ 2 + 8 = 10. Code hiện
+  trailing → nút. Icon đầy ô 24 nên cách mép pill 8 và cách chữ 8; Bu 20 nằm giữa ô 24 nên cách 10. Code hiện
   tại lệch nhau: idle dùng 7 (`.buoy-idle-zones`, thêm ở #107) cộng `padding-left: 2px`, minimal
   dùng 8 (`.buoy-minimal`). **Chốt** (Ethan, 2026-11-10)
-- Leading 20 trong ô 24: Bu, icon buổi trong ngày, icon thời tiết ([Icon](../icons/index.vi.md),
-  [Bu](../mascot/index.vi.md)). **Chốt**
+- Leading: icon buổi trong ngày và icon thời tiết **24**, đầy ô 24 ([Icon](../icons/index.vi.md));
+  Bu giữ **20** giữa ô 24, vì lưới 10 × 10 chỉ nét ở bội số của 10 ([Bu](../mascot/index.vi.md)).
+  **Chốt** (Ethan, 2026-11-11; icon thay 20 trong ô 24)
 
 ## Chữ
 

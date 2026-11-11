@@ -14,7 +14,7 @@ về đây thay vì chép số. Số px tính cho 1em = 11pt ≈ 14.67 px và l�
 | Khung nội dung | cao 24, trên dưới mỗi bên 4 | | Chốt |
 | Lề ngang | 8 | trước là 14 (`PAD`) | Chốt |
 | Khoảng giữa các phần | 8 | leading → chữ → trailing → nút | Chốt |
-| Leading | 20 trong ô 24 | icon, Bu | Chốt |
+| Leading | icon 24, đầy khung nội dung 24; Bu 20 giữa ô 24 (lưới 10 × 10) | | Chốt (Ethan, 2026-11-11) |
 | Viền | 1 px, trắng 12 %, nằm trong hình | | Chốt |
 | Idle | rộng theo plan rộng nhất, đo khi chạy: 133 ở 1×, 138 ở 1.25–2× | | Chốt |
 | Chấm đèn | 8, ở tâm hình tròn đầu (cách mép 16) | chỉ trên pill 1 | Chốt |

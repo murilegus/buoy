@@ -38,6 +38,9 @@ r $c/body.js compact/images/body.vi.png
 r $c/screen.js compact/images/screen.vi.png
 r $c/reply.js compact/images/reply.vi.png
 
+# icons
+r icons/render/symbolic.js icons/images/symbolic.vi.png
+
 # expanded
 r expanded/render/expanded.js expanded/images/expanded.vi.png
 

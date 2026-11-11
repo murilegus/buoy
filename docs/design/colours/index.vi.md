@@ -170,7 +170,7 @@ trên nền đen. Bảng này không gom vào thang trắng, nhưng tránh màu 
 Khoảng cách (ΔE, dưới 20 là gần, dễ nhầm ở cỡ nhỏ):
 
 - Với người thường, mọi cặp giữa đèn của Bu, đèn và chấm đều ≥ 23.
-- Mặt trời của icon và amber: 28 (mù lục 12). Icon 20 px cạnh chấm 8 px, khác hình dạng nên vẫn
+- Mặt trời của icon và amber: 28 (mù lục 12). Icon 24 px cạnh chấm 8 px, khác hình dạng nên vẫn
   đọc được.
 - Với người mù màu, vài cặp đèn của Bu gần nhau (done và wave 5–8). Chấp nhận: dáng của Bu mới là
   thứ mang nghĩa, đèn chỉ thêm vào.
