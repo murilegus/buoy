@@ -1,11 +1,15 @@
 // gjs -m scripts/icons.js [--sheet-only] [sheet.png] [bigpx]
 //
-// The daypart and weather icons: 19 colour SVGs on a 16 px grid, always on black, shown
-// at 20 px in the idle pill and 40 px in the hover card. Design source, not a build step:
-// it rewrites src/buoy@murilegus/icons/color/{daypart,weather}-*.svg, then renders docs/icons.png
-// (a 20 px row, a grid at 40 px with names, five mock idle pills). Chosen 2026-11-06
-// (Ethan: palette A, soft blue cloud). Every part carries an id (sun, moon, cloud, rain,
-// snow, bolt, wind, horizon, arc) so a tab can split an icon into layers and animate them.
+// The daypart and weather icons: 19 colour SVGs on a 24 grid, always on black. They fill
+// the pill's 24 px leading cell (one unit = one pixel), 48 px is two pixels a unit, the
+// compact's 40 is a little soft (docs/design/icons, 2026-11-11, Ethan). Design source, not
+// a build step: it rewrites src/buoy@murilegus/icons/color/{daypart,weather}-*.svg, then renders
+// docs/icons.png (a 24 px row, a grid at 48 px with names, five mock idle pills). Palette A,
+// soft blue cloud (2026-11-06). Every part carries an id (sun, moon, cloud, rain, snow,
+// bolt, wind, horizon, arc) so a tab can split an icon into layers and animate them.
+//
+// Whole pixels: a straight edge lies on an integer; a disc has an integer centre and
+// radius (or both on .5); an upright or level stroke is 2 wide on an integer centre line.
 import Cairo from 'cairo';
 import GLib from 'gi://GLib';
 import Rsvg from 'gi://Rsvg';
@@ -15,7 +19,7 @@ const ICONS = `${here}/../src/buoy@murilegus/icons/color`;
 const sheetOnly = ARGV[0] === '--sheet-only';
 const args = sheetOnly ? ARGV.slice(1) : ARGV;
 const SHEET = args[0] ?? `${here}/../docs/icons.png`;
-const BIG = Number(args[1] ?? 40);
+const BIG = Number(args[1] ?? 48);
 
 // ---- palette A ---------------------------------------------------------------
 const SUN = '#FFD23F';
@@ -27,6 +31,7 @@ const CLOUD_DARK = '#7FA8D0';       // the cloud behind, in overcast
 const SNOW = '#BFF2FA';
 const FOG = '#9DBBD6';
 const HORIZON = '#7A838D';
+const ARC = '#6B737C';               // the sun's path: single pixels, solid
 
 // ---- primitives ----------------------------------------------------------------
 const f = v => v.toFixed(2).replace(/\.?0+$/, '').replace(/^-0$/, '0');
@@ -44,11 +49,13 @@ function sun(cx, cy, r, ri, ro, sw, {color = SUN, n = 8, off = 0} = {}) {
     return `<g id="sun"><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" fill="${color}"/>${rays.join('')}</g>`;
 }
 
-// The upper half of a disc on the horizon, with three rays (steep enough to stay inside
-// the grid at either end of the horizon).
+// The upper half of a disc standing on the horizon row, with five rays, 35° apart: the
+// upper three reach ro, the two outer ones stop a pixel short (2026-11-11, Ethan). The
+// outer two reach ro - 1 + sw / 2 sideways, so the centre sits that far inside the grid.
 function halfSun(cx, cy, r, ri, ro, sw, color = PEACH) {
     const disc = `<path d="M${f(cx - r)} ${f(cy)}A${f(r)} ${f(r)} 0 0 1 ${f(cx + r)} ${f(cy)}Z" fill="${color}"/>`;
-    const rays = [240, 270, 300].map(deg => ray(cx, cy, ri, ro, deg, sw, color));
+    const rays = [[200, ro - 1], [235, ro], [270, ro], [305, ro], [340, ro - 1]]
+        .map(([deg, to]) => ray(cx, cy, ri, to, deg, sw, color));
     return `<g id="sun">${disc}${rays.join('')}</g>`;
 }
 
@@ -73,75 +80,80 @@ function star(cx, cy, s, color = SUN) {
         `Q${f(cx - k)} ${f(cy + k)} ${f(cx - s)} ${f(cy)}Q${f(cx - k)} ${f(cy - k)} ${f(cx)} ${f(cy - s)}Z" fill="${color}"/>`;
 }
 
-// The one cloud: two bumps on a rounded base, in the box x, y, w, h.
+// The one cloud: two bumps on a rounded base, in the box x, y, w, h (whole numbers). The
+// bumps' centres and radii are rounded so the cloud's top, sides and bottom lie on pixels.
 function cloud(x, y, w, h, color = CLOUD, id = 'cloud') {
-    const rr = 0.275 * h;
-    const big = [x + 0.60 * w, y + 0.42 * h, 0.42 * h];
-    const sm = [x + 0.27 * w, y + 0.50 * h, 0.34 * h];
+    const base = Math.round(0.55 * h);
+    const R = Math.round(0.42 * h);
+    const r = Math.round(0.34 * h);
+    const big = [Math.round(x + 0.60 * w), y + R, R];
+    const sm = [Math.max(Math.round(x + 0.27 * w), x + r), y + h - base / 2 - Math.round(0.24 * h), r];
     return `<g id="${id}" fill="${color}"><circle cx="${f(big[0])}" cy="${f(big[1])}" r="${f(big[2])}"/>` +
         `<circle cx="${f(sm[0])}" cy="${f(sm[1])}" r="${f(sm[2])}"/>` +
-        `<rect x="${f(x)}" y="${f(y + h - 2 * rr)}" width="${f(w)}" height="${f(2 * rr)}" rx="${f(rr)}"/></g>`;
+        `<rect x="${f(x)}" y="${f(y + h - base)}" width="${f(w)}" height="${f(base)}" rx="${f(base / 2)}"/></g>`;
 }
 
-const drops = (xs, y0, y1, sw = 1.4, dx = -0.8, color = TEAL) =>
+const drops = (xs, y0, y1, sw = 2, dx = -1, color = TEAL) =>
     `<g id="rain">${xs.map(x => line(x, y0, x + dx, y1, sw, color)).join('')}</g>`;
 
 const dots = (pts, r, color = SNOW) =>
     `<g id="snow">${pts.map(([x, y]) => `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="${color}"/>`).join('')}</g>`;
 
 const bolt = (pts, color = SUN) =>
-    `<path id="bolt" d="M${pts.map(([x, y]) => `${f(x)} ${f(y)}`).join(' ')}Z" fill="${color}" stroke="${color}" stroke-width="0.5" stroke-linejoin="round"/>`;
+    `<path id="bolt" d="M${pts.map(([x, y]) => `${f(x)} ${f(y)}`).join(' ')}Z" fill="${color}" stroke="${color}" stroke-width="1" stroke-linejoin="round"/>`;
 
 const svg = (...parts) =>
-    `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">${parts.join('')}</svg>\n`;
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">${parts.join('')}</svg>\n`;
 
-// ---- dayparts: one horizon and one faint dotted arc, shared ------------------------
-// the horizon sits at 11, not at the bottom: at 20 px in the idle pill it falls on the
-// time's baseline row (measured in headless Shell, 2026-11-06, Ethan); on the grid's
-// bottom edge (14.2) the scene read as sunk 1.5 px under the digits
-const HY = 11;
-const AR = 5.6;
+// ---- dayparts: one horizon and one dotted arc, shared ---------------------------------
+// The horizon is exactly one pixel row, row 15 (y 15–16), x 1–23: in the 32 px pill that is
+// row 19, the time's baseline row (measured in headless Shell, 2026-11-06, Ethan). The
+// sun's path is single solid pixels on an arc around (12, 15), radius about 8.4, mirrored
+// in x = 12 (docs/design/icons, 2026-11-11). Cells are [column, row] of the right half.
+const HY = 15;
+const AR = 8.4;
+const ARC_CELLS = [[13, 6], [15, 7], [17, 8], [19, 10], [20, 12]];
+const pixels = [...ARC_CELLS.map(([x, y]) => [23 - x, y]).reverse(), ...ARC_CELLS];
 const horizon = () =>
-    `<path id="arc" d="M${f(8 - AR)} ${f(HY)}A${f(AR)} ${f(AR)} 0 0 1 ${f(8 + AR)} ${f(HY)}" fill="none" ` +
-    `stroke="${HORIZON}" stroke-width="1" stroke-dasharray="0.01 1.5" stroke-linecap="round" opacity="0.6"/>${
-        line(1, HY, 15, HY, 1.2, HORIZON).replace('<line', '<line id="horizon"')}`;
-const onArc = deg => [8 + AR * Math.cos(rad(deg)), HY - AR * Math.sin(rad(deg))];
+    `<g id="arc" fill="${ARC}">${pixels.map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`).join('')}</g>` +
+    `<rect id="horizon" x="1" y="${HY}" width="22" height="1" fill="${HORIZON}"/>`;
+const onArc = deg => [Math.round(12 + AR * Math.cos(rad(deg))), Math.round(HY - AR * Math.sin(rad(deg)))];
 const [mx, my] = onArc(124);
 const [ax, ay] = onArc(56);
-const arcSun = (x, y) => sun(x, y, 2.1, 2.8, 3.6, 1.1, {off: 22.5});
+const arcSun = (x, y) => sun(x, y, 3, 5, 5, 2);
 
 const icons = {
-    'daypart-dawn': svg(horizon(), halfSun(4.4, HY, 3.6, 4.4, 6.2, 1.2)),
+    'daypart-dawn': svg(horizon(), halfSun(9, HY, 5, 7, 9, 2)),
     'daypart-morning': svg(horizon(), arcSun(mx, my)),
-    'daypart-noon': svg(horizon(), arcSun(8, HY - AR)),
+    'daypart-noon': svg(horizon(), arcSun(12, 7)),
     'daypart-afternoon': svg(horizon(), arcSun(ax, ay)),
-    'daypart-evening': svg(horizon(), halfSun(11.6, HY, 3.6, 4.4, 6.2, 1.2)),
-    'daypart-night': svg(horizon(), moon(7.4, 5.2, 3.6), star(12.4, 1.6, 1.2), star(11.8, 6.2, 0.75)),
+    'daypart-evening': svg(horizon(), halfSun(15, HY, 5, 7, 9, 2)),
+    'daypart-night': svg(horizon(), moon(10.5, 7.5, 5.5), star(18.5, 3.5, 2.5), star(17.5, 10.5, 1.5)),
 
     // ---- weather: GWeather's conditions; sun or moon behind the cloud, upper left ----
-    'weather-clear': svg(sun(8, 8, 3.7, 5.0, 6.9, 1.5)),
-    'weather-clear-night': svg(moon(7.2, 8.6, 5.2), star(12.8, 3.6, 1.5), star(13.8, 8.2, 0.8)),
-    'weather-few-clouds': svg(sun(5.2, 5.4, 2.9, 3.7, 4.7, 1.2), cloud(3.0, 6.6, 12.5, 7.6)),
-    'weather-few-clouds-night': svg(moon(5.4, 5.2, 3.6), cloud(3.0, 6.6, 12.5, 7.6)),
-    'weather-overcast': svg(cloud(3.5, 1.5, 12, 7, CLOUD_DARK, 'cloud-back'), cloud(0.5, 6.0, 13, 8)),
-    'weather-fog': svg(cloud(0.5, 1.2, 15, 8.2),
-        `<g id="fog">${line(2.2, 11.6, 11.0, 11.6, 1.4, FOG)}${line(5.0, 14.3, 13.8, 14.3, 1.4, FOG)}</g>`),
-    'weather-showers-scattered': svg(sun(4.8, 4.6, 2.5, 3.2, 4.1, 1.1), cloud(3.0, 5.6, 12.5, 6.8),
-        drops([7.4, 11.4], 13.2, 15.0)),
-    'weather-showers': svg(cloud(0.5, 1.0, 15, 8), drops([4.6, 8.4, 12.2], 10.6, 14.6, 1.5, -1.0)),
-    'weather-snow': svg(cloud(0.5, 1.0, 15, 8), dots([[4.2, 11.6], [8, 13.9], [11.8, 11.6]], 1.2)),
-    'weather-storm': svg(cloud(0.5, 0.8, 15, 7.6),
-        bolt([[8.9, 8.0], [5.6, 12.4], [8.0, 12.4], [6.8, 15.3], [10.6, 10.9], [8.4, 10.9], [9.9, 8.0]]),
-        drops([3.6, 13.2], 9.8, 12.4, 1.4, -0.7)),
-    'weather-windy': svg(`<g id="wind" fill="none" stroke="${TEAL}" stroke-width="1.5" stroke-linecap="round">` +
-        '<path d="M1 5.4H10.2a1.9 1.9 0 1 0-1.9-1.9"/>' +
-        '<path d="M1 9H13.2a2 2 0 1 1-2 2"/>' +
-        '<path d="M1 12.6H7.6a1.5 1.5 0 1 1-1.5 1.5"/></g>'),
+    'weather-clear': svg(sun(12, 12, 6, 8, 10, 2)),
+    'weather-clear-night': svg(moon(11, 13, 9), star(19.5, 4.5, 2.5), star(20.5, 12.5, 1.5)),
+    'weather-few-clouds': svg(sun(8, 9, 4, 6, 7, 2), cloud(5, 11, 18, 11)),
+    'weather-few-clouds-night': svg(moon(7.5, 7.5, 5.5), cloud(5, 11, 18, 11)),
+    'weather-overcast': svg(cloud(5, 2, 18, 11, CLOUD_DARK, 'cloud-back'), cloud(1, 10, 19, 12)),
+    'weather-fog': svg(cloud(1, 2, 22, 12),
+        `<g id="fog">${line(4, 17, 16, 17, 2, FOG)}${line(8, 21, 20, 21, 2, FOG)}</g>`),
+    'weather-showers-scattered': svg(sun(7, 7, 3, 5, 6, 2), cloud(5, 8, 18, 10),
+        drops([12, 18], 20, 22)),
+    'weather-showers': svg(cloud(1, 2, 22, 12), drops([6.5, 12.5, 18.5], 17, 22)),
+    'weather-snow': svg(cloud(1, 2, 22, 12), dots([[6, 18], [12, 21], [18, 18]], 2)),
+    'weather-storm': svg(cloud(1, 1, 22, 11),
+        bolt([[13.5, 11.5], [8.5, 18.5], [12, 18.5], [10, 23], [16, 16.5], [12.5, 16.5], [15, 11.5]]),
+        drops([6, 20], 15, 18)),
+    'weather-windy': svg(`<g id="wind" fill="none" stroke="${TEAL}" stroke-width="2" stroke-linecap="round">` +
+        '<path d="M2 8H15a3 3 0 1 0-3-3"/>' +
+        '<path d="M2 13H19a3 3 0 1 1-3 3"/>' +
+        '<path d="M2 18H11a2 2 0 1 1-2 2"/></g>'),
     'weather-tornado': svg(`<g id="tornado">${[
-        [1.2, 2.6, 14.8, 2.6], [2.8, 5.6, 13.6, 5.6], [4.8, 8.6, 12.6, 8.6], [6.6, 11.6, 11.2, 11.6], [8.6, 14.5, 10.4, 14.5],
-    ].map(p => line(...p, 1.6, TEAL)).join('')}</g>`),
-    'weather-severe-alert': svg(`<path id="sign" d="M8 1.6 15 14H1Z" fill="${SUN}" stroke="${SUN}" stroke-width="1.6" stroke-linejoin="round"/>`,
-        `<rect x="7.2" y="5.4" width="1.6" height="5.1" rx="0.8" fill="${INK}"/><circle cx="8" cy="12.3" r="0.95" fill="${INK}"/>`),
+        [2, 2, 22, 2], [4, 7, 20, 7], [7, 12, 19, 12], [10, 17, 17, 17], [13, 22, 16, 22],
+    ].map(p => line(...p, 2, TEAL)).join('')}</g>`),
+    'weather-severe-alert': svg(`<path id="sign" d="M12 3 22 21H2Z" fill="${SUN}" stroke="${SUN}" stroke-width="2" stroke-linejoin="round"/>`,
+        `<rect x="11" y="8" width="2" height="8" rx="1" fill="${INK}"/><circle cx="12" cy="18.5" r="1.5" fill="${INK}"/>`),
 };
 
 if (!sheetOnly) {
@@ -156,7 +168,7 @@ const cols = 10;
 const cell = BIG + 24;
 const rows = Math.ceil(names.length / cols);
 const W = cols * cell + 24;
-const H = 24 + 44 + rows * (cell + 18) + 70;
+const H = 24 + 44 + rows * (cell + 18) + 66;
 const surf = new Cairo.ImageSurface(Cairo.Format.ARGB32, W, H);
 const cr = new Cairo.Context(surf);
 cr.setSourceRGB(0, 0, 0);
@@ -170,7 +182,7 @@ const label = name => name
     .replace('weather-', '').replace('daypart-', '')
     .replace('showers-scattered', 'showers-sc.').replace('few-clouds-night', 'few-cl-night');
 
-names.forEach((n, i) => draw(n, 12 + i * 30, 14, 20));
+names.forEach((n, i) => draw(n, 12 + i * 34, 14, 24));
 cr.selectFontFace('sans', Cairo.FontSlant.NORMAL, Cairo.FontWeight.NORMAL);
 cr.setFontSize(9);
 names.forEach((n, i) => {
@@ -182,22 +194,23 @@ names.forEach((n, i) => {
     cr.showText(label(n));
 });
 
-const barY = H - 56;
+const barY = H - 52;
 cr.setSourceRGB(0.16, 0.16, 0.17);
-cr.rectangle(0, barY, W, 44);
+cr.rectangle(0, barY, W, 40);
 cr.fill();
 const pill = (x, icon, text) => {
-    const w = 20 + 10 + 8 * text.length + 16;
+    // the pill of docs/design: 32 high in a 40 bar, 8 at the sides, the icon fills the 24 cell
+    const w = 8 + 24 + 8 + 8 * text.length + 12;
     cr.setSourceRGB(0, 0, 0);
     cr.newSubPath();
-    cr.arc(x + 15, barY + 22, 15, Math.PI / 2, 3 * Math.PI / 2);
-    cr.arc(x + w - 15, barY + 22, 15, -Math.PI / 2, Math.PI / 2);
+    cr.arc(x + 16, barY + 20, 16, Math.PI / 2, 3 * Math.PI / 2);
+    cr.arc(x + w - 16, barY + 20, 16, -Math.PI / 2, Math.PI / 2);
     cr.closePath();
     cr.fill();
-    draw(icon, x + 10, barY + 12, 20);
+    draw(icon, x + 8, barY + 8, 24);
     cr.setSourceRGB(1, 1, 1);
     cr.setFontSize(13);
-    cr.moveTo(x + 36, barY + 27);
+    cr.moveTo(x + 40, barY + 24);
     cr.showText(text);
 };
 pill(16, 'daypart-afternoon', '14:32');

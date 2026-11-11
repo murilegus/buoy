@@ -34,7 +34,7 @@ for (const [i, uri] of files.entries()) {
     const path = GLib.filename_from_uri(uri)[0];
     ok(GLib.file_test(path, GLib.FileTest.EXISTS), `${DAYPARTS[i]}: the file exists (${path})`);
     const svg = new TextDecoder().decode(GLib.file_get_contents(path)[1]);
-    ok(svg.startsWith('<svg') && svg.includes('viewBox="0 0 16 16"'), `${DAYPARTS[i]}: an SVG`);
+    ok(svg.startsWith('<svg') && svg.includes('viewBox="0 0 24 24"'), `${DAYPARTS[i]}: an SVG on the 24 grid`);
     for (const reserved of STATE_COLOURS.map(c => c.toUpperCase()))
         ok(!svg.toUpperCase().includes(reserved), `${DAYPARTS[i]}: no state colour ${reserved} (INDICATORS)`);
 }
