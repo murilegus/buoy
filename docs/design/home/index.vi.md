@@ -21,7 +21,7 @@ lại mỗi lần Home mở và mỗi khi stack đổi, nên Home không bao gi�
 - Hẹn giờ có một ô nhìn nhanh để bắt đầu, cả khi không chạy; thêm khi làm mục Timer. **Chốt**
   (Ethan, 2026-11-11)
 - Activity chưa có thẻ chính riêng dùng compact của nó (phần đầu 56 và thân) đặt trong thẻ, nên chỉ
-  nhạc, câu hỏi của Claude Code, cuộc gọi và lời chào cần thiết kế riêng. **Đề xuất**
+  nhạc, câu hỏi của Claude Code, cuộc gọi và lời chào cần thiết kế riêng. **Chốt** (Ethan, 2026-11-12)
 
 ## Kích thước
 
@@ -63,18 +63,18 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 
 - **Bị nhỡ gom mọi thứ chưa thấy**, không chỉ thông báo: việc kết thúc lúc không thấy được (tải xong,
   hẹn giờ hết, Claude Code xong, cuộc gọi nhỡ) và thông báo chưa xem. Chỉ dùng thông báo thì mất
-  những việc kia, vì Buoy không đăng thông báo của riêng nó (SPEC §3). **Đề xuất**
+  những việc kia, vì Buoy không đăng thông báo của riêng nó (SPEC §3). **Chốt** (Ethan, 2026-11-12)
 - Ô Bị nhỡ đếm tất cả; ô rộng ghi "3 thông báo · 4 việc". Thông báo gộp thành **một hàng**
   ("Thông báo · 3", tên các app), mở tab Thông báo ở mục "Nhỡ khi vắng"; chi tiết thông báo nằm ở
-  tab đó. **Đề xuất**
+  tab đó. **Chốt** (Ethan, 2026-11-12)
 - Bấm ô Bị nhỡ hoặc +K: Home **thay thẻ chính và hàng ô bằng một danh sách**, không mở thêm cửa
   sổ. Hàng đầu: ‹ (về Home, cũng Esc), tên và số, nút hành động. Rồi các hàng 32 một dòng: leading
-  20, tên 1em 600, chi tiết 0.85em `fg-muted`, giờ hoặc giá trị ở cuối. **Đề xuất**
+  20, tên 1em 600, chi tiết 0.85em `fg-muted`, giờ hoặc giá trị ở cuối. **Chốt** (Ethan, 2026-11-12)
 - Danh sách Bị nhỡ: mới nhất trước; bấm hàng mở chỗ của nó (tab của loại, thông báo → tab Thông
   báo) và hàng rời danh sách; × xoá hết. Mở Home thì đèn amber tắt, danh sách giữ đến khi xoá.
-  **Đề xuất**
+  **Chốt** (Ethan, 2026-11-12)
 - Danh sách +K ("Đang diễn ra"): mọi activity theo thứ tự stack; bấm hàng mở tab của nó. Dài hơn 5
-  hàng thì cuộn, chỉ ở danh sách này. **Đề xuất**
+  hàng thì cuộn, chỉ ở danh sách này. **Chốt** (Ethan, 2026-11-12)
 
 ## Quay màn hình trong Home
 
@@ -82,9 +82,9 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 
 - Bản ghi (priority 55) đứng trước nhạc nên thường là **thẻ chính**: compact của nó đặt trong thẻ
   (leading 40, "Đang quay màn hình", đồng hồ, nút Dừng kem). Khi có việc đứng trước (ask) nó là
-  **một ô**: icon `video`, đồng hồ chạy, "Đang quay". **Đề xuất**
+  **một ô**: icon `video`, đồng hồ chạy, "Đang quay". **Chốt** (Ethan, 2026-11-12)
 - Ô của activity không có tab (bản ghi, chia sẻ màn hình): bấm thì nó lên thẻ chính, có nút của
-  nó. **Đề xuất**
+  nó. **Chốt** (Ethan, 2026-11-12)
 - Chấm đỏ chỉ ở pill, không lặp lại trong Home ([Compact](../compact/index.vi.md)). **Chốt**
 
 ## Chỗ trong code
