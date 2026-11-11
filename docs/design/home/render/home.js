@@ -3,7 +3,9 @@
 //   states  — four moments at 1920: music, Claude asks, nothing running, missed and a full row
 //   anatomy — 1920 with every measure, then 2560 and 3440
 //   fill    — how the row fills: activities, then the glance, then wide tiles
-// gjs -m home.js out.png <states|anatomy|fill>
+//   lists   — the Missed tile and +K open a list in place of the card and the row
+//   screen  — screen recording in Home: the main card, or a tile
+// gjs -m home.js out.png <states|anatomy|fill|lists|screen>
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
@@ -147,12 +149,21 @@ function heroGreet(x, y, w, h) {
         text('Không có gì đang chạy', tx, top + 64, {sz: SUB, a: C.FG_SUBTLE});
     }
 }
-const HEROES = {music: heroMusic, ask: heroAsk, greet: heroGreet};
+// an activity without a card of its own: its compact (here the head 56) in the card, centred
+function heroRec(x, y, w, h) {
+    fill([1, 1, 1, C.FILL1], x, y, w, h, 16);
+    const hy = y + (h - 56) / 2;
+    cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(x + 34, hy + 28, 20, 0, 2 * Math.PI); cr.fill();
+    icon('video', x + 24, hy + 18, 20);
+    text('Đang quay màn hình', x + 66, hy + 11, {wt: 600}); text('0:42 · từ 14:03', x + 66, hy + 31, {sz: SUB, a: C.FG_SUBTLE});
+    round(x + w - 14 - 16, hy + 28, 'stop-fill', true);
+}
+const HEROES = {music: heroMusic, ask: heroAsk, greet: heroGreet, rec: heroRec};
 
 // ---- tiles: a leading 20 at 12 (a symbolic 16 in its middle, Bu 20 filling it, a colour icon 24 over
 // it by 2), a value 1.5em 600, a caption 0.85em fg-muted; a detail column on the right from 200 wide ----
 const ITEMS = {
-    missed: {ic: 'bell', val: '2', cap: 'Bị lỡ', det: ['Tải về xong', 'Đã chép'], amber: true},
+    missed: {ic: 'bell', val: '7', cap: 'Bị nhỡ', det: ['3 thông báo', '4 việc'], amber: true},
     claude: {ic: 'bu', val: '2 / 3', cap: 'Claude Code', det: ['Run pnpm test', 'buoy']},
     dl: {ic: 'arrow-down-to-line', val: '42%', cap: 'report.pdf', det: ['2.1 MB/s', 'còn 30 s']},
     timer: {ic: 'alarm', val: '12:40', cap: 'Pomodoro', det: ['vòng 2 / 4', '']},
@@ -160,7 +171,8 @@ const ITEMS = {
     music: {ic: 'music-note', val: 'Lofi', cap: 'Lumen Coast', det: ['Harbor Lights', '']},
     wx: {ic: 'weather-few-clouds', val: '31°', cap: 'Ít mây', det: ['cảm giác 34°', 'gió 12 km/h'], wide: true},
     up: {ic: 'calendar', val: '3:00', cap: 'Design review', det: ['25 phút nữa', 'phòng 3'], wide: true},
-    bat: {ic: 'thunderbolt', val: '82%', cap: 'Pin', det: ['đang sạc', 'còn 4 giờ']},
+    bat: {ic: 'battery-charging', val: '82%', cap: 'Pin', det: ['đang sạc', 'còn 4 giờ']},
+    rec: {ic: 'video', val: '0:42', cap: 'Đang quay', det: ['từ 14:03', '']},
 };
 function lead(x, y, ic, amber) {
     if (ic === 'bu') drawBu(cr, 'busy', x + 12, y + 12, 2);
@@ -223,6 +235,24 @@ function home(x, y, EW, EH, hero, acts, glance, title, opts) {
 }
 const note = (x, y, lines, a = .75) => lines.forEach((l, i) => text(l, x, y + i * 15, {sz: 8, a}));
 
+// a list in place of the card and the row: a head row (‹, the title, an action), rows of 32 on one
+// line (leading 20, the title 1em 600, a detail 0.85em after it, the time or value at the end)
+function list(x, y, EW, EH, title, head, rows, {amber = false, action = null, bellDot = false} = {}) {
+    panel(x, y, EW, EH, title, {bellDot});
+    const cx = x + PAD, cw = EW - 2 * PAD, cy = y + HEAD;
+    round(cx + 16, cy + 16, 'chevron-left');
+    text(head, cx + 44, cy + 7, {wt: 600, rgb: amber ? C.AMBER : W1});
+    if (action) round(cx + cw - 16, cy + 16, action);
+    rows.forEach(([ic, t, det, end, sub], i) => {
+        const ry = cy + 40 + i * 32;
+        if (i % 2 === 0) fill([1, 1, 1, C.FILL1], cx, ry, cw, 32, 12);
+        if (ic === 'bu') drawBu(cr, 'busy', cx + 10, ry + 6, 2); else icon(ic, cx + 12, ry + 8, 16);
+        const e = text(t, cx + 40, ry + 7, {wt: 600, maxW: cw - 200});
+        if (det) text(det, cx + 40 + e.width + 8, ry + 9, {sz: SUB, a: C.FG_MUTED, maxW: cw - e.width - 150});
+        if (end) text(end, cx + cw - 12, ry + 9, {sz: SUB, a: C.FG_SUBTLE, right: true});
+    });
+}
+
 // ---- states ---------------------------------------------------------------------------------------------
 if (MODE === 'states') {
     const EW = 560, EH = 280, GX = 40, GY = 84, W = 24 + 2 * EW + GX + 24, H = 50 + 2 * (EH + GY) - 20;
@@ -234,10 +264,44 @@ if (MODE === 'states') {
             ['Ask đứng trước nhạc trong stack nên lên thẻ chính, có nút trả lời;', 'nhạc lùi xuống thành một ô.']],
         [24, 50 + EH + GY, 'greet', [], G, 'C · Không có gì chạy: lời chào và ngày',
             ['Thẻ chính thành lời chào, không bao giờ trống;', 'ô dư cho thời tiết nở rộng.']],
-        [24 + EW + GX, 50 + EH + GY, 'music', ['missed', 'claude', 'dl', 'timer', 'call'], G, 'D · Bị lỡ và nhiều việc: Bị lỡ đầu tiên, dư thì +K',
-            ['Bị lỡ: nền amber 16 %; mở Home thì đèn amber tắt.', 'Nhiều activity hơn N: N − 1 ô và +K; phần nhìn nhanh nhường chỗ.']],
+        [24 + EW + GX, 50 + EH + GY, 'music', ['missed', 'claude', 'dl', 'timer', 'call'], G, 'D · Bị nhỡ và nhiều việc: Bị nhỡ đầu tiên, dư thì +K',
+            ['Bị nhỡ: nền amber 16 %; mở Home thì đèn amber tắt.', 'Nhiều activity hơn N: N − 1 ô và +K; phần nhìn nhanh nhường chỗ.']],
     ];
     S.forEach(([x, y, hero, acts, gl, t, n], i) => { home(x, y, EW, EH, hero, acts, gl, t, {bellDot: i === 3}); note(x, y + EH + 8, n); });
+    surf.writeToPNG(out);
+}
+
+// ---- lists: Missed and +K ---------------------------------------------------------------------------------
+if (MODE === 'lists') {
+    const EW = 560, EH = 280, GX = 40, W = 24 + 3 * EW + 2 * GX + 24, H = 50 + EH + 90;
+    const surf = canvas(W, H), G = ['wx', 'up', 'bat'], x0 = 24, x1 = 24 + EW + GX, x2 = 24 + 2 * (EW + GX);
+    home(x0, 50, EW, EH, 'music', ['missed', 'claude', 'dl', 'timer', 'call'], G, '1 · Home: ô Bị nhỡ đầu hàng, ô +K cuối hàng', {bellDot: true});
+    list(x1, 50, EW, EH, '2 · Bấm Bị nhỡ: danh sách thay thẻ chính và hàng ô', 'Bị nhỡ · 7', [
+        ['bell', 'Thông báo · 3', 'Slack, Zalo, Gmail', '2:41 PM'],
+        ['smartphone', 'Cuộc gọi nhỡ', 'Mira Vale · Điện thoại', '2:40 PM'],
+        ['arrow-down-to-line', 'report.pdf đã tải xong', 'Tải về', '2:38 PM'],
+        ['alarm', 'Pomodoro hết giờ', 'Hẹn giờ', '2:30 PM'],
+        ['bu', 'Claude Code xong', 'buoy · 3 / 3', '2:12 PM']], {amber: true, action: 'xmark', bellDot: true});
+    list(x2, 50, EW, EH, '3 · Bấm +K: mọi activity đang chạy, theo stack', 'Đang diễn ra · 5', [
+        ['music-note', 'Lumen Coast', 'Harbor Lights', '1:24'],
+        ['bu', 'Claude Code', 'Run pnpm test', '2 / 3'],
+        ['arrow-down-to-line', 'report.pdf', '2.1 MB/s', '42%'],
+        ['alarm', 'Pomodoro', 'vòng 2 / 4', '12:40'],
+        ['smartphone', 'Mira Vale', 'đang gọi', '3:12']]);
+    note(x1, 50 + EH + 8, ['Hàng 32 một dòng; bấm hàng mở chỗ của nó (thông báo → tab Thông báo, mục Nhỡ khi vắng)', 'và hàng rời danh sách; × xoá hết; ‹ hoặc Esc về Home.']);
+    note(x2, 50 + EH + 8, ['Cùng khuôn danh sách; bấm hàng mở tab của activity đó.', 'Dài hơn 5 hàng thì danh sách cuộn, chỉ ở đây.']);
+    note(x0, 50 + EH + 8, ['Bị nhỡ đếm cả thông báo chưa xem và việc kết thúc lúc không thấy.']);
+    surf.writeToPNG(out);
+}
+
+// ---- screen recording in Home -----------------------------------------------------------------------------
+if (MODE === 'screen') {
+    const EW = 560, EH = 280, GX = 40, W = 24 + 2 * EW + GX + 24, H = 50 + EH + 70;
+    const surf = canvas(W, H), G = ['wx', 'up', 'bat'];
+    home(24, 50, EW, EH, 'rec', ['music'], G, 'A · Đang quay và nghe nhạc: bản ghi (55) là thẻ chính');
+    home(24 + EW + GX, 50, EW, EH, 'ask', ['rec', 'music'], G, 'B · Claude Code hỏi lúc đang quay: bản ghi thành một ô');
+    note(24, 50 + EH + 8, ['Bản ghi chưa có thẻ riêng: dùng compact của nó (leading 40, tiêu đề, đồng hồ, Dừng) đặt trong thẻ.', 'Nhạc lùi thành ô.']);
+    note(24 + EW + GX, 50 + EH + 8, ['Ô: icon video, đồng hồ chạy, "Đang quay". Không có tab: bấm ô thì nó lên thẻ chính, có nút Dừng.', 'Chấm đỏ vẫn ở pill, không lặp lại trong Home.']);
     surf.writeToPNG(out);
 }
 
@@ -288,7 +352,7 @@ if (MODE === 'fill') {
     S.forEach(([x, y, w, h, hero, acts, gl, t, n]) => { home(x, y, w, h, hero, acts, gl, t); note(x, y + h + 8, [n]); });
     const ny = r0 + 376 + 44;
     ['Cách lấp hàng ô (N ô một hàng):',
-     '1. Activity trước (Bị lỡ đầu tiên), mỗi cái một ô; nhiều hơn N: N − 1 ô và +K, nên activity luôn tới được.',
+     '1. Activity trước (Bị nhỡ đầu tiên), mỗi cái một ô; nhiều hơn N: N − 1 ô và +K, nên activity luôn tới được.',
      '2. Còn chỗ: phần nhìn nhanh theo thứ tự thời tiết, sắp tới, pin, điện thoại, hẹn giờ…, mỗi cái một ô; hết chỗ thì bỏ (không vào +K).',
      '3. Còn dư: thời tiết rồi sắp tới nở thành ô rộng (2 phần). Ít hơn N phần mà không còn gì để nở: các ô rộng ra cho đầy hàng.'].forEach((l, i) =>
         text(l, c2, ny + i * 17, {sz: 8.5, wt: i ? 400 : 700, a: i ? .85 : 1, maxW: 760}));

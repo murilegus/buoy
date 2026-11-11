@@ -31,7 +31,7 @@ về đây thay vì chép số. Số px tính cho 1em = 11pt ≈ 14.67 px và l�
 | Phần đầu | 56: leading 40, trên dưới 8, hai bên 14 | | Chốt (Ethan, 2026-11-11) |
 | Nút tròn | 32, tâm ở y = 28 | | Chốt (Ethan, 2026-11-11) |
 | Ảnh bìa (nhạc) | 72, cách mép 8, bo 20 | nhạc 88 | Chốt |
-| Hàng (Claude Code, bị lỡ) | 16, icon 16; trên 8, dưới 8 | 88 / 104 / 120 | Chốt (Ethan, 2026-11-11) |
+| Hàng (Claude Code, bị nhỡ) | 16, icon 16; trên 8, dưới 8 | 88 / 104 / 120 | Chốt (Ethan, 2026-11-11) |
 | Card thông báo | thân cách đầu 8, cách nút 12; nút cách mép 12, cao 32, bo 16 | 136 / 152 | Chốt |
 | Ask | như card | 120 / 136 / 152 | Chốt |
 | Hỏi nhiều lựa chọn | hàng 32 mỗi lựa chọn | tới 280 | Chốt (Ethan, 2026-11-11) |
