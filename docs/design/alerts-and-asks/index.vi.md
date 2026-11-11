@@ -34,6 +34,76 @@ nút phải rê chuột vào pill.
 - Đang **chia sẻ hoặc quay màn hình**: như v0.1 (NOTIFICATIONS §5): card chỉ ghi tên app và
   "Thông báo mới", không thân, không ảnh. **Chốt**
 
+### Khi nào đã xem, khi nào bị nhỡ
+
+Một quy tắc: **thông báo chỉ tính là đã xem khi card của nó hiện đủ 5 s lúc bạn có mặt, hoặc khi
+bạn rê chuột hay bấm vào nó.** Còn lại là **bị nhỡ**: vào Bị nhỡ ([Home](../home/index.vi.md)) và
+đèn amber sáng. **Chốt** (Ethan, 2026-11-12)
+
+| Lúc thông báo tới | Buoy làm gì | Bị nhỡ, đèn amber? |
+|---|---|---|
+| Đang dùng máy | alert 5 s → pill → tab | Không |
+| Vừa rời mắt, không chạm máy | card **đứng chờ**; 5 s bắt đầu khi bạn chạm chuột hay phím lại | Không |
+| Card đang chờ mà tới `idle-delay` của GNOME (vắng, màn tối) hoặc màn hình khoá | card đóng | **Có** |
+| Đang vắng hoặc màn hình khoá | không alert | **Có** |
+| Đang toàn màn hình | không alert; ra khỏi toàn màn hình cũng không bung lần lượt từng card | **Có** |
+| Do Not Disturb | không alert, như GNOME | **Có**; đèn đứng yên (đèn vẫn sáng trong DnD, 2026-11-08) |
+| Khẩn cấp | luôn alert, có nút, ở đến khi xử lý; bạn vắng thì card chờ | Không |
+| Đang mở Home hoặc tab Thông báo | hiện ngay trong tab | Không |
+
+- **Có mặt** = có chuột hay phím trong 1 s gần nhất, như GNOME (`IDLE_TIME`, `ui/messageTray.js`).
+  **Vắng** = trạng thái idle của GNOME session, tức sau `idle-delay` (Cài đặt → Nguồn điện → Tắt màn
+  hình), hoặc màn hình khoá. Card đứng chờ cho tới khi bạn quay lại, nhưng không quá lúc đó.
+  **Chốt** (Ethan, 2026-11-12)
+- **Việc đang chạy kết thúc** (tải xong, hẹn giờ hết, Claude Code xong) theo cùng bảng: kết thúc lúc
+  vắng, khoá màn hình, toàn màn hình hoặc DnD thì vào Bị nhỡ. (v0.1 chỉ tính toàn màn hình.)
+  **Chốt** (Ethan, 2026-11-12)
+- **Đèn amber và ô Bị nhỡ:** mở Home thì đèn tắt; ô Bị nhỡ ở đó tới khi **mọi hàng** trong danh sách
+  đã mở hoặc bị xoá. Mở hàng "Thông báo · N", tab Thông báo (mục Nhỡ khi vắng) hay danh sách của
+  GNOME thì các thông báo đó tính là đã xem và rời Bị nhỡ. **Chốt** (Ethan, 2026-11-12)
+
+### Nhiều thông báo cùng lúc
+
+GNOME 50 hiện từng banner một, mỗi cái đủ 4 s, hàng đợi tối đa 3 tính cả banner đang hiện; dư thì
+không có banner, chỉ còn chấm trên thanh (`_onNotificationRequestBanner`,
+`MAX_NOTIFICATIONS_IN_QUEUE`). Buoy giữ giới hạn đó nhưng không bắt chờ đủ 4 s mỗi tin.
+
+- Card hiện **theo thứ tự tin tới**. Tin **liền nhau của cùng một app** gộp vào **một lượt**: card
+  đổi sang tin mới nhất, dòng phụ ghi số tin ("Slack · #design · 4 tin · bây giờ"). Tin cùng app mà
+  không liền nhau thì có lượt riêng, để giữ thứ tự. **Chốt** (Ethan, 2026-11-12)
+- Mỗi lượt hiện **ít nhất 1 s** rồi nhường lượt sau; **lượt cuối** chạy như khi chỉ có một thông
+  báo (5 s, rê chuột hiện nút). **Chốt** (Ethan, 2026-11-12)
+- Ngoài card đang hiện, tối đa **2 lượt chờ** (như hàng đợi 3 của GNOME). Tin tới khi đã đủ chỗ
+  không có card: chỉ cập nhật pill của app và vào thẳng Bị nhỡ. Tin khẩn cấp luôn chen lên đầu; khi
+  card khẩn cấp đang hiện, tin thường không thay được nó. **Chốt** (Ethan, 2026-11-12)
+- Theo quy tắc đã xem: tin có card chưa đủ 5 s (bị lượt sau thay), và các tin trước đã gộp vào card
+  của cùng app, đều **bị nhỡ**. Ví dụ Slack ×4, Zalo, Gmail: Slack "4 tin" 1 s → Zalo 1 s → Gmail
+  5 s; Gmail đã xem, bốn tin Slack và tin Zalo vào Bị nhỡ. **Chốt** (Ethan, 2026-11-12)
+- **Pill sau đợt:** mỗi app một pill như v0.1 (NOTIFICATIONS §2), đuôi ghi số tin của app còn trong
+  danh sách GNOME từ 2. Xếp theo PRIORITY (cùng mức thì tin tới sau đứng trước): pill 1 là app của
+  card cuối, rồi hai pill phụ, còn lại `+N`. Ví dụ trên: Gmail · Zalo · Slack 4. **Chốt** (Ethan,
+  2026-11-12)
+- **Hiệu ứng:** tin đầu: pill nở thành card như alert (morph 460 ms). Tin sau, cùng app hay app
+  khác: card **vẫn mở**, chỉ nội dung đổi (mờ đi 100 ms, hiện lại 200 ms; avatar, tên, thân, số
+  tin), chiều cao co giãn 240 ms nếu số dòng khác (SPEC §5). Không đóng rồi mở lại mỗi giây. Hết
+  đợt: card thu về pill của app cuối; các pill khác hiện lại tại chỗ. **Chốt** (Ethan, 2026-11-12)
+
+### Rê chuột giữa một đợt tin
+
+- Rê chuột vào là **cả đợt dừng**: card đứng yên, hiện hàng nút, **không đổi nội dung** khi con trỏ
+  còn trên nó (không bấm nhầm). Tin đang hiện tính là đã xem. **Chốt** (Ethan, 2026-11-12)
+- Tin mới tới khi đang rê chuột: cùng app thì thân giữ nguyên, chỉ số tin tăng; app khác thì vào
+  lượt chờ (tối đa 2), dư thì vào thẳng Bị nhỡ. Đồng hồ 1 s và 5 s chỉ chạy khi con trỏ không ở trên
+  card. **Chốt** (Ethan, 2026-11-12)
+- Rời chuột: đợi 200 ms như GNOME (`HIDE_TIMEOUT`) phòng khi rê vào lại, rồi chạy tiếp lượt chờ kế;
+  không còn lượt thì thu về pill. **Chốt** (Ethan, 2026-11-12)
+- Bấm card: mở app đúng chỗ của tin (như banner GNOME), card đóng, đợt chạy tiếp. Bấm ×: bỏ tin đó,
+  đợt chạy tiếp. **Chốt** (Ethan, 2026-11-12)
+- Card bật lên **ngay dưới con trỏ** chưa tính là rê chuột: con trỏ phải rời ra rồi vào lại, như
+  GNOME (`_onNotificationHoverChanged`). **Chốt** (Ethan, 2026-11-12)
+- Các tin trước của cùng app (chỉ thấy qua số "4 tin") vẫn bị nhỡ: rê chuột chỉ đánh dấu đã xem tin
+  đang hiện. **Chốt** (Ethan, 2026-11-12)
+
 ## Ask
 
 - Cũng ở cỡ compact, và **đứng đó đến khi có câu trả lời** (hoặc hết `timeoutMs` thì dùng
@@ -103,7 +173,12 @@ làm permission host, vì không có host thì `-p` không đưa tool này cho m
 - `lib/modules/agent/adapter.js` — ask thành card; câu hỏi nhiều lựa chọn (đã chốt).
 - SPEC §2 (bảng các dạng: alert và ask ở cỡ compact).
 - `lib/modules/notification/source.js`, `adapter.js` — thông báo tới thì xin alert (card mở trên
-  pill 5 s) thay cho pill 6 s; card không nút cho tới khi rê chuột; khẩn cấp có nút ngay, không ttl.
-  NOTIFICATIONS §2–§3 viết lại theo đây.
+  pill 5 s) thay cho pill 6 s; card không nút cho tới khi rê chuột; khẩn cấp có nút ngay, không ttl;
+  đợt tin (lượt, gộp cùng app, 2 lượt chờ, 1 s mỗi lượt); `acknowledged` chỉ đặt khi đã xem theo
+  quy tắc trên, không phải lúc hiện. NOTIFICATIONS §1–§3 viết lại theo đây.
+- `lib/kit/` (mới: theo dõi có mặt) — idle monitor của Mutter (`get_core_idle_monitor`,
+  `add_user_active_watch`, như `ui/messageTray.js`) và trạng thái presence của GNOME session; khoá
+  màn hình; DnD. Vắng, khoá, toàn màn hình, DnD → `stack.setUnseen()` (INDICATORS, FEATURES "Buoy
+  light, the rest").
 - `lib/kit/present.js` (card) — hàng nút ẩn khi card mở bằng alert, hiện khi rê chuột; chiều cao đổi
   104 → 136 / 152 theo nhịp 16.

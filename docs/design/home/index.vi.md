@@ -71,7 +71,8 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
   sổ. Hàng đầu: ‹ (về Home, cũng Esc), tên và số, nút hành động. Rồi các hàng 32 một dòng: leading
   20, tên 1em 600, chi tiết 0.85em `fg-muted`, giờ hoặc giá trị ở cuối. **Chốt** (Ethan, 2026-11-12)
 - Danh sách Bị nhỡ: mới nhất trước; bấm hàng mở chỗ của nó (tab của loại, thông báo → tab Thông
-  báo) và hàng rời danh sách; × xoá hết. Mở Home thì đèn amber tắt, danh sách giữ đến khi xoá.
+  báo) và hàng rời danh sách; × xoá hết. Mở Home thì đèn amber tắt; ô Bị nhỡ ở đó tới khi mọi hàng
+  đã mở hoặc bị xoá. Khi nào một thứ tính là bị nhỡ: [Alert và ask](../alerts-and-asks/index.vi.md).
   **Chốt** (Ethan, 2026-11-12)
 - Danh sách +K ("Đang diễn ra"): mọi activity theo thứ tự stack; bấm hàng mở tab của nó. Dài hơn 5
   hàng thì cuộn, chỉ ở danh sách này. **Chốt** (Ethan, 2026-11-12)
