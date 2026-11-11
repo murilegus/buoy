@@ -4,8 +4,8 @@ import GLib from 'gi://GLib';
 
 import {MAX_FOLDERS as progressMaxFolders} from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
 import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, withPlan, movePlan, planRows, weatherNote, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER, lingerMs} from
-    '../src/buoy@murilegus/lib/kit/settings.js';
-import {check} from '../src/buoy@murilegus/lib/kit/dbus.js';
+    '../src/buoy@murilegus/lib/kit/model/settings.js';
+import {check} from '../src/buoy@murilegus/lib/kit/services/dbus.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

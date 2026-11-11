@@ -193,7 +193,7 @@ square against the screen edge or dock.
   (i, default `15` = Adwaita's window radius, range 0–32). Both live on their own prefs
   page (**Windows**), not under a module; changes apply live.
 - **Which windows**: every normal window whose top edge is on the work area's top
-  (`kit/rounded.js` `onTopEdge`), not fullscreen, any toolkit (GTK, Qt, Electron,
+  (`kit/model/rounded.js` `onTopEdge`), not fullscreen, any toolkit (GTK, Qt, Electron,
   Xwayland): maximized vertically — fully maximized, tiled left or right, maximized
   vertically alone; Mutter pins the top edge then (`window.c` `update_edge_constraints`)
   and the client, told `tiled-top`, drops its own top radius — or a frame that starts on
@@ -285,7 +285,7 @@ and shrinks when they are off; `auto` and `none` are the kit's own.
 |---|---|---|---|
 | `auto` | the idle plan that matters right now, chosen and rotated by context (§2a-iii) — a smart stack, not a random carousel | core | plan signals + one re-rank timer while idle |
 | `none` | black pill + the **buoy light**: a small amber dot at the leading edge. Off normally; lit when something was missed (§6 missed history) | core | event |
-| `clock` | a *second* clock, styled unlike the one in the right cluster: an icon of the part of the day + the time in bold even figures. Six icons, one per daypart (`kit/daypart.js`, §2d): the sun along an arc over the horizon (dawn and evening half-set in peach `#FFB889`, morning/noon/afternoon in yellow `#FFD23F`; palette A, `scripts/icons.js`), then the moon; colour SVGs at 20 px like art and Bu, no state colour (2026-11-04, Ethan). The time is GNOME's: 12/24 h (`clock-format`), locale, and seconds when Date & Time shows them (`clock-show-seconds`). Variants via `idle-clock-style` (2026-11-08, Ethan): icon and the part of the day in words ("Afternoon", the default) · icon and time · icon only · the part of the day in words · time only; the old "with seconds" left for GNOME's own setting | `clock` | GNOME's wall clock (`GnomeDesktop.WallClock`, as the lock screen): a tick on the minute (each second with seconds), right after suspend; it exists only while the idle pill is on screen |
+| `clock` | a *second* clock, styled unlike the one in the right cluster: an icon of the part of the day + the time in bold even figures. Six icons, one per daypart (`kit/model/daypart.js`, §2d): the sun along an arc over the horizon (dawn and evening half-set in peach `#FFB889`, morning/noon/afternoon in yellow `#FFD23F`; palette A, `scripts/icons.js`), then the moon; colour SVGs at 20 px like art and Bu, no state colour (2026-11-04, Ethan). The time is GNOME's: 12/24 h (`clock-format`), locale, and seconds when Date & Time shows them (`clock-show-seconds`). Variants via `idle-clock-style` (2026-11-08, Ethan): icon and the part of the day in words ("Afternoon", the default) · icon and time · icon only · the part of the day in words · time only; the old "with seconds" left for GNOME's own setting | `clock` | GNOME's wall clock (`GnomeDesktop.WallClock`, as the lock screen): a tick on the minute (each second with seconds), right after suspend; it exists only while the idle pill is on screen |
 | `weather` | condition icon + temperature ("31°", the user's unit, rounded as the date menu's forecast); its compact (hover): "31° · Partly cloudy" over "Feels like 34° · Wind NE 12 km/h · Humidity 75%", each part left out when unknown; the day itself is Home's (§3). Icons are Buoy's own colour SVGs, one per GNOME condition (13, with clear and few-clouds at night), one family with the clock's dayparts (`scripts/icons.js`, palette A: soft blue cloud, yellow sun, teal moon, rain and wind) — GNOME's symbolic icon as fallback (2026-11-06, Ethan: the symbolic ones read flat). **The place** (2026-11-06, Ethan: GNOME Weather is not installed on Ubuntu, and without it Shell's client never locates): the first of `org.gnome.shell.weather` `locations`, the key GNOME Weather and the date menu use. "Use my location" (`idle-weather-automatic`, on by default): each ask first asks Geoclue once as `org.gnome.Shell` (a system app in geoclue.conf: no dialog, bounded by Location Services) and puts the nearest GWeather city first there; Geoclue is stopped right after. Off: a city searched under the plan on the Island page (GWeather's own cities, accents ignored). Location Services off → "Location Services is off" with an Open Settings button (Privacy). **Units** (2026-11-06, Ethan: an en_US session showed °F in Vietnam): GNOME Weather's own keys, `org.gnome.GWeather4` `temperature-unit` / `speed-unit` — GWeather's own default reads only the locale. Buoy's first enable sets them to °C and km/h where the user never chose (`weather-defaults-applied`, like the clock's keys); prefs has Temperature and Wind speed under the plan, shared with GNOME Weather, Automatic last (the locale's). No place or no data → the pill keeps only the light, and the plan's row says why | `weather` | the date menu's own `WeatherClient` (`misc/weather.js`, `dateMenu.js` WeatherSection) — same place, no second client; asked for news only while the idle pill shows it: at once when older than `idle-weather-refresh` (30 min / 1 h), then on that interval (2026-11-06) |
 | `next-event` (`idle-content` `calendar`, "Next Event") | today's next event: the calendar icon, the title, the time at the end ("3:00 PM", "until 4:00 PM" while it runs, "all day"), so a long title ellipsizes and the time stays; the pill grows past the idle size to fit, up to the minimal cap (2026-11-08). Compact: the title over "3:00 PM – 4:00 PM · in 25 min". One starting within 30 min comes before one running; then an all-day event, unless `idle-calendar-all-day` is off (2026-11-08); nothing left today → nothing (only the light). No Join glyph: Shell's calendar server sends only id, title and times (M4 "Meeting in 5 min · Join") | `calendar` | the date menu's event source (`changed`); the wall clock's minute moves it |
 | `mascot` | Bu's eyes in the pill, four modes — idle · sleep · missed · waiting; in `idle` the eyes stroll in pixel steps: look, walk, blink, smile, one beat every few seconds (`idle-mascot-stroll`); asleep after 60 s without input, in power-saver and with animations off (`MASCOT.md` § Eyes, 2026-11-03) | `mascot` (off by default) | light changes, daypart, idle monitor, power profile; one beat timer only while strolling |
@@ -313,7 +313,7 @@ was hidden (fullscreen; away and DND are M4) (missed history: hover names it, op
 notifications nobody has seen (off once the Notifications tab or GNOME's list shows them —
 2026-11-08, NOTIFICATIONS.md §2) · **red** = something
 is waiting for your answer (an `ask` that could not show). Red › amber. Shown in idle, minimal
-**and** compact — it is a separate slot, so it never competes with the app icon; `present.js`
+**and** compact — it is a separate slot, so it never competes with the app icon; `kit/ui/present/`
 nudges the leading zone inward when the light is on. Hidden only while expanded, where
 Home already lists what was missed.
 
@@ -327,7 +327,7 @@ agent's colour.
 
 Mirrors iOS and the buoy light: a small **orange** (mic) / **green** (camera, screen
 share) dot at the far right of the pill, outside the content zones, present whether the
-pill is idle or showing an activity. `present.js` inserts it last and nudges the
+pill is idle or showing an activity. `kit/ui/present/` inserts it last and nudges the
 trailing zone inward; adapters never know. Click → expanded Home with "in use by Zoom".
 GNOME's own indicator in the system cluster is hidden while the `privacy` module is on;
 setting `privacy-dot = pill | system | both`, default `pill`.
@@ -378,8 +378,8 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   click → Home, as in every idle state.
 - **Motion.** A switch is one content transition (fade out 100 ms / in 200 ms, plus the
   width morph if the plan is wider), then nothing until the next switch.
-- **Built** (2026-11-08): `kit/smartstack.js` (pure: `choose`, `scrollTo`, `stackOrder`,
-  `intervalMs`) and `kit/idle.js`. Between turns a re-rank (a feed's change, the wall
+- **Built** (2026-11-08): `kit/model/smartstack.js` (pure: `choose`, `scrollTo`, `stackOrder`,
+  `intervalMs`) and `kit/services/idle.js`. Between turns a re-rank (a feed's change, the wall
   clock's minute) keeps the shown plan while it has something to show. While `auto` is on, every plan of the stack has its feed and is told that
   the pill shows (the weather asks on its own interval meanwhile), and the wall clock runs
   whatever plan shows. A scroll steps once per gesture (400 ms apart: a touchpad sends many
@@ -507,7 +507,7 @@ the user's birthday and the world's holidays (by time zone). **[GREETING.md](GRE
 is the reference**: moments and how they are detected, every line and its priority,
 sizes, Bu's poses, special days, weather, settings and tests.
 
-- **Dayparts** — `kit/daypart.js`, shared with the clock plan's icons and `auto`'s
+- **Dayparts** — `kit/model/daypart.js`, shared with the clock plan's icons and `auto`'s
   `ctx.daypart`: `dawn · morning · noon · afternoon · evening · night`, starts from
   `daypart-starts` (ai, hours, default `[5, 7, 11, 13, 18, 22]`, wrapping past midnight).
   Any rotation works (night may start at 1, dawn at 23) as long as the six hours are
@@ -726,7 +726,7 @@ go when expanded closes; each one's data lives only that long (rule 8).
 > first). This section describes v0.1, as the code is today; it changes with the M4 redesign
 > items (FEATURES).
 
-All sizes are logical px; HiDPI is handled by St/Clutter. `kit/shapes.js#shapesFor()`
+All sizes are logical px; HiDPI is handled by St/Clutter. `kit/model/shapes.js#shapesFor()`
 derives everything from two inputs — the monitor's logical width `W` and the panel
 height — and is recomputed on `monitors-changed` or when `expanded-width` changes.
 A function, not breakpoints: no jumps when moving between monitors.
@@ -767,7 +767,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
   move past its end, which on expanded → minimal (560 → 168 px) cut 39 px into the text.
   A shrink whose bounce would pass 12 px shrinks to 12 px short of its size (70 % of the
   time, ease-out cubic), then settles out to it (ease-in-out); shorter shrinks (compact →
-  minimal, ~120 px) and every grow keep Clutter's own (`kit/shapes.js` `shrinkStop`).
+  minimal, ~120 px) and every grow keep Clutter's own (`kit/model/shapes.js` `shrinkStop`).
 - Compact (2026-11-05): a pill growing into its compact is a shape morph (460 ms) and
   grows by far more than 25 %, so it uncovers its content as expanded does (below);
   neighbour pills fade where they stand (100 ms out, 200 ms in).

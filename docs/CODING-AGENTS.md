@@ -227,7 +227,7 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
 
 ## 5. Keyboard
 
-As every ask (SPEC §2c, `kit/keys.js`): when the island holds the keyboard (a click, or
+As every ask (SPEC §2c, `kit/model/keys.js`): when the island holds the keyboard (a click, or
 Super+B), the buttons carry their key — `d` for Deny; Allow and Always share their first
 letter, so they take their position, `2` and `3` (kit `mnemonics`; Deny · Allow alone is
 `d` · `a`) — Esc closes without answering (the ask stays). Never takes the keyboard on its
@@ -320,8 +320,8 @@ pill shape, "Codex · {project}". Its own row in prefs when it lands.
 - Kit: the `{since}` element (§2); D-Bus `Agent` (DBUS.md, `Version` 2; a source gets the
   `BuoyDBus` in `enable(…, {dbus})` and answers with `setAgent`); `stack.ask` `look` and
   `quiet`, `stack.wake`; a stale activity's Bu takes the pose `stale`; `pressFirst` and
-  `tabWhileLive` (tabs.js); `buildElement` (present.js, for a tab.js); an icon may be an
-  absolute path (present.js `iconProps`), and falls back to the generic one when missing.
+  `tabWhileLive` (tabs.js); `buildElement` (kit/ui/present/elements.js, for a tab.js); an icon may be an
+  absolute path (kit/ui/present/elements.js `iconProps`), and falls back to the generic one when missing.
 - Tests (`tests/agent.test.js`): every row of §3 (pose, title, detail per tool), the run
   > 10 min `party`, stale, two sessions, subagents counted in the parent (no pill),
   priorities 35 / 60 / 90, unknown events ignored; the three replies and the

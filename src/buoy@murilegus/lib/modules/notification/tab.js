@@ -7,9 +7,10 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
-import {EmptyState, tick} from '../../kit/present.js';
-import {agoText} from '../../kit/presentation.js';
-import {SharingWatch} from '../../kit/sharing.js';
+import {EmptyState} from '../../kit/ui/present/elements.js';
+import {tick} from '../../kit/ui/present/parts.js';
+import {agoText} from '../../kit/model/presentation.js';
+import {SharingWatch} from '../../kit/services/sharing.js';
 import {actionIndex, buttonsOf, countText, rowText, stackGroups} from './adapter.js';
 import {appIdOf, msOf} from './source.js';
 

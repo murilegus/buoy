@@ -1,7 +1,7 @@
 # Pill order — which activity is pill 1
 
 The reference for the order of the pills: which activity takes the centre, which go to
-the side pills and which wait behind `+N`. One rule, in one place (`kit/stack.js`), so
+the side pills and which wait behind `+N`. One rule, in one place (`kit/model/stack.js`), so
 a module never has to guess a number to land where it should. Decided with Ethan,
 2026-11-07, after a paused player kept the centre over one that played and a finished
 agent needed a priority of its own to step aside. SPEC §2 and §2c point here.
@@ -45,7 +45,7 @@ The first is pill 1 at the centre, the next two the side pills (SPEC §2c), the 
   its `staleAfter` passes it ranks as running, so "Done" or a just-paused track keeps
   the centre for a moment; then it dims and goes to tier 3 in the same step, one change
   on screen rather than two. Waiting activities use a short `staleAfter`: **10 s**
-  (`SETTLE_MS` in `kit/activity.js`; agent done, a paused player). A running activity
+  (`SETTLE_MS` in `kit/model/activity.js`; agent done, a paused player). A running activity
   that goes stale (an agent with no news for 1 min) stays in tier 2, behind the fresh
   ones (§1.3).
 - `needsYou` wins over `linger`: an agent waiting for you lingers (it ends after
@@ -57,7 +57,7 @@ The first is pill 1 at the centre, the next two the side pills (SPEC §2c), the 
 
 ## 3. Priorities inside a tier
 
-The kind's default (`kit/activity.js` `PRIORITY`), unchanged:
+The kind's default (`kit/model/activity.js` `PRIORITY`), unchanged:
 
 | Kind | Priority | | Kind | Priority |
 |---|---|---|---|---|
@@ -96,9 +96,9 @@ They change what is drawn for a moment, not the ranking.
 
 *Built 2026-11-07.*
 
-- `kit/stack.js`: rank by tier, then priority, then fresh, then recent (§1); `ask` and
-  `call` are tier 1 by kind; `needsYou` validated in `kit/activity.js`.
-- `kit/activity.js`: `SETTLE_MS` 10 s; the tier is `needsYou` → 1, `linger` and stale
+- `kit/model/stack.js`: rank by tier, then priority, then fresh, then recent (§1); `ask` and
+  `call` are tier 1 by kind; `needsYou` validated in `kit/model/activity.js`.
+- `kit/model/activity.js`: `SETTLE_MS` 10 s; the tier is `needsYou` → 1, `linger` and stale
   → 3, else 2 (a stale activity's re-render moves it, as the stack already re-renders on
   stale).
 - Agent adapter: `turn` and the permission prompt's session set `needsYou`; drop

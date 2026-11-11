@@ -1,7 +1,7 @@
 // Run: gjs -m tests/hud.test.js   (no Shell needed; adapters are pure)
 import adapter, {TTL, family, isFnLockLed, isMuted, ledOn, percent, panelFor} from '../src/buoy@murilegus/lib/modules/hud/adapter.js';
-import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
-import {validate} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
+import {validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

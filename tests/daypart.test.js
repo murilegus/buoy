@@ -2,7 +2,7 @@
 import GLib from 'gi://GLib';
 
 import {DAYPARTS, DEFAULT_STARTS, normaliseStarts, daypartAt, nextBoundary} from
-    '../src/buoy@murilegus/lib/kit/daypart.js';
+    '../src/buoy@murilegus/lib/kit/model/daypart.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

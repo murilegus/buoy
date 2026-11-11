@@ -7,7 +7,7 @@
     "check": "tsc -p jsconfig.json",
     "dev": "scripts/dev.sh",
     "link": "scripts/link.sh",
-    "lint": "eslint src tests eslint.config.js",
+    "lint": "eslint src tests eslint.config.js && node tests/boundaries.mjs",
     "pack": "scripts/pack.sh",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "test": "tests/run.sh",

@@ -1,6 +1,6 @@
 /**
  * Presentation data → render plan. Pure (no St, no Main), so it runs under plain gjs;
- * present.js turns a plan into actors and is the only place content actors are made.
+ * ui/present/ turns a plan into actors and is the only place content actors are made.
  *
  * Adapter data (CONTRACT.md §1/B3, ARCHITECTURE rule 3):
  *   {leading, text, trailing, expanded, actions, keyline, isStale}
@@ -8,7 +8,7 @@
  *   {progress: 0..1}
  *                     | {bar: 0..1} | {countdown: s} | {until: ms since the epoch}
  *                     | {since: ms since the epoch} | {text}
- *                     `until` counts down live, once a second while shown (present.js);
+ *                     `until` counts down live, once a second while shown (ui/present/parts.js);
  *                     `since` is its twin, the time since then in minutes ("4 min"), the
  *                     text changing once a minute while shown (CODING-AGENTS.md §2)
  *   leading only:     {mascot: '<pose>', icon?} — Bu (MASCOT.md); an unknown pose falls
@@ -285,7 +285,7 @@ export function planCompact(p, {light} = {}) {
     return plan;
 }
 
-/** A card's body: at most this many lines, then … (present.js, via its max height). */
+/** A card's body: at most this many lines, then … (ui/present/compact.js, via its max height). */
 export const MAX_CARD_LINES = 2;
 
 // compact.card (NOTIFICATIONS.md §3): the plan keeps the compact's fields (empty) so code
@@ -431,7 +431,7 @@ export function planExpanded(p) {
     let acts = actions(p.actions, MAX_ACTIONS.expanded);
     if (p.kind === 'ask') {
         // answered from the keyboard too: the key is printed on the button while the
-        // island holds the keyboard (kit/keys.js)
+        // island holds the keyboard (kit/model/keys.js)
         const keys = mnemonics(acts.map(a => a.label ?? a.id));
         acts = acts.map((a, i) => ({...a, key: keys[i]}));
     }

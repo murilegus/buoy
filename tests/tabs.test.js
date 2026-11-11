@@ -1,5 +1,5 @@
 // Run: gjs -m tests/tabs.test.js   (pure: which tabs the strip shows, where an open starts)
-import {planStrip, stripOrder, tabFor, pressTarget, tabActivities, findTab, homeChips, homeColumns, HOME} from '../src/buoy@murilegus/lib/kit/tabs.js';
+import {planStrip, stripOrder, tabFor, pressTarget, tabActivities, findTab, homeChips, homeColumns, HOME} from '../src/buoy@murilegus/lib/kit/model/tabs.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

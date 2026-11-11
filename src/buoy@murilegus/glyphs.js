@@ -5,7 +5,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
 
-import {glyphTint, lightGlyph} from './lib/kit/contrast.js';
+import {glyphTint, lightGlyph} from './lib/kit/model/contrast.js';
 
 const EFFECT = 'buoy-glyph';
 const SIZE = 32;    // read size: enough to tell one colour from a logo

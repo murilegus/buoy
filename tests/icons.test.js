@@ -13,7 +13,7 @@ try {
     print('icons: no Rsvg typelib, the librsvg parse check is skipped');
 }
 
-const dir = GLib.build_filenamev([GLib.get_current_dir(), '..', 'src', 'buoy@murilegus', 'icons']);
+const dir = GLib.build_filenamev([GLib.get_current_dir(), '..', 'src', 'buoy@murilegus', 'icons', 'color']);
 const read = name => {
     const [ok, bytes] = GLib.file_get_contents(`${dir}/${name}.svg`);
     if (!ok)

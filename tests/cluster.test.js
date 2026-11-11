@@ -1,5 +1,5 @@
 // Run: gjs -m tests/cluster.test.js   (pure: what the left cluster shows, SPEC §1)
-import {GENERIC_APP_ICONS, OPEN_HOVER_STEP, OPEN_STEP, clusterFill, fallbackIcons, leftCluster, workspaceName} from '../src/buoy@murilegus/lib/kit/cluster.js';
+import {GENERIC_APP_ICONS, OPEN_HOVER_STEP, OPEN_STEP, clusterFill, fallbackIcons, leftCluster, workspaceName} from '../src/buoy@murilegus/lib/kit/model/cluster.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

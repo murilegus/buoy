@@ -5,7 +5,7 @@ import {
 } from '../src/buoy@murilegus/lib/modules/calendar/agenda.js';
 import {monthDays, weekdayInitials, monthTitle, stepDay, pickedTitle, isWeekend, cellSize, cellFont, CELL_MIN, CELL_MAX} from '../src/buoy@murilegus/lib/modules/calendar/month.js';
 import plan, {present, ICON, keys, ticks} from '../src/buoy@murilegus/lib/modules/calendar/idle.js';
-import {planIdle} from '../src/buoy@murilegus/lib/kit/presentation.js';
+import {planIdle} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

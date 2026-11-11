@@ -7,9 +7,9 @@ import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
 import cairo from 'cairo';
 import {SCALE as SC, fit, width1x, LAMPS} from '../../render/lib.js';
-import {POSES, PALETTE, frameAt, cells, lampColour} from '../../../../src/buoy@murilegus/lib/kit/mascot.js';
+import {POSES, PALETTE, frameAt, cells, lampColour} from '../../../../src/buoy@murilegus/lib/kit/model/mascot.js';
 const out = ARGV[0];
-const ICONS = `${import.meta.url.replace('file://', '').replace(/docs\/design\/.*/, '')}src/buoy@murilegus/icons`;
+const ICONS = `${import.meta.url.replace('file://', '').replace(/docs\/design\/.*/, '')}src/buoy@murilegus/icons/color`;
 // the lights and dots as decided (design/colours); the lamp of `missed` / `ask` follows the lights
 const STATE = {missed: '#FF9F0A', waiting: '#FF453A', mic: '#BF5AF2', cam: '#30D158'};
 // Bu's lamp, more saturated (design/colours, "Minh hoạ"); `lampColour` is what ships today

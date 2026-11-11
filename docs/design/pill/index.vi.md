@@ -89,7 +89,7 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
   vừa 2 pill phụ, nhưng thứ tự ưu tiên không còn đọc theo một chiều. **Chốt** (Ethan, 2026-11-11)
 - Pill phụ 2–3 cố định 133, bằng idle (leading, một giá trị ngắn, `+N`). **Chốt** (Ethan, 2026-11-11)
 - Hover: mọi pill rộng thêm cố định 0.75em (12 px), thay cho +10 % (pill 336 sẽ nở tới 34); chiều
-  cao vẫn cộng 2 như nay (32 → 34, `kit/shapes.js`). **Chốt** (Ethan, 2026-11-11)
+  cao vẫn cộng 2 như nay (32 → 34, `kit/model/shapes.js`). **Chốt** (Ethan, 2026-11-11)
 - Hai cụm trên máy Ethan, đo bằng Looking Glass: `Main.panel._leftBox` 93, `_rightBox` 293. Ở
   1920, khoảng trống không bao giờ là giới hạn của pill 1 — giới hạn em và expanded mới là. Pill
   phụ chỉ bên phải còn dư 215 trước `_rightBox`; đặt hai bên thì dư 555 / 355. Buoy đo lại cụm
@@ -111,8 +111,8 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 
 ## Chỗ trong code
 
-- `lib/kit/pill.js` — `PAD` 14 → 8; hover và nhấn cộng theo em thay cho × 1.10 / × 1.16.
-- `lib/kit/shapes.js` — `idleW = even(h × 3.75)` → đo từ plan rộng nhất; giới hạn độ rộng tính
+- `lib/kit/ui/pill.js` — `PAD` 14 → 8; hover và nhấn cộng theo em thay cho × 1.10 / × 1.16.
+- `lib/kit/model/shapes.js` — `idleW = even(h × 3.75)` → đo từ plan rộng nhất; giới hạn độ rộng tính
   bằng em.
 - `stylesheet.css` — `#panel.buoy` cao 40px → 2.75em; chữ trong pill 13px → 1em; `.buoy-light`
   7 → 8, ở tâm hình tròn đầu; `.buoy-idle-zones` spacing 7 → 8 và bỏ `padding-left: 2px` của

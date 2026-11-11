@@ -43,7 +43,8 @@ Open an issue before a large change, so the approach can be agreed before the co
   changed and why in a few lines, and ends with `Refs: FEATURES.md M3 "<item>"` when
   there is one.
 - **Keep the rules** in `docs/ARCHITECTURE.md`: adapters and `apps/*.js` stay pure (no
-  `St`, `Main`, timers or measurements), modules import `kit/` only, nothing polls while
+  `St`, `Main`, timers or measurements), modules import `kit/` only, the kit keeps its
+  layers (`model/`, `services/`, `ui/`; `pnpm lint` checks the imports), nothing polls while
   the island is closed, nothing animates while idle, no code loaded at runtime. Prefer
   GNOME Shell's own objects to new proxies; when unsure how Shell or Mutter behaves, read
   their `gnome-50` source and say which file and function you relied on.
@@ -79,7 +80,8 @@ buoy/
 ├── install.sh  install / update / remove without EGO (curl … | bash, --help)
 ├── scripts/  link.sh · dev.sh · pack.sh · verify.sh · release-check.sh
 ├── .github/workflows/release.yml   a tag v<version-name> publishes the zip on GitHub
-├── tests/    gjs unit tests (*.test.js), run by tests/run.sh
+├── tests/    gjs unit tests (*.test.js), run by tests/run.sh; boundaries.mjs, the import
+│             rules `pnpm lint` checks (node)
 ├── .githooks/pre-commit · .github/workflows/ci.yml   both run `pnpm verify`
 ├── .github/dependabot.yml   monthly updates of the actions the workflows pin
 ├── docs/

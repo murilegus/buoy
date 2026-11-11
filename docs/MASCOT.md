@@ -28,7 +28,7 @@ and in GNOME's icon language, so a pill that switches between plans never change
 
 | Place | What | Since |
 |---|---|---|
-| Brand | extension icon, README, EGO screenshots, prefs About page (drawn from `kit/mascot.js`, no image shipped; waves 5 s the first time the page shows, then `idle`; still with GTK animations off; 2026-11-04); empty states — every empty tab, Bu over its line (kit `EmptyState` `pose`, 2026-11-07, Ethan): Home "Nothing going on", Media "Nothing playing", Claude Code, the not-yet-built Timer and Clipboard ("Coming soon", Timer since 2026-11-08) and Calendar's "No calendars" `idle`; Notifications "All caught up" and a picked day with no events in the Calendar tab ("No events", "Nothing else today", 2026-11-08) `sleep`; Transfers "No transfers" `done` | M3 release |
+| Brand | extension icon, README, EGO screenshots, prefs About page (drawn from `kit/model/mascot.js`, no image shipped; waves 5 s the first time the page shows, then `idle`; still with GTK animations off; 2026-11-04); empty states — every empty tab, Bu over its line (kit `EmptyState` `pose`, 2026-11-07, Ethan): Home "Nothing going on", Media "Nothing playing", Claude Code, the not-yet-built Timer and Clipboard ("Coming soon", Timer since 2026-11-08) and Calendar's "No calendars" `idle`; Notifications "All caught up" and a picked day with no events in the Calendar tab ("No events", "Nothing else today", 2026-11-08) `sleep`; Transfers "No transfers" `done` | M3 release |
 | Agents | the **leading** of every agent activity (Claude Code, Codex, any D-Bus caller that sends `{mascot}`); the pose follows the agent's lifecycle (§ Agents). The agent's name is always the first word of the text, since Bu does not say which agent it is | M3 "Claude Code: ask + agent activity" (merged 2026-11-07) |
 | Greeting | leading of every greeting (GREETING.md §6): `wave` for 5 s at start, wake, welcome back and leaving; `party` on a birthday or celebration; `done` for a good weekend; `sleep` for good night; `busy` while updating | M3 greeting: first run and What's new (`wave`); the rest M4 greeting |
 | Idle plan `mascot` | Bu's eyes in the idle pill (§ Eyes), module off by default | M4 |
@@ -61,7 +61,7 @@ replacement for the light in every state.
 
 - **The lamp is 2 × 2 cells** in every pose (2026-11-04, Ethan): at 2 × 1 it was 4 × 2 px in
   the pill, too small to tell amber from green. It sits straight on the round body where
-  the neck was; the grids below, `kit/mascot.js` and every preview in `docs/mascot/`
+  the neck was; the grids below, `kit/model/mascot.js` and every preview in `docs/mascot/`
   changed together.
 - **The lamp is the pose's.** It shows the pose's own colour, always; the stack's
   amber/red is the pill's edge dot, drawn on a pill Bu leads as on any other (2026-11-08,
@@ -71,7 +71,7 @@ replacement for the light in every state.
 - **Motion, only with an activity.** Four poses move: `busy` and `think` loop while their
   activity is visible; `wave` and `party` play once (~2 s) and settle on `done` / `idle`.
   Every move is **two frames swapped every 500 ms** — two repaints a second of a 20 px
-  area, no frame clock, no easing. The swap timer lives in `present.js`, exists only while
+  area, no frame clock, no easing. The swap timer lives in `kit/ui/present/motion.js`, exists only while
   a moving pose is mapped, and is removed on pose change, destroy and disable; the frame
   holds still while the user is away (Mutter idle monitor, a signal) and when
   `org.gnome.desktop.interface enable-animations` is off. The lamp never blinks.
@@ -83,7 +83,7 @@ replacement for the light in every state.
   - **Held still**, a loop shows its first frame; a once pose shows its first frame and
     still settles on time (one change, no swaps).
   - **Rebuilt content carries on** (2026-11-04): a pill's content is rebuilt on every
-    update, light change and hover, so `present.js` keeps when each pose was first shown
+    update, light change and hover, so `kit/ui/present/motion.js` keeps when each pose was first shown
     per activity surface (id + surface, last 32). An update mid-wave continues the wave; a
     new `Surface` with the same id starts it again.
 - **Stale** is drawn by the renderer as for any stale activity (dimmed, CONTRACT.md §1): the
@@ -94,13 +94,13 @@ replacement for the light in every state.
 
 *Decided 2026-11-03.*
 
-- `kit/mascot.js` holds the grids below as data: pure, no `St`, unit-tested. Pose names
+- `kit/model/mascot.js` holds the grids below as data: pure, no `St`, unit-tested. Pose names
   are a closed set; an unknown pose falls back to the element's `icon`, or `idle`.
-- `present.js` paints a grid with one `St.DrawingArea` (cairo rectangles) in the palette
+- `kit/ui/present/motion.js` paints a grid with one `St.DrawingArea` (cairo rectangles) in the palette
   above. No image files ship in the extension, so HiDPI comes free and there is nothing to
   keep in sync but this file.
 - `tests/mascot.test.js` parses the grid blocks of **this file** and compares them with
-  `kit/mascot.js`, so the doc stays the source of truth. It also checks the Poses table
+  `kit/model/mascot.js`, so the doc stays the source of truth. It also checks the Poses table
   (every pose, its motion), the lamp rule and the frame timing (`frameAt`).
 - Sizes (2026-11-04): 20 px in minimal (and Home's rows, which are minimal views), 40 px
   in compact (2026-11-05), 50 px in the expanded leading; the cells are painted without antialiasing.
@@ -459,9 +459,9 @@ change, then stillness until the next — not a loop (ARCHITECTURE rule 8).
   `idle-mascot-stroll` is true (default). Anything else — a mode change, an activity
   surfacing, the plan replaced, destroy, disable — removes the beat timer and the
   pending steps at once; back in `idle`, the script restarts at beat 1.
-- Code: `kit/mascot.js` exports `STROLL` (the beats above as data: `{eyes, dx, steps,
+- Code: `kit/model/mascot.js` exports `STROLL` (the beats above as data: `{eyes, dx, steps,
   hold}`), a pure `nextBeat(i, rand) → {beat, next, holdMs}` and a pure
-  `eyesMode({light, daypart, idleInput, powerSaver, animations})`. `present.js` owns the
+  `eyesMode({light, daypart, idleInput, powerSaver, animations})`. `kit/ui/present/motion.js` owns the
   single `GLib.timeout_add` (steps and beats share it; removed on every stop above) and
   the two idle-monitor watches, and moves the two eye actors without easing.
   `tests/mascot.test.js`: script order and wrap-around, hold bounds with `rand` 0 and 1,

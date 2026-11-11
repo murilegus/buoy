@@ -13,10 +13,10 @@ import {
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
     donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote, weatherNote, placeLabel,
     searchPlaces, withPlace, WEATHER_UNITS, PLAN_LINES, withPlan, movePlan, planRows,
-} from './lib/kit/settings.js';
-import {slugOf, profileDir} from './lib/kit/registry.js';
-import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/mascot.js';
-import {PATH} from './lib/kit/dbus.js';
+} from './lib/kit/model/settings.js';
+import {slugOf, profileDir} from './lib/kit/services/registry.js';
+import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/model/mascot.js';
+import {PATH} from './lib/kit/services/dbus.js';
 // the one module file prefs imports: pure, no Shell (CODING-AGENTS.md §8)
 import {commandFor, hooksNote, install, installed, uninstall} from './lib/modules/agent/hooks.js';
 import {linesOf, releaseLabel} from './lib/modules/greeting/adapter.js';
@@ -30,7 +30,7 @@ const TILE_RADIUS = TILE / 6;     // hello.svg: rx 20 on 120
 
 /**
  * Buoy's prefs (FEATURES M1 "GSettings schema + prefs.js", 2026-11-03). The schema XML is
- * the source of every key's title and text; lib/kit/settings.js says where it goes.
+ * the source of every key's title and text; lib/kit/model/settings.js says where it goes.
  *
  *   Island    when idle (idle-content), each idle plan's keys, the pill (expanded width,
  *             Super+B, when Bu rests) (was General, 2026-11-04)
@@ -94,7 +94,7 @@ function launchPanel(panel) {
         });
 }
 
-// A GWeather city as kit/settings.js names it: its region when it sits in one (Ontario),
+// A GWeather city as kit/model/settings.js names it: its region when it sits in one (Ontario),
 // its country
 function describe(loc) {
     const parent = loc.get_parent();
@@ -325,7 +325,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     }
 
     // Bu on its #0b0b0b tile (MASCOT.md: never on a light background), drawn from
-    // kit/mascot.js's grid — no image file ships. The first time the page shows, Bu waves
+    // kit/model/mascot.js's grid — no image file ships. The first time the page shows, Bu waves
     // hello for HELLO_MS (helloAt, as the README's hello.svg), then rests on idle; with
     // GTK animations off it is idle from the start. One timer, only while waving and
     // mapped; leaving the page mid-wave settles on idle.
@@ -564,7 +564,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
 
     // --- Modules ------------------------------------------------------------------------
 
-    // One group per way a module shows (kit/settings.js MODULE_GROUPS, 2026-11-06): live
+    // One group per way a module shows (kit/model/settings.js MODULE_GROUPS, 2026-11-06): live
     // in the pill, quick feedback, tabs, at rest. Group text is markup (no use-markup on
     // Adw.PreferencesGroup): it is Buoy's own, with nothing to escape.
     _modulesPage(plan, key) {
@@ -581,7 +581,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     }
 
     // Show names a plan whose module is off: the pill falls back to nothing, and the row
-    // says why under it ("Clock is off, so the pill shows nothing") until the plan is back (kit/settings.js
+    // says why under it ("Clock is off, so the pill shows nothing") until the plan is back (kit/model/settings.js
     // idleOffNote, 2026-11-06).
     _followPlanSwitches(row, description, plans) {
         const sync = () => {
@@ -599,7 +599,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     // date menu's client shows. "Use my location" (a row from the schema) has the pill
     // write it from Geoclue; Place shows it, and a city picked from the search below goes
     // first there and turns "Use my location" off. The plan row's subtitle says when the
-    // pill cannot show (kit/settings.js weatherNote).
+    // pill cannot show (kit/model/settings.js weatherNote).
     _weatherPlace(row, description) {
         const source = Gio.SettingsSchemaSource.get_default();
         if (!source?.lookup('org.gnome.shell.weather', true))
@@ -672,7 +672,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         });
     }
 
-    // A drop-down over one of GNOME Weather's unit keys (kit/settings.js WEATHER_UNITS)
+    // A drop-down over one of GNOME Weather's unit keys (kit/model/settings.js WEATHER_UNITS)
     _unitRow(settings, key, title) {
         const choices = WEATHER_UNITS[key];
         const row = new Adw.ComboRow({
@@ -710,7 +710,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         sync();
     }
 
-    // The plan rows in the stack's order, then the plans out of it (kit/settings.js planRows)
+    // The plan rows in the stack's order, then the plans out of it (kit/model/settings.js planRows)
     _fillPlans() {
         const {group, list, key, rows} = this._plans;
         rows.splice(0).forEach(r => group.remove(r));
@@ -983,7 +983,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         return page;
     }
 
-    // Ubuntu Dock's own keys (kit/settings.js GNOME_DOCK): the rows of Settings → Ubuntu
+    // Ubuntu Dock's own keys (kit/model/settings.js GNOME_DOCK): the rows of Settings → Ubuntu
     // Desktop → Dock, on the same keys, so each side follows the other's changes. Shown only
     // where the dock's schema is installed.
     _dockGroup() {
@@ -1077,7 +1077,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     }
 
     // "Show on": all displays, the primary one, or one by its connector — two dock keys
-    // behind one drop-down (kit/settings.js dockMonitor*). Displays are named and numbered
+    // behind one drop-down (kit/model/settings.js dockMonitor*). Displays are named and numbered
     // from Mutter, as Settings does (org.gnome.Mutter.DisplayConfig GetCurrentState, asked
     // again on MonitorsChanged); Gdk's connectors stand in until it answers.
     _dockMonitorRow(gs, watch) {
@@ -1139,7 +1139,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         return row;
     }
 
-    // GNOME's own clock keys (kit/settings.js GNOME_CLOCK): one set of values for this
+    // GNOME's own clock keys (kit/model/settings.js GNOME_CLOCK): one set of values for this
     // page and Settings → Date & Time, each side follows the other's changes.
     _clockGroup() {
         const source = Gio.SettingsSchemaSource.get_default();

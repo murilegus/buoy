@@ -1,0 +1,16 @@
+/* The agent module's own CSS, loaded by kit/ui/styles.js while it runs (ARCHITECTURE
+ "Stylesheets"). At equal specificity stylesheet.css wins over it. */
+
+/* the Claude Code tab (modules/agent/tab.js, CODING-AGENTS.md §2) */
+.buoy-agents-tab { spacing: 2px; padding: 0 2px 4px; }
+.buoy-agents-row { padding: 6px 8px; border-radius: 12px; }
+.buoy-agents-row:hover { background-color: rgba(255, 255, 255, 0.08); }
+.buoy-agents-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-agents-line { spacing: 12px; }
+.buoy-agents-text { spacing: 2px; }
+.buoy-agents-name { color: #fff; }
+.buoy-agents-detail { color: rgba(255, 255, 255, 0.55); font-size: 12px; }
+/* on the kit's .buoy-label (a `since`): named with its row so it wins over stylesheet.css */
+.buoy-agents-line .buoy-agents-time { color: rgba(255, 255, 255, 0.55); font-size: 12px; font-feature-settings: "tnum"; }
+.buoy-agents-buttons { spacing: 6px; padding: 0 8px 6px; }
+.buoy-agents-buttons .buoy-action { padding: 4px 12px; }

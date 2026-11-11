@@ -56,7 +56,7 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
 **Unit tests (`tests/*.test.js`, run with `pnpm test`)** — required for all pure logic:
 - Every adapter (`modules/*/adapter.js`, `apps/*.js`): default output, each override
   branch, profile overrides, empty/missing fields, long text (no truncation in adapter).
-- `kit/activity.js`, `kit/stack.js`, `kit/registry.js`, `kit/shapes.js`: contract
+- `kit/model/activity.js`, `kit/model/stack.js`, `kit/services/registry.js`, `kit/model/shapes.js`: contract
   defaults and validation errors; priority ordering and ties; ttl expiry and the 8 h cap;
   stale; transient end; `apps-hidden`/`apps-plain`; slug normalisation; shape derivation
   at 1366 / 1920 / 2560 / 3440 and the `expanded-width` override.
@@ -65,8 +65,8 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
 - `gjs -m` has no test framework: use plain `throw new Error(...)`, keep tests
   independent, and make `tests/run.sh` exit non-zero on the first failure.
 
-**Running in the Shell** — required for anything that touches `kit/island.js`,
-`present.js`, `home.js`, `panel.js`, a `source.js` or `tab.js`:
+**Running in the Shell** — required for anything that touches `kit/ui/island.js`,
+`ui/present/`, `home.js`, `panel.js`, a `source.js` or `tab.js`:
 - Start it yourself in the nested shell (`pnpm dev`) or hot-swap with
   `reload('<id>')` when `dev-mode` is on. Watch `journalctl -f -o cat /usr/bin/gnome-shell`
   for the whole session; any warning or error mentioning `buoy@murilegus` is a failure.

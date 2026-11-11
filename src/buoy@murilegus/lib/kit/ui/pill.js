@@ -3,9 +3,11 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {buildCompact, buildExpanded, buildIdle, buildMinimal, buildMissedCompact} from './present.js';
-import {planCompact, planExpanded, keyline} from './presentation.js';
-import {compactCx, shrinkStop} from './shapes.js';
+import {buildCompact, buildMissedCompact} from './present/compact.js';
+import {buildExpanded} from './present/expanded.js';
+import {buildIdle, buildMinimal} from './present/minimal.js';
+import {planCompact, planExpanded, keyline} from '../model/presentation.js';
+import {compactCx, shrinkStop} from '../model/shapes.js';
 
 const PAD = 14;          // content + 2·PAD = pill width (shapes add 28)
 const COMPACT_DELAY = 300;  // ms of hover before the pill grows into its compact (SPEC §2)
@@ -57,7 +59,7 @@ export class Pill {
         this.light = 'off';
         this.more = 0;
         this.expanded = false;
-        this._panel = null;          // Home's panel while a click has it open (kit/home.js)
+        this._panel = null;          // Home's panel while a click has it open (kit/ui/home.js)
         this.fresh = true;           // not placed yet: first layout puts it there, then fades in
         this._compact = false;
         this._contentW = 0;          // resting content size, measured in _applyContentSize()

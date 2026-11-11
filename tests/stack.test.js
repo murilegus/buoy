@@ -1,6 +1,6 @@
 // Run: gjs -m tests/stack.test.js   (no Shell; fake clock + fake island)
-import {ActivityStack, ALERT_MS, pillWindow} from '../src/buoy@murilegus/lib/kit/stack.js';
-import {DEFAULT_LINGER, PRIORITY, SETTLE_MS, tierOf} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {ActivityStack, ALERT_MS, pillWindow} from '../src/buoy@murilegus/lib/kit/model/stack.js';
+import {DEFAULT_LINGER, PRIORITY, SETTLE_MS, tierOf} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 
 const HOUR = 60 * 60 * 1000;
 

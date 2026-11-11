@@ -3,8 +3,9 @@ import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {EmptyState, progressBar} from '../../kit/present.js';
-import {clockTime} from '../../kit/presentation.js';
+import {EmptyState} from '../../kit/ui/present/elements.js';
+import {progressBar} from '../../kit/ui/present/parts.js';
+import {clockTime} from '../../kit/model/presentation.js';
 import {downloadedDetail} from './adapter.js';
 import {doneHistory, downloadHistory} from './history.js';
 
@@ -21,7 +22,7 @@ import {doneHistory, downloadHistory} from './history.js';
  *
  * A row's action brings a window up — the app, the file, its folder — and closes the
  * island, as a clicked notification goes; a Done or Downloaded row acted on leaves the
- * list (2026-11-06, Ethan). It reads the kit's activities (`update`, kit/home.js) and the
+ * list (2026-11-06, Ethan). It reads the kit's activities (`update`, kit/ui/home.js) and the
  * module's stores. A Downloaded file deleted since leaves its row when the tab is drawn.
  * Done and Downloaded each have an icon-only × in their header: it empties that list
  * (the files stay where they are).

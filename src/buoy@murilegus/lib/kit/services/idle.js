@@ -1,7 +1,7 @@
 import GLib from 'gi://GLib';
 import GnomeDesktop from 'gi://GnomeDesktop?version=4.0';
 
-import {choose, intervalMs, scrollTo, stackOrder} from './smartstack.js';
+import {choose, intervalMs, scrollTo, stackOrder} from '../model/smartstack.js';
 
 /**
  * idle-content (SPEC §2a): which module's idle plan the idle pill shows, and its clock.
@@ -22,7 +22,7 @@ import {choose, intervalMs, scrollTo, stackOrder} from './smartstack.js';
  * only while shown. A plan with `ticks: false` runs no wall clock.
  *
  * `auto` (SPEC §2a-iii, 2026-11-08): the plans of `idle-auto-plans` whose modules run form
- * a smart stack (kit/smartstack.js). Each re-rank asks every plan's `relevance(ctx, opts)` and
+ * a smart stack (kit/model/smartstack.js). Each re-rank asks every plan's `relevance(ctx, opts)` and
  * shows the winner; a switch is one cross-fade (the width morphs with it), then nothing.
  * Re-ranks: a feed's change and the wall clock's minute (the shown plan stays while it has
  * something to show), and one turn every `idle-auto-interval`, when the next plan comes. That

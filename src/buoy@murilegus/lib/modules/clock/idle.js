@@ -12,7 +12,7 @@
  * seconds any more.
  */
 
-import {DAYPARTS, daypartAt} from '../../kit/daypart.js';
+import {DAYPARTS, daypartAt} from '../../kit/model/daypart.js';
 
 export const STYLES = Object.freeze(['icon-text', 'icon-time', 'icon', 'text', 'time']);
 export const DEFAULT_STYLE = 'icon-text';
@@ -27,14 +27,14 @@ export const keys = Object.freeze(['idle-clock-style']);
 
 /**
  * @param {string} daypart  one of DAYPARTS
- * @returns {string} file URI of its icon (icons/daypart-<part>.svg, a colour SVG:
+ * @returns {string} file URI of its icon (icons/color/daypart-<part>.svg, a colour SVG:
  *   the pill is always black, MASCOT/INDICATORS keep amber and red for the light)
  */
 export function iconFor(daypart) {
     const part = DAYPARTS.includes(daypart) ? daypart : 'noon';
     // the extension's root: this file is <root>/lib/modules/clock/idle.js (no URL in gjs)
     const root = import.meta.url.split('/').slice(0, -4).join('/');
-    return `${root}/icons/daypart-${part}.svg`;
+    return `${root}/icons/color/daypart-${part}.svg`;
 }
 
 function styleOf(opts) {

@@ -1,6 +1,6 @@
 /**
  * `auto`: the idle pill as a smart stack of idle plans (SPEC §2a-iii, FEATURES M3 "idle
- * auto"). Pure: which plan shows, given each plan's relevance. kit/idle.js asks the plans,
+ * auto"). Pure: which plan shows, given each plan's relevance. kit/services/idle.js asks the plans,
  * runs the one timer and draws the choice.
  *
  * - The idle pill turns (2026-11-08, Ethan: "an idle pill just rotates"): every plan with

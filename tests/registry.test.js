@@ -2,7 +2,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {Registry, slugOf, parseProfile, loadProfiles} from '../src/buoy@murilegus/lib/kit/registry.js';
+import {Registry, slugOf, parseProfile, loadProfiles} from '../src/buoy@murilegus/lib/kit/services/registry.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

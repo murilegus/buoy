@@ -1,5 +1,5 @@
 // Run: gjs -m tests/keys.test.js   (pure: ask mnemonics, pill navigation)
-import {mnemonics, actionForKey, step} from '../src/buoy@murilegus/lib/kit/keys.js';
+import {mnemonics, actionForKey, step} from '../src/buoy@murilegus/lib/kit/model/keys.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

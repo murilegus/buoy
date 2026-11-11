@@ -4,10 +4,13 @@ import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {EmptyState, FILL, buildExpanded, buildMinimal, iconProps} from './present.js';
-import {clockTime} from './presentation.js';
-import {planStrip, stripOrder, tabActivities, findTab, homeChips, homeColumns, HOME} from './tabs.js';
-import {step} from './keys.js';
+import {EmptyState, iconProps} from './present/elements.js';
+import {buildExpanded} from './present/expanded.js';
+import {buildMinimal} from './present/minimal.js';
+import {FILL} from './present/parts.js';
+import {clockTime} from '../model/presentation.js';
+import {planStrip, stripOrder, tabActivities, findTab, homeChips, homeColumns, HOME} from '../model/tabs.js';
+import {step} from '../model/keys.js';
 
 const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edge
 const STRIP_H = 60; // first guess for the strip + panel padding; measured once laid out
@@ -306,7 +309,7 @@ export class Home {
 
     _button({icon, label, badge = false}, accessibleName) {
         const box = new St.BoxLayout({style_class: 'buoy-tab-box'});
-        // a theme name, or another app's image by path (present.js iconProps)
+        // a theme name, or another app's image by path (present/elements.js iconProps)
         if (icon) {
             const glyph = new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER});
             box.add_child(badge ? badged(glyph) : glyph);

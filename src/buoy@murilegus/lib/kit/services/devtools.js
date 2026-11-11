@@ -25,6 +25,7 @@ export async function reloadModule(ext, id) {
         src = new fresh.source();
         src.enable(ext._stack, ext._registry, ext._settings, {dbus: ext._dbus});
     }
-    ext._active.push({m: fresh, src});
+    // its stylesheet stays loaded across the swap (a CSS edit still needs `pnpm dev`)
+    ext._active.push({m: fresh, src, style: old ? old.style : ext._loadStyle(fresh.id)});
     return fresh.id;
 }

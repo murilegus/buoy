@@ -7,8 +7,8 @@ import adapter, {
 import {
     DoneHistory, KEEP_MS, MAX_DONE, KEEP_DOWNLOADS_MS, MAX_DOWNLOADS, downloadHistory,
 } from '../src/buoy@murilegus/lib/modules/progress/history.js';
-import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
-import {validate} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
+import {validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

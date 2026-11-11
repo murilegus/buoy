@@ -1,8 +1,8 @@
 // Run: gjs -m tests/greeting.test.js   (pure: the first run, What's new, their lines)
 import adapter, {SHOW_MS, MAX_NOTES, MORE, INTRO, caseOf, noteFor, linesOf, buSize, releaseLabel, shortcutText} from '../src/buoy@murilegus/lib/modules/greeting/adapter.js';
 import notes from '../src/buoy@murilegus/lib/modules/greeting/notes.js';
-import {planExpanded, typedSplit, typingMs, TYPE_MS, MAX_LINES} from '../src/buoy@murilegus/lib/kit/presentation.js';
-import {validate, tierOf, PRIORITY} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {planExpanded, typedSplit, typingMs, TYPE_MS, MAX_LINES} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
+import {validate, tierOf, PRIORITY} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

@@ -44,7 +44,7 @@ Lifecycle API (internal and D-Bus): `surface(activity)` · `update(id, patch, {a
 extra) answered by `answer(id, choice)`; an ask opens expanded whenever it reaches the
 pill, since only expanded shows every option (decided 2026-11-01); `dismiss(id)` hides an ask but keeps it pending
 (red light), any other activity just ends. `ttl: 0` lives until ended; the 8 h cap
-applies to a set `ttl` (`kit/stack.js`, 2026-11-01).
+applies to a set `ttl` (`kit/model/stack.js`, 2026-11-01).
 
 `validate()` throws on bad adapter or caller output (the registry, `surface`, `update`,
 `schedule`). Apple rules kept as code: 8 h cap, end removes from the pill immediately, relevance decides
@@ -83,7 +83,7 @@ power(a), timer(a), ask(a) …
 export default { media(a) { ...detect 'Advertisement' → text 'Ad', trailing countdown } }
 ```
 
-Leading/trailing values an adapter may return (normalised by `kit/presentation.js#element`):
+Leading/trailing values an adapter may return (normalised by `kit/model/presentation.js#element`):
 `'icon-name'` or a `Gio.Icon` (icon) · `'eq'` / `'eq-paused'` (named glyphs: the equaliser, moving or stopped low) · `{art, icon}` (artwork with
 an icon fallback) · `{progress}` (ring) · `{bar, label?, off?}` (a bar; `label` its number
 beside it, `off` dims both — a muted level, 2026-11-05) · `{countdown}` / `{text}` (text) ·

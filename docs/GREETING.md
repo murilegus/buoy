@@ -125,7 +125,7 @@ The first rule that applies wins. `name` is `greeting-name`, or the real name
 | 5 | Saturday, dawn to noon | "Happy Saturday, {name}." | wave |
 | 5 | Sunday, dawn to noon | "Easy Sunday, {name}." | wave |
 | 5 | Saturday or Sunday, afternoon to night | "Enjoy your weekend, {name}." | wave |
-| 6 | Otherwise, by daypart (`kit/daypart.js`) | dawn, morning → "Good morning, {name}." · noon → "Good day, {name}." · afternoon → "Good afternoon, {name}." · evening → "Good evening, {name}." · night → "Still up, {name}?" | wave |
+| 6 | Otherwise, by daypart (`kit/model/daypart.js`) | dawn, morning → "Good morning, {name}." · noon → "Good day, {name}." · afternoon → "Good afternoon, {name}." · evening → "Good evening, {name}." · night → "Still up, {name}?" | wave |
 
 Observances (§7, kind `observe`) never take line 1; they go on line 2.
 
@@ -315,7 +315,7 @@ integer):
   v0.1 that is the introduction. Each version's heading: the running one "Buoy 0.2 — this
   version", an older one "Buoy 0.1 — 8 November 2026", its release day (`date` in
   notes.js, written when it ships). The same `notes.js` (pure data, so prefs may import it,
-  as it does `kit/settings.js`): written once, said by Bu and listed here. To open prefs on
+  as it does `kit/model/settings.js`): written once, said by Bu and listed here. To open prefs on
   that page ("…and more"), the Shell side writes the bookkeeping key `prefs-page` =
   `whats-new` and opens prefs (`Main.extensionManager.openExtensionPrefs`); prefs reads
   it when it builds its window, shows the page and clears the key, and an open prefs

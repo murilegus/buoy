@@ -1,7 +1,7 @@
 /**
  * Bu, Buoy's mascot (MASCOT.md, 2026-11-03): the pose grids and the rules that pick a
  * frame and a lamp colour. Pure (no St, no Main, no timers), so it runs under plain gjs;
- * present.js paints the grids and owns the one swap timer. MASCOT.md is the source:
+ * ui/present/motion.js paints the grids and owns the one swap timer. MASCOT.md is the source:
  * tests/mascot.test.js parses its grid blocks and compares them with FRAMES.
  *
  * A grid is 10 × 10 cells, one letter each (MASCOT.md § Drawing rules):

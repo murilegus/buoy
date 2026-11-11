@@ -82,9 +82,9 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
 ## Chỗ trong code
 
 - `scripts/icons.js` — vẽ lại 19 icon trên lưới 24; chạy lại để ghi
-  `src/buoy@murilegus/icons/{daypart,weather}-*.svg` và `docs/icons.png`.
+  `src/buoy@murilegus/icons/color/{daypart,weather}-*.svg` và `docs/icons.png`.
 - Cỡ icon trong pill tính bằng em để lớn theo chữ lớn.
-- `src/buoy@murilegus/icons/` — chép các SVG Gravity UI đang dùng, đổi tên `<tên>-symbolic.svg`, kèm
+- `src/buoy@murilegus/icons/symbolic/` — chép các SVG Gravity UI đang dùng, đổi tên `<tên>-symbolic.svg`, kèm
   LICENSE của Gravity UI. Tên đuôi `-symbolic.svg` để St tô bằng màu chữ như icon của theme
   (`st-icon-theme.c` `st_icon_info_load_symbolic_svg`), như `caps-lock-symbolic.svg` đã có.
 

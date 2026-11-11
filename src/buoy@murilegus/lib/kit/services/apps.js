@@ -17,7 +17,7 @@ const MAX_WALK = 32;
 /**
  * @param {number} pid
  * @returns {Promise<number>} its parent's pid, 0 when unknown (read without blocking the
- *   Shell, kit/files.js)
+ *   Shell, kit/services/files.js)
  */
 export async function parentOf(pid) {
     return ppidOf(await readText(`/proc/${pid}/stat`));

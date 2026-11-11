@@ -124,11 +124,11 @@ còn lại là thanh trải hết bề ngang.
 
 ## Chỗ trong code
 
-- `lib/kit/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`
+- `lib/kit/model/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`
   24 → 28.
-- `lib/kit/present.js` — bỏ `lightDot` trong `compactBox` và `cardBox`; leading trong ô của nó;
+- `lib/kit/ui/present/compact.js` — bỏ `lightDot` trong `compactBox` và `cardBox`; leading trong ô của nó;
   ảnh bìa 72 cho compact nhạc; icon từng hàng ở cột leading; card dùng chung phần đầu (ảnh đại
   diện + huy hiệu), thân và nút trải ngang.
-- `lib/kit/presentation.js` — `MAX_CARD_LINES` giữ 2; `MAX_ROWS` giữ 3.
+- `lib/kit/model/presentation.js` — `MAX_CARD_LINES` giữ 2; `MAX_ROWS` giữ 3.
 - `stylesheet.css` — style hàng và card của compact.
 - SPEC §4 (bảng kích thước); NOTIFICATIONS.md §3 (card).

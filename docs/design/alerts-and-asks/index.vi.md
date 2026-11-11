@@ -184,7 +184,7 @@ làm permission host, vì không có host thì `-p` không đưa tool này cho m
 
 ## Chỗ trong code
 
-- `lib/kit/island.js` — alert mở compact của pill (không `_openPill` ra giữa); ask là card ở cỡ
+- `lib/kit/ui/island.js` — alert mở compact của pill (không `_openPill` ra giữa); ask là card ở cỡ
   compact, giữ đến khi trả lời.
 - `lib/modules/media/adapter.js` — bỏ `expanded` (không bao giờ hiện: nhạc không alert, không ask,
   đã có `tab.js`).
@@ -198,5 +198,5 @@ làm permission host, vì không có host thì `-p` không đưa tool này cho m
   `add_user_active_watch`, như `ui/messageTray.js`) và trạng thái presence của GNOME session; khoá
   màn hình; DnD. Vắng, khoá, toàn màn hình, DnD → `stack.setUnseen()` (INDICATORS, FEATURES "Buoy
   light, the rest").
-- `lib/kit/present.js` (card) — hàng nút ẩn khi card mở bằng alert, hiện khi rê chuột; chiều cao đổi
+- `lib/kit/ui/present/compact.js` (card) — hàng nút ẩn khi card mở bằng alert, hiện khi rê chuột; chiều cao đổi
   104 → 136 / 152 theo nhịp 16.

@@ -1,5 +1,5 @@
 // Run: gjs -m tests/smartstack.test.js   (pure: which idle plan `auto` shows)
-import {HOLD, candidates, choose, scrollTo, stackOrder, intervalMs} from '../src/buoy@murilegus/lib/kit/smartstack.js';
+import {HOLD, candidates, choose, scrollTo, stackOrder, intervalMs} from '../src/buoy@murilegus/lib/kit/model/smartstack.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

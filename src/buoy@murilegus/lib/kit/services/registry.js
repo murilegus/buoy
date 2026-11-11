@@ -1,7 +1,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {validate} from './activity.js';
+import {validate} from '../model/activity.js';
 import {listNames, readText} from './files.js';
 
 /**
@@ -157,7 +157,7 @@ export function parseProfile(json) {
  * @param {?Gio.Cancellable} [cancellable]
  * @returns {Promise<{profiles: Map<string, object>, errors: {file: string, message: string}[]}>}
  *   one profile per valid `<app>.json`, keyed by the slug of its name; a missing
- *   directory is no profiles and no error. Read without blocking the Shell (kit/files.js).
+ *   directory is no profiles and no error. Read without blocking the Shell (kit/services/files.js).
  */
 export async function loadProfiles(dir, cancellable = null) {
     const profiles = new Map(), errors = [];
@@ -264,7 +264,7 @@ export class Registry {
      * @param {function(object[]):void} [onErrors]  bad files, after every load
      */
     watch(dir, onErrors = () => {}) {
-        // async (kit/files.js); a newer load wins over one still reading, and destroy()
+        // async (kit/services/files.js); a newer load wins over one still reading, and destroy()
         // cancels whatever is in flight
         this._loads = new Gio.Cancellable();
         let generation = 0;

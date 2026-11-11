@@ -6,7 +6,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
 import {getInputSourceManager, InputSourcePopup} from 'resource:///org/gnome/shell/ui/status/keyboard.js';
 
-import {Source} from '../../kit/source.js';
+import {Source} from '../../kit/services/source.js';
 import {CHAIN_MS, labelOf, primaryModifier, shouldFlash, switchStep} from './adapter.js';
 
 const ID = 'input';

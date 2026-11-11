@@ -1,6 +1,6 @@
 /**
  * The tab strip inside expanded (SPEC §2b): which tabs exist and which one an open
- * starts on. Pure (no St, no Main), so it runs under plain gjs; kit/home.js builds the
+ * starts on. Pure (no St, no Main), so it runs under plain gjs; kit/ui/home.js builds the
  * actors.
  *
  *   [Home] [kind tabs] [pinned standalone tabs] [slot] [⋯]

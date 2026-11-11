@@ -1,7 +1,7 @@
 // Run: gjs -m tests/media.test.js   (no Shell needed; adapters are pure)
 import adapter, {transport, liveOf, ICON, PAUSED_ICON, PAUSED_EQ} from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
-import {planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/presentation.js';
+import {planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import {artSize, metaLine, ART_MIN, ART_MAX} from '../src/buoy@murilegus/lib/modules/media/layout.js';
 
 function eq(actual, expected, msg) {
