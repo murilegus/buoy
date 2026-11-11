@@ -23,8 +23,19 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   (nét 1.5 px vắt qua hai hàng, mờ mép dưới). **Chốt** (Ethan, 2026-11-11)
 - **Cung chấm** (đường mặt trời đi): từng pixel đặc màu `#6B737C` thay cho chấm tròn 1 đơn vị mờ
   60 %, đối xứng, trên cung quanh tâm (12, 15) bán kính khoảng 8.4; ở 48 mỗi pixel thành ô 2 × 2.
-  Khoảng cách không cần đều hẳn: pixel nhỏ nên không thấy. Toạ độ từng ô lấy lại khi vẽ trên lưới
-  24 (bản lưới 20: 9 pixel quanh (10, 13)). **Chốt** (Ethan, 2026-11-11)
+  Khoảng cách không cần đều hẳn: pixel nhỏ nên không thấy. 10 ô [cột, hàng], đối xứng qua x = 12:
+  (3, 12) (4, 10) (6, 8) (8, 7) (10, 6) | (13, 6) (15, 7) (17, 8) (19, 10) (20, 12); tâm mỗi ô cách
+  (12, 15) từ 8.28 đến 8.86; hàng 13 và 14 để trống trên đường chân trời. **Chốt** (Ethan, 2026-11-11)
+- Mặt trời trên cung (sáng, trưa, chiều): đĩa bán kính 3, tám tia là chấm 2 px ở bán kính 5, tia
+  đầu ở 0° (trước là 22.5°), để ở 24 px tia đứng và tia ngang rơi đúng pixel. Tâm: sáng (7, 8), trưa
+  (12, 7), chiều (17, 8). Mặt trời đứng riêng (thời tiết) giữ tia dạng vạch. **Chốt** (Ethan,
+  2026-11-11)
+- Bình minh và hoàng hôn: nửa đĩa bán kính 5 đứng trên hàng 15, tâm x 9 (bình minh) và x 15 (hoàng
+  hôn; hoàng hôn là bình minh lật qua x = 12). **Năm tia** cách nhau 35° (20°, 55°, 90°, 125°, 160°
+  trên đường chân trời), rộng 2 px; ba tia trên dài 4 px, hai tia ngoài 3 px. **Chốt** (Ethan,
+  2026-11-11)
+- Bản vẽ: nhánh `feat/m4-icons-24` (commit 5d07965, chưa push), merge cùng nhánh đổi leading của
+  pill sang 24.
 
 ## Icon symbolic
 
