@@ -4,7 +4,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done (reviewed by Ethan) · `[-
 Top to bottom within a milestone. What an item does lives in SPEC and docs/design; how it was
 done, in its PR. Update this file in the item's PR.
 
-Last updated: 2026-11-10
+Last updated: 2026-11-12
 
 ## M0 — Foundation `[x]`
 
@@ -32,7 +32,7 @@ pages, Bu, About, greeting first run and What's new, `install.sh`, README, last 
 |---|---|---|
 | [~] | Release | 0.1.1 accepted on extensions.gnome.org (in review since 2026-11-09); README badge and wording updated, the overview on the EGO page |
 | [ ] | `daypart-starts` in prefs | a row on the Island page (the clock already reads the key) |
-| [ ] | Home: Now playing on large screens | no empty middle in the card at 2560 and 3440 |
+| [-] | Home: Now playing on large screens | dropped (2026-11-12): the Home redesign (M4, design/home) gives the main card 168 / 200 and the tall form at 2560 and 3440 |
 | [ ] | Field checks | seen with real apps: a Firefox or Thunderbird notification; Spotify and Firefox (https) art; a Google or Microsoft calendar; IBus Bamboo; the red light in fullscreen; a °C locale's Automatic; an EGO update's What's new; Home at 1366 and 2560 |
 
 ## M4 — Redesign and "Wow" pack (v0.2) `[ ]`
