@@ -7,7 +7,7 @@ import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
 import GLib from 'gi://GLib';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, C, drawBu} from '../../render/lib.js';
 const out = ARGV[0];
 // record-screen-symbolic is GNOME Shell's own (data/icons, the screenshot UI's record button), in the
 // gnome-shell clone beside the repo; the others are Adwaita's
@@ -15,7 +15,7 @@ const SHELL = `${GLib.get_home_dir()}/works/gnome-shell/data/icons/scalable/acti
 const DIRS = {'screen-shared-symbolic': '/usr/share/icons/Adwaita/symbolic/status',
     'audio-x-generic-symbolic': '/usr/share/icons/Adwaita/symbolic/mimetypes', 'record-screen-symbolic': SHELL};
 const ICON = n => `${DIRS[n]}/${n}.svg`;
-const RED = [1, 0x45 / 255, 0x3A / 255], CREAM = [0xF1 / 255, 0xEF / 255, 0xE8 / 255], WALL = [0.20, 0.17, 0.35];
+const {RED, CREAM, WALL} = C;
 
 const W = 760, H = 520;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
@@ -61,7 +61,7 @@ function pill(cx, y, {lead, label, left = null, right = null, bu = false}) {
     if (left) dot(x + 16, y + 16, left);
     if (right) dot(x + pw - 16, y + 16, right);
     const zx = x + 8 + (lit ? 20 : 0) + Math.round((inner - 20 - 8 - tw) / 2);
-    if (bu) { cr.setSourceRGB(...CREAM); rr(zx + 2, y + 8, 16, 14, 4); cr.fill(); cr.setSourceRGB(0, 0, 0); cr.rectangle(zx + 6, y + 12, 2, 3); cr.rectangle(zx + 12, y + 12, 2, 3); cr.fill(); cr.setSourceRGB(...RED); cr.rectangle(zx + 8, y + 4, 4, 4); cr.fill(); }
+    if (bu) drawBu(cr, 'ask', zx + 2, y + 6, 2);   // Bu 20, the ask pose: its lamp red
     else icon(lead, zx + 2, y + 8, 16);
     const e = text(label, zx + 28, 0, {sz: 11, wt: 600, a: 0, exact: true});
     text(label, zx + 28, y + Math.round((32 - e.height) / 2), {sz: 11, wt: 600, a: 1, exact: true});

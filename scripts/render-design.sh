@@ -24,9 +24,7 @@ r $p/dots.js $i/dots.vi.png
 r $p/dots.js $i/dots-guides.vi.png guides
 r $p/minimal-media.js $i/minimal-media.vi.png
 r $p/bar.js $i/bar-1920.vi.png 1920
-r $p/bar.js $i/bar-1920-sym.vi.png 1920 sym
 r $p/bar.js $i/bar-1366.vi.png 1366
-r $p/bar.js $i/bar-1366-sym.vi.png 1366 sym
 
 # compact (anatomy-compact.js draws the alerts-and-asks images too)
 c=compact/render
@@ -38,6 +36,10 @@ r $c/anatomy-compact.js alerts-and-asks/images/question.vi.png question
 r $c/card.js compact/images/card.vi.png
 r $c/body.js compact/images/body.vi.png
 r $c/screen.js compact/images/screen.vi.png
+r $c/reply.js compact/images/reply.vi.png
+
+# icons
+r icons/render/symbolic.js icons/images/symbolic.vi.png
 
 # expanded
 r expanded/render/expanded.js expanded/images/expanded.vi.png

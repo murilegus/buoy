@@ -3,12 +3,12 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, C} from '../../render/lib.js';
 const [out, guides] = [ARGV[0], ARGV[1] === 'guides'];
 const SUN = ['....Y.....','.Y..Y..Y..','..Y...Y...','....YY....','YY.YYYY.YY','...YYYY...','....YY....','..Y...Y...','.Y..Y..Y..','....Y.....'];
-const AMBER = [0xEF, 0x9F, 0x27], GREEN = [0x4C, 0xC2, 0x6A], RED = [0xE2, 0x4B, 0x4A], ORANGE = [0xFF, 0x95, 0x00];
+const {AMBER, CAM: GREEN, RED, MIC} = C;   // design/colours
 const rows = [[0, null, null, 'không đèn — pad 8'], [6, AMBER, GREEN, 'chấm 6'], [8, AMBER, GREEN, 'chấm 8'], [10, AMBER, GREEN, 'chấm 10'],
-  [8, RED, ORANGE, 'chấm 8 — đỏ (ask) · cam (mic)'], [8, AMBER, null, 'chấm 8 — chỉ một đèn']];
+  [8, RED, MIC, 'chấm 8 — đỏ (ask) · tím (mic)'], [8, AMBER, null, 'chấm 8 — chỉ một đèn']];
 const W = 560, ROW = 44, CX = 140, CONTENT = 24 + 8 + 85, PAD = 8, LIT = 28;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, ROW * rows.length * SC);
 const cr = new cairo.Context(surf);
@@ -20,7 +20,7 @@ function font(sz, wt) { const d = Pango.FontDescription.from_string('SF Pro Disp
   const a = new Pango.AttrList(); a.insert(Pango.attr_font_features_new('tnum')); L.set_attributes(a); }
 function rr(x, y, w, h, r) { cr.newSubPath(); cr.arc(x + w - r, y + r, r, -Math.PI / 2, 0); cr.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
   cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI); cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI); cr.closePath(); }
-const rgb = c => c.map(v => v / 255);
+const rgb = c => c;
 rows.forEach(([d, lt, dt, note], i) => {
   const py = i * ROW + 6, side = d ? LIT : PAD, pw = CONTENT + 2 * side, px = Math.round(CX - pw / 2);
   rr(px + .5, py + .5, pw - 1, 31, 15.5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve(); cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke();

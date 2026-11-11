@@ -5,6 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
+import {C} from '../../render/lib.js';
 const SC = 3, W = 300, H = 150;
 const SUN = ['....Y.....','.Y..Y..Y..','..Y...Y...','....YY....','YY.YYYY.YY','...YYYY...','....YY....','..Y...Y...','.Y..Y..Y..','....Y.....'];
 const W1 = [1, 1, 1], CY = [.4, .85, 1], RD = [1, .5, .5];
@@ -41,7 +42,7 @@ function fitted(x, y) {
 function pill(px, py, lit) {
   const side = lit ? 28 : 8, pw = side + 117 + side;
   rr(px + .5, py + .5, pw - 1, 31, 15.5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve(); cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke();
-  if (lit) { cr.setSourceRGB(.94, .62, .15); cr.arc(px + 16, py + 16, 4, 0, 2 * Math.PI); cr.fill(); cr.setSourceRGB(.3, .76, .42); cr.arc(px + pw - 16, py + 16, 4, 0, 2 * Math.PI); cr.fill(); }
+  if (lit) { cr.setSourceRGB(...C.AMBER); cr.arc(px + 16, py + 16, 4, 0, 2 * Math.PI); cr.fill(); cr.setSourceRGB(...C.CAM); cr.arc(px + pw - 16, py + 16, 4, 0, 2 * Math.PI); cr.fill(); }
   const x0 = px + side, by = py + 4;
   SUN.forEach((r, yy) => [...r].forEach((c, xx) => { if (c === 'Y') { cr.setSourceRGB(1, .82, .4); cr.rectangle(x0 + 2 + xx * 2, by + 2 + yy * 2, 2, 2); cr.fill(); } }));
   fitted(x0 + 32, py);
