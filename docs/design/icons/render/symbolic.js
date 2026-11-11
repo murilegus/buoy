@@ -1,7 +1,7 @@
 // Symbolic icons in place (design/icons, 2026-11-11): the tab strip (the chosen tab icon + title
 // on fill-3, the others icon only at fg-muted), the round buttons (32 with a 16 icon; the main
 // action cream with a black icon, the others fill-2 with a white one) and a row of 16. The icons
-// come from the system theme: Yaru, else Adwaita, as St looks them up. gjs -m symbolic.js out.png
+// are Gravity UI's (gravity-ui/, MIT). gjs -m symbolic.js out.png
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
@@ -29,10 +29,9 @@ function rr(x, y, w, h, r) {
     cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI); cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI); cr.closePath();
 }
 const fill = (rgba, x, y, w, h, r) => { cr.newPath(); rr(x, y, w, h, r); cr.setSourceRGBA(...rgba); cr.fill(); };
-const DIRS = ['actions', 'status', 'mimetypes', 'devices', 'apps', 'places', 'categories', 'emblems', 'legacy', 'ui', 'time'];
-const THEMES = ['/usr/share/icons/Yaru/scalable', '/usr/share/icons/Adwaita/symbolic'];
+const GRAVITY = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]), 'gravity-ui']);
 function icon(name, x, y, s, rgb = C.WHITE, a = 1) {
-    const path = THEMES.flatMap(t => DIRS.map(d => `${t}/${d}/${name}.svg`)).find(p => GLib.file_test(p, GLib.FileTest.EXISTS));
+    const path = `${GRAVITY}/${name}.svg`;
     const m = new cairo.ImageSurface(cairo.Format.ARGB32, s * SC, s * SC);
     const v = new Rsvg.Rectangle(); v.x = 0; v.y = 0; v.width = s * SC; v.height = s * SC;
     Rsvg.Handle.new_from_file(path).render_document(new cairo.Context(m), v);
@@ -52,10 +51,10 @@ panel(16, 34, 376, 64);
 const sx = 28, sy = 50;
 fill([1, 1, 1, C.FILL2], sx, sy, 352, 32, 16);
 fill([1, 1, 1, C.FILL3], sx + 4, sy + 4, 80, 24, 12);
-icon('go-home-symbolic', sx + 12, sy + 8, 16);
+icon('house', sx + 12, sy + 8, 16);
 text('Home', sx + 34, sy + 4, {sz: 9.5, wt: 600, h: 24});
-['audio-x-generic-symbolic', 'preferences-system-notifications-symbolic', 'x-office-calendar-symbolic', 'phone-symbolic',
-    'alarm-symbolic', 'folder-download-symbolic', 'view-more-symbolic'].forEach((n, i) => icon(n, sx + 96 + i * 36, sy + 8, 16, C.WHITE, C.FG_MUTED));
+['music-note', 'bell-dot', 'calendar', 'smartphone',
+    'alarm', 'arrow-down-to-line', 'ellipsis-vertical'].forEach((n, i) => icon(n, sx + 96 + i * 36, sy + 8, 16, C.WHITE, C.FG_MUTED));
 dim(sx + 4, sx + 84, sy - 6, 'tab chọn'); dim(sx + 96, sx + 112, sy - 6, '16');
 text('Cao 32, bo 16. Tab đang chọn: nền fill-3 cao 24 (cách 4), icon 16 và tên 1em 600.', 16, 108, {sz: 7.5, a: .75});
 text('Tab khác: chỉ icon 16, fg-muted 70 %, mỗi ô rộng 36; tên là accessible name.', 16, 121, {sz: 7.5, a: .75});
@@ -63,7 +62,7 @@ text('Tab khác: chỉ icon 16, fg-muted 70 %, mỗi ô rộng 36; tên là acce
 // 2. buttons
 text('Nút tròn', 410, 10, {sz: 10, wt: 700});
 panel(410, 34, 334, 64);
-const BTN = [['media-skip-backward-symbolic', 0], ['media-playback-pause-symbolic', 1], ['media-skip-forward-symbolic', 0], ['window-close-symbolic', 0], ['emblem-system-symbolic', 0]];
+const BTN = [['backward-step-fill', 0], ['pause-fill', 1], ['forward-step-fill', 0], ['xmark', 0], ['gear', 0]];
 BTN.forEach(([n, main], i) => {
     const bx = 426 + i * 44, by = 50;
     cr.newPath();
@@ -78,11 +77,11 @@ text('Còn lại: fill-2, icon trắng; hover fill-3, nhấn fill-4.', 410, 133,
 // 3. a row
 text('Hàng', 16, 150, {sz: 10, wt: 700});
 panel(16, 174, 376, 64);
-[['object-select-symbolic', 'Edit shapes.js', '12s'], ['media-playback-start-symbolic', 'Run pnpm test', '4s']].forEach(([n, t, r], i) => {
+[['check', 'Edit shapes.js', '12s'], ['play-fill', 'Run pnpm test', '4s']].forEach(([n, t, r], i) => {
     const ry = 190 + i * 16;
     icon(n, 36, ry, 16, C.WHITE, .9); text(t, 64, ry, {sz: 9.35, a: .85, h: 16});
     const e = text(r, 0, -100, {sz: 9.35}); text(r, 372 - e.width, ry, {sz: 9.35, a: .5, h: 16});
 });
 text('Icon 16 trong hàng 16, giữa cột leading 40.', 410, 190, {sz: 7.5, a: .75});
-text('Icon của Yaru; máy không có Yaru dùng Adwaita.', 410, 203, {sz: 7.5, a: .75});
+text('Icon Gravity UI; nút nhạc và ▶ dùng bản -fill; tab thông báo có tin mới: bell-dot.', 410, 203, {sz: 7.5, a: .75});
 surf.writeToPNG(out);

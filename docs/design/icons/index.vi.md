@@ -39,9 +39,19 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
 
 ## Icon symbolic
 
-- Icon symbolic (tab, nút, hàng, leading của các loại không có ảnh) lấy từ **icon theme của hệ
-  thống** theo tên: Yaru trên Ubuntu, Adwaita ở bản khác. Tên nào theme đang dùng không có, St tìm
-  tiếp trong Adwaita rồi hicolor (`st-icon-theme.c` `load_themes`). **Chốt** (Ethan, 2026-11-11)
+- Icon symbolic (tab, nút, hàng, leading của các loại không có ảnh) là bộ **Gravity UI**
+  (`@gravity-ui/icons` 2.23.0, MIT, lưới 16), ship cùng Buoy. Vẽ thẳng trên lưới 16 nên nét ở 1×;
+  bo mềm, hợp chữ trong pill. **Chốt** (Ethan, 2026-11-11)
+- Nút nhạc (lùi, dừng/phát, tiến) và ▶ trong hàng dùng bản `-fill`; còn lại bản thường. **Đề xuất**
+- Tab thông báo khi có tin chưa đọc: `bell-dot` thay `bell`. **Đề xuất**
+- Icon theo vai trò:
+
+  | Vai trò | Icon |
+  |---|---|
+  | Home, Media, Thông báo, Lịch | `house`, `music-note`, `bell` / `bell-dot`, `calendar` |
+  | Thiết bị, Hẹn giờ, Tải về, Thêm | `smartphone`, `alarm`, `arrow-down-to-line`, `ellipsis-vertical` |
+  | Lùi, dừng, tiến, phát | `backward-step-fill`, `pause-fill`, `forward-step-fill`, `play-fill` |
+  | Đóng, cài đặt, xong | `xmark`, `gear`, `check` |
 - **Cỡ 16 ở mọi chỗ**: thanh tab, nút 32, pill, hàng 16 (Claude Code, bị lỡ). **Chốt** (Ethan,
   2026-11-11)
 - **Thanh tab**: cao 32, bo 16. Tab đang chọn: nền `fill-3` cao 24 (cách mép 4), icon 16 và tên
@@ -52,13 +62,16 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
 
 ![Icon symbolic ở thanh tab, nút tròn và hàng](images/symbolic.vi.png)
 
-*Icon trong hình là của Yaru.*
+*Icon trong hình là của Gravity UI; SVG và LICENSE ở `render/gravity-ui/`.*
 
 ## Chỗ trong code
 
 - `scripts/icons.js` — vẽ lại 19 icon trên lưới 24; chạy lại để ghi
   `src/buoy@murilegus/icons/{daypart,weather}-*.svg` và `docs/icons.png`.
 - Cỡ icon trong pill tính bằng em để lớn theo chữ lớn.
+- `src/buoy@murilegus/icons/` — chép các SVG Gravity UI đang dùng, đổi tên `<tên>-symbolic.svg`, kèm
+  LICENSE của Gravity UI. Tên đuôi `-symbolic.svg` để St tô bằng màu chữ như icon của theme
+  (`st-icon-theme.c` `st_icon_info_load_symbolic_svg`), như `caps-lock-symbolic.svg` đã có.
 
 `docs/icons.png` và `scripts/icons.js` ở nguyên chỗ cũ cho tới khi các docs ở gốc `docs/` được làm
 gọn lại (Ethan, 2026-11-10).
