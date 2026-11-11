@@ -31,8 +31,9 @@ nút phải rê chuột vào pill.
   **Chốt** (Ethan, 2026-11-12)
 - **Khẩn cấp** (`Urgency.CRITICAL`): card có nút ngay, ở lại đến khi xử lý, như GNOME mở rộng sẵn
   banner khẩn cấp. **Chốt** (Ethan, 2026-11-12)
-- Đang **chia sẻ hoặc quay màn hình**: như v0.1 (NOTIFICATIONS §5): card chỉ ghi tên app và
-  "Thông báo mới", không thân, không ảnh. **Chốt**
+- Đang **chia sẻ hoặc quay màn hình**: một thông báo thì như v0.1 (NOTIFICATIONS §5): card chỉ ghi
+  tên app và "Thông báo mới", không thân, không ảnh; nút giữ. **Chốt** Nhiều thông báo: xem
+  [Khi chia sẻ màn hình](#khi-chia-sẻ-màn-hình).
 
 ### Khi nào đã xem, khi nào bị nhỡ
 
@@ -50,6 +51,7 @@ bạn rê chuột hay bấm vào nó.** Còn lại là **bị nhỡ**: vào Bị
 | Do Not Disturb | không alert, như GNOME | **Có**; đèn đứng yên (đèn vẫn sáng trong DnD, 2026-11-08) |
 | Khẩn cấp | luôn alert, có nút, ở đến khi xử lý; bạn vắng thì card chờ | Không |
 | Đang mở Home hoặc tab Thông báo | hiện ngay trong tab | Không |
+| Đang chia sẻ hoặc quay màn hình | card không thân; nhiều tin thì một compact | **Có**: nội dung bị ẩn |
 
 - **Có mặt** = có chuột hay phím trong 1 s gần nhất, như GNOME (`IDLE_TIME`, `ui/messageTray.js`).
   **Vắng** = trạng thái idle của GNOME session, tức sau `idle-delay` (Cài đặt → Nguồn điện → Tắt màn
@@ -87,6 +89,22 @@ không có banner, chỉ còn chấm trên thanh (`_onNotificationRequestBanner`
   khác: card **vẫn mở**, chỉ nội dung đổi (mờ đi 100 ms, hiện lại 200 ms; avatar, tên, thân, số
   tin), chiều cao co giãn 240 ms nếu số dòng khác (SPEC §5). Không đóng rồi mở lại mỗi giây. Hết
   đợt: card thu về pill của app cuối; các pill khác hiện lại tại chỗ. **Chốt** (Ethan, 2026-11-12)
+
+### Khi chia sẻ màn hình
+
+![Đợt tin khi đang chia sẻ màn hình: một compact; sau đó mỗi app một pill](images/shared.vi.png)
+
+Card không có thân nên chạy lần lượt từng app chỉ thêm nhấp nháy mà không thêm thông tin.
+
+- Cả đợt là **một compact**, chỉ phần đầu 56: leading là logo các app xếp chồng, tiêu đề "N thông
+  báo mới", dòng phụ số tin từng app ("Slack 3 · Telegram 2 · Gmail 1 · bây giờ"). Hiện 5 s rồi về
+  pill; tin tới thêm trong lúc đó chỉ đổi số. **Chốt** (Ethan, 2026-11-12)
+- **Không nút** (một compact nhiều app không có nút chung). **Bấm không mở gì**: mở app hay tab
+  Thông báo trên màn hình đang chia sẻ sẽ lộ nội dung. **×** chỉ đóng compact; thông báo vẫn trong
+  danh sách GNOME và Bị nhỡ. **Chốt** (Ethan, 2026-11-12)
+- Sau đó mỗi app một pill, chỉ tên app, đuôi ghi số tin từ 2 (NOTIFICATIONS §2, §5). **Chốt**
+- Cả đợt tính là **bị nhỡ**: nội dung bị ẩn nên chưa ai đọc; xem lại trong Bị nhỡ sau khi dừng chia
+  sẻ. Đèn amber vẫn sáng trong lúc chia sẻ: đèn không lộ gì. **Chốt** (Ethan, 2026-11-12)
 
 ### Rê chuột giữa một đợt tin
 

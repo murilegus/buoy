@@ -93,6 +93,10 @@ way the app's pill updates.
 >   that finds no room gets no card, only its app's pill, and is missed; a critical one jumps
 >   ahead and is never replaced. The card stays open between turns, its content fading (100 ms
 >   out, 200 ms in); afterwards one pill per app as below, ranked by PRIORITY (the newest first).
+> - **Shared or recorded screen**: one notification as §5; a burst is **one compact** (the head
+>   only: the apps' logos stacked, "6 new notifications", "Slack 3 · Telegram 2 · Gmail 1"), 5 s,
+>   later ones only bump the counts; no buttons, a click opens nothing, × only closes it; then one
+>   pill per app, named only. All of it counts as missed: nobody read what was hidden.
 > - **Hover during a burst** pauses it: the card stays, shows its buttons, never changes under the
 >   pointer (a same-app message only bumps the count); timers run only off the card; leaving
 >   resumes after 200 ms (Shell's `HIDE_TIMEOUT`). A card that opens under a resting pointer is
