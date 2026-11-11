@@ -4,17 +4,10 @@
 // gjs -m screen.js out.png
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
-import Rsvg from 'gi://Rsvg?version=2.0';
-import GLib from 'gi://GLib';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x, C, drawBu} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, C, drawBu, icon as gicon} from '../../render/lib.js';
 const out = ARGV[0];
-// record-screen-symbolic is GNOME Shell's own (data/icons, the screenshot UI's record button), in the
-// gnome-shell clone beside the repo; the others are Adwaita's
-const SHELL = `${GLib.get_home_dir()}/works/gnome-shell/data/icons/scalable/actions`;
-const DIRS = {'screen-shared-symbolic': '/usr/share/icons/Adwaita/symbolic/status',
-    'audio-x-generic-symbolic': '/usr/share/icons/Adwaita/symbolic/mimetypes', 'record-screen-symbolic': SHELL};
-const ICON = n => `${DIRS[n]}/${n}.svg`;
+// Gravity UI (design/icons): video for recording, display-pulse for sharing, music-note for music
 const {RED, CREAM, WALL} = C;
 
 const W = 760, H = 520;
@@ -41,14 +34,7 @@ function rr(x, y, w, h, r) {
     cr.newSubPath(); cr.arc(x + w - r, y + r, r, -Math.PI / 2, 0); cr.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
     cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI); cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI); cr.closePath();
 }
-// a symbolic icon in one colour: rendered to a mask, then filled
-function icon(name, x, y, s, rgb = [1, 1, 1]) {
-    const m = new cairo.ImageSurface(cairo.Format.ARGB32, s * SC, s * SC);
-    const mc = new cairo.Context(m);
-    const v = new Rsvg.Rectangle(); v.x = 0; v.y = 0; v.width = s * SC; v.height = s * SC;
-    Rsvg.Handle.new_from_file(ICON(name)).render_document(mc, v);
-    cr.save(); cr.scale(1 / SC, 1 / SC); cr.setSourceRGB(...rgb); cr.maskSurface(m, x * SC, y * SC); cr.restore();
-}
+const icon = (name, x, y, s, rgb = [1, 1, 1]) => gicon(cr, name, x, y, s, rgb);
 const dot = (cx, cy, rgb) => { cr.setSourceRGB(...rgb); cr.arc(cx, cy, 4, 0, 2 * Math.PI); cr.fill(); };
 
 // a pill: leading 20, gap 8, text 1em 600; min 133 (idle); a light or dot on either end widens both
@@ -75,13 +61,13 @@ function bar(y, caption) {
 // 1. bars
 text('Trên thanh', 16, 12, {sz: 10, wt: 700, a: 1});
 bar(32, 'Chỉ quay: pill 1 là bản ghi, đồng hồ chạy; chấm đỏ bên phải.');
-pill(W / 2, 36, {lead: 'record-screen-symbolic', label: '0:42', right: RED});
+pill(W / 2, 36, {lead: 'video', label: '0:42', right: RED});
 bar(96, 'Quay và nghe nhạc: bản ghi (55) đứng trước nhạc (10); nhạc sang pill phụ.');
-const [px, pw] = pill(W / 2, 100, {lead: 'record-screen-symbolic', label: '0:42', right: RED});
-pill(px + pw + 8 + 133 / 2, 100, {lead: 'audio-x-generic-symbolic', label: 'Lofi'});
+const [px, pw] = pill(W / 2, 100, {lead: 'video', label: '0:42', right: RED});
+pill(px + pw + 8 + 133 / 2, 100, {lead: 'music-note', label: 'Lofi'});
 bar(160, 'Claude Code hỏi trong lúc quay: ask (cần bạn) lên pill 1, đèn đỏ trái; bản ghi sang pill phụ; chấm đỏ vẫn ở pill 1.');
 const [qx, qw] = pill(W / 2, 164, {bu: true, label: 'Cần trả lời', left: RED, right: RED});
-pill(qx + qw + 8 + 133 / 2, 164, {lead: 'record-screen-symbolic', label: '0:42'});
+pill(qx + qw + 8 + 133 / 2, 164, {lead: 'video', label: '0:42'});
 
 // 2. compacts on hover
 text('Hover: compact', 16, 232, {sz: 10, wt: 700, a: 1});
@@ -93,18 +79,18 @@ function compact(x, y, {lead, title, sub, w = 300}) {
     icon(lead, x + 24, y + 18, 20);
     text(title, x + 62, y + 11, {sz: 11, wt: 600, a: 1, exact: true});
     text(sub, x + 62, y + 30, {sz: 9.35, a: .5});
-    // Stop: round 32, centre on y = 28, 14 from the edge; fill-inverse, the black square
+    // Stop: round 32, centre on y = 28, 14 from the edge; fill-inverse, stop-fill in black
     const bx = x + w - 14 - 32;
-    cr.setSourceRGB(...CREAM); cr.arc(bx + 16, y + 28, 16, 0, 2 * Math.PI); cr.fill();
-    cr.setSourceRGB(0, 0, 0); rr(bx + 11, y + 23, 10, 10, 2); cr.fill();
+    cr.newPath(); cr.setSourceRGB(...CREAM); cr.arc(bx + 16, y + 28, 16, 0, 2 * Math.PI); cr.fill();
+    icon('stop-fill', bx + 8, y + 20, 16, [0, 0, 0]);
     return bx;
 }
 const notes = (x, y, lines) => lines.forEach((l, i) => text(l, x, y + i * 13, {sz: 7.5, a: .65}));
-const b1 = compact(16, 256, {lead: 'record-screen-symbolic', title: 'Đang quay màn hình', sub: '0:42 · từ 14:03'});
+const b1 = compact(16, 256, {lead: 'video', title: 'Đang quay màn hình', sub: '0:42 · từ 14:03'});
 notes(16, 322, ['Rộng: tối thiểu 16em (240), ở đây theo chữ.', 'Cao 56, chỉ phần đầu; bo 28.',
     'Leading 40: nền fill-2, icon trắng.', 'Tiêu đề 1em 600 fg; dòng dưới 0.85em fg-subtle,', 'đồng hồ chạy và giờ bắt đầu.',
-    'Dừng: nút tròn 32, fill-inverse, ô vuông đen;', `cách mép phải 14, tâm y = 28.`]);
-compact(400, 256, {lead: 'screen-shared-symbolic', title: 'Đang chia sẻ màn hình', sub: '12:05 · từ 13:51'});
+    'Dừng: nút tròn 32, fill-inverse, stop-fill đen;', `cách mép phải 14, tâm y = 28.`]);
+compact(400, 256, {lead: 'display-pulse', title: 'Đang chia sẻ màn hình', sub: '12:05 · từ 13:51'});
 notes(400, 322, ['Giống hệt, khác icon và chữ.', 'App quay qua portal (OBS…): "Ứng dụng đang quay màn hình".',
     'Không biết tên app: Mutter không đưa tên', '(MetaRemoteAccessHandle chỉ có is-recording).',
     'Dừng tất cả phiên chia sẻ, như nút của GNOME.']);

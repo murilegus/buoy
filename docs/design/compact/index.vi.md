@@ -43,9 +43,9 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
   `PostToolUse`; Claude cũng ghi danh sách ở `~/.claude/tasks/<session_id>/<id>.json`, nên Buoy
   bật lại giữa phiên vẫn đọc được. Thử với Claude Code 2.1.319 (2026-11-11); bản này không còn
   `TodoWrite`.
-- Ba trạng thái: **xong** ✓, **đang làm** ▶ (đặc), **chờ** ○; việc chờ mờ như stale, cả icon lẫn chữ.
-  Trắng, không màu ([Bảng màu](../colours/index.vi.md)); vẽ bằng code, đứng yên. **Chốt** (Ethan,
-  2026-11-11)
+- Ba trạng thái: **xong** `check`, **đang làm** `play-fill`, **chờ** `circle` ([Icon](../icons/index.vi.md));
+  việc chờ mờ như stale, cả icon lẫn chữ. Trắng, không màu ([Bảng màu](../colours/index.vi.md)),
+  đứng yên. **Chốt** (Ethan, 2026-11-11)
 - Nhiều hơn 3 việc: hiện việc vừa xong, việc đang làm, việc kế tiếp; dòng dưới tiêu đề ghi tiến độ
   (`buoy · 2 / 5`).
 - Claude không lập danh sách việc: hàng là các bước gần nhất (lời gọi tool), như dòng
@@ -84,7 +84,7 @@ hỗ trợ trả lời ngay trong thông báo (`notificationDaemon.js`, `GetCapa
   cũng gửi.
 - Esc hoặc bấm ra ngoài: về hai nút, giữ chữ đã gõ đến khi card đóng. Đang gõ thì compact không thu
   lại khi chuột rời, và đếm giờ đóng card dừng.
-- Đã gửi: một dòng ✓ "Đã gửi: …" (`fg-subtle`), card đóng sau 2 s. Lỗi: "Không gửi được" và nút
+- Đã gửi: một dòng `check` "Đã gửi: …" (`fg-subtle`), card đóng sau 2 s. Lỗi: "Không gửi được" và nút
   Thử lại, chữ còn nguyên.
 
 ## Chia sẻ và quay màn hình
@@ -99,12 +99,11 @@ chia sẻ: nút cam), có nút Dừng, như dưới đây. **Chốt** (Ethan, 20
   và các khoảnh khắc ngắn (osd, thông báo). Không phải "cần bạn": không ai chờ câu trả lời.
 - **Chấm đỏ luôn ở pill 1**, dù activity màn hình đang ở pill phụ hay `+N`: chấm nói về cả máy,
   không thuộc activity nào (như đèn).
-- **Pill:** leading là icon (quay: `record-screen-symbolic` của Shell; chia sẻ:
-  `screen-shared-symbolic`), chữ là đồng hồ chạy từ lúc bắt đầu, `0:42`. Đồng hồ nhảy mỗi giây chỉ
+- **Pill:** leading là icon (quay: `video`; chia sẻ: `display-pulse`), chữ là đồng hồ chạy từ lúc bắt đầu, `0:42`. Đồng hồ nhảy mỗi giây chỉ
   khi pill đang hiện, như nút của GNOME (`status/remoteAccess.js`, `ScreenRecordingIndicator`).
 - **Compact khi hover:** chỉ phần đầu 56. Leading 40 nền `fill-2`, icon trắng; tiêu đề "Đang quay
   màn hình" / "Đang chia sẻ màn hình"; dòng dưới `0:42 · từ 14:03` (`fg-subtle`). Nút Dừng tròn 32,
-  `fill-inverse`, ô vuông đen, tâm y = 28.
+  `fill-inverse`, `stop-fill` đen, tâm y = 28.
 - **Dừng:** quay gọi `Main.screenshotUI.stopScreencast()`; chia sẻ gọi `stop()` trên mọi
   `MetaRemoteAccessHandle` chưa phải bản ghi, như nút của GNOME. App quay qua portal (handle có
   `is-recording`): "Ứng dụng đang quay màn hình". Mutter không đưa tên app.

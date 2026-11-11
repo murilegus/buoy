@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, taskState, C, GREY, drawBu} from '../../render/lib.js';
+import {SCALE as SC, taskState, icon, C, GREY, drawBu} from '../../render/lib.js';
 const R = 28, PAD = 14, LEAD = 40, IND = 12, PW = 340, TX = PAD + LEAD + IND;   // text column at 66
 const W = 1120, colX = [20, 520];
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, 760 * SC);
@@ -26,10 +26,12 @@ function waste(x, y, h) { cr.setSourceRGBA(1, .35, .35, .18); cr.rectangle(x + P
 function art(x, y, s, r = 10, c = [[.95, .55, .35], [.35, .25, .75]]) { const g = new cairo.LinearGradient(x, y, x + s, y + s); g.addColorStopRGB(0, ...c[0]); g.addColorStopRGB(1, ...c[1]); cr.setSource(g); rr(x, y, s, s, r); cr.fill(); }
 function head(x, y, t1, t2, c, btn = '⏸') { if (c === 'bu') drawBu(cr, 'busy', x + PAD, y + 8, 4); else art(x + PAD, y + 8, LEAD, 10, c); text(t1, x + TX, y + 9, 11, 600, W1); text(t2, x + TX, y + 29, 9.5, 400, G);
   roundBtn(x + PW - PAD - 16, y + R, btn); }
-// the head's button: its main action (⏸ ■) is fill-inverse, cream with a black glyph; × is fill-2
-function roundBtn(cx, cy, btn) { const main = btn !== '×', fg = main ? C.BLACK : W1;
-  if (main) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
-  const e = text(btn, 0, 0, 10, 400, fg, 1, true); text(btn, cx - e.width / 2, cy - e.height / 2, 10, 400, fg); }
+// the head's button (design/icons): its main action (⏸ pause-fill, ■ stop-fill) is fill-inverse,
+// cream with a black icon; × (xmark) is fill-2 with a white one; the icon 16 in the middle
+const GLYPH = {'⏸': 'pause-fill', '■': 'stop-fill', '×': 'xmark'};
+function roundBtn(cx, cy, btn) { const main = btn !== '×';
+  cr.newPath(); if (main) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
+  icon(cr, GLYPH[btn], cx - 8, cy - 8, 16, main ? C.BLACK : W1); }
 function bar(x, y, x0, x1) { cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(x0, y, x1 - x0, 4, 2); cr.fill(); cr.setSourceRGB(1, 1, 1); rr(x0, y, (x1 - x0) * .38, 4, 2); cr.fill();
   text('1:24', x0, y + 7, 8.5, 400, W1, .5); right('-2:11', x1, y + 7, 8.5, .5); }
 const label = (t, x, y) => text(t, x, y, 9, 600, W1, .85);
@@ -56,7 +58,7 @@ label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 
   rows.forEach(([k, a, b], j) => row(x, y + 64 + j * 16, a, b, k));
   x = colX[1]; panel(x, y, h); head(x, y, 'Claude Code', 'buoy · 2 / 3', 'bu', '■');
   rows.forEach(([k, a, b], j) => { const ry = y + 64 + j * 16; taskState(cr, k, x + PAD + LEAD / 2 - 8, ry, 16); row(x, ry, a, b, k); });
-  text('✓ xong · ▶ đang làm · ○ chờ, dưới leading', x + PW + 8, y + 76, 8, 400, W1, .6, false, 140); y += h + 22; }
+  text('check xong · play-fill đang làm · circle chờ, dưới leading', x + PW + 8, y + 76, 8, 400, W1, .6, false, 140); y += h + 22; }
 // 3) card
 { let x = colX[0];
   const nI = text(NOTI, 0, 0, 9.5, 400, G2, 1, true, PW - PAD - TX).lines, hI = snap(56 + nI * 16 + 6 + 28 + 12);

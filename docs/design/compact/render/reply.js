@@ -6,7 +6,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C} from '../../render/lib.js';
+import {SCALE as SC, C, icon} from '../../render/lib.js';
 const out = ARGV[0];
 
 const R = 28, PW = 340, H1 = 136, W = 2 * PW + 3 * 24 + 220, TOP = 34, GAP = 70;
@@ -33,13 +33,11 @@ function rr(x, y, w, h, r) {
 }
 const fill = (a, x, y, w, h, r) => { rr(x, y, w, h, r); cr.setSourceRGBA(1, 1, 1, a); cr.fill(); };
 const mid = (t, y, h, o) => y + (h - text(t, 0, 0, {...o, measure: true}).height) / 2;
-// arrow right in a 32 circle: Send
+// Send: a 32 circle with arrow-right (design/icons)
 function send(cx, cy, on) {
-    if (on) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2);
+    cr.newPath(); if (on) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2);
     cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
-    if (on) cr.setSourceRGB(...C.BLACK); else cr.setSourceRGBA(1, 1, 1, C.FG_DISABLED);
-    cr.setLineWidth(2); cr.setLineCap(cairo.LineCap.ROUND); cr.setLineJoin(cairo.LineJoin.ROUND);
-    cr.moveTo(cx - 6, cy); cr.lineTo(cx + 6, cy); cr.moveTo(cx + 1, cy - 5); cr.lineTo(cx + 6, cy); cr.lineTo(cx + 1, cy + 5); cr.stroke();
+    if (on) icon(cr, 'arrow-right', cx - 8, cy - 8, 16, C.BLACK); else icon(cr, 'arrow-right', cx - 8, cy - 8, 16, C.WHITE, C.FG_DISABLED);
 }
 function card(x, y, title, row) {
     rr(x + .5, y + .5, PW - 1, H1 - 1, R - .5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve();
@@ -52,7 +50,7 @@ function card(x, y, title, row) {
     cr.setSourceRGB(.3, .55, .95); rr(x + 40, y + 34, 14, 14, 3.5); cr.fill();   // the app's logo: not a state colour
     text('Mira Vale', x + 66, y + 9, {sz: 11, wt: 600});
     text('Tin nhắn · Pixel 8 · 2 min', x + 66, y + 29, {rgb: C.WHITE, a: C.FG_MUTED});
-    fill(C.FILL2, x + PW - 46, y + 12, 32, 32, 16); text('×', x + PW - 34, mid('×', y + 12, 32, {sz: 11}), {sz: 11});
+    fill(C.FILL2, x + PW - 46, y + 12, 32, 32, 16); icon(cr, 'xmark', x + PW - 38, y + 20, 16);
     // body: one line, from the leading column (design/compact)
     text('On my way, 5 min.', x + 14, y + 56 + 8, {a: C.FG_MUTED});
     row(x, y + 56 + 8 + 16 + 12);
@@ -84,8 +82,7 @@ card(xs[1], y1, '2 · Bấm Reply: hàng nút thành ô nhập, Gửi tắt', x 
 card(xs[0], y2, '3 · Đang gõ: Gửi sáng (kem), Enter cũng gửi', x => field(x, y2 + 92, {value: 'Ok, mình đợi ở sảnh nhé'}));
 card(xs[1], y2, '4 · Đã gửi: một dòng xác nhận, card đóng sau 2 s', x => {
     const by = y2 + 92;
-    cr.setSourceRGB(1, 1, 1); cr.setLineWidth(1.5); cr.setLineCap(cairo.LineCap.ROUND); cr.setLineJoin(cairo.LineJoin.ROUND);
-    cr.moveTo(x + 20, by + 16); cr.lineTo(x + 24, by + 20); cr.lineTo(x + 31, by + 11); cr.stroke();
+    icon(cr, 'check', x + 18, by + 8, 16);
     text('Đã gửi: Ok, mình đợi ở sảnh nhé', x + 40, mid('Đã gửi', by, 32, {}), {a: C.FG_SUBTLE, maxW: PW - 60});
 });
 // notes on the right
