@@ -1,7 +1,7 @@
 // Symbolic icons in place (design/icons, 2026-11-11): the tab strip (the chosen tab icon + title
 // on fill-3, the others icon only at fg-muted), the round buttons (32 with a 16 icon; the main
 // action cream with a black icon, the others fill-2 with a white one) and a row of 16. The icons
-// are Adwaita's as stand-ins until Buoy's own set is drawn. gjs -m symbolic.js out.png
+// come from the system theme: Yaru, else Adwaita, as St looks them up. gjs -m symbolic.js out.png
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
@@ -29,9 +29,10 @@ function rr(x, y, w, h, r) {
     cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI); cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI); cr.closePath();
 }
 const fill = (rgba, x, y, w, h, r) => { cr.newPath(); rr(x, y, w, h, r); cr.setSourceRGBA(...rgba); cr.fill(); };
-const DIRS = ['actions', 'status', 'mimetypes', 'devices', 'apps', 'places', 'categories', 'emblems', 'legacy', 'ui'];
+const DIRS = ['actions', 'status', 'mimetypes', 'devices', 'apps', 'places', 'categories', 'emblems', 'legacy', 'ui', 'time'];
+const THEMES = ['/usr/share/icons/Yaru/scalable', '/usr/share/icons/Adwaita/symbolic'];
 function icon(name, x, y, s, rgb = C.WHITE, a = 1) {
-    const path = DIRS.map(d => `/usr/share/icons/Adwaita/symbolic/${d}/${name}.svg`).find(p => GLib.file_test(p, GLib.FileTest.EXISTS));
+    const path = THEMES.flatMap(t => DIRS.map(d => `${t}/${d}/${name}.svg`)).find(p => GLib.file_test(p, GLib.FileTest.EXISTS));
     const m = new cairo.ImageSurface(cairo.Format.ARGB32, s * SC, s * SC);
     const v = new Rsvg.Rectangle(); v.x = 0; v.y = 0; v.width = s * SC; v.height = s * SC;
     Rsvg.Handle.new_from_file(path).render_document(new cairo.Context(m), v);
@@ -83,5 +84,5 @@ panel(16, 174, 376, 64);
     const e = text(r, 0, -100, {sz: 9.35}); text(r, 372 - e.width, ry, {sz: 9.35, a: .5, h: 16});
 });
 text('Icon 16 trong hàng 16, giữa cột leading 40.', 410, 190, {sz: 7.5, a: .75});
-text('Tất cả là icon tạm của Adwaita; bộ riêng của Buoy sẽ thay, cùng cỡ.', 410, 203, {sz: 7.5, a: .75});
+text('Icon của Yaru; máy không có Yaru dùng Adwaita.', 410, 203, {sz: 7.5, a: .75});
 surf.writeToPNG(out);

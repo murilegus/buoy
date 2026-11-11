@@ -118,4 +118,4 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
   7 → 8, ở tâm hình tròn đầu; `.buoy-idle-zones` spacing 7 → 8 và bỏ `padding-left: 2px` của
   `.buoy-idle`; `.buoy-text` đậm 600 và số đều như `.buoy-idle-text`.
 - SPEC §2 cấu trúc pill ("that zone nudges inward" → pill nở ra ở hai đầu), §2a-i/ii (đèn), §2c
-  (pill phụ, nếu mục còn mở thay đổi), bảng kích thước §4.
+  (tối đa 2 pill phụ bên phải, pill phụ 133), bảng kích thước §4.

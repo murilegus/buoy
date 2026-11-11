@@ -78,5 +78,5 @@ làm permission host, vì không có host thì `-p` không đưa tool này cho m
   compact, giữ đến khi trả lời.
 - `lib/modules/media/adapter.js` — bỏ `expanded` (không bao giờ hiện: nhạc không alert, không ask,
   đã có `tab.js`).
-- `lib/modules/agent/adapter.js` — ask thành card; câu hỏi nhiều lựa chọn nếu đề xuất được duyệt.
+- `lib/modules/agent/adapter.js` — ask thành card; câu hỏi nhiều lựa chọn (đã chốt).
 - SPEC §2 (bảng các dạng: alert và ask ở cỡ compact).

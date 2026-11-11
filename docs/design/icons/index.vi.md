@@ -39,8 +39,9 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
 
 ## Icon symbolic
 
-- Buoy vẽ **bộ symbolic riêng** (tab, nút, hàng, leading của các loại không có ảnh), không lấy từ
-  icon theme, để cùng một nét với icon buổi, thời tiết và Bu. **Chốt** (Ethan, 2026-11-11)
+- Icon symbolic (tab, nút, hàng, leading của các loại không có ảnh) lấy từ **icon theme của hệ
+  thống** theo tên: Yaru trên Ubuntu, Adwaita ở bản khác. Tên nào theme đang dùng không có, St tìm
+  tiếp trong Adwaita rồi hicolor (`st-icon-theme.c` `load_themes`). **Chốt** (Ethan, 2026-11-11)
 - **Cỡ 16 ở mọi chỗ**: thanh tab, nút 32, pill, hàng 16 (Claude Code, bị lỡ). **Chốt** (Ethan,
   2026-11-11)
 - **Thanh tab**: cao 32, bo 16. Tab đang chọn: nền `fill-3` cao 24 (cách mép 4), icon 16 và tên
@@ -51,11 +52,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
 
 ![Icon symbolic ở thanh tab, nút tròn và hàng](images/symbolic.vi.png)
 
-*Icon trong hình là icon tạm của Adwaita; bộ riêng của Buoy thay vào, cùng cỡ.*
-
-## Còn mở
-
-- Danh sách icon cần vẽ, lưới (16) và độ dày nét của bộ symbolic.
+*Icon trong hình là của Yaru.*
 
 ## Chỗ trong code
 
