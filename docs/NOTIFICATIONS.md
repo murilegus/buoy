@@ -67,6 +67,14 @@ way the app's pill updates.
 
 ## 2. The pill
 
+> **v0.2 redesign** (2026-11-12, Ethan): a notification arrives as an **alert**, as GNOME 50's
+> banner does (`ui/messageTray.js` `_showNotification`, `_expandBanner`): its card opens on the
+> pill for 5 s with the title and up to two lines of body but **no buttons**; hovering shows the
+> app's buttons and holds it; then it goes back to the pill, which keeps the notification's full
+> title as the app sent it (no per-app rewriting). A critical one opens with its buttons and stays
+> until dealt with; a shared screen still names only the app (§5). Decided in
+> [Design](design/index.md) (alerts and asks); this section describes v0.1, as the code is today.
+
 One pill per app (its id: the desktop id, else the name it sends; not per Shell `Source`,
 which notify-send makes once per process): a new notification from the same app replaces the
 pill's content instead of adding a pill.

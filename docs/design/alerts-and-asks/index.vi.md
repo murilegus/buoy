@@ -12,6 +12,28 @@ báo, trong khi alert nhẹ hơn một tin mới). Số dùng chung ở [Bảng 
   lên một nhịp như trước. **Chốt** (Ethan, 2026-11-10)
 - Nhạc **không alert**, kể cả khi đổi bài. **Chốt** (Ethan, 2026-11-10)
 
+## Thông báo
+
+![Thông báo tới: card không nút 5 s, rê chuột hiện nút, thu về pill; khi chia sẻ màn hình](images/notification.vi.png)
+
+Như banner của GNOME 50: banner hiện ngay tiêu đề và một dòng thân, nút của app chỉ hiện khi rê
+chuột vào (`ui/messageTray.js` `_showNotification`, `_expandBanner`; `ui/messageList.js`
+`NotificationMessage`). Trước đây (v0.1) thông báo chỉ là pill ghi tiêu đề; muốn đọc thân hay bấm
+nút phải rê chuột vào pill.
+
+- Thông báo tới là một **alert**: card của nó tự mở ngay trên pill, **không có hàng nút**: phần đầu
+  56 (ảnh, tên người gửi hay tiêu đề, nguồn và giờ, ×) và tối đa 2 dòng thân; cao 104. **Chốt**
+  (Ethan, 2026-11-12)
+- **Rê chuột** vào card: hiện hàng nút của app (cao 136 / 152 như card) và giữ card lại. **Chốt**
+  (Ethan, 2026-11-12)
+- Sau **5 s** (như mọi alert) card thu về pill. Pill ghi **tiêu đề đầy đủ** như app gửi, không sửa
+  riêng cho app nào (Slack: "New message from …"). Rê chuột vào pill thì card mở lại, có nút.
+  **Chốt** (Ethan, 2026-11-12)
+- **Khẩn cấp** (`Urgency.CRITICAL`): card có nút ngay, ở lại đến khi xử lý, như GNOME mở rộng sẵn
+  banner khẩn cấp. **Chốt** (Ethan, 2026-11-12)
+- Đang **chia sẻ hoặc quay màn hình**: như v0.1 (NOTIFICATIONS §5): card chỉ ghi tên app và
+  "Thông báo mới", không thân, không ảnh. **Chốt**
+
 ## Ask
 
 - Cũng ở cỡ compact, và **đứng đó đến khi có câu trả lời** (hoặc hết `timeoutMs` thì dùng
@@ -80,3 +102,8 @@ làm permission host, vì không có host thì `-p` không đưa tool này cho m
   đã có `tab.js`).
 - `lib/modules/agent/adapter.js` — ask thành card; câu hỏi nhiều lựa chọn (đã chốt).
 - SPEC §2 (bảng các dạng: alert và ask ở cỡ compact).
+- `lib/modules/notification/source.js`, `adapter.js` — thông báo tới thì xin alert (card mở trên
+  pill 5 s) thay cho pill 6 s; card không nút cho tới khi rê chuột; khẩn cấp có nút ngay, không ttl.
+  NOTIFICATIONS §2–§3 viết lại theo đây.
+- `lib/kit/present.js` (card) — hàng nút ẩn khi card mở bằng alert, hiện khi rê chuột; chiều cao đổi
+  104 → 136 / 152 theo nhịp 16.
