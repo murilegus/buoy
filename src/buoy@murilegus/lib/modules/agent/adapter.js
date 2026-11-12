@@ -253,6 +253,75 @@ function taskId(v) {
     return isPlain(v) ? taskId(v.id ?? v.taskId ?? v.task?.id) : null;
 }
 
+// Claude Code Desktop's own plan (2026-11-13, Ethan: "dù có task rồi như claude không hiện
+// task"): the app's MCP tool `update_plan` (server `ccd_turn`), the list the Desktop shows
+// under the message. Its input: `items` [{content, status}] (the whole plan, again on every
+// change of plan), `advance` (the step in progress is done, the next starts), or `done`
+// [n] / `start` n (1-based). The hooks see it as any MCP tool, `mcp__<server>__<tool>`
+// (hooks reference); Buoy keeps the plan as tasks `plan:<n>`.
+const PLAN_TOOL = /^mcp__ccd[a-z_]*__update_plan$/;
+const planId = n => `plan:${n}`;
+const planNumber = t => Number(/^plan:(\d+)$/.exec(t.id)?.[1] ?? 0);
+
+// a plan step's new status, its times kept or stamped
+function planSet(t, status, now) {
+    if (t.status === status)
+        return t;
+    return {
+        ...t, status,
+        startedAt: status === 'in_progress' ? now : t.startedAt,
+        doneAt: status === 'completed' ? now : t.doneAt,
+    };
+}
+
+/**
+ * The session's tasks after Desktop's `update_plan`: a whole plan replaces the plan (a step
+ * whose text and status did not change keeps its times); `advance` completes the step in
+ * progress and starts the next to do; `done` / `start` act on steps by number; numbers out
+ * of range are ignored. Tasks from TaskCreate stay beside it.
+ *
+ * @param {object[]} tasks  the session's
+ * @param {object} i  the tool's input
+ * @param {number} now  ms
+ * @returns {object[]}
+ */
+export function planStep(tasks, i, now) {
+    const own = tasks.filter(t => !planNumber(t));
+    let plan = tasks.filter(t => planNumber(t));
+    if (Array.isArray(i.items)) {
+        const before = new Map(plan.map(t => [t.id, t]));
+        plan = i.items.filter(it => isPlain(it) && str(it.content)).map((it, k) => {
+            const status = TASK_STATUS.has(it.status) ? it.status : 'pending';
+            const was = before.get(planId(k + 1));
+            const subject = str(it.content);
+            const fresh = {id: planId(k + 1), subject, status, startedAt: status === 'in_progress' ? now : 0, doneAt: status === 'completed' ? now : 0};
+            if (!was || was.subject !== subject)
+                return fresh;
+            return {...planSet(was, status, now), subject};
+        });
+        return [...own, ...plan];
+    }
+    const at = n => plan.findIndex(t => planNumber(t) === n);
+    const set = (k, status) => {
+        if (k >= 0)
+            plan[k] = planSet(plan[k], status, now);
+    };
+    if (i.advance === true) {
+        const cur = plan.findIndex(t => t.status === 'in_progress');
+        set(cur, 'completed');
+        set(plan.findIndex((t, k) => k > cur && t.status === 'pending'), 'in_progress');
+    }
+    for (const n of Array.isArray(i.done) ? i.done : [])
+        set(Number.isInteger(n) ? at(n) : -1, 'completed');
+    if (Number.isInteger(i.start)) {
+        const k = at(i.start);
+        if (k >= 0)
+            plan = plan.map((t, j) => j !== k && t.status === 'in_progress' ? planSet(t, 'pending', now) : t);
+        set(k, 'in_progress');
+    }
+    return [...own, ...plan];
+}
+
 /**
  * The session's task list after a tool call, or null when the call is not about tasks.
  *
@@ -263,6 +332,8 @@ function taskId(v) {
  */
 export function taskStep(tasks, ev, now) {
     const i = isPlain(ev?.tool_input) ? ev.tool_input : {};
+    if (typeof ev?.tool_name === 'string' && PLAN_TOOL.test(ev.tool_name))
+        return planStep(tasks, i, now);
     if (ev?.tool_name === 'TaskCreate') {
         const id = taskId(ev.tool_response), subject = str(i.subject);
         if (!id || !subject)
