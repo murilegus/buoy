@@ -90,6 +90,7 @@ plugins:
                 - Tab: design/tabs/index.md
                 - Icon: design/icons/index.md
                 - Bu: design/mascot/index.md
+                - Chuyển động: design/motion/index.md
             - Sản phẩm (tiếng Anh): *product
             - Xây trên Buoy (tiếng Anh): *build
             - Bản phát hành: *releases

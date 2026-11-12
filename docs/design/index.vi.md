@@ -24,6 +24,7 @@ Các thay đổi ở đây chưa có trong code: chúng là các mục redesign 
 | [Tab](tabs/index.vi.md) | thanh tab, từng tab (đang mở) |
 | [Icon](icons/index.vi.md) | icon buổi trong ngày và thời tiết |
 | [Bu](mascot/index.vi.md) | cỡ của Bu trong mỗi dạng |
+| [Chuyển động](motion/index.vi.md) | lò xo kiểu Dynamic Island, từng chuyển, tương tác, khi bị cắt ngang |
 
 ## Quy tắc chung
 

@@ -79,3 +79,29 @@ chứa một dòng ([Alert và ask](alerts-and-asks/index.vi.md)).
 |---|---|---|
 | Alert hiện | 5 s, giữ lại khi rê chuột | Chốt |
 | Compact hiện sau khi rê chuột | 300 ms | Chốt |
+
+## Chuyển động
+
+Lò xo theo `d` (thời gian cảm nhận) và `bounce`: khối lượng 1, độ cứng (2π / d)², giảm chấn
+(1 − bounce) · 4π / d ([Chuyển động](motion/index.vi.md)). Lắng: còn cách đích dưới 0.5 px trên
+quãng 400 px.
+
+| Tên | d | bounce | Vọt quá | 95 % lúc | Lắng lúc | Trạng thái |
+|---|---|---|---|---|---|---|
+| `snap` | 240 ms | 0.15 | 0.6 % | 141 ms | 327 ms | Đề xuất |
+| `size` | 240 ms | 0 | 0 | 182 ms | 344 ms | Đề xuất |
+| `move` | 400 ms | 0.20 | 1.5 % (compact rộng 4 px) | 216 ms | 532 ms | Đề xuất |
+| `open` | 500 ms | 0.25 | 2.8 % (expanded rộng 12, cao 7 px) | 249 ms | 631 ms | Đề xuất |
+| `close` | 360 ms | 0 | 0 | 272 ms | 515 ms | Đề xuất |
+
+| Tên | Thời gian | Đường | Trạng thái |
+|---|---|---|---|
+| `fade-out` | 100 ms | ease-out | Đề xuất |
+| `fade-in` | 200 ms | ease-out | Đề xuất |
+| `state` | 120 ms | ease-out (CSS) | Đề xuất |
+| `idle` | 300 ms | ease-in-out | Đề xuất |
+| Ân hạn khi rời compact | 200 ms | | Chốt |
+| Một bước khi cuộn trên idle | 400 ms | | Chốt |
+| Vạch chọn và thân khi đổi tab | dời 12 px | | Đề xuất |
+| Danh sách tại chỗ | tới từ 24 px | | Đề xuất |
+| Nhấn pill | co 4 px mỗi chiều | | Đề xuất |
