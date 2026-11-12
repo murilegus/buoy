@@ -3,21 +3,29 @@
 
 /* The Transfers tab (progress/tab.js, SPEC §6c): Running and Done rows per app. */
 .buoy-transfers-tab { spacing: 2px; padding: 0 2px 4px; }
-.buoy-transfers-header { padding: 8px 8px 2px; font-size: 12px; color: rgba(255, 255, 255, 0.55); }
+.buoy-transfers-header { padding: 8px 8px 2px; font-size: 12px; color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 .buoy-transfers-row { padding: 6px 8px; border-radius: 12px; }
-.buoy-transfers-row:hover { background-color: rgba(255, 255, 255, 0.08); }
+.buoy-transfers-row:hover { background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
 .buoy-transfers-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-transfers-line { spacing: 12px; }
 .buoy-transfers-text { spacing: 2px; }
-.buoy-transfers-name { color: #fff; }
-.buoy-transfers-detail { color: rgba(255, 255, 255, 0.55); font-size: 12px; }
-.buoy-transfers-bar { color: #fff; margin-top: 4px; }
-.buoy-transfers-pct { color: #fff; font-size: 12px; font-feature-settings: "tnum"; min-width: 36px; text-align: right; }
+.buoy-transfers-name { color: #fff; /* fg */ }
+.buoy-transfers-detail { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; }
+.buoy-transfers-bar { color: #fff; /* fg */ margin-top: 4px; }
+.buoy-transfers-pct { color: #fff; /* fg */ font-size: 12px; font-feature-settings: "tnum"; min-width: 36px; text-align: right; }
 .buoy-transfers-actions-line { spacing: 2px; }
-.buoy-transfers-clear { padding: 4px; border-radius: 99px; color: rgba(255, 255, 255, 0.7); }
-.buoy-transfers-clear:hover { background-color: rgba(255, 255, 255, 0.12); color: #fff; }
+.buoy-transfers-clear { padding: 4px; border-radius: 99px; color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
+.buoy-transfers-clear:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ color: #fff; /* fg */ }
 .buoy-transfers-clear:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
-.buoy-transfers-action { padding: 8px; border-radius: 99px; color: #fff; }
-.buoy-transfers-action:hover { background-color: rgba(255, 255, 255, 0.12); }
-.buoy-transfers-action:active { background-color: rgba(255, 255, 255, 0.2); }
+.buoy-transfers-action { padding: 8px; border-radius: 99px; color: #fff; /* fg */ }
+.buoy-transfers-action:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+.buoy-transfers-action:active { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
 .buoy-transfers-action:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+
+/* ==== High contrast (design/colours "Tương phản cao") ======================================= */
+/* kit/ui/island.js puts buoy-hc on the island while GNOME's high contrast is on: border
+   50 %, border-strong 70 %, fg-subtle 70 %, fg-disabled 50 %; the fills stay. The prefix adds
+   a class, so a rule that must still win over one of these is repeated here after it.
+   tests/palette.test.js checks every use of those four roles has its line here. */
+.buoy-hc .buoy-transfers-header { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-transfers-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

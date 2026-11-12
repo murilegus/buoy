@@ -4,6 +4,7 @@ import GLib from 'gi://GLib';
 import clock, {STYLES, DEFAULT_STYLE, WORDS, keys, iconFor, present, relevance} from
     '../src/buoy@murilegus/lib/modules/clock/idle.js';
 import {DAYPARTS} from '../src/buoy@murilegus/lib/kit/model/daypart.js';
+import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 import {planIdle} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
 function eq(actual, expected, msg) {
@@ -34,7 +35,7 @@ for (const [i, uri] of files.entries()) {
     ok(GLib.file_test(path, GLib.FileTest.EXISTS), `${DAYPARTS[i]}: the file exists (${path})`);
     const svg = new TextDecoder().decode(GLib.file_get_contents(path)[1]);
     ok(svg.startsWith('<svg') && svg.includes('viewBox="0 0 16 16"'), `${DAYPARTS[i]}: an SVG`);
-    for (const reserved of ['#EF9F27', '#E24B4A', '#F0997B', '#5DCAA5'])
+    for (const reserved of STATE_COLOURS.map(c => c.toUpperCase()))
         ok(!svg.toUpperCase().includes(reserved), `${DAYPARTS[i]}: no state colour ${reserved} (INDICATORS)`);
 }
 eq(iconFor('nope'), iconFor('noon'), 'an unknown part: noon\'s icon');

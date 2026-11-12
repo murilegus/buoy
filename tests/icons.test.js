@@ -3,6 +3,7 @@
 // contract (16 grid, flat, nothing loaded at runtime), the palette (none of the status
 // light colours), and that the family shares its parts (one cloud, one horizon…).
 import GLib from 'gi://GLib';
+import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 
 // librsvg is what St.Icon renders with; its typelib may be missing on a bare machine,
 // then only the parse check is skipped (CI installs gir1.2-rsvg-2.0).
@@ -37,7 +38,7 @@ eq(ALL.length, 19, 'nineteen icons');
 
 // Palette A (2026-11-06): sun, peach, teal, ink, cloud, back cloud, snow, fog, horizon.
 const PALETTE = ['#FFD23F', '#FFB889', '#5CD6E6', '#000000', '#CFE6FB', '#7FA8D0', '#BFF2FA', '#9DBBD6', '#7A838D'];
-const STATUS = ['#EF9F27', '#E24B4A', '#F0997B', '#5DCAA5']; // amber, red, orange, green: the lights
+const STATUS = STATE_COLOURS.map(c => c.toUpperCase()); // the lights and the privacy dots
 
 for (const name of ALL) {
     const svg = read(name);

@@ -67,7 +67,7 @@ eq(element({text: 42}), {type: 'text', text: '42'}, 'numeric text');
 // --- keyline ------------------------------------------------------------------
 eq(keyline('#1DB954'), '#1db954', 'brand colour accepted, normalised');
 eq(keyline('#abc'), '#abc', 'short hex');
-for (const bad of ['#EF9F27', '#e24b4a', '#F0997B', '#5DCAA5', '#3A3A3A'])
+for (const bad of ['#FF9F0A', '#ff453a', '#BF5AF2', '#30d158'])
     eq(keyline(bad), null, `reserved state colour ${bad} refused (INDICATORS.md)`);
 for (const bad of [null, undefined, 'red', '#12345', 'rgb(1,2,3)', 42, ''])
     eq(keyline(bad), null, `invalid keyline ${bad}`);

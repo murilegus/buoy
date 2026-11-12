@@ -4,13 +4,21 @@
 /* the Claude Code tab (modules/agent/tab.js, CODING-AGENTS.md §2) */
 .buoy-agents-tab { spacing: 2px; padding: 0 2px 4px; }
 .buoy-agents-row { padding: 6px 8px; border-radius: 12px; }
-.buoy-agents-row:hover { background-color: rgba(255, 255, 255, 0.08); }
+.buoy-agents-row:hover { background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
 .buoy-agents-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-agents-line { spacing: 12px; }
 .buoy-agents-text { spacing: 2px; }
-.buoy-agents-name { color: #fff; }
-.buoy-agents-detail { color: rgba(255, 255, 255, 0.55); font-size: 12px; }
+.buoy-agents-name { color: #fff; /* fg */ }
+.buoy-agents-detail { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; }
 /* on the kit's .buoy-label (a `since`): named with its row so it wins over stylesheet.css */
-.buoy-agents-line .buoy-agents-time { color: rgba(255, 255, 255, 0.55); font-size: 12px; font-feature-settings: "tnum"; }
+.buoy-agents-line .buoy-agents-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; font-feature-settings: "tnum"; }
 .buoy-agents-buttons { spacing: 6px; padding: 0 8px 6px; }
 .buoy-agents-buttons .buoy-action { padding: 4px 12px; }
+
+/* ==== High contrast (design/colours "Tương phản cao") ======================================= */
+/* kit/ui/island.js puts buoy-hc on the island while GNOME's high contrast is on: border
+   50 %, border-strong 70 %, fg-subtle 70 %, fg-disabled 50 %; the fills stay. The prefix adds
+   a class, so a rule that must still win over one of these is repeated here after it.
+   tests/palette.test.js checks every use of those four roles has its line here. */
+.buoy-hc .buoy-agents-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-agents-line .buoy-agents-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

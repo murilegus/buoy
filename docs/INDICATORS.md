@@ -3,9 +3,10 @@
 The reference for every status mark on the pill. One table, stick to it; a new colour or
 position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 
-> **v0.2 redesign:** where the lights sit, how the pill grows around them and their colours are
-> decided in [Design](design/index.md) (Pill, Colours; in Vietnamese first): pill 1 only, an 8 px
-> dot at the centre of each end circle; amber `#FF9F0A`, red `#FF453A`. Their meaning stays here.
+> **v0.2 redesign:** where the lights sit and how the pill grows around them are decided in
+> [Design](design/index.md) (Pill; in Vietnamese first): pill 1 only, an 8 px dot at the centre
+> of each end circle. Their colours are the palette's roles (design/colours,
+> `kit/model/palette.js`, in the code since 2026-11-12). Their meaning stays here.
 
 ## Principles
 
@@ -25,9 +26,9 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 
 | Colour | Token | Meaning | Set by | Cleared by | Shown in |
 |---|---|---|---|---|---|
-| grey `#3a3a3a` | `light-off` | nothing | — | — | idle `none` only |
-| amber `#EF9F27` | `light-missed` | ≥1 activity ended while the island was hidden (fullscreen; away and DND are M4); missed history has entries. Not counted (2026-11-01): `osd`, `copied`, `input` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, minimal, compact |
-| red `#E24B4A` | `light-waiting` | an `ask` activity exists that could not surface (fullscreen, dismissed) and still has no answer | `stack` when an `ask` is queued but not shown | the ask is answered, times out (→ deny), or is ended by the caller | idle, minimal, compact |
+| white 20 % | `light-off` | nothing | — | — | idle `none` only |
+| amber `#FF9F0A` | `light-missed` | ≥1 activity ended while the island was hidden (fullscreen; away and DND are M4); missed history has entries. Not counted (2026-11-01): `osd`, `copied`, `input` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, minimal, compact |
+| red `#FF453A` | `light-waiting` | an `ask` activity exists that could not surface (fullscreen, dismissed) and still has no answer | `stack` when an `ask` is queued but not shown | the ask is answered, times out (→ deny), or is ended by the caller | idle, minimal, compact |
 
 Precedence: red › amber › off. Only one light is drawn.
 
@@ -55,14 +56,16 @@ palette, none of which is a state colour here (2026-11-03).
 
 | Colour | Poses |
 |---|---|
-| `#B4B2A9` | idle |
+| `#C8C6BD` | idle |
 | `#444441` | sleep, stale |
-| amber `#EF9F27` | missed |
-| red `#E24B4A` | ask |
-| `#97C459` | done, party |
-| `#85B7EB` | busy |
-| `#FAC775` | wave |
-| `#AFA9EC` | think |
+| amber `#FF9F0A` | missed |
+| red `#FF453A` | ask |
+| `#B4E33D` | done, party |
+| `#3D9BFF` | busy |
+| `#FFE14D` | wave |
+| `#FF7EB6` | think (pink: purple is the mic) |
+| `#5AD8F5` | compact |
+| `#8A8880` | error (grey, never red: red is ask) |
 | foreground | turn |
 | `#5F5E5A` | error |
 | `#B5D4F4` | compact |
@@ -80,10 +83,12 @@ tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Red (waiting) has no compact
 
 | Colour | Token | Meaning | Source | Shown in |
 |---|---|---|---|---|
-| orange `#F0997B` | `dot-mic` | microphone in use by some app | Gvc source-output streams | idle, minimal, compact |
-| green `#5DCAA5` | `dot-cam` | camera in use, **or** screen is being shared/recorded | `Shell.CameraMonitor`; screencast / screen-share indicator | idle, minimal, compact |
+| purple `#BF5AF2` | `dot-mic` | microphone in use by some app | Gvc source-output streams | idle, minimal, compact |
+| green `#30D158` | `dot-cam` | camera in use | `Shell.CameraMonitor` | idle, minimal, compact |
+| red `#FF453A` | `dot-screen` | screen is being shared or recorded (the waiting red, on the other side) | screencast / screen-share indicator | idle, minimal, compact |
 
-Precedence when both: green › orange (camera/screen is the more sensitive one), one dot.
+Precedence when several: red › green › purple (design/colours "Chấm riêng tư", 2026-11-11), one
+dot. Location has no dot, as in GNOME and on Apple's devices.
 Click → expanded Home with the "in use by …" row (app name, since when, Stop for recordings).
 
 GNOME's own privacy indicator in the system cluster is hidden while the `privacy` module
@@ -101,7 +106,7 @@ The one place an app may put its colour on the pill — Apple's `keylineTint`. I
 | idle plans | may not set a keyline |
 | several pills | each pill carries its own |
 | cover-art colour | if ever added (deferred), it feeds the keyline, never the background |
-| state colours | amber/red/orange/green are reserved for the slots; an adapter must not use them as keyline |
+| state colours | the lights' amber and red, the dots' purple and green are reserved for the slots; an adapter must not use them as keyline (`kit/model/palette.js` STATE_COLOURS) |
 | setting | `keyline = brand \| none`, default `brand`; `none` = plain black pill like iOS |
 | theme accent | never the keyline: an accent border at rest would say nothing and pull the eye all day. The accent is only the keyboard focus ring (`Super+B`, SPEC §2c), as everywhere in GNOME; while ringed, the 1 px border is the accent and the keyline waits (2026-11-04) |
 | motion | not eased (St can't); it switches with the content swap |
@@ -129,5 +134,6 @@ the pill grows by that amount (one short morph). Both slots are inserted by
 
 Colour is never the only channel: the hover compact names the state in words
 ("2 missed", "Waiting: Claude Code wants to run `git push`"), and the Home row for the
-privacy dot names the app. High-contrast theme swaps amber/red/orange/green for the
-GNOME accent and error colours.
+privacy dot names the app. GNOME's high contrast raises the borders and the quieter text
+(design/colours "Tương phản cao"); the lights and dots keep their colours, each 3:1 or more on
+black already.

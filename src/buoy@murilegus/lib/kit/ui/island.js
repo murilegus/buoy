@@ -89,6 +89,12 @@ export class Island {
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
             () => this._queueLayout());
+        // GNOME's high contrast (St.Settings, the a11y key Shell reloads its own theme on,
+        // ui/main.js _loadDefaultStylesheet): the stylesheets raise four roles under buoy-hc
+        // (design/colours "Tương phản cao").
+        this._a11y = St.Settings.get();
+        this._hcId = this._a11y.connect('notify::high-contrast', () => this._syncContrast());
+        this._syncContrast();
         // Hidden by a fullscreen window (Shell's trackFullscreen): close, let go of the
         // keyboard. The stack re-opens a pending ask once it is seen again.
         this.actor.connect('notify::visible', () => {
@@ -703,6 +709,13 @@ export class Island {
         }
     }
 
+    _syncContrast() {
+        if (this._a11y.high_contrast)
+            this.actor.add_style_class_name('buoy-hc');
+        else
+            this.actor.remove_style_class_name('buoy-hc');
+    }
+
     destroy() {
         this._destroyed = true;
         this._syncIdleShown();      // tells the idle plan to stop its clock
@@ -713,6 +726,7 @@ export class Island {
             this._layoutLater = 0;
         }
         Main.panel._rightBox.disconnect(this._rightBoxId);
+        this._a11y.disconnect(this._hcId);
         this._disarmAlert();
         for (const p of this._pills)
             p.activity = null; // no onExpand while tearing down
