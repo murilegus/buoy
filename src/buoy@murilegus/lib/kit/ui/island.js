@@ -13,6 +13,7 @@ import {showKeys} from './present/elements.js';
 import {planCompact, planExpanded, planMissed} from '../model/presentation.js';
 import {ALERT_MS, pillWindow} from '../model/stack.js';
 import {planStrip, pressTarget} from '../model/tabs.js';
+import {Presence} from '../services/presence.js';
 import {actionForKey, step} from '../model/keys.js';
 
 const MAX_PILLS = 3;       // SPEC §2c
@@ -65,8 +66,12 @@ export class Island {
         this._capacity = MAX_PILLS;
         this._compactPill = null;   // the pill whose compact is open (SPEC §2c)
         // a compact the stack opened, held open on its pill (design/alerts-and-asks): an
-        // alert for ALERT_MS, an ask until it is answered — {pill, how: 'alert' | 'ask'}
+        // alert for ALERT_MS of your presence, an ask until it is answered, an alert that
+        // stays (`alertStays`: a critical notification) until its activity no longer asks it
+        // — {pill, how: 'alert' | 'ask' | 'stay', seen}
         this._held = null;
+        this._activeWatch = 0;      // an alert waiting for you to be back (Presence.whenActive)
+        this._presence = new Presence({onAway: away => this._awayChanged(away)});
         this._open = null;          // the expanded pill
         this._openedBy = null;      // 'user' | 'auto' | 'alert'
         this._home = null;          // Home's panel while a click has the island open
@@ -223,7 +228,8 @@ export class Island {
 
         // a held ask stays while its pill still shows that ask; an alert keeps its time
         const h = this._held;
-        if (h && (!this._pills.includes(h.pill) || (h.how === 'ask' && h.pill.activity?.kind !== 'ask')))
+        if (h && (!this._pills.includes(h.pill) || (h.how === 'ask' && h.pill.activity?.kind !== 'ask') ||
+            (h.how === 'stay' && h.pill.activity?.alertStays !== true)))
             this._release();
         const centre = this._pills[0];
         const alerted = this._pills.find(p => p.id === alert && p.id !== null);
@@ -235,7 +241,7 @@ export class Island {
         else if (expand && centre.id === expand && centre.expandable)
             this._openPill(centre, 'auto');
         else if (alerted?.hasCompact)
-            this._hold(alerted, 'alert');
+            this._hold(alerted, alerted.activity?.alertStays === true ? 'stay' : 'alert');
         else
             alerted?.pulse();
         this._syncKeys();           // the held ask's card was rebuilt by an update
@@ -248,13 +254,30 @@ export class Island {
             this._release();
         if (this._compactPill && this._compactPill !== pill)
             this._compactPill._stopCompact();
-        this._held = {pill, how};
+        this._held = {pill, how, seen: false};
         pill.holdCompact(true);
-        if (how === 'alert')
+        this._holdHovered(pill, pill.hoverCounts);
+        if (how === 'alert' || how === 'stay')
             this._armAlert();
         else
             this._disarmAlert();
         this._syncKeys();
+    }
+
+    // Seen (design/alerts-and-asks): its card had its 5 s while you were there, or you
+    // hovered it — once; the source decides what that means (a notification: acknowledged).
+    _seen(pill) {
+        if (this._held?.pill !== pill || this._held.seen)
+            return;
+        this._held.seen = true;
+        pill.activity?.onSeen?.();
+    }
+
+    // Away (the session idle, the screen locked): a card waiting for you closes, unseen —
+    // missed (design/alerts-and-asks); an ask or a critical one stays for when you are back.
+    _awayChanged(away) {
+        if (away && this._held?.how === 'alert' && !this._held.seen)
+            this._release();
     }
 
     _release() {
@@ -264,6 +287,8 @@ export class Island {
         this._held = null;
         this._disarmAlert();
         h.pill.holdCompact(false);
+        h.pill.activity?.onAlertDone?.(h.seen);     // closed: seen, or missed
+        this._holdHovered(h.pill, h.pill.hoverCounts);
         // an answered ask lets the keyboard go, as closing its expanded did
         if (h.how === 'ask' && this._grab && !this._open)
             this._letGo();
@@ -339,8 +364,12 @@ export class Island {
     // The activity under the pointer keeps its ttl (stack.hold, SPEC §2e): one at a time;
     // a pill that changes activity or stops being hovered lets the old one go.
     _holdHovered(pill, hovered) {
-        const id = hovered && this._pills.includes(pill) ? pill.id : null;
-        if (!hovered && this._heldPill !== pill)
+        if (hovered && pill.hoverCounts)
+            this._seen(pill);       // a held card you point at is seen (design/alerts-and-asks)
+        // its card held open holds its ttl too: a card waiting for you does not end under you
+        const keep = hovered || this._held?.pill === pill;
+        const id = keep && this._pills.includes(pill) ? pill.id : null;
+        if (!keep && this._heldPill !== pill)
             return;
         if (id === this._heldId)
             return;
@@ -793,13 +822,28 @@ export class Island {
         return x >= ax && x <= ax + bg.width && y >= ay && y <= ay + bg.height;
     }
 
+    // An alert's 5 s run while you are there; not there, the card waits and its 5 s start at
+    // your next input (Shell's banner, ui/messageTray.js _showNotification).
     _armAlert() {
         this._disarmAlert();
+        if ((this._held?.how === 'alert' || this._held?.how === 'stay') && !this._presence.present) {
+            this._activeWatch = this._presence.whenActive(() => {
+                this._activeWatch = 0;
+                this._armAlert();
+            });
+            return;
+        }
         this._alertId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ALERT_MS, () => this._alertDone());
     }
 
     _alertDone() {
+        if (this._held?.how === 'stay') {      // a critical one: seen after its 5 s, it stays
+            this._alertId = 0;
+            this._seen(this._held.pill);
+            return GLib.SOURCE_REMOVE;
+        }
         if (this._held?.how === 'alert') {
+            this._seen(this._held.pill);       // its 5 s while you were there
             if (this._held.pill.hovered) {     // being read: it stays while the pointer does
                 this._alertId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ALERT_HOVER, () => this._alertDone());
                 return GLib.SOURCE_REMOVE;
@@ -823,6 +867,8 @@ export class Island {
             GLib.source_remove(this._alertId);
             this._alertId = 0;
         }
+        this._presence?.cancel(this._activeWatch);
+        this._activeWatch = 0;
     }
 
     _syncContrast() {
@@ -849,6 +895,8 @@ export class Island {
         this._a11y.disconnect(this._hcId);
         this._held = null;
         this._disarmAlert();
+        this._presence.destroy();
+        this._presence = null;
         for (const p of this._pills)
             p.activity = null; // no onExpand while tearing down
         this._close();

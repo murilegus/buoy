@@ -44,9 +44,10 @@ eq([actionIndex('a0'), actionIndex('a12'), actionIndex(DISMISS), actionIndex('ax
 {
     const p = build({});
     eq([p.text, p.leading, p.trailing], ['Lan', 'org.telegram.desktop', null], 'title, the app\'s icon, no count');
-    eq([p.ttl, p.needsYou, p.pressFirst, p.minimalAction], [TTL, false, true, false],
-        '6 s, running tier, click activates, no button in minimal');
-    eq(TTL, 6000, 'TTL is 6 s');
+    eq([p.ttl, p.needsYou, p.pressFirst, p.minimalAction, p.alertStays], [TTL, false, true, false, false],
+        'its card 5 s then the pill 6 s, running tier, click activates, no button in minimal, the card does not stay');
+    eq(TTL, 11000, 'TTL: the card\'s 5 s and the pill\'s 6 s (design/alerts-and-asks)');
+    eq(p.compact.card.actionsOnHover, true, 'its card\'s buttons only under the pointer, as GNOME 50\'s banner');
     const m = planMinimal(validate({id: 'x', kind: 'notification', ...p}), {light: 'off'});
     eq(m.text, 'Lan', 'minimal plan: the title');
     eq(m.action, null, 'minimal plan: no button');
@@ -60,10 +61,21 @@ eq(build({count: 3}).trailing, {text: '3'}, 'from 2 on: the count');
 eq([build({count: 0}).trailing, build({count: 'x'}).trailing], [null, null], 'a bad count: none');
 eq(build({appIcon: null}).leading, 'preferences-system-notifications-symbolic', 'no app icon: the generic one');
 
+// --- seen and done: the kit's callbacks reach the source's (design/alerts-and-asks) -------------
+{
+    let seen = 0, done = 0;
+    const p = build({seen: () => seen++, alertDone: () => done++});
+    p.onSeen();
+    p.onAlertDone(true);
+    eq([seen, done], [1, 1], 'onSeen and onAlertDone are the source\'s seen and alertDone');
+    eq([build({}).onSeen, build({}).onAlertDone], [null, null], 'none given: none');
+}
+
 // --- critical needs you (§2) --------------------------------------------------------------
 {
     const p = build({critical: true});
-    eq([p.ttl, p.needsYou], [0, true], 'critical: no ttl, needs you');
+    eq([p.ttl, p.needsYou, p.alertStays, p.compact.card.actionsOnHover], [0, true, true, false],
+        'critical: no ttl, needs you, its card stays with its buttons at once');
     eq(tierOf(validate({id: 'x', kind: 'notification', ...p})), 1, 'critical: tier 1');
 }
 

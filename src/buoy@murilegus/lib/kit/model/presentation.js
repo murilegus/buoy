@@ -311,6 +311,9 @@ function planCard(c, p, light) {
             header, title, body,
             picture: el && el.type !== 'text' ? el : null,
             close: str(c.close),
+            // its buttons only under the pointer (a notification's alert, as GNOME 50's
+            // banner: design/alerts-and-asks "Thông báo")
+            actionsOnHover: c.actionsOnHover === true,
         },
         leading: null, text: null, subtitle: null, trailing: null,
         actions: acts,

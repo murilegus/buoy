@@ -18,10 +18,15 @@
  *   actions      the notification's action labels, in its order
  *   activate()   the banner's click; onAction(id) a button: `a<i>` an action, `dismiss` ×
  *   expire()     the pill's 6 s ran out (its `onExpire`): what the banner's hide does
+ *   seen()       its card had its 5 s while you were there, or you hovered it (onSeen)
+ *   alertDone()  its card closed, seen or missed (onAlertDone)
  */
 
-/** How long a notification's pill stays (§2), held while hovered (the kit's hold). */
-export const TTL = 6000;
+/**
+ * How long a notification's pill stays (§2): its card's 5 s as an alert (the kit's ALERT_MS,
+ * held while it waits for you or is hovered), then the pill 6 s (design/alerts-and-asks).
+ */
+export const TTL = 5000 + 6000;
 /** Of the notification's own actions, the card shows the first three (§3); × is its header's. */
 export const MAX_OWN_ACTIONS = 3;
 export const DISMISS = 'dismiss';
@@ -210,6 +215,9 @@ export default {
                 card: {
                     icon: appIcon, app, at: Number.isFinite(ev.at) ? ev.at : null,
                     picture, title: text.title, body: text.body, close: DISMISS,
+                    // as GNOME 50's banner: the buttons under the pointer; a critical one has
+                    // them at once (design/alerts-and-asks "Thông báo")
+                    actionsOnHover: !critical,
                 },
             },
             expanded: null,
@@ -217,10 +225,13 @@ export default {
             minimalAction: false,
             ttl: critical ? 0 : TTL,
             needsYou: critical,
+            alertStays: critical,     // its card stays open, with its buttons, till dealt with
             pressFirst: true,
             onPress: ev.activate ?? null,
             onAction: ev.onAction ?? null,
             onExpire: ev.expire ?? null,
+            onSeen: ev.seen ?? null,
+            onAlertDone: ev.alertDone ?? null,
             attributes: {title, body, app},
         };
     },

@@ -48,6 +48,9 @@ export class NotificationSource extends Source {
         // app id → {key, list (alive, oldest first), seen, shown, id}
         this._pills = new Map();
         this._serial = 0;
+        // notifications whose card is up as an alert, not yet seen nor missed: not counted
+        // unseen (the amber light) while you may still read them (design/alerts-and-asks)
+        this._pending = new Set();
         this._queuedAt = new WeakMap();
         this._sharing = new SharingWatch(() => this._redrawAll());
         this._injections = new InjectionManager();
@@ -104,7 +107,7 @@ export class NotificationSource extends Source {
         Promise.resolve().then(() => {
             this._countPending = false;
             if (this._stack)
-                this._stack.flagMissed(KIND, unseenCount(Main.messageTray) > 0);
+                this._stack.flagMissed(KIND, unseenCount(Main.messageTray, this._pending) > 0);
         });
     }
 
@@ -137,10 +140,10 @@ export class NotificationSource extends Source {
 
     _take(n, held = false) {
         this._queuedAt.delete(n);
-        // what the banner does when it shows (`_updateShowingNotification`); one that
-        // waited while nobody could see it stays unseen (§1)
-        if (!held)
-            n.acknowledged = true;
+        // the banner's sound (`_updateShowingNotification`); it is seen only when its card
+        // had 5 s while you were there, or you hovered or clicked it (the kit's onSeen,
+        // design/alerts-and-asks, 2026-11-12) — not when it shows, as v0.1 had it. One that
+        // waited while nobody could see it (full screen, locked) gets no card: missed (§1)
         n.playSound();
         if (!n.source)
             return;
@@ -165,7 +168,29 @@ export class NotificationSource extends Source {
             n.connectObject('destroy', () => this._gone(app, n), this);
         }
         pill.list = [...pill.list.filter(x => x !== n), n];
-        this._show(app, {anew: fresh});
+        // its card cuts the app's previous one short: that one is missed
+        if (pill.alerting && pill.alerting !== n)
+            this._pending.delete(pill.alerting);
+        pill.alerting = held ? null : n;
+        if (!held)
+            this._pending.add(n);
+        this._show(app, {anew: fresh, alert: !held});
+        this._countLater();
+    }
+
+    // The kit's onSeen: its card had its 5 s while you were there, or you hovered it.
+    _seenOne(n) {
+        if (this._pending.delete(n) || n.source)
+            n.acknowledged = true;
+        this._countLater();
+    }
+
+    // The card closed: seen (onSeen came first) or missed, as GNOME's list counts it.
+    _alertDone(pill, n) {
+        this._pending.delete(n);
+        if (pill.alerting === n)
+            pill.alerting = null;
+        this._countLater();
     }
 
     _gone(app, n) {
@@ -200,7 +225,7 @@ export class NotificationSource extends Source {
             this._sharing.stop();
     }
 
-    _show(app, {anew}) {
+    _show(app, {anew, alert = false}) {
         const pill = this._pills.get(app);
         const n = pill.list.at(-1);
         const src = n.source;
@@ -224,6 +249,8 @@ export class NotificationSource extends Source {
             activate: () => this._activate(pill, n),
             onAction: id => this._act(pill, n, id),
             expire: () => this._expire(pill),
+            seen: () => this._seenOne(n),
+            alertDone: () => this._alertDone(pill, n),
         });
         pill.shown = n;
         const live = this._live(pill);
@@ -233,15 +260,17 @@ export class NotificationSource extends Source {
             pill.id = null;
             return;
         }
-        if (live && !anew && this._stack.update(pill.id, a))
+        if (live && !anew && this._stack.update(pill.id, a, {alert}))
             return;
-        pill.id = this._stack.surface(a);
+        pill.id = this._stack.surface({...a, alert});
     }
 
     // The banner's click (ui/messageList.js NotificationMessage vfunc_clicked).
     _activate(pill, n) {
-        if (pill.list.includes(n))
+        if (pill.list.includes(n)) {
+            this._seenOne(n);         // clicked: seen (design/alerts-and-asks)
             n.activate();
+        }
         return true;
     }
 
@@ -275,12 +304,15 @@ function monotonicMs() {
 
 /**
  * @param {MessageTray.MessageTray} tray
+ * @param {Set<MessageTray.Notification>} [showing]  cards up now, not yet seen nor missed
  * @returns {number} notifications nobody has seen, as the date menu counts them (ui/dateMenu.js
- *   MessagesIndicator `_updateCount`): the queue's are about to show
+ *   MessagesIndicator `_updateCount`): the queue's are about to show, the cards up may
+ *   still be read
  */
-function unseenCount(tray) {
+function unseenCount(tray, showing = new Set()) {
     const unseen = tray.getSources().reduce((sum, src) => sum + src.unseenCount, 0);
-    return Math.max(0, unseen - tray.queueCount);
+    const up = [...showing].filter(n => !n.acknowledged && n.source).length;
+    return Math.max(0, unseen - tray.queueCount - up);
 }
 
 /** @returns {boolean} GNOME's list has notifications (the tab's bell has a dot) */

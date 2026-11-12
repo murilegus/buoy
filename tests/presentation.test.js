@@ -254,8 +254,12 @@ eq(planCompact({compact: {card: {icon: 'x'}}}), null, 'a card with no name, titl
     eq(note.actions[0].key, undefined, 'a notification card: no keys');
 }
 eq(planCompact({compact: {card: {app: 'Mail', at: 'soon', picture: {text: 'no'}}}}).card,
-    {header: {icon: null, text: 'Mail', at: null}, title: null, body: null, picture: null, close: null},
-    'bad time, a text picture, no close: dropped');
+    {header: {icon: null, text: 'Mail', at: null}, title: null, body: null, picture: null, close: null, actionsOnHover: false},
+    'bad time, a text picture, no close: dropped; buttons always shown');
+eq(planCompact({compact: {card: {title: 'T', actionsOnHover: true}}}).card.actionsOnHover, true,
+    'a card can show its buttons only under the pointer (a notification\'s alert)');
+eq(planCompact({compact: {card: {title: 'T', actionsOnHover: 'yes'}}}).card.actionsOnHover, false,
+    'actionsOnHover: only true counts');
 eq(planCompact({compact: {card: {title: 'T'}}, actions: 'x'}).actions, [], 'card without actions: no row');
 {
     const acts = [{id: 'prev', icon: 'p-symbolic'}, {id: 'pp', icon: 'q-symbolic'},
