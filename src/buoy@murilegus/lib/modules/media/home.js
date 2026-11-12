@@ -4,7 +4,7 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {progressBar, tick} from '../../kit/ui/present/parts.js';
-import {iconProps} from '../../kit/ui/present/elements.js';
+import {fallbackIcon, iconProps} from '../../kit/ui/present/elements.js';
 import {livePosition} from '../../kit/model/presentation.js';
 
 const ART = 56;
@@ -81,12 +81,12 @@ export class MediaHome {
         // the cover; without one (or until it loads) a grey tile with the note, not a
         // 56 px glyph
         const tile = new St.Bin({style_class: 'buoy-home-media-tile', width: ART, height: ART});
-        tile.set_child(new St.Icon({icon_name: 'audio-x-generic-symbolic', icon_size: 24}));
+        tile.set_child(new St.Icon({...iconProps('audio-x-generic-symbolic'), icon_size: 24}));
         if (at.art) {
             tile.set_child(new St.Icon({
                 style_class: 'buoy-home-media-art', icon_size: ART,
                 gicon: new Gio.FileIcon({file: Gio.File.new_for_uri(at.art)}),
-                fallback_icon_name: 'audio-x-generic-symbolic',
+                fallback_gicon: fallbackIcon('audio-x-generic-symbolic'),
             }));
         }
         row.add_child(tile);

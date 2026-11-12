@@ -166,7 +166,7 @@ export class MediaTab {
             y_align: Clutter.ActorAlign.START,
         });
         this._tile.add_child(new St.Icon({
-            icon_name: 'audio-x-generic-symbolic', icon_size: 24,
+            ...iconProps('audio-x-generic-symbolic'), icon_size: 24,
             x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER, x_expand: true, y_expand: true,
         }));
         this._cover = null;
@@ -238,7 +238,7 @@ export class MediaTab {
             return null;
         const open = new St.Button({
             style_class: 'buoy-media-button buoy-media-open', can_focus: true,
-            child: new St.Icon({icon_name: 'external-link-symbolic', fallback_icon_name: 'window-new-symbolic', icon_size: 14}),
+            child: new St.Icon({...iconProps('external-link-symbolic'), icon_size: 14}),
             accessible_name: `Open ${app}`, y_align: Clutter.ActorAlign.START,
         });
         open.connect('clicked', () => {

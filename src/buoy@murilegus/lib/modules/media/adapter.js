@@ -19,8 +19,9 @@
 import {SETTLE_MS} from '../../kit/model/activity.js';
 
 export const ICON = 'audio-x-generic-symbolic';
-// Gravity UI's, filled (design/icons "Icon symbolic"): kit/ui/present/elements.js iconProps
-export const PAUSED_ICON = 'pause-fill';
+// by the theme's names, drawn by Gravity UI filled (design/icons "Icon symbolic"; Buoy's
+// own files first, kit/ui/present/elements.js iconProps)
+export const PAUSED_ICON = 'media-playback-pause-symbolic';
 /** The minimal pill's trailing while paused: the equaliser stopped low (kit glyph). */
 export const PAUSED_EQ = 'eq-paused';
 
@@ -34,9 +35,9 @@ const num = v => typeof v === 'number' && Number.isFinite(v) ? v : null;
 export function transport(ev) {
     const playing = ev.status === 'Playing';
     return [
-        ev.canPrev ? {id: 'prev', icon: 'backward-step-fill'} : null,
-        {id: 'playpause', icon: playing ? PAUSED_ICON : 'play-fill'},
-        ev.canNext ? {id: 'next', icon: 'forward-step-fill'} : null,
+        ev.canPrev ? {id: 'prev', icon: 'media-skip-backward-symbolic'} : null,
+        {id: 'playpause', icon: playing ? PAUSED_ICON : 'media-playback-start-symbolic'},
+        ev.canNext ? {id: 'next', icon: 'media-skip-forward-symbolic'} : null,
     ].filter(Boolean);
 }
 

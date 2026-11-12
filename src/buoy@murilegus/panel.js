@@ -11,6 +11,7 @@ import {AppMenu} from 'resource:///org/gnome/shell/ui/appMenu.js';
 import {clusterFill, fallbackIcons, leftCluster} from './lib/kit/model/cluster.js';
 import {contrastFor, spanLuminance} from './lib/kit/model/contrast.js';
 import {gnomeDefaults} from './lib/kit/model/settings.js';
+import {iconProps} from './lib/kit/ui/present/elements.js';
 import {TrayGlyphs} from './glyphs.js';
 import {reachUnderBar, wallpaperUnderBar} from './reach.js';
 import {Wallpaper} from './wallpaper.js';
@@ -434,7 +435,7 @@ class LeftCluster {
         this._text.clutter_text.ellipsize = Pango.EllipsizeMode.END;
         this._extra = new St.BoxLayout({style_class: 'buoy-app-extra', y_align: Clutter.ActorAlign.CENTER});
         this._extra.add_child(new St.Label({text: '·', y_align: Clutter.ActorAlign.CENTER}));
-        this._extra.add_child(new St.Icon({icon_name: 'view-grid-symbolic', style_class: 'buoy-app-grid'}));
+        this._extra.add_child(new St.Icon({...iconProps('view-grid-symbolic'), style_class: 'buoy-app-grid'}));
         this._extraText = new St.Label({y_align: Clutter.ActorAlign.CENTER});
         this._extra.add_child(this._extraText);
         row.add_child(this._icon);
@@ -490,7 +491,7 @@ class LeftCluster {
             this._shownApp = iconKey;
             this._icon.child = plan.icon === 'app'
                 ? appIcon(app)
-                : new St.Icon({icon_name: 'view-grid-symbolic', style_class: 'buoy-app-grid'});
+                : new St.Icon({...iconProps('view-grid-symbolic'), style_class: 'buoy-app-grid'});
         }
         this._text.text = plan.text;
         this._extra.visible = plan.extra !== null;

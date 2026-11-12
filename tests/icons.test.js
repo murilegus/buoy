@@ -163,19 +163,65 @@ if (Rsvg) {
 // (design/colours "Một màu một nghĩa"; Gravity's bell-dot came with #f33, 2026-11-12)
 {
     const sym = GLib.build_filenamev([dir, '..', 'symbolic']);
+    const render = GLib.build_filenamev([GLib.get_current_dir(), '..', 'docs', 'design', 'icons', 'render']);
+    const text = path => new TextDecoder().decode(GLib.file_get_contents(path)[1]);
     const en = Gio.File.new_for_path(sym).enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
-    let n = 0;
+    const shipped = [];
     for (let info; (info = en.next_file(null));) {
         const name = info.get_name();
         if (!name.endsWith('.svg'))
             continue;
         ok(name.endsWith('-symbolic.svg'), `${name}: named -symbolic.svg, so St recolours it`);
-        const svg = new TextDecoder().decode(GLib.file_get_contents(GLib.build_filenamev([sym, name]))[1]);
+        const svg = text(GLib.build_filenamev([sym, name]));
         for (const m of svg.matchAll(/(?:fill|stroke)="([^"]+)"/g))
             ok(['currentColor', 'none', '#fff', '#ffffff'].includes(m[1]), `${name}: ${m[0]} is a colour of its own`);
-        n++;
+        // one solid colour: St sets the opacity of the whole icon from the text colour; a
+        // part dimmed inside the file (Yaru's .5) is not Buoy's way, and St's stylesheet
+        // forces every path's fill (st_icon_info_load_symbolic_svg), which breaks a mask
+        for (const tag of ['opacity', '<mask', '<style', '<image', '<text', 'xlink:href'])
+            ok(!svg.includes(tag), `${name}: no ${tag}`);
+        if (Rsvg)
+            ok(Rsvg.Handle.new_from_file(GLib.build_filenamev([sym, name])), `${name}: librsvg parses it`);
+        shipped.push(name.replace(/-symbolic\.svg$/, ''));
     }
-    ok(n >= 30, `the symbolic icons: ${n}`);
+    ok(GLib.file_test(GLib.build_filenamev([sym, 'LICENSE.gravity-ui']), GLib.FileTest.EXISTS), 'Gravity UI\'s licence ships');
+
+    // Each file is the table's (design/icons, render/symbolic-map.js), named as the theme names
+    // the icon, its drawing as scripts/symbolic-icons.js writes it: run that after a change
+    const {SYMBOLIC, sourceFile} = await import('../docs/design/icons/render/symbolic-map.js');
+    eq(JSON.stringify([...shipped].sort()), JSON.stringify(Object.keys(SYMBOLIC).sort()), 'icons/symbolic holds the table, no more');
+    for (const [name, src] of Object.entries(SYMBOLIC)) {
+        const want = `${text(GLib.build_filenamev([render, sourceFile(src)])).trim()
+            .replace(/fill="#[0-9a-fA-F]{3,6}"/g, 'fill="currentColor"')}\n`;
+        eq(text(GLib.build_filenamev([sym, `${name}-symbolic.svg`])) === want, true,
+            `${name}-symbolic.svg is ${src} as scripts/symbolic-icons.js writes it`);
+    }
+
+    // Every icon name the code asks for has a file of Buoy's: none falls back to the theme
+    // unnoticed (design/icons "Icon tự vẽ", 2026-11-12). Not prefs.js (an Adwaita app) and
+    // not the system cluster (GNOME's own, CLAUDE.md "Don't restyle").
+    const SKIP = new Set(['prefs.js', 'cluster.js']);
+    const code = [];
+    const walk = path => {
+        const d = Gio.File.new_for_path(path);
+        const it = d.enumerate_children('standard::name,standard::type', Gio.FileQueryInfoFlags.NONE, null);
+        for (let info; (info = it.next_file(null));) {
+            const child = GLib.build_filenamev([path, info.get_name()]);
+            if (info.get_file_type() === Gio.FileType.DIRECTORY)
+                walk(child);
+            else if (info.get_name().endsWith('.js') && !SKIP.has(info.get_name()))
+                code.push(child);
+        }
+    };
+    walk(GLib.build_filenamev([dir, '..', '..']));
+    const asked = new Set();
+    for (const path of code) {
+        for (const m of text(path).matchAll(/['`"]([a-z0-9-]+)-symbolic['`"]/g))
+            asked.add(m[1]);
+    }
+    ok(asked.size >= 40, `icon names found in the code: ${asked.size}`);
+    for (const name of asked)
+        ok(name in SYMBOLIC, `the code asks for ${name}-symbolic: Buoy has no file for it`);
 }
 
 print('icons: ok');

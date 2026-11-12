@@ -474,9 +474,9 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(taskStep(tasks, update('9', 'completed'), 12), null, 'an unknown task: nothing changes');
     eq(taskStep(tasks, update('3', 'deleted'), 12).map(t => t.id), ['1', '2'], 'deleted: gone');
     eq(taskRows(tasks), [
-        {icon: 'check', text: 'Edit shapes.js', dim: false},
-        {icon: 'play-fill', text: 'Run pnpm test', dim: false},
-        {icon: 'circle', text: 'Update the docs', dim: true},
+        {icon: 'object-select-symbolic', text: 'Edit shapes.js', dim: false},
+        {icon: 'media-playback-start-symbolic', text: 'Run pnpm test', dim: false},
+        {icon: 'task-todo-symbolic', text: 'Update the docs', dim: true},
     ], 'three tasks: all, ✓ ▶ ○, the one to do dimmed (Gravity UI icons)');
     eq(taskProgress(tasks), '2 / 3', 'progress: done and being done, of all');
     // more than three: the one just done, the one being done, the next
@@ -493,7 +493,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     // through step(): rows and progress on the compact; none while the screen is shared
     const rec = last([[ev('UserPromptSubmit')], [create('1', 'Edit shapes.js')], [create('2', 'Run pnpm test')], [update('1', 'completed')]]).rec;
     const a = agent(rec);
-    eq([a.compact.text, a.compact.subtitle, a.compact.rows.map(r => r.icon)], ['Claude Code', 'buoy · 1 / 2', ['check', 'circle']],
+    eq([a.compact.text, a.compact.subtitle, a.compact.rows.map(r => r.icon)], ['Claude Code', 'buoy · 1 / 2', ['object-select-symbolic', 'task-todo-symbolic']],
         'the compact: "Claude Code" over project · progress, the tasks');
     eq(agent({...rec, sessionTitle: 'Weather icons'}).compact.text, 'Weather icons', 'a named session: its name on top');
     // the pill with a task list (design/pill D): the task being done, the list's progress
@@ -528,7 +528,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
 {
     const run2 = last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Bash', tool_input: {command: 'pnpm test'}})]]).rec;
     eq(agent(run2).actions, [], 'no ■ without hooks that can stop (an older install)');
-    eq(agent({...run2, canStop: true}).actions, [{id: STOP, icon: 'stop-fill'}], 'a turn running, hooks that stop: ■ (Gravity stop-fill)');
+    eq(agent({...run2, canStop: true}).actions, [{id: STOP, icon: 'media-playback-stop-symbolic'}], 'a turn running, hooks that stop: ■ (Gravity stop-fill)');
     eq([agent({...run2, canStop: true}).compact.transport, agent({...run2, canStop: true}).minimalAction], [true, false],
         'in the compact, never in the pill');
     const asked = stopping({...run2, canStop: true});

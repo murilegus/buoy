@@ -29,7 +29,9 @@ src/buoy@murilegus/
 ├── icons/
 │   ├── color/              the daypart and weather colour SVGs (one family, scripts/icons.js is the
 │   │                       source and draws docs/icons.png; 2026-11-06)
-│   └── symbolic/           `<name>-symbolic.svg`, tinted by St with the text colour (the lock keys)
+│   └── symbolic/           `<theme name>-symbolic.svg`: Gravity UI's drawings and Buoy's own, named
+│                           as GNOME's theme names the icon, tinted by St with the text colour;
+│                           written by scripts/symbolic-icons.js (design/icons, 2026-11-12)
 └── lib/
     ├── kit/                FRAMEWORK — stable API; the only thing modules import. Three layers
     │   │                   (2026-11-12, FEATURES M4 "Restructure"); `eslint.config.js` checks who

@@ -173,6 +173,16 @@ eq(stripOrder({tabs: [{id: HOME}], slot: null, more: []}), [HOME], 'no slot: Hom
     eq('badge' in planStrip([{...notes, badge: () => 'yes'}], []).tabs[1], false, 'only a true badge');
     eq('badge' in planStrip([{...notes, badge: true}], []).tabs[1], false, 'not a function: none');
     eq('badge' in planStrip([notes], []).tabs[0], false, 'Home never');
+    // a badgeIcon takes the icon's place instead of a dot (the bell-dot, design/icons)
+    const bell = {...notes, icon: 'preferences-system-notifications-symbolic', badgeIcon: 'notifications-unread-symbolic'};
+    has = true;
+    eq(planStrip([bell], []).tabs[1].icon, 'notifications-unread-symbolic', 'badge() true with a badgeIcon: that icon');
+    eq('badge' in planStrip([bell], []).tabs[1], false, 'badge() true with a badgeIcon: no dot');
+    has = false;
+    eq(planStrip([bell], []).tabs[1].icon, 'preferences-system-notifications-symbolic', 'badge() false: the module icon');
+    eq(planStrip([{...pad, badgeIcon: 'notifications-unread-symbolic'}], [], {slot: 'pad'}).slot.icon,
+        'notifications-unread-symbolic', 'a standalone tab takes its badgeIcon too');
+    eq(planStrip([{...bell, badge: () => true, badgeIcon: '  '}], []).tabs[1].badge, true, 'a blank badgeIcon: the dot');
 }
 
 // --- noTab: a module whose activities open on their own (the greeting, 2026-11-08) ----------

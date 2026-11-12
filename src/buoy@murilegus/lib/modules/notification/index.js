@@ -9,9 +9,10 @@ export default {
     id: 'notification',
     title: 'Notifications',
     icon: 'preferences-system-notifications-symbolic',
-    // the bell carries a dot while GNOME's list has some (2026-11-08); read when the
-    // strip is planned, so only while the island is open
+    // the bell with a dot while GNOME's list has some (2026-11-08, design/icons); read when
+    // the strip is planned, so only while the island is open
     badge: hasNotifications,
+    badgeIcon: 'notifications-unread-symbolic',
     kinds: ['notification'],
     source: NotificationSource,
     adapter,

@@ -52,6 +52,12 @@ eq(osd('audio-volume-overamplified-symbolic', 1.3, {maxLevel: 1.5}).trailing, {b
     'over 100 %: the bar is full, the number says 130');
 eq(osd('audio-volume-muted-symbolic', 0.5).trailing, {bar: 0.5, label: '50%', off: true}, 'muted: the level stays, dimmed');
 eq(osd('microphone-sensitivity-muted-symbolic', 0).trailing, {bar: 0, label: '0%', off: true}, 'mic muted at 0');
+// at 0 the icon is the muted one, as Shell's sliders draw it (gsd sends -low), the bar not dimmed
+eq(osd('audio-volume-low-symbolic', 0).leading, {icon: 'audio-volume-muted-symbolic'}, 'volume 0: the muted icon');
+eq(osd('audio-volume-low-symbolic', 0).trailing, {bar: 0, label: '0%'}, 'volume 0: not muted, the bar not dimmed');
+eq(osd('microphone-sensitivity-low-symbolic', 0).leading, {icon: 'microphone-sensitivity-muted-symbolic'}, 'mic 0: the muted icon');
+eq(osd('audio-volume-low-symbolic', 0.01).leading, {icon: 'audio-volume-low-symbolic'}, 'volume above 0: gsd\'s icon');
+eq(osd('display-brightness-symbolic', 0).leading, {icon: 'display-brightness-symbolic'}, 'brightness 0: its own icon');
 eq(osd('display-brightness-symbolic', 0).trailing, {bar: 0, label: '0%'}, 'brightness 0 is a level, not a toggle');
 
 // --- click → its Settings panel, through the source -------------------------------------
@@ -60,15 +66,22 @@ eq(osd('display-brightness-symbolic', 0).trailing, {bar: 0, label: '0%'}, 'brigh
     const p = adapter.osd({id: 'hud', iconName: 'audio-volume-high-symbolic', level: 0.8, open: id => opened.push(id)}, null);
     p.onPress();
     eq(opened, ['gnome-sound-panel.desktop'], 'click on volume: Sound settings');
-    eq(adapter.osd({id: 'hud', iconName: 'airplane-mode-symbolic', label: 'Airplane Mode Enabled', open: () => {}}, null).onPress ?? null,
+    eq(adapter.osd({id: 'hud', iconName: 'screen-privacy-symbolic', label: 'Privacy Screen Enabled', open: () => {}}, null).onPress ?? null,
         null, 'no panel: no onPress (Home)');
     eq(adapter.osd({id: 'hud', iconName: 'audio-volume-high-symbolic', level: 0.8}, null).onPress ?? null, null,
         'no opener from the source: no onPress');
 }
 
 // --- toggles: icon + a short word ---------------------------------------------------------
-eq(osd('airplane-mode-symbolic', null, {label: 'Airplane Mode Enabled'}).text, 'Airplane Mode Enabled', 'gsd\'s own label');
+// Bluetooth and airplane mode say on / off as the locks do, over gsd's own label (2026-11-12)
+eq(osd('airplane-mode-symbolic', null, {label: 'Airplane Mode Enabled'}).text, 'Airplane Mode on', 'airplane on: our words');
+eq(osd('airplane-mode-disabled-symbolic', null, {label: 'Airplane Mode Disabled'}).text, 'Airplane Mode off', 'airplane off');
+eq(osd('airplane-mode-symbolic', null, {label: 'Hardware Airplane Mode'}).text, 'Airplane Mode on', 'the hardware switch: on too');
+eq(osd('bluetooth-active-symbolic', -1, {label: 'Bluetooth Enabled'}).text, 'Bluetooth on', 'bluetooth on');
+eq(osd('bluetooth-disabled-symbolic', -1, {label: 'Bluetooth Disabled'}).text, 'Bluetooth off', 'bluetooth off');
+eq(osd('bluetooth-active-symbolic').text, 'Bluetooth on', 'no label from gsd: still ours');
 eq(osd('bluetooth-disabled-symbolic', -1, {label: 'Bluetooth Disabled'}).trailing ?? null, null, 'level −1 (gsd: none) → no bar');
+eq(osd('bluetooth-disabled-symbolic', -1).leading, {icon: 'bluetooth-disabled-symbolic'}, 'the theme name, for Buoy\'s own file');
 eq(osd('input-touchpad-symbolic').text, 'Touchpad on', 'touchpad on: our word');
 eq(osd('touchpad-disabled-symbolic').text, 'Touchpad off', 'touchpad off');
 eq(osd('rotation-locked-symbolic').text, 'Rotation locked', 'rotation locked');
@@ -79,10 +92,12 @@ eq(osd('screen-privacy-symbolic', null, {label: 'Privacy Screen Enabled'}).text,
 eq(adapter.osd({id: 'hud', iconName: '', label: null, level: null}, null), null, 'nothing to show: null');
 eq(osd('audio-volume-high-symbolic', NaN).trailing ?? null, null, 'NaN level: no bar');
 
-// --- a Gio.Icon from the source is passed through as the icon ----------------------------
+// --- an icon without a theme name (the source passes only those as gicon) ----------------
 {
     const gicon = new class FakeIcon {}();
-    eq(adapter.osd({id: 'hud', iconName: 'x-symbolic', gicon, level: 0.2}, null).leading.icon, gicon, 'gicon wins over the name');
+    eq(adapter.osd({id: 'hud', iconName: '/a/file.svg', gicon, level: 0.2}, null).leading.icon, gicon, 'gicon wins over its string');
+    eq(adapter.osd({id: 'hud', iconName: 'audio-volume-low-symbolic', gicon, level: 0}, null).leading.icon,
+        'audio-volume-muted-symbolic', 'at 0 the muted name wins even so');
 }
 
 // --- Caps Lock / Num Lock (Buoy's own) ----------------------------------------------------
@@ -92,6 +107,8 @@ eq(adapter.osd({id: 'hud', lock: 'num', on: true, iconName: 'num'}, null).text, 
 eq(adapter.osd({id: 'hud', lock: 'num', on: true, iconName: 'num'}, null).ttl, TTL, 'locks: same ttl');
 eq(adapter.osd({id: 'hud', lock: 'fn', on: true, iconName: 'fn'}, null).text, 'Fn Lock on', 'fn on');
 eq(adapter.osd({id: 'hud', lock: 'fn', on: false, iconName: 'fn'}, null).text, 'Fn Lock off', 'fn off');
+eq(adapter.osd({id: 'hud', lock: 'caps', on: true, iconName: 'caps-lock-symbolic'}, null).leading, {icon: 'caps-lock-symbolic'},
+    'a lock: Buoy\'s own icon by name');
 
 // --- every output sets the same fields, so updating the one pill in place replaces them ---
 {

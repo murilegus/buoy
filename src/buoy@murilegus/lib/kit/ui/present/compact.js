@@ -295,7 +295,7 @@ function agoLabel(at) {
 function closeButton(id, activity, m) {
     const button = new St.Button({
         style_class: 'buoy-round', can_focus: true, accessible_name: 'Dismiss',
-        child: new St.Icon({...iconProps('xmark'), icon_size: 16}),
+        child: new St.Icon({...iconProps('window-close-symbolic'), icon_size: 16}),
         y_align: Clutter.ActorAlign.CENTER,
     });
     button.set_size(m.button, m.button);

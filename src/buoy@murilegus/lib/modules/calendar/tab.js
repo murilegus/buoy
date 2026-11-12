@@ -6,7 +6,7 @@ import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
-import {buildElement, EmptyState} from '../../kit/ui/present/elements.js';
+import {buildElement, EmptyState, iconProps} from '../../kit/ui/present/elements.js';
 import {FillBox} from '../../kit/ui/present/parts.js';
 import {agenda, dayRows, dayStart} from './agenda.js';
 import {EventReader} from './events.js';
@@ -218,7 +218,7 @@ export class CalendarTab {
     _arrow(icon, name, step) {
         const button = new St.Button({
             style_class: 'buoy-calendar-arrow', can_focus: true, accessible_name: name,
-            child: new St.Icon({icon_name: icon, icon_size: 16}),
+            child: new St.Icon({...iconProps(icon), icon_size: 16}),
         });
         // the picked day moves with the month, as in the date menu: the list stays that
         // day's, and its month is the one loaded

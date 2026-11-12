@@ -39,7 +39,7 @@ eq([adapter.media({...track, status: 'Paused'}, null).staleAfter, p.staleAfter],
 eq(transport(track).map(a => a.id), ['prev', 'playpause', 'next'], 'all three');
 eq(transport({...track, canPrev: false, canNext: false}).map(a => a.id), ['playpause'], 'a player that cannot skip');
 eq(transport(track)[1].icon, PAUSED_ICON, 'playing: the button pauses');
-eq(transport({...track, status: 'Paused'})[1].icon, 'play-fill', 'paused: the button plays');
+eq(transport({...track, status: 'Paused'})[1].icon, 'media-playback-start-symbolic', 'paused: the button plays');
 
 // --- compact: two lines, transport, live position ----------------------------------------
 const c = planCompact(p);
