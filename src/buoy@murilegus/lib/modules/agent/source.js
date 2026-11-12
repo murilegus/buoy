@@ -5,9 +5,10 @@ import Shell from 'gi://Shell';
 import {Source} from '../../kit/services/source.js';
 import {appOfBusName} from '../../kit/services/apps.js';
 import {listInfos, readText} from '../../kit/services/files.js';
+import {installed} from './hooks.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
 import {lingerMs} from '../../kit/model/settings.js';
-import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step, tasksFromFiles} from './adapter.js';
+import {AGENTS, DESKTOP_APP, STOP, STOP_REPLY, TIMEOUT, answered, interrupted, stopping, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step, tasksFromFiles} from './adapter.js';
 
 const KIND = 'agent';
 const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
@@ -43,6 +44,7 @@ export class AgentSource extends Source {
         this._sessions = new Map();     // `${source}:${session_id}` → record
         this._asks = new Map();         // same key → {event, askId, watch}
         this._apps = new Map();         // same key → Shell.App, or null: none (looked up once)
+        this._stopping = new Set();     // keys whose ■ was pressed: the next PostToolUse stops the turn
         // same key → {uri, shown} for a session in Claude Desktop: its deep link and the
         // session Desktop shows, read ahead without blocking (kit/services/files.js) so a click
         // decides at once (_raise); refreshed on each of its events
@@ -51,6 +53,23 @@ export class AgentSource extends Source {
         this._sharing = new SharingWatch(() => this._sharingChanged());
         this._dbus = dbus;
         dbus?.setAgent((source, text, info) => this.event(source, text, info));
+        this._canStop = false;
+        this._checkHooks();
+    }
+
+    // ■ shows only when Buoy's hooks stop a turn: this Buoy's, PostToolUse waited on
+    // (hooks.js installed(): 'all'); an older install is told to update in prefs. Read now
+    // and when a session starts, never more often.
+    async _checkHooks() {
+        const reads = this._reads;
+        const text = await readText(GLib.build_filenamev([GLib.get_home_dir(), '.claude', 'settings.json']), reads);
+        if (reads?.is_cancelled())
+            return;
+        let state = 'none';
+        try {
+            state = installed(JSON.parse(text ?? ''));
+        } catch {}
+        this._canStop = state === 'all';
     }
 
     disable() {
@@ -96,11 +115,23 @@ export class AgentSource extends Source {
             this._forget(key);
             return '';
         }
+        // ■ was pressed: this tool call's hook answers the stop (hooks.js STOP_EVENT); a new
+        // prompt or the turn's own end drops it
+        if (ev.hook_event_name === 'UserPromptSubmit' || ev.hook_event_name === 'Stop')
+            this._stopping.delete(key);
+        if (ev.hook_event_name === 'PostToolUse' && this._stopping.delete(key)) {
+            const done = interrupted(res.rec, Date.now());
+            this._remember(key, done);
+            this._show(done);
+            return STOP_REPLY;
+        }
         this._remember(key, res.rec);
         // met in its middle (Buoy started after the session did): its task list from
         // Claude's own files, ahead of the next task tool call
-        if (!old && source === 'claude')
+        if (!old && source === 'claude') {
             this._readTasks(key);
+            this._checkHooks();
+        }
         if (res.show) {
             this._show(res.rec, {
                 alert: res.alert && !this._quiet(key), renew: res.rec.stopped && !old?.stopped,
@@ -135,11 +166,15 @@ export class AgentSource extends Source {
         if (!this._registry)
             return;
         this._watchSharing(true);
-        const a = this._registry.build(KIND, rec.source, {...rec, shared: this._sharing.shared});
+        const key = `${rec.source}:${rec.id}`;
+        const a = this._registry.build(KIND, rec.source, {...rec, shared: this._sharing.shared, canStop: this._canStop});
         if (!a)
             return;
-        const key = `${rec.source}:${rec.id}`;
         a.onPress = opts => this._raise(key, opts);
+        a.onAction = id => {
+            if (id === STOP)
+                this._stop(key);
+        };
         // its prompt's pill stands for it meanwhile: one pill per session (§4, Ethan)
         a.hidden = this._asks?.has(key) ?? false;
         if (this._stack.has(a.id) && !renew)
@@ -167,6 +202,7 @@ export class AgentSource extends Source {
             this._stack.end(this._activityId(rec));
         this._sessions.delete(key);
         this._apps.delete(key);
+        this._stopping.delete(key);
         this._desktop.delete(key);
         if (![...this._sessions.values()].some(r => this._stack.has(this._activityId(r))))
             this._watchSharing(false);
@@ -266,6 +302,18 @@ export class AgentSource extends Source {
             if (app?.get_id() === DESKTOP_APP)
                 this._readDesktop(key);
         }
+    }
+
+    // ■ (Ethan 2026-11-12: as Desktop's Stop): the turn stops at Claude's next tool call —
+    // the synchronous PostToolUse hook answers `continue: false` (hooks.js STOP_EVENT) —
+    // and the session stays, waiting for you. Meanwhile the compact says it is stopping.
+    _stop(key) {
+        const rec = this._sessions?.get(key);
+        if (!rec || rec.stopped)
+            return;
+        this._stopping.add(key);
+        this._sessions.set(key, stopping(rec));
+        this._show(this._sessions.get(key));
     }
 
     // ~/.claude/tasks/<session_id>/<id>.json (design/compact "Hàng của Claude Code")

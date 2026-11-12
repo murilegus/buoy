@@ -20,9 +20,10 @@ checked and what still waits for a real session).
    first prompt to the session's end. It says which project, what Claude is doing and
    for how long; Bu's pose says how it is going.
 2. **Never slow Claude down.** Every hook that only reports runs in the background
-   (`async`). Only the permission prompt waits, because a person has to answer it. If
-   Buoy is off or missing, the hook returns at once and Claude Code goes on as without
-   Buoy.
+   (`async`). The permission prompt waits, because a person has to answer it; and
+   `PostToolUse` waits a few ms for Buoy's answer, so the compact's ■ can stop the turn
+   (2026-11-12, Ethan: as Desktop's Stop). If Buoy is off or missing, the hook returns at
+   once and Claude Code goes on as without Buoy.
 3. **The terminal stays the source of truth.** Buoy shows and answers; it never stores
    prompts, transcripts or permissions of its own. "Always" writes the rule Claude Code
    itself suggested, where Claude Code keeps it.
@@ -280,10 +281,19 @@ my Claude Code sessions", its subtitle the state ("Hooks installed in
   supported by JSON so none are lost. Each entry's command is
   `gjs -m '<extension>/hooks/claude.js'`; Buoy recognises its own entries by
   `buoy@murilegus/hooks/claude.js` in the command, wherever the extension is installed.
-  Reporting events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`,
+  Reporting events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`,
   `PostToolUseFailure`, `SubagentStart`, `SubagentStop`, `Notification`, `PreCompact`,
-  `PostCompact`, `Stop`, `StopFailure`, `SessionEnd`) get `"async": true`;
-  `PermissionRequest` is synchronous with `timeout` 1810. No matcher: every tool. A
+  `PostCompact`, `Stop`, `StopFailure`, `SessionEnd`) get `"async": true`; `PostToolUse` is
+  synchronous with `timeout` 5 (the stop, below); `PermissionRequest` synchronous with
+  `timeout` 1810. An older install (its `PostToolUse` in the background) reads as partly
+  installed: the switch offers to update it, and the compact shows no ■ until then.
+- **■, stop the turn** (2026-11-12, Ethan): as Claude Desktop's Stop or Esc, not the
+  session. Pressed, the session's pill says "Stopping…"; the next `PostToolUse` answers
+  `{"continue": false, "stopReason": "Stopped from Buoy"}` (hooks.md: Claude stops, the
+  session stays), and the pill says "Stopped". A long command or a turn of text only
+  without a tool call runs to its end first: hooks cannot reach into a turn, and no
+  signal or API stops one from outside (a SIGINT or SIGTERM ends the whole process,
+  checked in a PTY). Only while a turn runs (`think`, `busy`, `compact`); never in the pill. No matcher: every tool. A
   file that is not a JSON object (comments, a typo) is never written.
 - **Off**: removes exactly Buoy's entries (and an event's list left empty), nothing else.
 - Claude Code reloads the file by itself: running sessions pick the change up.

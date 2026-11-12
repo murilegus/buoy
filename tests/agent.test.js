@@ -4,10 +4,10 @@ import GLib from 'gi://GLib';
 
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
-    agent, answered, askOf, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    STOP, STOP_REPLY, agent, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
-    ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, commandFor, hooksNote, install, installed, isOurs, uninstall,
+    ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, STOP_EVENT, STOP_HOOK_TIMEOUT, commandFor, hooksNote, install, installed, isOurs, uninstall,
 } from '../src/buoy@murilegus/lib/modules/agent/hooks.js';
 import {Registry} from '../src/buoy@murilegus/lib/kit/services/registry.js';
 import {PRIORITY as KIT_PRIORITY, SETTLE_MS, tierOf, validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
@@ -403,7 +403,12 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq([isOurs({command: 'my-hook.sh'}), isOurs(null)], [false, false], 'others are not');
 
     const empty = install({}, cmd);
-    eq(Object.keys(empty.hooks), [...REPORTS, ASK_EVENT], 'every event, once');
+    eq(Object.keys(empty.hooks), [...REPORTS, STOP_EVENT, ASK_EVENT], 'every event, once');
+    eq(empty.hooks[STOP_EVENT], [{hooks: [{type: 'command', command: cmd, timeout: STOP_HOOK_TIMEOUT}]}],
+        'PostToolUse is waited on, briefly: its answer can stop the turn (■)');
+    eq([STOP_EVENT, REPORTS.includes(STOP_EVENT)], ['PostToolUse', false], 'PostToolUse is no report any more');
+    const older = {...empty, hooks: {...empty.hooks, PostToolUse: [{hooks: [{type: 'command', command: cmd, async: true}]}]}};
+    eq(installed(older), 'some', 'an older Buoy\'s PostToolUse in the background: some (prefs offers to update)');
     eq(empty.hooks.Stop, [{hooks: [{type: 'command', command: cmd, async: true}]}], 'a report runs in the background');
     eq(empty.hooks[ASK_EVENT], [{hooks: [{type: 'command', command: cmd, timeout: ASK_HOOK_TIMEOUT}]}],
         'the permission hook waits, past the longest ask timeout');
@@ -510,6 +515,28 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
         {name: '4.json', text: JSON.stringify({id: '4'})},
     ]).map(t => [t.id, t.status]), [['1', 'completed'], ['2', 'in_progress'], ['10', 'pending']],
     'the files: in their ids\' order, deleted, broken and nameless ones left out');
+}
+
+// --- ■: the turn stops at Claude's next tool call, as Desktop's Stop -----------------------
+{
+    const run2 = last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Bash', tool_input: {command: 'pnpm test'}})]]).rec;
+    eq(agent(run2).actions, [], 'no ■ without hooks that can stop (an older install)');
+    eq(agent({...run2, canStop: true}).actions, [{id: STOP, icon: 'stop-fill'}], 'a turn running, hooks that stop: ■ (Gravity stop-fill)');
+    eq([agent({...run2, canStop: true}).compact.transport, agent({...run2, canStop: true}).minimalAction], [true, false],
+        'in the compact, never in the pill');
+    const asked = stopping({...run2, canStop: true});
+    eq([asked.stopRequested, agent(asked).compact.subtitle, agent(asked).actions], [true, 'Stopping…', []], 'pressed: "Stopping…", no ■ twice');
+    eq(step(asked, ev('PreToolUse', {tool_name: 'Read', tool_input: {file_path: 'a.js'}}), T0 + 5).rec.title, 'Stopping…',
+        'a tool call meanwhile keeps saying it is stopping');
+    const stopped = interrupted(asked, T0 + 9);
+    eq([stopped.stopped, stopped.title, stopped.pose, agent({...stopped, canStop: true}).actions], [true, 'Stopped', 'idle', []],
+        'answered: the turn is over, the session waits');
+    eq(step(stopped, ev('Stop'), T0 + 10).show, false, 'a Stop after it changes nothing: it says Stopped');
+    const again = step(stopped, ev('UserPromptSubmit'), T0 + 20).rec;
+    eq([again.stopped, again.interrupted, again.stopRequested, again.title], [false, false, false, 'Thinking'], 'a new prompt: working again');
+    eq(JSON.parse(STOP_REPLY), {continue: false, stopReason: 'Stopped from Buoy'}, 'the hook\'s answer (hooks.md continue / stopReason)');
+    eq(agent({...last([[ev('UserPromptSubmit')], [ev('Notification', {notification_type: 'idle_prompt'})]]).rec, canStop: true}).actions, [],
+        'waiting for you: nothing to stop');
 }
 
 print('agent: ok');

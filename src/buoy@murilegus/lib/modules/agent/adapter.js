@@ -30,6 +30,38 @@ export const PARTY_AFTER = 10 * 60 * 1000;
 
 /** The buttons, in order (§4). Always only when Claude Code sent a suggestion. */
 export const DENY = 'Deny', ALLOW = 'Allow', ALWAYS = 'Always';
+/** The compact's ■: stops the turn, as Desktop's Stop (source.js _stop). */
+export const STOP = 'stop';
+/**
+ * The synchronous PostToolUse hook's answer once ■ was pressed (hooks.js STOP_EVENT):
+ * Claude stops, the session stays (hooks.md, the common `continue` / `stopReason`).
+ */
+export const STOP_REPLY = JSON.stringify({continue: false, stopReason: 'Stopped from Buoy'});
+
+/**
+ * ■ pressed: the turn stops at Claude's next tool call; till then the compact says so.
+ *
+ * @param {object} rec
+ * @returns {object}
+ */
+export function stopping(rec) {
+    return {...rec, stopRequested: true, title: 'Stopping…', safeTitle: 'Stopping…'};
+}
+
+/**
+ * The stop answered: the turn is over, the session waits for you (no Stop event follows a
+ * hook's stop for sure, so Buoy says it itself; a Stop that does come changes nothing).
+ *
+ * @param {object} rec
+ * @param {number} now
+ * @returns {object}
+ */
+export function interrupted(rec, now) {
+    return {
+        ...rec, stopRequested: false, interrupted: true, stopped: true, finishedAt: now, subagents: 0,
+        pose: 'idle', title: 'Stopped', safeTitle: 'Stopped', lastAt: now,
+    };
+}
 /** The ask's fallback after `activity-linger`: not a button, so never pressed. */
 export const TIMEOUT = '\u0000timeout';
 
@@ -325,7 +357,7 @@ export function taskProgress(tasks) {
 }
 
 const working = (rec, now) => ({
-    ...rec, shown: true, stopped: false, finishedAt: 0,
+    ...rec, shown: true, stopped: false, finishedAt: 0, interrupted: false,
     startedAt: rec.shown && !rec.stopped && rec.startedAt ? rec.startedAt : now,
 });
 
@@ -375,14 +407,14 @@ export function step(rec, ev, now, source = 'claude') {
     case 'SessionStart':
         return out(r, {show: false});
     case 'UserPromptSubmit':
-        // the prompt itself is never kept (§7)
+        // the prompt itself is never kept (§7); a new turn: a ■ pending on the last is gone
         r = working(set('think', 'Thinking'), now);
-        return out({...r, subagents: 0});
+        return out({...r, subagents: 0, stopRequested: false});
     case 'PreToolUse': {
         const d = toolDoing(ev.tool_name, ev.tool_input, r.cwd);
         r = working(r, now);
-        if (sub && r.subagents > 0)
-            return out({...r, pose: 'busy'});    // the parent still says it works with them (§2)
+        if ((sub && r.subagents > 0) || r.stopRequested)
+            return out({...r, pose: 'busy'});    // it works with subagents (§2), or is stopping
         return out({...r, pose: 'busy', title: d.title, safeTitle: d.safeTitle});
     }
     case 'PostToolUse': {
@@ -439,8 +471,8 @@ export function step(rec, ev, now, source = 'claude') {
             return none();
         return out(set('busy', 'Working'));
     case 'Stop': {
-        if (!r.shown)
-            return none();
+        if (!r.shown || r.interrupted)
+            return none();                         // ■ stopped it: it says Stopped already
         const took = r.startedAt ? now - r.startedAt : 0;
         const pose = took > PARTY_AFTER ? 'party' : 'done';
         const title = took >= 60000 ? `Done in ${durationText(took)}` : 'Done';
@@ -505,6 +537,11 @@ export function agent(rec) {
         text: question ? `${label} needs your answer` : label,
         leading: {mascot: pose},
         trailing,
+        // ■ while a turn runs, when Buoy's hooks can stop it (the synchronous PostToolUse,
+        // hooks.js): the compact's round button, cream (design/compact); never in the pill
+        actions: rec.canStop === true && !rec.stopped && !rec.stopRequested && WORKING.has(pose)
+            ? [{id: STOP, icon: 'stop-fill'}] : [],
+        minimalAction: false,
         // hover: which session (its name, or the label), then what it is doing (§2); with a
         // task list, its progress and the tasks as rows (design/compact) — not while the
         // screen is shared: a task names files and commands as a command does (§7)
@@ -515,6 +552,7 @@ export function agent(rec) {
             text: tasks.length ? nameOf(rec) ?? PRODUCTS[rec.source] ?? label : hoverName(rec),
             subtitle: tasks.length ? `${rec.project ?? label} · ${taskProgress(tasks)}` : doing,
             rows: tasks.length && !shared ? taskRows(tasks) : [],
+            transport: true,      // its buttons: ■
         },
         // the kind's 35 (docs/PRIORITY.md); a question waits as a prompt, at the ask's 90 —
         // set every time, an update merges; waiting for you is tier 1, done steps back

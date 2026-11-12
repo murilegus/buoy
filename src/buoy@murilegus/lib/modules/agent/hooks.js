@@ -12,10 +12,19 @@ export const HOOK_PATH = 'buoy@murilegus/hooks/claude.js';
 
 /** Events that only report: they run in the background and never slow Claude down (§1). */
 export const REPORTS = [
-    'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PostToolUseFailure',
+    'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUseFailure',
     'SubagentStart', 'SubagentStop', 'Notification', 'PreCompact', 'PostCompact', 'Stop',
     'StopFailure', 'SessionEnd',
 ];
+/**
+ * The event Claude Code waits on after every tool call, so Buoy's ■ can stop the turn there
+ * (`{"continue": false}`: Claude stops, the session stays, as Desktop's Stop or Esc; an
+ * async hook's answer has no effect, hooks.md "Run hooks in the background"). Buoy answers
+ * at once: '' or the stop (2026-11-12).
+ */
+export const STOP_EVENT = 'PostToolUse';
+/** Seconds Claude Code waits for it: Buoy answers in a few ms; gone, the script returns. */
+export const STOP_HOOK_TIMEOUT = 5;
 /** The one event that waits for an answer (§4). */
 export const ASK_EVENT = 'PermissionRequest';
 /**
@@ -92,6 +101,7 @@ export function install(settings, command) {
     };
     for (const event of REPORTS)
         add(event, {async: true});
+    add(STOP_EVENT, {timeout: STOP_HOOK_TIMEOUT});
     add(ASK_EVENT, {timeout: ASK_HOOK_TIMEOUT});
     return {...s, hooks};
 }
@@ -119,13 +129,16 @@ export function uninstall(settings) {
  */
 export function installed(settings) {
     const hooks = isPlain(settings) && isPlain(settings.hooks) ? settings.hooks : {};
-    const has = event => Array.isArray(hooks[event]) &&
-        hooks[event].some(e => isPlain(e) && Array.isArray(e.hooks) && e.hooks.some(isOurs));
-    const events = [...REPORTS, ASK_EVENT];
-    const n = events.filter(has).length;
-    if (n === events.length)
+    // ours, and run the way this Buoy installs it: a report in the background, the stop
+    // and the ask waited on (an older Buoy ran PostToolUse in the background: 'some')
+    const async = event => REPORTS.includes(event);
+    const ours = (event, right) => Array.isArray(hooks[event]) &&
+        hooks[event].some(e => isPlain(e) && Array.isArray(e.hooks) &&
+            e.hooks.some(h => isOurs(h) && (!right || (h.async === true) === async(event))));
+    const events = [...REPORTS, STOP_EVENT, ASK_EVENT];
+    if (events.every(e => ours(e, true)))
         return 'all';
-    return n ? 'some' : 'none';
+    return events.some(e => ours(e, false)) ? 'some' : 'none';
 }
 
 /**
