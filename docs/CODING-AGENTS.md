@@ -88,7 +88,8 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   so the label is "Claude" alone and the hover says "New session" until the session has
   a title (Ethan, 2026-11-07). Moved to a folder, its next event names the project
   ("Claude · buoy", seen 2026-11-07).
-- **The session's name**, on hover only: its title when Claude Code sends one
+- **The session's name**, on hover only (kept off the pill again 2026-11-12, Ethan: the
+  project stays short there and the step keeps its room): its title when Claude Code sends one
   (`session_title`, on `SessionStart` and later events once the session has a title:
   Claude Desktop names every session, the CLI after `/rename` — both seen 2026-11-07), whole — "Buoy — Optimization and security
   check" as it is (Ethan, 2026-11-07); else its worktree's slug; else the label. Titles seen on this machine are 4–44 characters; none

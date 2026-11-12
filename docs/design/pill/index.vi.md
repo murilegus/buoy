@@ -130,6 +130,8 @@ Chọn **C**, và **D** khi Claude có danh sách việc. **Chốt** (Ethan, 202
 - **Dự án** là tên repo git (thư mục có `.git`, lần ngược từ `cwd`; worktree thì repo chính), không
   phải thư mục Claude đang đứng: chạy trong `buoy/src` vẫn là "buoy". Không có repo thì tên thư mục.
   **Chốt** (Ethan, 2026-11-12)
+- **Tên phiên** (`/rename` của Claude Code, tên phiên của Claude Desktop) không lên pill, chỉ ở tiêu
+  đề compact: tên dài (4–44 ký tự) sẽ đẩy việc đang làm ra "…". **Chốt** (Ethan, 2026-11-12)
 
 ## Phương án đã cân nhắc
 
