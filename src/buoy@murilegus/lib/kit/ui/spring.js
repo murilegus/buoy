@@ -31,6 +31,8 @@ export class SpringRunner {
         this._onDone = null;
         this._onFrame = null;
         this._limit = 0;
+        this._destroyed = false;
+        this._destroyId = actor.connect('destroy', () => this.destroy());
     }
 
     /** @returns {boolean} something is on its way */
@@ -78,6 +80,8 @@ export class SpringRunner {
      * @param {function(object): void} [opts.onFrame]  after each frame's apply: the runner
      */
     to(targets, spring, {onDone = null, onFrame = null} = {}) {
+        if (this._destroyed)
+            return;
         const s = typeof spring === 'string' ? SPRINGS[spring] ?? SPRINGS.move : spring;
         const now = this._elapsed();
         for (const [name, target] of Object.entries(targets)) {
@@ -114,8 +118,12 @@ export class SpringRunner {
     }
 
     destroy() {
+        if (this._destroyed)
+            return;
+        this._destroyed = true;
         this._stop(false);
         this._apply = () => {};
+        this._actor.disconnect(this._destroyId);
     }
 
     _elapsed() {
@@ -188,4 +196,53 @@ export class SpringRunner {
             out[name] = p.x;
         return out;
     }
+}
+
+/**
+ * Run `fn` once, after this frame's layout and before it is painted (the stage's
+ * `prepare-frame`, emitted after clutter_stage_maybe_relayout: mutter
+ * clutter/clutter/clutter-stage-view.c): where new actors are measured and an offset set
+ * on them is painted from their first frame.
+ *
+ * @param {function(): void} fn
+ * @returns {function(): void} cancels it
+ */
+export function afterLayout(fn) {
+    const stage = global.stage;
+    let id = stage.connect('prepare-frame', () => {
+        stage.disconnect(id);
+        id = 0;
+        fn();
+    });
+    stage.queue_redraw();
+    return () => {
+        if (id)
+            stage.disconnect(id);
+        id = 0;
+    };
+}
+
+/**
+ * Bring an actor in from `dx` px aside (a tab's body, a list in place: design/motion "Đổi
+ * tab", "Danh sách tại chỗ"): its translation springs to 0 and it fades in.
+ *
+ * @param {Clutter.Actor} actor
+ * @param {number} dx
+ * @param {string} spring  a SPRINGS key
+ * @param {number} fadeMs
+ */
+export function slideIn(actor, dx, spring, fadeMs) {
+    actor.remove_transition('opacity');
+    actor.opacity = 0;
+    actor.translation_x = dx;
+    afterLayout(() => {
+        if (!actor.get_stage())
+            return;
+        const run = new SpringRunner(actor, v => {
+            actor.translation_x = v.t;
+        });
+        run.set({t: dx});
+        run.to({t: 0}, spring, {onDone: () => run.destroy()});
+        actor.ease({opacity: 255, duration: fadeMs, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+    });
 }

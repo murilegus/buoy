@@ -142,6 +142,16 @@
     color: #fff;
 }
 
+/* ==== States: hover, press, checked change their colours over `state`, 120 ms, in and out
+   (design/motion "Tương tác"; St's own transition between theme nodes). The modules'
+   buttons and rows too: their stylesheets load with this one. ============================= */
+.buoy-tab, .buoy-round, .buoy-action, .buoy-choice, .buoy-menu-row, .buoy-home-hit, .buoy-home-row,
+.buoy-agents-row, .buoy-calendar-accounts, .buoy-calendar-arrow, .buoy-calendar-day, .buoy-calendar-row,
+.buoy-media-button, .buoy-media-chip, .buoy-media-play, .buoy-media-skip, .buoy-nback, .buoy-ncard,
+.buoy-nchip, .buoy-nclose, .buoy-transfers-action, .buoy-transfers-clear, .buoy-transfers-row {
+    transition-duration: 120ms;
+}
+
 /* ==== The pill and its content (minimal, expanded, idle) ================================== */
 
 /* The island pill. Hover/press/expanded are shapes, not CSS states. */
@@ -309,8 +319,8 @@
 
 /* Home's panel (kit/ui/home.js): the tab strip and the selected tab, only inside expanded. */
 .buoy-panel { padding: 10px 12px 12px; spacing: 8px; }
+.buoy-tabs-row { spacing: 2px; }
 .buoy-tabs {
-    spacing: 2px;
     padding: 3px;
     border-radius: 999px;
     background-color: rgba(255, 255, 255, 0.12); /* fill-2 */
@@ -325,7 +335,10 @@
 }
 .buoy-tab-box { spacing: 7px; }
 .buoy-tab:hover { color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
-.buoy-tab:checked { padding: 6px 14px; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
+.buoy-tab:checked { padding: 6px 14px; color: #fff; /* fg */ }
+/* the selected tab's pill, behind the row: it slides to the next tab (kit/ui/home.js, design/motion) */
+.buoy-tab-marker { border-radius: 999px; background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
+.buoy-tab.buoy-more:checked { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ } /* ⋯ open */
 .buoy-tab:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-tab.buoy-more:checked { padding: 6px 9px; } /* the menu hangs from its edge */
 /* the tab's dot (a module's badge) at the icon's top right, as Yaru's bell with a dot:
