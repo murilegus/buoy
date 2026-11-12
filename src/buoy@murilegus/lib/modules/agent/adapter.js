@@ -260,6 +260,10 @@ function taskId(v) {
 // [n] / `start` n (1-based). The hooks see it as any MCP tool, `mcp__<server>__<tool>`
 // (hooks reference); Buoy keeps the plan as tasks `plan:<n>`.
 const PLAN_TOOL = /^mcp__ccd[a-z_]*__update_plan$/;
+// The turn's end (`wrap_up`, same server) checks the whole list off in the app, with no
+// `update_plan` of its own (2026-11-13, Ethan: "Bu không update task": the pill stayed on
+// step 1 of 4 after the turn ended): every task is then done
+const WRAP_TOOL = /^mcp__ccd[a-z_]*__wrap_up$/;
 const planId = n => `plan:${n}`;
 const planNumber = t => Number(/^plan:(\d+)$/.exec(t.id)?.[1] ?? 0);
 
@@ -334,6 +338,12 @@ export function taskStep(tasks, ev, now) {
     const i = isPlain(ev?.tool_input) ? ev.tool_input : {};
     if (typeof ev?.tool_name === 'string' && PLAN_TOOL.test(ev.tool_name))
         return planStep(tasks, i, now);
+    if (typeof ev?.tool_name === 'string' && WRAP_TOOL.test(ev.tool_name)) {
+        // the turn is over: every task done (Ethan: "phải đánh dấu tất cả task xong")
+        if (!tasks.some(t => t.status !== 'completed'))
+            return null;
+        return tasks.map(t => planSet(t, 'completed', now));
+    }
     if (ev?.tool_name === 'TaskCreate') {
         const id = taskId(ev.tool_response), subject = str(i.subject);
         if (!id || !subject)

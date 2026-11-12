@@ -683,6 +683,17 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(taskStep([], {tool_name: 'mcp__other__update_plan', tool_input: {items}}, 1), null, 'another server\'s tool of the same name: not the plan');
     eq(planStep([], {}, 1), [], 'no input: nothing');
     eq(taskRows(tasks).length, 3, 'its rows, as tasks');
+
+    // the turn's end: wrap_up checks every task off (2026-11-13, Ethan: "phải đánh dấu tất cả task xong")
+    const WRAP = {hook_event_name: 'PostToolUse', tool_name: 'mcp__ccd_turn__wrap_up', tool_input: {recap: 'Done.'}};
+    const open = taskStep(mixed, plan({advance: true}), 2000);
+    const wrapped = taskStep(open, WRAP, 8000);
+    eq(brief(wrapped).map(x => x.split(':').at(-2)), ['c', 'c', 'c', 'c'], 'wrap_up: every task done, the plan and TaskCreate\'s');
+    eq([wrapped[0].doneAt, wrapped[1].doneAt, wrapped[3].doneAt], [8000, 1000, 8000], 'stamped when it ends; one done before keeps its time');
+    eq(taskProgress(wrapped), '4 / 4', 'progress: all of them');
+    eq(taskStep(wrapped, WRAP, 9000), null, 'all done already: no change');
+    eq(taskStep([], WRAP, 9000), null, 'no tasks: nothing');
+    eq(taskStep(open, {...WRAP, tool_name: 'mcp__other__wrap_up'}, 1), null, 'another server\'s wrap_up: not the turn\'s end');
 }
 
 print('agent: ok');
