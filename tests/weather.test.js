@@ -58,7 +58,7 @@ for (const name of ART) {
     if (!GLib.file_test(path, GLib.FileTest.EXISTS))
         throw new Error(`${name}: the file exists (${path})`);
     const svg = new TextDecoder().decode(GLib.file_get_contents(path)[1]);
-    eq(svg.startsWith('<svg') && svg.includes('viewBox="0 0 16 16"'), true, `${name}: a 16 px SVG, as the daypart icons`);
+    eq(svg.startsWith('<svg') && svg.includes('viewBox="0 0 24 24"'), true, `${name}: a 24 grid SVG, as the daypart icons`);
     for (const reserved of STATE_COLOURS.map(c => c.toUpperCase()))
         eq(svg.toUpperCase().includes(reserved), false, `${name}: no state colour ${reserved} (INDICATORS)`);
 }

@@ -43,7 +43,7 @@ src/buoy@murilegus/
     │   │   │                   ttl, stale, transient, alert; `apps-hidden` filter; missed history;
     │   │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
     │   │   ├── presentation.js presentation data → render plan (2026-11-01)
-    │   │   ├── shapes.js       the pill's sizes from the monitor (rule 11)
+    │   │   ├── shapes.js       the pill's sizes from the monitor and the em (rule 11)
     │   │   ├── tabs.js         which tabs exist, where an open starts (2026-11-02)
     │   │   ├── keys.js         keyboard: an ask's keys, ←/→ steps (2026-11-03)
     │   │   ├── settings.js     prefs: which page each schema key goes to, samples (2026-11-03)

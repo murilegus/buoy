@@ -95,7 +95,7 @@ its pose's colour; the buoy light stays in the left edge slot (INDICATORS). The 
 is data; frames, the swap timer and colours are the kit's.
 
 **One minimal for every place** (2026-11-05): an adapter returns one `leading · text ·
-trailing` and never knows which pill it lands in. Pill 1 shows all three; a 120 px side
+trailing` and never knows which pill it lands in. Pill 1 shows all three; an idle-sized side
 pill (SPEC §2c) shows `leading` and `trailing` only and drops `text`. So the **short value
 that matters most goes in `trailing`**, where every pill shows it, and `text` carries what
 can be lost: media `eq` or pause, progress a ring, timer `{countdown}` (not the time in
@@ -121,7 +121,7 @@ Selection → copied · GSConnect notifications → phone · D-Bus API → anyth
 
 1. Black opaque pill; colour lives in content; optional keyline tint per activity.
 2. Radius = h/2 for the pill; expanded radius 28; concentric margins (8 px pill, 14 px expanded).
-3. Text 13–14 px medium+; leading element ≤ 20 px in minimal, 40 px in compact, 56 px in expanded.
+3. Text in the pill 1em, weight 600 (compact and expanded 13–14 px medium+ until their M4 items); the leading in minimal takes a cell of 24 px at 1em (a cover fills it), 40 px in compact, 56 px in expanded (SPEC §4).
 4. Compact and expanded = enlarged minimal, same order; height grows only with content.
 5. ≤ 1 action in minimal, ≤ 3 in compact and expanded; click elsewhere = open the app/window.
 6. Rotate one activity through sub-events (e.g. one "downloads" activity cycling files)

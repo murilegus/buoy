@@ -13,21 +13,22 @@ import {eqGlyph, mascot} from './motion.js';
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
  * (what to show, limits, fallbacks) comes from presentation.js, which is unit-tested.
- * Sizes here are the renderer's (CONTRACT.md §5.3: leading ≤ 20 px minimal, 40 compact,
- * 56 expanded);
+ * Sizes here are the renderer's (CONTRACT.md §5.3: the leading's 24 px cell in minimal,
+ * at 1em, 40 compact, 56 expanded);
  * adapters never send any.
  */
 
 export const SIZE = {
-    // mascot: a multiple of Bu's 10 cells, so each cell is whole px (MASCOT.md)
-    minimal: {icon: 16, art: 20, ring: 18, bar: 40, mascot: 20},
+    // mascot: a multiple of Bu's 10 cells, so each cell is whole px (MASCOT.md); art fills
+    // the leading's cell, 24 at 1em (design/pill; minimal.js passes the em's)
+    minimal: {icon: 16, art: 24, ring: 18, bar: 40, mascot: 20},
     compact: {icon: 24, art: 40, ring: 32, bar: 0, mascot: 40},  // SPEC §4, 2026-11-05
     expanded: {icon: 32, art: 56, ring: 32, bar: 0, mascot: 50}, // bar: 0 = fill the width
 };
 
 // Album art's corners, inside the pill's (kit/model/rounded.js artRadius): the pill's radius
-// (minimal 16, compact 24; shapes.js) less the content padding (14, pill.js PAD); minimal
-// at least 6. Expanded and tabs stay square.
+// (minimal 16, compact 24; shapes.js) less 14; minimal 6 (design/pill "minimal-media").
+// Expanded and tabs stay square.
 const ART_INSET = 14;
 const ART_RADIUS = {
     minimal: artRadius(16, ART_INSET, SIZE.minimal.art, 6),     // 6
@@ -171,12 +172,14 @@ export function buildElement(value, {size = 'minimal', leading = false, activity
  * @param {?object} e  presentation.js element()
  * @param {'minimal'|'compact'|'expanded'} mode
  * @param {?object} [activity]  Bu's animation follows it
+ * @param {{art?: number}} [sizes]  the tier's sizes it overrides: minimal's art fills the
+ *   leading cell, which follows the em (kit/model/shapes.js)
  * @returns {?St.Widget}
  */
-export function makeElement(e, mode, activity = null) {
+export function makeElement(e, mode, activity = null, sizes = {}) {
     if (!e)
         return null;
-    const size = SIZE[mode];
+    const size = {...SIZE[mode], ...sizes};
     switch (e.type) {
     case 'mascot':
         return mascot(e, size.mascot, activity);

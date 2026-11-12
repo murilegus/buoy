@@ -17,20 +17,22 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   đặc, không gradient, không viền, không chữ. Đường chân trời ở y 11 của lưới 16 (không ở đáy),
   để ở 20 px nó nằm đúng hàng chân chữ của giờ. **Chốt** (Ethan, 2026-11-06)
 
-- **Đường chân trời** (icon buổi): đúng một hàng pixel, **hàng 15** của lưới 24 (y 15–16), x 1–23;
-  trong pill 32 là hàng 19 (khung nội dung cách đỉnh 4). 1 px ở 24, 2 px (hàng 30–31) ở 48. Đây là
-  hàng chân chữ của giờ (đo 2026-11-06). Không đặt ở hàng lẻ nửa pixel như cách quy đổi từ lưới 16
-  (nét 1.5 px vắt qua hai hàng, mờ mép dưới). **Chốt** (Ethan, 2026-11-11)
+- **Đường chân trời** (icon buổi): đúng một hàng pixel, **hàng 16** của lưới 24 (y 16–17), x 1–23;
+  trong pill 32 là hàng 20 (khung nội dung cách đỉnh 4). 1 px ở 24, 2 px (hàng 32–33) ở 48. Đây là
+  hàng đáy của chữ số giờ khi chữ 1em (SF Pro Display 11, 1×, đo 2026-11-12). Không đặt ở hàng lẻ
+  nửa pixel như cách quy đổi từ lưới 16 (nét 1.5 px vắt qua hai hàng, mờ mép dưới). **Chốt**
+  (Ethan, 2026-11-11; cả cảnh hạ 1 px từ hàng 15, 2026-11-12, vì chữ 1em có chân thấp hơn chữ 13 px)
 - **Cung chấm** (đường mặt trời đi): từng pixel đặc màu `#6B737C` thay cho chấm tròn 1 đơn vị mờ
-  60 %, đối xứng, trên cung quanh tâm (12, 15) bán kính khoảng 8.4; ở 48 mỗi pixel thành ô 2 × 2.
+  60 %, đối xứng, trên cung quanh tâm (12, 16) bán kính khoảng 8.4; ở 48 mỗi pixel thành ô 2 × 2.
   Khoảng cách không cần đều hẳn: pixel nhỏ nên không thấy. 10 ô [cột, hàng], đối xứng qua x = 12:
-  (3, 12) (4, 10) (6, 8) (8, 7) (10, 6) | (13, 6) (15, 7) (17, 8) (19, 10) (20, 12); tâm mỗi ô cách
-  (12, 15) từ 8.28 đến 8.86; hàng 13 và 14 để trống trên đường chân trời. **Chốt** (Ethan, 2026-11-11)
+  (3, 13) (4, 11) (6, 9) (8, 8) (10, 7) | (13, 7) (15, 8) (17, 9) (19, 11) (20, 13); tâm mỗi ô cách
+  (12, 16) từ 8.28 đến 8.86; hàng 14 và 15 để trống trên đường chân trời. **Chốt** (Ethan, 2026-11-11;
+  hạ 1 hàng cùng đường chân trời, 2026-11-12)
 - Mặt trời trên cung (sáng, trưa, chiều): đĩa bán kính 3, tám tia là chấm 2 px ở bán kính 5, tia
-  đầu ở 0° (trước là 22.5°), để ở 24 px tia đứng và tia ngang rơi đúng pixel. Tâm: sáng (7, 8), trưa
-  (12, 7), chiều (17, 8). Mặt trời đứng riêng (thời tiết) giữ tia dạng vạch. **Chốt** (Ethan,
+  đầu ở 0° (trước là 22.5°), để ở 24 px tia đứng và tia ngang rơi đúng pixel. Tâm: sáng (7, 9), trưa
+  (12, 8), chiều (17, 9) (hạ 1 hàng, 2026-11-12). Mặt trời đứng riêng (thời tiết) giữ tia dạng vạch. **Chốt** (Ethan,
   2026-11-11)
-- Bình minh và hoàng hôn: nửa đĩa bán kính 5 đứng trên hàng 15, tâm x 9 (bình minh) và x 15 (hoàng
+- Bình minh và hoàng hôn: nửa đĩa bán kính 5 đứng trên hàng 16, tâm x 9 (bình minh) và x 15 (hoàng
   hôn; hoàng hôn là bình minh lật qua x = 12). **Năm tia** cách nhau 35° (20°, 55°, 90°, 125°, 160°
   trên đường chân trời), rộng 2 px; ba tia trên dài 4 px, hai tia ngoài 3 px. **Chốt** (Ethan,
   2026-11-11)

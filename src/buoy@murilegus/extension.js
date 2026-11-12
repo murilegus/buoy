@@ -1,5 +1,6 @@
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
+import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -73,6 +74,10 @@ export default class BuoyExtension extends Extension {
         reposition();
         Main.layoutManager.connectObject('monitors-changed', reposition, this);
         this._settings.connectObject('changed::expanded-width', reposition, this);
+        // the pill follows the em (docs/design "Đơn vị là em"): a font or Large Text change
+        // restyles the theme, then the bar takes its new 2.75em
+        St.ThemeContext.get_for_stage(global.stage).connectObject('changed', reposition, this);
+        Main.panel.connectObject('notify::height', reposition, this);
         const rest = () => setMascotRest(this._settings.get_int('mascot-rest-after'));
         this._settings.connectObject('changed::mascot-rest-after', rest, this);
         rest();
@@ -214,6 +219,8 @@ export default class BuoyExtension extends Extension {
         this._registry = null;
 
         Main.layoutManager.disconnectObject(this);
+        St.ThemeContext.get_for_stage(global.stage).disconnectObject(this);
+        Main.panel.disconnectObject(this);
         this._idle?.destroy();
         this._idle = null;
         if (this._island) {

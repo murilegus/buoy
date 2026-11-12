@@ -1,9 +1,10 @@
 /* ==== The panel: clusters, tray, text over the wallpaper ================================== */
 
-/* Panel becomes an invisible 40px strip; clusters float inside it. */
+/* Panel becomes an invisible strip, 2.75em = 40 px at 11 pt, so it grows with Large Text and
+   the font (docs/design "Đơn vị là em"); clusters float inside it. */
 #panel.buoy {
     background-color: transparent;
-    height: 40px;
+    height: 2.75em;
 }
 
 /* Clusters: bare by default; a translucent background per cluster-background (no blur). */
@@ -149,22 +150,26 @@
     border: 1px solid rgba(255, 255, 255, 0.12); /* border */
 }
 
-/* Content built by kit/ui/present/. Text 13–14 px, medium or heavier (CONTRACT.md §5.3);
-   colour lives in content, the pill stays black. Nothing here animates. */
+/* Content built by kit/ui/present/. Colour lives in content, the pill stays black. Nothing
+   here animates. The pill's text is 1em, the stage's font as the bar's (design/pill "Chữ"):
+   the island is top chrome, outside #panel. Compact, the card and expanded keep 13 px until
+   their own redesign (FEATURES M4). */
 .buoy-content {
     color: #fff; /* fg */
-    font-size: 13px;
     font-weight: 500;
 }
+.buoy-content > * { font-size: 13px; }
+.buoy-content > .buoy-minimal, .buoy-content > .buoy-idle { font-size: 1em; }
 .buoy-content .dim { color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
 
-.buoy-minimal { spacing: 8px; }
-.buoy-text { font-weight: 600; }
+/* .buoy-minimal and .buoy-idle-zones: their spacing is the em's, set by present/minimal.js
+   (kit/model/shapes.js pillMetrics: 6, and 8 before a button) */
+.buoy-text { font-weight: 600; font-feature-settings: "tnum"; }
 .buoy-label { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-feature-settings: "tnum"; }
 .buoy-icon, .buoy-ring, .buoy-bar { color: #fff; /* fg */ }
 /* A level (hud): the bar and its number in even figures, dimmed when muted. */
 .buoy-level { spacing: 8px; }
-.buoy-level-label { font-size: 12px; font-feature-settings: "tnum"; min-width: 34px; text-align: right; }
+.buoy-level-label { font-feature-settings: "tnum"; min-width: 34px; text-align: right; }
 .buoy-level-off .buoy-bar, .buoy-level-off .buoy-level-label { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 /* .buoy-art: no border-radius, St.Icon does not clip to it; present/elements.js rounds minimal
    and compact art with a shader (kit/model/rounded.js artRadius), expanded and tabs stay square. */
@@ -203,10 +208,8 @@
 .buoy-light-off { background-color: rgba(255, 255, 255, 0.2); /* light-off */ }
 .buoy-light-missed { background-color: #ff9f0a; /* light-missed */ }
 .buoy-light-waiting { background-color: #ff453a; /* light-waiting */ }
-.buoy-idle { padding-left: 2px; }
 /* An idle plan (clock…): its zones centred; the time unlike the cluster's clock, bold
    with even figures so the minutes do not shift the icon (SPEC §2a). */
-.buoy-idle-zones { spacing: 7px; }
 .buoy-idle-text { font-weight: 600; font-feature-settings: "tnum"; }
 .buoy-badge {
     padding: 0 6px;

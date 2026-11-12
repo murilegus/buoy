@@ -22,8 +22,9 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
   hình tròn bán kính 16 ôm sát góc ô leading, nên lề 8 trông hẹp hơn 8, còn khoảng 8 giữa hai cạnh
   thẳng (ô và chữ) trông xa hơn; 6 làm ba khoảng trông đều. Icon đầy ô 24 nên cách mép pill 8 và
   cách chữ 6; Bu 20 nằm giữa ô 24 nên cách 8. **Chốt** (Ethan, 2026-11-12; thay một giá trị 8 cho
-  mọi chỗ của 2026-11-10). Code hiện tại lệch nhau: idle dùng 7 (`.buoy-idle-zones`, thêm ở #107)
-  cộng `padding-left: 2px`, minimal dùng 8 (`.buoy-minimal`).
+  mọi chỗ của 2026-11-10). Từ 2026-11-12 (M4 "Sizes in em") code dùng đúng các khoảng này cho cả idle
+  và minimal, tính theo em (`kit/model/shapes.js` `pillMetrics`); trước đó idle dùng 7 cộng
+  `padding-left: 2px`, minimal dùng 8.
 
 - Leading: icon buổi trong ngày và icon thời tiết **24**, đầy ô 24 ([Icon](../icons/index.vi.md));
   Bu giữ **20** giữa ô 24, vì lưới 10 × 10 chỉ nét ở bội số của 10 ([Bu](../mascot/index.vi.md)).
@@ -32,7 +33,7 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 ## Chữ
 
 - Chữ 1em như chữ trên thanh của GNOME (cỡ 11pt kế thừa từ `stage`, gnome-shell-sass
-  `_common.scss`). Hiện Buoy dùng cố định 13 px. **Chốt**
+  `_common.scss`); trước 2026-11-12 Buoy dùng cố định 13 px. **Chốt**
 - Đậm **600**, số đều, do Buoy tự đặt: island được gắn bằng `addTopChrome`, không nằm trong
   `#panel`, nên chỉ kế thừa `stage` (font hệ thống, chữ thường 400), không có `font-weight: bold`
   (700) và `%numeric` của thanh (`_panel.scss`). 600 thay vì 700: chữ trắng trên nền đen gọn và
