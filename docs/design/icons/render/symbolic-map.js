@@ -54,7 +54,7 @@ export const SYMBOLIC = {
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',
     // Claude Code, the screen
-    'task-todo': 'circle',
+    'task-todo': 'circle-dashed',
     'mail-send': 'arrow-right',
     'media-record': 'video',
     'screen-shared': 'display-pulse',

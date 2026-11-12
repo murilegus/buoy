@@ -52,7 +52,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   cho icon đó (`window-close`, `media-playback-pause`, `audio-volume-high`, `go-home`…), để thiếu
   file nào thì St tự dùng icon cùng tên của theme. Tên Gravity chỉ còn là nguồn hình trong
   `render/gravity-ui/`. Ý nào theme không có tên thì Buoy đặt tên riêng, không có icon dự phòng:
-  `notifications-unread` (bell-dot), `task-todo` (circle), `caps-lock`, `num-lock`, `fn-lock`.
+  `notifications-unread` (bell-dot), `task-todo` (circle-dashed), `caps-lock`, `num-lock`, `fn-lock`.
   **Chốt** (Ethan, 2026-11-12)
 - **Mọi icon symbolic Buoy vẽ** (tab, nút, hàng, HUD/OSD, media, lịch, tải về, đã chép) là hình
   Gravity hoặc Buoy tự vẽ, kể cả HUD và các nút trước đây lấy icon theme. Giữ của GNOME: `prefs.js`
@@ -74,7 +74,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Tải về, mở thư mục, mở tệp, tệp chữ | `folder-download`, `folder-open`, `document-open`, `text-x-generic` | `arrow-down-to-line`, `folder-open`, `file`, `file-text` |
   | Đã chép, mật khẩu, ảnh, clipboard | `edit-copy`, `dialog-password`, `image-x-generic`, `edit-paste` | `copy`, `key`, `picture`, tự vẽ |
   | Bàn phím, thư (mẫu), thời tiết (dự phòng) | `input-keyboard`, `mail-unread`, `weather-overcast` | `keyboard`, `envelope`, `cloud` |
-  | Việc chờ, gửi, quay màn hình, chia sẻ màn hình | `task-todo`, `mail-send`, `media-record`, `screen-shared` | `circle`, `arrow-right`, `video`, `display-pulse` |
+  | Việc chờ, gửi, quay màn hình, chia sẻ màn hình | `task-todo`, `mail-send`, `media-record`, `screen-shared` | `circle-dashed`, `arrow-right`, `video`, `display-pulse` |
   | Âm lượng: tắt tiếng hoặc 0, ≤ 33 %, còn lại | `audio-volume-muted`, `-low`, `-medium` / `-high` / `-overamplified` | `volume-slash`, `volume-low`, `volume` |
   | Mic: tắt tiếng hoặc 0, mọi mức | `microphone-sensitivity-muted`, `-low` / `-medium` / `-high`, `audio-input-microphone` | `microphone-slash`, `microphone` |
   | Độ sáng màn hình, đèn bàn phím | `display-brightness`, `keyboard-brightness` | `sun`, tự vẽ |
@@ -84,6 +84,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Bluetooth bật, tắt; máy bay bật, tắt | `bluetooth-active`, `bluetooth-disabled`; `airplane-mode`, `airplane-mode-disabled` | tự vẽ, tự vẽ; `plane`, tự vẽ |
   | Màn hình riêng tư bật, tắt; bảng vẽ | `screen-privacy`, `screen-privacy-disabled`; `input-tablet` | `eye-slash`, `eye`; `pencil` |
 
+- Việc chờ của Claude Code: `circle-dashed` của Gravity thay `circle`. **Chốt** (Ethan, 2026-11-12)
 - Âm lượng và mic ở mức 0 dùng icon tắt tiếng như Shell (`ui/status/volume.js` `getIcon`), dù gsd
   gửi `-low`. **Chốt** (Ethan, 2026-11-12)
 - HUD nói Bluetooth và chế độ máy bay bằng chữ của Buoy, như Caps Lock: "Bluetooth on / off",

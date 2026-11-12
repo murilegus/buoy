@@ -142,7 +142,7 @@ for (const it of ROWS) {
         });
         dim(x, lx, y - 4, '14'); dim(lx, lx + 40, y - 4, '40'); dim(lx + 40, tx, y - 4, '12');
         dim(lx, lx + 12, y + h + 4, '12', CY, true); dim(lx + 12, lx + 28, y + h + 4, '16', CY, true);
-        text('✓ xong · ▶ đang làm · ○ chờ (mờ cùng chữ); 16 trong hàng 16, giữa cột leading; chữ thẳng cột với tiêu đề (0.85em)', lx + 34, y + h + 4, 5.5, 600, CY);
+        text('✓ xong · ▶ đang làm · ◌ chờ (mờ cùng chữ); 16 trong hàng 16, giữa cột leading; chữ thẳng cột với tiêu đề (0.85em)', lx + 34, y + h + 4, 5.5, 600, CY);
         vdim(x + pw + 6, y, y + 56, '56 phần đầu');
         [[0, '8'], [8, '16'], [24, '16'], [40, '16'], [56, '8']].forEach(([o, t], k, all) => {
             const b = k + 1 < all.length ? all[k + 1][0] : 64;

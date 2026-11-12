@@ -313,8 +313,8 @@ export function tasksFromFiles(files) {
     return tasks.sort((a, b) => n(a.id) - n(b.id) || a.id.localeCompare(b.id));
 }
 
-// done ✓, being done ▶, to do ○ (design/icons: Gravity UI's check, play-fill, circle; the
-// theme has no name for ○, task-todo is Buoy's)
+// done ✓, being done ▶, to do ◌ (design/icons: Gravity UI's check, play-fill, circle-dashed;
+// the theme has no name for ◌, task-todo is Buoy's)
 const TASK_ICON = {completed: 'object-select-symbolic', in_progress: 'media-playback-start-symbolic', pending: 'task-todo-symbolic'};
 
 /**
