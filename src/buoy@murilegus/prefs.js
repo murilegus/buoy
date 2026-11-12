@@ -325,7 +325,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         return row;
     }
 
-    // Bu on its #0b0b0b tile (MASCOT.md: never on a light background), drawn from
+    // Bu on his tile, the island's surface #000 (MASCOT.md: never on a light background), drawn from
     // kit/model/mascot.js's grid — no image file ships. The first time the page shows, Bu waves
     // hello for HELLO_MS (helloAt, as the README's hello.svg), then rests on idle; with
     // GTK animations off it is idle from the start. One timer, only while waving and
@@ -378,7 +378,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         area.connect('destroy', stop);
         area.set_draw_func((_a, cr, w, h) => {
             const x0 = (w - TILE) / 2, y0 = (h - TILE) / 2;
-            cr.setSourceRGB(...rgb('#0b0b0b'));
+            cr.setSourceRGB(...rgb('#000000'));
             roundedRect(cr, x0, y0, TILE, TILE, TILE_RADIUS);
             cr.fill();
             const cell = BU / GRID, inset = (TILE - BU) / 2;

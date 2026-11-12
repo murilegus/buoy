@@ -45,6 +45,7 @@
 
 import {mnemonics} from './keys.js';
 import {poseName} from './mascot.js';
+import {STATE_COLOURS} from './palette.js';
 
 export const MAX_ACTIONS = {minimal: 1, compact: 3, expanded: 3};
 /** An expanded block's extra lines (the greeting's): more would not fit the cap. */
@@ -81,7 +82,7 @@ export function typingMs(texts, msPerChar) {
 const LIGHTS = new Set(['off', 'missed', 'waiting']);
 
 // INDICATORS.md: state colours belong to the light/dot slots, never to a keyline.
-const RESERVED = new Set(['#ef9f27', '#e24b4a', '#f0997b', '#5dcaa5', '#3a3a3a']);
+const RESERVED = new Set(STATE_COLOURS);
 // 'eq' the moving equaliser; 'eq-paused' its bars stopped low, a near flat line (media
 // paused, 2026-11-07, Ethan: replaced ⏸)
 const GLYPHS = new Set(['eq', 'eq-paused']);

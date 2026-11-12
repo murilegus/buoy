@@ -6,6 +6,7 @@ import weather, {
     ART, artFor, card,
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
 import {readInfo, nextHour, unitNames} from '../src/buoy@murilegus/lib/modules/weather/read.js';
+import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
 function eq(actual, expected, msg) {
@@ -58,7 +59,7 @@ for (const name of ART) {
         throw new Error(`${name}: the file exists (${path})`);
     const svg = new TextDecoder().decode(GLib.file_get_contents(path)[1]);
     eq(svg.startsWith('<svg') && svg.includes('viewBox="0 0 16 16"'), true, `${name}: a 16 px SVG, as the daypart icons`);
-    for (const reserved of ['#EF9F27', '#E24B4A', '#F0997B', '#5DCAA5'])
+    for (const reserved of STATE_COLOURS.map(c => c.toUpperCase()))
         eq(svg.toUpperCase().includes(reserved), false, `${name}: no state colour ${reserved} (INDICATORS)`);
 }
 eq(artFor('weather-showers-night-symbolic'), artFor('weather-showers'), 'a night GWeather has no own icon for: the day one');

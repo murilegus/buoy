@@ -145,32 +145,32 @@
 
 /* The island pill. Hover/press/expanded are shapes, not CSS states. */
 .buoy-island {
-    background-color: #000;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: #000; /* surface */
+    border: 1px solid rgba(255, 255, 255, 0.12); /* border */
 }
 
 /* Content built by kit/ui/present/. Text 13–14 px, medium or heavier (CONTRACT.md §5.3);
    colour lives in content, the pill stays black. Nothing here animates. */
 .buoy-content {
-    color: #fff;
+    color: #fff; /* fg */
     font-size: 13px;
     font-weight: 500;
 }
-.buoy-content .dim { color: #b8b8b8; }
+.buoy-content .dim { color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
 
 .buoy-minimal { spacing: 8px; }
 .buoy-text { font-weight: 600; }
-.buoy-label { color: #d0d0d0; font-feature-settings: "tnum"; }
-.buoy-icon, .buoy-ring, .buoy-bar { color: #fff; }
+.buoy-label { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-feature-settings: "tnum"; }
+.buoy-icon, .buoy-ring, .buoy-bar { color: #fff; /* fg */ }
 /* A level (hud): the bar and its number in even figures, dimmed when muted. */
 .buoy-level { spacing: 8px; }
 .buoy-level-label { font-size: 12px; font-feature-settings: "tnum"; min-width: 34px; text-align: right; }
-.buoy-level-off .buoy-bar, .buoy-level-off .buoy-level-label { color: rgba(255, 255, 255, 0.4); }
+.buoy-level-off .buoy-bar, .buoy-level-off .buoy-level-label { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 /* .buoy-art: no border-radius, St.Icon does not clip to it; present/elements.js rounds minimal
    and compact art with a shader (kit/model/rounded.js artRadius), expanded and tabs stay square. */
 /* The equaliser: four bars that grow from their middle while playing (present/motion.js eqGlyph). */
 .buoy-eq { spacing: 2px; }
-.buoy-eq-bar { width: 3px; height: 12px; border-radius: 1px; background-color: #fff; }
+.buoy-eq-bar { width: 3px; height: 12px; border-radius: 1px; background-color: #fff; /* fg */ }
 
 .buoy-expanded { padding: 14px; spacing: 12px; }
 .buoy-expanded-top { spacing: 14px; }
@@ -179,16 +179,17 @@
 /* the greeting's first line (GREETING.md §2: larger than other titles) */
 .buoy-title-hero { font-size: 18px; font-weight: 700; padding-bottom: 4px; }
 .buoy-line { padding-top: 2px; }
-.buoy-subtitle { color: #b8b8b8; }
+.buoy-subtitle { color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
 .buoy-actions { spacing: 8px; }
 
 .buoy-action {
     padding: 4px 12px;
     border-radius: 999px;
-    color: #fff;
-    background-color: rgba(255, 255, 255, 0.12);
+    color: #fff; /* fg */
+    background-color: rgba(255, 255, 255, 0.12); /* fill-2 */
 }
-.buoy-action:hover { background-color: rgba(255, 255, 255, 0.2); }
+.buoy-action:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
+.buoy-action:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
 .buoy-action:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-minimal .buoy-action { padding: 2px 8px; }
 
@@ -199,9 +200,9 @@
 
 /* The buoy light: left edge slot, static (INDICATORS.md — one colour, one meaning). */
 .buoy-light { width: 7px; height: 7px; border-radius: 4px; }
-.buoy-light-off { background-color: #3a3a3a; }
-.buoy-light-missed { background-color: #EF9F27; }
-.buoy-light-waiting { background-color: #E24B4A; }
+.buoy-light-off { background-color: rgba(255, 255, 255, 0.2); /* light-off */ }
+.buoy-light-missed { background-color: #ff9f0a; /* light-missed */ }
+.buoy-light-waiting { background-color: #ff453a; /* light-waiting */ }
 .buoy-idle { padding-left: 2px; }
 /* An idle plan (clock…): its zones centred; the time unlike the cluster's clock, bold
    with even figures so the minutes do not shift the icon (SPEC §2a). */
@@ -212,7 +213,7 @@
     border-radius: 999px;
     font-size: 11px;
     font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.16);
+    background-color: rgba(255, 255, 255, 0.2); /* fill-3 */
 }
 
 /* staleAfter passed without an update (CONTRACT.md §1): dimmed */
@@ -220,8 +221,8 @@
 .buoy-stale StLabel,
 .buoy-stale .buoy-icon,
 .buoy-stale .buoy-ring,
-.buoy-stale .buoy-bar { color: #8a8a8a; }
-.buoy-stale .buoy-eq-bar { background-color: #8a8a8a; }
+.buoy-stale .buoy-bar { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-stale .buoy-eq-bar { background-color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 
 /* ==== Compact, the hover tier ============================================================= */
 
@@ -231,16 +232,16 @@
 .buoy-compact-top { spacing: 12px; }   /* present/compact.js INDENT_GAP */
 .buoy-compact-lines { spacing: 3px; }
 .buoy-compact-title { font-size: 14px; }
-.buoy-compact-subtitle { color: #b8b8b8; font-size: 12px; }
+.buoy-compact-subtitle { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 12px; }
 .buoy-compact-rows { spacing: 1px; }
 .buoy-compact-row { spacing: 8px; }
-.buoy-compact-row-text { color: #d0d0d0; font-size: 12px; }
-.buoy-compact-row-detail { color: rgba(255, 255, 255, 0.5); font-size: 12px; font-feature-settings: "tnum"; }
+.buoy-compact-row-text { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 12px; }
+.buoy-compact-row-detail { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; font-feature-settings: "tnum"; }
 .buoy-compact .buoy-actions { spacing: 6px; padding-left: 4px; }
 .buoy-compact .buoy-action { padding: 6px; border-radius: 999px; }
 /* A live position (media): the bar, then elapsed and remaining in even figures. */
 .buoy-live { spacing: 4px; padding-top: 6px; }
-.buoy-live-time { color: rgba(255, 255, 255, 0.5); font-size: 11px; font-feature-settings: "tnum"; }
+.buoy-live-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 11px; font-feature-settings: "tnum"; }
 /* An ask's key (kit/model/keys.js), shown only while the island holds the keyboard. */
 .buoy-action-face { spacing: 6px; }
 
@@ -249,24 +250,25 @@
 /* A card (a notification's compact, NOTIFICATIONS.md §3): GNOME's banner layout */
 .buoy-card { spacing: 6px; }
 .buoy-card-header { spacing: 6px; }
-.buoy-card-app { color: #d0d0d0; font-size: 12px; }
-.buoy-card-time { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
-.buoy-card-close { padding: 4px; border-radius: 999px; background-color: rgba(255, 255, 255, 0.12); }
-.buoy-card-close:hover { background-color: rgba(255, 255, 255, 0.24); }
+.buoy-card-app { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 12px; }
+.buoy-card-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; }
+.buoy-card-close { padding: 4px; border-radius: 999px; background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+.buoy-card-close:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
+.buoy-card-close:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
 .buoy-card-main { spacing: 10px; }
 .buoy-card-lines { spacing: 2px; }
 .buoy-card-title { font-size: 14px; font-weight: bold; }
 /* two lines (presentation.js MAX_CARD_LINES): Pango keeps whole lines within it */
-.buoy-card-body { color: #cfcfcf; font-size: 13px; max-height: 2.8em; }
+.buoy-card-body { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 13px; max-height: 2.8em; }
 .buoy-card-actions { spacing: 6px; }
 .buoy-card-actions .buoy-action { padding: 6px 12px; border-radius: 999px; }
 .buoy-key {
     font-size: 11px;
     font-weight: bold;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.5); /* fg-subtle */
     padding: 0 4px;
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.28); /* border-strong */
 }
 
 /* ==== Home and the tab strip (each module's tab: lib/modules/<id>/stylesheet.css) ========= */
@@ -277,55 +279,55 @@
     spacing: 2px;
     padding: 3px;
     border-radius: 999px;
-    background-color: rgba(255, 255, 255, 0.11);
+    background-color: rgba(255, 255, 255, 0.12); /* fill-2 */
 }
 /* inactive: icon only, round; active (:checked): icon + title on a lighter pill */
 .buoy-tab {
     padding: 6px 9px;
     border-radius: 999px;
-    color: #b8b8b8;
+    color: rgba(255, 255, 255, 0.7); /* fg-muted */
     font-size: 13px;
     font-weight: 600;
 }
 .buoy-tab-box { spacing: 7px; }
-.buoy-tab:hover { color: #fff; background-color: rgba(255, 255, 255, 0.08); }
-.buoy-tab:checked { padding: 6px 14px; color: #fff; background-color: rgba(255, 255, 255, 0.2); }
+.buoy-tab:hover { color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
+.buoy-tab:checked { padding: 6px 14px; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
 .buoy-tab:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-tab.buoy-more:checked { padding: 6px 9px; } /* the menu hangs from its edge */
 /* the tab's dot (a module's badge) at the icon's top right, as Yaru's bell with a dot:
    the icon's own colour (no colour of its own, 2026-11-08, Ethan), ringed in the tab's
    background so it reads as cut out of the icon */
-.buoy-tab-dot { width: 5px; height: 5px; border-radius: 4px; border: 1.5px solid #1f1f1f; background-color: #b8b8b8; }
-.buoy-tab:hover .buoy-tab-dot { border-color: #2c2c2c; background-color: #fff; }
-.buoy-tab:checked .buoy-tab-dot { border-color: #424242; background-color: #fff; }
+.buoy-tab-dot { width: 5px; height: 5px; border-radius: 4px; border: 1.5px solid #1f1f1f; /* the strip, fill-2 on black */ background-color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
+.buoy-tab:hover .buoy-tab-dot { border-color: #313131; /* fill-1 over the strip */ background-color: #fff; /* fg */ }
+.buoy-tab:checked .buoy-tab-dot { border-color: #4b4b4b; /* fill-3 over the strip */ background-color: #fff; /* fg */ }
 .buoy-home-list { spacing: 2px; }
 /* every empty tab or list (kit/ui/present/elements.js EmptyState): one colour, centred, full height */
-.buoy-empty { color: rgba(255, 255, 255, 0.55); padding: 8px; }
+.buoy-empty { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ padding: 8px; }
 .buoy-empty-stack { spacing: 8px; }
 .buoy-home-row { padding: 6px 8px; border-radius: 12px; }
-.buoy-home-row:hover { background-color: rgba(255, 255, 255, 0.08); }
+.buoy-home-row:hover { background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
 .buoy-home-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 /* Home's Missed section (2026-11-03): what ended while the island was hidden. */
-.buoy-home-section { spacing: 8px; padding: 8px 8px 2px; font-size: 12px; color: rgba(255, 255, 255, 0.55); }
-.buoy-home-clear { padding: 4px; border-radius: 999px; color: rgba(255, 255, 255, 0.7); }
-.buoy-home-clear:hover { background-color: rgba(255, 255, 255, 0.12); color: #fff; }
+.buoy-home-section { spacing: 8px; padding: 8px 8px 2px; font-size: 12px; color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-home-clear { padding: 4px; border-radius: 999px; color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
+.buoy-home-clear:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ color: #fff; /* fg */ }
 .buoy-home-clear:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-missed-row { spacing: 10px; }
-.buoy-missed-source { color: rgba(255, 255, 255, 0.5); }
-.buoy-missed-time { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+.buoy-missed-source { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-missed-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; }
 /* Home's blocks (SPEC §3, 2026-11-08, layout A): chips for the running activities no block
    covers, then two columns of cards — Now playing | weather over Up next */
 .buoy-home-chips { padding: 2px 0 4px; }
-.buoy-home-chip { padding: 0 12px; height: 32px; border-radius: 999px; background-color: rgba(255, 255, 255, 0.07); }
-.buoy-home-chip:hover { background-color: rgba(255, 255, 255, 0.13); }
+.buoy-home-chip { padding: 0 12px; height: 32px; border-radius: 999px; background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
+.buoy-home-chip:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-home-chip:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-home-columns { spacing: 8px; }
 .buoy-home-column { spacing: 8px; }
-.buoy-home-card { padding: 10px 12px; border-radius: 16px; background-color: rgba(255, 255, 255, 0.07); }
-.buoy-home-hit:hover { background-color: rgba(255, 255, 255, 0.11); }
+.buoy-home-card { padding: 10px 12px; border-radius: 16px; background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
+.buoy-home-hit:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-home-hit:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
-.buoy-home-title { color: #fff; font-weight: 600; }
-.buoy-home-subtitle { color: rgba(255, 255, 255, 0.55); font-size: 12px; font-feature-settings: "tnum"; }
+.buoy-home-title { color: #fff; /* fg */ font-weight: 600; }
+.buoy-home-subtitle { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; font-feature-settings: "tnum"; }
 .buoy-kind-tab { spacing: 4px; }
 .buoy-kind-tab .buoy-expanded { padding: 4px 2px; }
 
@@ -334,14 +336,40 @@
     min-width: 200px;
     padding: 6px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background-color: #242424;
+    border: 1px solid rgba(255, 255, 255, 0.12); /* border */
+    background-color: #1f1f1f; /* surface-menu */
 }
-.buoy-menu-row { padding: 7px 10px; border-radius: 9px; color: #fff; font-weight: 500; }
-.buoy-menu-row:hover { background-color: rgba(255, 255, 255, 0.1); }
+.buoy-menu-row { padding: 7px 10px; border-radius: 9px; color: #fff; /* fg */ font-weight: 500; }
+.buoy-menu-row:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-menu-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-menu-row-box { spacing: 10px; }
 /* ⚙ at the right of the strip row: a round button in the strip's own grey */
 .buoy-panel-header { spacing: 8px; }
-.buoy-tab.buoy-gear { padding: 9px; background-color: rgba(255, 255, 255, 0.11); }
-.buoy-tab.buoy-gear:hover { color: #fff; background-color: rgba(255, 255, 255, 0.2); }
+.buoy-tab.buoy-gear { padding: 9px; background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+.buoy-tab.buoy-gear:hover { color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
+.buoy-tab.buoy-gear:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
+
+/* ==== High contrast (design/colours "Tương phản cao") ======================================= */
+/* kit/ui/island.js puts buoy-hc on the island while GNOME's high contrast is on: border
+   50 %, border-strong 70 %, fg-subtle 70 %, fg-disabled 50 %; the fills stay. The prefix adds
+   a class, so a rule that must still win over one of these is repeated here after it.
+   tests/palette.test.js checks every use of those four roles has its line here. */
+.buoy-hc .buoy-island { border-color: rgba(255, 255, 255, 0.5); /* border */ }
+.buoy-hc .buoy-island.buoy-focused { border-color: -st-accent-color; }
+.buoy-hc .buoy-level-off .buoy-bar, .buoy-hc .buoy-level-off .buoy-level-label { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-stale,
+.buoy-hc .buoy-stale StLabel,
+.buoy-hc .buoy-stale .buoy-icon,
+.buoy-hc .buoy-stale .buoy-ring,
+.buoy-hc .buoy-stale .buoy-bar { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-stale .buoy-eq-bar { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-compact-row-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-live-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-card-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-key { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ border-color: rgba(255, 255, 255, 0.7); /* border-strong */ }
+.buoy-hc .buoy-empty { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-home-section { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-missed-source { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-missed-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-home-subtitle { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-menu { border-color: rgba(255, 255, 255, 0.5); /* border */ }

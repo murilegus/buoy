@@ -9,6 +9,8 @@
  *   E  eye, a hole (transparent) · L lamp, in the lamp colour
  */
 
+import {ROLES} from './palette.js';
+
 export const SIZE = 10;
 
 /** Cell letter → colour; `null` = transparent; the lamp (L) is not here. */
@@ -22,7 +24,9 @@ export const PALETTE = Object.freeze({
 export const FOREGROUND = PALETTE.B;
 
 /** INDICATORS' state colours: in the lamp only as the `missed` / `ask` poses' own. */
-export const LIGHT_LAMPS = Object.freeze({missed: '#EF9F27', waiting: '#E24B4A'});
+export const LIGHT_LAMPS = Object.freeze({
+    missed: ROLES['light-missed'].toUpperCase(), waiting: ROLES['light-waiting'].toUpperCase(),
+});
 
 /** Frames swap every 500 ms; `once` poses play two swaps of both frames (~2 s). */
 export const FRAME_MS = 500;
@@ -237,23 +241,25 @@ export const FRAMES = Object.freeze({
 });
 
 /**
- * The 13 poses (MASCOT.md § Poses): lamp colour, frames, and motion. `loop` repeats
+ * The 13 poses (MASCOT.md § Poses): lamp colour, frames, and motion. The lamps are saturated
+ * to read at 4 × 4 px, clear of the lights and the privacy dots (design/colours, 2026-11-11):
+ * `missed` and `ask` are the lights' own, `think` is pink since purple is the mic. `loop` repeats
  * while shown; `then` plays once and settles on that pose.
  */
 export const POSES = Object.freeze({
-    idle: {lamp: '#B4B2A9'},
+    idle: {lamp: '#C8C6BD'},
     sleep: {lamp: '#444441'},
-    missed: {lamp: '#EF9F27'},
-    ask: {lamp: '#E24B4A'},
-    done: {lamp: '#97C459'},
-    busy: {lamp: '#85B7EB', frames: ['busy.1', 'busy.2'], loop: true},
-    wave: {lamp: '#FAC775', frames: ['wave.1', 'wave.2'], then: 'idle'},
-    think: {lamp: '#AFA9EC', frames: ['think.1', 'think.2'], loop: true},
+    missed: {lamp: LIGHT_LAMPS.missed},
+    ask: {lamp: LIGHT_LAMPS.waiting},
+    done: {lamp: '#B4E33D'},
+    busy: {lamp: '#3D9BFF', frames: ['busy.1', 'busy.2'], loop: true},
+    wave: {lamp: '#FFE14D', frames: ['wave.1', 'wave.2'], then: 'idle'},
+    think: {lamp: '#FF7EB6', frames: ['think.1', 'think.2'], loop: true},
     turn: {lamp: 'foreground'},
-    error: {lamp: '#5F5E5A'},
-    compact: {lamp: '#B5D4F4'},
+    error: {lamp: '#8A8880'},
+    compact: {lamp: '#5AD8F5'},
     stale: {lamp: '#444441'},
-    party: {lamp: '#97C459', frames: ['party.1', 'party.2'], then: 'done'},
+    party: {lamp: '#B4E33D', frames: ['party.1', 'party.2'], then: 'done'},
 });
 
 /**

@@ -45,7 +45,8 @@ replacement for the light in every state.
   this table had said "foreground at 35 / 55 / 70 %", which drew grey water and a faded
   stripe). Every cell is a solid colour, no partial opacity, so the edges stay crisp at
   20 px. Bu sits only on black: inside the always-black pill, and elsewhere (prefs, Home
-  cards, README, EGO) on its own `#0b0b0b` tile — never on a light background. Cell
+  cards, README, EGO) on its own tile, the island's black `#000` (2026-11-11, was `#0b0b0b`) —
+  never on a light background. Cell
   letters:
 
   | Cell | Meaning | Colour |
@@ -68,6 +69,9 @@ replacement for the light in every state.
   Ethan: the lamp is too small to read as the light — before, it took the light's colour
   and the edge slot was not drawn). Amber and red appear in the lamp only as the `missed`
   and `ask` poses' own colours.
+- **Saturated lamps** (2026-11-11, design/colours "Minh hoạ"): at 4 × 4 px a pastel reads
+  grey, so each pose keeps its hue at near full saturation, clear of the lights and the privacy
+  dots: `think` is pink (purple is the mic), `error` a lighter grey and never red (red is `ask`).
 - **Motion, only with an activity.** Four poses move: `busy` and `think` loop while their
   activity is visible; `wave` and `party` play once (~2 s) and settle on `done` / `idle`.
   Every move is **two frames swapped every 500 ms** — two repaints a second of a 20 px
@@ -87,7 +91,8 @@ replacement for the light in every state.
     per activity surface (id + surface, last 32). An update mid-wave continues the wave; a
     new `Surface` with the same id starts it again.
 - **Stale** is drawn by the renderer as for any stale activity (dimmed, CONTRACT.md §1): the
-  text greys in CSS and Bu, whose palette is fixed, is drawn at 40 % opacity, as the
+  text turns `fg-subtle` (50 %) in CSS and Bu, whose palette is fixed, is drawn at the same
+  50 % opacity (design/colours, 2026-11-11; 40 % before), as the
   `stale` preview; the `stale` pose is what Bu looks like while dimmed.
 
 ## Rendering
@@ -108,9 +113,9 @@ replacement for the light in every state.
   grids and the palette above (regenerated 2026-11-03 when the palette was corrected, and
   2026-11-04 for the 2 × 2 lamp: `sheet.svg`, the 13 pose files and `hello.svg`; `eyes.svg`
   has no lamp); they are not loaded at runtime. `tests/mascot.test.js` checks each pose
-  file cell by cell against its grid and lamp colour. The `stale` preview is dimmed to 40 %, as the renderer
+  file cell by cell against its grid and lamp colour. The `stale` preview is dimmed to 50 %, as the renderer
   dims a stale activity.
-  `hello-icon.png` (480 px, `wave.1` on its `#0b0b0b` tile: the extensions.gnome.org icon, 2026-11-09); `hello.svg` (README, 2026-11-03) waves `wave.1`/`wave.2` for 5 s at 500 ms (3 s until
+  `hello-icon.png` (480 px, `wave.1` on its `#000` tile: the extensions.gnome.org icon, 2026-11-09); `hello.svg` (README, 2026-11-03) waves `wave.1`/`wave.2` for 5 s at 500 ms (3 s until
   2026-11-04, Ethan), then
   rests on `idle` (CSS, once per page load; `prefers-reduced-motion` shows `idle` only).
 - Contract: an adapter (or a D-Bus caller) sets `leading: {mascot: '<pose>', icon?}`
@@ -120,25 +125,25 @@ replacement for the light in every state.
 
 | Pose | Name | When | Lamp | Moves |
 |---|---|---|---|---|
-| `idle` | normal | default; brand; agent session open, nothing running | `#B4B2A9` | — |
+| `idle` | normal | default; brand; agent session open, nothing running | `#C8C6BD` | — |
 | `sleep` | asleep | brand at night; empty states after `night` | `#444441` | — |
-| `missed` | looking | something was missed (brand, Home empty state with history) | amber `#EF9F27` | — |
-| `ask` | hand up | an agent asks for permission (`ask()`) | red `#E24B4A` | — |
-| `done` | pleased | the agent finished | `#97C459` | — |
-| `busy` | working | a tool is running | `#85B7EB` | loop, bobs into the water |
-| `wave` | waving | greeting | `#FAC775` | once, then `idle`; a greeting holds it 5 s (GREETING.md §6, 2026-11-06) |
-| `think` | thinking | prompt received, no tool yet | `#AFA9EC` | loop, thought dots |
+| `missed` | looking | something was missed (brand, Home empty state with history) | amber `#FF9F0A` | — |
+| `ask` | hand up | an agent asks for permission (`ask()`) | red `#FF453A` | — |
+| `done` | pleased | the agent finished | `#B4E33D` | — |
+| `busy` | working | a tool is running | `#3D9BFF` | loop, bobs into the water |
+| `wave` | waving | greeting | `#FFE14D` | once, then `idle`; a greeting holds it 5 s (GREETING.md §6, 2026-11-06) |
+| `think` | thinking | prompt received, no tool yet | `#FF7EB6` | loop, thought dots |
 | `turn` | your turn | the agent waits for you to type | foreground | — |
-| `error` | sinking | a tool or the turn failed | `#5F5E5A` | — |
-| `compact` | squeezed | the agent compacts its context | `#B5D4F4` | — |
+| `error` | sinking | a tool or the turn failed | `#8A8880` | — |
+| `compact` | squeezed | the agent compacts its context | `#5AD8F5` | — |
 | `stale` | faded | no update for `staleAfter` (drawn dimmed) | `#444441` | — |
-| `party` | celebrating | done after a run longer than 10 min | `#97C459` | once, then `done` |
+| `party` | celebrating | done after a run longer than 10 min | `#B4E33D` | once, then `done` |
 
 Every block is one frame: `<pose>[.<frame>]  lamp <colour>`. Moving poses have frames
 `.1` and `.2`.
 
 ```bu
-idle  lamp #B4B2A9
+idle  lamp #C8C6BD
 ....LL....
 ....LL....
 ..BBBBBB..
@@ -166,7 +171,7 @@ W.WW..WW.W
 ```
 
 ```bu
-missed  lamp #EF9F27
+missed  lamp #FF9F0A
 ....LL....
 ....LL....
 ..BBBBBB..
@@ -180,7 +185,7 @@ W.WW..WW.W
 ```
 
 ```bu
-ask  lamp #E24B4A
+ask  lamp #FF453A
 ....LL..A.
 ....LL..A.
 ..BBBBBBA.
@@ -194,7 +199,7 @@ W.WW..WW.W
 ```
 
 ```bu
-done  lamp #97C459
+done  lamp #B4E33D
 ....LL....
 ....LL....
 ..BBBBBB..
@@ -208,7 +213,7 @@ W.WW..WW.W
 ```
 
 ```bu
-busy.1  lamp #85B7EB
+busy.1  lamp #3D9BFF
 ....LL....
 ....LL....
 ..BBBBBB..
@@ -222,7 +227,7 @@ W.WW..WW.W
 ```
 
 ```bu
-busy.2  lamp #85B7EB
+busy.2  lamp #3D9BFF
 ..........
 ....LL....
 ....LL....
@@ -236,7 +241,7 @@ W.WW..WW.W
 ```
 
 ```bu
-wave.1  lamp #FAC775
+wave.1  lamp #FFE14D
 .A..LL....
 .A..LL....
 .ABBBBBB..
@@ -250,7 +255,7 @@ W.WW..WW.W
 ```
 
 ```bu
-wave.2  lamp #FAC775
+wave.2  lamp #FFE14D
 A...LL....
 .A..LL....
 ..BBBBBB..
@@ -264,7 +269,7 @@ W.WW..WW.W
 ```
 
 ```bu
-think.1  lamp #AFA9EC
+think.1  lamp #FF7EB6
 ....LL.D.D
 ....LL.D..
 ..BEBBEB..
@@ -278,7 +283,7 @@ W.WW..WW.W
 ```
 
 ```bu
-think.2  lamp #AFA9EC
+think.2  lamp #FF7EB6
 ....LL.D..
 ....LL.D..
 ..BEBBEB..
@@ -306,7 +311,7 @@ W.WW..WW.W
 ```
 
 ```bu
-error  lamp #5F5E5A
+error  lamp #8A8880
 ..........
 ....LL....
 ....LL....
@@ -320,7 +325,7 @@ W.WW..WW.W
 ```
 
 ```bu
-compact  lamp #B5D4F4
+compact  lamp #5AD8F5
 ..........
 ....LL....
 ....LL....
@@ -348,7 +353,7 @@ W.WW..WW.W
 ```
 
 ```bu
-party.1  lamp #97C459
+party.1  lamp #B4E33D
 D...LL...D
 ....LL....
 ..BBBBBB..
@@ -362,7 +367,7 @@ WW.W..W.WW
 ```
 
 ```bu
-party.2  lamp #97C459
+party.2  lamp #B4E33D
 ....LL....
 ....LL....
 ..BBBBBB..

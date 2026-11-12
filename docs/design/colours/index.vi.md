@@ -128,8 +128,8 @@ Bên trong island là bảng màu của Buoy; mọi thứ quanh nó theo GNOME. 
 - **Trên thanh** (chữ, icon, nền cụm, highlight nút tray): màu chữ của theme, hoặc `#1a1a1a` theo
   `cluster-contrast`, với các mức .17 / .28 / .32 / .75 của GNOME (SPEC §1). Không gom.
 - **Thứ GNOME vẽ** giữ nguyên màu GNOME: quick settings, menu của tray, menu lịch, hộp thoại.
-- **Prefs** (libadwaita) theo sáng/tối và accent của hệ thống. Riêng ô nền của Bu (`#0b0b0b`) nên
-  về `surface` `#000`, cho giống island.
+- **Prefs** (libadwaita) theo sáng/tối và accent của hệ thống. Riêng ô nền của Bu là `surface`
+  `#000` (trước là `#0b0b0b`), cho giống island.
 - **Shell kiểu sáng** (GNOME 47+): island vẫn đen; menu bánh răng là của Buoy nên cũng tối.
 - Icon và Bu: xem [Minh hoạ](#minh-hoạ-icon-và-bu).
 
@@ -194,3 +194,7 @@ màu không nằm trong bảng, kèm vai trò gần nhất. CSS ghi giá trị t
 - Chip lần lượt dùng .07, .10, `#1f1f1f`, `#3a3a3c` lúc nghỉ.
 
 Bảng vai trò ở trên gom 54 giá trị này còn 16 (không tính màu trên thanh và Bu).
+
+Từ 2026-11-12 (M4 "Colours by role") CSS trong island chỉ còn các vai trò, lấy từ
+`lib/kit/model/palette.js`; `tests/palette.test.js` giữ cho nó như vậy, và kiểm mọi chỗ dùng
+bốn vai trò mà tương phản cao nâng lên đều có dòng `.buoy-hc` tương ứng.

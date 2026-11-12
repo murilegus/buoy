@@ -4,4 +4,4 @@
 /* its block on Home (weather/home.js) */
 .buoy-home-weather { spacing: 12px; }
 .buoy-home-weather-top { spacing: 8px; }
-.buoy-home-temp { color: #fff; font-size: 20px; font-weight: 600; font-feature-settings: "tnum"; }
+.buoy-home-temp { color: #fff; /* fg */ font-size: 20px; font-weight: 600; font-feature-settings: "tnum"; }

@@ -100,13 +100,13 @@ eq(poseName('toString'), null, 'no prototype names');
 eq(Object.keys(POSES).filter(moves).sort(), ['busy', 'party', 'think', 'wave'], 'four poses move');
 
 // --- lamp rule (INDICATORS § Bu's lamp) -------------------------------------------------
-eq(lampColour('busy'), '#85B7EB', 'the pose\'s own colour');
-eq(lampColour('busy', 'missed'), '#85B7EB', 'the stack\'s amber never reaches the lamp (2026-11-08)');
-eq(lampColour('done', 'waiting'), '#97C459', 'nor its red');
+eq(lampColour('busy'), '#3D9BFF', 'the pose\'s own colour');
+eq(lampColour('busy', 'missed'), '#3D9BFF', 'the stack\'s amber never reaches the lamp (2026-11-08)');
+eq(lampColour('done', 'waiting'), '#B4E33D', 'nor its red');
 eq(lampColour('turn'), FOREGROUND, 'turn: foreground = the body colour');
 eq(FOREGROUND, '#F1EFE8', 'foreground is the body colour');
 eq(lampColour('nope'), POSES.idle.lamp, 'unknown pose: idle\'s lamp');
-eq(LIGHT_LAMPS, {missed: '#EF9F27', waiting: '#E24B4A'}, 'amber and red are INDICATORS\' state colours');
+eq(LIGHT_LAMPS, {missed: '#FF9F0A', waiting: '#FF453A'}, 'amber and red are INDICATORS\' state colours (design/colours C)');
 for (const [pose, p] of Object.entries(POSES)) {
     if (pose !== 'missed')
         ok(p.lamp !== LIGHT_LAMPS.missed, `${pose}: amber only for missed`);
@@ -201,7 +201,7 @@ eq(helloAt(5000), {frame: 'idle', pose: 'idle', nextIn: null}, 'at 5 s: idle, an
 eq(helloAt(60000), {frame: 'idle', pose: 'idle', nextIn: null}, 'long after: idle');
 eq(helloAt(-10).frame, 'wave.1', 'negative elapsed counts as 0');
 eq(helloAt(1000, {still: true}), {frame: 'idle', pose: 'idle', nextIn: null}, 'animations off: idle at once, as hello.svg');
-eq(lampColour(helloAt(0).pose), '#FAC775', 'the wave lamp while waving');
+eq(lampColour(helloAt(0).pose), '#FFE14D', 'the wave lamp while waving');
 let swaps = 0;
 for (let t = 0, f = helloAt(0); f.nextIn !== null; t += f.nextIn, f = helloAt(t))
     swaps++;

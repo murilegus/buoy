@@ -52,6 +52,7 @@ src/buoy@murilegus/
     │   │   ├── rounded.js      which windows get round top corners, where the arcs fall, the shader (2026-11-04)
     │   │   ├── daypart.js      hour → dawn…night from `daypart-starts` (2026-11-03)
     │   │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()` (2026-11-08)
+    │   │   ├── palette.js      the colours by role, high contrast, the state colours (design/colours, 2026-11-12)
     │   │   └── mascot.js       Bu: 13 pose grids, lamp rule, frame timing; MASCOT.md is the source (2026-11-03)
     │   ├── services/       the Shell side without actors: buses, files, Shell's objects, the
     │   │   │               one wall clock. Imports model/ and services/, never ui/, St or Clutter
@@ -149,6 +150,15 @@ follow from St:
   (`.buoy-agents-line .buoy-agents-time` over `.buoy-label`).
 - A module's selectors are its own: classes named `buoy-<its words>-…`, used only by its
   files; the kit's classes are styled only in `stylesheet.css`.
+
+Colours (2026-11-12, FEATURES M4 "Colours by role"): inside the island every colour is a role
+of `kit/model/palette.js` (design/colours), written as its value with the role in a comment,
+since St reads no CSS variables; the bar keeps GNOME's. `tests/palette.test.js` reads every
+stylesheet and fails on a colour that is not a role or names the wrong one. GNOME's high
+contrast (`St.Settings` `high-contrast`) puts `buoy-hc` on the island; each stylesheet ends
+with a block of `.buoy-hc …` rules raising `border`, `border-strong`, `fg-subtle` and
+`fg-disabled`, one for every rule that uses them (the test checks), and repeating after them
+any rule that must still win (`.buoy-media-on`, today in the calendar).
 
 ### Module kinds
 

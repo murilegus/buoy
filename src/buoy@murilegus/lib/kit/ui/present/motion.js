@@ -249,9 +249,9 @@ function startOf(key) {
     return STARTS.get(key);
 }
 
-// A stale activity is dimmed (CONTRACT.md §1): its text and icons turn grey in CSS; Bu's
-// palette is fixed, so it is dimmed to 40 % as the `stale` preview (MASCOT.md).
-const STALE_OPACITY = 102;
+// A stale activity is dimmed (CONTRACT.md §1): its text and icons turn fg-subtle (50 %) in
+// CSS; Bu's palette is fixed, so he is dimmed to the same 50 % (design/colours, 2026-11-11).
+const STALE_OPACITY = 128;
 
 function dimMascots(actor) {
     for (const a of actor.get_children()) {
