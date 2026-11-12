@@ -321,6 +321,23 @@ export function planCompact(p, {light} = {}) {
     return plan;
 }
 
+/**
+ * How many of a compact's rows fit a given height (Home's main card, design/home: the card
+ * takes the height the row of tiles leaves; 2026-11-13, #216: an agent's 3 task rows ran
+ * past it): as many as fit under the head with 8 above and below, from the first; none,
+ * the head alone (56). The card is still a button: its click opens the activity's tab,
+ * where every row is.
+ *
+ * @param {?object} plan  planCompact()
+ * @param {number} height  px
+ * @param {object} m  compactMetrics()
+ * @returns {number} rows to draw
+ */
+export function rowsThatFit(plan, height, m) {
+    const has = plan?.rows?.length ?? 0;
+    return Math.max(0, Math.min(has, Math.floor((height - m.head - 2 * m.vpad) / m.row)));
+}
+
 /** A card's choices: at most this many rows, Other besides (AskUserQuestion has 2–4). */
 export const MAX_CHOICES = 6;
 

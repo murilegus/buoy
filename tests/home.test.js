@@ -111,4 +111,28 @@ eq([batteryTile({present: false, percentage: 80, state: 2}), batteryTile({presen
     'no battery (a desktop), no percentage: no tile');
 eq(batteryTile({present: true, percentage: 140, state: 2}).value, '100%', 'clamped to 100');
 
+
+// --- the main card fits its rows (#216, 2026-11-13) ------------------------------------
+{
+    const {rowsThatFit, planCompact} = await import('../src/buoy@murilegus/lib/kit/model/presentation.js');
+    const {compactMetrics} = await import('../src/buoy@murilegus/lib/kit/model/shapes.js');
+    const m = compactMetrics();
+    const rows3 = planCompact({id: 'a', kind: 'agent', text: 'x', compact: {text: 'Buoy', rows: [{text: '1'}, {text: '2'}, {text: '3'}]}});
+    const check = (h, want, msg) => {
+        if (rowsThatFit(rows3, h, m) !== want)
+            throw new Error(`${msg}: expected ${want}, got ${rowsThatFit(rows3, h, m)}`);
+    };
+    check(120, 3, '56 + 8 + 3 × 16 + 8 = 120: all three');
+    check(104, 2, '104 (1920, low, a row of tiles under it): two');
+    check(119, 2, 'a px short of three: two');
+    check(88, 1, '88: one');
+    check(80, 0, 'no room for a row: the head alone');
+    check(0, 0, 'no height: none, never negative');
+    check(400, 3, 'room to spare: never more than it has');
+    if (rowsThatFit(planCompact({id: 'b', kind: 'x', text: 'y', compact: {text: 'y'}}), 400, m) !== 0)
+        throw new Error('no rows: zero');
+    if (rowsThatFit(null, 400, m) !== 0)
+        throw new Error('no plan: zero');
+}
+
 print('home: ok');
