@@ -105,6 +105,9 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   it is doing, in one line ("Thinking", "Running pnpm test", "Editing src/…/pill.js",
   "Fetching example.com", "Waiting for you", "Done in 4 min"); commands, paths and URLs
   give way to "Running a command", "Editing a file"… while the screen is shared (§7).
+  Rows (design/compact "Danh sách hàng"): Claude's task list; without one, its last three
+  steps, newest last — ▶ the call running, ✓ the ones done (2026-11-12). None while the
+  screen is shared.
 - **Expanded**: only for a permission prompt (§4).
 - **Click** on a session's pill (Ethan, 2026-11-07): its terminal — or Claude Desktop —
   comes to the front (the app found in §6, `Shell.App.activate`) and nothing opens.
