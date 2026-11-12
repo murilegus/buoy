@@ -625,9 +625,13 @@ export function questionReply(ev, answers) {
  */
 export function step(rec, ev, now, source = 'claude') {
     let r = rec ?? newRecord(source, ev);
-    if (str(ev.cwd))
-        // the project changes with the folder; the source may name it better (its git root)
-        r = str(ev.cwd) === r.cwd ? r : {...r, cwd: str(ev.cwd), project: projectOf(ev.cwd)};
+    if (str(ev.cwd)) {
+        // A new folder keeps the project it has: Claude moving into src/ is still the same
+        // repository, and its folder's name first, the git root's a moment later, made the
+        // pill jump (2026-11-13, Ethan). The source names it from the git root (and back to
+        // the folder's name outside any repository); with none yet, the folder's name.
+        r = str(ev.cwd) === r.cwd ? r : {...r, cwd: str(ev.cwd), project: r.project ?? projectOf(ev.cwd)};
+    }
     if (str(ev.session_title))                    // any event once the session has one (/rename)
         r = {...r, sessionTitle: str(ev.session_title)};
     const out = (next, {show = next.shown, end = false, alert = false} = {}) =>

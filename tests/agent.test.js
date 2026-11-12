@@ -112,6 +112,11 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq([titled.text, titled.compact.text], ['Claude · Thinking', 'Permission test'], 'with a title: the title on hover');
     const moved = last([[{...ev('UserPromptSubmit'), cwd: SCR}], [ev('PreToolUse', {tool_name: 'Read', tool_input: {}})]]).rec;
     eq(agent(moved).text, 'buoy · Reading a file', 'moved to a folder: its next event names the project');
+    // moving inside the repository keeps its name (2026-11-13, Ethan: the pill jumped
+    // "buoy@murilegus" → "buoy" as Claude cd'd into src/); the source renames from the git root
+    const deeper = last([[ev('UserPromptSubmit')], [{...ev('PreToolUse', {tool_name: 'Read', tool_input: {}}), cwd: `${CWD}/src/buoy@murilegus`}]]).rec;
+    eq([deeper.cwd, deeper.project, agent(deeper).text], [`${CWD}/src/buoy@murilegus`, 'buoy', 'buoy · Reading a file'],
+        'a folder inside it: the same project, no jump');
     const req = {...ev(ASK_EVENT, {tool_name: 'mcp__ccd_directory__change_directory', tool_input: {}}), cwd: SCR};
     const q = askOf(last([[{...ev('UserPromptSubmit'), cwd: SCR}], [req]]).rec, req);
     eq([q.question, q.look.compact.card.app], ['Claude needs your OK', 'New session · mcp__ccd_directory__change_directory'],
