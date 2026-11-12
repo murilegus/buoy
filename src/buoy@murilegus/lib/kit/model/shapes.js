@@ -8,7 +8,7 @@
 // (container.w − w) / 2, which then lands on a whole pixel and edges stay sharp.
 
 export const GAP = 4;          // pill ↔ screen edge (a compact near it)
-export const OVERSHOOT = 20;   // container margin so EASE_OUT_BACK never clips
+export const OVERSHOOT = 20;   // container margin so a bouncing spring never clips (open: 12 × 7 px past)
 export const PILL_GAP = 8;     // between side-by-side pills (SPEC §2c)
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -37,7 +37,7 @@ export function pillMetrics(em = EM_1) {
         gap: Math.round(6 * k),         // leading cell → text, text → trailing
         buttonGap: Math.round(8 * k),   // trailing → a button
         hover: even(12 * k),            // 0.75em wider under the pointer (was × 1.10)
-        press: even(18 * k),            // pressed: about 0.5em past the hover (was × 1.16)
+        press: even(4 * k),             // pressed: 4 smaller each way, on `snap` (design/motion, 2026-11-13; was 18 wider)
         dot: even(8 * k),               // the light at an end: 8, even so it covers whole px
     };
 }
@@ -134,7 +134,7 @@ export function shapesFor(monitor, panelH, opts = {}) {
         // side pills 2 and 3 (SPEC §2c): one fixed shape, the idle size
         side: {w: idleW, h, r: radius(h)},
         hover: base => ({w: even(base.w + m.hover), h: h + 2, r: radius(h + 2)}),
-        press: base => ({w: even(base.w + m.press), h: h + 4, r: radius(h + 4)}),
+        press: base => ({w: even(base.w - m.press), h: base.h - m.press, r: radius(base.h - m.press)}),
         // minimal (the pill in the bar, SPEC §2), content-fit; `hint` is a discrete size hint
         // from the adapter, never px. Pill 1 keeps it however many pills share the bar.
         // `lit`: pill 1 with a light at its ends — the cap counts it, no exception (2026-11-10)
@@ -183,32 +183,4 @@ export function shapesFor(monitor, panelH, opts = {}) {
  */
 export function compactCx(cx, w, containerW) {
     return Math.round(clamp(cx, GAP + w / 2, containerW - GAP - w / 2));
-}
-
-// --- the morph's bounce ------------------------------------------------------------------
-
-/** EASE_OUT_BACK goes this share of a move past its end (Clutter's constant 1.70158). */
-export const BACK_SHARE = 0.1;
-/** The most a shrinking pill may bounce past its size, in px (2026-11-06, Ethan). */
-export const SHRINK_BOUNCE = 12;
-
-/**
- * Where a long shrink turns round: EASE_OUT_BACK would go 10 % of the move past its end,
- * which on expanded → minimal (hundreds of px) cut into the text (2026-11-06, Ethan). A
- * shrink whose bounce would pass `maxPx` stops this far short instead, then settles out to
- * its size (pill.js two-step morph); one whose bounce is small enough keeps Clutter's.
- *
- * @param {{w: number, h: number}} from
- * @param {{w: number, h: number}} to
- * @param {number} [maxPx]
- * @returns {?{w: number, h: number}} the size it shrinks to first, or null (Clutter's own)
- */
-export function shrinkStop(from, to, maxPx = SHRINK_BOUNCE) {
-    const dw = from.w - to.w, dh = from.h - to.h;
-    const d = Math.max(dw, dh);
-    // a hair over (a 120 px compact → minimal is 12.0 px): keep Clutter's
-    if (!(d > 0) || d * BACK_SHARE <= maxPx + 0.05)
-        return null;
-    const k = maxPx / d;
-    return {w: to.w - Math.max(0, dw) * k, h: to.h - Math.max(0, dh) * k};
 }

@@ -1,6 +1,6 @@
 // Run: gjs -m tests/shapes.test.js   (pure; no Shell needed)
 import {
-    shapesFor, compactCx, compactMetrics, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop,
+    shapesFor, compactCx, compactMetrics, GAP, OVERSHOOT, PILL_GAP,
     EM_1, IDLE_TEXT_1EM, pillMetrics, idleSample,
 } from '../src/buoy@murilegus/lib/kit/model/shapes.js';
 
@@ -48,7 +48,7 @@ for (const c of CASES) {
 
     // hover / press grow by a fixed em amount, whatever the base (design/pill: 0.75em = 12)
     eq(s.hover(s.idle), {w: 144, h: 34, r: 17}, `${at} hover(idle): + 12, + 2`);
-    eq(s.press(s.idle), {w: 150, h: 36, r: 18}, `${at} press(idle): + 18, + 4`);
+    eq(s.press(s.idle), {w: 128, h: 28, r: 14}, `${at} press(idle): 4 smaller each way (design/motion)`);
     eq(s.hover(s.minimal(5000)).w, c.minimalMax + 12, `${at} hover adds 12 at the cap too, not 10 %`);
 
     // minimal: content + 2 × 8 padding rounded up to even, floor at idle width, cap by hint
@@ -178,7 +178,7 @@ eq(shapesFor({width: 1920}, PANEL_H, {}).expanded.w, 560, 'empty opts = derived'
 {
     const s = shapesFor({width: 1920}, 41);
     eq(s.idle, {w: 132, h: 33, r: 16}, 'odd pill height → radius floors');
-    eq(s.press(s.idle).r, 18, 'odd pill height → press radius');
+    eq(s.press(s.idle).r, Math.floor(s.press(s.idle).h / 2), 'odd pill height → press radius');
 }
 
 // shapes are fresh objects: mutating one call's result must not leak into the next
@@ -202,9 +202,9 @@ eq(compactMetrics(), {
     eq([s.expanded.h, s.expandedH(80)], [270, 90], 'Large Text: expanded on 70 + 20n, up to 280 → 270');
 }
 eq(Math.round(EM_1 * 100) / 100, 14.67, '1em = 11 pt at 96 dpi');
-eq(pillMetrics(), {inset: 4, pad: 8, gap: 6, buttonGap: 8, hover: 12, press: 18, dot: 8}, 'the pill at 1em: tokens');
-eq(pillMetrics(EM_1 * 1.25), {inset: 5, pad: 10, gap: 8, buttonGap: 10, hover: 16, press: 22, dot: 10}, 'Large Text (1.25)');
-eq(pillMetrics(EM_1 * 2), {inset: 8, pad: 16, gap: 12, buttonGap: 16, hover: 24, press: 36, dot: 16}, 'twice the font');
+eq(pillMetrics(), {inset: 4, pad: 8, gap: 6, buttonGap: 8, hover: 12, press: 4, dot: 8}, 'the pill at 1em: tokens');
+eq(pillMetrics(EM_1 * 1.25), {inset: 5, pad: 10, gap: 8, buttonGap: 10, hover: 16, press: 6, dot: 10}, 'Large Text (1.25)');
+eq(pillMetrics(EM_1 * 2), {inset: 8, pad: 16, gap: 12, buttonGap: 16, hover: 24, press: 8, dot: 16}, 'twice the font');
 eq(pillMetrics(0), pillMetrics(), 'no em: the design\'s');
 {
     const s = shapesFor({width: 1920}, PANEL_H);
@@ -232,20 +232,5 @@ eq(pillMetrics(0), pillMetrics(), 'no em: the design\'s');
 eq(idleSample('8', 'AM'), '88\u223688\u223688 AM', 'the clock at its longest, Shell\'s ratio sign');
 eq(idleSample('0'), '00\u223600\u223600', 'no meridiem: 24 h locale');
 eq(idleSample('x', 'PM'), '88\u223688\u223688 PM', 'not a digit: 8');
-
-// --- the morph's bounce (2026-11-06: expanded → minimal bounced into its text) ----------------
-{
-    eq([BACK_SHARE, SHRINK_BOUNCE], [0.1, 12], 'Clutter\'s back goes 10 % past; a shrink at most 12 px');
-    // measured in headless Shell: 560×133 → 168×32 went down to 129×22 (39 px past, under the text)
-    const stop = shrinkStop({w: 560, h: 133}, {w: 168, h: 32});
-    eq(Math.round((168 - stop.w) * 10) / 10, 12, 'the long collapse turns 12 px short of its width');
-    eq(Math.round((32 - stop.h) * 10) / 10, 3.1, 'and its height in the same proportion (101 of 392 px)');
-    eq(shrinkStop({w: 360, h: 56}, {w: 240, h: 32}), null, 'compact → minimal (120 px): Clutter\'s own bounce, 12 px');
-    eq(shrinkStop({w: 300, h: 32}, {w: 240, h: 32}), null, 'a short shrink: Clutter\'s own');
-    eq([shrinkStop({w: 240, h: 32}, {w: 560, h: 133}), shrinkStop({w: 240, h: 32}, {w: 240, h: 32})], [null, null],
-        'growing or not moving: Clutter\'s own (a grow bounces outward)');
-    const tall = shrinkStop({w: 240, h: 300}, {w: 240, h: 56});
-    eq([tall.w, Math.round((56 - tall.h) * 10) / 10], [240, 12], 'a shrink in height only: its height turns 12 px short');
-}
 
 console.log('shapes: ok');
