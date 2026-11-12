@@ -10,7 +10,7 @@ import {shapesFor, idleSample, PILL_GAP} from '../model/shapes.js';
 import {Pill} from './pill.js';
 import {Home} from './home.js';
 import {showKeys} from './present/elements.js';
-import {planExpanded, planMissed} from '../model/presentation.js';
+import {planCompact, planExpanded, planMissed} from '../model/presentation.js';
 import {ALERT_MS, pillWindow} from '../model/stack.js';
 import {planStrip, pressTarget} from '../model/tabs.js';
 import {actionForKey, step} from '../model/keys.js';
@@ -64,6 +64,9 @@ export class Island {
         this._light = 'off';
         this._capacity = MAX_PILLS;
         this._compactPill = null;   // the pill whose compact is open (SPEC §2c)
+        // a compact the stack opened, held open on its pill (design/alerts-and-asks): an
+        // alert for ALERT_MS, an ask until it is answered — {pill, how: 'alert' | 'ask'}
+        this._held = null;
         this._open = null;          // the expanded pill
         this._openedBy = null;      // 'user' | 'auto' | 'alert'
         this._home = null;          // Home's panel while a click has the island open
@@ -218,14 +221,53 @@ export class Island {
         }
         this._apply(true);
 
+        // a held ask stays while its pill still shows that ask; an alert keeps its time
+        const h = this._held;
+        if (h && (!this._pills.includes(h.pill) || (h.how === 'ask' && h.pill.activity?.kind !== 'ask')))
+            this._release();
         const centre = this._pills[0];
         const alerted = this._pills.find(p => p.id === alert && p.id !== null);
-        if (expand && centre.id === expand && centre.expandable)
+        // an ask is a card at the compact's size, on its pill, until it is answered; an
+        // alert opens its pill's compact in place for ALERT_MS (design/alerts-and-asks);
+        // a transient still opens expanded
+        if (expand && centre.id === expand && centre.activity?.kind === 'ask' && centre.hasCompact)
+            this._hold(centre, 'ask');
+        else if (expand && centre.id === expand && centre.expandable)
             this._openPill(centre, 'auto');
-        else if (alerted?.expandable)
-            this._openPill(alerted, 'alert');
+        else if (alerted?.hasCompact)
+            this._hold(alerted, 'alert');
         else
             alerted?.pulse();
+        this._syncKeys();           // the held ask's card was rebuilt by an update
+    }
+
+    _hold(pill, how) {
+        if (this._held?.pill === pill && this._held.how === 'ask' && how === 'alert')
+            return;                             // an ask outlasts an alert on it
+        if (this._held && this._held.pill !== pill)
+            this._release();
+        if (this._compactPill && this._compactPill !== pill)
+            this._compactPill._stopCompact();
+        this._held = {pill, how};
+        pill.holdCompact(true);
+        if (how === 'alert')
+            this._armAlert();
+        else
+            this._disarmAlert();
+        this._syncKeys();
+    }
+
+    _release() {
+        const h = this._held;
+        if (!h)
+            return;
+        this._held = null;
+        this._disarmAlert();
+        h.pill.holdCompact(false);
+        // an answered ask lets the keyboard go, as closing its expanded did
+        if (h.how === 'ask' && this._grab && !this._open)
+            this._letGo();
+        this._syncKeys();
     }
 
     /**
@@ -589,6 +631,7 @@ export class Island {
         } else {
             this._listen();
             this._setFocus(this._pills[0]?.id ?? null, 0);
+            this._syncKeys();       // a held ask prints its keys
         }
     }
 
@@ -610,6 +653,7 @@ export class Island {
             this._grab = null;
             this.actor.reactive = false;
         }
+        this._syncKeys();
     }
 
     // Watch clicks and keys: on the grab actor with the keyboard, else on the stage
@@ -648,7 +692,7 @@ export class Island {
 
     // An ask open with the keyboard held: its buttons show their keys.
     _syncKeys() {
-        const pill = this._open;
+        const pill = this._open ?? (this._held?.how === 'ask' ? this._held.pill : null);
         if (pill && !this._home && pill.activity?.kind === 'ask')
             showKeys(pill.content.child, this._grab !== null);
     }
@@ -667,6 +711,15 @@ export class Island {
             delta = -1;
         else if (sym === Clutter.KEY_Right || sym === Clutter.KEY_KP_Right)
             delta = 1;
+        // a held ask (a card at the compact's size) answers from its keys too
+        const held = !this._open && this._held?.how === 'ask' ? this._held.pill.activity : null;
+        if (held) {
+            const id = actionForKey(planCompact(held)?.actions ?? [], ev.get_key_unicode());
+            if (id) {
+                held.onAction?.(id);
+                return Clutter.EVENT_STOP;
+            }
+        }
         if (!this._open) {
             if (delta) {
                 const i = step(this._focusIndex, delta, this._pills.length);
@@ -746,6 +799,15 @@ export class Island {
     }
 
     _alertDone() {
+        if (this._held?.how === 'alert') {
+            if (this._held.pill.hovered) {     // being read: it stays while the pointer does
+                this._alertId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ALERT_HOVER, () => this._alertDone());
+                return GLib.SOURCE_REMOVE;
+            }
+            this._alertId = 0;
+            this._release();
+            return GLib.SOURCE_REMOVE;
+        }
         if (this._open?.hovered) {             // being read: give it a little longer
             this._alertId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ALERT_HOVER, () => this._alertDone());
             return GLib.SOURCE_REMOVE;
@@ -785,6 +847,7 @@ export class Island {
         }
         Main.panel._rightBox.disconnect(this._rightBoxId);
         this._a11y.disconnect(this._hcId);
+        this._held = null;
         this._disarmAlert();
         for (const p of this._pills)
             p.activity = null; // no onExpand while tearing down

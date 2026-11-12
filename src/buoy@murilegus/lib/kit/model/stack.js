@@ -60,8 +60,8 @@ export function order(a, b) {
         Number(a.isStale) - Number(b.isStale) || b._seq - a._seq;
 }
 
-/** How long an alert keeps an activity up / expanded (SPEC §2c: ~2 s). */
-export const ALERT_MS = 2000;
+/** How long an alert keeps an activity up, its compact open (design/alerts-and-asks: 5 s). */
+export const ALERT_MS = 5000;
 
 const MAX_DELAY = 2 ** 31 - 1;          // GLib timeouts are 32-bit ms; longer waits re-arm
 const MISSED_MAX = 5;
@@ -253,7 +253,9 @@ export class ActivityStack {
         if (!options?.length)
             throw new Error(`ask(${id}) needs at least one option`);
         this._settle(id, null);
-        const own = {};
+        // every ask is a card at the compact's size, held until answered: Bu, the question,
+        // the buttons (design/alerts-and-asks "Ask"); a caller's own `compact` replaces it
+        const own = {compact: {card: {picture: {mascot: 'ask'}, title: question}}};
         for (const k of ASK_LOOK) {
             if (look && k in look)
                 own[k] = look[k];

@@ -139,9 +139,12 @@ pill's content instead of adding a pill.
 
 ## 3. The compact (hover): a card
 
-> **v0.2 redesign:** the card's new layout and sizes are decided in [Design](design/index.md) (in Vietnamese
-> first). This section describes v0.1, as the code is today; it changes with the M4 redesign
-> items (FEATURES).
+> **v0.2 redesign:** the card is laid out as design/compact "Card thông báo" since 2026-11-12 (M4
+> "Compact layout"): the compact's head (the picture 40 with the app's logo on its corner,
+> the sender over "App · time", × round 32), the message under it across the full width (2
+> lines of 16), the buttons in a row 12 from the edges; 136 / 152. How a notification arrives
+> (an alert, its seen rule, bursts) changes with M4 "Notifications as alerts"; the rest of
+> this section describes v0.1.
 
 The compact of the other kinds (a leading, one title, one subtitle, buttons beside them,
 56 / 88 / 120 px) is too tight for a message (Ethan, 2026-11-07: "at least like GNOME's

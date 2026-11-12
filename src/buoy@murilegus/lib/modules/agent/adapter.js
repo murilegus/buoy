@@ -478,7 +478,14 @@ export function askOf(rec, ev, {shared = false} = {}) {
         options,
         look: {
             leading: {mascot: 'ask'},
-            compact: {leading: {mascot: 'ask'}, text: hoverName(rec), subtitle: want, transport: true},
+            // a card at the compact's size, kept until answered (design/alerts-and-asks "Ask"):
+            // Bu, the question, "Claude Code · session", what it wants; no ×, a button answers
+            compact: {
+                card: {
+                    picture: {mascot: 'ask'}, title: question,
+                    app: `Claude Code · ${hoverName(rec)}`, body: want,
+                },
+            },
             expanded: {leading: {mascot: 'ask'}, center: {title: question, subtitle: name ? `${name} · ${want}` : want}},
             minimalAction: false,
         },

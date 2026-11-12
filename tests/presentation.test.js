@@ -241,6 +241,17 @@ eq(planCompact({compact: {}}), null, 'empty compact → no compact');
         'card plan keeps the compact fields empty');
 }
 eq(planCompact({compact: {card: {icon: 'x'}}}), null, 'a card with no name, title or body: none');
+{
+    // an ask is a card (design/alerts-and-asks "Ask"): Bu as its picture, keys on its buttons
+    const ask = planCompact({
+        kind: 'ask', compact: {card: {picture: {mascot: 'ask'}, title: 'Allow?'}},
+        actions: [{id: 'Deny', label: 'Deny'}, {id: 'Allow', label: 'Allow'}],
+    });
+    eq(ask.card.picture, {type: 'mascot', pose: 'ask'}, 'an ask card: Bu asking leads');
+    eq(ask.actions.map(a => [a.id, a.key]), [['Deny', 'd'], ['Allow', 'a']], 'an ask card: its keys');
+    const note = planCompact({kind: 'notification', compact: {card: {title: 'Hi'}}, actions: [{id: 'r', label: 'Reply'}]});
+    eq(note.actions[0].key, undefined, 'a notification card: no keys');
+}
 eq(planCompact({compact: {card: {app: 'Mail', at: 'soon', picture: {text: 'no'}}}}).card,
     {header: {icon: null, text: 'Mail', at: null}, title: null, body: null, picture: null, close: null},
     'bad time, a text picture, no close: dropped');

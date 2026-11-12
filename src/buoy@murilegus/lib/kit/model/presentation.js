@@ -298,7 +298,13 @@ function planCard(c, p, light) {
     const body = str(c.body);
     if (!header.text && !title && !body)
         return null;
-    const el = element(c.picture);
+    const el = element(c.picture, {leading: true});   // the card's leading: Bu may be there (an ask)
+    let acts = actions(p.actions, MAX_ACTIONS.compact);
+    if (p.kind === 'ask') {
+        // an ask is a card (design/alerts-and-asks "Ask"), answered from the keyboard too
+        const keys = mnemonics(acts.map(a => a.label ?? a.id));
+        acts = acts.map((a, i) => ({...a, key: keys[i]}));
+    }
     return {
         card: {
             header, title, body,
@@ -306,7 +312,7 @@ function planCard(c, p, light) {
             close: str(c.close),
         },
         leading: null, text: null, subtitle: null, trailing: null,
-        actions: actions(p.actions, MAX_ACTIONS.compact),
+        actions: acts,
         progress: null, live: null, rows: [], tall: false,
         keyline: keyline(p.keyline),
         stale: p.isStale === true,

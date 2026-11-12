@@ -246,8 +246,8 @@ The code uses these names since 2026-11-05 (before: compact for minimal, peek fo
 |---|---|---|---|
 | **Idle** | no activity | 132×32 r16 at 1× (as wide as the clock at its longest, measured: §4); content per `idle-content` (§2a) | hover → +0.75em width, +2 height, and with the amber light the missed list as a compact; press → a pulse; **click → open Home** |
 | **Minimal** | one or more activities | pill 1 (highest priority) at screen centre, content-fit; up to two side pills to its right, each the idle's size, as many as fit before the system cluster (§2c) | hover a pill 300 ms → its compact; **click → that activity's tab**, Home on the `+N` badge or while the missed list shows (2026-11-04) |
-| **Compact** | the pointer rests on a pill | the hovered pill grows in place: top edge kept, width 0.72 × expanded (content-fit, ≥ 240), height 56 for one row, 88 with a bar, content-fit up to 120 for rows; a notification's card full width, up to 160 (§4, NOTIFICATIONS.md §3) | the activity's compact content (media: transport and seek bar), or the amber missed list instead (INDICATORS.md); its buttons run their action, a click elsewhere on it = the pill's click; never takes the keyboard; collapses 200 ms after the pointer leaves |
-| **Expanded** | opened from idle, minimal or compact by a click; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open), at once; clicks inside do nothing, buttons run their action (decided 2026-11-01) |
+| **Compact** | the pointer rests on a pill; an alert (5 s); an ask, until answered | the pill grows in place: top edge kept, width 16em … min(28em, 0.72 × expanded), content-fit; height 56 + 16n up to 152 (§4, design/compact); a card (a notification, an ask) full width | the activity's compact content (media: art 72, transport and its bar), or the amber missed list instead (INDICATORS.md); its buttons run their action, a click elsewhere on it = the pill's click; hovered, it collapses 200 ms after the pointer leaves; an alert's stays 5 s (longer while hovered), an ask's until it is answered (its keys work after Super+B) (2026-11-12, design/alerts-and-asks) |
+| **Expanded** | opened from idle, minimal or compact by a click; by the stack for a transient | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open), at once; clicks inside do nothing, buttons run their action (decided 2026-11-01) |
 
 Rules:
 - Pill closed = live activities only, no UI chrome. Expanded = Notchy-style panel.
@@ -266,9 +266,11 @@ Rules:
   then the newest. Feedback (§2e) and transient interrupt, then
   the previous returns. Transient is Apple's `style: 'transient'` (greeting, a picker): it
   opens expanded; feedback never does (2026-11-05: the two were mixed up here).
-- Alert (2026-11-01): the shown activity opens expanded for ~2 s (stays while hovered),
-  or pulses if it has no expanded; an alert on a covered activity brings it up for ~2 s,
-  then the top returns (§2c: an activity with a pill of its own alerts on that pill).
+- Alert (2026-11-12, design/alerts-and-asks; was expanded for ~2 s): the shown activity opens
+  its compact in place for 5 s (stays while hovered), or pulses if it has no compact; an alert
+  on a covered activity brings it up for 5 s, then the top returns (§2c: an activity with a
+  pill of its own alerts on that pill). An ask is a card at the compact's size (Bu, the
+  question, the buttons) and stays open on its pill until it is answered.
 - A click-open takes the keyboard (modal, so Esc works); automatic opens (alert, ask,
   transient) never do, so typing elsewhere is not interrupted.
 - Fullscreen (2026-11-03): the island hides with the top bar on a monitor showing a
@@ -753,7 +755,7 @@ container is sized to that cap.
 | hover / press | +0.75em / +1.25em width, +2 / +4 height (a pill before or without its compact) | 144×34 / 150×36 from idle | | |
 | minimal, pill 1 | content + 2 × 8 (rounded up), clamped to [idle, min(24em, 0.6 × expanded)] (`'wide'` hint → 0.8 × expanded) | ≤ 336 | ≤ 352 | ≤ 352 |
 | minimal, pills 2–3 | fixed, the idle size | 132×32 | 132×32 | 132×32 |
-| compact | width 0.72 × expanded, content-fit down to 240; height 56 (one row), 88 (a bar), content-fit up to 120 for rows (a title and 3 rows measure 72 px, so the missed list is 88; a 40 px leading over 3 rows needs more — measured in Shell 50.1, 2026-11-05); a **card** (a notification, NOTIFICATIONS.md §3, 2026-11-07) takes the full width and its content's height up to 160; r 24; top edge at the pill's (2026-11-05) | ≤ 404 × 56/88/≤120, card ≤ 160 | ≤ 516 | ≤ 548 |
+| compact | design/compact (2026-11-12): width 16em … min(28em, 0.72 × expanded), content-fit; height 56 + 16n up to 152 — a head of 56 (leading 40, 8 above and below, 14 at the sides, round buttons 32 on its middle), then rows of 16: media 88 (its art 72), up to 3 rows 120, a **card** (a notification, an ask; NOTIFICATIONS.md §3) full width, 136 with one line of message and 152 with two, 104 without buttons; r 28; the content carries its paddings, all scaled by the em (`shapes.js` compactMetrics); top edge at the pill's | 240 … 404 × 56 … 152 | ≤ 410 | ≤ 410 |
 | expanded | width `clamp(0.28 × W, 560, 760)` or `expanded-width` (≤ W − 40); height fits content, at most width/2; r 28 | 560 × ≤280 | 716 × ≤358 | 760 × ≤380 |
 | container | the monitor's width (2026-11-05, was expanded + 20 each side: a compact may open on any pill, up to 4 px from the screen edge), expanded's cap + 40 tall; never reactive at rest, so it takes no clicks (Clutter picks only reactive actors, `clutter_actor_should_pick`) | 1920 | 2560 | 3440 |
 

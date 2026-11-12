@@ -7,7 +7,7 @@ import {buildCompact, buildMissedCompact} from './present/compact.js';
 import {buildExpanded} from './present/expanded.js';
 import {buildIdle, buildMinimal} from './present/minimal.js';
 import {planCompact, planExpanded, keyline} from '../model/presentation.js';
-import {compactCx, shrinkStop, COMPACT_PAD} from '../model/shapes.js';
+import {compactCx, shrinkStop} from '../model/shapes.js';
 
 const COMPACT_DELAY = 300;  // ms of hover before the pill grows into its compact (SPEC §2)
 const COMPACT_GRACE = 200;  // ms the compact stays after the pointer leaves it (SPEC §2c)
@@ -69,6 +69,7 @@ export class Pill {
         this._resizeLater = 0;
         this._hoverLater = 0;
         this._compactId = 0;
+        this._held = false;          // the island holds the compact open (an alert, an ask)
         this._morphTo = null;        // target of the running bg transition
         this._collapsing = false;    // until the collapse morph lands: bg clips the content
         this._follow = null;         // {t, id}: bg transition the content clip follows
@@ -101,6 +102,28 @@ export class Pill {
     /** Its compact is open, or about to close (the grace after the pointer left). */
     get compact() {
         return this._compact;
+    }
+
+    /** It has a compact to open (the activity's, the idle plan's, the amber list). */
+    get hasCompact() {
+        return this._hasCompact();
+    }
+
+    /**
+     * The island opens the compact and keeps it open whatever the pointer does (an alert,
+     * an ask: design/alerts-and-asks), or lets it go: then it closes unless the pointer is
+     * on it, and hover takes over.
+     *
+     * @param {boolean} held
+     */
+    holdCompact(held) {
+        this._held = held;
+        if (held) {
+            this._clearGrace();
+            this._openCompact();
+        } else if (!this.hovered) {
+            this._stopCompact();
+        }
     }
 
     get expandable() {
@@ -455,17 +478,18 @@ export class Pill {
     // The amber missed list over the activity's own compact (INDICATORS.md), else that;
     // the idle pill's is its plan's (weather: feels like, wind, humidity — SPEC §2a)
     _compactContent() {
-        const maxWidth = this._s.compactMax - 2 * COMPACT_PAD;
+        // the content carries its own paddings (design/compact): it is the compact's size
+        const maxWidth = this._s.compactMax, metrics = this._s.compactMetrics;
         const missed = this._missed();
         this._compactCard = false;
         if (missed)
-            return buildMissedCompact(missed, {maxWidth});
+            return buildMissedCompact(missed, {maxWidth, metrics});
         const shown = this._compactOf();
         if (!shown)
             return null;
-        // a card (a notification) is taller than the other compacts (shapes.js CARD_MAX_H)
+        // a card (a notification) takes the compact's full width (shapes.js compact)
         this._compactCard = planCompact(shown)?.card !== undefined;
-        return buildCompact(shown, {maxWidth, light: this.role === 'centre' ? this.light : null});
+        return buildCompact(shown, {maxWidth, metrics, light: this.role === 'centre' ? this.light : null});
     }
 
     // What the compact shows besides the missed list: the activity, or the idle plan
@@ -625,9 +649,8 @@ export class Pill {
         if (this.content.natural_width_set)
             this.content.set_width(-1); // back to natural width after expanded
         // stored sizes only: this also runs right after a new child was set
-        const y = this._compact
-            ? Math.round((this.compactShape().h - this._compactH) / 2)
-            : Math.round((this._s.idle.h - this._contentH) / 2);
+        // a compact's content is laid out from its top edge, its head first (design/compact)
+        const y = this._compact ? 0 : Math.round((this._s.idle.h - this._contentH) / 2);
         this.content.set_position(this._contentX(), Math.max(0, y));
     }
 
@@ -674,10 +697,10 @@ export class Pill {
                 GLib.source_remove(this._compactId);
                 this._compactId = 0;
             }
-            if (this._compact && !this._graceId) {
+            if (this._compact && !this._graceId && !this._held) {
                 this._graceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, COMPACT_GRACE, () => {
                     this._graceId = 0;
-                    if (!this.hovered)
+                    if (!this.hovered && !this._held)
                         this._stopCompact();
                     return GLib.SOURCE_REMOVE;
                 });

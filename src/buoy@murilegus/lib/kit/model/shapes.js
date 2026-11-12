@@ -60,16 +60,28 @@ export function idleSample(digit, meridiem = '') {
     return meridiem ? `${t} ${meridiem}` : t;
 }
 
-// Compact (SPEC §2, §4, 2026-11-05): the hovered pill grown in place. Content-fit width
-// between COMPACT_MIN and 0.72 × expanded; 56 for one row, 88 with a bar, and content-fit
-// up to 120 when rows need more (a title and 3 rows measure ~82 px); radius 24.
-export const COMPACT_MIN = 240;
-export const COMPACT_H = Object.freeze([56, 88, 120]);
-// A card (a notification, NOTIFICATIONS.md §3, 2026-11-07): full width, content-fit up to
-// this — a header, a picture beside a title and 2 lines, a row of buttons measure ~150.
-export const CARD_MAX_H = 160;
-export const COMPACT_PAD = 14;                      // each side (design/compact redoes it)
-const COMPACT_VPAD = 8;                             // top and bottom
+/**
+ * The compact's sizes at an em (design/compact, tokens "Compact"), whole px: the hovered
+ * pill grown in place, and the card. Its content lays itself out with these (paddings
+ * included), so the compact is exactly as big as its content.
+ *
+ * @param {number} [em]  one em in logical px
+ * @returns {object} head 56 (leading 40, 8 above and below, 14 at the sides), rows of 16,
+ *   radius 28, the round button 32, the media art 72 with its radius 20, the card's gaps
+ */
+export function compactMetrics(em = EM_1) {
+    const k = (em > 0 ? em : EM_1) / EM_1;
+    const px = v => Math.round(v * k);
+    return {
+        head: px(56), lead: px(40), vpad: px(8), side: px(14), gap: px(12),
+        row: px(16), maxRows: 6,                  // 56 + 16n, at most 56 + 6 × 16 = 152
+        radius: px(28), button: px(32),
+        art: px(72), artInset: px(8), artRadius: px(20),
+        rowIcon: px(16),
+        bodyGap: px(8), actionsGap: px(12), edge: px(12),   // the card: body, buttons
+        min: even(240 * k),                       // 16em, 240 at 1em (tokens)
+    };
+}
 
 /**
  * @param {{width:number}} monitor   Main.layoutManager.primaryMonitor (logical px)
@@ -98,7 +110,10 @@ export function shapesFor(monitor, panelH, opts = {}) {
     // pill 1's cap: 24em, so the text never grows with the screen, and 0.6 × expanded so
     // minimal < compact < expanded (tokens "Độ rộng tối đa trên thanh"); `wide` 0.8 × expanded
     const minimalCap = Math.min(evenDown(24 * em), even(expW * 0.6));
-    const compactMax = Math.max(COMPACT_MIN, even(expW * 0.72));   // 404 / 516 / 548
+    // the compact: 16em … min(28em, 0.72 × expanded), 240 … 404 at 1920 (tokens "Compact")
+    const cm = compactMetrics(em);
+    const compactMax = Math.max(cm.min, Math.min(evenDown(28 * em), even(expW * 0.72)));
+    const compactTall = cm.head + cm.maxRows * cm.row;
     // The container spans the monitor: a compact may open on any pill and goes up to
     // GAP from the screen edge (SPEC §2c). It is not reactive at rest, so it eats no
     // clicks (Clutter picks only reactive actors, clutter_actor_should_pick).
@@ -117,16 +132,17 @@ export function shapesFor(monitor, panelH, opts = {}) {
                 hint === 'wide' ? even(expW * 0.8) : minimalCap),
             h, r: radius(h),
         }),
-        // compact from its content's natural size; the island places it (top edge kept)
-        // (`card`: a card's height, NOTIFICATIONS.md §3)
+        // compact from its content's natural size, paddings included; the island places it
+        // (top edge kept). Heights step by rows: 56 + 16n up to 152, for every compact, the
+        // card too (design/compact "Kích thước"); a card takes the full width.
         compact: (contentW, contentH, {card = false} = {}) => ({
-            w: clamp(evenUp(Math.ceil(contentW) + 2 * COMPACT_PAD), COMPACT_MIN, compactMax),
-            h: card
-                ? clamp(evenUp(Math.ceil(contentH) + 2 * COMPACT_VPAD), COMPACT_H[0], CARD_MAX_H)
-                : compactH(Math.ceil(contentH) + 2 * COMPACT_VPAD),
-            r: 24,
+            w: card ? compactMax : clamp(evenUp(Math.ceil(contentW)), cm.min, compactMax),
+            h: Math.min(compactTall,
+                cm.head + Math.max(0, Math.ceil((Math.ceil(contentH) - cm.head) / cm.row)) * cm.row),
+            r: cm.radius,
         }),
         compactMax,
+        compactMetrics: cm,
         // h is the cap: expanded fits its content up to this height (CONTRACT.md §5.4)
         expanded: {w: expW, h: expH, r: 28},
         container: {w: containerW, h: expH + 2 * OVERSHOOT},
@@ -134,14 +150,6 @@ export function shapesFor(monitor, panelH, opts = {}) {
         // and inset from top and bottom; the leading takes a cell × cell square
         em, pad: m.pad, inset: m.inset, cell, gap: m.gap, buttonGap: m.buttonGap,
     };
-}
-
-function compactH(need) {
-    if (need <= COMPACT_H[0])
-        return COMPACT_H[0];
-    if (need <= COMPACT_H[1])
-        return COMPACT_H[1];
-    return Math.min(evenUp(need), COMPACT_H[2]);
 }
 
 /**

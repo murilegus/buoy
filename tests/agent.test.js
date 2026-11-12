@@ -113,7 +113,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(agent(moved).text, 'Claude · buoy', 'moved to a folder: its next event names the project');
     const req = {...ev(ASK_EVENT, {tool_name: 'mcp__ccd_directory__change_directory', tool_input: {}}), cwd: SCR};
     const q = askOf(last([[{...ev('UserPromptSubmit'), cwd: SCR}], [req]]).rec, req);
-    eq([q.question, q.look.compact.text], ['Claude needs your OK', 'New session'], 'its prompt: the same names');
+    eq([q.question, q.look.compact.card.app], ['Claude needs your OK', 'Claude Code · New session'], 'its prompt: the same names');
 }
 {
     const r = last([[ev('SessionStart', {source: 'startup', session_title: 'Buoy — Weather icons'})], [ev('UserPromptSubmit')]]);
@@ -293,13 +293,15 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     const rec = last([[ev('UserPromptSubmit')], [req]]).rec;
     const q = askOf(rec, req);
     eq([q.question, q.options], ['Claude · buoy needs your OK', [DENY, ALLOW, ALWAYS]], 'Deny · Allow · Always');
-    eq([q.look.expanded.center, q.look.compact.text, q.look.compact.subtitle, q.look.compact.transport, q.look.leading],
-        [{title: 'Claude · buoy needs your OK', subtitle: 'Run: pnpm test'}, 'Claude · buoy', 'Run: pnpm test', true, {mascot: 'ask'}],
-        'the ask: Bu ask, what it wants, the buttons in the compact');
+    eq([q.look.expanded.center, q.look.compact.card, q.look.leading],
+        [{title: 'Claude · buoy needs your OK', subtitle: 'Run: pnpm test'},
+            {picture: {mascot: 'ask'}, title: 'Claude · buoy needs your OK', app: 'Claude Code · Claude · buoy', body: 'Run: pnpm test'},
+            {mascot: 'ask'}],
+        'the ask: a card (design/alerts-and-asks "Ask"): Bu, the question, the session, what it wants');
     const titled = {...rec, sessionTitle: 'Buoy — Weather icons'};
-    eq([askOf(titled, req).look.compact.text, askOf(titled, req).look.expanded.center.subtitle],
-        ['Buoy — Weather icons', 'Buoy — Weather icons · Run: pnpm test'], 'a named session: which one asks');
-    eq(askOf(rec, req, {shared: true}).look.compact.subtitle, 'Run a command', 'sharing: no command');
+    eq([askOf(titled, req).look.compact.card.app, askOf(titled, req).look.expanded.center.subtitle],
+        ['Claude Code · Buoy — Weather icons', 'Buoy — Weather icons · Run: pnpm test'], 'a named session: which one asks');
+    eq(askOf(rec, req, {shared: true}).look.compact.card.body, 'Run a command', 'sharing: no command');
     const plain = ev(ASK_EVENT, {tool_name: 'Bash', tool_input: {command: 'ls'}});
     eq(askOf(rec, plain).options, [DENY, ALLOW], 'no suggestion: no Always');
     eq(askOf(rec, {...plain, permission_suggestions: []}).options, [DENY, ALLOW], 'an empty list: no Always');

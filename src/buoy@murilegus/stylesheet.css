@@ -152,14 +152,15 @@
 
 /* Content built by kit/ui/present/. Colour lives in content, the pill stays black. Nothing
    here animates. The pill's text is 1em, the stage's font as the bar's (design/pill "Chữ"):
-   the island is top chrome, outside #panel. Compact, the card and expanded keep 13 px until
-   their own redesign (FEATURES M4). */
+   the island is top chrome, outside #panel; the compact and the card too (design/compact).
+   Expanded and Home keep 13 px until their own redesign (FEATURES M4). */
 .buoy-content {
     color: #fff; /* fg */
     font-weight: 500;
 }
 .buoy-content > * { font-size: 13px; }
-.buoy-content > .buoy-minimal, .buoy-content > .buoy-idle { font-size: 1em; }
+.buoy-content > .buoy-minimal, .buoy-content > .buoy-idle,
+.buoy-content > .buoy-compact, .buoy-content > .buoy-card { font-size: 1em; }
 .buoy-content .dim { color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
 
 /* .buoy-minimal and .buoy-idle-zones: their spacing is the em's, set by present/minimal.js
@@ -229,42 +230,40 @@
 
 /* ==== Compact, the hover tier ============================================================= */
 
-/* Compact, the hover tier (SPEC §2, §4): leading 40, a title over a subtitle, then a bar
-   or up to 3 rows under the text column (present/compact.js indents them). */
-.buoy-compact { spacing: 4px; }
-.buoy-compact-top { spacing: 12px; }   /* present/compact.js INDENT_GAP */
-.buoy-compact-lines { spacing: 3px; }
-.buoy-compact-title { font-size: 14px; }
-.buoy-compact-subtitle { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 12px; }
-.buoy-compact-rows { spacing: 1px; }
-.buoy-compact-row { spacing: 8px; }
-.buoy-compact-row-text { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 12px; }
-.buoy-compact-row-detail { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; font-feature-settings: "tnum"; }
-.buoy-compact .buoy-actions { spacing: 6px; padding-left: 4px; }
-.buoy-compact .buoy-action { padding: 6px; border-radius: 999px; }
+/* Compact (design/compact): its geometry is present/compact.js's, at the em
+   (kit/model/shapes.js compactMetrics: head 56, rows of 16, buttons 32); here only type and
+   colour. The title 1em 600, the rest 0.85em (tokens "Chữ"). */
+.buoy-compact-lines { spacing: 2px; }
+.buoy-compact-title { font-weight: 600; }
+.buoy-compact-subtitle { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
+.buoy-compact-row-text { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
+.buoy-compact-row-detail { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; font-feature-settings: "tnum"; }
+.buoy-round-row { spacing: 8px; }
+/* The round button 32 of a compact's head: fill-2, the main action (play/pause, stop) cream
+   with a black glyph (design/compact "Nút tròn") */
+.buoy-round { padding: 0; border-radius: 999px; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+.buoy-round:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
+.buoy-round:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
+.buoy-round:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-round.buoy-round-main { color: #000; /* fg-on-inverse */ background-color: #f1efe8; /* fill-inverse */ }
+.buoy-round.buoy-round-main:hover { background-color: #fff; /* fill-inverse-hover */ }
 /* A live position (media): the bar, then elapsed and remaining in even figures. */
-.buoy-live { spacing: 4px; padding-top: 6px; }
-.buoy-live-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 11px; font-feature-settings: "tnum"; }
+.buoy-live { spacing: 0; }
+.buoy-live-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; font-feature-settings: "tnum"; }
 /* An ask's key (kit/model/keys.js), shown only while the island holds the keyboard. */
 .buoy-action-face { spacing: 6px; }
 
 /* ==== The card (a notification's compact) ================================================= */
 
-/* A card (a notification's compact, NOTIFICATIONS.md §3): GNOME's banner layout */
-.buoy-card { spacing: 6px; }
-.buoy-card-header { spacing: 6px; }
-.buoy-card-app { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 12px; }
-.buoy-card-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; }
-.buoy-card-close { padding: 4px; border-radius: 999px; background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
-.buoy-card-close:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
-.buoy-card-close:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
-.buoy-card-main { spacing: 10px; }
-.buoy-card-lines { spacing: 2px; }
-.buoy-card-title { font-size: 14px; font-weight: bold; }
-/* two lines (presentation.js MAX_CARD_LINES): Pango keeps whole lines within it */
-.buoy-card-body { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 13px; max-height: 2.8em; }
-.buoy-card-actions { spacing: 6px; }
-.buoy-card-actions .buoy-action { padding: 6px 12px; border-radius: 999px; }
+/* A card (NOTIFICATIONS.md §3, design/compact "Card thông báo"): the compact's head, the
+   message under it, the buttons in a row; geometry in present/compact.js */
+.buoy-card-title { font-weight: 600; }
+/* the app's logo on the picture's corner, ringed in the island's black */
+.buoy-card-badge { border-radius: 999px; border: 2px solid #000; /* surface */ background-color: #000; /* surface */ }
+/* two lines (presentation.js MAX_CARD_LINES): Pango keeps whole lines within its max-height */
+.buoy-card-body { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
+.buoy-card-actions { spacing: 8px; }
+.buoy-card-actions .buoy-action { padding: 0 12px; border-radius: 16px; }
 .buoy-key {
     font-size: 11px;
     font-weight: bold;
@@ -368,7 +367,6 @@
 .buoy-hc .buoy-stale .buoy-eq-bar { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-compact-row-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-live-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
-.buoy-hc .buoy-card-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-key { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ border-color: rgba(255, 255, 255, 0.7); /* border-strong */ }
 .buoy-hc .buoy-empty { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-home-section { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

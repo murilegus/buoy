@@ -200,7 +200,7 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
 // --- alert on a covered activity: shown for ALERT_MS, then the top returns -----------
 {
     const {clock, island, stack} = setup();
-    eq(ALERT_MS, 2000, 'alert lasts ~2 s (SPEC §2c)');
+    eq(ALERT_MS, 5000, 'an alert lasts 5 s (design/alerts-and-asks)');
     stack.surface(media('m'));
     stack.surface({id: 'n', kind: 'notification'});
     stack.update('m', {text: 'under'}, {alert: true});
@@ -503,6 +503,8 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq([stack.top.kind, stack.top.text, stack.top.actions.map(a => a.id)], ['ask', 'Run tests?', ['Deny', 'Allow']],
         'ask activity carries question and options');
     eq(stack.top.expanded, true, 'ask has an expanded presentation (all options as buttons)');
+    eq(stack.top.compact, {card: {picture: {mascot: 'ask'}, title: 'Run tests?'}},
+        'an ask is a card at the compact\'s size by default: Bu, the question (design/alerts-and-asks)');
     eq(stack.light, 'off', 'a visible ask is not "waiting"');
     eq(stack.answer('q', 'Maybe'), false, 'answer outside the options is refused');
     island.top.onAction('Maybe');
@@ -510,6 +512,8 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.answer('q', 'Allow'), true, 'answer accepted');
     eq(await p, 'Allow', 'ask resolves with the answer');
     eq([stack.top, stack.answer('q', 'Allow')], [null, false], 'answered ask ends; second answer refused');
+    stack.ask('own', 'Edit?', ['Deny', 'Allow'], {look: {compact: {card: {title: 'Edit a.js?'}}}});
+    eq(stack.top.compact, {card: {title: 'Edit a.js?'}}, 'a caller\'s own compact replaces the default card');
 }
 {
     const {clock, stack} = setup();

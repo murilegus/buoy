@@ -172,8 +172,9 @@ export function buildElement(value, {size = 'minimal', leading = false, activity
  * @param {?object} e  presentation.js element()
  * @param {'minimal'|'compact'|'expanded'} mode
  * @param {?object} [activity]  Bu's animation follows it
- * @param {{art?: number}} [sizes]  the tier's sizes it overrides: minimal's art fills the
- *   leading cell, which follows the em (kit/model/shapes.js)
+ * @param {{art?: number, artRadius?: number}} [sizes]  the tier's sizes it overrides: the art
+ *   fills the leading's cell, which follows the em (kit/model/shapes.js); the compact's media
+ *   art is 72 with radius 20
  * @returns {?St.Widget}
  */
 export function makeElement(e, mode, activity = null, sizes = {}) {
@@ -194,7 +195,8 @@ export function makeElement(e, mode, activity = null, sizes = {}) {
             gicon: e.gicon ?? new Gio.FileIcon({file: file(e.src)}),
             fallback_icon_name: e.fallback ?? 'audio-x-generic-symbolic',
         });
-        return ART_RADIUS[mode] ? roundArt(icon, size.art, ART_RADIUS[mode]) : icon;
+        const r = sizes.artRadius ?? ART_RADIUS[mode];
+        return r ? roundArt(icon, size.art, r) : icon;
     }
     case 'glyph':
         return eqGlyph({paused: e.name === 'eq-paused'});
