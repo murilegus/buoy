@@ -7,10 +7,11 @@ import {appOfBusName} from '../../kit/services/apps.js';
 import {listInfos, readText} from '../../kit/services/files.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
 import {lingerMs} from '../../kit/model/settings.js';
-import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step} from './adapter.js';
+import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step, tasksFromFiles} from './adapter.js';
 
 const KIND = 'agent';
 const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
+const MAX_TASK_FILES = 100;   // a session's task list, read once when met in its middle
 
 /**
  * Coding agents' sessions in the pill (docs/CODING-AGENTS.md): the hook script calls
@@ -96,6 +97,10 @@ export class AgentSource extends Source {
             return '';
         }
         this._remember(key, res.rec);
+        // met in its middle (Buoy started after the session did): its task list from
+        // Claude's own files, ahead of the next task tool call
+        if (!old && source === 'claude')
+            this._readTasks(key);
         if (res.show) {
             this._show(res.rec, {
                 alert: res.alert && !this._quiet(key), renew: res.rec.stopped && !old?.stopped,
@@ -261,6 +266,32 @@ export class AgentSource extends Source {
             if (app?.get_id() === DESKTOP_APP)
                 this._readDesktop(key);
         }
+    }
+
+    // ~/.claude/tasks/<session_id>/<id>.json (design/compact "Hàng của Claude Code")
+    async _readTasks(key) {
+        const reads = this._reads;
+        const id = this._sessions?.get(key)?.id;
+        if (!id || !/^[\w-]+$/.test(id))
+            return;
+        const dir = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_home_dir(), '.claude', 'tasks', id]));
+        let infos;
+        try {
+            infos = await listInfos(dir, 'standard::name', reads);
+        } catch {
+            return;                       // no list: rows are its steps, as before
+        }
+        const names = infos.map(i => i.get_name()).filter(n => n.endsWith('.json')).slice(0, MAX_TASK_FILES);
+        const files = await Promise.all(names.map(async name => ({name, text: await readText(dir.get_child(name), reads)})));
+        const rec = this._sessions?.get(key);
+        if (reads.is_cancelled() || !rec || rec.tasks?.length)
+            return;                       // a task tool call came first: it is newer
+        const tasks = tasksFromFiles(files);
+        if (!tasks.length)
+            return;
+        this._sessions.set(key, {...rec, tasks});
+        if (this._stack?.has(this._activityId(rec)))
+            this._show(this._sessions.get(key));
     }
 
     // Claude Desktop's files for this session (§6), ahead of a click

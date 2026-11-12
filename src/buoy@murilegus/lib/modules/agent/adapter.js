@@ -202,8 +202,126 @@ export function newRecord(source, ev) {
         id: ev.session_id, source, cwd: str(ev.cwd), project: projectOf(ev.cwd),
         shown: false, startedAt: 0, finishedAt: 0, lastAt: 0,
         pose: 'think', title: 'Thinking', safeTitle: 'Thinking', sessionTitle: null,
-        subagents: 0, stopped: false,
+        subagents: 0, stopped: false, tasks: [],
     };
+}
+
+// --- Claude's task list (design/compact "Hàng của Claude Code", 2026-11-11) ----------------
+// TaskCreate's input has the `subject`, its result the `id`; TaskUpdate's input the `taskId`
+// and the `status` (pending → in_progress → completed, or deleted). Checked in Claude Code
+// 2.1.319; Claude also writes each to ~/.claude/tasks/<session_id>/<id>.json (source.js reads
+// them when Buoy starts in the middle of a session).
+const TASK_STATUS = new Set(['pending', 'in_progress', 'completed']);
+
+function taskId(v) {
+    if (typeof v === 'number' && Number.isFinite(v))
+        return String(v);
+    if (typeof v === 'string')
+        return str(v);
+    return isPlain(v) ? taskId(v.id ?? v.taskId ?? v.task?.id) : null;
+}
+
+/**
+ * The session's task list after a tool call, or null when the call is not about tasks.
+ *
+ * @param {object[]} tasks  [{id, subject, status, doneAt}] in the order Claude made them
+ * @param {object} ev  a PostToolUse
+ * @param {number} now  ms
+ * @returns {?object[]}
+ */
+export function taskStep(tasks, ev, now) {
+    const i = isPlain(ev?.tool_input) ? ev.tool_input : {};
+    if (ev?.tool_name === 'TaskCreate') {
+        const id = taskId(ev.tool_response), subject = str(i.subject);
+        if (!id || !subject)
+            return null;
+        return [...tasks.filter(t => t.id !== id), {id, subject, status: 'pending', startedAt: 0, doneAt: 0}];
+    }
+    if (ev?.tool_name === 'TaskUpdate') {
+        const id = taskId(i.taskId ?? i.id);
+        if (!id || !tasks.some(t => t.id === id))
+            return null;
+        if (i.status === 'deleted')
+            return tasks.filter(t => t.id !== id);
+        return tasks.map(t => {
+            if (t.id !== id)
+                return t;
+            const status = TASK_STATUS.has(i.status) ? i.status : t.status;
+            const doneAt = status === 'completed' && t.status !== 'completed' ? now : t.doneAt;
+            const startedAt = status === 'in_progress' && t.status !== 'in_progress' ? now : t.startedAt;
+            return {...t, status, subject: str(i.subject) ?? t.subject, startedAt, doneAt};
+        });
+    }
+    return null;
+}
+
+/**
+ * The task list from Claude's own files (~/.claude/tasks/<session_id>/<id>.json), for a
+ * session Buoy meets in its middle.
+ *
+ * @param {Array<{name: string, text: ?string}>} files
+ * @returns {object[]}  in the order of their ids
+ */
+export function tasksFromFiles(files) {
+    const tasks = [];
+    for (const {name, text} of files) {
+        let t = null;
+        try {
+            t = JSON.parse(text ?? '');
+        } catch {
+            continue;
+        }
+        const id = taskId(t?.id) ?? str(String(name).replace(/\.json$/, ''));
+        const subject = str(t?.subject);
+        if (!id || !subject || t.status === 'deleted')
+            continue;
+        tasks.push({id, subject, status: TASK_STATUS.has(t.status) ? t.status : 'pending', startedAt: 0, doneAt: 0});
+    }
+    const n = id => /^\d+$/.test(id) ? Number(id) : Infinity;
+    return tasks.sort((a, b) => n(a.id) - n(b.id) || a.id.localeCompare(b.id));
+}
+
+// done ✓, being done ▶, to do ○ (design/icons: Gravity UI's check, play-fill, circle)
+const TASK_ICON = {completed: 'check', in_progress: 'play-fill', pending: 'circle'};
+
+/**
+ * The compact's rows: up to three tasks; with more, the one just done, the one being done
+ * and the next (design/compact). A task to do is dimmed, its icon and its text; a task done
+ * says how long it took, when Buoy saw it start.
+ *
+ * @param {object[]} tasks
+ * @returns {object[]}  rows {icon, text, dim, detail?}
+ */
+export function taskRows(tasks) {
+    let shown = tasks;
+    if (tasks.length > 3) {
+        const done = tasks.filter(t => t.status === 'completed');
+        const justDone = done.reduce((a, t) => !a || t.doneAt >= a.doneAt ? t : a, null);
+        const doing = tasks.find(t => t.status === 'in_progress') ?? null;
+        const next = tasks.find(t => t.status === 'pending' && t !== doing) ?? null;
+        const pick = new Set([justDone, doing, next].filter(Boolean));
+        // fewer than three that way: the next ones to do, then the last ones done
+        for (const t of [...tasks.filter(x => x.status === 'pending'), ...done.reverse()]) {
+            if (pick.size >= 3)
+                break;
+            pick.add(t);
+        }
+        shown = tasks.filter(t => pick.has(t));
+    }
+    return shown.map(t => ({
+        icon: TASK_ICON[t.status], text: t.subject, dim: t.status === 'pending',
+        ...t.status === 'completed' && t.startedAt > 0 && t.doneAt >= t.startedAt
+            ? {detail: durationText(t.doneAt - t.startedAt)} : {},
+    }));
+}
+
+/**
+ * @param {object[]} tasks
+ * @returns {string}  "2 / 5": done and being done, of all
+ */
+export function taskProgress(tasks) {
+    const n = tasks.filter(t => t.status !== 'pending').length;
+    return `${n} / ${tasks.length}`;
 }
 
 const working = (rec, now) => ({
@@ -267,10 +385,14 @@ export function step(rec, ev, now, source = 'claude') {
             return out({...r, pose: 'busy'});    // the parent still says it works with them (§2)
         return out({...r, pose: 'busy', title: d.title, safeTitle: d.safeTitle});
     }
-    case 'PostToolUse':
+    case 'PostToolUse': {
+        const tasks = taskStep(r.tasks ?? [], ev, now);
+        if (tasks)
+            r = {...r, tasks};
         if (!r.shown || r.stopped)
-            return none();
+            return tasks ? out(r, {show: false}) : none();
         return out({...r, pose: 'busy'});
+    }
     case 'PostToolUseFailure':
         if (!r.shown || r.stopped)
             return none();
@@ -363,7 +485,9 @@ export function answered(rec, now) {
  */
 export function agent(rec) {
     const label = labelOf(rec);
+    const tasks = Array.isArray(rec.tasks) ? rec.tasks : [];
     const shared = rec.shared === true;
+    const doing = shared ? rec.safeTitle : rec.title;
     const pose = rec.pose;
     // a question waiting in Claude's card: the pill asks as a prompt's does (QUESTION_TITLE)
     const question = !rec.stopped && pose === 'ask' && rec.title === QUESTION_TITLE;
@@ -381,11 +505,16 @@ export function agent(rec) {
         text: question ? `${label} needs your answer` : label,
         leading: {mascot: pose},
         trailing,
-        // hover: which session (its name, or the label), then what it is doing (§2)
+        // hover: which session (its name, or the label), then what it is doing (§2); with a
+        // task list, its progress and the tasks as rows (design/compact) — not while the
+        // screen is shared: a task names files and commands as a command does (§7)
         compact: {
             leading: {mascot: pose},
-            text: hoverName(rec),
-            subtitle: shared ? rec.safeTitle : rec.title,
+            // with a task list the project is in the subtitle: the session's name, or the
+            // agent's product (design/compact: "Claude Code" over "buoy · 2 / 3")
+            text: tasks.length ? nameOf(rec) ?? PRODUCTS[rec.source] ?? label : hoverName(rec),
+            subtitle: tasks.length ? `${rec.project ?? label} · ${taskProgress(tasks)}` : doing,
+            rows: tasks.length && !shared ? taskRows(tasks) : [],
         },
         // the kind's 35 (docs/PRIORITY.md); a question waits as a prompt, at the ask's 90 —
         // set every time, an update merges; waiting for you is tier 1, done steps back

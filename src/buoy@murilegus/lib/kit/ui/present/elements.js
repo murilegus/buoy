@@ -10,6 +10,33 @@ import {element} from '../../model/presentation.js';
 import {LONG_BAR, bodyFill, file, label, levelBar, meter, sinceLabel, untilLabel} from './parts.js';
 import {eqGlyph, mascot} from './motion.js';
 
+// Buoy's own symbolic icons (design/icons "Icon symbolic"): Gravity UI's, and the ones
+// Buoy draws in its style, in icons/symbolic as <name>-symbolic.svg; St recolours such a
+// file in the text colour as it does a theme's symbolic icon (st-icon-theme.c, a GFileIcon
+// whose uri ends in -symbolic.svg). A plan names them as Gravity does: `check`, `play-fill`.
+// lib/kit/ui/present/ → the extension's icons/symbolic
+const OWN_DIR = Gio.File.new_for_uri(import.meta.url).get_parent().resolve_relative_path('../../../../icons/symbolic');
+let ownNames = null;
+
+function ownIcon(name) {
+    if (typeof name !== 'string' || name.includes('/') || name.endsWith('-symbolic'))
+        return null;
+    if (!ownNames) {
+        ownNames = new Set();
+        try {
+            const en = OWN_DIR.enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
+            for (let info; (info = en.next_file(null));) {
+                const m = info.get_name().match(/^(.+)-symbolic\.svg$/);
+                if (m)
+                    ownNames.add(m[1]);
+            }
+        } catch (e) {
+            console.warn(`Buoy: its icons: ${e.message}`);
+        }
+    }
+    return ownNames.has(name) ? new Gio.FileIcon({file: OWN_DIR.get_child(`${name}-symbolic.svg`)}) : null;
+}
+
 /**
  * Render plan → St actors. The ONLY place content actors are made; the plan itself
  * (what to show, limits, fallbacks) comes from presentation.js, which is unit-tested.
@@ -139,6 +166,9 @@ class EmptyState extends St.Bin {
  * @returns {object} St.Icon properties
  */
 export function iconProps(icon) {
+    const own = ownIcon(icon);
+    if (own)
+        return {gicon: own, fallback_icon_name: 'view-app-grid-symbolic'};
     if (typeof icon === 'string' && icon.startsWith('/')) {
         return {
             gicon: new Gio.FileIcon({file: Gio.File.new_for_path(icon)}),
@@ -222,7 +252,7 @@ export function makeElement(e, mode, activity = null, sizes = {}) {
  * @returns {St.Button}
  */
 export function actionButton(a, activity) {
-    const face = a.label ? {label: a.label} : {child: new St.Icon({icon_name: a.icon, icon_size: 16})};
+    const face = a.label ? {label: a.label} : {child: new St.Icon({...iconProps(a.icon), icon_size: 16})};
     const button = new St.Button({
         style_class: 'buoy-action', can_focus: true,
         accessible_name: a.label ?? a.id,

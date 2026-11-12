@@ -238,6 +238,8 @@
 .buoy-compact-subtitle { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
 .buoy-compact-row-text { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
 .buoy-compact-row-detail { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; font-feature-settings: "tnum"; }
+/* a row still to do (Claude's task list): dimmed like stale, its icon and its text */
+.buoy-compact-row-dim .buoy-compact-row-text, .buoy-compact-row-dim .buoy-icon { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 .buoy-round-row { spacing: 8px; }
 /* The round button 32 of a compact's head: fill-2, the main action (play/pause, stop) cream
    with a black glyph (design/compact "Nút tròn") */
@@ -369,6 +371,7 @@
 .buoy-hc .buoy-stale .buoy-bar { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-stale .buoy-eq-bar { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-compact-row-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-compact-row-dim .buoy-compact-row-text, .buoy-hc .buoy-compact-row-dim .buoy-icon { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-live-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-key { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ border-color: rgba(255, 255, 255, 0.7); /* border-strong */ }
 .buoy-hc .buoy-empty { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

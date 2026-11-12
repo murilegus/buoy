@@ -6,7 +6,7 @@ import {agoText, planCompact} from '../../model/presentation.js';
 import {compactMetrics} from '../../model/shapes.js';
 import {addAll, label, liveBar, meter, tick} from './parts.js';
 import {dimStale, marquee} from './motion.js';
-import {actionButton, makeElement} from './elements.js';
+import {actionButton, iconProps, makeElement} from './elements.js';
 
 // The compact tier, the hover: the compact, the card, the amber light's. Split out of
 // present.js (2026-11-12); laid out as design/compact (2026-11-12, M4 "Compact layout").
@@ -153,6 +153,8 @@ function rowList(rows, m) {
     const list = new St.BoxLayout({style_class: 'buoy-compact-rows', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
     for (const r of rows) {
         const row = new St.BoxLayout({style_class: 'buoy-compact-row', x_expand: true, height: m.row});
+        if (r.dim)
+            row.add_style_class_name('buoy-compact-row-dim');   // to do: icon and text dimmed
         const icon = r.icon ? makeElement(r.icon, 'minimal') : null;
         if (icon && 'icon_size' in icon)
             icon.icon_size = m.rowIcon;
@@ -293,7 +295,7 @@ function agoLabel(at) {
 function closeButton(id, activity, m) {
     const button = new St.Button({
         style_class: 'buoy-round', can_focus: true, accessible_name: 'Dismiss',
-        child: new St.Icon({icon_name: 'window-close-symbolic', icon_size: 16}),
+        child: new St.Icon({...iconProps('xmark'), icon_size: 16}),
         y_align: Clutter.ActorAlign.CENTER,
     });
     button.set_size(m.button, m.button);

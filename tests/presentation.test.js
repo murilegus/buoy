@@ -283,8 +283,8 @@ eq(planCompact({compact: {card: {title: 'T'}}, actions: 'x'}).actions, [], 'card
         {text: 'two'}, {text: 'three'}, {text: 'four'}];
     const r = planCompact({compact: {rows: rowsIn}});
     eq(r.rows.map(x => x.text), ['one', 'two', 'three'], 'rows: blank and non-objects dropped, at most 3');
-    eq(r.rows[0], {icon: {type: 'icon', icon: 'a-symbolic'}, text: 'one', detail: '1:00'}, 'a row');
-    eq(r.rows[1], {icon: null, text: 'two', detail: null}, 'a row without icon or detail');
+    eq(r.rows[0], {icon: {type: 'icon', icon: 'a-symbolic'}, text: 'one', detail: '1:00', dim: false}, 'a row');
+    eq(r.rows[1], {icon: null, text: 'two', detail: null, dim: false}, 'a row without icon or detail');
     eq(r.tall, true, 'rows → tall');
     eq(planCompact({compact: {rows: 'no'}}), null, 'rows must be a list');
     const long = 'x'.repeat(500);

@@ -4,7 +4,7 @@ import GLib from 'gi://GLib';
 
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
-    agent, answered, askOf, isQuestion, QUESTION_TITLE, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    agent, answered, askOf, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, commandFor, hooksNote, install, installed, isOurs, uninstall,
@@ -446,6 +446,70 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(note({found: false}), 'Claude Code not found', 'no Claude Code');
     eq(note({error: 'not a JSON object'}).startsWith('~/.claude/settings.json could not be read'), true, 'a bad file is left alone');
     eq(note({state: 'some'}).startsWith('Part of'), true, 'partly installed');
+}
+
+// --- Claude's task list as the compact's rows (design/compact "Hàng của Claude Code") ------------
+{
+    const create = (id, subject) => ev('PostToolUse', {tool_name: 'TaskCreate', tool_input: {subject}, tool_response: {task: {id, subject}}});
+    const update = (taskId, status) => ev('PostToolUse', {tool_name: 'TaskUpdate', tool_input: {taskId, status}, tool_response: {}});
+    let tasks = taskStep([], create('1', 'Edit shapes.js'), 1);
+    eq(tasks, [{id: '1', subject: 'Edit shapes.js', status: 'pending', startedAt: 0, doneAt: 0}], 'TaskCreate: its subject, the id from its result');
+    eq(taskStep([], ev('PostToolUse', {tool_name: 'TaskCreate', tool_input: {subject: 'x'}, tool_response: {id: 7}}), 1)[0].id, '7',
+        'a numeric id, at the result\'s top');
+    eq([taskStep([], ev('PostToolUse', {tool_name: 'TaskCreate', tool_input: {}, tool_response: {id: '1'}}), 1),
+        taskStep([], ev('PostToolUse', {tool_name: 'Read', tool_input: {}}), 1)], [null, null], 'no subject, or not a task tool: none');
+    tasks = taskStep(tasks, create('2', 'Run pnpm test'), 2);
+    tasks = taskStep(tasks, create('3', 'Update the docs'), 3);
+    tasks = taskStep(tasks, update('1', 'completed'), 10);
+    tasks = taskStep(tasks, update('2', 'in_progress'), 11);
+    eq(tasks.map(t => [t.id, t.status, t.doneAt]), [['1', 'completed', 10], ['2', 'in_progress', 0], ['3', 'pending', 0]],
+        'TaskUpdate: its status; when it was done');
+    eq(taskStep(tasks, update('9', 'completed'), 12), null, 'an unknown task: nothing changes');
+    eq(taskStep(tasks, update('3', 'deleted'), 12).map(t => t.id), ['1', '2'], 'deleted: gone');
+    eq(taskRows(tasks), [
+        {icon: 'check', text: 'Edit shapes.js', dim: false},
+        {icon: 'play-fill', text: 'Run pnpm test', dim: false},
+        {icon: 'circle', text: 'Update the docs', dim: true},
+    ], 'three tasks: all, ✓ ▶ ○, the one to do dimmed (Gravity UI icons)');
+    eq(taskProgress(tasks), '2 / 3', 'progress: done and being done, of all');
+    // more than three: the one just done, the one being done, the next
+    let five = tasks;
+    five = taskStep(five, create('4', 'Review'), 20);
+    five = taskStep(five, create('5', 'Push'), 21);
+    five = taskStep(five, update('2', 'completed'), 30);
+    five = taskStep(five, update('3', 'in_progress'), 31);
+    eq(taskRows(five).map(r => r.text), ['Run pnpm test', 'Update the docs', 'Review'], 'five: just done, doing, next');
+    eq(taskProgress(five), '3 / 5', 'five: progress');
+    const allDone = five.map(t => ({...t, status: 'completed', doneAt: Number(t.id)}));
+    eq(taskRows(allDone).map(r => r.text), ['Update the docs', 'Review', 'Push'], 'all done: the last three done');
+
+    // through step(): rows and progress on the compact; none while the screen is shared
+    const rec = last([[ev('UserPromptSubmit')], [create('1', 'Edit shapes.js')], [create('2', 'Run pnpm test')], [update('1', 'completed')]]).rec;
+    const a = agent(rec);
+    eq([a.compact.text, a.compact.subtitle, a.compact.rows.map(r => r.icon)], ['Claude Code', 'buoy · 1 / 2', ['check', 'circle']],
+        'the compact: "Claude Code" over project · progress, the tasks');
+    eq(agent({...rec, sessionTitle: 'Weather icons'}).compact.text, 'Weather icons', 'a named session: its name on top');
+    // how long a task took, when Buoy saw it start
+    let timed = taskStep([], create('1', 'Edit'), 0);
+    timed = taskStep(timed, update('1', 'in_progress'), 1000);
+    timed = taskStep(timed, update('1', 'completed'), 13000);
+    eq(taskRows(timed)[0].detail, durationText(12000), 'a task done: how long it took');
+    eq('detail' in taskRows(taskStep(timed, update('1', 'pending'), 14000))[0], false, 'not done: no time');
+    const s = agent({...rec, shared: true});
+    eq([s.compact.subtitle, s.compact.rows], ['buoy · 1 / 2', []], 'sharing the screen: the progress, no task names (§7)');
+    eq(agent(last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Read', tool_input: {file_path: 'a.js'}})]]).rec).compact.rows, [],
+        'no task list: no rows, what it does in the subtitle');
+
+    // ~/.claude/tasks/<session>/<id>.json, for a session met in its middle
+    eq(tasksFromFiles([
+        {name: '2.json', text: JSON.stringify({id: '2', subject: 'Run pnpm test', status: 'in_progress'})},
+        {name: '10.json', text: JSON.stringify({id: '10', subject: 'Push', status: 'pending'})},
+        {name: '1.json', text: JSON.stringify({id: '1', subject: 'Edit shapes.js', status: 'completed'})},
+        {name: '3.json', text: JSON.stringify({id: '3', subject: 'Gone', status: 'deleted'})},
+        {name: 'x.json', text: 'not json'},
+        {name: '4.json', text: JSON.stringify({id: '4'})},
+    ]).map(t => [t.id, t.status]), [['1', 'completed'], ['2', 'in_progress'], ['10', 'pending']],
+    'the files: in their ids\' order, deleted, broken and nameless ones left out');
 }
 
 print('agent: ok');

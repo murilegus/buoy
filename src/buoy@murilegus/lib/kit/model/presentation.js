@@ -399,7 +399,7 @@ function rows(list) {
     return list
         .filter(r => isPlain(r) && str(r.text))
         .slice(0, MAX_ROWS)
-        .map(r => ({icon: icon(r.icon), text: str(r.text), detail: str(r.detail)}));
+        .map(r => ({icon: icon(r.icon), text: str(r.text), detail: str(r.detail), dim: r.dim === true}));
 }
 
 function region(r, name) {

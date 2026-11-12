@@ -147,7 +147,7 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 | `SessionStart` | — | — | remembered (cwd, model), nothing shown |
 | `UserPromptSubmit` | `think` | "Thinking" | surfaces the pill; the elapsed time restarts |
 | `PreToolUse` | `busy` | by tool: "Running {command}", "Editing {path}", "Reading {path}", "Searching for {pattern}", "Fetching {host}", "Searching the web for {query}", "Starting a subagent: {description}" (`Agent`, once `Task`), "Using {server} {tool}" (MCP), "Using {tool}" | the compact's subtitle; inside a subagent (`agent_id`) the parent keeps "Working with N subagents" |
-| `PostToolUse` | `busy` | unchanged | clears an `error` |
+| `PostToolUse` | `busy` | unchanged | clears an `error`; `TaskCreate` (its `subject`, the result's `id`) and `TaskUpdate` (`taskId`, `status`) keep the session's task list: the compact reads "Claude Code" over "{project} · 2 / 5" with up to 3 tasks as rows — done ✓, being done ▶, to do ○ dimmed; with more, the one just done, the one being done, the next — and none while the screen is shared (§7). Met in its middle, Buoy reads `~/.claude/tasks/<session_id>/*.json` once (2026-11-12, design/compact) |
 | `PostToolUseFailure` | `error` | "Something failed" | until the next event |
 | `SubagentStart` / `SubagentStop` | `busy` | "Working with a subagent", "… with 2 subagents"; "Working" when the last stops | the parent keeps working |
 | `PermissionRequest` | `ask` | "Needs your OK · Run: pnpm test" | §4; after the prompt, with no other news: `busy` "Working" (so it can go stale) |
@@ -179,8 +179,10 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
   "Run: pnpm test", "Edit: src/…/pill.js", "Fetch: example.com", "Use: {mcp_server}
   {tool}" — the command or path on one line, ellipsized, after the session's name when it
   has one ("Buoy — Weather icons · Run: pnpm test"); buttons **Deny · Allow · Always** (Always
-  only when Claude Code sent `permission_suggestions`). Its compact: the session's name
-  (else the label), what it wants, the buttons.
+  only when Claude Code sent `permission_suggestions`). Its compact is a card held on the
+  pill until answered (2026-11-12, design/alerts-and-asks "Ask"): Bu; "Claude Code wants to
+  run" over "{project} · Bash" with the command as its body (2 lines), "Allow edits to
+  {file}?" for an edit, else the question with what it wants; the buttons, Allow cream.
 - **The answer** (Buoy builds the stdout, the script prints it):
 
   | Button | stdout |
