@@ -14,8 +14,10 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
   "Phần chung", pill → Home và pill → tab Media bay tới cùng một dạng (M4 "Motion: shared parts").
   **Chốt** (Ethan, 2026-11-13)
 - **Nhiều player: một hàng chip ở trên**, mỗi player một chip (icon app 16, tên app), chip đang chọn
-  `fill-3`, chip khác `fill-2`; thẻ thấp đi 40 (chip 32 + 8). Mở từ pill nào thì chọn player đó.
-  **Chốt** (Ethan, 2026-11-13)
+  `fill-3`, chip khác `fill-2`; thẻ thấp đi 40 (chip 32 + 8). **Chốt** (Ethan, 2026-11-13)
+- **Bấm pill hoặc compact của player nào thì tab mở với chip của player đó**, giữ logic cũ
+  (2026-11-07: Home nhận activity của pill đã bấm, `from` của tab Media). Mở từ chỗ khác (thẻ chính
+  của Home, thanh tab): player đứng đầu stack. **Chốt** (Ethan, 2026-11-13)
 - **Luôn đủ nút và thanh seek**: ⇄ ⏮ ⏯ ⏭ ↻ và thanh luôn có mặt; player không làm được (không
   seek, không có bài trước/sau, không trộn, không lặp) thì phần đó **mờ** (`fg-disabled`), không
   phản hồi hover, không bấm hay kéo được. Bố cục không đổi theo player. **Chốt** (Ethan, 2026-11-13)
