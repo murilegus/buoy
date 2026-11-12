@@ -62,6 +62,7 @@ src/buoy@murilegus/
     │   │   ├── files.js        small files read without blocking the Shell: readText, listInfos/listNames, ppidOf (EGO review, 2026-11-09)
     │   │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
     │   │   ├── sharing.js      the screen shared or recorded, from Shell's indicators (agent, notification; 2026-11-07)
+    │   │   ├── presence.js     you at the screen: input in the last second, away (session idle, locked), DND (alerts; 2026-11-12)
     │   │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
     │   │   └── devtools.js     `dev-mode`'s module hot swap
     │   └── ui/             actors. Imports anything in kit/, never a module

@@ -25,12 +25,22 @@ D-Bus API ──────────────────────┘ 
   ttl:       0,                        // ms; 0 = until ended; cap 8 h like Apple
   staleAfter:0,                        // ms without update → isStale → dimmed/"—"
   style:     'standard' | 'transient', // transient = opens expanded, ends on click-outside
-  alert:     false,                    // true on update → expand briefly (Apple alert config)
+  alert:     false,                    // true on surface/update → its card opens on its pill (an alert)
   keyline:   null,                     // optional border tint
   onPress, onExpand, actions: [{id, label, icon}],  // ≤ 1 in minimal, ≤ 3 compact/expanded (HIG)
   minimalAction: true,                 // false: no button in minimal, the compact has them (media)
   onAction(id, value?)                 // a button was pressed (ask: answers it); a tab may pass a value (seek)
   onExpire()                           // its ttl ended it (not end()): a transient notification goes (2026-11-08)
+  // an alert's card (design/alerts-and-asks, 2026-11-12): held 5 s of your presence, then closed
+  alertStays: false,                   // true: the card stays until this turns false (a critical notification)
+  alertKey:  null,                     // the card it is: another key on the same activity is another card;
+                                       // the card closes when the key changes (a burst's turn)
+  onSeen()                             // its card had its 5 s while you were there, or was hovered
+  onAlertDone(seen)                    // its card closed (or got none: hidden, away, another card up)
+  onAlertState({mayYield, hovered})    // the card had its 1 s and the pointer is off it: another may take its place
+  compact.card: {icon, app, at, picture, title, body, close, actionsOnHover}
+                                       // a message's card; actionsOnHover: its buttons only under the
+                                       // pointer; picture may be {stack: [icon, …]} (≤ 3 logos)
   compact: {leading, text, subtitle, trailing, transport, progress, rows}  // the hover tier (Buoy's
                                        // own; was `peek`); transport = ≤3 actions; progress 0..1 or
                                        // live {position, length, at, playing} (ms), which runs with

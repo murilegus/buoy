@@ -260,6 +260,10 @@ eq(planCompact({compact: {card: {title: 'T', actionsOnHover: true}}}).card.actio
     'a card can show its buttons only under the pointer (a notification\'s alert)');
 eq(planCompact({compact: {card: {title: 'T', actionsOnHover: 'yes'}}}).card.actionsOnHover, false,
     'actionsOnHover: only true counts');
+eq(planCompact({compact: {card: {title: 'T', picture: {stack: ['a', null, 'b', 'c', 'd']}}}}).card.picture,
+    {type: 'stack', icons: [{type: 'icon', icon: 'a'}, {type: 'icon', icon: 'b'}, {type: 'icon', icon: 'c'}]},
+    'a stack picture: up to three logos, the empty ones dropped');
+eq(planCompact({compact: {card: {title: 'T', picture: {stack: []}}}}).card.picture, null, 'an empty stack: no picture');
 eq(planCompact({compact: {card: {title: 'T'}}, actions: 'x'}).actions, [], 'card without actions: no row');
 {
     const acts = [{id: 'prev', icon: 'p-symbolic'}, {id: 'pp', icon: 'q-symbolic'},

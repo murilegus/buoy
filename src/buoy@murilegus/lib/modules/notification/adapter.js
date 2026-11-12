@@ -20,6 +20,9 @@
  *   expire()     the pill's 6 s ran out (its `onExpire`): what the banner's hide does
  *   seen()       its card had its 5 s while you were there, or you hovered it (onSeen)
  *   alertDone()  its card closed, seen or missed (onAlertDone)
+ *   burst        its turn's notifications (Turns), 2 and up: the card says how many
+ *   alertKey     its turn's key while it has the card, else null (the kit's alertKey)
+ *   alertState() the card may give way, is hovered (onAlertState)
  */
 
 /**
@@ -192,6 +195,217 @@ export function rowText({title, body, markup = false, appName}, shared = false) 
     return cardText(plainText(title), plainText(body, markup), app);
 }
 
+/** Besides the card up, at most this many turns wait (GNOME's queue of 3, design/alerts-and-asks). */
+export const MAX_WAITING = 2;
+
+/**
+ * A burst of notifications (design/alerts-and-asks "Nhiều thông báo cùng lúc", 2026-11-12):
+ * one card at a time, in the order they came. Pure: no timers — the kit says when the card
+ * up may give way (its 1 s, the pointer off it) and when it closed; the source asks step().
+ *
+ * - A turn: one app's notifications in a row (`count`), the newest shown (`item`). The next
+ *   of the same app joins the card up while nothing waits, else the last waiting turn if
+ *   it is that app's; otherwise it is a turn of its own, to keep the order.
+ * - Under the pointer the card's notification stays; the count still grows.
+ * - At most MAX_WAITING turns wait; more get no card (`dropped`: the app's pill only).
+ *   A critical one goes first in the queue, and never shares a turn with a normal one.
+ * - Every notification replaced or dropped before its card showed is `missed`.
+ */
+export class Turns {
+    constructor() {
+        /** @type {?{key: number, app: string, item: *, count: number, critical: boolean, mayYield: boolean, hovered: boolean}} */
+        this.current = null;
+        /** @type {{app: string, item: *, count: number, critical: boolean}[]} */
+        this.waiting = [];
+        this._key = 0;
+    }
+
+    /**
+     * A notification came.
+     *
+     * @param {string} app
+     * @param {*} item  the notification
+     * @param {boolean} [critical]
+     * @returns {{start: ?object, show: ?object, missed: *[], dropped: object[]}}  start: begin
+     *   this turn now (nothing was up); show: the card up changed in place; missed: items
+     *   that never get a card; dropped: turns with no card (their app's pill only)
+     */
+    arrive(app, item, critical = false) {
+        const out = {start: null, show: null, missed: [], dropped: []};
+        const t = this.current;
+        critical = critical === true;
+        if (!t && !this.waiting.length) {
+            out.start = this._begin({app, item, count: 1, critical});
+            return out;
+        }
+        if (t && t.item === item) {                 // an update of the one up
+            out.show = t;
+            return out;
+        }
+        if (t && t.app === app && t.critical === critical && !this.waiting.length) {
+            t.count++;
+            if (t.hovered) {
+                out.missed.push(item);              // being read: it stays, the count grows
+            } else {
+                out.missed.push(t.item);
+                t.item = item;
+            }
+            out.show = t;
+            return out;
+        }
+        const join = critical ? this.waiting[0] : this.waiting.at(-1);
+        if (join && join.app === app && join.critical === critical) {
+            out.missed.push(join.item);
+            join.item = item;
+            join.count++;
+            return out;
+        }
+        const turn = {app, item, count: 1, critical};
+        if (critical)
+            this.waiting.unshift(turn);
+        else
+            this.waiting.push(turn);
+        while (this.waiting.length > MAX_WAITING) {
+            const x = this.waiting.pop();
+            out.missed.push(x.item);
+            out.dropped.push(x);
+        }
+        return out;
+    }
+
+    /**
+     * @returns {?object} the turn to begin now: nothing up and one waits, or the card up may
+     *   give way and one waits (the card up is then cut short)
+     */
+    step() {
+        if (!this.waiting.length || (this.current && !this.current.mayYield))
+            return null;
+        return this._begin(this.waiting.shift());
+    }
+
+    /**
+     * The card closed (seen or missed).
+     *
+     * @param {?number} key
+     * @returns {boolean} it was the card up: step() may begin the next
+     */
+    end(key) {
+        if (key === null || key === undefined || this.current?.key !== key)
+            return false;
+        this.current = null;
+        return true;
+    }
+
+    /**
+     * The kit's word on the card up (onAlertState).
+     *
+     * @param {number} key
+     * @param {{mayYield: boolean, hovered: boolean}} state
+     * @returns {boolean} step() may begin the next now
+     */
+    state(key, {mayYield, hovered}) {
+        const t = this.current;
+        if (!t || t.key !== key)
+            return false;
+        t.mayYield = mayYield === true;
+        t.hovered = hovered === true;
+        return t.mayYield && this.waiting.length > 0;
+    }
+
+    /**
+     * @param {*} item  a notification gone from GNOME's list
+     * @returns {boolean} a waiting turn went with it
+     */
+    gone(item) {
+        const before = this.waiting.length;
+        this.waiting = this.waiting.filter(x => x.item !== item);
+        return this.waiting.length !== before;
+    }
+
+    /**
+     * @param {string} app
+     * @returns {boolean} the app has the card up or a turn waiting
+     */
+    busy(app) {
+        return this.current?.app === app || this.waiting.some(x => x.app === app);
+    }
+
+    /** @returns {*[]} every item up or waiting, all forgotten (the source's disable) */
+    clear() {
+        const items = [this.current?.item, ...this.waiting.map(x => x.item)].filter(x => x !== undefined);
+        this.current = null;
+        this.waiting = [];
+        return items;
+    }
+
+    _begin(turn) {
+        this.current = {...turn, key: ++this._key, mayYield: false, hovered: false};
+        return this.current;
+    }
+}
+
+/**
+ * @param {string} app
+ * @param {number} burst  the turn's notifications
+ * @returns {string} the card's header: the app, and how many from 2 ("Slack · 4 messages")
+ */
+export function burstHeader(app, burst) {
+    return Number.isInteger(burst) && burst > 1 ? `${app} · ${burst} messages` : app;
+}
+
+/**
+ * A burst on a shared or recorded screen (design/alerts-and-asks "Khi chia sẻ màn hình",
+ * 2026-11-12): one compact, the head only — the apps' logos stacked, "N new notifications",
+ * how many from each app. No body, no picture, no button; a click opens nothing (it would
+ * show the message on the shared screen); × closes it. Every one in it is missed.
+ *
+ * @param {object} ev
+ * @param {{name: string, icon: *, count: number}[]} ev.apps  in the order they came
+ * @param {number} [ev.at]  the newest's time, ms since the epoch
+ * @param {function():void} [ev.close]  the close button
+ * @param {function(boolean):void} [ev.alertDone]  its card closed
+ * @returns {?object} presentation data, null with no notification
+ */
+export function sharedBurst({apps, at, close = null, alertDone = null}) {
+    const list = (Array.isArray(apps) ? apps : [])
+        .map(a => ({
+            name: plainText(a?.name) || 'Notification', icon: a?.icon ?? ICON,
+            count: Number.isInteger(a?.count) && a.count > 0 ? a.count : 0,
+        }))
+        .filter(a => a.count > 0);
+    const total = list.reduce((sum, a) => sum + a.count, 0);
+    if (!total)
+        return null;
+    const title = total === 1 ? 'New notification' : `${total} new notifications`;
+    return {
+        text: title,
+        leading: list[0].icon,
+        trailing: null,
+        compact: {
+            card: {
+                icon: null, app: list.map(a => `${a.name} ${a.count}`).join(' · '),
+                at: Number.isFinite(at) ? at : null,
+                picture: {stack: list.map(a => a.icon)}, title, body: null, close: DISMISS,
+                actionsOnHover: false,
+            },
+        },
+        expanded: null,
+        actions: [],
+        minimalAction: false,
+        ttl: TTL,
+        needsYou: false,
+        alertStays: false,
+        pressFirst: true,
+        onPress: () => true,          // opens nothing: the screen is shared
+        onAction: id => {
+            if (id === DISMISS)
+                close?.();
+        },
+        onAlertDone: alertDone,
+        attributes: {title, app: 'buoy'},
+    };
+}
+
 export default {
     notification(ev) {
         const app = plainText(ev.appName) || 'Notification';
@@ -213,7 +427,7 @@ export default {
             trailing: count > 1 ? {text: String(count)} : null,
             compact: {
                 card: {
-                    icon: appIcon, app, at: Number.isFinite(ev.at) ? ev.at : null,
+                    icon: appIcon, app: burstHeader(app, ev.burst), at: Number.isFinite(ev.at) ? ev.at : null,
                     picture, title: text.title, body: text.body, close: DISMISS,
                     // as GNOME 50's banner: the buttons under the pointer; a critical one has
                     // them at once (design/alerts-and-asks "Thông báo")
@@ -232,6 +446,8 @@ export default {
             onExpire: ev.expire ?? null,
             onSeen: ev.seen ?? null,
             onAlertDone: ev.alertDone ?? null,
+            onAlertState: ev.alertState ?? null,
+            alertKey: Number.isInteger(ev.alertKey) ? ev.alertKey : null,
             attributes: {title, body, app},
         };
     },

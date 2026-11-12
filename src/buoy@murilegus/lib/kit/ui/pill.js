@@ -131,8 +131,8 @@ export class Pill {
         if (held) {
             this._clearGrace();
             this._openCompact();
-        } else if (!this.hovered) {
-            this._stopCompact();
+        } else if (!this.hoverCounts) {
+            this._stopCompact();     // a pointer it opened under does not keep it
         }
     }
 
@@ -168,7 +168,9 @@ export class Pill {
      */
     configure(activity, {role = 'centre', light = 'off', more = 0, fade = false} = {}) {
         const same = (activity?.id ?? null) === this.id;
-        if (!same)
+        // a held card takes another activity in place (a burst's next turn): it stays open,
+        // its content cross-fades (design/alerts-and-asks)
+        if (!same && !this._held)
             this._stopCompact();
         this.id = activity?.id ?? null;
         this.activity = activity;

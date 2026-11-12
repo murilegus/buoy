@@ -11,7 +11,7 @@ import {Pill} from './pill.js';
 import {Home} from './home.js';
 import {showKeys} from './present/elements.js';
 import {planCompact, planExpanded, planMissed} from '../model/presentation.js';
-import {ALERT_MS, pillWindow} from '../model/stack.js';
+import {ALERT_MS, ALERT_TURN_MS, pillWindow} from '../model/stack.js';
 import {planStrip, pressTarget} from '../model/tabs.js';
 import {Presence} from '../services/presence.js';
 import {actionForKey, step} from '../model/keys.js';
@@ -19,6 +19,7 @@ import {actionForKey, step} from '../model/keys.js';
 const MAX_PILLS = 3;       // SPEC §2c
 const CLUSTER_MARGIN = 12; // keep side pills this far from the system cluster
 const ALERT_HOVER = 1000;  // an alert still hovered at its end stays open this much longer
+const TURN_GRACE = 200;    // the pointer off a held card: Shell's banner HIDE_TIMEOUT (ui/messageTray.js)
 const SCROLL_GAP_MS = 400; // one plan per scroll gesture on the idle pill (auto)
 
 /**
@@ -68,9 +69,14 @@ export class Island {
         // a compact the stack opened, held open on its pill (design/alerts-and-asks): an
         // alert for ALERT_MS of your presence, an ask until it is answered, an alert that
         // stays (`alertStays`: a critical notification) until its activity no longer asks it
-        // — {pill, how: 'alert' | 'ask' | 'stay', seen}
+        // — {pill, how: 'alert' | 'ask' | 'stay', id, key, activity, seen, turned, done, told}
+        // (_hold). While an alert's card is up the pills behind it keep their places
+        // (`_later`): they settle when it closes.
         this._held = null;
+        this._later = false;
         this._activeWatch = 0;      // an alert waiting for you to be back (Presence.whenActive)
+        this._turnId = 0;           // the alert's ALERT_TURN_MS
+        this._graceId = 0;          // TURN_GRACE after the pointer left a held card
         this._presence = new Presence({onAway: away => this._awayChanged(away)});
         this._open = null;          // the expanded pill
         this._openedBy = null;      // 'user' | 'auto' | 'alert'
@@ -158,7 +164,7 @@ export class Island {
             Math.round(m.x + (m.width - this._s.container.w) / 2),
             m.y + this._s.inset);
         this._updateCapacity();
-        this._apply(false);
+        this._apply(false, {force: true});
     }
 
     // The em and the idle clock's widest text, read from a hidden idle pill's label: the
@@ -204,11 +210,13 @@ export class Island {
         this._list = list;
         if (this._home) {
             // the panel stays while a click has it open: it lists whatever is running,
-            // even after the pill it grew from ended; alerts wait until it closes
+            // even after the pill it grew from ended; an alert shows in it (design/alerts-
+            // and-asks: Home open, the notification is in its tab, seen)
             const a = list.find(x => x.id === this._open.id);
             if (a)
                 this._open.configure(a, {...this._roleOf(this._open)});
             this._home.update(list);
+            this._noCard(list, alert, true);
             return;
         }
         if (this._open) {
@@ -220,47 +228,91 @@ export class Island {
                 this._open.morph();
                 if (alert === a.id)
                     this._armAlert();
+                else
+                    this._noCard(list, alert, false);
                 return;
             }
             this._close();
         }
-        this._apply(true);
+        // an alert for another pill takes the held card's pill with it: the card stays open
+        // and its content changes (a burst's next turn, design/alerts-and-asks)
+        const held = this._held;
+        const takes = held && held.how === 'alert' && alert !== null && alert !== held.id &&
+            list.some(a => a.id === alert);
+        this._apply(true, {heldTo: takes ? alert : null, force: expand !== null});
 
-        // a held ask stays while its pill still shows that ask; an alert keeps its time
-        const h = this._held;
-        if (h && (!this._pills.includes(h.pill) || (h.how === 'ask' && h.pill.activity?.kind !== 'ask') ||
-            (h.how === 'stay' && h.pill.activity?.alertStays !== true)))
-            this._release();
+        // a held ask stays while its pill still shows that ask; an alert while its pill
+        // shows that activity and the same card (`alertKey`); an alert that stays while it
+        // still asks to
         const centre = this._pills[0];
         const alerted = this._pills.find(p => p.id === alert && p.id !== null);
+        const h = this._held;
+        if (h && h.pill !== alerted && (!this._pills.includes(h.pill) || h.pill.id !== h.id ||
+            (h.how === 'ask' && h.pill.activity?.kind !== 'ask') ||
+            (h.how === 'stay' && h.pill.activity?.alertStays !== true) ||
+            (h.how !== 'ask' && h.pill.activity?.alertKey !== h.key)))
+            this._release();
+        else if (h && h.pill.id === h.id && (h.how === 'ask' || h.pill.activity?.alertKey === h.key))
+            h.activity = h.pill.activity;   // the same card, updated: its newest callbacks
+        const busy = this._held && this._held.how !== 'alert' && this._held.pill !== alerted;
         // an ask is a card at the compact's size, on its pill, until it is answered; an
         // alert opens its pill's compact in place for ALERT_MS (design/alerts-and-asks);
         // a transient still opens expanded
-        if (expand && centre.id === expand && centre.activity?.kind === 'ask' && centre.hasCompact)
+        if (expand && centre.id === expand && centre.activity?.kind === 'ask' && centre.hasCompact) {
             this._hold(centre, 'ask');
-        else if (expand && centre.id === expand && centre.expandable)
+        } else if (expand && centre.id === expand && centre.expandable) {
             this._openPill(centre, 'auto');
-        else if (alerted?.hasCompact)
-            this._hold(alerted, alerted.activity?.alertStays === true ? 'stay' : 'alert');
-        else
+        } else if (alerted?.hasCompact) {
+            const how = alerted.activity?.alertStays === true ? 'stay' : 'alert';
+            // away (the screen off, locked): no card, missed; an ask or a critical card up
+            // keeps its place: the alert gets none
+            if (busy || (how === 'alert' && this._presence.away))
+                this._noCard(list, alert, false);
+            else
+                this._hold(alerted, how);
+        } else {
             alerted?.pulse();
+            this._noCard(list, alert, false);
+        }
         this._syncKeys();           // the held ask's card was rebuilt by an update
     }
 
+    // An alert that gets no card here: its activity is done with it, seen (in Home's tab) or
+    // missed — a burst moves on (design/alerts-and-asks).
+    _noCard(list, alert, seen) {
+        if (alert === null)
+            return;
+        const a = list.find(x => x.id === alert);
+        if (seen)
+            a?.onSeen?.();
+        a?.onAlertDone?.(seen);
+    }
+
     _hold(pill, how) {
-        if (this._held?.pill === pill && this._held.how === 'ask' && how === 'alert')
+        const h = this._held;
+        if (h?.pill === pill && h.how === 'ask' && how === 'alert')
             return;                             // an ask outlasts an alert on it
-        if (this._held && this._held.pill !== pill)
+        if (h && h.pill !== pill)
             this._release();
+        else if (h && (h.id !== pill.id || h.key !== pill.activity?.alertKey))
+            h.activity?.onAlertDone?.(h.seen);  // another card on it (a burst's next turn)
+        const again = this._held?.pill === pill;
         if (this._compactPill && this._compactPill !== pill)
             this._compactPill._stopCompact();
-        this._held = {pill, how, seen: false};
-        pill.holdCompact(true);
+        // turned: its ALERT_TURN_MS are over; done: its ALERT_MS; told: what its activity
+        // last heard (_syncTurn)
+        this._held = {
+            pill, how, id: pill.id, key: pill.activity?.alertKey, activity: pill.activity,
+            seen: false, turned: false, done: false, told: null,
+        };
+        if (!again)                             // still held: a pointer on it still counts
+            pill.holdCompact(true);
         this._holdHovered(pill, pill.hoverCounts);
         if (how === 'alert' || how === 'stay')
             this._armAlert();
         else
             this._disarmAlert();
+        this._syncTurn();
         this._syncKeys();
     }
 
@@ -270,7 +322,43 @@ export class Island {
         if (this._held?.pill !== pill || this._held.seen)
             return;
         this._held.seen = true;
-        pill.activity?.onSeen?.();
+        this._held.activity?.onSeen?.();
+    }
+
+    // A held alert's turn (design/alerts-and-asks "Nhiều thông báo cùng lúc"): once it has
+    // had ALERT_TURN_MS of you, while the pointer is off it — and TURN_GRACE after it left —
+    // another alert may take its place. Its activity hears that, and whether it is hovered
+    // (`onAlertState`), when either changes; a critical card never gives way.
+    _syncTurn() {
+        const h = this._held;
+        if (!h || h.how === 'ask')
+            return;
+        const hovered = h.pill.hoverCounts;
+        const mayYield = h.how === 'alert' && h.turned && !hovered && !this._graceId;
+        if (h.told?.mayYield === mayYield && h.told?.hovered === hovered)
+            return;
+        h.told = {mayYield, hovered};
+        h.activity?.onAlertState?.({mayYield, hovered});
+    }
+
+    // The pointer on a held card, or off it: off, TURN_GRACE in case it comes back (Shell's
+    // HIDE_TIMEOUT), then the card goes on — gives way, or closes if its 5 s are over.
+    _turnHover(hovered) {
+        const h = this._held;
+        if (hovered && this._graceId) {
+            GLib.source_remove(this._graceId);
+            this._graceId = 0;
+        } else if (!hovered && h.told?.hovered && !this._graceId) {
+            this._graceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TURN_GRACE, () => {
+                this._graceId = 0;
+                if (this._held?.done && this._held.how === 'alert' && !this._held.pill.hoverCounts)
+                    this._release();
+                else
+                    this._syncTurn();
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+        this._syncTurn();
     }
 
     // Away (the session idle, the screen locked): a card waiting for you closes, unseen —
@@ -287,11 +375,13 @@ export class Island {
         this._held = null;
         this._disarmAlert();
         h.pill.holdCompact(false);
-        h.pill.activity?.onAlertDone?.(h.seen);     // closed: seen, or missed
+        h.activity?.onAlertDone?.(h.seen);          // closed: seen, or missed
         this._holdHovered(h.pill, h.pill.hoverCounts);
         // an answered ask lets the keyboard go, as closing its expanded did
         if (h.how === 'ask' && this._grab && !this._open)
             this._letGo();
+        if (this._later)                            // the pills behind the card settle
+            this._apply(true);
         this._syncKeys();
     }
 
@@ -366,6 +456,8 @@ export class Island {
     _holdHovered(pill, hovered) {
         if (hovered && pill.hoverCounts)
             this._seen(pill);       // a held card you point at is seen (design/alerts-and-asks)
+        if (this._held?.pill === pill && this._held.how !== 'ask')
+            this._turnHover(hovered && pill.hoverCounts);
         // its card held open holds its ttl too: a card waiting for you does not end under you
         const keep = hovered || this._held?.pill === pill;
         const id = keep && this._pills.includes(pill) ? pill.id : null;
@@ -395,12 +487,38 @@ export class Island {
 
     // Bind the shown activities to pills. A pill follows its activity: one that moves
     // to another slot slides there; a new one fades in at its slot; a gone one fades out.
-    _apply(animate) {
+    /**
+     * @param {boolean} animate
+     * @param {object} [opts]
+     * @param {?string} [opts.heldTo]  the held card's pill takes this activity (a burst's
+     *   next turn): the card stays open where it is
+     * @param {boolean} [opts.force]  even while an alert's card is up
+     */
+    _apply(animate, {heldTo = null, force = false} = {}) {
         if (this._destroyed)
             return;
+        // an alert's card up: the pills behind it keep their places (a burst's quiet
+        // notifications, a pill ending), only the card follows its activity
+        const h = this._held;
+        const card = h && h.how !== 'ask' && !heldTo && !force && h.pill.id === h.id &&
+            this._pills.includes(h.pill) ? this._list.find(x => x.id === h.id) : null;
+        if (card) {
+            this._later = true;
+            h.pill.configure(card, this._roleOf(h.pill));
+            return;
+        }
+        this._later = false;
         const shown = pillWindow(this._list, this._capacity).shown;   // feedback covers pill 1
         const wanted = shown.length ? shown : [null];
         const byId = new Map(this._pills.map(p => [p.id, p]));
+        if (heldTo && h && this._pills.includes(h.pill)) {
+            const other = byId.get(heldTo);
+            byId.set(heldTo, h.pill);
+            if (other && other !== h.pill)
+                byId.set(h.id, other);
+            else
+                byId.delete(h.id);
+        }
         const next = [];
         for (const [i, a] of wanted.entries()) {
             const id = a?.id ?? null;
@@ -834,6 +952,16 @@ export class Island {
             return;
         }
         this._alertId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ALERT_MS, () => this._alertDone());
+        const h = this._held;
+        if (h?.how === 'alert') {
+            this._turnId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ALERT_TURN_MS, () => {
+                this._turnId = 0;
+                h.turned = true;
+                if (this._held === h)
+                    this._syncTurn();
+                return GLib.SOURCE_REMOVE;
+            });
+        }
     }
 
     _alertDone() {
@@ -843,13 +971,12 @@ export class Island {
             return GLib.SOURCE_REMOVE;
         }
         if (this._held?.how === 'alert') {
-            this._seen(this._held.pill);       // its 5 s while you were there
-            if (this._held.pill.hovered) {     // being read: it stays while the pointer does
-                this._alertId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ALERT_HOVER, () => this._alertDone());
-                return GLib.SOURCE_REMOVE;
-            }
             this._alertId = 0;
-            this._release();
+            this._seen(this._held.pill);       // its 5 s while you were there
+            this._held.done = true;
+            // being read: it stays while the pointer does, and TURN_GRACE after (_turnHover)
+            if (!this._held.pill.hoverCounts && !this._graceId)
+                this._release();
             return GLib.SOURCE_REMOVE;
         }
         if (this._open?.hovered) {             // being read: give it a little longer
@@ -866,6 +993,14 @@ export class Island {
         if (this._alertId) {
             GLib.source_remove(this._alertId);
             this._alertId = 0;
+        }
+        if (this._turnId) {
+            GLib.source_remove(this._turnId);
+            this._turnId = 0;
+        }
+        if (this._graceId) {
+            GLib.source_remove(this._graceId);
+            this._graceId = 0;
         }
         this._presence?.cancel(this._activeWatch);
         this._activeWatch = 0;

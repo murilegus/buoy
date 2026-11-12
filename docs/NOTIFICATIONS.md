@@ -44,9 +44,11 @@ point is GNOME's rule:
 
 With `notification-replace-banners` on, Buoy overrides `_showNotification` (on the
 prototype, through Shell's `InjectionManager`, as the hud module does for the OSD): each
-notification GNOME would have shown leaves the queue as a pill instead — marked seen and
-its sound played, as the banner would have. No banner is built. Off: the original runs
-and GNOME shows its banner; Buoy shows no pill (the tab still lists everything, §6).
+notification GNOME would have shown leaves the queue as an alert on its app's pill instead,
+its sound played as the banner would have. No banner is built. It is marked seen
+(`acknowledged = true`) only by the rule in §2 (2026-11-12), not when it shows. Off: the
+original runs and GNOME shows its banner; Buoy shows no pill (the tab still lists
+everything, §6).
 
 **Held, still unseen** (2026-11-08): Shell takes a notification out of the queue in the
 same call that queued it unless it holds the queue — full screen, busy, the lock screen.
@@ -67,40 +69,42 @@ way the app's pill updates.
 
 ## 2. The pill
 
-> **v0.2 redesign** (2026-11-12, Ethan; the drawings and the full rules in
-> [Design](design/index.md), alerts and asks). This section and §1's "marked seen" describe
-> v0.1, as the code is today. What changes:
->
-> - **An alert, as GNOME 50's banner** (`ui/messageTray.js` `_showNotification`,
->   `_expandBanner`): the card opens on the pill for 5 s with the title and up to two lines of
->   body but no buttons; hovering shows the app's buttons and holds it; then the pill, with the
->   full title as the app sent it (no per-app rewriting). Critical: buttons at once, it stays.
->   A shared screen still names only the app (§5).
-> - **Seen only when you were there**: a notification is seen when its card had its 5 s while
->   you were present, or you hovered or clicked it; only then `acknowledged = true` (v0.1 set it
->   when the pill showed, even with nobody at the screen). Present: input in the last second
->   (Shell's `IDLE_TIME`, the core idle monitor). A card that comes while you are idle waits and
->   starts its 5 s at your next input (`add_user_active_watch`, as Shell's banner), but closes,
->   missed, when the session turns idle (`idle-delay`) or the screen locks.
-> - **Missed** (the amber light, the Missed list in Home): what came while you were away
->   (session idle), locked, full screen or in Do Not Disturb; a card cut short by the next one;
->   ended activities under the same conditions (the stack's history; v0.1 counted full screen
->   only). Full screen and Do Not Disturb show no card, as GNOME shows no banner. Opening Home
->   turns the light off; the Missed tile stays until every row is opened or cleared.
-> - **Several at once**: cards in arrival order; consecutive ones from one app merge into one
->   turn (the newest, "4 messages" on the subtitle); each turn at least 1 s, the last one 5 s;
->   besides the card at most 2 waiting turns (Shell's `MAX_NOTIFICATIONS_IN_QUEUE` = 3); one
->   that finds no room gets no card, only its app's pill, and is missed; a critical one jumps
->   ahead and is never replaced. The card stays open between turns, its content fading (100 ms
->   out, 200 ms in); afterwards one pill per app as below, ranked by PRIORITY (the newest first).
-> - **Shared or recorded screen**: one notification as §5; a burst is **one compact** (the head
->   only: the apps' logos stacked, "6 new notifications", "Slack 3 · Telegram 2 · Gmail 1"), 5 s,
->   later ones only bump the counts; no buttons, a click opens nothing, × only closes it; then one
->   pill per app, named only. All of it counts as missed: nobody read what was hidden.
-> - **Hover during a burst** pauses it: the card stays, shows its buttons, never changes under the
->   pointer (a same-app message only bumps the count); timers run only off the card; leaving
->   resumes after 200 ms (Shell's `HIDE_TIMEOUT`). A card that opens under a resting pointer is
->   not hovered until the pointer leaves and comes back (`_onNotificationHoverChanged`).
+Since M4 "Notifications as alerts" (2026-11-12, Ethan; drawings and rules in
+[design/alerts-and-asks](design/alerts-and-asks/index.vi.md)):
+
+- **An alert, as GNOME 50's banner** (`ui/messageTray.js` `_showNotification`,
+  `_expandBanner`): the card (§3) opens on the app's pill for 5 s, the title and up to two
+  lines of body, its buttons only under the pointer (`actionsOnHover`); then the pill.
+  Critical: the buttons at once, and the card stays until it is dealt with (`alertStays`).
+- **Seen only when you were there**: its card had its 5 s while you were present, or you
+  hovered or clicked it (the kit's `onSeen`); only then `acknowledged = true`. Present: input
+  in the last second (Shell's `IDLE_TIME`, the core idle monitor; `kit/services/presence.js`).
+  A card that comes while you are idle waits, with no limit, and starts its 5 s at your next
+  input (`add_user_active_watch`, as Shell's banner); it closes, missed, when the session
+  turns idle (`idle-delay`, org.gnome.SessionManager.Presence) or the screen locks. Away or
+  locked, a new one gets no card.
+- **Missed** (the amber light): everything not seen by that rule — a card cut short, one with
+  no card, one that waited in Shell's queue (full screen, locked: §1), Do Not Disturb (Shell
+  shows no banner, so no card).
+- **A burst** (`adapter.js` `Turns`): cards in arrival order; consecutive ones from one app
+  are one turn (the newest, "Slack · 4 messages" in the header); the same app after another
+  is a turn of its own. Each turn at least 1 s (`ALERT_TURN_MS`), the last one 5 s; besides
+  the card at most 2 turns wait (Shell's `MAX_NOTIFICATIONS_IN_QUEUE` = 3); one that finds no
+  room gets no card, only its app's pill. A critical one goes first and is never replaced.
+  The card stays open between turns, its content cross-fading (100 ms out, 200 ms in), and the
+  pills behind it keep their places until it closes; then one pill per app, the newest
+  first.
+- **Hover during a burst** pauses it: the card stays, shows its buttons and counts as seen;
+  a message from the same app only bumps the count; the 1 s and 5 s run only off the card;
+  leaving resumes after 200 ms (Shell's `HIDE_TIMEOUT`). A card that opens under a resting
+  pointer is not hovered until the pointer leaves and comes back
+  (`_onNotificationHoverChanged`). A click opens the app (the card closes, the burst goes
+  on); × dismisses that notification (the burst goes on).
+- **Shared or recorded screen** (§5): one notification is a card naming only the app; from
+  the second, the burst is **one compact** (`sharedBurst`: the apps' logos stacked, "6 new
+  notifications", "Slack 3 · Telegram 2 · Gmail 1"), 5 s, later ones only bump the counts;
+  no buttons, a click opens nothing, × closes it; each app keeps its pill. All of it is
+  missed: nobody read what was hidden.
 
 One pill per app (its id: the desktop id, else the name it sends; not per Shell `Source`,
 which notify-send makes once per process): a new notification from the same app replaces the
@@ -112,8 +116,8 @@ pill's content instead of adding a pill.
 | text | the notification's title; the app's name when it has none |
 | trailing | how many of the notifications it has shown are still in GNOME's list, from 2 on |
 
-- **How long:** 6 s (`TTL`), held while the pointer is on it (the kit's hover hold). A
-  new notification from the app starts the 6 s again.
+- **How long:** its card's 5 s, then 6 s as a pill (`TTL` 11 s), held while its card is up
+  or the pointer is on it. A new notification from the app starts it again.
 - **Critical** (`Urgency.CRITICAL`): no ttl, `needsYou` — tier 1 (PRIORITY.md §2); it
   stays until it is activated, dismissed or withdrawn by the app.
 - **Priority:** the kind's 70 inside the running tier; profiles move it as for any app.
@@ -125,9 +129,9 @@ pill's content instead of adding a pill.
   replaced): the pill shows the app's previous notification it still holds, or ends.
   A GTK replacement arrives in the same call as the old one's end, so the pill waits for
   the end of that call before ending (no flicker).
-- **Missed:** GNOME holds banners while full-screen, so no pill appears while the island
-  is hidden; the queue shows when it is back (as GNOME's banners do), still unseen (§1),
-  so the tab counts it.
+- **Full screen:** GNOME holds banners, so no pill appears while the island is hidden; the
+  queue shows when it is back, as pills with no card, still unseen (§1), so the tab counts
+  them.
 - **The amber light** (2026-11-08, Ethan): on while GNOME's list holds notifications
   nobody has seen — the date menu's own count, `unseenCount` less the queue
   (`ui/dateMenu.js` `MessagesIndicator._updateCount`), so a notification about to show is
@@ -139,12 +143,11 @@ pill's content instead of adding a pill.
 
 ## 3. The compact (hover): a card
 
-> **v0.2 redesign:** the card is laid out as design/compact "Card thông báo" since 2026-11-12 (M4
-> "Compact layout"): the compact's head (the picture 40 with the app's logo on its corner,
-> the sender over "App · time", × round 32), the message under it across the full width (2
-> lines of 16), the buttons in a row 12 from the edges; 136 / 152. How a notification arrives
-> (an alert, its seen rule, bursts) changes with M4 "Notifications as alerts"; the rest of
-> this section describes v0.1.
+> Laid out as design/compact "Card thông báo" (M4 "Compact layout", 2026-11-12): the compact's
+> head (the picture 40 with the app's logo on its corner, the sender over "App · time", ×
+> round 32), the message under it across the full width (2 lines of 16), the buttons in a row
+> 12 from the edges; 104 without buttons, 136 / 152 with. As an alert its buttons show only
+> under the pointer (§2). The sketch and sizes below are v0.1's.
 
 The compact of the other kinds (a leading, one title, one subtitle, buttons beside them,
 56 / 88 / 120 px) is too tight for a message (Ethan, 2026-11-07: "at least like GNOME's
@@ -202,7 +205,9 @@ for an `ask` while Do Not Disturb is SPEC §2a-i's (FEATURES "Buoy light").
   module uses, `kit/services/sharing.js`): the pill's text is the app's name; the card keeps its
   header (app, time, ×) and says "New notification" (or "N notifications") as its title,
   with no body and no picture. The actions stay: their labels are the app's, not the
-  message. Watched only while a notification pill is up; a change re-draws it at once.
+  message. From the second notification, the burst is one compact instead (§2), and none of
+  it counts as seen. Watched only while a notification pill is up; a change re-draws it at
+  once.
 - **Profiles** (PROFILES.md): `hideBody` keeps the body from the adapter for that app
   (the card shows the title alone); `skip` drops a notification from the pill
   (GNOME's list keeps it, and no banner shows either).
