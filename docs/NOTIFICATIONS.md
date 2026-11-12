@@ -70,7 +70,7 @@ way the app's pill updates.
 ## 2. The pill
 
 Since M4 "Notifications as alerts" (2026-11-12, Ethan; drawings and rules in
-[design/alerts-and-asks](design/alerts-and-asks/index.vi.md)):
+[design/alerts-and-asks](design/alerts-and-asks/index.md)):
 
 - **An alert, as GNOME 50's banner** (`ui/messageTray.js` `_showNotification`,
   `_expandBanner`): the card (§3) opens on the app's pill for 5 s, the title and up to two
