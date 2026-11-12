@@ -25,11 +25,15 @@ và cách từng chuyển diễn ra; số dùng chung ở [Bảng số](../token
 - **Bo góc đi theo chiều cao**: bo = min(cao / 2, bo của dạng đích), không đổi ngay ở đầu chuyển như
   nay. **Đề xuất**
 - **Không blur** (luật 8). Chỗ Apple dùng blur khi đổi nội dung, Buoy dùng độ mờ và mép hình. **Chốt**
-- **Phần chung đi tới chỗ mới hay mờ đi rồi hiện lại?** HIG (Live Activities) khuyên giữ bố cục cũ
-  nhiều nhất có thể, "animating existing elements to their new positions rather than removing and
-  animating them back in": leading của minimal (20) lớn lên và đi tới chỗ leading của compact (40),
-  tên đi tới chỗ tên. SPEC §5 hiện nói ngược lại: nội dung không dời, không đổi cỡ trong lúc morph,
-  chỉ lộ theo mép nền (đang làm như vậy, hình bên dưới vẽ như vậy). **Mở**
+- **Phần chung đi tới chỗ mới**, như HIG (Live Activities): "animating existing elements to their new
+  positions rather than removing and animating them back in". Phần có ở cả hai dạng (leading, tên)
+  đi cùng nền bằng cùng lò xo: leading 20 của minimal lớn lên và tới chỗ leading 40 của compact, tên
+  tới chỗ tên. Phần chỉ có ở một dạng (đèn, equaliser, phụ đề, thanh, nút) vẫn như nay: phần đi thì
+  `fade-out`, phần đến thì lộ theo mép nền. Thay luật "nội dung không dời, không đổi cỡ trong lúc
+  morph" của SPEC §5 (2026-11-02), luật đó đặt ra vì chữ của expanded từng hiện đủ rộng khi nền còn
+  nhỏ; mép nền vẫn cắt mọi thứ nên lỗi đó không quay lại. Chỉ dời bằng `translation` và phóng bằng
+  `scale` (không xếp lại); leading vẽ sẵn ở cỡ đích rồi thu nhỏ, nên không mờ ở cỡ cuối. **Đề xuất**
+  (Ethan, 2026-11-12: "cần thiết thì đổi lại")
 
 ## Lò xo và độ mờ
 
@@ -55,24 +59,39 @@ nguyên.
 
 ![Pill thành compact và về lại, từng khung](images/compact.vi.png)
 
+<video src="clips/compact.webm" autoplay loop muted playsinline controls width="100%" title="Pill thành compact và về lại: đề xuất và hiện nay"></video>
+
+*Clip thật (60 fps), đề xuất ở trên, hiện nay ở dưới: [compact.vi.webm](clips/compact.vi.webm).*
+
 **Pill ↔ compact.** Rê chuột 300 ms: nền nở bằng `move` từ chính pill (đỉnh đứng yên, nở xuống và
-sang hai bên quanh tâm). Nội dung minimal đi bằng `fade-out` ngay; nội dung compact đứng sẵn ở chỗ
-cuối, lộ theo mép nền, độ mờ đi từ 0 ở nửa đường tới đủ ở cuối (như nay). Pill bên cạnh mờ tại chỗ
-(`fade-out`). Rời chuột: đợi 200 ms, rồi `close`; compact đi bằng `fade-out`, minimal về bằng
-`fade-in` từ nửa đường. **Đề xuất**
+sang hai bên quanh tâm). Leading và tên đi tới chỗ của chúng trong compact cùng nền; đèn và
+equaliser đi bằng `fade-out` ngay; phụ đề và thanh đứng sẵn ở chỗ cuối, lộ theo mép nền, độ mờ đi từ
+0 ở nửa đường tới đủ ở cuối. Pill bên cạnh mờ tại chỗ (`fade-out`). Rời chuột: đợi 200 ms, rồi
+`close`; leading và tên đi về chỗ cũ, phụ đề và thanh `fade-out`, đèn và equaliser `fade-in` từ nửa
+đường. **Đề xuất**
 
 ![Pill thành expanded, hai pill phụ gộp vào; rồi thu về](images/expanded.vi.png)
 
-**Pill → expanded.** Bấm: nền nở bằng `open`. Thanh tab và thân tab đứng sẵn ở chỗ cuối, lộ theo
-mép nền. Pill phụ trượt vào giữa bằng `move` và mờ đi ở nửa sau (gộp). **Thu về:** thân đi bằng
-`fade-out`, nền thu bằng `close` cùng lúc, minimal về bằng `fade-in` từ 60 %; pill phụ trượt ra
-bằng `move` và hiện lại. **Đề xuất**
+<video src="clips/expanded.webm" autoplay loop muted playsinline controls width="100%" title="Pill thành expanded và thu về: đề xuất và hiện nay"></video>
+
+*Clip thật (60 fps), đề xuất ở trên, hiện nay ở dưới: [expanded.vi.webm](clips/expanded.vi.webm).*
+
+**Pill → expanded.** Bấm: nền nở bằng `open`. Khi tab mở ra có cùng activity (thẻ chính của Home,
+tab Media), leading của pill đi tới ảnh của nó ở đó (20 → 88) và tên tới chỗ tên; phần còn lại
+(thanh tab, thân tab) đứng sẵn ở chỗ cuối, lộ theo mép nền. Tab khác: mọi thứ lộ theo mép, nội dung
+pill `fade-out`. Pill phụ trượt vào giữa bằng `move` và mờ đi ở nửa sau (gộp). **Thu về:** ngược
+lại: ảnh và tên đi về pill bằng `close`, phần còn lại `fade-out`; pill phụ trượt ra bằng `move` và
+hiện lại. **Đề xuất**
 
 **Alert và ask.** Như mở expanded nhưng tới cỡ compact hay card, cùng `open`; hết giờ thì như rời
 chuột (`close`). Card trong một đợt tin giữ nguyên: nội dung `fade-out` / `fade-in`, chiều cao
 `size` ([Alert và ask](../alerts-and-asks/index.vi.md)). **Đề xuất**
 
 ![Đổi tab: vạch chọn trượt, thân đổi theo hướng; danh sách mở tại chỗ](images/tabs.vi.png)
+
+<video src="clips/tabs.webm" autoplay loop muted playsinline controls width="100%" title="Đổi tab Home ↔ Media: đề xuất và hiện nay"></video>
+
+*Clip thật (60 fps), đề xuất ở trên, hiện nay ở dưới: [tabs.vi.webm](clips/tabs.vi.webm).*
 
 **Đổi tab.** Vạch chọn (nền `fill-3` cao 24) trượt và đổi rộng sang tab mới bằng `snap`; các icon
 dời chỗ cũng bằng `snap` vì tab được chọn rộng hơn (có tên). Tên tab cũ `fade-out`, tên tab mới
@@ -153,4 +172,7 @@ Idle không có gì chuyển động; idle đổi nội dung là một lần `id
 - `lib/kit/ui/home.js` — đổi tab: vạch chọn là một actor riêng sau các tab; thân đổi theo hướng;
   danh sách tại chỗ đẩy từ phải.
 - `stylesheet.css` và CSS của module — `transition-duration: 120ms` cho nút, hàng, chip, tab.
-- SPEC §5 viết lại, dẫn về trang này.
+- SPEC §5 viết lại, dẫn về trang này: bỏ "content never moves or scales during a morph", thay bằng
+  phần chung đi tới chỗ mới.
+- `lib/kit/ui/present/` — compact và Home đánh dấu phần chung (leading, tên) để pill tìm chỗ đích của
+  chúng; phần chung vẽ ở cỡ đích, đi bằng `translation` và `scale`.

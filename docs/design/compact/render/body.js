@@ -41,13 +41,13 @@ let y = 30;
 label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', colX[0], 8); label('Đề xuất — dùng cột dưới leading', colX[1], 8);
 // 1) media + bar
 { const h = 88;
-  let x = colX[0]; panel(x, y, h); head(x, y, 'Lumen Coast', 'Harbor Lights · Mira Vale'); bar(x, y + 64, x + TX, x + PW - PAD); waste(x, y, h);
-  x = colX[1]; panel(x, y, h); head(x, y, 'Lumen Coast', 'Harbor Lights · Mira Vale'); bar(x, y + 64, x + PAD + 6, x + PW - PAD - 6);
+  let x = colX[0]; panel(x, y, h); head(x, y, 'Lumen Coast', 'Harbor Lights · Spotify'); bar(x, y + 64, x + TX, x + PW - PAD); waste(x, y, h);
+  x = colX[1]; panel(x, y, h); head(x, y, 'Lumen Coast', 'Harbor Lights · Spotify'); bar(x, y + 64, x + PAD + 6, x + PW - PAD - 6);
   text('thanh dài hết bề ngang', x + PW + 8, y + 60, 8, 400, W1, .6); y += h + 22; }
 // 1b) media, big art spanning head + bar
 { const h = 88, x = colX[1]; label('…hoặc ảnh bìa 72 chiếm cả hai hàng', x, y - 16); panel(x, y, h);
   art(x + 8, y + 8, 72, 20); const tx = x + 8 + 72 + 12;   // inset 8 → r 28 − 8 = 20, concentric
-  text('Lumen Coast', tx, y + 10, 11, 600, W1); text('Harbor Lights · Mira Vale', tx, y + 30, 9.5, 400, G);
+  text('Lumen Coast', tx, y + 10, 11, 600, W1); text('Harbor Lights · Spotify', tx, y + 30, 9.5, 400, G);
   roundBtn(x + PW - PAD - 16, y + R, '⏸');
   bar(x, y + 60, tx, x + PW - PAD - 6); y += h + 30; }
 // 2) rows: Claude's task list (2026-11-11), on the 16 rhythm: 56 + 8 + 3 × 16 + 8 = 120

@@ -23,6 +23,9 @@ export const C = Object.freeze({
     WALL: [0.20, 0.17, 0.35],
 });
 export const GREY = Object.freeze({MUTED: [.70, .70, .70], SUBTLE: [.50, .50, .50]});
+// The one sample cover (design/index "Một bộ nội dung mẫu"): Lumen Coast by Harbor Lights, a
+// diagonal gradient from the top left
+export const COVER = Object.freeze([[.95, .55, .35], [.35, .25, .75]]);
 
 // the width a label has at 1× (hinted, as on a scale-1 screen)
 const meas1 = new cairo.Context(new cairo.ImageSurface(cairo.Format.ARGB32, 4, 4));

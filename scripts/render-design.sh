@@ -7,6 +7,16 @@ set -eu
 cd "$(dirname "$0")/../docs/design"
 
 r() { script=$1; out=$2; shift 2; gjs -m "$script" "$out" "$@"; }
+# clip <mode> <out.webm>: a render script's frames (60 fps) as a WebM, with GStreamer (vp8enc,
+# webmmux: gstreamer1.0-plugins-good, on Ubuntu by default)
+clip() {
+  frames="$(mktemp -d)"
+  gjs -m motion/render/motion.js "$frames" "$1"
+  gst-launch-1.0 -q multifilesrc location="$frames/f%04d.png" index=0 caps="image/png,framerate=60/1" \
+    ! pngdec ! videoconvert ! vp8enc deadline=0 cpu-used=0 end-usage=cq cq-level=6 target-bitrate=6000000 \
+    keyframe-max-dist=120 ! webmmux ! filesink location="$2"
+  rm -rf "${frames:?}"
+}
 
 # colours
 r colours/render/roles.js colours/images/roles.vi.png
@@ -52,5 +62,7 @@ for m in states anatomy fill lists screen; do r home/render/home.js home/images/
 
 # motion
 for m in curves compact expanded tabs; do r motion/render/motion.js motion/images/$m.vi.png $m; done
+mkdir -p motion/clips
+for m in compact expanded tabs; do clip clip-$m motion/clips/$m.vi.webm; done
 
 echo "docs/design: images redrawn"

@@ -115,12 +115,12 @@ function heroMusic(x, y, w, h) {
     art(x + 8, ay, s, 8);
     const tx = x + 8 + s + 12, x1 = x + w - 14;
     if (h < TALL) {   // low: the buttons top right, the bar at the foot of the text column
-        text('Lumen Coast', tx, y + 12, {wt: 600}); text('Harbor Lights · Mira Vale', tx, y + 32, {sz: SUB, a: C.FG_MUTED});
+        text('Lumen Coast', tx, y + 12, {wt: 600}); text('Harbor Lights · Spotify', tx, y + 32, {sz: SUB, a: C.FG_MUTED});
         [['forward-step-fill', 0], ['pause-fill', 1], ['backward-step-fill', 0]].forEach(([n, m], i) => round(x + w - 28 - i * 40, y + 28, n, m));
         bar(tx, y + h - 34, x1 - tx);
         text('1:24', tx, y + h - 26, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, y + h - 26, {sz: SUB, a: C.FG_SUBTLE, right: true});
     } else {          // tall: the title larger, the bar, the buttons centred under it
-        text('Lumen Coast', tx, ay + 6, {sz: 14, wt: 700}); text('Harbor Lights · Mira Vale', tx, ay + 32, {sz: SUB, a: C.FG_MUTED});
+        text('Lumen Coast', tx, ay + 6, {sz: 14, wt: 700}); text('Harbor Lights · Spotify', tx, ay + 32, {sz: SUB, a: C.FG_MUTED});
         const by = ay + s - 40;
         bar(tx, by - 30, x1 - tx);
         text('1:24', tx, by - 22, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, by - 22, {sz: SUB, a: C.FG_SUBTLE, right: true});
@@ -168,7 +168,7 @@ const ITEMS = {
     dl: {ic: 'arrow-down-to-line', val: '42%', cap: 'report.pdf', det: ['2.1 MB/s', 'còn 30 s']},
     timer: {ic: 'alarm', val: '12:40', cap: 'Pomodoro', det: ['vòng 2 / 4', '']},
     call: {ic: 'smartphone', val: '3:12', cap: 'Mira Vale', det: ['đang gọi', '']},
-    music: {ic: 'music-note', val: 'Lofi', cap: 'Lumen Coast', det: ['Harbor Lights', '']},
+    music: {ic: 'music-note', val: '1:24', cap: 'Lumen Coast', det: ['Harbor Lights', '']},
     wx: {ic: 'weather-few-clouds', val: '31°', cap: 'Ít mây', det: ['cảm giác 34°', 'gió 12 km/h'], wide: true},
     up: {ic: 'calendar', val: '3:00', cap: 'Design review', det: ['25 phút nữa', 'phòng 3'], wide: true},
     bat: {ic: 'battery-charging', val: '82%', cap: 'Pin', det: ['đang sạc', 'còn 4 giờ']},

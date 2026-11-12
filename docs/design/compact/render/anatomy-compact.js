@@ -101,7 +101,7 @@ for (const it of ROWS) {
     if (it.kind === 'head') {
         grad(lx, y + 8, 40, 10, ...ART); guide(lx, y + 8, 40, 40);
         const tx = lx + 40 + 12;
-        text('Lumen Coast', tx, y + 9, 11, 600, W1); text('Harbor Lights · Mira Vale', tx, y + 29, 9.5, 400, G);
+        text('Lumen Coast', tx, y + 9, 11, 600, W1); text('Harbor Lights · Spotify', tx, y + 29, 9.5, 400, G);
         round(xr - 16, y + R, '⏸'); guide(xr - 32, y + 12, 32, 32, 16);
         dim(x, lx, y - 4, '14'); dim(lx, lx + 40, y - 4, '40'); dim(lx + 40, tx, y - 4, '12');
         dim(xr - 32, xr, y - 4, '32'); dim(xr, x + pw, y - 4, '14');
@@ -114,7 +114,7 @@ for (const it of ROWS) {
     if (it.kind === 'media') {
         const ax = x + 8, tx = ax + 72 + 12;
         grad(ax, y + 8, 72, 20, ...ART); guide(ax, y + 8, 72, 72, 20);
-        text('Lumen Coast', tx, y + 10, 11, 600, W1); text('Harbor Lights · Mira Vale', tx, y + 30, 9.5, 400, G);
+        text('Lumen Coast', tx, y + 10, 11, 600, W1); text('Harbor Lights · Spotify', tx, y + 30, 9.5, 400, G);
         round(xr - 16, y + R, '⏸');
         const by = y + 60;
         cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(tx, by, xr - tx, 4, 2); cr.fill();

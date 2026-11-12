@@ -200,6 +200,9 @@ docs/design/
     ├── index.vi.md     purpose, anatomy, sizes, states, decisions (date, who), open, code
     ├── images/         x.vi.png (labels in Vietnamese), x.en.png (English, with the translation);
     │                   each page links its own (mkdocs-static-i18n serves both as x.png)
+    ├── clips/          x.vi.webm, motion at 60 fps (design/motion, 2026-11-12); the site serves it
+    │                   as x.webm, and a raw <video> is not rewritten, so its src names x.webm
+    │                   and a Markdown link beside it names x.vi.webm for GitHub
     └── render/         the gjs scripts that draw those images
 ```
 

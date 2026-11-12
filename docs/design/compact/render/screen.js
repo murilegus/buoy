@@ -64,7 +64,7 @@ bar(32, 'Chỉ quay: pill 1 là bản ghi, đồng hồ chạy; chấm đỏ bê
 pill(W / 2, 36, {lead: 'video', label: '0:42', right: RED});
 bar(96, 'Quay và nghe nhạc: bản ghi (55) đứng trước nhạc (10); nhạc sang pill phụ.');
 const [px, pw] = pill(W / 2, 100, {lead: 'video', label: '0:42', right: RED});
-pill(px + pw + 8 + 133 / 2, 100, {lead: 'music-note', label: 'Lofi'});
+pill(px + pw + 8 + 133 / 2, 100, {lead: 'music-note', label: 'Lumen Coast'});
 bar(160, 'Claude Code hỏi trong lúc quay: ask (cần bạn) lên pill 1, đèn đỏ trái; bản ghi sang pill phụ; chấm đỏ vẫn ở pill 1.');
 const [qx, qw] = pill(W / 2, 164, {bu: true, label: 'Cần trả lời', left: RED, right: RED});
 pill(qx + qw + 8 + 133 / 2, 164, {lead: 'video', label: '0:42'});

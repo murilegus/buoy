@@ -2,7 +2,7 @@
 // duration d and a bounce (WWDC23 "Animate with springs": m 1, k (2π/d)², c (1 − bounce)·4π/d).
 // Every frame here is computed from those springs, so the drawings match the table.
 //   curves   — the five springs beside today's EASE_OUT_BACK 460 ms
-//   compact  — pill → compact (move), compact → pill (close), frame by frame
+//   compact  — pill → compact (move), compact → pill (close), frame by frame; shared parts travel
 //   expanded — pill and two side pills → expanded (open, move), and back (close)
 //   tabs     — a tab switch (snap: the selection slides, the body shifts by its direction), a list
 //              opened in place (move)
@@ -10,8 +10,10 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon} from '../../render/lib.js';
+import {SCALE as SC, C, COVER, icon} from '../../render/lib.js';
 const [out, MODE] = ARGV;
+// stills at 3× (lib.js SCALE); the clips at 2×, frames for scripts/render-design.sh to encode
+const S = MODE.startsWith('clip-') ? 2 : SC;
 
 // ---- the springs (design/motion "Lò xo và độ mờ") --------------------------------------------------
 const SPRING = {
@@ -41,8 +43,8 @@ const fadeIn = (ms, from) => easeOut((ms - from) / 200);
 const W1 = C.WHITE, SUB = 9.35;
 let cr, L;
 function canvas(W, H) {
-    const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
-    cr = new cairo.Context(surf); cr.scale(SC, SC); cr.setSourceRGB(...C.WALL); cr.paint();
+    const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * S, H * S);
+    cr = new cairo.Context(surf); cr.scale(S, S); cr.setSourceRGB(...C.WALL); cr.paint();
     L = PangoCairo.create_layout(cr); PangoCairo.context_set_resolution(L.get_context(), 96);
     return surf;
 }
@@ -70,8 +72,8 @@ function shape(x, y, w, h, alpha = 1) {
     cr.setSourceRGBA(1, 1, 1, C.BORDER * alpha); cr.setLineWidth(1); cr.stroke();
 }
 function clipTo(x, y, w, h) { cr.newPath(); rr(x, y, w, h, Math.min(h / 2, 28)); cr.clip(); }
-const art = (x, y, s, a = 1) => { // a stand-in for a cover: a soft gradient tile
-    const g = new cairo.LinearGradient(x, y, x + s, y + s); g.addColorStopRGBA(0, .55, .8, .65, a); g.addColorStopRGBA(1, .2, .4, .6, a);
+const art = (x, y, s, a = 1) => { // the sample cover (lib.js COVER)
+    const g = new cairo.LinearGradient(x, y, x + s, y + s); g.addColorStopRGBA(0, ...COVER[0], a); g.addColorStopRGBA(1, ...COVER[1], a);
     cr.newPath(); rr(x, y, s, s, s / 4); cr.setSource(g); cr.fill();
 };
 const caption = (t, x, y, opts = {}) => text(t, x, y, {sz: 8, a: .8, ...opts});
@@ -133,45 +135,57 @@ function curves() {
     surf.writeToPNG(out);
 }
 
-// ---- compact -------------------------------------------------------------------------------------
-// The pill (173 × 32: a light, Weightless, the equaliser) and its compact (404 × 88: art 40, title,
-// subtitle, the bar), top edge still, centred.
-const PILL = {w: 173, h: 32}, COMPACT = {w: 404, h: 88};
-function minimalContent(cx, y, w, a) {
-    if (a <= 0) return;
-    const x = cx - w / 2;
-    fill([...C.AMBER, a], x + 12, y + 12, 8, 8, 4);
-    art(x + 28, y + 6, 20, a);
-    text('Weightless', x + 56, y + 8, {sz: 10, wt: 600, a});
-    for (let i = 0; i < 4; i++) fill([1, 1, 1, a], x + w - 32 + i * 5, y + 11 + (i % 2) * 3, 3, 10 - (i % 2) * 3, 1);
+// ---- compact and expanded: shared parts travel ----------------------------------------------------
+// Each form lays out the parts it shares with the others (leading, title) relative to its own top
+// left; during a morph a shared part goes from its place in one form to its place in the other on
+// the same spring as the background (design/motion: "Phần chung đi tới chỗ mới"). The rest fades out
+// (what leaves) or is uncovered by the background's edge (what arrives).
+const PILL = {w: 173, h: 32, lead: {x: 28, y: 6, s: 20}, title: {x: 56, y: 8, sz: 11}};
+const COMPACT = {w: 404, h: 88, lead: {x: 14, y: 8, s: 40}, title: {x: 66, y: 10, sz: 11}};
+const EXP = {w: 560, h: 280, lead: {x: 20, y: 64, s: 88}, title: {x: 120, y: 74, sz: 13}};
+function shared(cx, y, from, to, x, a = 1) {
+    const at = (f, k) => ({x: cx - f.w / 2 + f[k].x, y: y + f[k].y});
+    const l0 = at(from, 'lead'), l1 = at(to, 'lead'), t0 = at(from, 'title'), t1 = at(to, 'title');
+    art(lerp(l0.x, l1.x, x), lerp(l0.y, l1.y, x), lerp(from.lead.s, to.lead.s, x), a);
+    text('Lumen Coast', lerp(t0.x, t1.x, x), lerp(t0.y, t1.y, x), {sz: lerp(from.title.sz, to.title.sz, x), wt: 600, a});
 }
-function compactContent(cx, y, a) {
+function pillRest(cx, y, a) { // the light and the equaliser: only the pill has them
+    if (a <= 0) return;
+    const x = cx - PILL.w / 2;
+    fill([...C.AMBER, a], x + 12, y + 12, 8, 8, 4);
+    for (let i = 0; i < 4; i++) fill([1, 1, 1, a], x + PILL.w - 32 + i * 5, y + 11 + (i % 2) * 3, 3, 10 - (i % 2) * 3, 1);
+}
+function compactRest(cx, y, a) { // the subtitle and the bar: only the compact has them
     if (a <= 0) return;
     const x = cx - COMPACT.w / 2;
-    art(x + 14, y + 8, 40, a);
-    text('Weightless', x + 66, y + 10, {sz: 11, wt: 600, a});
-    text('Marconi Union · Spotify', x + 66, y + 30, {sz: SUB, a: a * C.FG_MUTED});
+    text('Harbor Lights · Spotify', x + 66, y + 30, {sz: SUB, a: a * C.FG_MUTED});
     fill([1, 1, 1, .2 * a], x + 66, y + 64, COMPACT.w - 66 - 18, 4, 2);
     fill([1, 1, 1, a], x + 66, y + 64, (COMPACT.w - 84) * .38, 4, 2);
 }
-function morphFrame(fx, fy, cw, from, to, x, aFrom, aTo, drawFrom, drawTo) {
+const REST = {pill: pillRest, compact: compactRest, expanded: (cx, y, a) => panel(cx, y, a)};
+// travel false: today's rule (SPEC §5), the shared parts leave and arrive like the rest
+function morph(fx, fy, cw, from, to, x, ms, rest, travel = true) {
     const w = lerp(from.w, to.w, x), h = lerp(from.h, to.h, x), cx = fx + cw / 2;
     shape(cx - w / 2, fy, w, h);
     cr.save(); clipTo(cx - w / 2, fy, w, h);
-    drawFrom(cx, fy, aFrom); drawTo(cx, fy, aTo);
+    const leave = fadeOut(ms), arrive = clamp01((x - .5) / .5);
+    rest.from(cx, fy, leave);                     // what only the old form has leaves at once
+    rest.to(cx, fy, arrive);                      // what only the new one has is uncovered
+    if (travel) {
+        shared(cx, fy, from, to, x);              // the shared parts travel with the background
+    } else {
+        if (leave > 0) shared(cx, fy, from, from, 0, leave);
+        if (arrive > 0) shared(cx, fy, to, to, 0, arrive);
+    }
     cr.restore();
 }
 function compact() {
     const CW = 420, W = 24 + 3 * CW + 2 * 12 + 24, H = 2 * (34 + 2 * 140) + 40, surf = canvas(W, H);
     const rows = [
-        {t: 'Rê chuột 300 ms → compact: nền nở bằng move (400 ms, bounce 0.2); minimal đi bằng fade-out; compact lộ theo mép nền, mờ dần từ nửa đường',
-            spring: SPRING.move, from: PILL, to: COMPACT, ms: [0, 60, 120, 200, 300, 450],
-            aFrom: ms => fadeOut(ms), aTo: (ms, x) => clamp01((x - .5) / .5),
-            drawFrom: (cx, y, a) => minimalContent(cx, y, PILL.w, a), drawTo: compactContent},
-        {t: 'Rời chuột (sau 200 ms ân hạn) → pill: close (360 ms, không nảy); compact đi bằng fade-out; minimal về bằng fade-in từ nửa đường',
-            spring: SPRING.close, from: COMPACT, to: PILL, ms: [0, 50, 100, 160, 240, 400],
-            aFrom: ms => fadeOut(ms), aTo: (ms, x) => clamp01((x - .5) / .5),
-            drawFrom: compactContent, drawTo: (cx, y, a) => minimalContent(cx, y, PILL.w, a)},
+        {t: 'Rê chuột 300 ms → compact: nền nở bằng move (400 ms, bounce 0.2); leading và tên đi tới chỗ mới cùng nền; đèn và equaliser đi bằng fade-out; phụ đề và thanh lộ theo mép nền',
+            spring: SPRING.move, from: PILL, to: COMPACT, ms: [0, 60, 120, 200, 300, 450], rest: {from: pillRest, to: compactRest}},
+        {t: 'Rời chuột (sau 200 ms ân hạn) → pill: close (360 ms, không nảy); leading và tên về chỗ cũ; phụ đề và thanh đi bằng fade-out; đèn và equaliser hiện lại từ nửa đường',
+            spring: SPRING.close, from: COMPACT, to: PILL, ms: [0, 50, 100, 160, 240, 400], rest: {from: compactRest, to: pillRest}},
     ];
     rows.forEach((r, ri) => {
         const y0 = 16 + ri * (34 + 2 * 140 + 20);
@@ -180,16 +194,15 @@ function compact() {
         r.ms.forEach((ms, i) => {
             const x = f(ms / 1000), fx = 24 + (i % 3) * (CW + 12), fy = y0 + 40 + Math.floor(i / 3) * 140;
             fill([1, 1, 1, .03], fx, fy - 6, CW, 120, 8);
-            morphFrame(fx, fy, CW, r.from, r.to, x, r.aFrom(ms, x), r.aTo(ms, x), r.drawFrom, r.drawTo);
+            morph(fx, fy, CW, r.from, r.to, x, ms, r.rest);
             caption(`${ms} ms · ${Math.round(x * 100)} %`, fx + 4, fy + 120);
         });
     });
     surf.writeToPNG(out);
 }
 
-// ---- expanded ------------------------------------------------------------------------------------
-const EXP = {w: 560, h: 280};
-function panel(cx, y, a) { // the tab strip and Home (main card over the tiles), at their final place
+// the tab strip and Home (main card over the tiles) at their final place, without the shared parts
+function panel(cx, y, a) {
     if (a <= 0) return;
     const x = cx - EXP.w / 2;
     fill([1, 1, 1, .11 * a], x + 12, y + 12, 236, 32, 16);
@@ -200,19 +213,17 @@ function panel(cx, y, a) { // the tab strip and Home (main card over the tiles),
     fill([1, 1, 1, .12 * a], x + EXP.w - 44, y + 12, 32, 32, 16);
     icon(cr, 'gear', x + EXP.w - 36, y + 20, 16, W1, a);
     fill([1, 1, 1, .08 * a], x + 12, y + 56, EXP.w - 24, 104, 16);
-    art(x + 20, y + 64, 88, a);
-    text('Weightless', x + 120, y + 74, {sz: 13, wt: 700, a});
-    text('Marconi Union', x + 120, y + 96, {sz: SUB, a: a * C.FG_MUTED});
+    text('Harbor Lights', x + 120, y + 96, {sz: SUB, a: a * C.FG_MUTED});
     for (let i = 0; i < 4; i++) fill([1, 1, 1, .08 * a], x + 12 + i * (128 + 2), y + 168, 128 - 6, 100, 16);
 }
 function expanded() {
     const CW = 760, W = 24 + 3 * CW + 2 * 12 + 24, H = 2 * (40 + 2 * 330) + 40, surf = canvas(W, H);
     const SIDE = 133, GAP = 8;
     const rows = [
-        {t: 'Bấm → expanded: nền nở bằng open (500 ms, bounce 0.25); thanh tab và Home lộ theo mép nền; hai pill phụ trượt vào giữa bằng move và mờ ở nửa sau',
-            spring: SPRING.open, from: PILL, to: EXP, ms: [0, 80, 160, 260, 400, 640], open: true},
-        {t: 'Thu về: thân đi bằng fade-out, nền thu bằng close (360 ms, không nảy); minimal về bằng fade-in từ 60 %; pill phụ trượt ra và hiện lại',
-            spring: SPRING.close, from: EXP, to: PILL, ms: [0, 60, 120, 200, 300, 480], open: false},
+        {t: 'Bấm → expanded: nền nở bằng open (500 ms, bounce 0.25); ảnh và tên của pill đi tới thẻ chính của Home; thanh tab và phần còn lại lộ theo mép nền; hai pill phụ trượt vào giữa bằng move và mờ ở nửa sau',
+            spring: SPRING.open, from: PILL, to: EXP, ms: [0, 80, 160, 260, 400, 640], open: true, rest: {from: pillRest, to: REST.expanded}},
+        {t: 'Thu về: nền thu bằng close (360 ms, không nảy); ảnh và tên về pill; phần còn lại đi bằng fade-out; đèn và equaliser hiện lại; pill phụ trượt ra và hiện lại',
+            spring: SPRING.close, from: EXP, to: PILL, ms: [0, 60, 120, 200, 300, 480], open: false, rest: {from: REST.expanded, to: pillRest}},
     ];
     rows.forEach((r, ri) => {
         const y0 = 16 + ri * (40 + 2 * 330 + 20);
@@ -232,17 +243,7 @@ function expanded() {
                     fill([1, 1, 1, .3 * sa], sx - SIDE / 2 + 10, fy + 8, 16, 16, 4);
                 }
             }
-            const w = lerp(r.from.w, r.to.w, x), h = lerp(r.from.h, r.to.h, x);
-            shape(cx - w / 2, fy, w, h);
-            cr.save(); clipTo(cx - w / 2, fy, w, h);
-            if (r.open) {
-                minimalContent(cx, fy, PILL.w, fadeOut(ms));
-                panel(cx, fy, clamp01((x - .5) / .5));
-            } else {
-                panel(cx, fy, fadeOut(ms));
-                minimalContent(cx, fy, PILL.w, clamp01((x - .6) / .4));
-            }
-            cr.restore();
+            morph(fx, fy, CW, r.from, r.to, x, ms, r.rest);
             caption(`${ms} ms · ${Math.round(x * 100)} %`, fx + 4, fy + 296);
         });
     });
@@ -268,7 +269,7 @@ function strip(x0, y0, from, to, p, ms) {
     fill([1, 1, 1, .20], x0 + sel.x, y0 + 4, sel.w, 24, 12);
     TABS.forEach(([ic, name], i) => {
         const tx = lerp(A[i].x, B[i].x, p), tw = lerp(A[i].w, B[i].w, p);
-        const on = i === from ? fadeOut(ms) : i === to ? fadeIn(ms, 0) : 0;
+        const on = from === to ? (i === to ? 1 : 0) : i === from ? fadeOut(ms) : i === to ? fadeIn(ms, 0) : 0;
         icon(cr, ic, x0 + tx + (i === from || i === to ? 8 : 10), y0 + 8, 16, W1, lerp(C.FG_MUTED, 1, on));
         if (on > 0) { // the name stays inside its cell as the cell narrows or widens
             cr.save(); cr.newPath(); cr.rectangle(x0 + tx + 28, y0, Math.max(0, tw - 34), 32); cr.clip();
@@ -282,12 +283,12 @@ function body(x, y, w, h, kind, a, dx) {
     cr.save(); cr.translate(dx, 0);
     if (kind === 'home') {
         fill([1, 1, 1, .08 * a], x, y, w, 60, 16); art(x + 8, y + 8, 44, a);
-        text('Weightless', x + 62, y + 14, {sz: 10, wt: 700, a});
+        text('Lumen Coast', x + 62, y + 14, {sz: 10, wt: 700, a});
         for (let i = 0; i < 3; i++) fill([1, 1, 1, .08 * a], x + i * (w / 3), y + 68, w / 3 - 6, 48, 12);
     } else {
         art(x + 8, y + 4, 96, a);
-        text('Weightless', x + 116, y + 20, {sz: 12, wt: 700, a});
-        text('Marconi Union', x + 116, y + 40, {sz: SUB, a: a * C.FG_MUTED});
+        text('Lumen Coast', x + 116, y + 20, {sz: 12, wt: 700, a});
+        text('Harbor Lights', x + 116, y + 40, {sz: SUB, a: a * C.FG_MUTED});
         fill([1, 1, 1, .2 * a], x + 116, y + 74, w - 124, 4, 2);
     }
     cr.restore();
@@ -329,4 +330,107 @@ function tabs() {
     surf.writeToPNG(out);
 }
 
-({curves, compact, expanded, tabs})[MODE]();
+// ---- clips: real time at 60 fps, the proposal over today's -------------------------------------
+// today: EASE_OUT_BACK for every morph; a shrink whose bounce would pass 12 px stops 12 px short in
+// 70 % of the time (ease-out cubic), then settles (ease-in-out) — pill.js _morph, shapes.js shrinkStop
+const easeInOutQuad = u => u < .5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+function todayShrink(t, T, dist) {
+    const stop = Math.max(0, 1 - 12 / dist), turn = .7 * T;
+    if (t < turn) return stop * easeOut(t / turn);
+    return stop + (1 - stop) * easeInOutQuad(Math.min(1, (t - turn) / (T - turn)));
+}
+const FPS = 60;
+function frames(seconds, draw) {
+    const n = Math.round(seconds * FPS);
+    for (let i = 0; i < n; i++) {
+        const surf = draw(i / FPS);
+        surf.writeToPNG(`${out}/f${String(i).padStart(4, '0')}.png`);
+        surf.finish();
+    }
+}
+const rowLabel = (t, y) => text(t, 24, y, {sz: 9, wt: 700, a: .85});
+// a two-state cycle: rest in `a`, go to `b` at `t1`, back to `a` at `t2`
+function phase(t, t1, t2) {
+    if (t < t1) return {dir: 0, ms: 1e6};
+    if (t < t2) return {dir: 1, ms: (t - t1) * 1000};
+    return {dir: -1, ms: (t - t2) * 1000};
+}
+function clipCompact() {
+    const CW = 480, W = CW + 48, ROW = 150, H = 2 * ROW + 16;
+    const grow = spring(SPRING.move), shrink = spring(SPRING.close);
+    frames(2.4, t => {
+        const surf = canvas(W, H), ph = phase(t, .3, 1.4);
+        [[true, 'Đề xuất: lò xo move / close, leading và tên đi tới chỗ mới'],
+            [false, 'Hiện nay: EASE_OUT_BACK 460 ms, nội dung mờ đi rồi lộ ra']].forEach(([mine, label], ri) => {
+            const y0 = 12 + ri * ROW, fy = y0 + 28;
+            rowLabel(label, y0);
+            const rest = {from: pillRest, to: compactRest}, back = {from: compactRest, to: pillRest};
+            if (ph.dir === 0)
+                morph(24, fy, CW, PILL, COMPACT, 0, 1e6, {from: pillRest, to: () => {}});
+            else if (ph.dir === 1)
+                morph(24, fy, CW, PILL, COMPACT, mine ? grow(ph.ms / 1000) : backOut(ph.ms / 460), ph.ms, rest, mine);
+            else
+                morph(24, fy, CW, COMPACT, PILL, mine ? shrink(ph.ms / 1000) : todayShrink(ph.ms / 1000, .36, 271), ph.ms, back, mine);
+        });
+        return cr.getTarget();
+    });
+}
+function clipExpanded() {
+    const CW = 760, W = CW + 48, ROW = 330, H = 2 * ROW + 16, SIDE = 133, GAP = 8;
+    const grow = spring(SPRING.open), shrink = spring(SPRING.close), slide = spring(SPRING.move);
+    frames(2.8, t => {
+        const surf = canvas(W, H), ph = phase(t, .3, 1.7);
+        [[true, 'Đề xuất: lò xo open / close, ảnh và tên đi tới thẻ chính của Home'],
+            [false, 'Hiện nay: EASE_OUT_BACK 460 ms, nội dung mờ đi rồi lộ ra']].forEach(([mine, label], ri) => {
+            const y0 = 12 + ri * ROW, fy = y0 + 28, cx = 24 + CW / 2;
+            rowLabel(label, y0);
+            // the side pills merge into the centre while it is open
+            const s = ph.dir === 0 ? 0 : mine ? slide(ph.ms / 1000) : backOut(ph.ms / 360);
+            const m = ph.dir === 1 ? s : ph.dir === -1 ? 1 - s : 0;
+            const sa = ph.dir === 1 ? clamp01(1 - (s - .5) / .5) : ph.dir === -1 ? clamp01((s - .5) / .5) : 1;
+            for (let k = 0; k < 2; k++) {
+                const slot = cx + PILL.w / 2 + GAP + k * (SIDE + GAP) + SIDE / 2, sx = lerp(slot, cx, m);
+                if (sa > 0) {
+                    shape(sx - SIDE / 2, fy, SIDE, 32, sa);
+                    fill([1, 1, 1, .3 * sa], sx - SIDE / 2 + 10, fy + 8, 16, 16, 4);
+                }
+            }
+            if (ph.dir === 0)
+                morph(24, fy, CW, PILL, EXP, 0, 1e6, {from: pillRest, to: () => {}});
+            else if (ph.dir === 1)
+                morph(24, fy, CW, PILL, EXP, mine ? grow(ph.ms / 1000) : backOut(ph.ms / 460), ph.ms, {from: pillRest, to: REST.expanded}, mine);
+            else
+                morph(24, fy, CW, EXP, PILL, mine ? shrink(ph.ms / 1000) : todayShrink(ph.ms / 1000, .46, 427), ph.ms, {from: REST.expanded, to: pillRest}, mine);
+        });
+        return cr.getTarget();
+    });
+}
+function clipTabs() {
+    const CW = 360, W = CW + 48, ROW = 230, H = 2 * ROW + 16;
+    const f = spring(SPRING.snap);
+    frames(2.2, t => {
+        const surf = canvas(W, H);
+        // Home → Media at 0.3 s, Media → Home at 1.3 s
+        const go = t < 1.3 ? {from: 0, to: 1, ms: (t - .3) * 1000} : {from: 1, to: 0, ms: (t - 1.3) * 1000};
+        const kinds = ['home', 'media'];
+        [[true, 'Đề xuất: vạch chọn trượt (snap), thân dời theo hướng'], [false, 'Hiện nay: đổi tức thì']].forEach(([mine, label], ri) => {
+            const y0 = 12 + ri * ROW, fx = 24, fy = y0 + 28;
+            rowLabel(label, y0);
+            shape(fx, fy, CW, 180);
+            if (go.ms < 0) {
+                strip(fx + 12, fy + 12, 0, 0, 1, 1e6);
+                cr.save(); clipTo(fx, fy, CW, 180); body(fx + 12, fy + 56, CW - 24, 120, 'home', 1, 0); cr.restore();
+                return;
+            }
+            const p = mine ? f(go.ms / 1000) : 1, ms = mine ? go.ms : 1e6, dir = go.to > go.from ? 1 : -1;
+            strip(fx + 12, fy + 12, go.from, go.to, p, ms);
+            cr.save(); clipTo(fx, fy, CW, 180);
+            if (mine) body(fx + 12, fy + 56, CW - 24, 120, kinds[go.from], fadeOut(ms), -12 * p * dir);
+            body(fx + 12, fy + 56, CW - 24, 120, kinds[go.to], mine ? fadeIn(ms, 0) * clamp01(p * 1.2) : 1, mine ? 12 * (1 - p) * dir : 0);
+            cr.restore();
+        });
+        return cr.getTarget();
+    });
+}
+
+({curves, compact, expanded, tabs, 'clip-compact': clipCompact, 'clip-expanded': clipExpanded, 'clip-tabs': clipTabs})[MODE]();
