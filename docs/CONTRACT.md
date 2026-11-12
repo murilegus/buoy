@@ -38,6 +38,9 @@ D-Bus API ──────────────────────┘ 
   onSeen()                             // its card had its 5 s while you were there, or was hovered
   onAlertDone(seen)                    // its card closed (or got none: hidden, away, another card up)
   onAlertState({mayYield, hovered})    // the card had its 1 s and the pointer is off it: another may take its place
+  tile: {value, caption} | {live, caption}  // Home's tile (design/home): its own value in large figures;
+                                       // `live` a player's position, the elapsed time; default: a text
+                                       // or ring trailing, the text as caption (kit/model/home.js tileOf)
   compact.card: {icon, app, at, picture, title, body, close, actionsOnHover}
                                        // a message's card; actionsOnHover: its buttons only under the
                                        // pointer; picture may be {stack: [icon, …]} (≤ 3 logos)

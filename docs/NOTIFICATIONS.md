@@ -137,9 +137,10 @@ pill's content instead of adding a pill.
   (`ui/dateMenu.js` `MessagesIndicator._updateCount`), so a notification about to show is
   not counted: one that came during Do Not Disturb, past a full queue, or held while full
   screen. It goes off when they are seen (the tab, or GNOME's list), not when Home is
-  shown: the source flags it (`stack.flagMissed`), apart from the stack's missed history.
-  GNOME hides its own dot during Do Not Disturb; Buoy's light stays, since that is when
-  notifications are missed.
+  shown: the source flags it (`stack.flagMissed`), apart from the stack's missed history,
+  with its row for Home's Missed list — "Notifications · 3", the apps, the Notifications tab
+  (`adapter.js` missedRow, 2026-11-12, design/home). GNOME hides its own dot during Do Not
+  Disturb; Buoy's light stays, since that is when notifications are missed.
 
 ## 3. The compact (hover): a card
 

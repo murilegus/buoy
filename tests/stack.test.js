@@ -674,6 +674,24 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     stack.setUnseen(false);
     eq(log.length, 3, 'destroy drops the waiters');
 }
+{
+    const {stack} = setup();
+    // Home's Missed list (design/home): each flag a row, with its count
+    stack.flagMissed('notification', true, {count: 3, title: 'Notifications', detail: 'Slack, Zalo', tab: 'notification'});
+    stack.flagMissed('x', true);
+    eq(stack.missedFlags, [
+        {key: 'notification', count: 3, title: 'Notifications', detail: 'Slack, Zalo', tab: 'notification'},
+        {key: 'x', count: 1, title: 'x', detail: null, tab: null},
+    ], 'flags as rows: their count, title, detail and tab; none given: 1 and the key');
+    stack.flagMissed('notification', true, {count: 5, title: 'Notifications'});
+    eq(stack.missedFlags[0].count, 5, 'a flag set again takes its new row');
+    stack.flagMissed('notification', true, {count: 0});
+    eq(stack.missedFlags[0].count, 1, 'a bad count: 1');
+    stack.flagMissed('notification', false);
+    stack.flagMissed('x', false);
+    eq(stack.missedFlags, [], 'off: no row');
+}
+
 // --- a source's own unseen: flagMissed keeps the amber light (2026-11-08) -------
 {
     const {island, stack} = setup();

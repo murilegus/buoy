@@ -1,9 +1,8 @@
 /* The calendar module's own CSS, loaded by kit/ui/styles.js while it runs (ARCHITECTURE
  "Stylesheets"). At equal specificity stylesheet.css wins over it. */
 
-/* its block on Home, Up next (calendar/home.js) */
-.buoy-home-upnext { spacing: 7px; }
-.buoy-home-header { spacing: 8px; font-size: 12px; color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+/* its wide glance on Home, Up next (calendar/home.js): the next two events */
+.buoy-home-upnext { spacing: 6px; }
 .buoy-home-event { spacing: 8px; min-height: 20px; }
 .buoy-home-event-bar { width: 3px; border-radius: 2px; background-color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 .buoy-home-event-now .buoy-home-event-bar { background-color: -st-accent-color; }
@@ -55,7 +54,6 @@
    50 %, border-strong 70 %, fg-subtle 70 %, fg-disabled 50 %; the fills stay. The prefix adds
    a class, so a rule that must still win over one of these is repeated here after it.
    tests/palette.test.js checks every use of those four roles has its line here. */
-.buoy-hc .buoy-home-header { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-home-event-bar { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-home-event-now .buoy-home-event-bar { background-color: -st-accent-color; }
 .buoy-hc .buoy-calendar-month-year { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

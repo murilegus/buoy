@@ -7,7 +7,7 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 
 import {Source} from '../../kit/services/source.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
-import {DISMISS, Turns, actionIndex, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
+import {DISMISS, Turns, actionIndex, missedRow, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
 const REPLACE_KEY = 'notification-replace-banners';
@@ -119,8 +119,11 @@ export class NotificationSource extends Source {
         this._countPending = true;
         Promise.resolve().then(() => {
             this._countPending = false;
-            if (this._stack)
-                this._stack.flagMissed(KIND, unseenCount(Main.messageTray, this._pending) > 0);
+            if (!this._stack)
+                return;
+            const count = unseenCount(Main.messageTray, this._pending);
+            const apps = Main.messageTray.getSources().filter(src => src.unseenCount > 0).map(src => src.title);
+            this._stack.flagMissed(KIND, count > 0, missedRow(count, apps));
         });
     }
 

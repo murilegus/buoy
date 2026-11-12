@@ -183,13 +183,15 @@ function rowList(rows, m) {
  * @param {string} [opts.light]  unused: the light is the pill's, never the compact's
  * @param {object} [opts.metrics]  kit/model/shapes.js compactMetrics at the em
  * @param {boolean} [opts.hovered]  the pointer is on it: a card's buttons on hover show
+ * @param {boolean} [opts.actionsEnd]  a card's buttons at their own width, at the bottom
+ *   right (Home's main card, design/home B) instead of a row of equal widths
  * @returns {?Clutter.Actor} null when the activity has no compact
  */
-export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMetrics(), hovered = false} = {}) {
+export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false} = {}) {
     const p = planCompact(activity, {light});
     if (!p)
         return null;
-    return p.card ? cardBox(p, activity, maxWidth, metrics, hovered) : compactBox(p, activity, maxWidth, metrics);
+    return p.card ? cardBox(p, activity, maxWidth, metrics, hovered, actionsEnd) : compactBox(p, activity, maxWidth, metrics);
 }
 
 // A card (NOTIFICATIONS.md §3, design/compact "Card thông báo"): the head as every compact's
@@ -198,7 +200,7 @@ export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMe
 // lines of 16, 8 under the head, and the buttons in a row 12 from the edges, 32 tall, 12
 // above and below: 136 with one line, 152 with two (104 without buttons). The compact's full
 // width. A click on it but a button is the pill's click (island.js).
-function cardBox(p, activity, maxWidth, m, hovered = false) {
+function cardBox(p, activity, maxWidth, m, hovered = false, actionsEnd = false) {
     const c = p.card;
     const box = new St.BoxLayout({style_class: 'buoy-card', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
     if (maxWidth > 0)
@@ -231,14 +233,19 @@ function cardBox(p, activity, maxWidth, m, hovered = false) {
         box.add_child(body);
     }
     if (hasActions) {
-        const row = new St.BoxLayout({style_class: 'buoy-card-actions', x_expand: true});
+        const row = new St.BoxLayout({
+            style_class: 'buoy-card-actions', x_expand: !actionsEnd,
+            x_align: actionsEnd ? Clutter.ActorAlign.END : Clutter.ActorAlign.FILL,
+        });
         // under the head with no message: 8 + 12 (design/alerts-and-asks "Ask 120")
         const above = c.body ? m.actionsGap : m.bodyGap + m.actionsGap;
         row.set_style(`margin: ${px(above)} ${px(m.edge)} ${px(m.actionsGap)}; height: ${px(m.button)};`);
         row.layout_manager.homogeneous = true;      // equal widths, as GNOME's banner
         for (const a of p.actions) {
             const b = actionButton(a, activity);
-            b.x_expand = true;
+            b.x_expand = !actionsEnd;
+            if (actionsEnd)
+                b.add_style_class_name('buoy-action-wide');
             if (a.main)
                 b.add_style_class_name('buoy-action-main');   // an ask's answer: cream
             row.add_child(b);

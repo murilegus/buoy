@@ -1,7 +1,7 @@
 // Run: gjs -m tests/calendar.test.js   (no Shell needed: agenda.js and idle.js are pure)
 import {
     HORIZON_DAYS, SOON, dayStart, isAllDay, normalise, nextEvent, relevance, whenText, spanText, relativeText,
-    rangeText, dayLabel, agenda, dayRows, detailText, upNext, upNextDetail, UP_NEXT_MAX, NEAR,
+    rangeText, dayLabel, agenda, dayRows, detailText, upNext, upNextDetail, upNextTile, UP_NEXT_MAX, NEAR,
 } from '../src/buoy@murilegus/lib/modules/calendar/agenda.js';
 import {monthDays, weekdayInitials, monthTitle, stepDay, pickedTitle, isWeekend, cellSize, cellFont, CELL_MIN, CELL_MAX} from '../src/buoy@murilegus/lib/modules/calendar/month.js';
 import plan, {present, ICON, keys, ticks} from '../src/buoy@murilegus/lib/modules/calendar/idle.js';
@@ -241,5 +241,11 @@ eq([cellSize(0), cellSize(-50), cellSize(NaN), cellSize(undefined), cellSize(Inf
     'grid: no room known → the least');
 eq([cellFont(26), cellFont(32), cellFont(40)], [12, 15, 16], 'grid: the number grows with the circle, 12 to 16');
 eq([cellFont(10), cellFont(100)], [12, 16], 'grid: the number stays within 12–16');
+
+// --- Home's Up next tile (design/home) ---------------------------------------------------
+eq(upNextTile({startText: '3:00 PM', title: 'Design review'}), {value: '3:00 PM', caption: 'Design review'}, 'Up next tile: its start, its title');
+eq(upNextTile({startText: '3:00 PM', title: 'Standup', now: true}).value, 'Now', 'Up next tile: running → Now');
+eq(upNextTile({startText: '', title: 'Holiday', allDay: true}).value, 'All day', 'Up next tile: all day');
+eq([upNextTile(null), upNextTile({}).value], [null, ''], 'Up next tile: no row, an empty one');
 
 print('calendar: ok');

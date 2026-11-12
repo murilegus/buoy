@@ -3,6 +3,7 @@ import {
     planHome, tilesPerRow, tileWidths, tileOf, greetingLine, TILE_H, CARD_GAP, TALL_FROM,
 } from '../src/buoy@murilegus/lib/kit/model/home.js';
 import {validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
+import {batteryTile, STATE} from '../src/buoy@murilegus/lib/modules/home/adapter.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -83,6 +84,13 @@ eq(tileOf(validate({id: 'n', kind: 'timer', text: 'Copied'})), {leading: null, v
 eq(tileOf(validate({id: 'm', kind: 'media', text: 'Song', trailing: 'eq', tile: {value: '1:24', caption: 'Song'}})).value,
     {type: 'text', text: '1:24'}, 'an adapter\'s own tile wins');
 eq(tileOf(validate({id: 'e', kind: 'timer', tile: {value: ''}})).value, null, 'an empty own value: the usual rules, nothing to show');
+{
+    const live = {position: 84000, length: 215000, at: 1, playing: true};
+    eq(tileOf(validate({id: 'p', kind: 'media', text: 'Song · Artist', trailing: 'eq', tile: {live, caption: 'Song'}})),
+        {leading: null, value: {type: 'live', live}, caption: 'Song'}, 'a player: its live position, the title under it');
+    eq(tileOf(validate({id: 'p', kind: 'media', text: 'Song', tile: {live: {position: 1, length: 0}}})).value,
+        {type: 'text', text: 'Song'}, 'no length: not live');
+}
 
 // --- the greeting -------------------------------------------------------------------------------
 eq(greetingLine('afternoon', 'Ethan Nguyen'), 'Good afternoon, Ethan', 'the first name');
@@ -90,5 +98,17 @@ eq([greetingLine('dawn', 'A'), greetingLine('noon', 'A'), greetingLine('night', 
     ['Good morning, A', 'Good afternoon, A', 'Good evening, A'], 'the dayparts');
 eq([greetingLine('afternoon', ''), greetingLine('afternoon', 'Unknown'), greetingLine('x', null)],
     ['Good afternoon', 'Good afternoon', 'Good day'], 'no name (GLib says Unknown), no daypart');
+
+// --- the battery glance (modules/home) ----------------------------------------------------------
+eq(batteryTile({present: true, percentage: 82.4, state: STATE.DISCHARGING}), {icon: 'battery-full-symbolic', value: '82%', caption: 'Battery'},
+    'battery: the percentage, full from 80');
+eq(batteryTile({present: true, percentage: 45, state: STATE.CHARGING}), {icon: 'battery-good-charging-symbolic', value: '45%', caption: 'Charging'},
+    'charging: its icon and word');
+eq([batteryTile({present: true, percentage: 19, state: STATE.DISCHARGING}).icon, batteryTile({present: true, percentage: 50, state: STATE.DISCHARGING}).icon,
+    batteryTile({present: true, percentage: 60, state: STATE.FULLY_CHARGED}).icon], ['battery-low-symbolic', 'battery-good-symbolic', 'battery-full-symbolic'],
+'low under 20, good, fully charged as full');
+eq([batteryTile({present: false, percentage: 80, state: 2}), batteryTile({present: true, percentage: NaN, state: 2})], [null, null],
+    'no battery (a desktop), no percentage: no tile');
+eq(batteryTile({present: true, percentage: 140, state: 2}).value, '100%', 'clamped to 100');
 
 print('home: ok');

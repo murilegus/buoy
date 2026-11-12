@@ -5,7 +5,7 @@
 import idle from './idle.js';
 import {CalendarFeed} from './feed.js';
 import {CalendarTab} from './tab.js';
-import {CalendarHome} from './home.js';
+import {CalendarGlance} from './home.js';
 
 export default {
     id: 'calendar',
@@ -17,6 +17,6 @@ export default {
     idle,
     feed: CalendarFeed,
     tab: CalendarTab,
-    // Home's Up next, under the weather (SPEC §3)
-    home: {Block: CalendarHome, column: 'end', order: 20},
+    // Home's Up next glance, after the weather; wide when there is room (design/home)
+    home: {Glance: CalendarGlance, order: 20, wide: true},
 };

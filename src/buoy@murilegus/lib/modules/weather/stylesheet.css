@@ -1,7 +1,5 @@
 /* The weather module's own CSS, loaded by kit/ui/styles.js while it runs (ARCHITECTURE
  "Stylesheets"). At equal specificity stylesheet.css wins over it. */
 
-/* its block on Home (weather/home.js) */
-.buoy-home-weather { spacing: 12px; }
-.buoy-home-weather-top { spacing: 8px; }
-.buoy-home-temp { color: #fff; /* fg */ font-size: 20px; font-weight: 600; font-feature-settings: "tnum"; }
+/* its wide glance on Home (weather/home.js): the colour icon 48, then the text */
+.buoy-home-weather-wide { spacing: 12px; }

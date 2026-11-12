@@ -71,8 +71,8 @@ src/buoy@murilegus/
     │   └── ui/             actors. Imports anything in kit/, never a module
     │       ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
     │       ├── pill.js         one pill: content, sizing, hover → compact, morph (2026-11-01; tier names 2026-11-05)
-    │       ├── home.js         the panel a click opens: tab strip + tab body (Home: Missed, chips,
-    │       │                   the modules' blocks in two columns, 2026-11-08; kind, standalone)
+    │       ├── home.js         the panel a click opens: tab strip + tab body (Home: the main card
+    │       │                   and the row of tiles, design/home 2026-11-12; kind, standalone)
     │       ├── styles.js       a module's stylesheet.css, loaded while it runs (Stylesheets, below)
     │       └── present/        render plan → St actors. The ONLY place content actors are made,
     │           │               one file per tier (2026-11-12; was present.js)
@@ -94,8 +94,8 @@ src/buoy@murilegus/
             │               tab in the strip; tabWhileLive: that tab only while one of its
             │               activities is there (2026-11-07); noTab: never a tab, its
             │               activities open on their own (the greeting, 2026-11-08); badge():
-            │               a dot on its tab's icon (2026-11-08); home: {Block, column,
-            │               order} — its block on Home (below, 2026-11-08)
+            │               a dot on its tab's icon (2026-11-08); home: {Card} or {Glance,
+            │               order, wide} — its part of Home (below, 2026-11-12)
             ├── source.js   watches a system facility, calls stack.surface/update/end;
             │               `enable(stack, registry, settings, {dbus, extension})` (settings: its `<id>-…`
             │               keys, 2026-11-05)
@@ -106,13 +106,15 @@ src/buoy@murilegus/
             │               change (2026-11-05); built on first selection, destroyed when
             │               expanded closes; `close()` closes the island after an action
             │               that brings a window up (2026-11-06)
-            ├── home.js     its block on Home (optional; media, weather, calendar, SPEC §3,
-            │               2026-11-08): a class, `new Block({open, close, changed,
-            │               settings})` → {actor, ready, update?(activities), refresh?(),
-            │               destroy()}; made the first time Home shows, kept for the open
-            │               (kit/ui/home.js moves its actor between layouts), destroyed when
-            │               expanded closes; `ready` false → left out; `changed()` when
-            │               `ready` flips; column 'start' (Now playing) or 'end'
+            ├── home.js     its part of Home (optional, SPEC §3, design/home, 2026-11-12):
+            │               a Card for its kinds' activity on the main card (media), `new
+            │               Card({open, close})` → {actor, show(activity, {height, form,
+            │               width}), destroy()}; or a Glance tile (weather, calendar, home's
+            │               battery), `new Glance({open, close, changed, settings})` →
+            │               {ready, tile: {icon, value, caption, detail?}, wide?(width),
+            │               activate(), refresh?(), destroy()}; made the first time Home
+            │               shows, kept for the open, destroyed when expanded closes;
+            │               `changed()` when its tile changes
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
             │               pure: `keys` (its idle-<id>-… keys), `present(ctx, opts)` →
             │               presentation data (its `compact` is the idle pill's hover tier,

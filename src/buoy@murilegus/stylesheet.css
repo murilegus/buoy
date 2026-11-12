@@ -268,6 +268,8 @@
 .buoy-card-body { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
 .buoy-card-actions { spacing: 8px; }
 .buoy-card-actions .buoy-action { padding: 0 12px; border-radius: 16px; }
+/* on Home's main card the buttons keep their own width, at least 112, at the bottom right */
+.buoy-card-actions .buoy-action.buoy-action-wide { min-width: 112px; padding: 0 20px; }
 /* an ask's answer (its second option): cream with black text (design/alerts-and-asks "Ask") */
 .buoy-card-actions .buoy-action.buoy-action-main { color: #000; /* fg-on-inverse */ background-color: #f1efe8; /* fill-inverse */ }
 .buoy-card-actions .buoy-action.buoy-action-main:hover { background-color: #fff; /* fill-inverse-hover */ }
@@ -317,22 +319,25 @@
 .buoy-home-row:hover { background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
 .buoy-home-row:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 /* Home's Missed section (2026-11-03): what ended while the island was hidden. */
-.buoy-home-section { spacing: 8px; padding: 8px 8px 2px; font-size: 12px; color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
-.buoy-home-clear { padding: 4px; border-radius: 999px; color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
-.buoy-home-clear:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ color: #fff; /* fg */ }
-.buoy-home-clear:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
-.buoy-missed-row { spacing: 10px; }
-.buoy-missed-source { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
-.buoy-missed-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; }
-/* Home's blocks (SPEC §3, 2026-11-08, layout A): chips for the running activities no block
-   covers, then two columns of cards — Now playing | weather over Up next */
-.buoy-home-chips { padding: 2px 0 4px; }
-.buoy-home-chip { padding: 0 12px; height: 32px; border-radius: 999px; background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
-.buoy-home-chip:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
-.buoy-home-chip:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
-.buoy-home-columns { spacing: 8px; }
-.buoy-home-column { spacing: 8px; }
-.buoy-home-card { padding: 10px 12px; border-radius: 16px; background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
+/* Home (design/home, 2026-11-11): a main card over one row of tiles, fill-1, radius 16 (=
+   28 − 12, concentric); sizes from kit/model/home.js, set in code */
+.buoy-home-card { padding: 0; border-radius: 16px; background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
+.buoy-home-card-hit { border-radius: 16px; }
+.buoy-home-greeting { padding: 0 24px; spacing: 16px; }
+.buoy-home-greeting-title { color: #fff; /* fg */ font-size: 1.27em; font-weight: 700; }
+.buoy-home-tile { padding: 12px; border-radius: 16px; background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
+.buoy-home-tile-value { color: #fff; /* fg */ font-size: 1.5em; font-weight: 600; font-feature-settings: "tnum"; }
+.buoy-home-tile-caption { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
+.buoy-home-tile-detail { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; padding-left: 12px; }
+.buoy-home-tile-missed { background-color: rgba(255, 159, 10, 0.16); /* missed-tint */ }
+.buoy-home-tile-missed .buoy-icon,
+.buoy-home-tile-missed .buoy-home-tile-value { color: #ff9f0a; /* light-missed */ }
+.buoy-home-tile-missed:hover { background-color: rgba(255, 159, 10, 0.16); /* missed-tint */ }
+/* the Missed and Ongoing lists in place of the card and the row: rows of 32 */
+.buoy-home-list-head { spacing: 12px; padding-bottom: 8px; }
+.buoy-home-list-row-box { spacing: 12px; }
+.buoy-home-list-name { color: #fff; /* fg */ font-weight: 600; }
+.buoy-home-list-detail { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
 .buoy-home-hit:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-home-hit:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-home-title { color: #fff; /* fg */ font-weight: 600; }
@@ -377,8 +382,6 @@
 .buoy-hc .buoy-live-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-key { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ border-color: rgba(255, 255, 255, 0.7); /* border-strong */ }
 .buoy-hc .buoy-empty { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
-.buoy-hc .buoy-home-section { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
-.buoy-hc .buoy-missed-source { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
-.buoy-hc .buoy-missed-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-home-subtitle { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-home-tile-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-menu { border-color: rgba(255, 255, 255, 0.5); /* border */ }

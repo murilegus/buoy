@@ -2,7 +2,7 @@ import {MprisSource} from './source.js';
 import adapter from './adapter.js';
 import spotify from './apps/spotify.js';
 import {MediaTab} from './tab.js';
-import {MediaHome} from './home.js';
+import {MediaCard} from './home.js';
 
 export default {
     id: 'media',
@@ -12,7 +12,7 @@ export default {
     source: MprisSource,
     adapter,
     tab: MediaTab,
-    // Home's Now playing, in its start column (SPEC §3)
-    home: {Block: MediaHome, column: 'start', order: 0},
+    // Home's main card while a player is first in the stack (design/home)
+    home: {Card: MediaCard},
     apps: {spotify},
 };

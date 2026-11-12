@@ -4,19 +4,48 @@ import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {EmptyState, iconProps} from './present/elements.js';
+import {EmptyState, iconProps, makeElement} from './present/elements.js';
+import {buildCompact} from './present/compact.js';
 import {buildExpanded} from './present/expanded.js';
-import {buildMinimal} from './present/minimal.js';
-import {FILL} from './present/parts.js';
-import {clockTime} from '../model/presentation.js';
-import {planStrip, stripOrder, tabActivities, findTab, homeChips, homeColumns, HOME} from '../model/tabs.js';
+import {FILL, label as textLabel, tick} from './present/parts.js';
+import {clockTime, element, livePosition, mediaTimes, planMinimal} from '../model/presentation.js';
+import {planHome, tileOf, tileWidths, greetingLine, TILE_H, CARD_GAP, DETAIL_FROM} from '../model/home.js';
+import {daypartAt} from '../model/daypart.js';
+import {compactMetrics} from '../model/shapes.js';
+import {planStrip, stripOrder, tabActivities, findTab, HOME} from '../model/tabs.js';
 import {step} from '../model/keys.js';
 
 /** @import Gio from 'gi://Gio' */
 
 const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edge
-const STRIP_H = 60; // first guess for the strip + panel padding; measured once laid out
-const CHIP_MAX = 240; // a Home chip ellipsizes past this
+const STRIP_H = 68; // first guess for the head and the panel's padding; measured once laid out
+const EDGE = 12;     // the panel's padding each side, and under Home's row (design/home)
+const LIST_MAX = 5;  // the Ongoing list scrolls past this many rows (design/home)
+
+// A tile's value as an actor: an element (presentation.js), or a player's live position as
+// its elapsed time, ticking once a second only while it plays and shows (kit `tick`)
+function valueActor(e, activity) {
+    if (e?.type !== 'live')
+        return makeElement(e, 'minimal', activity);
+    const l = textLabel('', '');
+    const update = () => {
+        l.text = mediaTimes(livePosition(e.live, Date.now()), e.live.length)[0];
+    };
+    update();
+    tick(l, update, () => e.live.playing === true);
+    return l;
+}
+
+// A glance's or a row's icon: a theme name (or Buoy's own, iconProps), a Gio.Icon (the
+// weather's colour SVG), at its size
+function iconOf(icon, size) {
+    if (!icon)
+        return null;
+    return new St.Icon({
+        style_class: 'buoy-icon', icon_size: size,
+        ...typeof icon === 'string' ? iconProps(icon) : {gicon: icon},
+    });
+}
 
 // what the strip draws: its tabs, their icons and dots
 const stripKey = strip => strip.tabs.map(t => `${t.id}${t.badge ? '•' : ''}:${t.icon}`).join();
@@ -58,12 +87,11 @@ class BodyView extends St.BoxLayout {
  * again and a closed island holds none of it. Which tabs exist and where an open
  * starts come from tabs.js; this file only makes the actors.
  *
- *   Home        SPEC §3 (2026-11-08, layout A): the Missed section, then a chip for each
- *               running activity no block covers (a chip opens its tab), then the
- *               modules' blocks in two columns — Now playing at the start, the weather
- *               over Up next at the end; a block with nothing to show is left out and a
- *               column left empty gives the other the full width. Nothing at all →
- *               "Nothing going on" with Bu.
+ *   Home        design/home (2026-11-11/12): a main card — the stack's first activity, its
+ *               module's Card or its compact, or the greeting with none — and one row of
+ *               tiles: Missed, the other activities (+K past the row), then the modules'
+ *               glances (kit/model/home.js planHome). The Missed and +K tiles show their
+ *               list in place of the card and the row (‹ or Esc goes back).
  *   kind tab    the module's tab.js, or the expanded views of its activities
  *   standalone  a module's tab.js, built on first selection (slot / ⋯ / pinned)
  *
@@ -73,13 +101,14 @@ class BodyView extends St.BoxLayout {
  * (open a file, focus an app), as a notification goes once it is clicked (2026-11-06,
  * Ethan). A Home chip that runs its activity's onPress closes it the same way.
  *
- * A Home block is a module's `home: {Block, column, order}` (index.js): `new Block({open,
- * close, changed, settings})` → {actor, ready, update?(activities), refresh?(), destroy()}.
- * Made the first time Home shows, kept for the rest of the open like a tab.js (its actor
- * moves between layouts, never rebuilt), destroyed when expanded closes. `ready`: it has
- * something to show; `changed()`: `ready` flipped, lay Home out again; `update` gets its
- * module's activities as a kind tab does; `refresh` is called each time Home is laid out
- * (a time moved); `open(id)` selects a tab; `settings` is Buoy's Gio.Settings.
+ * A module's `home` (index.js): `{Card}` draws its kinds' activity on the main card (media:
+ * the art, the transport and the bar); `{Glance, order, wide}` is a glance tile (the
+ * weather, Up next, the battery). Both are made the first time Home shows and kept for the
+ * rest of the open, destroyed when expanded closes. `new Card({open, close})` → {actor,
+ * show(activity, {height, form, width}), destroy()}. `new Glance({open, close, changed,
+ * settings})` → {ready, tile: {icon, iconSize?, value, caption, detail?}, wide?(width) →
+ * actor, activate(), refresh?(), destroy()}; `changed()`: `ready` or `tile` changed, lay
+ * Home out again; `wide`: it may take two units (design/home "Cách lấp hàng ô").
  */
 export class Home {
     /**
@@ -88,22 +117,33 @@ export class Home {
      * @param {object[]} opts.list  visible activities (stack order)
      * @param {string} opts.tab  the tab to start on (tabs.js tabFor)
      * @param {number} opts.maxHeight  the expanded height cap
+     * @param {number} [opts.width]  the expanded width (Home's row is it less 2 × 12)
+     * @param {object} [opts.metrics]  kit/model/shapes.js compactMetrics at the em
+     * @param {object[]} [opts.missedFlags]  stack.missedFlags: a source's own unseen rows
      * @param {{slot?: string, pinned?: string[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`
      * @param {function(string):void} [opts.onSlot]  a standalone tab was chosen from ⋯
      * @param {function():void} [opts.onPrefs]  the ⚙ button was clicked
      * @param {function():void} [opts.onClose]  close the island (a tab's action is done)
-     * @param {object[]} [opts.missed]  stack.missed, newest first: Home's Missed section
+     * @param {object[]} [opts.missed]  stack.missed, newest first: Home's Missed list
      * @param {function():void} [opts.onMissedSeen]  Home was shown with that section
      * @param {function(object):void} [opts.onMissedOpen]  one of its rows was opened
      * @param {function():void} [opts.onMissedClear]  its × was clicked
      * @param {?string} [opts.from]  the activity whose pill opened it; a tab.js gets it as
      *   `from` (the Media tab shows that player first)
-     * @param {?Gio.Settings} [opts.gsettings]  Buoy's settings, for Home's blocks
+     * @param {?Gio.Settings} [opts.gsettings]  Buoy's settings, for Home's glances
      */
     constructor({
         modules, list, tab, maxHeight, settings = {}, onSlot = null, onPrefs = null, onClose = null, from = null,
         missed = [], onMissedSeen = null, onMissedOpen = null, onMissedClear = null, gsettings = null,
+        width = 560, metrics = compactMetrics(), missedFlags = [],
     }) {
+        this._width = width;
+        this._metrics = metrics;
+        this._flags = missedFlags;
+        this._page = null;           // Home's list in place of its card and row: 'missed' | 'more'
+        this._front = null;          // an activity without a tab put on the main card by its tile
+        this._cards = new Map();     // module id → its home Card, made when first shown
+        this._glances = new Map();   // module id → {glance, order, wide}, made when Home first shows
         this._modules = modules;
         this._list = list;
         this._from = from;           // the activity id whose pill opened Home, or null
@@ -116,9 +156,8 @@ export class Home {
         this._onPrefs = onPrefs;
         this._onClose = onClose;
         this._tabs = new Map();      // module id → tab.js instance, built on first selection
-        this._blocks = new Map();    // module id → {block, column, order}: Home's, built when it first shows
         this._gsettings = gsettings;
-        this._building = false;      // Home is being laid out: a block's changed() waits
+        this._building = false;      // Home is being laid out: a glance's changed() waits
         this._strip = null;
         this._current = null;
         this._menu = null;           // ⋯ menu while it is open, on _menuLayer
@@ -149,12 +188,15 @@ export class Home {
         this._body.set_child(this._view);
         // the strip on the left, ⚙ (prefs, SPEC §3) on the right of the same row
         this._header = new St.BoxLayout({style_class: 'buoy-panel-header', x_expand: true});
+        // the head 56: the strip and ⚙ are 32, 12 from the top (design/expanded)
+        this._header.set_height(metrics.button);
+        this._column.set_style(`padding: ${(metrics.head - metrics.button) / 2}px ${EDGE}px ${EDGE}px; spacing: ${(metrics.head - metrics.button) / 2}px;`);
         this._header.add_child(this._stripBox);
         this._header.add_child(new St.Widget({x_expand: true}));
         const prefs = new St.Button({
             style_class: 'buoy-tab buoy-gear', can_focus: true, accessible_name: 'Settings',
             child: new St.Icon({...iconProps('emblem-system-symbolic'), icon_size: 16}),
-            y_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER, width: metrics.button, height: metrics.button,
         });
         prefs.connect('clicked', () => this._onPrefs?.());
         this._header.add_child(prefs);
@@ -196,7 +238,6 @@ export class Home {
      */
     update(list) {
         this._list = list;
-        this._feedBlocks();          // before Home is laid out again: a block's `ready` may flip
         const before = stripKey(this._strip);
         this._plan();
         if (this._menu)
@@ -219,17 +260,6 @@ export class Home {
             this._renderStrip();
     }
 
-    // Home's blocks keep their actor too: each gets its module's activities.
-    _feedBlocks() {
-        for (const [id, {block}] of this._blocks)
-            block.update?.(this._ownActivities(id));
-    }
-
-    _ownActivities(id) {
-        const kinds = this._module(id)?.kinds ?? [];
-        return this._list.filter(a => kinds.includes(a.kind));
-    }
-
     // Kind tabs with a tab.js keep their actor: hand them their activities instead.
     _feedTabs() {
         for (const [id, tab] of this._tabs) {
@@ -244,11 +274,26 @@ export class Home {
         if (!findTab(this._strip, id))
             return;
         this._closeMenu(false);
+        if (id !== HOME || this._current !== HOME)
+            this._page = null;       // Home opens on its card and row
         this._current = id;
         this._renderStrip();
         this._setBody(this._buildBody(findTab(this._strip, id)));
         if (id === HOME && this._missed.length)
             this._onMissedSeen?.();  // the amber light goes off; the list stays (stack)
+    }
+
+    /**
+     * Esc on Home's Missed or Ongoing list: back to the card and the row.
+     *
+     * @returns {boolean} handled
+     */
+    back() {
+        if (this._current !== HOME || !this._page || this._gone)
+            return false;
+        this._page = null;
+        this._setBody(this._homeBody());
+        return true;
     }
 
     /**
@@ -398,11 +443,11 @@ export class Home {
     // --- body ---------------------------------------------------------------------------
 
     _setBody(actor) {
-        // a block's actor is kept for the rest of this open, wherever Home placed it: out of
-        // the old layout first, which goes
-        for (const {block} of this._blocks.values()) {
-            if (!actor.contains(block.actor))
-                block.actor.get_parent()?.remove_child(block.actor);
+        // a module Card's actor is kept for the rest of this open: out of the old layout
+        // first, which goes
+        for (const card of this._cards.values()) {
+            if (!actor.contains(card.actor))
+                card.actor.get_parent()?.remove_child(card.actor);
         }
         // a tab.js actor is kept for the rest of this open; anything else is rebuilt
         const kept = new Set([...this._tabs.values()].map(t => t.actor));
@@ -457,60 +502,73 @@ export class Home {
     }
 
     _buildHome() {
-        // y_expand: the blocks take what the full-height body leaves under Missed and chips
-        const box = new St.BoxLayout({
-            style_class: 'buoy-home-list', orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_expand: true,
+        if (this._page === 'missed')
+            return this._missedList();
+        if (this._page === 'more')
+            return this._ongoingList();
+        const m = this._metrics;
+        const rowW = this._width - 2 * EDGE;
+        const height = this._maxHeight - m.head - EDGE;
+        const glances = this._homeGlances();
+        const plan = planHome({
+            list: this._ordered(), missed: this._missedCount(),
+            glances: glances.map(([id, g]) => ({id, wide: g.wide})), width: rowW, height,
         });
-        const blocks = this._homeBlocks();
-        const columns = homeColumns(blocks.map(([id, b]) => ({id, column: b.column, order: b.order, ready: Boolean(b.block.ready)})));
-        const chips = homeChips(this._list, this._modules);
-        if (this._missed.length)
-            this._missedSection(box);
-        if (chips.length)
-            box.add_child(this._chips(chips));
-        if (columns.length)
-            box.add_child(this._columns(columns));
-        if (!box.get_n_children())
-            box.add_child(new EmptyState('Nothing going on', {pose: 'idle'}));
+        const box = new St.BoxLayout({
+            style_class: 'buoy-home', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
+        });
+        box.set_style(`spacing: ${CARD_GAP}px;`);
+        box.set_height(height);
+        box.add_child(this._mainCard(plan));
+        if (plan.tiles.length)
+            box.add_child(this._tileRow(plan, rowW));
         return box;
     }
 
-    // Every enabled module's Home block: made the first time Home shows, refreshed on
-    // every later layout
-    _homeBlocks() {
-        for (const m of this._modules) {
-            const Block = m.home?.Block;
-            if (!Block)
-                continue;
-            const known = this._blocks.get(m.id);
-            if (known) {
-                known.block.refresh?.();
-                continue;
-            }
-            try {
-                const block = new Block({
-                    open: id => this._openTab(id),
-                    close: () => this._onClose?.(),
-                    changed: () => this._blockChanged(),
-                    settings: this._gsettings,
-                });
-                block.update?.(this._ownActivities(m.id));
-                this._blocks.set(m.id, {block, column: m.home.column, order: m.home.order});
-            } catch (e) {
-                console.warn(`Buoy: Home block ${m.id} failed: ${e.message}`);
-            }
-        }
-        return [...this._blocks];
+    // The stack's order, with the activity a tile put on the main card first (one without a
+    // tab of its own, design/home "Quay màn hình trong Home")
+    _ordered() {
+        const front = this._list.find(a => a.id === this._front);
+        return front ? [front, ...this._list.filter(a => a !== front)] : this._list;
     }
 
-    // A block's `ready` flipped (its data came or went): Home is laid out again
-    _blockChanged() {
-        if (this._gone || this._building || this._menu || this._current !== HOME)
+    _missedCount() {
+        return this._missed.length + this._flags.reduce((sum, f) => sum + f.count, 0);
+    }
+
+    // Every enabled module's glance: made the first time Home shows, refreshed on every
+    // later layout; the ready ones in their order
+    _homeGlances() {
+        for (const mod of this._modules) {
+            const Glance = mod.home?.Glance;
+            if (!Glance || this._glances.has(mod.id))
+                continue;
+            try {
+                const glance = new Glance({
+                    open: id => this._openTab(id),
+                    close: () => this._onClose?.(),
+                    changed: () => this._glanceChanged(),
+                    settings: this._gsettings,
+                });
+                this._glances.set(mod.id, {glance, order: Number.isFinite(mod.home.order) ? mod.home.order : 0, wide: mod.home.wide === true});
+            } catch (e) {
+                console.warn(`Buoy: Home glance ${mod.id} failed: ${e.message}`);
+            }
+        }
+        for (const {glance} of this._glances.values())
+            glance.refresh?.();
+        return [...this._glances].filter(([, g]) => g.glance.ready && g.glance.tile)
+            .sort(([, a], [, b]) => a.order - b.order);
+    }
+
+    // A glance's data came or went: Home is laid out again
+    _glanceChanged() {
+        if (this._gone || this._building || this._menu || this._current !== HOME || this._page)
             return;
         this._setBody(this._homeBody());
     }
 
-    // A block opens a tab: the strip's or the slot's at once; one listed only under ⋯ goes
+    // A glance opens a tab: the strip's or the slot's at once; one listed only under ⋯ goes
     // into the slot first, as choosing it there does
     _openTab(id) {
         const tab = findTab(this._strip, id);
@@ -524,107 +582,342 @@ export class Home {
         this.select(id);
     }
 
-    // The running activities no block covers, each its pill's content on a chip (wrapping
-    // onto more lines when they do not fit); a chip opens its kind's tab, or runs the
-    // activity's onPress and closes the island
-    _chips(list) {
-        const flow = new St.Widget({
-            style_class: 'buoy-home-chips', x_expand: true,
-            // snap_to_grid off: each chip its own width (clutter-flow-layout.c allocate)
-            layout_manager: new Clutter.FlowLayout({
-                orientation: Clutter.Orientation.HORIZONTAL, snap_to_grid: false,
-                column_spacing: 6, row_spacing: 6,
-            }),
-        });
-        for (const a of list) {
-            const content = buildMinimal(a, {maxWidth: CHIP_MAX});
-            if (!content)
-                continue;
-            const tabId = this._strip.tabs.find(t => t.type === 'kind' && t.kinds.includes(a.kind))?.id;
-            const chip = new St.Button({
-                style_class: 'buoy-home-chip', child: content,
-                can_focus: true, reactive: !!tabId || !!a.onPress,
-            });
-            chip.connect('clicked', () => {
-                if (tabId) {
-                    this.select(tabId);
-                } else if (a.onPress) {
-                    a.onPress();
-                    this._onClose?.();
-                }
-            });
-            flow.add_child(chip);
-        }
-        return flow;
+    // The tab an activity opens: its kind's, if the strip has one
+    _tabOf(a) {
+        return this._strip.tabs.find(t => t.type === 'kind' && t.kinds.includes(a.kind))?.id ?? null;
     }
 
-    // Two columns of equal width (start: Now playing; end: weather, Up next), or one
-    _columns(columns) {
-        const row = new St.BoxLayout({style_class: 'buoy-home-columns', x_expand: true, y_expand: true});
-        row.layout_manager.homogeneous = true;
-        for (const ids of columns) {
-            const col = new St.BoxLayout({
-                style_class: 'buoy-home-column', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
-            });
-            for (const id of ids) {
-                const {actor} = this._blocks.get(id).block;
-                actor.get_parent()?.remove_child(actor);    // still in the layout before
-                col.add_child(actor);
-            }
-            row.add_child(col);
+    // --- the main card (design/home "Kích thước": fill-1, radius 16, the height the row leaves)
+
+    _mainCard(plan) {
+        const a = plan.main;
+        const bin = new St.Bin({style_class: 'buoy-home-card', x_expand: true, x_align: Clutter.ActorAlign.FILL});
+        bin.set_height(plan.mainH);
+        if (!a) {
+            bin.set_child(this._greeting(plan));
+            return bin;
+        }
+        const mod = this._modules.find(x => x.home?.Card && (x.kinds ?? []).includes(a.kind));
+        const card = mod ? this._cardOf(mod) : null;
+        if (card) {
+            card.show(a, {height: plan.mainH, form: plan.form, width: this._width - 2 * EDGE});
+            card.actor.get_parent()?.remove_child(card.actor);
+            bin.set_child(card.actor);
+            return bin;
+        }
+        // the rest: its compact in the card (design/home: only music, an ask, a call and the
+        // greeting have a card of their own); a click on it opens its tab, as the pill's would
+        const content = buildCompact(a, {maxWidth: this._width - 2 * EDGE, metrics: this._metrics, hovered: true, actionsEnd: true}) ??
+            this._headOf(a);
+        const tab = this._tabOf(a);
+        if (!tab && !a.onPress) {
+            bin.set_child(content);
+            return bin;
+        }
+        const button = new St.Button({
+            style_class: 'buoy-home-hit buoy-home-card-hit', child: content, can_focus: true,
+            x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL,
+            accessible_name: a.text ?? a.kind,
+        });
+        button.connect('clicked', () => this._activateActivity(a, tab));
+        bin.set_child(button);
+        return bin;
+    }
+
+    // An activity with no compact: a head as the compact's — its leading at 40, its text,
+    // its value at the end
+    _headOf(a) {
+        const m = this._metrics;
+        const p = planMinimal(a, {});
+        const row = new St.BoxLayout({style_class: 'buoy-home-head', x_expand: true, y_align: Clutter.ActorAlign.START});
+        row.set_style(`padding: ${m.vpad}px ${m.side}px; spacing: ${m.gap}px;`);
+        const cell = new St.Bin({width: m.lead, height: m.lead});
+        const lead = makeElement(p.leading, 'compact', a, {icon: 24, art: m.lead});
+        if (lead)
+            cell.set_child(lead);
+        row.add_child(cell);
+        const name = textLabel(p.text ?? a.kind, 'buoy-home-title', true);
+        name.y_align = Clutter.ActorAlign.CENTER;
+        row.add_child(name);
+        const {value} = tileOf(a);
+        const end = value && value.text !== p.text ? valueActor(value, a) : null;
+        if (end) {
+            end.y_align = Clutter.ActorAlign.CENTER;
+            row.add_child(end);
         }
         return row;
     }
 
-    // What ended while the island was hidden (2026-11-03): newest first, at most 5 (the
-    // stack keeps 5), each row its kind's icon, text, tab name and time; a row opens its
-    // kind's tab and leaves the list (as an activated notification does), × empties it.
-    // Until the M4 notifications tab carries it.
-    _missedSection(box) {
-        const header = this._sectionHeader(`Missed · ${this._missed.length}`, true);
-        // icon-only, as the Transfers tab's (2026-11-06, Ethan); the name stays for a11y
+    _cardOf(mod) {
+        let card = this._cards.get(mod.id);
+        if (card)
+            return card;
+        try {
+            card = new mod.home.Card({open: id => this._openTab(id), close: () => this._onClose?.()});
+            this._cards.set(mod.id, card);
+            return card;
+        } catch (e) {
+            console.warn(`Buoy: Home card ${mod.id} failed: ${e.message}`);
+            return null;
+        }
+    }
+
+    // Nothing going on: Bu waving, "Good afternoon, Ethan" and the date (design/home C)
+    _greeting(plan) {
+        const now = GLib.DateTime.new_now_local();
+        const row = new St.BoxLayout({style_class: 'buoy-home-greeting', x_expand: true, y_align: Clutter.ActorAlign.CENTER});
+        // Bu as tall as the card allows, a multiple of his 10 cells, 40 … 80
+        const size = Math.max(40, Math.min(80, 10 * Math.floor((plan.mainH - 2 * EDGE) / 10)));
+        const bu = makeElement(element({mascot: 'hello', size}, {leading: true}), 'expanded');
+        if (bu)
+            row.add_child(bu);
+        const text = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, y_align: Clutter.ActorAlign.CENTER, x_expand: true});
+        const hour = now.get_hour() + now.get_minute() / 60;
+        text.add_child(textLabel(greetingLine(daypartAt(hour), GLib.get_real_name()), 'buoy-home-greeting-title'));
+        text.add_child(textLabel(now.format('%A, %B %-d') ?? '', 'buoy-home-subtitle'));
+        row.add_child(text);
+        return row;
+    }
+
+    // A tile or the main card pressed: its tab; an activity without one runs its onPress and
+    // closes the island
+    _activateActivity(a, tab = this._tabOf(a)) {
+        if (tab) {
+            this.select(tab);
+        } else if (a.onPress) {
+            a.onPress();
+            this._onClose?.();
+        }
+    }
+
+    // --- the row of tiles ---------------------------------------------------------------
+
+    _tileRow(plan, rowW) {
+        const row = new St.BoxLayout({style_class: 'buoy-home-tiles', x_expand: true});
+        row.set_style(`spacing: ${CARD_GAP}px;`);
+        row.set_height(TILE_H);
+        const widths = tileWidths(plan.tiles, rowW);
+        plan.tiles.forEach((t, i) => {
+            const tile = this._tile(t, widths[i]);
+            if (tile) {
+                tile.set_width(widths[i]);
+                row.add_child(tile);
+            }
+        });
+        return row;
+    }
+
+    _tile(t, width) {
+        if (t.type === 'missed') {
+            const tile = this._tileButton({
+                icon: 'preferences-system-notifications-symbolic', value: String(t.count), caption: 'Missed',
+                detail: this._missedDetail(), width,
+            }, 'Missed');
+            tile.add_style_class_name('buoy-home-tile-missed');
+            tile.connect('clicked', () => this._showPage('missed'));
+            return tile;
+        }
+        if (t.type === 'more') {
+            const tile = this._tileButton({icon: 'view-more-symbolic', value: `+${t.count}`, caption: 'See all', width}, 'Ongoing');
+            tile.connect('clicked', () => this._showPage('more'));
+            return tile;
+        }
+        if (t.type === 'glance') {
+            const {glance} = this._glances.get(t.id);
+            const wide = t.wide ? glance.wide?.(width) : null;
+            const tile = wide ? this._tileButton(null, glance.tile.caption ?? t.id, wide) : this._tileButton({...glance.tile, width}, glance.tile.caption ?? t.id);
+            tile.connect('clicked', () => glance.activate?.());
+            return tile;
+        }
+        const a = t.activity;
+        const {leading, value, caption} = tileOf(a);
+        const tile = this._tileButton({leading, valueEl: value, caption, width, activity: a}, a.text ?? a.kind);
+        // an activity without a tab of its own goes up to the main card, with its buttons
+        tile.connect('clicked', () => {
+            if (this._tabOf(a)) {
+                this._activateActivity(a);
+                return;
+            }
+            this._front = a.id;
+            this._setBody(this._homeBody());
+        });
+        return tile;
+    }
+
+    // "3 notifications · 4 tasks" on a wide Missed tile
+    _missedDetail() {
+        const notes = this._flags.reduce((sum, f) => sum + f.count, 0);
+        const tasks = this._missed.length;
+        return [notes ? `${notes} notification${notes > 1 ? 's' : ''}` : null, tasks ? `${tasks} task${tasks > 1 ? 's' : ''}` : null]
+            .filter(Boolean).join(' · ') || null;
+    }
+
+    /**
+     * A tile (design/home "Kích thước"): the leading in a 20 cell at 12, the value 1.5em 600,
+     * the caption 0.85em; from DETAIL_FROM wide a detail column on the right.
+     *
+     * @param {?object} t  {icon?, iconSize?, leading?, valueEl?, value?, caption?, detail?, width, activity?}
+     * @param {string} name  its accessible name
+     * @param {?Clutter.Actor} [own]  a glance's own wide content instead
+     * @returns {St.Button}
+     */
+    _tileButton(t, name, own = null) {
+        const button = new St.Button({
+            style_class: 'buoy-home-tile buoy-home-hit', can_focus: true, accessible_name: name,
+            y_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL,
+        });
+        if (own) {
+            button.set_child(own);
+            return button;
+        }
+        const row = new St.BoxLayout({x_expand: true});
+        const col = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_expand: true});
+        const cell = new St.Bin({style_class: 'buoy-home-tile-leading', width: 20, height: 20, x_align: Clutter.ActorAlign.START});
+        const lead = t.leading
+            ? makeElement(t.leading, 'minimal', t.activity ?? null, {icon: 16, art: 20})
+            : iconOf(t.icon, t.iconSize ?? 16);
+        if (lead)
+            cell.set_child(lead);
+        col.add_child(cell);
+        col.add_child(new St.Widget({y_expand: true}));
+        /** @type {?St.Widget} */
+        let value = t.value ? textLabel(t.value, '') : null;
+        if (t.valueEl)
+            value = valueActor(t.valueEl, t.activity ?? null);
+        if (value) {
+            value.add_style_class_name('buoy-home-tile-value');
+            col.add_child(value);
+        }
+        if (t.caption)
+            col.add_child(textLabel(t.caption, 'buoy-home-tile-caption'));
+        row.add_child(col);
+        if (t.detail && t.width >= DETAIL_FROM) {
+            const detail = textLabel(t.detail, 'buoy-home-tile-detail');
+            detail.y_align = Clutter.ActorAlign.END;
+            row.add_child(detail);
+        }
+        button.set_child(row);
+        return button;
+    }
+
+    // --- the lists in place of the card and the row (design/home "Bị nhỡ và +K") --------
+
+    _showPage(page) {
+        this._page = page;
+        this._setBody(this._homeBody());
+    }
+
+    // ‹ (back to Home, also Esc), the title and its count, an action
+    _listHead(title, action = null) {
+        const head = new St.BoxLayout({style_class: 'buoy-home-list-head', x_expand: true});
+        const back = new St.Button({
+            style_class: 'buoy-round', can_focus: true, accessible_name: 'Back',
+            child: new St.Icon({...iconProps('go-previous-symbolic'), icon_size: 16}),
+            width: this._metrics.button, height: this._metrics.button,
+        });
+        back.connect('clicked', () => this.back());
+        head.add_child(back);
+        head.add_child(textLabel(title, 'buoy-home-title', true));
+        if (action)
+            head.add_child(action);
+        return head;
+    }
+
+    /**
+     * One row 32: the leading 20, the name, its detail, the time or value at the end.
+     *
+     * @param {{leading?: object, icon?: *, name?: string, detail?: ?string, end?: ?Clutter.Actor, activity?: object}} r
+     * @param {?function():void} onClick
+     * @returns {St.Button}
+     */
+    _listRow({leading = null, icon = null, name = '', detail = null, end = null, activity = null}, onClick) {
+        const content = new St.BoxLayout({style_class: 'buoy-home-list-row-box', x_expand: true});
+        const cell = new St.Bin({width: 20, height: 20, y_align: Clutter.ActorAlign.CENTER});
+        const lead = leading ? makeElement(leading, 'minimal', activity, {icon: 16, art: 20}) : iconOf(icon, 16);
+        if (lead)
+            cell.set_child(lead);
+        content.add_child(cell);
+        content.add_child(textLabel(name ?? '', 'buoy-home-list-name'));
+        if (detail)
+            content.add_child(textLabel(detail, 'buoy-home-list-detail', true));
+        else
+            content.add_child(new St.Widget({x_expand: true}));
+        if (end)
+            content.add_child(end);
+        const row = new St.Button({
+            style_class: 'buoy-home-row', child: content, x_expand: true, can_focus: true,
+            reactive: !!onClick, x_align: Clutter.ActorAlign.FILL, accessible_name: name ?? '',
+        });
+        if (onClick)
+            row.connect('clicked', onClick);
+        return row;
+    }
+
+    _listBox(head) {
+        const box = new St.BoxLayout({style_class: 'buoy-home-list', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        box.add_child(head);
+        return box;
+    }
+
+    // Missed: the sources' rows (notifications, one row) then what ended unseen, newest
+    // first; a row opens its place and leaves; × clears them all
+    _missedList() {
         const clear = new St.Button({
-            style_class: 'buoy-home-clear', can_focus: true, accessible_name: 'Clear missed',
-            child: new St.Icon({...iconProps('window-close-symbolic'), icon_size: 12}),
-            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'buoy-round', can_focus: true, accessible_name: 'Clear missed',
+            child: new St.Icon({...iconProps('window-close-symbolic'), icon_size: 16}),
+            width: this._metrics.button, height: this._metrics.button,
         });
         clear.connect('clicked', () => {
             this._missed = [];
             this._onMissedClear?.();
-            this.select(HOME);
+            this._page = this._flags.length ? 'missed' : null;
+            this._setBody(this._homeBody());
         });
-        header.add_child(new St.Widget({x_expand: true}));
-        header.add_child(clear);
-        box.add_child(header);
-
+        const box = this._listBox(this._listHead(`Missed · ${this._missedCount()}`, this._missed.length ? clear : null));
+        for (const f of this._flags) {
+            box.add_child(this._listRow({icon: 'preferences-system-notifications-symbolic', name: `${f.title} · ${f.count}`, detail: f.detail},
+                f.tab ? () => this._openTab(f.tab) : null));
+        }
         for (const m of this._missed) {
             const tab = this._strip.tabs.find(t => t.type === 'kind' && t.kinds.includes(m.kind));
-            const content = new St.BoxLayout({style_class: 'buoy-missed-row', x_expand: true});
-            content.add_child(new St.Icon({...iconProps(tab?.icon ?? 'view-app-grid-symbolic'), icon_size: 16}));
-            content.add_child(new St.Label({text: m.text ?? m.kind, style_class: 'buoy-text', y_align: Clutter.ActorAlign.CENTER}));
-            if (tab)
-                content.add_child(new St.Label({text: tab.label, style_class: 'buoy-missed-source', y_align: Clutter.ActorAlign.CENTER}));
-            content.add_child(new St.Widget({x_expand: true}));
-            content.add_child(new St.Label({text: clockTime(m.at), style_class: 'buoy-missed-time', y_align: Clutter.ActorAlign.CENTER}));
-            const row = new St.Button({
-                style_class: 'buoy-home-row', child: content, x_expand: true,
-                can_focus: true, reactive: !!tab, x_align: Clutter.ActorAlign.FILL,
-            });
-            row.connect('clicked', () => {
+            box.add_child(this._listRow({
+                icon: tab?.icon ?? 'view-app-grid-symbolic', name: m.text ?? m.kind, detail: tab?.label ?? null,
+                end: textLabel(clockTime(m.at), 'buoy-home-list-detail'),
+            }, tab ? () => {
                 this._missed = this._missed.filter(x => x !== m);
                 this._onMissedOpen?.(m);
                 this.select(tab.id);
-            });
-            box.add_child(row);
+            } : null));
         }
+        if (!this._flags.length && !this._missed.length)
+            box.add_child(new EmptyState('Nothing missed', {pose: 'idle'}));
+        return box;
     }
 
-    _sectionHeader(text, lit = false) {
-        const header = new St.BoxLayout({style_class: 'buoy-home-section', x_expand: true});
-        if (lit)
-            header.add_child(new St.Widget({style_class: 'buoy-light buoy-light-missed', y_align: Clutter.ActorAlign.CENTER}));
-        header.add_child(new St.Label({text, y_align: Clutter.ActorAlign.CENTER}));
-        return header;
+    // Ongoing (+K): every activity in the stack's order; a row opens its tab
+    _ongoingList() {
+        const box = this._listBox(this._listHead(`Ongoing · ${this._list.length}`));
+        const rows = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        for (const a of this._list) {
+            const {leading, value} = tileOf(a);
+            rows.add_child(this._listRow({
+                leading, name: a.text ?? a.kind, activity: a,
+                end: value && value.type !== 'text' ? valueActor(value, a) : null,
+                detail: value?.type === 'text' && value.text !== a.text ? value.text : null,
+            }, () => this._activateActivity(a)));
+        }
+        // past LIST_MAX rows it scrolls, only this list (design/home)
+        if (this._list.length > LIST_MAX) {
+            const scroll = new St.ScrollView({
+                style_class: 'buoy-home-list-scroll', x_expand: true, y_expand: true,
+                hscrollbar_policy: St.PolicyType.NEVER, vscrollbar_policy: St.PolicyType.AUTOMATIC,
+            });
+            scroll.set_child(rows);
+            box.add_child(scroll);
+        } else {
+            box.add_child(rows);
+        }
+        return box;
     }
 
     _destroyTabs() {
@@ -635,14 +928,15 @@ export class Home {
         for (const tab of this._tabs.values())
             tab.destroy?.();
         this._tabs.clear();
-        for (const {block} of this._blocks.values()) {
+        for (const made of [...this._cards.values(), ...[...this._glances.values()].map(g => g.glance)]) {
             try {
-                block.destroy?.();
+                made.destroy?.();
             } catch (e) {
-                console.warn(`Buoy: Home block failed to go: ${e.message}`);
+                console.warn(`Buoy: a Home card or glance failed to go: ${e.message}`);
             }
         }
-        this._blocks.clear();
+        this._cards.clear();
+        this._glances.clear();
     }
 
     destroy() {

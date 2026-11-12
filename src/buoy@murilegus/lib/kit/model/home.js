@@ -108,7 +108,8 @@ export function tileWidths(tiles, width) {
 
 /**
  * An activity as a tile (design/home "Kích thước"): its minimal's leading as the icon, then
- * a value in large figures over a caption. An adapter's own `tile: {value, caption}` wins;
+ * a value in large figures over a caption. An adapter's own `tile: {value, caption}` or
+ * `tile: {live, caption}` (a player's position, the elapsed time) wins;
  * else a text trailing ("2 / 3", "4:59") or a ring ("42%") is the value and the text the
  * caption; else the text alone is the value.
  *
@@ -119,6 +120,10 @@ export function tileWidths(tiles, width) {
 export function tileOf(a) {
     const p = planMinimal(a, {});
     const own = a.tile !== null && typeof a.tile === 'object' ? a.tile : null;
+    // a player's: its live position, the elapsed time running (presentation.js livePosition)
+    const live = own?.live;
+    if (live && Number.isFinite(live.position) && Number.isFinite(live.length) && live.length > 0)
+        return {leading: p.leading, value: {type: 'live', live}, caption: str(own.caption) ?? p.text};
     const text = typeof own?.value === 'string' && own.value ? own.value : null;
     if (text)
         return {leading: p.leading, value: {type: 'text', text}, caption: str(own.caption) ?? p.text};

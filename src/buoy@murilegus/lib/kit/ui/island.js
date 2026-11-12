@@ -94,7 +94,7 @@ export class Island {
         // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice, ⚙
         this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
         // set by the extension: the stack's missed history, and telling it it was seen
-        this.missed = {list: () => [], seen: null, open: null, clear: null};
+        this.missed = {list: () => [], flags: () => [], seen: null, open: null, clear: null};
         // the idle plan's presentation data (kit/services/idle.js), null = `none`; and told when
         // the idle pill starts or stops being on screen, so its clock runs only then
         this.idle = null;
@@ -725,6 +725,7 @@ export class Island {
                 // Media tab's chip, 2026-11-07, Ethan)
                 from: pill.activity?.id ?? null,
                 maxHeight: this._s.expanded.h, settings: this.tabs.settings(),
+                width: this._s.expanded.w, metrics: this._s.compactMetrics,
                 onSlot: id => this.tabs.onSlot?.(id),
                 // close first: the prefs window must get the keyboard the grab holds
                 onPrefs: () => {
@@ -734,6 +735,7 @@ export class Island {
                 // a tab's action brought a window up (or a Home row ran its onPress)
                 onClose: () => this._close(),
                 missed: this.missed.list(),
+                missedFlags: this.missed.flags?.() ?? [],
                 onMissedSeen: () => this.missed.seen?.(),
                 onMissedOpen: m => this.missed.open?.(m.id, m.at),
                 onMissedClear: () => this.missed.clear?.(),
@@ -854,6 +856,8 @@ export class Island {
     _onKey(ev) {
         const sym = ev.get_key_symbol();
         if (sym === Clutter.KEY_Escape) {
+            if (this._home?.back())
+                return Clutter.EVENT_STOP;   // Home's Missed or Ongoing list: back to Home
             if (this._open)
                 this._close();
             else

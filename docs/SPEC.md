@@ -636,84 +636,74 @@ sizes, Bu's poses, special days, weather, settings and tests.
 
 ## 3. Expanded: Home
 
-Single screen, no sub-navigation. Blocks, each from a module that can be off (layout A,
-2026-11-08, Ethan; the month grid left for the Calendar tab):
+Single screen, no sub-navigation: a **main card** over **one row of tiles** (design/home, H5,
+decided 2026-11-11/12, Ethan; built 2026-11-12, M4 "Expanded on the same rhythm"). It is
+laid out again each time Home opens and each time the stack changes, so it is never empty
+and never scrolls (`kit/model/home.js` planHome, `kit/ui/home.js`).
 
 ```
-┌ ⌂ Home · ♪ · 🔔 · ⤓ · ⏱ · [ ▣ Calendar ] · ⋯ ───────────────────────── ⚙ ┐
-│ ● Missed · 1                                                       ×  │  while any
-│ ⤓ report.pdf → Downloads   Transfers                           2:41 PM │
-│ ( Claude · buoy  <1 min )  ( … )                                       │  chips
-│ ┌ Now playing ───────────────┐ ┌ ☀ 31°  Partly cloudy ──────────────┐ │
-│ │ [art] title                │ │   Ho Chi Minh City · Feels like 34° │ │
-│ │       artist / player      │ └─────────────────────────────────────┘ │
-│ │ ━━━━━━━━━──────────        │ ┌ Up next                    +2 more ┐ │
-│ │      ⏮    ⏯    ⏭          │ │ ▌Design review   3:00 PM · in 25 min│ │
-│ └────────────────────────────┘ │ ▌Gym             5:30 PM · 45 min   │ │
-│                                └─────────────────────────────────────┘ │
+┌ ⌂ Home · ♪ · 🔔 · ⤓ · ⏱ · [ ▣ Calendar ] · ⋯ ───────────────────── ⚙ ┐  head 56
+│ ┌ main card: the stack's first activity, or the greeting ────────────┐ │
+│ │ [cover]  Sóng Ngoài Khơi                          ⏮  ⏯  ⏭        │ │  the rest of
+│ │          Hải Đăng · Spotify   ━━━━━━━━━━──────── 1:24 / −2:11      │ │  the height
+│ └────────────────────────────────────────────────────────────────────┘ │
+│ ┌ 🔔 7 ──┐ ┌ Bu 2/3 ──────┐ ┌ ☁ 31° ────────────┐ ┌ ▭ 82% ─┐            │  row 100
+│ │ Missed │ │ Claude Code  │ │ Partly cloudy      │ │ Battery │            │
+│ └────────┘ └──────────────┘ └────────────────────┘ └─────────┘            │
 └────────────────────────────────────────────────────────────────────────┘
   strip: Home · kind tabs of enabled modules · one slot for a standalone tab · ⋯ menu · ⚙ prefs
-  ⚙ sits alone at the right of the strip row (a round button); it closes the island, then
+  ⚙ sits alone at the right of the strip row (a round button 32); it closes the island, then
   opens the extension's prefs window (2026-11-02)
   no system indicators here — they live in the right-hand system cluster (§1)
 ```
 
-Top to bottom (2026-11-08, Ethan):
+- **The head** is 56: the strip and ⚙ are 32, 12 from the top. Under it the main card, 8,
+  the row of tiles 100, and 12 at the bottom; 12 at the sides. The main card takes the rest:
+  104 / 168 / 200 at 1920 / 2560 / 3440; with no tile, all of it.
+- **The main card** is the stack's first activity with its buttons; with none, the
+  **greeting** (Bu waving, "Good afternoon, Ethan", the date). A player has a card of its
+  own (`modules/media/home.js`: the cover as tall as the card less 16, at most 160; under
+  160 the transport at the top right and the bar at the foot, from 160 the title larger and
+  the transport centred under the bar); an ask is its card with its buttons at the bottom
+  right; any other activity shows its compact in the card (or, without one, its leading,
+  text and value). A click on it opens its tab.
+- **The tiles** (fill-1, radius 16): N = floor((row + 8) / 128) a row — 4 at 1920, 5 at
+  2560 and 3440. **Missed** first, then the other activities, each a tile (its minimal's
+  leading, a value in 1.5em, a caption: "2 / 3 · Claude Code", "42% · report.pdf", a
+  player's elapsed time over its title); more than N → N − 1 tiles and **+K**. Room left:
+  the **glances** in order — the weather, Up next, the battery (phone and timer with their
+  items) — one tile each, left out when they do not fit (never into +K). Still room: the
+  weather, then Up next, take two units (the weather's icon at 48 and the place; Up next's
+  two events); still room: the tiles widen to fill the row. A tile 200 wide or more shows a
+  detail column. A tile opens its tab; an activity without one goes up to the main card.
+- **Missed** (the amber tint, 16 %): counts everything unseen — what ended while the
+  island could not show it (the stack's missed history) and the sources' own unseen
+  (GNOME's notifications nobody saw, `stack.flagMissed` with its row). Its list, in place
+  of the card and the row: ‹ (back, also Esc), "Missed · N", × to clear; then "Notifications
+  · 3" (its apps) opening the Notifications tab, and the tasks, newest first, each opening
+  its tab and leaving. Showing Home turns the amber light off; the tile stays until every
+  row is opened or cleared.
+- **+K** opens "Ongoing": every activity in the stack's order, rows of 32; past 5 it
+  scrolls, the one place Home does.
 
-- the **Missed** section (below), while the missed history has entries;
-- a **chip** for each running activity no block covers — its pill's content on a round
-  chip, wrapping to more lines when they do not fit; a chip opens its kind's tab (or runs
-  the activity's onPress and closes the island). Media's activities are not chips: Now
-  playing shows them. `+N` still opens Home, so every activity is reachable from here;
-- the **blocks**, in two columns of equal width: Now playing at the start; the weather over
-  Up next at the end. A block with nothing to show is left out, never shown empty, and a
-  column left empty gives the other the full width (nothing playing → weather and Up next
-  across). With the Missed rows and chips above, the blocks move down and the body
-  scrolls;
-- nothing at all (no missed, no activity, no block with something to show) → "Nothing
-  going on" with Bu.
+The glances and a module's card stay for the whole open and go when expanded closes; each
+one's data lives only that long (rule 8). Every tab opens the panel at the full expanded
+cap (2026-11-08, Ethan): a taller tab scrolls inside, an empty one ("Nothing playing", "No
+transfers"…) centres its text with Bu over it (kit `EmptyState`, MASCOT.md). Buoy posts no
+notifications of its own.
 
-The blocks stay for the whole open (their actors move between layouts, never rebuilt) and
-go when expanded closes; each one's data lives only that long (rule 8).
-
-- **Missed** (2026-11-03): while the missed history has entries, Home starts with a
-  "Missed · N" section — the last 5, newest first, each row the kind's icon, its text, the
-  tab's name and the time it ended; a row opens that kind's tab and leaves the list, as an
-  activated system notification does; an icon-only × empties it (its "Clear" label
-  dropped 2026-11-06, Ethan, as in the Transfers tab).
-  Showing Home turns the amber light off; the list stays until cleared or pushed out by
-  newer ones. The running activities follow as chips (was a "Now" list until the blocks,
-  2026-11-08). The notifications tab has its
-  own "Missed while away": the notifications nobody saw (NOTIFICATIONS.md §6, 2026-11-07,
-  replacing the plan to move this section there — notifications never reach the stack's
-  missed history); Buoy posts no notifications of its own.
-- **Until the M3 blocks** (2026-11-02, replaced by the chips and blocks above 2026-11-08):
-  Home listed every visible activity, each row its minimal view. Every tab opens the panel
-  at the full expanded cap (2026-11-08, Ethan; was content-fit up to the cap): a shorter
-  tab leaves room at its foot (Home's blocks stretch into it), a taller one scrolls inside
-  (no blur, scrollbar only when needed). An empty tab or
-  list ("Nothing going on", "Nothing playing", "No transfers", "No notifications"…) opens
-  the panel at the full cap instead, its text centred both ways, in one colour for every
-  tab (2026-11-06, Ethan; kit `EmptyState`), with Bu over it in a pose that fits (MASCOT.md, 2026-11-07). It grows to the cap too when a list empties
-  while open.
-- Now playing — MPRIS (the media module's activities): the stack's first player — art (a
-  grey tile with a note when it has none), title, artist, the player's name; the position
-  as a thin bar, moving only while shown and playing; the player's own ⏮ ⏯ ⏭. A click
-  anywhere on the card but those buttons opens the Media tab (2026-11-08, Ethan) (the other players, seeking, shuffle, repeat). Hidden when
-  nothing plays.
 - Calendar — reuse `ui/calendar.js` (same EDS source as dateMenu). Every account in Settings → Online
   Accounts (Google, Microsoft 365, Exchange, Nextcloud, WebDAV) syncs in by itself: GOA
   registers its calendars with EDS and Shell's calendar server watches every selected
   source (`calendar-sources.c`); a calendar unticked in GNOME Calendar stays out. Buoy
   never talks to those services; prefs offers "Online Accounts" (Settings' `launch-panel`)
   (2026-11-06, Ethan).
-- Weather — reuse `ui/weather.js` (same GWeather location as dateMenu): the pill's icon
-  and temperature, the condition, then one line with the place and the compact's details
-  (feels like when it differs, wind, humidity). No high / low: GWeather gives the current
-  reading and hourly forecasts from now, not the day's range. A click opens GNOME Weather
-  when it is installed; Ubuntu ships without it, and then the card is not a button. Hidden
-  without a place or a reading. Home has its own reader for the open: a stale reading is
-  fetched once.
+- Weather glance — reuse `ui/weather.js` (same GWeather location as dateMenu): Buoy's
+  colour icon, the temperature and the condition; wide, the icon at 48 and the place with
+  the compact's details (feels like when it differs, wind, humidity). No high / low: GWeather
+  gives the current reading and hourly forecasts from now, not the day's range. A click
+  opens GNOME Weather when it is installed (Ubuntu ships without it). Left out without a
+  place or a reading. Home has its own reader for the open: a stale reading is fetched once.
 - Up next — today's events from the same calendar source (the calendar module's
   `events.js` / `agenda.js`). The month grid is the Calendar tab's, not Home's: the tab
   has the month to pick a day on one side, that day's events on the other — today's and
@@ -722,14 +712,17 @@ go when expanded closes; each one's data lives only that long (rule 8).
   the six weeks' room, even, 26–40, the digits 12–16 px. The month's name in the accent, the
   year grey, weekends dimmed, today a filled circle, an accent dot on days with events; a
   day's events as cards (dot · title · time). A row opens the calendar app (the date menu's
-  choice) and closes the island. No calendars → Bu with "Add an Online Account" (Settings). What is left of today, at
-  most three, one line each: a bar (the accent for one running), the title, its time at the
-  end ("3:00 PM · in 25 min" within 2 h, "5:30 PM · 45 min" later, "Now · until 4:00 PM",
-  "All day" last); "+2 more" when there are more; a click opens the Calendar tab. Hidden
-  when nothing is left today.
-- Timer — current pomodoro/stopwatch. Not in v0.1 (2026-11-08, Ethan): the timer module is
-  M4, and a `--:--` with nothing behind it would be a block without an effect (rule 9's
-  spirit); it joins the end column under Up next with its item.
+  choice) and closes the island. No calendars → Bu with "Add an Online Account" (Settings). Home's Up next glance: the next of
+  today's events, its time ("3:00 PM", "Now", "All day") over its title; wide, the next two,
+  each a bar (the accent for one running; Shell's calendar server sends no calendar colour),
+  the title and "3:00 PM · in 25 min"; a click opens the Calendar tab. Left out when nothing
+  is left today.
+- Battery glance (2026-11-12, Ethan: GNOME's own battery) — the battery Quick Settings
+  reads (`ui/status/system.js` PowerToggle's UPower DisplayDevice proxy), no proxy of Buoy's:
+  the percentage, "Battery" or "Charging", Buoy's battery icons; none on a desktop. A click
+  opens Settings → Power.
+- Timer glance — a tile to start one, even when none runs (design/home); comes with the
+  timer module's M4 item. The phone's comes with "Phone via GSConnect".
 
 ## 4. Sizes
 
@@ -751,7 +744,7 @@ A function, not breakpoints: no jumps when moving between monitors.
 Every width is snapped to an even whole px (2026-11-01), so a shape centred in the even-wide
 container sits on whole pixels — no half-pixel edges; radius = ⌊h/2⌋.
 Expanded follows iOS (2026-11-01): width is fixed per screen (derived, or the user's
-`expanded-width`), height is not a setting — it fits the content up to width/2. The input
+`expanded-width`), height is not a setting — it fits the content on 56 + 16n, up to width/2 rounded down to it. The input
 container is sized to that cap.
 
 | Thing | Rule | 1920 | 2560 | 3440 |
@@ -764,7 +757,8 @@ container is sized to that cap.
 | light | an 8 px dot (even, 0.5em) at the centre of pill 1's end cap; each end grows 20 | idle 172 lit | | |
 | minimal, pills 2–3 | fixed, the idle size | 132×32 | 132×32 | 132×32 |
 | compact | design/compact (2026-11-12): width fixed at min(28em, 0.72 × expanded), whatever it holds (content-fit is the pill's alone); height 56 + 16n up to 152 — a head of 56 (leading 40, 8 above and below, 14 at the sides, round buttons 32 on its middle), then rows of 16: media 88 (its art 72), up to 3 rows 120, a **card** (a notification, an ask; NOTIFICATIONS.md §3) 136 with one line of message and 152 with two, 104 without buttons; r 28; the content carries its paddings, all scaled by the em (`shapes.js` compactMetrics); top edge at the pill's | 404 × 56 … 152 | 410 | 410 |
-| expanded | width `clamp(0.28 × W, 560, 760)` or `expanded-width` (≤ W − 40); height fits content, at most width/2; r 28 | 560 × ≤280 | 716 × ≤358 | 760 × ≤380 |
+| expanded | width `clamp(0.28 × W, 560, 760)` or `expanded-width` (≤ W − 40); height on 56 + 16n as the compact's, at most width/2 rounded down to it (2026-11-12, design/expanded; was width/2); r 28; every tab at the cap; the head 56 (the strip 32, 12 from the top); no tab (the greeting) 88 | 560 × ≤280 | 716 × ≤344 | 760 × ≤376 |
+| Home | the head 56, the main card (the rest), 8, the row of tiles 100, 12 under it and at the sides; N = floor((w − 24 + 8) / 128) tiles, each ≥ 120, radius 16; the main card low under 160, tall from 160 (§3, design/home) | card 104, N 4 | 168, N 5 | 200, N 5 |
 | container | the monitor's width (2026-11-05, was expanded + 20 each side: a compact may open on any pill, up to 4 px from the screen edge), expanded's cap + 40 tall; never reactive at rest, so it takes no clicks (Clutter picks only reactive actors, `clutter_actor_should_pick`) | 1920 | 2560 | 3440 |
 
 Leading element per tier: in minimal a cell of 24 at 1em (30 with Large Text) that a cover

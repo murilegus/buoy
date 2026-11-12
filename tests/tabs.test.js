@@ -1,5 +1,5 @@
 // Run: gjs -m tests/tabs.test.js   (pure: which tabs the strip shows, where an open starts)
-import {planStrip, stripOrder, tabFor, pressTarget, tabActivities, findTab, homeChips, homeColumns, HOME} from '../src/buoy@murilegus/lib/kit/model/tabs.js';
+import {planStrip, stripOrder, tabFor, pressTarget, tabActivities, findTab, HOME} from '../src/buoy@murilegus/lib/kit/model/tabs.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -194,32 +194,4 @@ eq(stripOrder({tabs: [{id: HOME}], slot: null, more: []}), [HOME], 'no slot: Hom
 }
 
 
-// --- Home's blocks (2026-11-08) ----------------------------------------------------
-{
-    const mediaHome = {id: 'media', kinds: ['media'], home: {column: 'start'}};
-    const agent = {id: 'agent', kinds: ['agent']};
-    const running = [act('a', 'agent'), act('m', 'media'), act('d', 'deploy'), act('m2', 'media')];
-    eq(homeChips(running, [mediaHome, agent]).map(a => a.id), ['a', 'd'],
-        'chips: every activity but those a Home block covers (media), stack order kept');
-    eq(homeChips(running, [{...mediaHome, home: undefined}, agent]).map(a => a.id), ['a', 'm', 'd', 'm2'],
-        'chips: a module without a Home block covers nothing');
-    eq(homeChips(running, []).map(a => a.id), ['a', 'm', 'd', 'm2'], 'chips: no modules, every activity');
-    eq(homeChips([], [mediaHome]), [], 'chips: nothing running, none');
-    eq(homeChips([act('x', 'x')], [{id: 'w', home: {}}]).map(a => a.id), ['x'],
-        'chips: a block module without kinds (weather) covers nothing');
-}
-{
-    const b = (id, column, ready = true, order) => ({id, column, ready, order});
-    eq(homeColumns([b('media', 'start'), b('calendar', 'end', true, 20), b('weather', 'end', true, 10)]),
-        [['media'], ['weather', 'calendar']], 'columns: start then end, each by order (weather above Up next)');
-    eq(homeColumns([b('media', 'start', false), b('calendar', 'end', true, 20), b('weather', 'end', true, 10)]),
-        [['weather', 'calendar']], 'columns: nothing playing → one column, the full width');
-    eq(homeColumns([b('media', 'start'), b('calendar', 'end', false), b('weather', 'end', false)]),
-        [['media']], 'columns: only Now playing → its column alone');
-    eq(homeColumns([b('media', 'start', false), b('weather', 'end', false)]), [], 'columns: nothing ready → none (Home is empty)');
-    eq(homeColumns([]), [], 'columns: no blocks');
-    eq(homeColumns([b('x'), b('y', 'sideways')]), [['x', 'y']], 'columns: no or an unknown column → end');
-    eq(homeColumns([b('a', 'end'), b('b', 'end')]), [['a', 'b']], 'columns: no order → module order');
-    eq(homeColumns([b('a', 'end', true, 5), b('b', 'end', true, 5)]), [['a', 'b']], 'columns: a tie → module order');
-}
 print('tabs: ok');

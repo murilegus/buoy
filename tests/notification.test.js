@@ -1,7 +1,7 @@
 // Run: gjs -m tests/notification.test.js   (no Shell needed; adapters are pure)
 import adapter, {
     TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, sharedLine, cardText, stackGroups, countText, rowText,
-    HELD_MS, waitedInQueue, Turns, MAX_WAITING, burstHeader, sharedBurst,
+    HELD_MS, waitedInQueue, Turns, MAX_WAITING, burstHeader, sharedBurst, missedRow,
 } from '../src/buoy@murilegus/lib/modules/notification/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import {validate, tierOf} from '../src/buoy@murilegus/lib/kit/model/activity.js';
@@ -320,5 +320,11 @@ eq(rowText({title: 'Lan', body: 'Hi', appName: 'Telegram'}, true), {title: 'Tele
     eq([sharedBurst({apps: []}), sharedBurst({apps: [{name: 'x', count: 0}]}), sharedBurst({})], [null, null, null], 'none: no pill');
     eq(sharedBurst({apps: [{name: '', count: 2}]}).compact.card.app, 'Notification 2', 'a nameless app: a word');
 }
+
+// --- Home's Missed row (design/home) ---------------------------------------------------------
+eq(missedRow(3, ['Slack', 'Zalo', 'Slack']), {count: 3, title: 'Notifications', detail: 'Slack, Zalo', tab: 'notification'},
+    'one row: the count, the apps once each, the Notifications tab');
+eq(missedRow(5, ['A', 'B', 'C', 'D', 'E']).detail, 'A, B, C +2', 'more than three apps: +N');
+eq([missedRow(0, []).detail, missedRow(NaN, null).count, missedRow(2.7, ['<b>x</b>']).count], [null, 0, 2], 'no app, a bad count');
 
 print('notification: ok');
