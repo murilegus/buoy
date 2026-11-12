@@ -29,6 +29,7 @@ p=pill/render; i=pill/images
 r $p/anatomy.js $i/anatomy.vi.png
 r $p/weight.js $i/weight.vi.png
 r $p/pad.js $i/pad.vi.png
+r $p/gap.js $i/gap.vi.png
 r $p/fonts.js $i/fonts.vi.png > /dev/null   # it also prints its measures
 r $p/dots.js $i/dots.vi.png
 r $p/dots.js $i/dots-guides.vi.png guides
