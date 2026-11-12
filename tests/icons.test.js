@@ -83,33 +83,35 @@ const dayparts = DAYPARTS.map(read);
 const horizon = dayparts[0].match(/<g id="arc".*?<rect id="horizon"[^>]*>/)[0];
 for (const [i, svg] of dayparts.entries())
     ok(svg.includes(horizon), `${DAYPARTS[i]}: the same horizon and arc as dawn`);
-// The horizon: exactly one pixel row, row 15 (y 15–16), x 1–23; in the 32 px pill that is row
-// 19, the time's baseline row (docs/design/icons, 2026-11-11, Ethan)
-ok(horizon.endsWith('<rect id="horizon" x="1" y="15" width="22" height="1" fill="#7A838D"/>'),
-    'the horizon: one pixel row at y 15, x 1 to 23, solid');
+// The horizon: exactly one pixel row, row 16 (y 16–17), x 1–23; in the 32 px pill that is row
+// 20, the bottom row of the time's figures at 1em (docs/design/icons, 2026-11-12, Ethan: the
+// scene a pixel lower than row 15)
+const HY = 16;
+ok(horizon.endsWith(`<rect id="horizon" x="1" y="${HY}" width="22" height="1" fill="#7A838D"/>`),
+    'the horizon: one pixel row at y 16, x 1 to 23, solid');
 // The sun's path: single pixels in the arc's grey, mirrored in x = 12, near the circle of
-// radius 8.4 around (12, 15), none on or next to the horizon row
-const ARC = [[3, 12], [4, 10], [6, 8], [8, 7], [10, 6], [13, 6], [15, 7], [17, 8], [19, 10], [20, 12]];
+// radius 8.4 around (12, 16), none on or next to the horizon row
+const ARC = [[3, 13], [4, 11], [6, 9], [8, 8], [10, 7], [13, 7], [15, 8], [17, 9], [19, 11], [20, 13]];
 const cells = [...horizon.matchAll(/<rect x="(\d+)" y="(\d+)" width="1" height="1"\/>/g)].map(m => [Number(m[1]), Number(m[2])]);
 eq(JSON.stringify(cells), JSON.stringify(ARC), 'the arc\'s pixels, left to right');
 ok(horizon.startsWith('<g id="arc" fill="#6B737C">'), 'the arc: solid #6B737C');
 for (const [x, y] of cells) {
     ok(cells.some(([mx, my]) => mx === 23 - x && my === y), `arc pixel (${x}, ${y}) has its mirror`);
-    const d = Math.hypot(x + 0.5 - 12, y + 0.5 - 15);
-    ok(Math.abs(d - 8.4) <= 0.5, `arc pixel (${x}, ${y}) is ${d.toFixed(2)} from (12, 15), not about 8.4`);
-    ok(y <= 13, `arc pixel (${x}, ${y}) stays clear of the horizon row`);
+    const d = Math.hypot(x + 0.5 - 12, y + 0.5 - HY);
+    ok(Math.abs(d - 8.4) <= 0.5, `arc pixel (${x}, ${y}) is ${d.toFixed(2)} from (12, ${HY}), not about 8.4`);
+    ok(y <= HY - 2, `arc pixel (${x}, ${y}) stays clear of the horizon row`);
 }
 // Dawn and evening: half a disc on the horizon row, five rays 35° apart, the outer two a
 // pixel shorter (2026-11-11, Ethan); evening is dawn mirrored in x = 12
 const rays = name => [...read(name).match(/<g id="sun">.*?<\/g>/)[0]
     .matchAll(/<line x1="([\d.]+)" y1="([\d.]+)" x2="([\d.]+)" y2="([\d.]+)"/g)].map(m => m.slice(1).map(Number));
 for (const [name, cx] of [['daypart-dawn', 9], ['daypart-evening', 15]]) {
-    ok(read(name).includes(`<g id="sun"><path d="M${cx - 5} 15A5 5 0 0 1 ${cx + 5} 15Z"`), `${name}: half a disc of radius 5 at x ${cx}, on row 15`);
+    ok(read(name).includes(`<g id="sun"><path d="M${cx - 5} ${HY}A5 5 0 0 1 ${cx + 5} ${HY}Z"`), `${name}: half a disc of radius 5 at x ${cx}, on row ${HY}`);
     const r = rays(name);
     eq(r.length, 5, `${name}: five rays`);
     eq(JSON.stringify(r.map(([x1, y1, x2, y2]) => Math.round(Math.hypot(x2 - x1, y2 - y1)))), '[1,2,2,2,1]',
         `${name}: the outer rays a pixel shorter than the upper three`);
-    eq(JSON.stringify(r.map(([x1, y1]) => Math.round(Math.atan2(15 - y1, x1 - cx) * 180 / Math.PI))), '[160,125,90,55,20]',
+    eq(JSON.stringify(r.map(([x1, y1]) => Math.round(Math.atan2(HY - y1, x1 - cx) * 180 / Math.PI))), '[160,125,90,55,20]',
         `${name}: rays 35° apart`);
 }
 eq(JSON.stringify(rays('daypart-evening').map(([x1, y1, x2, y2]) => [24 - x1, y1, 24 - x2, y2].map(v => v.toFixed(1))).reverse()),
@@ -143,8 +145,8 @@ if (Rsvg) {
         eq(`${px.get_width()}x${px.get_height()}`, '24x24', `${name}: renders 24 × 24`);
         const n = px.get_n_channels();
         for (let x = 0; x < 24; x++) {
-            eq(hex(px, n, x, 15), x >= 1 && x <= 22 ? '#7A838D' : 'none', `${name}: horizon row 15, column ${x}`);
-            for (const y of [16, 17, 18, 19, 20, 21, 22, 23])
+            eq(hex(px, n, x, HY), x >= 1 && x <= 22 ? '#7A838D' : 'none', `${name}: horizon row ${HY}, column ${x}`);
+            for (let y = HY + 1; y < 24; y++)
                 eq(hex(px, n, x, y), 'none', `${name}: nothing under the horizon at (${x}, ${y})`);
         }
         // an arc pixel is its grey in full, or under the sun or the moon: never half lit

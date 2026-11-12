@@ -106,13 +106,14 @@ const svg = (...parts) =>
     `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">${parts.join('')}</svg>\n`;
 
 // ---- dayparts: one horizon and one dotted arc, shared ---------------------------------
-// The horizon is exactly one pixel row, row 15 (y 15–16), x 1–23: in the 32 px pill that is
-// row 19, the time's baseline row (measured in headless Shell, 2026-11-06, Ethan). The
-// sun's path is single solid pixels on an arc around (12, 15), radius about 8.4, mirrored
+// The horizon is exactly one pixel row, row 16 (y 16–17), x 1–23: in the 32 px pill (the cell
+// at y 4) that is row 20, the bottom row of the time's figures at 1em (SF Pro Display 11, 1×,
+// measured in headless Shell 2026-11-12, Ethan: the whole scene a pixel lower than row 15).
+// The sun's path is single solid pixels on an arc around (12, 16), radius about 8.4, mirrored
 // in x = 12 (docs/design/icons, 2026-11-11). Cells are [column, row] of the right half.
-const HY = 15;
+const HY = 16;
 const AR = 8.4;
-const ARC_CELLS = [[13, 6], [15, 7], [17, 8], [19, 10], [20, 12]];
+const ARC_CELLS = [[13, 7], [15, 8], [17, 9], [19, 11], [20, 13]];
 const pixels = [...ARC_CELLS.map(([x, y]) => [23 - x, y]).reverse(), ...ARC_CELLS];
 const horizon = () =>
     `<g id="arc" fill="${ARC}">${pixels.map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`).join('')}</g>` +
@@ -125,10 +126,10 @@ const arcSun = (x, y) => sun(x, y, 3, 5, 5, 2);
 const icons = {
     'daypart-dawn': svg(horizon(), halfSun(9, HY, 5, 7, 9, 2)),
     'daypart-morning': svg(horizon(), arcSun(mx, my)),
-    'daypart-noon': svg(horizon(), arcSun(12, 7)),
+    'daypart-noon': svg(horizon(), arcSun(12, 8)),
     'daypart-afternoon': svg(horizon(), arcSun(ax, ay)),
     'daypart-evening': svg(horizon(), halfSun(15, HY, 5, 7, 9, 2)),
-    'daypart-night': svg(horizon(), moon(10.5, 7.5, 5.5), star(18.5, 3.5, 2.5), star(17.5, 10.5, 1.5)),
+    'daypart-night': svg(horizon(), moon(10.5, 8.5, 5.5), star(18.5, 4.5, 2.5), star(17.5, 11.5, 1.5)),
 
     // ---- weather: GWeather's conditions; sun or moon behind the cloud, upper left ----
     'weather-clear': svg(sun(12, 12, 6, 8, 10, 2)),
