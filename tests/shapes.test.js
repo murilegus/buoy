@@ -57,6 +57,15 @@ for (const c of CASES) {
     eq(s.minimal(5000, 'wide').w, c.wideMax, `${at} minimal cap (wide)`);
     eq(s.minimal(5000, 'bogus').w, c.minimalMax, `${at} unknown hint behaves as normal`);
     eq([s.minimal(200).h, s.minimal(200).r], [32, 16], `${at} minimal keeps pill height`);
+    // the lights at the ends (design/pill "Đèn ở hai đầu"): each end grows r + dot/2 = 20
+    eq([s.dot, s.ends], [8, 20], `${at} the dot 8, each end 20 at 1×`);
+    eq(s.lit(s.idle).w, 172, `${at} idle with a light: 132 + 2 × 20`);
+    eq([s.lit(s.idle).h, s.lit(s.idle).r], [32, 16], `${at} lit: the same height and radius`);
+    eq(s.minimal(0, 'normal', true).w, 172, `${at} lit minimal floors at the lit idle`);
+    eq(s.minimal(200, 'normal', true).w, 256, `${at} lit minimal: content + 2 × 8 + 2 × 20`);
+    eq(s.minimal(5000, 'normal', true).w, c.minimalMax, `${at} the cap counts the light: no exception`);
+    eq(s.minimal(5000, 'wide', true).w, c.wideMax, `${at} the wide cap counts it too`);
+    eq(s.lit(s.minimal(5000)).w, c.minimalMax, `${at} lit() never passes the cap`);
 
     // compact (design/compact): its content lays out its own paddings, so the compact is the
     // content's size: content-fit width from 240 to the cap, heights 56 + 16n up to 152, r 28
@@ -185,9 +194,9 @@ eq(compactMetrics(), {
     eq(s.compactMax, 404, 'Large Text: 28em = 513, 0.72 × 560 = 404 caps');
 }
 eq(Math.round(EM_1 * 100) / 100, 14.67, '1em = 11 pt at 96 dpi');
-eq(pillMetrics(), {inset: 4, pad: 8, gap: 6, buttonGap: 8, hover: 12, press: 18}, 'the pill at 1em: tokens');
-eq(pillMetrics(EM_1 * 1.25), {inset: 5, pad: 10, gap: 8, buttonGap: 10, hover: 16, press: 22}, 'Large Text (1.25)');
-eq(pillMetrics(EM_1 * 2), {inset: 8, pad: 16, gap: 12, buttonGap: 16, hover: 24, press: 36}, 'twice the font');
+eq(pillMetrics(), {inset: 4, pad: 8, gap: 6, buttonGap: 8, hover: 12, press: 18, dot: 8}, 'the pill at 1em: tokens');
+eq(pillMetrics(EM_1 * 1.25), {inset: 5, pad: 10, gap: 8, buttonGap: 10, hover: 16, press: 22, dot: 10}, 'Large Text (1.25)');
+eq(pillMetrics(EM_1 * 2), {inset: 8, pad: 16, gap: 12, buttonGap: 16, hover: 24, press: 36, dot: 16}, 'twice the font');
 eq(pillMetrics(0), pillMetrics(), 'no em: the design\'s');
 {
     const s = shapesFor({width: 1920}, PANEL_H);

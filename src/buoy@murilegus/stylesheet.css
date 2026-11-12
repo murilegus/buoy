@@ -204,8 +204,8 @@
    than GNOME's 2 px; flat, no blur. pill.js drops the keyline meanwhile. */
 .buoy-island.buoy-focused { border-color: -st-accent-color; }
 
-/* The buoy light: left edge slot, static (INDICATORS.md — one colour, one meaning). */
-.buoy-light { width: 7px; height: 7px; border-radius: 4px; }
+/* The buoy light: a dot at the centre of pill 1's left end, static (INDICATORS.md — one
+   colour, one meaning). Its size and radius come from the em (pill.js _syncDot: 8 at 1×). */
 .buoy-light-off { background-color: rgba(255, 255, 255, 0.2); /* light-off */ }
 .buoy-light-missed { background-color: #ff9f0a; /* light-missed */ }
 .buoy-light-waiting { background-color: #ff453a; /* light-waiting */ }

@@ -27,7 +27,7 @@ export const EM_1 = 11 * 96 / 72;   // 14.67
  * @param {number} [em]  one em in logical px: the font's size × resolution / 72, as St reads
  *   `em` in CSS (st-theme-node.c get_length_from_term)
  * @returns {{inset: number, pad: number, gap: number, buttonGap: number, hover: number,
- *   press: number}}
+ *   press: number, dot: number}}
  */
 export function pillMetrics(em = EM_1) {
     const k = (em > 0 ? em : EM_1) / EM_1;
@@ -38,6 +38,7 @@ export function pillMetrics(em = EM_1) {
         buttonGap: Math.round(8 * k),   // trailing → a button
         hover: even(12 * k),            // 0.75em wider under the pointer (was × 1.10)
         press: even(18 * k),            // pressed: about 0.5em past the hover (was × 1.16)
+        dot: even(8 * k),               // the light at an end: 8, even so it covers whole px
     };
 }
 
@@ -110,6 +111,12 @@ export function shapesFor(monitor, panelH, opts = {}) {
     // pill 1's cap: 24em, so the text never grows with the screen, and 0.6 × expanded so
     // minimal < compact < expanded (tokens "Độ rộng tối đa trên thanh"); `wide` 0.8 × expanded
     const minimalCap = Math.min(evenDown(24 * em), even(expW * 0.6));
+    const wideCap = even(expW * 0.8);
+    const capOf = hint => hint === 'wide' ? wideCap : minimalCap;
+    // a light on pill 1 sits at the centre of an end's round cap, and each end grows by that
+    // radius and half the dot: 16 + 4 = 20 at 1×, both ends even for one light, so the
+    // content stays where it is (design/pill "Đèn ở hai đầu", 2026-11-10)
+    const ends = h / 2 + m.dot / 2;
     // the compact: 16em … min(28em, 0.72 × expanded), 240 … 404 at 1920 (tokens "Compact")
     const cm = compactMetrics(em);
     const compactMax = Math.max(cm.min, Math.min(evenDown(28 * em), even(expW * 0.72)));
@@ -127,11 +134,17 @@ export function shapesFor(monitor, panelH, opts = {}) {
         press: base => ({w: even(base.w + m.press), h: h + 4, r: radius(h + 4)}),
         // minimal (the pill in the bar, SPEC §2), content-fit; `hint` is a discrete size hint
         // from the adapter, never px. Pill 1 keeps it however many pills share the bar.
-        minimal: (contentW, hint = 'normal') => ({
-            w: clamp(evenUp(Math.ceil(contentW) + 2 * m.pad), idleW,
-                hint === 'wide' ? even(expW * 0.8) : minimalCap),
-            h, r: radius(h),
-        }),
+        // `lit`: pill 1 with a light at its ends — the cap counts it, no exception (2026-11-10)
+        minimal: (contentW, hint = 'normal', lit = false) => {
+            const grow = lit ? 2 * ends : 0;
+            return {
+                w: clamp(evenUp(Math.ceil(contentW) + 2 * m.pad + grow), idleW + grow, capOf(hint)),
+                h, r: radius(h),
+            };
+        },
+        // a resting shape with the light at its ends, up to the cap
+        lit: (base, hint = 'normal') => ({...base, w: Math.min(base.w + 2 * ends, Math.max(base.w, capOf(hint)))}),
+        dot: m.dot, ends,
         // compact: one width, min(28em, 0.72 × expanded), whatever it holds — content-fit is
         // the pill's alone (Ethan 2026-11-12: a content-fit compact put its buttons beside
         // the text, and looked wrong). Its height from its content, paddings included, by

@@ -290,7 +290,7 @@ and shrinks when they are off; `auto` and `none` are the kit's own.
 | value | what the pill shows | module | refresh |
 |---|---|---|---|
 | `auto` | the idle plan that matters right now, chosen and rotated by context (§2a-iii) — a smart stack, not a random carousel | core | plan signals + one re-rank timer while idle |
-| `none` | black pill + the **buoy light**: a small amber dot at the leading edge. Off normally; lit when something was missed (§6 missed history) | core | event |
+| `none` | black pill + the **buoy light**: a small dot at its left end (grey, amber or red). Off normally; lit when something was missed (§6 missed history) | core | event |
 | `clock` | a *second* clock, styled unlike the one in the right cluster: an icon of the part of the day + the time in bold even figures. Six icons, one per daypart (`kit/model/daypart.js`, §2d): the sun along an arc over the horizon (dawn and evening half-set in peach `#FFB889`, morning/noon/afternoon in yellow `#FFD23F`; palette A, `scripts/icons.js`), then the moon; colour SVGs at 20 px like art and Bu, no state colour (2026-11-04, Ethan). The time is GNOME's: 12/24 h (`clock-format`), locale, and seconds when Date & Time shows them (`clock-show-seconds`). Variants via `idle-clock-style` (2026-11-08, Ethan): icon and the part of the day in words ("Afternoon", the default) · icon and time · icon only · the part of the day in words · time only; the old "with seconds" left for GNOME's own setting | `clock` | GNOME's wall clock (`GnomeDesktop.WallClock`, as the lock screen): a tick on the minute (each second with seconds), right after suspend; it exists only while the idle pill is on screen |
 | `weather` | condition icon + temperature ("31°", the user's unit, rounded as the date menu's forecast); its compact (hover): "31° · Partly cloudy" over "Feels like 34° · Wind NE 12 km/h · Humidity 75%", each part left out when unknown; the day itself is Home's (§3). Icons are Buoy's own colour SVGs, one per GNOME condition (13, with clear and few-clouds at night), one family with the clock's dayparts (`scripts/icons.js`, palette A: soft blue cloud, yellow sun, teal moon, rain and wind) — GNOME's symbolic icon as fallback (2026-11-06, Ethan: the symbolic ones read flat). **The place** (2026-11-06, Ethan: GNOME Weather is not installed on Ubuntu, and without it Shell's client never locates): the first of `org.gnome.shell.weather` `locations`, the key GNOME Weather and the date menu use. "Use my location" (`idle-weather-automatic`, on by default): each ask first asks Geoclue once as `org.gnome.Shell` (a system app in geoclue.conf: no dialog, bounded by Location Services) and puts the nearest GWeather city first there; Geoclue is stopped right after. Off: a city searched under the plan on the Island page (GWeather's own cities, accents ignored). Location Services off → "Location Services is off" with an Open Settings button (Privacy). **Units** (2026-11-06, Ethan: an en_US session showed °F in Vietnam): GNOME Weather's own keys, `org.gnome.GWeather4` `temperature-unit` / `speed-unit` — GWeather's own default reads only the locale. Buoy's first enable sets them to °C and km/h where the user never chose (`weather-defaults-applied`, like the clock's keys); prefs has Temperature and Wind speed under the plan, shared with GNOME Weather, Automatic last (the locale's). No place or no data → the pill keeps only the light, and the plan's row says why | `weather` | the date menu's own `WeatherClient` (`misc/weather.js`, `dateMenu.js` WeatherSection) — same place, no second client; asked for news only while the idle pill shows it: at once when older than `idle-weather-refresh` (30 min / 1 h), then on that interval (2026-11-06) |
 | `next-event` (`idle-content` `calendar`, "Next Event") | today's next event: the calendar icon, the title, the time at the end ("3:00 PM", "until 4:00 PM" while it runs, "all day"), so a long title ellipsizes and the time stays; the pill grows past the idle size to fit, up to the minimal cap (2026-11-08). Compact: the title over "3:00 PM – 4:00 PM · in 25 min". One starting within 30 min comes before one running; then an all-day event, unless `idle-calendar-all-day` is off (2026-11-08); nothing left today → nothing (only the light). No Join glyph: Shell's calendar server sends only id, title and times (M4 "Meeting in 5 min · Join") | `calendar` | the date menu's event source (`changed`); the wall clock's minute moves it |
@@ -305,36 +305,41 @@ ARCHITECTURE rule 9). `idle-content` defaults to `auto` (2026-11-08, when it lan
 `clock` until then, Ethan, 2026-11-04); with a plan the grey "off" light is not drawn, amber and red still are.
 
 Pill structure is the same in every state: `[light] leading · text · trailing [dot]`.
-The two edge slots are Buoy's own status layers; the three zones between them belong to
-the plan (idle) or the adapter (minimal). **Edge slots exist only when they have
-something to say**: no light → no slot, the three zones take the full pill; a light or
-dot appears → that zone nudges inward and the pill grows a few px (one small morph).
-The grey "off" light is drawn only in idle `none`, so an empty pill never looks broken;
-idle `none` keeps the full idle width (§4).
+The two ends are Buoy's own status lights; the three zones between them belong to the plan
+(idle) or the adapter (minimal). **The lights live at pill 1's ends** (2026-11-10, Ethan;
+design/pill "Đèn ở hai đầu"; built 2026-11-12): an 8 px dot at the centre of the end's round
+cap (16 from the edge at 1×), and the pill grows at **both** ends by that radius and half the
+dot (16 + 4 = 20 at 1×; idle 132 → 172), so the content never moves — even for one light.
+No light, no growth. The cap is the whole pill's, the lights counted: at pill 1's cap the text
+ellipsizes as any long text. A light coming or going is one small morph. Side pills, a
+compact, a card and expanded have no light: it is back as soon as pill 1 rests again. The
+grey "off" light is drawn only in idle `none`, so an empty pill never looks broken.
 
-### 2a-i. The buoy light (left edge slot, idle, minimal and compact)
+### 2a-i. The buoy light (pill 1's left end, idle and minimal)
 
 Static, never blinking. Off (faint grey, idle `none` only) · **amber** = something ended while the island
 was hidden (fullscreen; away and DND are M4) (missed history: hover names it, opening Home turns it off — 2026-11-03), or GNOME's
 notifications nobody has seen (off once the Notifications tab or GNOME's list shows them —
 2026-11-08, NOTIFICATIONS.md §2) · **red** = something
-is waiting for your answer (an `ask` that could not show). Red › amber. Shown in idle, minimal
-**and** compact — it is a separate slot, so it never competes with the app icon; `kit/ui/present/`
-nudges the leading zone inward when the light is on. Hidden only while expanded, where
-Home already lists what was missed.
+is waiting for your answer (an `ask` that could not show). Red › amber. Shown on pill 1 in idle and minimal, at its
+left end (§2a above), never among the zones, so it never competes with the app icon; the pill
+draws it (`kit/ui/pill.js`), not the content. Not on side pills, nor in a compact, a card or
+expanded (2026-11-10: the compact only shows under the pointer, and Home lists what was
+missed).
 
 **Bu's lamp is not the light** (2026-11-08, Ethan; it was from 2026-11-03): a pill Bu
-leads (`{mascot}`, agent activities and the greeting) draws the edge dot like any other,
+leads (`{mascot}`, agent activities and the greeting) draws the end's dot like any other,
 and Bu's lamp keeps its pose's colour (INDICATORS § Bu's lamp) — the lamp is too small to
 read as the light, and an amber that stayed while notifications were unseen hid the
 agent's colour.
 
-### 2a-ii. Privacy dot (right edge slot, idle, minimal and compact)
+### 2a-ii. Privacy dot (pill 1's right end, idle and minimal)
 
 Mirrors iOS and the buoy light: a small **orange** (mic) / **green** (camera, screen
-share) dot at the far right of the pill, outside the content zones, present whether the
-pill is idle or showing an activity. `kit/ui/present/` inserts it last and nudges the
-trailing zone inward; adapters never know. Click → expanded Home with "in use by Zoom".
+share) dot at the centre of pill 1's right end, outside the content zones, present whether the
+pill is idle or showing an activity; the ends grow as for the buoy light (§2a), so one dot
+or both give the same width. The pill draws it; adapters never know. (The ends are built;
+the dot itself waits for FEATURES "Privacy dot".) Click → expanded Home with "in use by Zoom".
 GNOME's own indicator in the system cluster is hidden while the `privacy` module is on;
 setting `privacy-dot = pill | system | both`, default `pill`.
 
@@ -755,7 +760,8 @@ container is sized to that cap.
 | pill height `h` | bar − 2 × 0.25em; its content box h − 2 × 0.25em, the leading's cell | 32 (cell 24) | 32 | 32 |
 | idle | 8 + cell + 6 + the idle clock's widest text + 8, the text measured at run time on the pill's label: the font's widest digit, `88∶88∶88` and the wider of AM/PM (design/pill "Idle"); r = h/2 | 132×32 at 1× (Ubuntu Sans: 126; DejaVu Sans: 146; scale 2: +6) | | |
 | hover / press | +0.75em / +1.25em width, +2 / +4 height (a pill before or without its compact) | 144×34 / 150×36 from idle | | |
-| minimal, pill 1 | content + 2 × 8 (rounded up), clamped to [idle, min(24em, 0.6 × expanded)] (`'wide'` hint → 0.8 × expanded) | ≤ 336 | ≤ 352 | ≤ 352 |
+| minimal, pill 1 | content + 2 × 8 (rounded up), clamped to [idle, min(24em, 0.6 × expanded)] (`'wide'` hint → 0.8 × expanded); with a light + 2 × 20 (r + dot/2) and at least idle + 40, the cap unchanged (2026-11-12) | ≤ 336 | ≤ 352 | ≤ 352 |
+| light | an 8 px dot (even, 0.5em) at the centre of pill 1's end cap; each end grows 20 | idle 172 lit | | |
 | minimal, pills 2–3 | fixed, the idle size | 132×32 | 132×32 | 132×32 |
 | compact | design/compact (2026-11-12): width fixed at min(28em, 0.72 × expanded), whatever it holds (content-fit is the pill's alone); height 56 + 16n up to 152 — a head of 56 (leading 40, 8 above and below, 14 at the sides, round buttons 32 on its middle), then rows of 16: media 88 (its art 72), up to 3 rows 120, a **card** (a notification, an ask; NOTIFICATIONS.md §3) 136 with one line of message and 152 with two, 104 without buttons; r 28; the content carries its paddings, all scaled by the em (`shapes.js` compactMetrics); top edge at the pill's | 404 × 56 … 152 | 410 | 410 |
 | expanded | width `clamp(0.28 × W, 560, 760)` or `expanded-width` (≤ W − 40); height fits content, at most width/2; r 28 | 560 × ≤280 | 716 × ≤358 | 760 × ≤380 |

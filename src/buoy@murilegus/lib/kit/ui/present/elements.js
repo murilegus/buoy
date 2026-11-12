@@ -317,16 +317,3 @@ export function badge(text) {
     l.reactive = true;
     return l;
 }
-
-/**
- * The buoy light (INDICATORS.md): the pill's left edge slot. Static, never blinks.
- *
- * @param {?string} light  'missed', 'waiting', 'off' or none
- * @returns {?St.Widget}
- */
-export function lightDot(light) {
-    return light ? new St.Widget({
-        style_class: `buoy-light buoy-light-${light}`,
-        y_align: Clutter.ActorAlign.CENTER,
-    }) : null;
-}

@@ -394,10 +394,15 @@ export class Island {
      * @param {boolean} [opts.fade]  cross-fade: `auto` switched plans (SPEC §2a-iii)
      */
     setIdle(data, {fade = false} = {}) {
-        this.idle = data;
         const pill = this._pills[0];
-        if (pill && pill.id === null && !this._open && !this._destroyed)
+        const was = pill?.id === null ? pill.bg.width : null;
+        this.idle = data;
+        if (pill && pill.id === null && !this._open && !this._destroyed) {
             pill.configure(null, {...this._roleOf(pill), fade});
+            // `none` ↔ a plan turns the grey light on or off: the pill's ends follow
+            if (pill.restShape().w !== was)
+                this._layout(true);
+        }
     }
 
     // Scroll on the idle pill (SPEC §2a-iii): the next / previous plan in `auto`. A
@@ -445,8 +450,10 @@ export class Island {
         if (light === this._light)
             return;
         this._light = light;
-        if (!this._open)          // expanded hides the light (INDICATORS.md)
-            this._apply(false);
+        // expanded hides the light (INDICATORS.md); pill 1's ends grow or shrink with it,
+        // one small morph (SPEC §2)
+        if (!this._open)
+            this._apply(true);
     }
 
     // --- pills ------------------------------------------------------------------------

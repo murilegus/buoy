@@ -101,7 +101,7 @@ beside it, `off` dims both — a muted level, 2026-11-05) · `{countdown}` / `{t
 2026-11-05: a Spotify ad) ·
 **`{mascot: '<pose>', icon?}`** (Bu, added 2026-11-03): one of the 13 poses in
 `MASCOT.md`; an unknown pose falls back to `icon`, else `idle`. Bu's lamp always shows
-its pose's colour; the buoy light stays in the left edge slot (INDICATORS). The pose
+its pose's colour; the buoy light stays at pill 1's left end (INDICATORS). The pose
 is data; frames, the swap timer and colours are the kit's.
 
 **One minimal for every place** (2026-11-05): an adapter returns one `leading · text ·

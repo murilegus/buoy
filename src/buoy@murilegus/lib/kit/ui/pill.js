@@ -6,7 +6,7 @@ import St from 'gi://St';
 import {buildCompact, buildMissedCompact} from './present/compact.js';
 import {buildExpanded} from './present/expanded.js';
 import {buildIdle, buildMinimal} from './present/minimal.js';
-import {planCompact, planExpanded, keyline} from '../model/presentation.js';
+import {lightSlot, planCompact, planExpanded, keyline} from '../model/presentation.js';
 import {compactCx, shrinkStop} from '../model/shapes.js';
 
 const COMPACT_DELAY = 300;  // ms of hover before the pill grows into its compact (SPEC §2)
@@ -76,6 +76,7 @@ export class Pill {
         this._collapsing = false;    // until the collapse morph lands: bg clips the content
         this._follow = null;         // {t, id}: bg transition the content clip follows
         this._destroyed = false;
+        this._dot = null;            // the buoy light at the left end (_syncDot)
 
         this.bg = new St.Widget({style_class: 'buoy-island', reactive: true, track_hover: true});
         this.content = new St.Bin({style_class: 'buoy-content', reactive: true, track_hover: true});
@@ -175,6 +176,7 @@ export class Pill {
         this.id = activity?.id ?? null;
         this.activity = activity;
         Object.assign(this, {role, light, more});
+        this._syncDot();
         if (this.expanded) {
             if (activity && !this._panel)  // the panel updates itself (Home.update)
                 this._setContent(buildExpanded(activity), false);
@@ -246,12 +248,47 @@ export class Pill {
     // --- shapes -------------------------------------------------------------------
 
     restShape() {
-        // idle: the idle size, wider only for a plan that needs it (content-fit as minimal)
-        if (!this.activity)
-            return this._contentW > this._s.idle.w - 2 * this._s.pad ? this._s.minimal(this._contentW) : this._s.idle;
+        // pill 1 with a light grows at both ends (design/pill "Đèn ở hai đầu"); idle: the
+        // idle size, wider only for a plan that needs it (content-fit as minimal)
+        const lit = this._light() !== null;
+        if (!this.activity) {
+            if (this._contentW > this._s.idle.w - 2 * this._s.pad)
+                return this._s.minimal(this._contentW, 'normal', lit);
+            return lit ? this._s.lit(this._s.idle) : this._s.idle;
+        }
         if (this.role === 'side')
             return this._s.side;
-        return this._s.minimal(this._contentW, this.activity.sizeHint);
+        return this._s.minimal(this._contentW, this.activity.sizeHint, lit);
+    }
+
+    // The light pill 1 has at its ends (SPEC §2a-i): amber or red, the grey `off` only on an
+    // empty idle pill; side pills never. Its room stays in the resting shape while a compact
+    // or expanded covers it, so the pills beside it do not move.
+    _light() {
+        if (this.role !== 'centre')
+            return null;
+        return lightSlot(this.light, {idle: !this.activity && !this._island.idle});
+    }
+
+    // The dot: at the centre of the left end's round cap (16 from the edge at 1×), drawn on
+    // the bg so it rides the morph; not in a compact, a card or expanded, back as soon as
+    // the pill is (design/pill, 2026-11-10).
+    _syncDot() {
+        const light = this.expanded || this._compact ? null : this._light();
+        if (!light) {
+            this._dot?.destroy();
+            this._dot = null;
+            return;
+        }
+        if (!this._dot) {
+            this._dot = new St.Widget({});
+            this.bg.add_child(this._dot);
+        }
+        const d = this._s.dot, at = Math.round((this._s.idle.h - d) / 2);
+        this._dot.style_class = `buoy-light buoy-light-${light}`;
+        this._dot.set_style(`border-radius: ${d / 2}px;`);
+        this._dot.set_size(d, d);
+        this._dot.set_position(at, at);
     }
 
     // The grown pill: from its content's size, centred on the pill and kept on screen;
@@ -442,6 +479,7 @@ export class Pill {
         this.expanded = true;
         this._panel = panel;
         this._dropCompact();          // the panel replaces the compact's content
+        this._syncDot();
         this._setContent(panel ?? buildExpanded(this.activity), false);
         this._layoutContent();
         this._morph(this.currentShape(), SHAPE_MS); // fades the content in with the reveal
@@ -455,6 +493,7 @@ export class Pill {
         // Clear it; the next real enter sets it again.
         this.bg.hover = false;
         this.content.hover = false;
+        this._syncDot();
         this._setContent(this._restingContent(), false);
         this._layoutContent();
         this._collapsing = true;
@@ -472,19 +511,20 @@ export class Pill {
     // --- content ------------------------------------------------------------------
 
     _restingContent() {
-        const light = this.role === 'centre' ? this.light : null;
         const compact = this._compact ? this._compactContent() : null;
         if (compact)
             return compact;
         // the content box: the pill less its padding each side (design/pill), the leading
         // in its cell, the gaps of the em
-        const s = this._s, pad = 2 * s.pad, metrics = {cell: s.cell, gap: s.gap, buttonGap: s.buttonGap};
+        // the light's ends come off the cap (design/pill: the cap counts the light)
+        const s = this._s, pad = 2 * s.pad + (this._light() ? 2 * s.ends : 0);
+        const metrics = {cell: s.cell, gap: s.gap, buttonGap: s.buttonGap};
         if (!this.activity)
-            return buildIdle({width: s.idle.w - pad, maxWidth: s.minimal(Infinity).w - pad, light, plan: this._island.idle, metrics});
+            return buildIdle({width: s.idle.w - 2 * s.pad, maxWidth: s.minimal(Infinity).w - pad, plan: this._island.idle, metrics});
         if (this.role === 'side')
             return buildMinimal(this.activity, {maxWidth: s.side.w - pad, more: this.more, side: true, metrics});
         const capW = s.minimal(Infinity, this.activity.sizeHint).w;
-        return buildMinimal(this.activity, {maxWidth: capW - pad, light, more: this.more, metrics});
+        return buildMinimal(this.activity, {maxWidth: capW - pad, more: this.more, metrics});
     }
 
     // The amber missed list over the activity's own compact (INDICATORS.md), else that;
@@ -736,6 +776,7 @@ export class Pill {
         if (this._compact || this.expanded || this._destroyed || !this._hasCompact())
             return;
         this._compact = true;
+        this._syncDot();
         this._island._compactShown(this, true);
         this._swapResting(SHAPE_MS);  // a shape morph that uncovers its content (SPEC §5)
     }
@@ -757,6 +798,7 @@ export class Pill {
         if (!this._compact)
             return false;
         this._compact = false;
+        this._syncDot();
         this._island._compactShown(this, false);
         return true;
     }
