@@ -2,41 +2,34 @@ import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {upNext} from './agenda.js';
+import {upNext, upNextTile} from './agenda.js';
 import {EventReader} from './events.js';
 
+const ICON = 'x-office-calendar-symbolic';
+const WIDE_ROWS = 2;
+
 /**
- * Home's Up next (SPEC §3, 2026-11-08): what is left of today (agenda.js `upNext`) — at
- * most three, running ones marked in the accent as the Calendar tab marks them, "+2 more"
- * when there are more — each one line: a bar, its title, its time at the end ("3:00 PM · in
- * 25 min"), so three fit under the weather in the expanded height. A click
- * opens the Calendar tab, which has the month and the week ahead. Nothing left today, or no
- * calendar → not ready, and Home leaves the card out.
+ * Home's Up next glance (design/home, 2026-11-11): a tile with the next of today's events
+ * (agenda.js `upNext`: running or still to come) — its time and title; wide, the next two,
+ * each a bar, its title and "3:00 PM · in 25 min", a running one's bar in the accent as the
+ * Calendar tab marks it. Shell's calendar server sends no calendar colour (only id, title
+ * and times), so the bar is the accent or grey. A click opens the Calendar tab. Nothing
+ * left today, or no calendar → not ready, and Home leaves the tile out.
  *
  * The events are the date menu's (events.js), read while Home is open; made, it brings the
- * date menu's calendar to today so today's events are loaded. No timer: Home lays out its
- * blocks again on every change of the stack and calls `refresh` then, which redoes the
- * times ("in 25 min").
+ * date menu's calendar to today so today's events are loaded. No timer: Home lays its
+ * glances out again on every change of the stack and calls `refresh` then.
  */
-export class CalendarHome {
+export class CalendarGlance {
     /**
      * @param {object} [kit]
      * @param {function(string):void} [kit.open]  select a tab of the panel
-     * @param {function():void} [kit.changed]  `ready` flipped: Home lays out again
+     * @param {function():void} [kit.changed]  the tile changed: Home lays out again
      */
     constructor({open = null, changed = null} = {}) {
         this._open = open;
         this._changed = changed;
         this._up = {rows: [], more: 0};
-        this._box = new St.BoxLayout({
-            style_class: 'buoy-home-upnext', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
-        });
-        this.actor = new St.Button({
-            style_class: 'buoy-home-card buoy-home-hit', child: this._box, x_expand: true, y_expand: true,
-            can_focus: true, accessible_name: 'Up next', x_align: Clutter.ActorAlign.FILL,
-            y_align: Clutter.ActorAlign.FILL,
-        });
-        this.actor.connect('clicked', () => this._open?.('calendar'));
         this._reader = new EventReader(() => this.refresh());
         this._reader.ensureToday();
         this.refresh(false);
@@ -47,51 +40,61 @@ export class CalendarHome {
         return this._up.rows.length > 0;
     }
 
+    /** @returns {?object} the tile (kit/ui/home.js) */
+    get tile() {
+        const t = upNextTile(this._up.rows[0]);
+        return t ? {icon: ICON, value: t.value, caption: t.caption, detail: this._up.rows[0].detail} : null;
+    }
+
     /**
      * Read again (the time moved, or the events changed).
      *
-     * @param {boolean} [notify]  call `changed` when `ready` flipped
+     * @param {boolean} [notify]  call `changed` when the tile changed
      */
     refresh(notify = true) {
-        const was = this.ready;
+        const before = JSON.stringify(this._up.rows.slice(0, WIDE_ROWS).map(r => [r.title, r.detail, r.now]));
         this._up = upNext(this._reader?.state.events ?? [], Date.now());
-        this._render();
-        if (notify && was !== this.ready)
+        const after = JSON.stringify(this._up.rows.slice(0, WIDE_ROWS).map(r => [r.title, r.detail, r.now]));
+        if (notify && before !== after)
             this._changed?.();
     }
 
-    _render() {
-        this._box.destroy_all_children();
-        const {rows, more} = this._up;
+    /**
+     * The wide tile: the next two events.
+     *
+     * @returns {?Clutter.Actor}
+     */
+    wide() {
+        const rows = this._up.rows.slice(0, WIDE_ROWS);
         if (!rows.length)
-            return;
-        const header = new St.BoxLayout({style_class: 'buoy-home-header'});
-        header.add_child(new St.Label({text: 'Up next', x_expand: true}));
-        if (more)
-            header.add_child(new St.Label({text: `+${more} more`}));
-        this._box.add_child(header);
+            return null;
+        const box = new St.BoxLayout({style_class: 'buoy-home-upnext', orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_align: Clutter.ActorAlign.CENTER});
+        box.add_child(new St.Icon({icon_name: ICON, icon_size: 16, style_class: 'buoy-icon', x_align: Clutter.ActorAlign.START}));
         for (const r of rows) {
-            const row = new St.BoxLayout({style_class: `buoy-home-event${r.now ? ' buoy-home-event-now' : ''}`});
+            const row = new St.BoxLayout({style_class: `buoy-home-event${r.now ? ' buoy-home-event-now' : ''}`, x_expand: true});
             row.add_child(new St.Widget({style_class: 'buoy-home-event-bar', y_expand: true}));
-            const title = ellipsized(r.title, 'buoy-home-title');
-            title.x_expand = true;
-            row.add_child(title);
-            row.add_child(ellipsized(r.detail, 'buoy-home-subtitle'));
-            this._box.add_child(row);
+            const text = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+            text.add_child(ellipsized(r.title, 'buoy-home-title'));
+            text.add_child(ellipsized(r.detail, 'buoy-home-tile-caption'));
+            row.add_child(text);
+            box.add_child(row);
         }
-        this.actor.accessible_name = ['Up next', ...rows.map(r => `${r.title}, ${r.detail}`)].join('; ');
+        return box;
+    }
+
+    activate() {
+        this._open?.('calendar');
     }
 
     destroy() {
         this._reader?.destroy();
         this._reader = null;
         this._changed = null;
-        this.actor.destroy();
     }
 }
 
 function ellipsized(text, styleClass) {
-    const l = new St.Label({text, style_class: styleClass, y_align: Clutter.ActorAlign.CENTER});
+    const l = new St.Label({text, style_class: styleClass});
     l.clutter_text.ellipsize = Pango.EllipsizeMode.END;
     return l;
 }

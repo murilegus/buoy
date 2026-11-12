@@ -124,6 +124,7 @@ export default class BuoyExtension extends Extension {
         };
         this._island.missed = {
             list: () => this._stack?.missed ?? [],
+            flags: () => this._stack?.missedFlags ?? [],   // a source's own unseen (notifications), Home's Missed
             seen: () => this._stack?.seeMissed(),
             open: (id, at) => this._stack?.openMissed(id, at),
             clear: () => this._stack?.clearMissed(),

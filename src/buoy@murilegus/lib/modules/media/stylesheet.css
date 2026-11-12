@@ -1,16 +1,13 @@
 /* The media module's own CSS, loaded by kit/ui/styles.js while it runs (ARCHITECTURE
  "Stylesheets"). At equal specificity stylesheet.css wins over it. */
 
-/* its block on Home (media/home.js) */
-.buoy-home-media { spacing: 8px; }
-.buoy-home-media-track { spacing: 10px; }
-.buoy-home-media-art { border-radius: 10px; }
-.buoy-home-media-tile { border-radius: 10px; background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
-.buoy-home-meta { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 11px; }
+/* Home's main card for a player (home.js MediaCard, design/home): the cover 8 in, then the text */
+.buoy-home-media { padding: 8px; spacing: 16px; }
+.buoy-home-media-text { padding: 4px 8px 4px 0; spacing: 4px; }
+.buoy-home-media-title-tall { color: #fff; /* fg */ font-size: 1.27em; font-weight: 700; }
+.buoy-home-media-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; font-feature-settings: "tnum"; }
+.buoy-home-media-transport { spacing: 8px; }
 .buoy-home-media-bar { color: #fff; /* fg */ }
-.buoy-home-media-transport { spacing: 18px; }
-.buoy-media-button.buoy-home-media-play { padding: 8px; color: #000; /* fg-on-inverse */ background-color: #f1efe8; /* fill-inverse */ }
-.buoy-media-button.buoy-home-media-play:hover { background-color: #fff; /* fill-inverse-hover */ }
 
 /* The Media tab (modules/media/tab.js): players, the track, the position, the transport. */
 /* layout A (2026-11-08): with more than one player a row of chips, then the art as tall as
@@ -51,10 +48,9 @@
    50 %, border-strong 70 %, fg-subtle 70 %, fg-disabled 50 %; the fills stay. The prefix adds
    a class, so a rule that must still win over one of these is repeated here after it.
    tests/palette.test.js checks every use of those four roles has its line here. */
-.buoy-hc .buoy-home-media-tile { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
-.buoy-hc .buoy-home-meta { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-media-tile { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-media-album { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-media-button { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-media-on, .buoy-hc .buoy-media-skip { color: #fff; /* fg */ }
-.buoy-hc .buoy-media-play, .buoy-hc .buoy-media-button.buoy-home-media-play { color: #000; /* fg-on-inverse */ }
+.buoy-hc .buoy-media-play { color: #000; /* fg-on-inverse */ }
+.buoy-hc .buoy-home-media-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

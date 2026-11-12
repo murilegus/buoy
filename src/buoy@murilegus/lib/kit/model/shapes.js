@@ -104,7 +104,6 @@ export function shapesFor(monitor, panelH, opts = {}) {
     const expW = opts.expandedWidth > 0
         ? Math.min(even(opts.expandedWidth), maxW)
         : even(clamp(monitor.width * 0.28, 560, 760));             // 1920→560, 2560→716, 3440→760
-    const expH = Math.round(expW / 2);
     // 8 + 24 + 6 + the clock + 8 (design/pill "Idle"): 131 → 132 at 1×, even
     const textW = opts.idleTextW > 0 ? opts.idleTextW : IDLE_TEXT_1EM * em / EM_1;
     const idleW = evenUp(2 * m.pad + cell + m.gap + Math.ceil(textW));
@@ -119,6 +118,10 @@ export function shapesFor(monitor, panelH, opts = {}) {
     const ends = h / 2 + m.dot / 2;
     // the compact: 16em … min(28em, 0.72 × expanded), 240 … 404 at 1920 (tokens "Compact")
     const cm = compactMetrics(em);
+    // expanded's height, as the compact's, on 56 + 16n: up to w/2 rounded down to it — 280 /
+    // 344 / 376 at 1920 / 2560 / 3440 (design/expanded, 2026-11-10)
+    const onRhythm = v => cm.head + Math.max(0, Math.ceil((v - cm.head) / cm.row)) * cm.row;
+    const expH = cm.head + Math.max(0, Math.floor((expW / 2 - cm.head) / cm.row)) * cm.row;
     const compactMax = Math.max(cm.min, Math.min(evenDown(28 * em), even(expW * 0.72)));
     const compactTall = cm.head + cm.maxRows * cm.row;
     // The container spans the monitor: a compact may open on any pill and goes up to
@@ -160,6 +163,7 @@ export function shapesFor(monitor, panelH, opts = {}) {
         compactMetrics: cm,
         // h is the cap: expanded fits its content up to this height (CONTRACT.md §5.4)
         expanded: {w: expW, h: expH, r: 28},
+        expandedH: contentH => Math.min(expH, onRhythm(Math.ceil(contentH))),
         container: {w: containerW, h: expH + 2 * OVERSHOOT},
         // the pill's own metrics (design/pill): its content box sits pad in from each side
         // and inset from top and bottom; the leading takes a cell × cell square

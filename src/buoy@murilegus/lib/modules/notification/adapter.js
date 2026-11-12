@@ -406,6 +406,20 @@ export function sharedBurst({apps, at, close = null, alertDone = null}) {
     };
 }
 
+/**
+ * Home's Missed row for GNOME's notifications nobody has seen (design/home "Bị nhỡ và +K"):
+ * one row, "Notifications · 3", the apps they came from; it opens the Notifications tab.
+ *
+ * @param {number} count  unseen notifications
+ * @param {*[]} apps  their apps' names, newest first (repeats allowed)
+ * @returns {{count: number, title: string, detail: ?string, tab: string}}
+ */
+export function missedRow(count, apps) {
+    const names = [...new Set((Array.isArray(apps) ? apps : []).map(a => plainText(a)).filter(Boolean))];
+    const detail = names.length > 3 ? `${names.slice(0, 3).join(', ')} +${names.length - 3}` : names.join(', ');
+    return {count: Math.max(0, Math.floor(count) || 0), title: 'Notifications', detail: detail || null, tab: 'notification'};
+}
+
 export default {
     notification(ev) {
         const app = plainText(ev.appName) || 'Notification';

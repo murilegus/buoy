@@ -82,6 +82,8 @@ export default {
                 center: {title, subtitle: artist || app || null},
                 bottom: {transport: true},
             },
+            // Home's tile: the elapsed time over the title (design/home)
+            tile: {live: liveOf(ev), caption: title},
             actions: transport(ev),
             minimalAction: false,
             onPress: ev.raise,

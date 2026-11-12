@@ -290,3 +290,21 @@ export function upNext(events, now, {max = UP_NEXT_MAX} = {}) {
         more: Math.max(0, all.length - n),
     };
 }
+
+/**
+ * Home's Up next tile (design/home, 2026-11-11): the next row's time as the value — "Now"
+ * while it runs, "All day", else its start ("3:00 PM") — and its title as the caption.
+ *
+ * @param {?object} row  an upNext row
+ * @returns {?{value: string, caption: string}}
+ */
+export function upNextTile(row) {
+    if (!row)
+        return null;
+    let value = row.startText || '';
+    if (row.allDay)
+        value = 'All day';
+    else if (row.now)
+        value = 'Now';
+    return {value, caption: row.title || ''};
+}

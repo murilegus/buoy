@@ -310,7 +310,7 @@ export class Pill {
         const cap = this._s.expanded;
         const child = this.content.child;
         const [, natural] = child ? child.get_preferred_height(cap.w) : [0, 0];
-        const h = Math.min(cap.h, Math.max(Math.ceil(natural), 2 * this._s.idle.h));
+        const h = this._s.expandedH(natural);     // 56 + 16n, up to the cap (design/expanded)
         return {w: cap.w, h, r: Math.min(cap.r, Math.floor(h / 2))};
     }
 

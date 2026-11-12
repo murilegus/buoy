@@ -128,7 +128,7 @@ export class ActivityStack {
         this._seenWaiters = new Set();   // whenSeen
         this._missed = [];
         this._missedNew = false;     // something was missed since the history was last seen
-        this._flags = new Set();     // sources with something unseen of their own (flagMissed)
+        this._flags = new Map();     // sources with something unseen of their own (flagMissed): key → row
         this._seq = 0;
         this._shown = null;           // id of the centre pill
         this._shownIds = [];          // ids of every pill the island shows
@@ -371,13 +371,25 @@ export class ActivityStack {
      *
      * @param {string} key  the source's, one flag each
      * @param {boolean} on
+     * @param {object} [row]  how Home's Missed list shows it (design/home "Bị nhỡ và +K"):
+     *   {count, title, detail, tab} — "Notifications · 3", "Slack, Zalo", the tab a click opens
      */
-    flagMissed(key, on) {
+    flagMissed(key, on, row = {}) {
         if (on)
-            this._flags.add(key);
+            this._flags.set(key, {...row});
         else
             this._flags.delete(key);
         this._updateLight();
+    }
+
+    /** @returns {{key: string, count: number, title: string, detail: ?string, tab: ?string}[]} the flags, as Home lists them */
+    get missedFlags() {
+        return [...this._flags].map(([key, r]) => ({
+            key, count: Number.isInteger(r.count) && r.count > 0 ? r.count : 1,
+            title: typeof r.title === 'string' && r.title ? r.title : key,
+            detail: typeof r.detail === 'string' && r.detail ? r.detail : null,
+            tab: typeof r.tab === 'string' && r.tab ? r.tab : null,
+        }));
     }
 
     /** Home showed the missed history: the light goes off, the list stays. */

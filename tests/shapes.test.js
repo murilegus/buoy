@@ -24,8 +24,8 @@ const CASES = [
     {width: 1366, expW: 560, expH: 280, minimalMax: 336, wideMax: 448, compactMax: 404, containerW: 1366},
     {width: 1920, expW: 560, expH: 280, minimalMax: 336, wideMax: 448, compactMax: 404, containerW: 1920},
     // compact: min(28em, 0.72 × expanded), tokens: 404 / 410
-    {width: 2560, expW: 716, expH: 358, minimalMax: 352, wideMax: 572, compactMax: 410, containerW: 2560},
-    {width: 3440, expW: 760, expH: 380, minimalMax: 352, wideMax: 608, compactMax: 410, containerW: 3440},
+    {width: 2560, expW: 716, expH: 344, minimalMax: 352, wideMax: 572, compactMax: 410, containerW: 2560},
+    {width: 3440, expW: 760, expH: 376, minimalMax: 352, wideMax: 608, compactMax: 410, containerW: 3440},
 ];
 
 for (const c of CASES) {
@@ -35,7 +35,10 @@ for (const c of CASES) {
     // idle does not depend on the monitor: 8 + 24 + 6 + 85 + 8 = 131 → 132 (even), and the
     // pill = bar − 2 × 0.25em
     eq(s.idle, {w: 132, h: 32, r: 16}, `${at} idle`);
-    eq(s.expanded, {w: c.expW, h: c.expH, r: 28}, `${at} expanded`);
+    eq(s.expanded, {w: c.expW, h: c.expH, r: 28}, `${at} expanded: up to w/2 on 56 + 16n`);
+    // a content height lands on 56 + 16n, up to the cap (design/expanded, 2026-11-10)
+    eq([s.expandedH(0), s.expandedH(56), s.expandedH(57), s.expandedH(88), s.expandedH(5000)],
+        [56, 56, 72, 88, c.expH], `${at} expanded heights on 56 + 16n`);
     eq(s.container, {w: c.containerW, h: c.expH + 2 * OVERSHOOT}, `${at} container`);
     if (s.container.w > c.width)
         throw new Error(`${at} container wider than the monitor`);
@@ -138,8 +141,8 @@ eq(shapesFor({width: 800}, PANEL_H).expanded.w, 560, 'small monitor never goes b
 // --- expanded-width override (opts.expandedWidth; 0 = derived) ----------------
 {
     const s = shapesFor({width: 1920}, PANEL_H, {expandedWidth: 600});
-    eq(s.expanded, {w: 600, h: 300, r: 28}, 'override expanded (h is the content cap)');
-    eq(s.container, {w: 1920, h: 340}, 'override container (the monitor)');
+    eq(s.expanded, {w: 600, h: 296, r: 28}, 'override expanded: w/2 = 300 down to 56 + 16n');
+    eq(s.container, {w: 1920, h: 336}, 'override container (the monitor)');
     eq(s.compactMax, 410, 'override: 0.72 × 600 = 432, but 28em = 410 is less');
     eq(s.minimal(5000).w, 352, 'override: 0.6 × 600 = 360, but 24em = 352 is less');
     eq(s.idle, {w: 132, h: 32, r: 16}, 'override leaves idle alone');
@@ -150,8 +153,8 @@ eq(shapesFor({width: 3440}, PANEL_H, {expandedWidth: 400}).expanded.w, 400,
     'override wins over the monitor clamp (below 560)');
 eq(shapesFor({width: 3440}, PANEL_H, {expandedWidth: 300}).compactMax, COMPACT_MIN,
     'a tiny expanded never makes compact narrower than its floor');
-eq(shapesFor({width: 1920}, PANEL_H, {expandedWidth: 601}).expanded, {w: 602, h: 301, r: 28},
-    'odd override snaps to even');
+eq(shapesFor({width: 1920}, PANEL_H, {expandedWidth: 601}).expanded, {w: 602, h: 296, r: 28},
+    'odd override snaps to even; h on 56 + 16n');
 eq(shapesFor({width: 1366}, PANEL_H, {expandedWidth: 5000}).container.w, 1366,
     'override never pushes the container off screen');
 eq(shapesFor({width: 1365}, PANEL_H, {expandedWidth: 5000}).expanded.w, 1324,
@@ -192,6 +195,7 @@ eq(compactMetrics(), {
     const s = shapesFor({width: 1920}, 50, {em: EM_1 * 1.25});
     eq([s.compact(100, 70).h, s.compact(100, 71).h, s.compact(100, 999).h], [70, 90, 190], 'Large Text: 70 + 20n up to 190');
     eq(s.compactMax, 404, 'Large Text: 28em = 513, 0.72 × 560 = 404 caps');
+    eq([s.expanded.h, s.expandedH(80)], [270, 90], 'Large Text: expanded on 70 + 20n, up to 280 → 270');
 }
 eq(Math.round(EM_1 * 100) / 100, 14.67, '1em = 11 pt at 96 dpi');
 eq(pillMetrics(), {inset: 4, pad: 8, gap: 6, buttonGap: 8, hover: 12, press: 18, dot: 8}, 'the pill at 1em: tokens');
