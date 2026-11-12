@@ -27,7 +27,12 @@ export const PLACES = {
     'idle-auto-plans': null,
     'prefs-page': null,         // bookkeeping: the page prefs opens on (GREETING.md §11)
     'greeting-intro-shown': null,   // bookkeeping; About's "Show Bu's introduction again" resets it
-    'greeting-version-seen': null,  // bookkeeping (GREETING.md §11)    // the plan rows' switches and order: FEATURES M3 "Prefs: Island page"
+    'greeting-version-seen': null,  // bookkeeping (GREETING.md §11)
+    // the weather's refresh (prefs' button asks, Buoy answers; 2026-11-12): bookkeeping
+    'idle-weather-locate-now': null,
+    'idle-weather-located': null,
+    'idle-weather-located-at': null,
+    'idle-weather-updated-at': null,    // the plan rows' switches and order: FEATURES M3 "Prefs: Island page"
     'expanded-width': 'general',
     'keybind-focus': 'general',
     // the kit's rule for every waiting activity (2026-11-07, Ethan; was media's
@@ -254,6 +259,69 @@ export function weatherNote({automatic, locating, locations}) {
     return null;
 }
 
+/** A refresh asked this long ago with no answer yet still shows as running (prefs' spinner). */
+export const LOCATE_WAIT_MS = 20000;
+
+/**
+ * "2 min ago" for the place row (prefs, Weather).
+ *
+ * @param {number} at  ms since the epoch
+ * @param {number} now
+ * @returns {string} "just now", "4 min ago", "2 h ago", "3 days ago"
+ */
+export function agoWords(at, now) {
+    const min = Math.floor(Math.max(0, now - at) / 60000);
+    if (min < 1)
+        return 'just now';
+    if (min < 60)
+        return `${min} min ago`;
+    const h = Math.floor(min / 60);
+    if (h < 48)
+        return `${h} h ago`;
+    return `${Math.floor(h / 24)} days ago`;
+}
+
+/**
+ * The Weather plan's place row with its refresh button (design: prefs weather refresh,
+ * 2026-11-12, Ethan: A, "Current location" while "Use my location" is on, "City" off). Its
+ * subtitle says where the place came from: by Wi-Fi, a guess from the network (about 25 km),
+ * or kept because only the network answered; with a picked city, when the weather came.
+ *
+ * @param {object} s
+ * @param {boolean} s.automatic  `idle-weather-automatic`
+ * @param {boolean} s.locating  Location Services on
+ * @param {?string} s.place  the first place's label, or null
+ * @param {string} s.located  `idle-weather-located`
+ * @param {number} s.locatedAt  `idle-weather-located-at`, ms
+ * @param {number} s.updatedAt  `idle-weather-updated-at`, ms
+ * @param {number} s.asked  `idle-weather-locate-now` in ms (prefs' last click)
+ * @param {number} s.now  ms
+ * @returns {{title: string, subtitle: string, busy: boolean, warn: boolean, button: boolean}}
+ *   button: the refresh button shows (not with Location Services off while automatic)
+ */
+export function placeStatus({automatic, locating, place, located, locatedAt, updatedAt, asked, now}) {
+    const title = automatic ? 'Current location' : 'City';
+    const answered = automatic ? locatedAt : updatedAt;
+    const busy = asked > 0 && now - asked < LOCATE_WAIT_MS && !(answered >= asked);
+    const out = (subtitle, {warn = false, button = true} = {}) => ({title, subtitle, busy, warn, button});
+    if (automatic && !locating)
+        return out(place ? `${place} · Location Services is off` : 'Location Services is off', {warn: true, button: false});
+    if (busy)
+        return out(automatic ? 'Locating…' : 'Updating the weather…');
+    if (!place)
+        return out(automatic ? 'None yet' : 'None yet: search for a city below');
+    if (!automatic)
+        return out(updatedAt > 0 ? `${place} · weather ${agoWords(updatedAt, now)}` : place);
+    const when = locatedAt > 0 ? ` · ${agoWords(locatedAt, now)}` : '';
+    if (located === 'wifi')
+        return out(`${place} · by Wi-Fi${when}`);
+    if (located === 'ip')
+        return out(`${place} · guessed from the network, about 25 km`, {warn: true});
+    if (located === 'kept')
+        return out(`${place} · no Wi-Fi fix, kept this place`, {warn: true});
+    return out(place);
+}
+
 /**
  * The units rows under the Weather plan: GNOME Weather's own keys (`org.gnome.GWeather4`),
  * which the weather plan reads (modules/weather/read.js unitNames) — a pick there is GNOME
@@ -469,7 +537,7 @@ export function planPrefs(keys) {
         // nothing unused (its feed runs only while its plan is in use)
         plan.plans.push({
             id, enableKey,
-            keys: names.filter(n => n.startsWith(`idle-${id}-`)),
+            keys: names.filter(n => n.startsWith(`idle-${id}-`) && !(n in PLACES)),
             planOnly: enableKey !== null && planOnly(id),
         });
     }

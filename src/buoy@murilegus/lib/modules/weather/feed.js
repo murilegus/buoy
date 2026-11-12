@@ -3,13 +3,20 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GWeather from 'gi://GWeather';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {withPlace} from '../../kit/model/settings.js';
 import {refreshMs} from './idle.js';
-import {goodFix, nextFix, readInfo, unitNames} from './read.js';
+import {goodFix, locateOutcome, nextFix, readInfo, unitNames} from './read.js';
 
 // As long as Geoclue may take for a first fix before this ask gives up (Wi-Fi scan, IP)
 const LOCATE_TIMEOUT = 15;
+
+// The one Geoclue ask running, whichever feed made it (the idle plan's, Home's, prefs'
+// refresh): another feed that wants to locate meanwhile waits for its answer instead of
+// asking too, so two asks never write the place or prefs' status over each other
+// (2026-11-12). {ask, waiters: [function(moved)]}
+let shared = null;
 
 /**
  * The weather plan's feed (ARCHITECTURE "feed.js"): what idle.js shows, read from GNOME's
@@ -37,6 +44,10 @@ const LOCATE_TIMEOUT = 15;
  *   is stopped as soon as the ask ends: nothing tracks the position between asks. Needs
  *   Location Services (`org.gnome.system.location`); off, the last place stays. Off, the
  *   place is the city picked in prefs.
+ * - For prefs' place row (2026-11-12): how each locate ended (`idle-weather-located`:
+ *   wifi, ip, kept, none) and when, and when the weather last came
+ *   (`idle-weather-updated-at`), written to Buoy's settings. `refreshNow` is prefs' refresh
+ *   button (source.js): locate and fetch once, then call back.
  */
 export class WeatherFeed {
     /** @param {function(): void} onChanged  the state changed: present again */
@@ -44,8 +55,12 @@ export class WeatherFeed {
         this._onChanged = onChanged;
         this._timer = 0;
         this._every = 0;
+        this._updatedAt = 0;              // the weather's time last written for prefs
+        this._asked = 0;                  // refreshNow: the time of the ask (whole seconds)
+        this._waitFetch = null;           // refreshNow's callback, until new weather comes
         this._automatic = true;
         this._locating = null;            // the Geoclue ask running (_locate)
+        this._waiting = null;             // waiting for another feed's ask (shared)
         this._weakPlace = null;           // placeKey of the place an IP-only fix wrote last
         this._client = Main.panel.statusArea.dateMenu?._weatherItem?._weatherClient ?? null;
         // when the client last had news; its own _lastUpdate (set on every `updated`)
@@ -65,8 +80,10 @@ export class WeatherFeed {
         let state = null;
         if (client?.hasLocation) {
             const info = client.info;
-            if (!client.loading && info.is_valid())
+            if (!client.loading && info.is_valid()) {
                 this._fetched = Date.now();
+                this._recordUpdate(client);
+            }
             state = readInfo(info, {now: Date.now(), units: units(this._units), place: placeOf(info.location)});
             // while loading the info keeps the last values; GWeather drops them on a
             // location change (info.set_location), which reads as no data — right then
@@ -77,6 +94,52 @@ export class WeatherFeed {
         this.state = state;
         if (notify && !same)
             this._onChanged();
+    }
+
+    // The weather's own time (the client's last `updated`), for prefs' row; written once per
+    // new reading, whichever feed sees it
+    _recordUpdate(client) {
+        const at = (client._lastUpdate?.to_unix?.() ?? 0) * 1000;
+        if (at > 0 && at !== this._updatedAt) {
+            this._updatedAt = at;
+            const settings = buoySettings();
+            if (settings && settings.get_int64('idle-weather-updated-at') !== at)
+                settings.set_int64('idle-weather-updated-at', at);
+        }
+        if (this._waitFetch && at >= this._asked)
+            this._fetchDone();
+    }
+
+    _fetchDone() {
+        const done = this._waitFetch;
+        this._waitFetch = null;
+        done?.();
+    }
+
+    /**
+     * Prefs' refresh (source.js): where we are again, Wi-Fi first (with "Use my location"),
+     * then the weather, once; `done` when new weather came (or the caller's cap ends it).
+     *
+     * @param {object} opts  the plan's keys' values
+     * @param {function():void} done
+     */
+    refreshNow(opts, done) {
+        if (!this._client) {
+            done();
+            return;
+        }
+        this._automatic = opts['idle-weather-automatic'] !== false;
+        this._fetched = Date.now();
+        this._asked = Math.floor(Date.now() / 1000) * 1000;   // the client's time is whole seconds
+        this._waitFetch = done;
+        if (!this._automatic || !locationOn()) {
+            this._client.update();
+            return;
+        }
+        this._locate(moved => {
+            if (!moved)
+                this._client?.update();
+        });
     }
 
     /**
@@ -134,10 +197,19 @@ export class WeatherFeed {
      * @param {function(boolean): void} done  whether the place changed
      */
     _locate(done) {
-        if (this._locating)
+        if (this._locating || this._waiting)
             return;
+        if (shared) {                     // another feed is asking: its answer is ours
+            this._waiting = moved => {
+                this._waiting = null;
+                done(moved);
+            };
+            shared.waiters.push(this._waiting);
+            return;
+        }
         const ask = {cancel: new Gio.Cancellable(), simple: null, held: null, notifyId: 0, timeout: 0, done};
         this._locating = ask;
+        shared = {ask, waiters: []};
         ask.timeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, LOCATE_TIMEOUT, () => {
             ask.timeout = 0;
             if (ask.simple)
@@ -159,6 +231,7 @@ export class WeatherFeed {
                 return;
             }
             if (!ask.simple) {
+                recordLocate('none');
                 this._endLocate(ask, false);
                 return;
             }
@@ -178,6 +251,7 @@ export class WeatherFeed {
         ask.held = step.held;
         if (!step.done)
             return;
+        recordLocate(locateOutcome(step));
         let moved = false;
         if (step.use) {
             try {
@@ -207,6 +281,7 @@ export class WeatherFeed {
             return;
         this._locating = null;
         ask.done(moved);
+        answerWaiters(ask, moved);
     }
 
     _stopTimer() {
@@ -217,17 +292,51 @@ export class WeatherFeed {
 
     destroy() {
         this._stopTimer();
+        this._waitFetch = null;
         this._units?.disconnectObject(this);
         this._units = null;
         const ask = this._locating;
         this._locating = null;
-        if (ask)
+        if (ask) {
             stopAsk(ask);
+            answerWaiters(ask, false);    // the others ask again on their next turn
+        }
+        if (this._waiting && shared)
+            shared.waiters = shared.waiters.filter(w => w !== this._waiting);
+        this._waiting = null;
         this._client?.disconnectObject(this);
         this._client = null;
         this._onChanged = () => {};
         this.state = null;
     }
+}
+
+// The shared ask ended: the feeds that waited for it get its answer
+function answerWaiters(ask, moved) {
+    if (shared?.ask !== ask)
+        return;
+    const {waiters} = shared;
+    shared = null;
+    waiters.forEach(w => w(moved));
+}
+
+// Buoy's settings, to write what prefs' place row reads (the feed has only the plan's
+// values); null if the extension is not found
+function buoySettings() {
+    try {
+        return Extension.lookupByURL(import.meta.url)?.getSettings() ?? null;
+    } catch {
+        return null;
+    }
+}
+
+// how a locate ended, and when (prefs' place row)
+function recordLocate(how) {
+    const settings = buoySettings();
+    if (!settings)
+        return;
+    settings.set_string('idle-weather-located', how);
+    settings.set_int64('idle-weather-located-at', Date.now());
 }
 
 function locationOn() {

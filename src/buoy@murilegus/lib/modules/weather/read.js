@@ -182,6 +182,20 @@ export function nextFix(fix, {held = null, final = false, previous = null} = {})
     return {use: held && previous !== 'good' ? held : null, held, done: true};
 }
 
+/**
+ * How an ask ended, for prefs' place row (`idle-weather-located`, 2026-11-12): a good fix
+ * made the place ('wifi'), an IP guess did ('ip'), only IP-only fixes came and the place was
+ * kept ('kept'), or nothing came ('none').
+ *
+ * @param {{use?: ?Fix, held?: ?Fix}} [step]  nextFix's last step
+ * @returns {'wifi'|'ip'|'kept'|'none'}
+ */
+export function locateOutcome({use = null, held = null} = {}) {
+    if (use)
+        return goodFix(use) ? 'wifi' : 'ip';
+    return held ? 'kept' : 'none';
+}
+
 // a finer accuracy wins; a known one beats an unknown one; a tie goes to the newer fix
 function finer(fix, than) {
     const a = finite(fix.accuracy) && fix.accuracy >= 0 ? fix.accuracy : Infinity;

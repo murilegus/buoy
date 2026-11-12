@@ -6,7 +6,7 @@ import weather, {
     ART, artFor, card,
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
 import {
-    readInfo, nextHour, unitNames, IP_ONLY_METRES, goodFix, nextFix,
+    readInfo, nextHour, unitNames, IP_ONLY_METRES, goodFix, nextFix, locateOutcome,
 } from '../src/buoy@murilegus/lib/modules/weather/read.js';
 import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
@@ -272,6 +272,15 @@ eq([unitNames('invalid', 'x'), unitNames(null, undefined)], [{temperature: 'DEFA
     eq(nextFix(null, {held: {accuracy: 25000}, final: true}), {use: null, held: null, done: true},
         'a held value without coordinates is never used');
     eq(nextFix(), {use: null, held: null, done: false}, 'no arguments: wait');
+}
+
+// --- how an ask ended, for prefs (2026-11-12) ------------------------------------------------
+{
+    const wifi = {latitude: 10.79, longitude: 106.66, accuracy: 40}, ip = {latitude: 21.03, longitude: 105.83, accuracy: 25000};
+    eq(locateOutcome({use: wifi, held: null}), 'wifi', 'a good fix made the place: by Wi-Fi');
+    eq(locateOutcome({use: ip, held: ip}), 'ip', 'an IP guess made the place');
+    eq(locateOutcome({use: null, held: ip}), 'kept', 'only IP, the place kept');
+    eq([locateOutcome({use: null, held: null}), locateOutcome()], ['none', 'none'], 'nothing came');
 }
 
 print('weather: ok');
