@@ -45,6 +45,7 @@ export class AgentSource extends Source {
         this._asks = new Map();         // same key → {event, askId, watch}
         this._apps = new Map();         // same key → Shell.App, or null: none (looked up once)
         this._stopping = new Set();     // keys whose ■ was pressed: the next PostToolUse stops the turn
+        this._roots = new Map();        // a cwd → its git repository's name (null: none), read once
         // same key → {uri, shown} for a session in Claude Desktop: its deep link and the
         // session Desktop shows, read ahead without blocking (kit/services/files.js) so a click
         // decides at once (_raise); refreshed on each of its events
@@ -126,6 +127,8 @@ export class AgentSource extends Source {
             return STOP_REPLY;
         }
         this._remember(key, res.rec);
+        if (res.rec.cwd && res.rec.cwd !== old?.cwd)
+            this._nameProject(key, res.rec.cwd);
         // met in its middle (Buoy started after the session did): its task list from
         // Claude's own files, ahead of the next task tool call
         if (!old && source === 'claude') {
@@ -316,6 +319,26 @@ export class AgentSource extends Source {
         this._show(this._sessions.get(key));
     }
 
+    // The project is the git repository Claude works in, not the folder it stands in
+    // (Ethan 2026-11-12: `buoy/src` showed "src"): up from the cwd to the folder with `.git`;
+    // in a git worktree its `.git` file points into the main repository's .git/worktrees/.
+    // No repository: the folder's name (adapter.js projectOf) stays.
+    async _nameProject(key, cwd) {
+        let name = this._roots.get(cwd);
+        if (name === undefined) {
+            name = await repoName(cwd, this._reads);
+            if (this._reads?.is_cancelled())
+                return;
+            this._roots.set(cwd, name);
+        }
+        const rec = this._sessions?.get(key);
+        if (!name || !rec || rec.cwd !== cwd || rec.project === name)
+            return;
+        this._sessions.set(key, {...rec, project: name});
+        if (this._stack?.has(this._activityId(rec)))
+            this._show(this._sessions.get(key));
+    }
+
     // ~/.claude/tasks/<session_id>/<id>.json (design/compact "Hàng của Claude Code")
     async _readTasks(key) {
         const reads = this._reads;
@@ -410,6 +433,30 @@ export class AgentSource extends Source {
 
 const DESKTOP_SESSIONS = ['Claude', 'claude-code-sessions'];
 const MAX_DESKTOP_FILES = 200;
+
+/**
+ * The git repository a folder is in: its name, the main repository's for a worktree.
+ *
+ * @param {string} cwd
+ * @param {?Gio.Cancellable} cancellable
+ * @returns {Promise<?string>} null outside a repository (up to the home folder or /)
+ */
+async function repoName(cwd, cancellable) {
+    const home = GLib.get_home_dir();
+    for (let dir = cwd, i = 0; dir && dir !== '/' && dir !== home && i < 24; dir = GLib.path_get_dirname(dir), i++) {
+        // eslint-disable-next-line no-await-in-loop -- one folder after the other, up
+        if (await readText(GLib.build_filenamev([dir, '.git', 'HEAD']), cancellable) !== null)
+            return GLib.path_get_basename(dir);
+        // eslint-disable-next-line no-await-in-loop
+        const link = await readText(GLib.build_filenamev([dir, '.git']), cancellable);
+        const main = link?.match(/^gitdir:\s*(.+?)\/\.git\/worktrees\//m)?.[1];
+        if (main)
+            return GLib.path_get_basename(main);
+        if (link !== null)
+            return GLib.path_get_basename(dir);      // a submodule's .git file: its own folder
+    }
+    return null;
+}
 
 /**
  * Claude Desktop's deep link to a session (adapter.js desktopRoute), read ahead of a click

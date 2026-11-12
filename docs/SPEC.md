@@ -456,7 +456,9 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
 - **Side pills 2 and 3** share one fixed shape, the idle size (132 × 32 at 1×, §4): leading, a short
   trailing (equaliser, `40%`, `4:59`) and the `+N` badge; their text is dropped. The
   adapter's data is the same for every pill, so the short value that matters goes in
-  `trailing` (CONTRACT.md §3). Their full content is their compact.
+  `trailing` (CONTRACT.md §3). Their full content is their compact. Laid out at both ends
+  (2026-11-12, Ethan, design/pill "Pill phụ"): the leading at the left edge, the trailing at
+  the right; with `+N` the badge takes the right edge and the trailing moves in before it.
 - **How many**: as many side pills as fit before the system cluster (12 px margin), at most
   two, re-measured whenever the right cluster resizes. Side pills go before pill 1 is ever
   narrowed. With pill 1 at its widest and a 300 px system cluster: 1366 → one side pill,

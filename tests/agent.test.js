@@ -106,11 +106,11 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq([isScratch(SCR), isScratch(CWD), projectOf(SCR), worktreeOf(SCR)], [true, false, null, null],
         'a scratch workspace: no project, no worktree');
     const fresh = agent(last([[{...ev('UserPromptSubmit'), cwd: SCR}]]).rec);
-    eq([fresh.text, fresh.compact.text], ['Claude', 'New session'], 'minimal "Claude"; hover "New session" until it has a title');
+    eq([fresh.text, fresh.compact.text], ['Claude · Thinking', 'New session'], 'no project: "Claude · what it does"; hover "New session" until it has a title');
     const titled = agent(last([[{...ev('SessionStart', {session_title: 'Permission test'}), cwd: SCR}], [{...ev('UserPromptSubmit'), cwd: SCR}]]).rec);
-    eq([titled.text, titled.compact.text], ['Claude', 'Permission test'], 'with a title: the title on hover');
+    eq([titled.text, titled.compact.text], ['Claude · Thinking', 'Permission test'], 'with a title: the title on hover');
     const moved = last([[{...ev('UserPromptSubmit'), cwd: SCR}], [ev('PreToolUse', {tool_name: 'Read', tool_input: {}})]]).rec;
-    eq(agent(moved).text, 'Claude · buoy', 'moved to a folder: its next event names the project');
+    eq(agent(moved).text, 'buoy · Reading a file', 'moved to a folder: its next event names the project');
     const req = {...ev(ASK_EVENT, {tool_name: 'mcp__ccd_directory__change_directory', tool_input: {}}), cwd: SCR};
     const q = askOf(last([[{...ev('UserPromptSubmit'), cwd: SCR}], [req]]).rec, req);
     eq([q.question, q.look.compact.card.app], ['Claude needs your OK', 'New session · mcp__ccd_directory__change_directory'],
@@ -119,10 +119,10 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
 {
     const r = last([[ev('SessionStart', {source: 'startup', session_title: 'Buoy — Weather icons'})], [ev('UserPromptSubmit')]]);
     const a = agent(r.rec);
-    eq([a.text, a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Buoy — Weather icons', 'Thinking'],
-        'minimal: the label only; hover: the session\'s name, then what it does');
+    eq([a.text, a.compact.text, a.compact.subtitle], ['buoy · Thinking', 'Buoy — Weather icons', 'Thinking'],
+        'minimal: the project · what it does (design/pill C); hover: the session\'s name, then what it does');
     const wt = agent(last([[{...ev('UserPromptSubmit'), cwd: `${CWD}/.claude/worktrees/w1`}]]).rec);
-    eq([wt.text, wt.compact.text], ['Claude · buoy', 'w1'], 'a worktree: the repository\'s label, the slug on hover');
+    eq([wt.text, wt.compact.text], ['buoy · Thinking', 'w1'], 'a worktree: the repository, the slug on hover');
     const plain = agent(last([[ev('UserPromptSubmit')]]).rec);
     eq(plain.compact.text, 'Claude · buoy', 'no name: the label');
 }
@@ -228,21 +228,23 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
 {
     const rec = last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Edit', tool_input: {file_path: `${CWD}/src/a/b/c.js`}})]]).rec;
     const a = agent({...rec, shared: false});
-    eq([a.text, a.leading, a.trailing], ['Claude · buoy', {mascot: 'busy'}, {since: T0}], 'minimal: Bu, the name, the elapsed time');
+    eq([a.text, a.leading, a.trailing], ['buoy · Editing src/…/c.js', {mascot: 'busy'}, {since: T0}],
+        'minimal: Bu, the project · what it does, the elapsed time (design/pill C)');
     eq([a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Editing src/…/c.js'], 'compact: which session, what it does');
     eq([a.priority, a.needsYou, a.staleAfter, a.ttl ?? 0], [35, false, STALE_MS, 0],
         'working: the kind\'s 35, set every time (a question raises it), stale after 1 min, no end');
     eq(a.pressFirst, true, 'a click brings the terminal up first, else the tab (§2)');
     eq(a.linger, false, 'working: it does not wait, it never lingers out');
     const s = agent({...rec, shared: true});
-    eq([s.compact.text, s.compact.subtitle], ['Claude · buoy', 'Editing a file'], 'sharing the screen: no file name (§7)');
+    eq([s.text, s.compact.text, s.compact.subtitle], ['buoy · Editing a file', 'Claude · buoy', 'Editing a file'], 'sharing the screen: no file name (§7)');
     if (JSON.stringify(s).includes('c.js'))
         throw new Error('sharing: the path appears nowhere');
     const turn = agent({...last([[ev('UserPromptSubmit')], [ev('Notification', {notification_type: 'idle_prompt'})]]).rec});
     eq([turn.needsYou, turn.staleAfter, turn.linger], [true, 0, true], 'waiting for you: needs you, never stale, lingers out');
     const done = agent(last([[ev('UserPromptSubmit')], [ev('Stop'), 4 * MIN]]).rec);
-    eq([done.needsYou, done.linger, done.ttl ?? 0, done.staleAfter, done.trailing], [false, true, 0, DONE_STALE, {text: '4 min'}],
-        'done: waits (ends after activity-linger), dims after 10 s, the time frozen');
+    eq([done.needsYou, done.linger, done.ttl ?? 0, done.staleAfter, done.trailing, done.text],
+        [false, true, 0, DONE_STALE, null, 'buoy · Done in 4 min'],
+        'done: waits (ends after activity-linger), dims after 10 s, its time in its words, no trailing');
     eq([DONE_STALE, SETTLE_MS, STALE_MS], [10000, 10000, MIN], 'done dims (and steps back) after 10 s; working after 1 min');
     eq([KIT_PRIORITY.agent, KIT_PRIORITY.ask, KIT_PRIORITY.media], [35, 90, 10], 'the kinds\' priorities');
     // the tiers (docs/PRIORITY.md): through the kit, as the stack ranks them
@@ -369,7 +371,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(after.rec.pose === 'ask', false, 'answered (its result): back to work');
     const pill = agent({...asked.rec, shared: false});
     eq([pill.text, pill.compact.subtitle, pill.needsYou, pill.linger, pill.priority],
-        ['Claude · buoy needs your answer', 'Needs your answer', true, false, 90],
+        ['buoy · Needs your answer', 'Needs your answer', true, false, 90],
         'the pill asks as a prompt\'s does: its words, needs you, no linger, the ask\'s 90');
     eq(agent({...after.rec, shared: false}).priority, 35, 'back to work: the kind\'s 35 again (set every time)');
 }
@@ -494,6 +496,11 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq([a.compact.text, a.compact.subtitle, a.compact.rows.map(r => r.icon)], ['Claude Code', 'buoy · 1 / 2', ['check', 'circle']],
         'the compact: "Claude Code" over project · progress, the tasks');
     eq(agent({...rec, sessionTitle: 'Weather icons'}).compact.text, 'Weather icons', 'a named session: its name on top');
+    // the pill with a task list (design/pill D): the task being done, the list's progress
+    const doingTask = step(rec, update('2', 'in_progress'), T0 + 50).rec;
+    eq([agent(doingTask).text, agent(doingTask).trailing], ['buoy · Run pnpm test', {text: '2 / 2'}], 'D: the task ▶, progress (done and being done) for the time');
+    eq([agent(rec).text, agent(rec).trailing.text], ['buoy · Thinking', '1 / 2'], 'none being done: its step, the progress still');
+    eq(agent({...doingTask, shared: true}).text, 'buoy · Thinking', 'sharing: the step\'s safe words, never a task\'s');
     // how long a task took, when Buoy saw it start
     let timed = taskStep([], create('1', 'Edit'), 0);
     timed = taskStep(timed, update('1', 'in_progress'), 1000);

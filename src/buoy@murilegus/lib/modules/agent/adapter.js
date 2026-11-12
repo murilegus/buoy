@@ -394,7 +394,8 @@ export function isQuestion(ev) {
 export function step(rec, ev, now, source = 'claude') {
     let r = rec ?? newRecord(source, ev);
     if (str(ev.cwd))
-        r = {...r, cwd: str(ev.cwd), project: projectOf(ev.cwd)};
+        // the project changes with the folder; the source may name it better (its git root)
+        r = str(ev.cwd) === r.cwd ? r : {...r, cwd: str(ev.cwd), project: projectOf(ev.cwd)};
     if (str(ev.session_title))                    // any event once the session has one (/rename)
         r = {...r, sessionTitle: str(ev.session_title)};
     const out = (next, {show = next.shown, end = false, alert = false} = {}) =>
@@ -523,18 +524,22 @@ export function agent(rec) {
     const pose = rec.pose;
     // a question waiting in Claude's card: the pill asks as a prompt's does (QUESTION_TITLE)
     const question = !rec.stopped && pose === 'ask' && rec.title === QUESTION_TITLE;
+    // the pill (design/pill "Claude Code ở pill 1", C + D, 2026-11-12): the project, then
+    // what it does — the task being done when Claude keeps a list, else its step — and the
+    // time it has run, or the list's progress; done, the time is in its words
+    const current = !shared && !rec.stopped ? tasks.find(t => t.status === 'in_progress') : null;
     let trailing = null;
-    if (!rec.stopped && rec.startedAt > 0)
+    if (!rec.stopped && tasks.length)
+        trailing = {text: taskProgress(tasks)};
+    else if (!rec.stopped && rec.startedAt > 0)
         trailing = {since: rec.startedAt};
-    else if (rec.finishedAt && rec.startedAt)
-        trailing = {text: durationText(rec.finishedAt - rec.startedAt)};
     let staleAfter = 0;
     if (rec.stopped)
         staleAfter = DONE_STALE;
     else if (WORKING.has(pose))
         staleAfter = STALE_MS;
     return {
-        text: question ? `${label} needs your answer` : label,
+        text: `${rec.project ?? AGENTS[rec.source] ?? 'Agent'} · ${current?.subject ?? doing}`,
         leading: {mascot: pose},
         trailing,
         // ■ while a turn runs, when Buoy's hooks can stop it (the synchronous PostToolUse,

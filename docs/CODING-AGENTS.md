@@ -77,8 +77,10 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   so the hooks of `~/.claude/settings.json` run for its sessions too; each is a pill like a
   terminal's. Sessions are stored in one place (`~/.claude/projects/…`) and can be
   resumed from either: a resumed session keeps its `session_id`, so its pill.
-- **Label**: "Claude · {project}", the project being the last part of `cwd` — for a
-  Claude Code worktree (`<repo>/.claude/worktrees/<slug>`) the repository's. The agent's
+- **Label**: "Claude · {project}", the project being the git repository Claude works in:
+  up from `cwd` to the folder with `.git`, a git worktree's main repository (its `.git`
+  file), so `buoy/src` and `buoy/.claude/worktrees/<slug>` are both "buoy" (2026-11-12,
+  Ethan: the last part of `cwd` said "src"); no repository, the last part of `cwd`. The agent's
   name always leads the text (MASCOT.md: Bu does not say which agent it is). Sessions of
   one project share it in the minimal pill: no number there (Ethan, 2026-11-07).
   A Claude Desktop session opened on no folder runs in Desktop's own scratch workspace
@@ -91,10 +93,13 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   Claude Desktop names every session, the CLI after `/rename` — both seen 2026-11-07), whole — "Buoy — Optimization and security
   check" as it is (Ethan, 2026-11-07); else its worktree's slug; else the label. Titles seen on this machine are 4–44 characters; none
   is cut by Buoy, the renderer ellipsizes.
-- **Minimal**: Bu (the pose, §3) · "Claude · buoy" · elapsed since the prompt, "4 min"
-  (a new kit element `{since}`, the twin of `{until}`: "<1 min", "4 min", "1 h 5 min";
-  read every 20 s only while shown, so the text changes within 20 s of the minute).
-  Done freezes it: the run's length.
+- **Minimal** (2026-11-12, Ethan, design/pill "Claude Code ở pill 1", C + D): Bu (the pose,
+  §3) · "{project} · {what it does}" — the compact's subtitle, "buoy · Running pnpm test",
+  "buoy · Waiting for you", "buoy · Done in 4 min" (no project: "Claude · …") — · elapsed
+  since the prompt, "4 min" (the kit element `{since}`: "<1 min", "4 min", "1 h 5 min"; read
+  every 20 s only while shown). With a task list: the task being done ("buoy · Run pnpm
+  test") and the list's progress, "2 / 5", for the time. Done: no time beside it, it is in
+  the words. A side pill keeps Bu and the time (or progress) at its two ends.
 - **Compact** (hover): title — which session (its name, else the label); subtitle — what
   it is doing, in one line ("Thinking", "Running pnpm test", "Editing src/…/pill.js",
   "Fetching example.com", "Waiting for you", "Done in 4 min"); commands, paths and URLs

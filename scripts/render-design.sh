@@ -31,6 +31,8 @@ r $p/fonts.js $i/fonts.vi.png > /dev/null   # it also prints its measures
 r $p/dots.js $i/dots.vi.png
 r $p/dots.js $i/dots-guides.vi.png guides
 r $p/minimal-media.js $i/minimal-media.vi.png
+r $p/side.js $i/side.vi.png side
+r $p/side.js $i/claude.vi.png claude
 r $p/bar.js $i/bar-1920.vi.png 1920
 r $p/bar.js $i/bar-1366.vi.png 1366
 
