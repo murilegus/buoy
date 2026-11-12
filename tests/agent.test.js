@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
     BACK, ENTER, NEXT, OTHER, OTHER_HINT, OTHER_TEXT, PICK, SKIP, SUBMIT, answersOf, newAnswers, pickAnswer, questionLook, questionReply, questionsOf,
-    STOP, STOP_REPLY, agent, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    STOP, STOP_REPLY, agent, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, planStep, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, STOP_EVENT, STOP_HOOK_TIMEOUT, commandFor, hooksNote, install, installed, isOurs, uninstall,
@@ -640,6 +640,49 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(JSON.parse(STOP_REPLY), {continue: false, stopReason: 'Stopped from Buoy'}, 'the hook\'s answer (hooks.md continue / stopReason)');
     eq(agent({...last([[ev('UserPromptSubmit')], [ev('Notification', {notification_type: 'idle_prompt'})]]).rec, canStop: true}).actions, [],
         'waiting for you: nothing to stop');
+}
+
+// --- Claude Code Desktop's plan (update_plan, 2026-11-13) -------------------------------------
+{
+    const TOOL = 'mcp__ccd_turn__update_plan';
+    const plan = input => ({hook_event_name: 'PostToolUse', tool_name: TOOL, tool_input: input});
+    const brief = list => list.map(t => `${t.id}:${t.status[0]}:${t.subject}`);
+    const items = [
+        {content: 'Read the code', status: 'completed'},
+        {content: 'Write the plan', status: 'in_progress'},
+        {content: 'Test it', status: 'pending'},
+    ];
+    let tasks = taskStep([], plan({items, scope: 'first_task'}), 1000);
+    eq(brief(tasks), ['plan:1:c:Read the code', 'plan:2:i:Write the plan', 'plan:3:p:Test it'], 'a whole plan: its steps, in order');
+    eq([tasks[1].startedAt, tasks[0].doneAt], [1000, 1000], 'stamped when first seen');
+    eq(taskProgress(tasks), '2 / 3', 'progress as for tasks: done and being done, of all');
+    tasks = taskStep(tasks, plan({advance: true}), 2000);
+    eq(brief(tasks), ['plan:1:c:Read the code', 'plan:2:c:Write the plan', 'plan:3:i:Test it'], 'advance: done, the next starts');
+    eq([tasks[1].doneAt, tasks[2].startedAt], [2000, 2000], 'advance stamps both');
+    tasks = taskStep(tasks, plan({advance: true}), 3000);
+    eq(brief(tasks).map(x => x.split(':')[2]), ['c', 'c', 'c'], 'advance on the last: all done');
+    eq(brief(taskStep(tasks, plan({advance: true}), 4000)), brief(tasks), 'advance with nothing left: no change');
+
+    let t2 = taskStep([], plan({items: items.map(x => ({...x, status: 'pending'}))}), 1000);
+    t2 = taskStep(t2, plan({done: [1, 2], start: 3}), 5000);
+    eq(brief(t2).map(x => x.split(':')[2]), ['c', 'c', 'i'], 'done [1, 2] and start 3');
+    t2 = taskStep(t2, plan({start: 1}), 6000);
+    eq(brief(t2).map(x => x.split(':')[2]), ['i', 'c', 'p'], 'start another: the one in progress goes back to waiting');
+    eq(brief(taskStep(t2, plan({done: [0, 9, 'x'], start: 42}), 7000)), brief(t2), 'numbers out of range: ignored');
+
+    const kept = taskStep(tasks, plan({items: [{content: 'Read the code', status: 'completed'}, {content: 'Something new', status: 'in_progress'}]}), 9000);
+    eq(brief(kept), ['plan:1:c:Read the code', 'plan:2:i:Something new'], 'a new plan replaces the old');
+    eq([kept[0].doneAt, kept[1].startedAt], [1000, 9000], 'a step unchanged keeps its time; a new one is stamped');
+    eq(taskStep(tasks, plan({items: []}), 9000), [], 'an empty plan: no steps');
+    eq(brief(taskStep([], plan({items: [{content: '', status: 'pending'}, 'x', {content: 'Ok', status: 'weird'}]}), 1)), ['plan:1:p:Ok'],
+        'empty or bad steps dropped; an unknown status waits');
+
+    const mixed = taskStep([{id: '1', subject: 'From TaskCreate', status: 'pending', startedAt: 0, doneAt: 0}], plan({items}), 1000);
+    eq(brief(mixed)[0], '1:p:From TaskCreate', 'TaskCreate tasks stay beside the plan');
+    eq(brief(taskStep(mixed, plan({advance: true}), 2000)).filter(x => x.startsWith('plan:')).length, 3, 'advance moves the plan only');
+    eq(taskStep([], {tool_name: 'mcp__other__update_plan', tool_input: {items}}, 1), null, 'another server\'s tool of the same name: not the plan');
+    eq(planStep([], {}, 1), [], 'no input: nothing');
+    eq(taskRows(tasks).length, 3, 'its rows, as tasks');
 }
 
 print('agent: ok');
