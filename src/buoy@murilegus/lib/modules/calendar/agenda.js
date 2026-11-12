@@ -92,9 +92,9 @@ export function nextEvent(events, now, {allDay = true} = {}) {
  * `auto` (SPEC §2a-iii): starts within 30 min 90 (holds), running now 80, within 2 h 50,
  * later today 25 (an all-day one too); nothing today → null.
  *
- * @param {object} ctx
- * @param {Date} ctx.now
- * @param {?object} ctx.data  the feed's state {hasCalendars, events}
+ * @param {object} [ctx]
+ * @param {Date} [ctx.now]
+ * @param {?object} [ctx.data]  the feed's state {hasCalendars, events}
  * @param {object} [opts]  the plan's keys' values (`idle-calendar-all-day`)
  * @returns {?{score: number}}
  */

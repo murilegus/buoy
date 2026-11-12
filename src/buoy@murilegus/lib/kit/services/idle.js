@@ -3,6 +3,9 @@ import GnomeDesktop from 'gi://GnomeDesktop?version=4.0';
 
 import {choose, intervalMs, scrollTo, stackOrder} from '../model/smartstack.js';
 
+/** @import Gio from 'gi://Gio' */
+/** @import {Island} from '../ui/island.js' */
+
 /**
  * idle-content (SPEC §2a): which module's idle plan the idle pill shows, and its clock.
  * `none` (or a plan whose module is off) leaves the pill empty with the buoy light.

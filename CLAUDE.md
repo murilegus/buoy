@@ -43,7 +43,10 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
 ## Commands
 - `pnpm test` — gjs unit tests (adapters, contract). Run before saying something works.
 - `pnpm lint`
-- `pnpm verify` — lint + test + strict schema compile; the same gate runs in the
+- `pnpm check` — tsc over the JSDoc (`jsconfig.json`, @girs types). A type @girs lacks:
+  JSDoc cast, `ambient.d.ts` (Shell internals) / `typelibs.d.ts` (gi:// modules without
+  @girs), or a narrow `@ts-expect-error -- <reason>`.
+- `pnpm verify` — lint + check + test + strict schema compile; the same gate runs in the
   pre-commit hook (`.githooks/`, enabled by `pnpm install`) and in CI
   (`.github/workflows/ci.yml`, ubuntu:26.04 = Shell 50's gjs). Don't bypass the hook.
 - Module hot swap without restart: enable `dev-mode`, then in Looking Glass

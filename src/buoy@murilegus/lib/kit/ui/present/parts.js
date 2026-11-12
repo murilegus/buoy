@@ -34,20 +34,22 @@ export function file(src) {
     return /^[a-z][a-z0-9+.-]*:/i.test(src) ? Gio.File.new_for_uri(src) : Gio.File.new_for_path(src);
 }
 
+/** @typedef {St.DrawingArea & {setValue: function(number): void}} Meter */
+
 /**
  * One drawing area for both: a ring (value as an arc) or a rounded bar.
  *
  * @param {'ring'|'bar'} kind
  * @param {number} value  0–1
  * @param {number} size  px; a bar's 0 fills the width
- * @returns {St.DrawingArea} setValue(v) moves it
+ * @returns {Meter} setValue(v) moves it
  */
 export function meter(kind, value, size) {
-    const area = new St.DrawingArea({
+    const area = /** @type {Meter} */ (new St.DrawingArea({
         style_class: `buoy-${kind}`,
         y_align: Clutter.ActorAlign.CENTER,
         x_expand: kind === 'bar' && !size,
-    });
+    }));
     if (kind === 'ring')
         area.set_size(size, size);
     else
@@ -109,8 +111,8 @@ export function bodyFill(actor) {
             return {fill: p[FILL], ...inset};
         if (p instanceof St.Widget) {
             const node = p.get_theme_node();
-            for (const [side, key] of [[St.Side.TOP, 'top'], [St.Side.BOTTOM, 'bottom'],
-                [St.Side.LEFT, 'left'], [St.Side.RIGHT, 'right']])
+            for (const [side, key] of /** @type {[St.Side, string][]} */ ([[St.Side.TOP, 'top'],
+                [St.Side.BOTTOM, 'bottom'], [St.Side.LEFT, 'left'], [St.Side.RIGHT, 'right']]))
                 inset[key] += node.get_padding(side) + node.get_border_width(side);
         }
     }
@@ -124,6 +126,10 @@ export function bodyFill(actor) {
  */
 export const FillBox = GObject.registerClass(
 class FillBox extends St.BoxLayout {
+    /**
+     * @param {number} forWidth
+     * @returns {[number, number]}
+     */
     vfunc_get_preferred_height(forWidth) {
         const [min, nat] = super.vfunc_get_preferred_height(forWidth);
         const body = bodyFill(this);
@@ -139,7 +145,7 @@ class FillBox extends St.BoxLayout {
  * tab.js (Transfers rows). setValue(v) moves it.
  *
  * @param {number} value  0–1
- * @returns {St.DrawingArea}
+ * @returns {Meter}
  */
 export function progressBar(value) {
     return meter('bar', value, 0);
@@ -194,7 +200,7 @@ export const LONG_BAR = 120;
  *
  * @param {object} e  a `bar` element
  * @param {number} width
- * @returns {Clutter.Actor}
+ * @returns {St.Widget}
  */
 export function levelBar(e, width) {
     const bar = meter('bar', e.value, width);

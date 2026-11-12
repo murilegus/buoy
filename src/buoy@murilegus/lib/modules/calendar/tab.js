@@ -12,6 +12,8 @@ import {agenda, dayRows, dayStart} from './agenda.js';
 import {EventReader} from './events.js';
 import {CELL_MIN, cellFont, cellSize, isWeekend, monthDays, monthTitle, pickedTitle, stepDay, weekdayInitials} from './month.js';
 
+/** @import GioUnix from 'gi://GioUnix' */
+
 /**
  * The Calendar tab (FEATURES M3 "calendar"; a standalone tab, SPEC §2b; two sides,
  * 2026-11-08, Ethan): the month on the left to pick a day — the month's name in the accent
@@ -304,7 +306,7 @@ export class CalendarTab {
         const context = global.create_app_launch_context(0, -1);
         try {
             if (app.get_id() === 'org.gnome.Evolution.desktop')
-                app.launch_action('calendar', context);
+                /** @type {GioUnix.DesktopAppInfo} */ (app).launch_action('calendar', context);
             else
                 app.launch([], context);
         } catch (e) {

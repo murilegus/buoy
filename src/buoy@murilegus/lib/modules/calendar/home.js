@@ -20,9 +20,9 @@ import {EventReader} from './events.js';
  */
 export class CalendarHome {
     /**
-     * @param {object} kit
-     * @param {function(string):void} kit.open  select a tab of the panel
-     * @param {function():void} kit.changed  `ready` flipped: Home lays out again
+     * @param {object} [kit]
+     * @param {function(string):void} [kit.open]  select a tab of the panel
+     * @param {function():void} [kit.changed]  `ready` flipped: Home lays out again
      */
     constructor({open = null, changed = null} = {}) {
         this._open = open;

@@ -266,6 +266,7 @@ export function planCompact(p, {light} = {}) {
     if (isPlain(c.card))
         return planCard(c.card, p, light);
     const lead = leadingAndLight(c.leading, light, {stale: p.isStale === true});
+    /** @type {Record<string, any>} `tall` is added below */
     const plan = {
         leading: lead.leading,
         text: str(c.text),

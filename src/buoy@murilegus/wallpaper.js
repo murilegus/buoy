@@ -32,6 +32,7 @@ export class Wallpaper {
         this._cancel = null;
         this._bg = new Gio.Settings({schema_id: 'org.gnome.desktop.background'});
         this._iface = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
+        /** @type {Array<[{disconnect(id: number): void}, number]>} */
         this._ids = [
             [this._bg, this._bg.connect('changed', () => this._load())],
             [this._iface, this._iface.connect('changed::color-scheme', () => this._load())],

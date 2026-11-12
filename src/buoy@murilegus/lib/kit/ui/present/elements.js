@@ -48,7 +48,8 @@ class ArtCorners extends Shell.GLSLEffect {
      * @param {number} scale  device px per logical px
      */
     setShape(size, r, scale) {
-        this._loc ??= {box: this.get_uniform_location('buoy_box'), art: this.get_uniform_location('buoy_art')};
+        // `??=` would declare no field for tsc
+        this._loc = this._loc ?? {box: this.get_uniform_location('buoy_box'), art: this.get_uniform_location('buoy_art')};
         const box = effectBox(size, size);    // the texture is the padded paint box
         this.set_uniform_float(this._loc.box, 4, [box.x, box.y, box.width, box.height]);
         this.set_uniform_float(this._loc.art, 4, [size, size, r, 1 / Math.max(scale, 1)]);
@@ -88,6 +89,7 @@ class EmptyState extends St.Bin {
         if (pose && !above)
             above = buildElement({mascot: pose}, {size: 'compact', leading: true});
         const words = new St.Label({text, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER});
+        /** @type {St.Widget} */
         let child = words;
         if (above || below) {
             // the stack spans the width: Bu centres on the same width in every tab, not on
@@ -109,6 +111,10 @@ class EmptyState extends St.Bin {
     // which would set Bu and the words a pixel or two apart from tab to tab: the content
     // moves back by half the difference, both ways, so its centre is the body's in every
     // tab (2026-11-08, Ethan). A translation: it moves nothing else.
+    /**
+     * @param {number} forWidth
+     * @returns {[number, number]}
+     */
     vfunc_get_preferred_height(forWidth) {
         const [min, nat] = super.vfunc_get_preferred_height(forWidth);
         const body = bodyFill(this);
@@ -151,7 +157,7 @@ export function iconProps(icon) {
  * @param {boolean} [opts.leading]  the leading zone: Bu may be drawn
  * @param {?object} [opts.activity]  its activity (Bu's animation follows it)
  * @param {boolean} [opts.stale]  the activity is stale: Bu takes `stale`
- * @returns {?Clutter.Actor}
+ * @returns {?St.Widget}
  */
 export function buildElement(value, {size = 'minimal', leading = false, activity = null, stale = false} = {}) {
     const e = element(value, {leading});
@@ -165,7 +171,7 @@ export function buildElement(value, {size = 'minimal', leading = false, activity
  * @param {?object} e  presentation.js element()
  * @param {'minimal'|'compact'|'expanded'} mode
  * @param {?object} [activity]  Bu's animation follows it
- * @returns {?Clutter.Actor}
+ * @returns {?St.Widget}
  */
 export function makeElement(e, mode, activity = null) {
     if (!e)
@@ -242,7 +248,7 @@ function keyedFace(face, key) {
 export function showKeys(actor, shown) {
     if (!actor)
         return;
-    if (actor.has_style_class_name?.('buoy-key'))
+    if (/** @type {Partial<St.Widget>} not all are widgets */ (actor).has_style_class_name?.('buoy-key'))
         actor.visible = shown;
     for (const child of actor.get_children())
         showKeys(child, shown);

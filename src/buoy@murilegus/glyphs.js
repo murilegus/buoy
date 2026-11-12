@@ -26,6 +26,7 @@ export class TrayGlyphs {
     constructor(box, skip) {
         this._box = box;
         this._skip = skip;
+        /** @type {'dark-text'|'light-text'} */
         this._text = 'light-text';
         this._icons = new Map();        // St.Icon → {light, cancel, ids}
         this._known = new WeakMap();    // GIcon → lightGlyph()

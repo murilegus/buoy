@@ -5,7 +5,7 @@ import base, {liveOf} from '../adapter.js';
 // its end; nothing to skip, so no transport.
 export default {
     media(ev, profile) {
-        const p = base.media(ev, profile);
+        const p = /** @type {Record<string, any>} a presentation (CONTRACT.md) */ (base.media(ev, profile));
         if (!ev.ad)
             return p;
         const live = liveOf(ev);

@@ -71,6 +71,7 @@ const IFACE = `<node>
   </interface>
 </node>`;
 
+// @ts-expect-error -- GJS's GLib.Error(domain, code, message), as Shell's misc/util.js; @girs types only the props form
 const invalid = msg => new GLib.Error(Gio.DBusError, Gio.DBusError.INVALID_ARGS, msg);
 const isPlain = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
@@ -186,6 +187,7 @@ export class BuoyDBus {
         const id = data.id ?? `${++this._seq}`;
         const internal = PREFIX + id;
         if (!this._live.has(internal) && this._liveCount() >= MAX_LIVE)
+            // @ts-expect-error -- GLib.Error(domain, code, message): see `invalid` above
             throw new GLib.Error(Gio.DBusError, Gio.DBusError.LIMITS_EXCEEDED, `at most ${MAX_LIVE} activities`);
         const a = this._present({...data, id});
         if (!a)

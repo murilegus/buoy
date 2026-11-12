@@ -75,6 +75,7 @@ export class Island {
         this._layoutLater = 0;
         this._destroyed = false;
         this.onCapacityChanged = null; // set by the extension → stack.refresh()
+        this.onHold = null;            // set by the extension → stack.hold(id, held)
         // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice, ⚙
         this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
         // set by the extension: the stack's missed history, and telling it it was seen
@@ -370,7 +371,8 @@ export class Island {
     }
 
     _onBadge(ev) {
-        return global.stage.get_event_actor(ev)?.has_style_class_name?.('buoy-badge') ?? false;
+        const actor = /** @type {?Partial<St.Widget>} not all are widgets */ (global.stage.get_event_actor(ev));
+        return actor?.has_style_class_name?.('buoy-badge') ?? false;
     }
 
     // SPEC §2b, INDICATORS.md: tabs.js pressTarget decides

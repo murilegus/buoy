@@ -184,7 +184,7 @@ function setPlace(city) {
     if (!city)
         return false;
     const settings = new Gio.Settings({schema_id: 'org.gnome.shell.weather'});
-    const list = settings.get_value('locations').deepUnpack();
+    const list = /** @type {GLib.Variant[]} */ (settings.get_value('locations').deepUnpack());
     const place = city.serialize();
     const key = v => v.print(true);
     if (list.length && key(list[0]) === key(place))

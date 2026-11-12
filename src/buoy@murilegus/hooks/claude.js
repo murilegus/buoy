@@ -25,6 +25,7 @@ try {
 function readStdin() {
     const stream = GioUnix
         ? new GioUnix.InputStream({fd: 0, close_fd: false})
+        // @ts-expect-error -- GLib < 2.80 only; @girs types the GLib that moved it to GioUnix
         : new Gio.UnixInputStream({fd: 0, close_fd: false});
     const out = Gio.MemoryOutputStream.new_resizable();
     out.splice(stream, Gio.OutputStreamSpliceFlags.CLOSE_TARGET, null);
@@ -62,7 +63,7 @@ function main() {
         const res = Gio.DBus.session.call_sync('org.gnome.Shell', '/org/gnome/Shell/Extensions/Buoy',
             'org.gnome.Shell.Extensions.Buoy', 'Agent', new GLib.Variant('(ss)', [SOURCE, JSON.stringify(slim(event))]),
             new GLib.VariantType('(s)'), Gio.DBusCallFlags.NO_AUTO_START, asks ? ASK_MS : REPORT_MS, null);
-        const [reply] = res.deepUnpack();
+        const [reply] = /** @type {[string]} */ (res.deepUnpack());
         if (reply)
             print(reply);
     } catch {

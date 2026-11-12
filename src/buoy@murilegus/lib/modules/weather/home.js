@@ -24,10 +24,10 @@ const WEATHER_APP = 'org.gnome.Weather.desktop';
  */
 export class WeatherHome {
     /**
-     * @param {object} kit
-     * @param {function():void} kit.close  close the island
-     * @param {function():void} kit.changed  `ready` flipped: Home lays out again
-     * @param {?Gio.Settings} kit.settings  Buoy's: the plan's keys (refresh, Use my location)
+     * @param {object} [kit]
+     * @param {function():void} [kit.close]  close the island
+     * @param {function():void} [kit.changed]  `ready` flipped: Home lays out again
+     * @param {?Gio.Settings} [kit.settings]  Buoy's: the plan's keys (refresh, Use my location)
      */
     constructor({close = null, changed = null, settings = null} = {}) {
         this._close = close;

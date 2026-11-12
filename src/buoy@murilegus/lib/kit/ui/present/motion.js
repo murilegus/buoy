@@ -58,6 +58,10 @@ class Marquee extends St.Widget {
     }
 
     // Asks for nothing: the column gives what it has, the copies are clipped to it.
+    /**
+     * @param {number} forHeight
+     * @returns {[number, number]}
+     */
     vfunc_get_preferred_width(forHeight) {
         const [, nat] = this._first.get_preferred_width(forHeight);
         return [0, nat];
@@ -262,14 +266,14 @@ function dimMascots(actor) {
  * Dims an actor as the pills dim a stale activity (grey text and icons, Bu at 40 %): for
  * a module's tab.js, so its rows match the pill (the Claude Code tab, 2026-11-07).
  *
- * @param {Clutter.Actor} box
+ * @param {St.Widget} box
  */
 export function dimStale(box) {
     box.add_style_class_name('buoy-stale');
     dimMascots(box);
 }
 
-const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+const rgb = hex => /** @type {[number, number, number]} */ ([1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255));
 
 /**
  * One St.DrawingArea painting Bu's grid in MASCOT.md's palette; the lamp in the pose's

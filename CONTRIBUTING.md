@@ -77,6 +77,7 @@ Start with `docs/ARCHITECTURE.md` (layout and the rules every change keeps),
 ```
 buoy/
 ├── package.json / jsconfig.json / eslint.config.js   pnpm, types, lint — nothing is bundled
+├── ambient.d.ts · typelibs.d.ts   types only, for `pnpm check`: Shell internals, gi:// modules
 ├── install.sh  install / update / remove without EGO (curl … | bash, --help)
 ├── scripts/  link.sh · dev.sh · pack.sh · verify.sh · release-check.sh
 ├── .github/workflows/release.yml   a tag v<version-name> publishes the zip on GitHub
@@ -112,8 +113,8 @@ pnpm link        # symlink into GNOME + compile the schema
 pnpm dev         # nested shell (mutter devkit) with auto-restart
 pnpm lint
 pnpm test        # gjs unit tests for adapters and the contract — no Shell needed
-pnpm verify      # lint + test + schema: what the pre-commit hook and CI run
-pnpm check       # tsc type check — not part of verify yet
+pnpm verify      # lint + type check + test + schema: what the pre-commit hook and CI run
+pnpm check       # the type check alone (tsc over the JSDoc, @girs types)
 pnpm run pack    # zip for EGO (`pnpm pack` is pnpm's own tarball command)
 ```
 

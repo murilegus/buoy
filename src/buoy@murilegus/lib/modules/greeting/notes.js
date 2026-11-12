@@ -13,8 +13,11 @@
  *   fixed    what was fixed, one short line each
  *
  * Newest last.
+ *
+ * @typedef {{version: number, name: string, date: ?string, intro?: boolean,
+ *   added: string[], fixed: string[]}} Note
  */
-export default Object.freeze([
+export default /** @type {ReadonlyArray<Readonly<Note>>} */ (Object.freeze([
     Object.freeze({version: 1, name: '0.1', date: '2026-11-08', intro: true, added: [], fixed: []}),
     Object.freeze({
         version: 2, name: '0.1.1', date: '2026-11-09', added: [],
@@ -23,4 +26,4 @@ export default Object.freeze([
             'Settings clean up after themselves when closed',
         ],
     }),
-]);
+]));

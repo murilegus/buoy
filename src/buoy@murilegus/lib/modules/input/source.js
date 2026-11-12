@@ -38,6 +38,7 @@ export class InputChangeSource extends Source {
         this._chain = null;
         this._injections = new InjectionManager();
         const source = this;
+        // @ts-expect-error -- tsc takes a function that sets a property of `this` for a constructor
         this._injections.overrideMethod(InputSourcePopup.prototype, 'show', original => function (backward, binding, mask) {
             // eslint-disable-next-line no-invalid-this -- the popup Shell built
             const popup = this;

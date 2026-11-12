@@ -22,9 +22,9 @@ export const keys = Object.freeze(['idle-calendar-all-day']);
 export const ticks = true;
 
 /**
- * @param {object} ctx
- * @param {Date} ctx.now
- * @param {?object} ctx.data  the feed's state {hasCalendars, events}
+ * @param {object} [ctx]
+ * @param {Date} [ctx.now]
+ * @param {?object} [ctx.data]  the feed's state {hasCalendars, events}
  * @param {object} [opts]  its keys' values: `idle-calendar-all-day` false leaves all-day
  *   events out
  * @returns {?object} {leading, text, trailing, compact, accessibleName}; null with nothing

@@ -330,6 +330,7 @@ export class Pill {
         if (Math.abs(dx) < 0.5)
             return;
         this.content.translation_x = dx;
+        // @ts-expect-error -- snake_case, as Shell's environment.js _easeActor reads it; @girs lists camelCase only
         this.content.ease({translation_x: 0, duration, mode: MORPH_MODE});
     }
 

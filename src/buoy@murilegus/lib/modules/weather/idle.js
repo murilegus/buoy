@@ -132,8 +132,8 @@ export function artFor(icon) {
 }
 
 /**
- * @param {object} ctx
- * @param {?object} ctx.data  the feed's state (read.js)
+ * @param {object} [ctx]
+ * @param {?object} [ctx.data]  the feed's state (read.js)
  * @returns {?object} presentation data for the idle pill: {leading, text, compact,
  *   accessibleName}; null while there is no weather (the pill shows nothing)
  */
@@ -199,9 +199,9 @@ const HOUR = 60 * 60 * 1000;
  * `auto` (SPEC §2a-iii): the first hour of the morning 70, a change in the next hour (rain
  * starts, a swing of 5 °C or more) 75, else 35; nothing to show → null.
  *
- * @param {object} ctx
- * @param {Date} ctx.now
- * @param {?object} ctx.data  the feed's state (read.js)
+ * @param {object} [ctx]
+ * @param {Date} [ctx.now]
+ * @param {?object} [ctx.data]  the feed's state (read.js)
  * @param {*} [ctx.starts]  `daypart-starts`
  * @returns {?{score: number}}
  */
