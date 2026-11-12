@@ -126,9 +126,11 @@ The one place an app may put its colour on the pill — Apple's `keylineTint`. I
  (left slot)  ←── adapter / idle plan ──→  (right slot)
 ```
 
-Slot width 10 px + 6 px gap. When a slot appears the neighbouring zone nudges inward and
-the pill grows by that amount (one short morph). Both slots are inserted by
-`kit/ui/present/`; adapters and idle plans cannot draw into them.
+The slots are pill 1's ends (2026-11-10, design/pill "Đèn ở hai đầu"; built 2026-11-12): an
+8 px dot at the centre of the end's round cap, and the pill grows at both ends by that radius
+and half the dot (20 at 1×), so the zones never move (one short morph). The cap counts the
+lights. The pill draws them (`kit/ui/pill.js`); adapters and idle plans cannot draw into
+them. Side pills, a compact, a card and expanded have none.
 
 ## Accessibility
 
