@@ -43,11 +43,14 @@ function roundButton(a, activity, m) {
     return b;
 }
 
+// The head's buttons: its main action alone when it has one (media: ⏸, design/compact),
+// the rest live in the activity's tab
 function buttons(list, activity, m) {
     if (!list?.length)
         return null;
+    const main = list.filter(a => MAIN.has(a.id));
     const box = new St.BoxLayout({style_class: 'buoy-round-row', y_align: Clutter.ActorAlign.CENTER});
-    addAll(box, list.map(a => roundButton(a, activity, m)));
+    addAll(box, (main.length ? main : list).map(a => roundButton(a, activity, m)));
     return box;
 }
 
@@ -223,11 +226,15 @@ function cardBox(p, activity, maxWidth, m) {
     }
     if (hasActions) {
         const row = new St.BoxLayout({style_class: 'buoy-card-actions', x_expand: true});
-        row.set_style(`margin: ${px(m.actionsGap)} ${px(m.edge)}; height: ${px(m.button)};`);
+        // under the head with no message: 8 + 12 (design/alerts-and-asks "Ask 120")
+        const above = c.body ? m.actionsGap : m.bodyGap + m.actionsGap;
+        row.set_style(`margin: ${px(above)} ${px(m.edge)} ${px(m.actionsGap)}; height: ${px(m.button)};`);
         row.layout_manager.homogeneous = true;      // equal widths, as GNOME's banner
         for (const a of p.actions) {
             const b = actionButton(a, activity);
             b.x_expand = true;
+            if (a.main)
+                b.add_style_class_name('buoy-action-main');   // an ask's answer: cream
             row.add_child(b);
         }
         box.add_child(row);
@@ -238,19 +245,26 @@ function cardBox(p, activity, maxWidth, m) {
 // The card's leading: the picture with the app's logo on its lower right corner, or the
 // logo alone at 40.
 function avatar(c, activity, m) {
-    const main = cell(c.picture ?? c.header.icon, activity, m.lead);
-    if (!main || !c.picture || !c.header.icon)
+    if (!c.picture) {
+        // no picture: the app's logo at 40, without a badge (design/compact "Card thông báo")
+        const logo = makeElement(c.header.icon, 'compact', activity, {icon: m.lead, art: m.lead});
+        return logo ? new St.Bin({style_class: 'buoy-leading', width: m.lead, height: m.lead, child: logo}) : null;
+    }
+    const main = cell(c.picture, activity, m.lead);
+    if (!main || !c.header.icon)
         return main;
     const badge = makeElement(c.header.icon, 'minimal');
     if (!badge)
         return main;
+    // the logo 18 with its 2 px black ring, at (24, 24) of the picture: 2 px past its
+    // corner (design/compact "Card thông báo")
     if ('icon_size' in badge)
-        badge.icon_size = m.rowIcon;
-    const ring = new St.Bin({style_class: 'buoy-card-badge', child: badge});
+        badge.icon_size = m.badge - 4;
+    const ring = new St.Bin({style_class: 'buoy-card-badge', child: badge, width: m.badge, height: m.badge});
     const stack = new St.Widget({width: m.lead, height: m.lead, layout_manager: new Clutter.FixedLayout()});
     stack.add_child(main);
     stack.add_child(ring);
-    ring.set_position(m.lead - m.rowIcon + 2, m.lead - m.rowIcon + 2);
+    ring.set_position(m.lead - m.badge + 2, m.lead - m.badge + 2);
     return stack;
 }
 

@@ -178,7 +178,7 @@ eq(shapesFor({width: 1920}, PANEL_H, {}).expanded.w, 560, 'empty opts = derived'
 // --- the em (design "Đơn vị là em": Large Text and the font size scale bar and pill) ----
 eq(compactMetrics(), {
     head: 56, lead: 40, vpad: 8, side: 14, gap: 12, row: 16, maxRows: 6, radius: 28, button: 32,
-    art: 72, artInset: 8, artRadius: 20, rowIcon: 16, bodyGap: 8, actionsGap: 12, edge: 12, min: 240,
+    art: 72, artInset: 8, artRadius: 20, rowIcon: 16, badge: 18, bodyGap: 8, actionsGap: 12, edge: 12, min: 240,
 }, 'the compact at 1em: tokens');
 {
     const m = compactMetrics(EM_1 * 1.25);

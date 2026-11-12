@@ -172,7 +172,7 @@ export function buildElement(value, {size = 'minimal', leading = false, activity
  * @param {?object} e  presentation.js element()
  * @param {'minimal'|'compact'|'expanded'} mode
  * @param {?object} [activity]  Bu's animation follows it
- * @param {{art?: number, artRadius?: number}} [sizes]  the tier's sizes it overrides: the art
+ * @param {{art?: number, artRadius?: number, icon?: number}} [sizes]  the tier's sizes it overrides: the art
  *   fills the leading's cell, which follows the em (kit/model/shapes.js); the compact's media
  *   art is 72 with radius 20
  * @returns {?St.Widget}

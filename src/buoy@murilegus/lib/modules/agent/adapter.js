@@ -17,6 +17,8 @@ import {sinceText} from '../../kit/model/presentation.js';
 
 /** The agents this module knows, by the `source` the hook sends (CODING-AGENTS.md §1). */
 export const AGENTS = {claude: 'Claude'};
+/** The agent's product, as an ask's card names it ("Claude Code wants to run"). */
+const PRODUCTS = {claude: 'Claude Code'};
 
 /** No news for this long → stale: the renderer dims it, Bu `stale` (§3). Working or done
  * alike (Ethan, 2026-11-07: one minute for both; was 2 min while working). */
@@ -479,17 +481,38 @@ export function askOf(rec, ev, {shared = false} = {}) {
         look: {
             leading: {mascot: 'ask'},
             // a card at the compact's size, kept until answered (design/alerts-and-asks "Ask"):
-            // Bu, the question, "Claude Code · session", what it wants; no ×, a button answers
-            compact: {
-                card: {
-                    picture: {mascot: 'ask'}, title: question,
-                    app: `Claude Code · ${hoverName(rec)}`, body: want,
-                },
-            },
+            // Bu, what it asks, "project · tool", the command; no ×, a button answers
+            compact: {card: {picture: {mascot: 'ask'}, ...askCard(rec, ev, question, {shared})}},
             expanded: {leading: {mascot: 'ask'}, center: {title: question, subtitle: name ? `${name} · ${want}` : want}},
             minimalAction: false,
         },
     };
+}
+
+/**
+ * The ask's card (design/alerts-and-asks "Ask"): a command is "Claude Code wants to run" over
+ * "buoy · Bash" with the command as the body (2 lines); an edit "Allow edits to shapes.js?"
+ * without a body; any other tool the question with what it wants. Sharing the screen hides
+ * the command and the file (§7).
+ *
+ * @param {object} rec  the session's record
+ * @param {object} ev  the PermissionRequest
+ * @param {string} question  the ask's question
+ * @param {{shared: boolean}} opts
+ * @returns {{title: string, app: string, body: ?string}}
+ */
+function askCard(rec, ev, question, {shared}) {
+    const tool = str(ev.tool_name) ?? 'a tool';
+    const i = isPlain(ev.tool_input) ? ev.tool_input : {};
+    const app = `${rec?.project ?? projectOf(rec?.cwd) ?? hoverName(rec)} · ${tool}`;
+    if (COMMANDS.has(tool))
+        return {title: `${PRODUCTS[rec?.source] ?? 'The agent'} wants to run`, app, body: shared ? null : str(i.command)};
+    if (EDITS.has(tool)) {
+        const file = shared ? null : str(i.file_path ?? i.notebook_path)?.split('/').at(-1);
+        return {title: file ? `Allow edits to ${file}?` : 'Allow edits to a file?', app, body: null};
+    }
+    const d = toolDoing(tool, i, rec?.cwd);
+    return {title: question, app, body: shared ? d.safeWant : d.want};
 }
 
 // every field of `asked` is in `got`, the same (`got` may have more)

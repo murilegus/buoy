@@ -259,11 +259,14 @@
    message under it, the buttons in a row; geometry in present/compact.js */
 .buoy-card-title { font-weight: 600; }
 /* the app's logo on the picture's corner, ringed in the island's black */
-.buoy-card-badge { border-radius: 999px; border: 2px solid #000; /* surface */ background-color: #000; /* surface */ }
+.buoy-card-badge { border-radius: 6px; border: 2px solid #000; /* surface */ background-color: #000; /* surface */ }
 /* two lines (presentation.js MAX_CARD_LINES): Pango keeps whole lines within its max-height */
 .buoy-card-body { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
 .buoy-card-actions { spacing: 8px; }
 .buoy-card-actions .buoy-action { padding: 0 12px; border-radius: 16px; }
+/* an ask's answer (its second option): cream with black text (design/alerts-and-asks "Ask") */
+.buoy-card-actions .buoy-action.buoy-action-main { color: #000; /* fg-on-inverse */ background-color: #f1efe8; /* fill-inverse */ }
+.buoy-card-actions .buoy-action.buoy-action-main:hover { background-color: #fff; /* fill-inverse-hover */ }
 .buoy-key {
     font-size: 11px;
     font-weight: bold;

@@ -248,7 +248,8 @@ eq(planCompact({compact: {card: {icon: 'x'}}}), null, 'a card with no name, titl
         actions: [{id: 'Deny', label: 'Deny'}, {id: 'Allow', label: 'Allow'}],
     });
     eq(ask.card.picture, {type: 'mascot', pose: 'ask'}, 'an ask card: Bu asking leads');
-    eq(ask.actions.map(a => [a.id, a.key]), [['Deny', 'd'], ['Allow', 'a']], 'an ask card: its keys');
+    eq(ask.actions.map(a => [a.id, a.key, a.main === true]), [['Deny', 'd', false], ['Allow', 'a', true]],
+        'an ask card: its keys; the second option is the main answer, cream');
     const note = planCompact({kind: 'notification', compact: {card: {title: 'Hi'}}, actions: [{id: 'r', label: 'Reply'}]});
     eq(note.actions[0].key, undefined, 'a notification card: no keys');
 }

@@ -301,9 +301,10 @@ function planCard(c, p, light) {
     const el = element(c.picture, {leading: true});   // the card's leading: Bu may be there (an ask)
     let acts = actions(p.actions, MAX_ACTIONS.compact);
     if (p.kind === 'ask') {
-        // an ask is a card (design/alerts-and-asks "Ask"), answered from the keyboard too
+        // an ask is a card (design/alerts-and-asks "Ask"), answered from the keyboard too;
+        // its second option is the main answer, cream (the first refuses: Deny · Allow)
         const keys = mnemonics(acts.map(a => a.label ?? a.id));
-        acts = acts.map((a, i) => ({...a, key: keys[i]}));
+        acts = acts.map((a, i) => ({...a, key: keys[i], ...i === 1 ? {main: true} : {}}));
     }
     return {
         card: {
