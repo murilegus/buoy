@@ -6,6 +6,7 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {livePosition, mediaTimes, sinceText, untilText} from '../../model/presentation.js';
+import {caretBlink} from '../../model/keys.js';
 
 // The pieces every tier and a module's tab build from: labels, meters, the timed labels,
 // tick(), the boxes that fill Home's body. Split out of present.js (2026-11-12).
@@ -281,4 +282,57 @@ export function addAll(box, actors) {
         if (actor)
             box.add_child(actor);
     }
+}
+
+/**
+ * An entry's caret blinks as in GNOME's own text fields (kit/model/keys.js caretBlink, the
+ * user's `cursor-blink` keys): only while it has the key focus; solid again at each key, and
+ * still after `cursor-blink-timeout` with no typing. One timer at most, gone on focus out and
+ * with the entry (rule 8).
+ *
+ * @param {St.Entry} entry
+ */
+export function blinkingCaret(entry) {
+    const t = entry.clutter_text;
+    const iface = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
+    const plan = caretBlink({
+        blink: iface.get_boolean('cursor-blink'),
+        time: iface.get_int('cursor-blink-time'),
+        timeout: iface.get_int('cursor-blink-timeout'),
+    });
+    if (!plan)
+        return;
+    let id = 0, since = 0;
+    const stop = () => {
+        if (id)
+            GLib.source_remove(id);
+        id = 0;
+        t.cursor_visible = true;
+    };
+    const start = () => {
+        stop();
+        since = GLib.get_monotonic_time() / 1000;
+        id = GLib.timeout_add(GLib.PRIORITY_DEFAULT, plan.half, () => {
+            if (GLib.get_monotonic_time() / 1000 - since >= plan.stopAfter) {
+                id = 0;
+                t.cursor_visible = true;
+                return GLib.SOURCE_REMOVE;
+            }
+            t.cursor_visible = !t.cursor_visible;
+            return GLib.SOURCE_CONTINUE;
+        });
+    };
+    t.connect('key-focus-in', start);
+    t.connect('key-focus-out', stop);
+    t.connect('text-changed', () => {
+        if (id)
+            start();                  // typing: solid, the blink starts over
+    });
+    t.connect('cursor-changed', () => {
+        if (id)
+            start();
+    });
+    entry.connect('destroy', stop);
+    if (t.has_key_focus())
+        start();
 }

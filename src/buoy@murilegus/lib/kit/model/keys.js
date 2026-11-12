@@ -61,3 +61,24 @@ export function step(index, delta, count) {
         return 0;
     return Math.max(0, Math.min(count - 1, index + delta));
 }
+
+/**
+ * How a caret blinks, as GNOME's own text fields do (org.gnome.desktop.interface, GTK's
+ * gtktext.c: `cursor-blink-time` is one whole cycle, on then off; after
+ * `cursor-blink-timeout` seconds with no typing it stays on). Shell's own entries do not
+ * blink (Mutter 50's ClutterText has no blink), Buoy's typed answer does (2026-11-13, Ethan).
+ *
+ * @param {object} s
+ * @param {boolean} s.blink  `cursor-blink`
+ * @param {number} s.time  `cursor-blink-time`, ms
+ * @param {number} s.timeout  `cursor-blink-timeout`, s
+ * @returns {?{half: number, stopAfter: number}}  ms on and ms off each, ms of blinking after the
+ *   last key; null: a steady caret
+ */
+export function caretBlink({blink, time, timeout}) {
+    if (blink !== true || !Number.isFinite(time) || time < 200)
+        return null;
+    const half = Math.round(time / 2);
+    const stopAfter = Number.isFinite(timeout) && timeout > 0 ? Math.round(timeout * 1000) : Infinity;
+    return {half, stopAfter};
+}

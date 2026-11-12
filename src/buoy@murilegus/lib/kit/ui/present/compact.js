@@ -4,7 +4,7 @@ import St from 'gi://St';
 
 import {agoText, planCompact} from '../../model/presentation.js';
 import {compactMetrics} from '../../model/shapes.js';
-import {addAll, label, liveBar, meter, tick} from './parts.js';
+import {addAll, label, liveBar, meter, tick, blinkingCaret} from './parts.js';
 import {dimStale, marquee} from './motion.js';
 import {actionButton, iconProps, makeElement} from './elements.js';
 
@@ -319,6 +319,7 @@ function choiceList(ch, activity, m, onType) {
         });
         entry.set_style(`height: ${px(m.button - m.vpad)}; border-radius: ${px((m.button - m.vpad) / 2)};`);
         const t = entry.clutter_text;
+        blinkingCaret(entry);             // as GNOME's own fields; Shell's do not blink
         t.connect('text-changed', () => activity.onAction?.(o.textId, t.text));
         t.connect('activate', () => activity.onAction?.(o.enterId));
         // a click into it (Mutter 50: ClutterText's own click gesture, clutter-text.c

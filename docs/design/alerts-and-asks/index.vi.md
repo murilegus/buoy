@@ -152,6 +152,10 @@ is not a permission" (CODING-AGENTS.md, 2026-11-08).
 - **Other** là hàng cuối: chưa chọn thì ghi "Type your own answer" màu xám; chọn rồi thì hàng thành
   ô nhập ngay trong card (viền màu nhấn như ô nhập của GNOME). Bấm vào ô thì Buoy nhận bàn phím (bấm
   vào island là của bạn, SPEC §2); Enter hoặc Submit gửi đi. (Ethan, 2026-11-10)
+  Ô chỉ có **một viền**: vòng focus của theme (Buoy bỏ viền riêng của mình, vì hai cái chồng thành
+  hai đường), và **con trỏ nhấp nháy** như ô nhập của GNOME, theo `cursor-blink`, `cursor-blink-time`
+  và `cursor-blink-timeout` của bạn; ô nhập của Shell không nhấp nháy nên Buoy tự làm. **Chốt**
+  (Ethan, 2026-11-13)
 - Cao 56 + 8 + 32 × số hàng + 12 + 32 + 12: 2 lựa chọn + Other = 216, 4 + Other = **280** — vượt
   152 của compact, tối đa bằng expanded (rộng/2); rộng như compact lớn nhất (404 ở 1920).
 - Nhiều câu hỏi thì lần lượt từng câu, "1 / 3" ở dòng phụ: các câu trước câu cuối có Skip · **Next**,
