@@ -179,7 +179,13 @@ export class Pill {
         }
         if (this._compact && !this._hasCompact())
             this._stopCompact();     // its compact went away in this update
-        this._setContent(this._restingContent(), same && !fade ? 'follow' : true);
+        const next = this._restingContent();
+        this._setContent(next, same && !fade ? 'follow' : true);
+        // the same activity's new content, in place at once: measured and placed now, before
+        // this frame paints, as _swapResting does — waiting for notify::width showed a longer
+        // text for one frame at the old place, unclipped (2026-11-13, Ethan: "text bị glitch")
+        if (!this.fresh && next && this.content.child === next && this._fadingIn !== next)
+            this._applyContentSize();
         // A pill that appears (or changes activity) under a resting pointer is hovered
         // without an enter event: look again, so its compact still opens.
         if (!same)
@@ -188,11 +194,14 @@ export class Pill {
 
     // Move the pill's centre; `animate` slides it (slide-to-fill, merge/split).
     setCx(cx, animate) {
+        const slides = Math.abs(cx - this.cx) >= 0.5;
         this.cx = cx;
         const shape = this.currentShape();
         this._layoutContent();
+        // a slide is `move`; the same place at a new width (pill 1's longer text, laid out
+        // again by the island) is `size`, uncovered without a fade (_followBg)
         if (animate)
-            this._morph(shape, 'move');
+            this._morph(shape, slides ? 'move' : 'size');
         else
             this.applyShape(shape);
     }
@@ -370,7 +379,7 @@ export class Pill {
         const from = {cx: at.x + at.w / 2, w: at.w, h: at.h};
         if (run.value('x') === null)
             run.set({x: at.x, w: at.w, h: at.h});
-        this._followBg(from, shape);
+        this._followBg(from, shape, spring);
         run.to({x, w: shape.w, h: shape.h}, springFor(spring, from, shape), {
             onFrame: () => this._followFrame(),
             onDone: finished => {
@@ -390,14 +399,17 @@ export class Pill {
     // content is clipped to the bg every frame of the bg's spring, so it is uncovered
     // exactly as fast as the pill opens, its opacity following the same progress (full
     // from halfway). A plain slide (slide-to-fill, merge) moves it with the bg.
-    _followBg(from, to) {
+    // A new size of the same content (`size`: a longer text) is only uncovered, never faded:
+    // the text is the one already shown, and fading it to 0 first read as a blink.
+    _followBg(from, to, spring) {
         this._resetContentTransform();
         const grow = Math.min(from.w / to.w, from.h / to.h);
         const reveal = grow < REVEAL_FROM || this._collapsing;
         const dx = from.cx - (to.cx ?? this.cx);
         if (!reveal && Math.abs(dx) < 0.5)
             return;
-        this._follow = {from, to: {...to, cx: to.cx ?? this.cx}, reveal, fade: reveal && !this._collapsing};
+        const fade = reveal && !this._collapsing && spring !== 'size';
+        this._follow = {from, to: {...to, cx: to.cx ?? this.cx}, reveal, fade};
         this._followFrame();
     }
 
