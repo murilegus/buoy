@@ -1,4 +1,4 @@
-// The Media tab (design/tabs "Media", 2026-11-13: proposed, Ethan to choose). What a click on a
+// The Media tab (design/media, 2026-11-13). What a click on a
 // music pill or its compact opens: the expanded panel on the Media tab.
 //   options — M1 (one card, as Home's main card) and M2 (no card, the art as tall as the body),
 //             each with one player and with two (the players' chips above); M1 and the chips
@@ -6,7 +6,9 @@
 //   anatomy — M1 at 1920 with every measure, then 2560 and 3440
 //   states  — paused, no length (a stream), no cover, shuffle and repeat-one on, a player with
 //             only play/pause, nothing playing
-// gjs -m media.js out.png <options|anatomy|states>
+//   players — several players at once: two (one paused), three (two playing, the second
+//             chosen), five (the chips past the row's width keep only their logo)
+// gjs -m media.js out.png <options|anatomy|states|players>
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
@@ -89,15 +91,40 @@ function panel(x, y, EW, EH) {
 }
 
 // the players' chips: one per player, its name; the chosen one fill-3
-function chips(x, y, players) {
+// a player's logo (the app's icon; drawn here as its colour and initial)
+const LOGO = {Spotify: [.11, .73, .33], Firefox: [1, .44, .22], Rhythmbox: [.95, .65, .1], VLC: [1, .53, 0], Chromium: [.26, .52, .96]};
+function logo(name, x, y) {
+    cr.newPath(); cr.setSourceRGB(...LOGO[name] ?? [.6, .6, .6]); cr.arc(x + 8, y + 8, 8, 0, 2 * Math.PI); cr.fill();
+    const e = text(name[0], 0, 0, {sz: 7, wt: 800, measure: true});
+    text(name[0], x + 8 - e.width / 2, y + 8 - e.height / 2 - 1, {sz: 7, wt: 800, rgb: C.BLACK});
+}
+// playing: three bars (they move only while it plays and shows, rule 8)
+function eq(x, y, a) {
+    [6, 10, 4].forEach((h, k) => fill([1, 1, 1, a], x + k * 4, y + 12 - h, 2.5, h, 1));
+}
+// The players' chips: one per player, its logo and its app's name, three bars while it plays;
+// the chosen one fill-3. Past the row's width, the ones not chosen keep only their logo.
+function chips(x, y, players, maxW = 536) {
+    const ps = players.map((p, i) => typeof p === 'string' ? {name: p, chosen: i === 0, playing: i === 0} : p);
+    const full = p => 12 + 16 + 6 + text(p.name, 0, 0, {sz: 9.5, wt: 600, measure: true}).width + (p.playing ? 8 + 10 : 0) + 14;
+    const wide = ps.reduce((n, p) => n + full(p) + 6, -6) <= maxW;
     let cx = x;
-    players.forEach((p, i) => {
-        const w = 12 + 16 + 6 + text(p, 0, 0, {sz: 9.5, wt: 600, measure: true}).width + 14;
-        fill([1, 1, 1, i === 0 ? C.FILL3 : C.FILL2], cx, y, w, CHIP_H, 16);
-        icon('music-note', cx + 12, y + 8, 16, W1, i === 0 ? 1 : C.FG_MUTED);
-        text(p, cx + 34, y + 9, {sz: 9.5, wt: 600, a: i === 0 ? 1 : C.FG_MUTED});
+    for (const p of ps) {
+        const named = wide || p.chosen;
+        const w = named ? full(p) : 12 + 16 + (p.playing ? 6 + 10 : 0) + 12;
+        fill([1, 1, 1, p.chosen ? C.FILL3 : C.FILL2], cx, y, w, CHIP_H, 16);
+        logo(p.name, cx + 12, y + 8);
+        let ex = cx + 34;
+        if (named) {
+            const e = text(p.name, cx + 34, y + 9, {sz: 9.5, wt: 600, a: p.chosen ? 1 : C.FG_MUTED});
+            ex = cx + 34 + e.width + 8;
+        } else {
+            ex = cx + 34;
+        }
+        if (p.playing)
+            eq(ex, y + 10, p.chosen ? 1 : C.FG_MUTED);
         cx += w + 6;
-    });
+    }
 }
 
 // the text column and the controls, from tx to x1, between y0 and y1
@@ -241,5 +268,40 @@ if (MODE === 'states') {
         text(cap, x, y - 22, {sz: 9.5, wt: 700});
         m1(x, y, EW, EH, [SAMPLE.app], o);
     });
+    surf.writeToPNG(out);
+}
+
+if (MODE === 'players') {
+    const {w: EW, h: EH} = EXP[1920];
+    const surf = canvas(40 + EW + 60 + EW + 40, 40 + 2 * (30 + EH + 30) + 70);
+    const P = [
+        ['Hai player: Spotify đang phát, Firefox đang dừng', [
+            {name: 'Spotify', chosen: true, playing: true}, {name: 'Firefox'}], {}],
+        ['Ba player, hai đang phát; chọn Firefox (mở từ pill của nó)', [
+            {name: 'Spotify', playing: true}, {name: 'Firefox', chosen: true, playing: true}, {name: 'Rhythmbox'}],
+        {title: 'Tiếng Sóng Biển 10 Giờ', sub: 'YouTube · Firefox', album: null}],
+        ['Năm player: không đủ chỗ, chip không chọn chỉ còn logo', [
+            {name: 'Spotify', chosen: true, playing: true}, {name: 'Firefox', playing: true}, {name: 'Rhythmbox'},
+            {name: 'VLC'}, {name: 'Chromium', playing: true}], {}],
+    ];
+    P.forEach(([cap, players, o], i) => {
+        const x = 40 + (i % 2) * (EW + 60), y = 40 + Math.floor(i / 2) * (30 + EH + 30) + 30;
+        text(cap, x, y - 22, {sz: 9.5, wt: 700});
+        panel(x, y, EW, EH);
+        // the chips row, then the card 40 lower (m1 draws the card under its own chips; redraw them here)
+        m1(x, y, EW, EH, players.map(p => p.name), o);
+        fill([0, 0, 0, 1], x + PAD, y + HEAD, EW - 2 * PAD, CHIP_H, 0);
+        chips(x + PAD, y + HEAD, players, EW - 2 * PAD);
+    });
+    const x = 40 + EW + 60, y = 40 + (30 + EH + 30) + 30;
+    text('Luật', x, y - 4, {sz: 11, wt: 700});
+    [
+        'Mỗi player một chip, theo thứ tự của stack: đang phát trước, rồi đang dừng.',
+        'Chip: logo app 16, tên app, ba vạch nhỏ khi đang phát (chỉ chạy khi phát và đang hiện).',
+        'Chip đang chọn fill-3, chữ trắng; chip khác fill-2, chữ fg-muted.',
+        'Mở từ pill nào thì chọn player đó; bấm chip để đổi, thẻ fade-out / fade-in, không đổi cỡ.',
+        'Không đủ chỗ: chip không chọn chỉ còn logo (và ba vạch nếu đang phát); chip đang chọn luôn đủ tên.',
+        'Một player: không có hàng chip, thẻ cao hết thân.',
+    ].forEach((t, k) => text(`• ${t}`, x, y + 22 + k * 30, {sz: 9, a: .85, maxW: EW}));
     surf.writeToPNG(out);
 }

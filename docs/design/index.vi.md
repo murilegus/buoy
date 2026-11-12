@@ -21,7 +21,8 @@ Các thay đổi ở đây chưa có trong code: chúng là các mục redesign 
 | [Alert và ask](alerts-and-asks/index.vi.md) | alert 5 s, ask có nút, hỏi nhiều câu |
 | [Expanded](expanded/index.vi.md) | bảng mở khi bấm, lời chào |
 | [Home](home/index.vi.md) | thẻ chính, hàng ô, cách lấp để không bao giờ trống |
-| [Tab](tabs/index.vi.md) | thanh tab, từng tab (đang mở) |
+| [Tab](tabs/index.vi.md) | thanh tab và luật chung; mỗi tab một trang |
+| [Media](media/index.vi.md) | tab Media: thẻ như Home, chip cho nhiều player, nút và thanh luôn đủ |
 | [Icon](icons/index.vi.md) | icon buổi trong ngày và thời tiết |
 | [Bu](mascot/index.vi.md) | cỡ của Bu trong mỗi dạng |
 | [Chuyển động](motion/index.vi.md) | lò xo kiểu Dynamic Island, từng chuyển, tương tác, khi bị cắt ngang |

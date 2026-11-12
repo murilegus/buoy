@@ -88,6 +88,7 @@ plugins:
                 - Expanded: design/expanded/index.md
                 - Home: design/home/index.md
                 - Tab: design/tabs/index.md
+                - Media: design/media/index.md
                 - Icon: design/icons/index.md
                 - Bu: design/mascot/index.md
                 - Chuyển động: design/motion/index.md
