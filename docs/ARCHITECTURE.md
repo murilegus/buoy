@@ -46,6 +46,7 @@ src/buoy@murilegus/
     │   │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
     │   │   ├── presentation.js presentation data → render plan (2026-11-01)
     │   │   ├── shapes.js       the pill's sizes from the monitor and the em (rule 11)
+    │   │   ├── home.js         Home's plan: the main card, the row of tiles and its fill rules (design/home, 2026-11-12)
     │   │   ├── tabs.js         which tabs exist, where an open starts (2026-11-02)
     │   │   ├── keys.js         keyboard: an ask's keys, ←/→ steps (2026-11-03)
     │   │   ├── settings.js     prefs: which page each schema key goes to, samples (2026-11-03)
