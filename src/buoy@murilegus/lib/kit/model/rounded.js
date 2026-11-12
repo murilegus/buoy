@@ -77,16 +77,21 @@ export function frameInActor(frame, buffer) {
  * @param {{left: number, top: number, right: number}} frame  frameInActor()
  * @param {number} radius  `window-corners-radius`, logical px
  * @param {number} scale  the actor's resource scale: the edge is smoothed over one device px
- * @returns {{box: number[], frame: number[], pixel: number}} box: texture origin and size;
- *   frame: left, top, right, radius (no wider than half the frame)
+ * @param {boolean} [tiled]  MetaWindow:maximized-vertically — the client was told `tiled-top`
+ *   (meta-wayland-xdg-shell.c fill_states, from window.c update_edge_constraints), so what
+ *   it draws outside the frame is a square border, not a shadow round its own corners
+ * @returns {{box: number[], frame: number[], pixel: number, tiled: number}} box: texture
+ *   origin and size; frame: left, top, right, radius (no wider than half the frame);
+ *   tiled: 1 or 0
  */
-export function cornerUniforms(actor, frame, radius, scale) {
+export function cornerUniforms(actor, frame, radius, scale, tiled = false) {
     const b = effectBox(actor.width, actor.height);
     const r = Math.max(0, Math.min(radius, (frame.right - frame.left) / 2));
     return {
         box: [b.x, b.y, b.width, b.height],
         frame: [frame.left, frame.top, frame.right, r],
         pixel: 1 / (scale > 0 ? scale : 1),
+        tiled: tiled ? 1 : 0,
     };
 }
 
@@ -99,15 +104,17 @@ export function cornerUniforms(actor, frame, radius, scale) {
  * @returns {number} how much of the window's pixel is kept, 0…1
  */
 export function coverage(u, v, uniforms) {
-    const {box, frame, pixel} = uniforms;
+    const {box, frame, pixel, tiled} = uniforms;
     const px = box[0] + u * box[2], py = box[1] + v * box[3];
     const [left, top, right, r] = frame;
     const cx = Math.min(Math.max(px, left + r), right - r), cy = top + r;
     const inFrame = px >= left && px <= right && py >= top;
-    if (!(r > 0 && inFrame && py < cy && cx !== px))
-        return 1;
-    const d = Math.hypot(px - cx, py - cy);
-    return Math.min(Math.max((r - d) / pixel + 0.5, 0), 1);
+    const corner = py < cy && cx !== px;
+    if (r > 0 && inFrame && corner)
+        return Math.min(Math.max((r - Math.hypot(px - cx, py - cy)) / pixel + 0.5, 0), 1);
+    if (r > 0 && tiled > 0.5 && (corner || py < top))
+        return 0;
+    return 1;
 }
 
 /**
@@ -115,12 +122,16 @@ export function coverage(u, v, uniforms) {
  * texture is sampled, so `cogl_color_out` is the window's premultiplied pixel. Inside the
  * frame but outside the two top arcs it goes to nothing; across the arc's edge it fades
  * over one device px. Outside the frame — a floating window's client-drawn shadow — it is
- * left alone.
+ * left alone, unless the window is tiled: then the client draws a square border just
+ * outside the frame on its untiled sides and above its top (GTK 3, GTK 4, the X11 frames
+ * client; #196), which would frame the arc. So above the frame and, in the two corner
+ * squares, beside it, all goes; the sides below the arcs keep theirs.
  */
 export const DECLARATIONS = `
 uniform vec4 buoy_box;
 uniform vec4 buoy_frame;
 uniform float buoy_pixel;
+uniform float buoy_tiled;
 `;
 
 export const CODE = `
@@ -129,9 +140,12 @@ float r = buoy_frame.w;
 float cx = clamp(p.x, buoy_frame.x + r, buoy_frame.z - r);
 float cy = buoy_frame.y + r;
 bool in_frame = p.x >= buoy_frame.x && p.x <= buoy_frame.z && p.y >= buoy_frame.y;
-if (r > 0.0 && in_frame && p.y < cy && cx != p.x) {
+bool corner = p.y < cy && cx != p.x;
+if (r > 0.0 && in_frame && corner) {
     float d = length(p - vec2(cx, cy));
     cogl_color_out *= clamp((r - d) / buoy_pixel + 0.5, 0.0, 1.0);
+} else if (r > 0.0 && buoy_tiled > 0.5 && (corner || p.y < buoy_frame.y)) {
+    cogl_color_out *= 0.0;
 }
 `;
 

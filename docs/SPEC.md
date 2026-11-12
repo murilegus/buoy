@@ -201,8 +201,12 @@ square against the screen edge or dock.
   which JS cannot read back) and a window moved up against the bar (Ethan 2026-11-04).
   Both top corners round, the inner one of a tiled pair too, so tiled windows meet under
   the bar like floating ones. A floating window that already draws round corners looks the
-  same; one that draws square ones (Qt, some Electron apps) is rounded there too. Only
-  pixels inside the frame are cut: a floating window's own shadow is kept.
+  same; one that draws square ones (Qt, some Electron apps) is rounded there too. On a
+  floating window only pixels inside the frame are cut: its own shadow is kept. A window
+  maximized vertically (tiled) also loses what lies above its frame and, in the two corner
+  squares, beside it: told `tiled-top` but not tiled on its inner side, the client still
+  draws a square 1 px border just outside the frame there (GTK 3, GTK 4, the X11 frames
+  client), which framed the arc; below the arcs that side keeps its border (2026-11-12, #196).
 - **How** (`corners.js`, next to `panel.js`): a `Shell.GLSLEffect` on the window's
   `Meta.WindowActor` that discards the pixels outside the two top arcs — the pattern
   `ui/lightbox.js` (RadialShaderEffect) uses. Whatever is behind shows through the
