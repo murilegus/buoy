@@ -7,24 +7,17 @@ import {buildCompact, buildMissedCompact} from './present/compact.js';
 import {buildExpanded} from './present/expanded.js';
 import {buildIdle, buildMinimal} from './present/minimal.js';
 import {lightSlot, planCompact, planExpanded, keyline} from '../model/presentation.js';
-import {compactCx, shrinkStop} from '../model/shapes.js';
+import {compactCx} from '../model/shapes.js';
+import {FADES, PRESS_HOLD, progressOf, radiusAt, springFor} from '../model/motion.js';
+import {SpringRunner} from './spring.js';
 
 const COMPACT_DELAY = 300;  // ms of hover before the pill grows into its compact (SPEC §2)
 const COMPACT_GRACE = 200;  // ms the compact stays after the pointer leaves it (SPEC §2c)
-const MERGE_MS = 360;    // side pills sliding into / out of an expanded one (SPEC §2c)
-const MORPH_MODE = Clutter.AnimationMode.EASE_OUT_BACK;
-// The morphs' durations, a fifth slower than the first ones (380 / 200 / 250, merge 300;
-// 2026-11-06, Ethan: the back-out read hurried): a shape (expand, collapse, into the
-// compact), a size (out of the compact, a longer text), the press's settle
-const SHAPE_MS = 460;
-const SIZE_MS = 240;
-// out of the compact: a little quicker than into it (SHAPE_MS), not snapped (Ethan, 2026-11-06)
-const COMPACT_OUT_MS = 360;
-const PRESS_MS = 300;
+// Every move, size and shape is a spring (design/motion, model/motion.js SPRINGS): `open`
+// into expanded, `move` into the compact and for slides, `size` for a content's new size,
+// `snap` for hover and press, `close` for every shrink back (springFor turns a shrinking
+// `open` / `move` into `close`). Fades stay plain: FADES.
 const REVEAL_FROM = 0.8; // the bg grows by more than this ratio: it uncovers the content
-// A long shrink (pill.js _morph, shapes.js shrinkStop): its share of the time to reach the
-// turning point, then it settles out to its size
-const SHRINK_TURN = 0.7;
 
 /**
  * One pill on the island: a background that morphs and a content actor on top, bound
@@ -72,9 +65,10 @@ export class Pill {
         this._held = false;          // the island holds the compact open (an alert, an ask)
         this._ignoreHover = false;   // held open under a resting pointer: not hovered till it leaves
         this._builtHovered = false;  // the compact's card was built for a pointer on it
-        this._morphTo = null;        // target of the running bg transition
+        this._morphTo = null;        // where the bg's springs are heading
         this._collapsing = false;    // until the collapse morph lands: bg clips the content
-        this._follow = null;         // {t, id}: bg transition the content clip follows
+        this._follow = null;         // {from, to, reveal, fade}: how the content follows the bg
+        this._targetR = 0;           // the radius on the way: never past half the height (_applyBg)
         this._destroyed = false;
         this._dot = null;            // the buoy light at the left end (_syncDot)
 
@@ -82,6 +76,7 @@ export class Pill {
         this.content = new St.Bin({style_class: 'buoy-content', reactive: true, track_hover: true});
         parent.add_child(this.bg);
         parent.add_child(this.content);
+        this._bgRun = new SpringRunner(this.bg, v => this._applyBg(v));
 
         this.content.connect('notify::width', () => this._contentResized());
         this.content.connect('notify::height', () => this._contentResized());
@@ -184,7 +179,13 @@ export class Pill {
         }
         if (this._compact && !this._hasCompact())
             this._stopCompact();     // its compact went away in this update
-        this._setContent(this._restingContent(), same && !fade ? 'follow' : true);
+        const next = this._restingContent();
+        this._setContent(next, same && !fade ? 'follow' : true);
+        // the same activity's new content, in place at once: measured and placed now, before
+        // this frame paints, as _swapResting does — waiting for notify::width showed a longer
+        // text for one frame at the old place, unclipped (2026-11-13, Ethan: "text bị glitch")
+        if (!this.fresh && next && this.content.child === next && this._fadingIn !== next)
+            this._applyContentSize();
         // A pill that appears (or changes activity) under a resting pointer is hovered
         // without an enter event: look again, so its compact still opens.
         if (!same)
@@ -193,11 +194,14 @@ export class Pill {
 
     // Move the pill's centre; `animate` slides it (slide-to-fill, merge/split).
     setCx(cx, animate) {
+        const slides = Math.abs(cx - this.cx) >= 0.5;
         this.cx = cx;
         const shape = this.currentShape();
         this._layoutContent();
+        // a slide is `move`; the same place at a new width (pill 1's longer text, laid out
+        // again by the island) is `size`, uncovered without a fade (_followBg)
         if (animate)
-            this._morph(shape, MERGE_MS);
+            this._morph(shape, slides ? 'move' : 'size');
         else
             this.applyShape(shape);
     }
@@ -230,7 +234,7 @@ export class Pill {
             }
             const opacity = shown && !dim ? 255 : 0;
             if (animate)
-                a.ease({opacity, duration: MERGE_MS, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+                a.ease({opacity, duration: shown ? FADES.in.ms : FADES.out.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
             else
                 a.opacity = opacity;
         }
@@ -241,7 +245,7 @@ export class Pill {
     dim(dimmed) {
         for (const a of [this.bg, this.content]) {
             a.remove_transition('opacity');
-            a.ease({opacity: dimmed ? 0 : 255, duration: dimmed ? 100 : 200, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+            a.ease({opacity: dimmed ? 0 : 255, duration: dimmed ? FADES.out.ms : FADES.in.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         }
     }
 
@@ -323,148 +327,149 @@ export class Pill {
     applyShape(shape) {
         this._morphTo = null;
         this._collapsing = false;
-        this.bg.remove_transition('x');
-        this.bg.remove_transition('width');
-        this.bg.remove_transition('height');
-        this.bg.set_size(shape.w, shape.h);
-        this.bg.set_position((shape.cx ?? this.cx) - shape.w / 2, 0);
-        this.bg.set_style(this._bgStyle(shape));
+        this._targetR = shape.r;
+        this._radius = undefined;
+        this._bgRun.set({x: (shape.cx ?? this.cx) - shape.w / 2, w: shape.w, h: shape.h});
         this._resetContentTransform();
     }
 
-    morph(shape = this.currentShape(), duration = SHAPE_MS) {
-        this._morph(shape, duration);
+    // Every frame of a spring (and once at a jump): the bg's place and size, its radius
+    // following its height (design/motion "Bo góc đi theo chiều cao"), set only when it
+    // changes by a whole px.
+    _applyBg({x, w, h}) {
+        if (this._destroyed)
+            return;
+        this.bg.set_position(x, 0);
+        this.bg.set_size(Math.max(0, w), Math.max(0, h));
+        const r = radiusAt(h, this._targetR);
+        if (r !== this._radius)
+            this.bg.set_style(this._bgStyle({r}));
     }
 
-    _morph(shape, duration) {
+    /**
+     * @param {object} [shape]
+     * @param {string} [spring]  a motion.js SPRINGS key: `open` by default (the island's
+     *   expand)
+     */
+    morph(shape = this.currentShape(), spring = 'open') {
+        this._morph(shape, spring);
+    }
+
+    _morph(shape, spring) {
         if (this._destroyed)
             return;
         const x = (shape.cx ?? this.cx) - shape.w / 2;
-        this.bg.set_style(this._bgStyle(shape));
-        const t = this.bg.get_transition('width') || this.bg.get_transition('x');
-        if (!t && this.bg.x === x && this.bg.width === shape.w && this.bg.height === shape.h)
-            return; // already there: start no transition (nothing animates at rest)
-        const to = this._morphTo;
-        if (t && to?.x === x && to.w === shape.w && to.h === shape.h)
-            return; // already heading there: restarting would hold the morph at its start
-        this._morphTo = {x, w: shape.w, h: shape.h};
-        const from = {cx: this.bg.x + this.bg.width / 2, w: this.bg.width, h: this.bg.height};
-        this.bg.remove_transition('x');
-        this.bg.remove_transition('width');
-        this.bg.remove_transition('height');
-        const done = finished => {
-            if (finished)
-                this._collapsing = false;
-        };
-        const stop = shrinkStop(from, shape);
-        if (!stop) {
-            this.bg.ease({x, width: shape.w, height: shape.h, duration, mode: MORPH_MODE, onStopped: done});
-            this._followBg(from, shape, duration);
-            return;
+        const run = this._bgRun;
+        const at = {x: run.value('x') ?? this.bg.x, w: run.value('w') ?? this.bg.width, h: run.value('h') ?? this.bg.height};
+        // On the way the radius is the larger of where it is and where it goes, never past
+        // half the height: it follows the height down as up, and is the shape's own at the
+        // end (design/motion "Bo góc đi theo chiều cao")
+        this._targetR = Math.max(this._radius ?? shape.r, shape.r);
+        const endR = shape.r;
+        this.bg.set_style(this._bgStyle({r: radiusAt(at.h, this._targetR)}));  // the keyline too
+        if (!run.running && at.x === x && at.w === shape.w && at.h === shape.h) {
+            this._targetR = endR;
+            this.bg.set_style(this._bgStyle({r: radiusAt(at.h, endR)}));
+            return; // already there: start nothing (nothing animates at rest)
         }
-        // A long shrink: EASE_OUT_BACK would bounce ~10 % of it past the size, into the
-        // text. Shrink to just short of it (at most SHRINK_BOUNCE px), then settle out —
-        // the same overshoot-and-return, bounded (2026-11-06, Ethan)
-        const turn = Math.round(duration * SHRINK_TURN);
-        const cx = shape.cx ?? this.cx;
-        this.bg.ease({
-            x: cx - stop.w / 2, width: stop.w, height: stop.h, duration: turn,
-            mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
-            onStopped: finished => {
-                const heading = this._morphTo;
-                if (!finished || this._destroyed || heading?.x !== x || heading.w !== shape.w || heading.h !== shape.h)
-                    return;     // stopped or sent elsewhere meanwhile
-                this.bg.ease({
-                    x, width: shape.w, height: shape.h, duration: duration - turn,
-                    mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD, onStopped: done,
-                });
+        const to = this._morphTo;
+        if (run.running && to?.x === x && to.w === shape.w && to.h === shape.h)
+            return; // already heading there
+        this._morphTo = {x, w: shape.w, h: shape.h};
+        const from = {cx: at.x + at.w / 2, w: at.w, h: at.h};
+        if (run.value('x') === null)
+            run.set({x: at.x, w: at.w, h: at.h});
+        this._followBg(from, shape, spring);
+        run.to({x, w: shape.w, h: shape.h}, springFor(spring, from, shape), {
+            onFrame: () => this._followFrame(),
+            onDone: finished => {
+                if (!finished || this._destroyed)
+                    return;
+                this._targetR = endR;
+                this.bg.set_style(this._bgStyle({r: radiusAt(this._bgRun.value('h'), endR)}));
+                this._collapsing = false;
+                this._morphTo = null;
+                this._resetContentTransform();
             },
         });
-        this._followBg(from, {...stop, cx}, turn);
     }
 
     // The content sits at its final place at once and never scales (SPEC §5). While the
-    // bg grows into it (expand, a much longer text) or shrinks past it (collapse, the
-    // EASE_OUT_BACK undershoot), the content is clipped to the bg every frame of the bg's
-    // own transition, so it is uncovered exactly as fast as the pill opens. A plain slide
-    // (slide-to-fill, merge) moves it with the bg on the same curve instead.
-    _followBg(from, to, duration) {
+    // bg grows into it (expand, a much longer text) or shrinks past it (collapse), the
+    // content is clipped to the bg every frame of the bg's spring, so it is uncovered
+    // exactly as fast as the pill opens, its opacity following the same progress (full
+    // from halfway). A plain slide (slide-to-fill, merge) moves it with the bg.
+    // A new size of the same content (`size`: a longer text) is only uncovered, never faded:
+    // the text is the one already shown, and fading it to 0 first read as a blink.
+    _followBg(from, to, spring) {
         this._resetContentTransform();
         const grow = Math.min(from.w / to.w, from.h / to.h);
-        if (grow < REVEAL_FROM || this._collapsing) {
-            const t = ['width', 'height', 'x'].map(p => this.bg.get_transition(p)).find(Boolean);
-            if (t)
-                this._clipToBg(t, from, to, !this._collapsing);
-            return;
-        }
+        const reveal = grow < REVEAL_FROM || this._collapsing;
         const dx = from.cx - (to.cx ?? this.cx);
-        if (Math.abs(dx) < 0.5)
+        if (!reveal && Math.abs(dx) < 0.5)
             return;
-        this.content.translation_x = dx;
-        // @ts-expect-error -- snake_case, as Shell's environment.js _easeActor reads it; @girs lists camelCase only
-        this.content.ease({translation_x: 0, duration, mode: MORPH_MODE});
+        const fade = reveal && !this._collapsing && spring !== 'size';
+        this._follow = {from, to: {...to, cx: to.cx ?? this.cx}, reveal, fade};
+        this._followFrame();
     }
 
-    // fade: opening; the content also fades in with the same progress, so a word the
-    // bg's edge is still cutting through stays faint (full from halfway through the morph)
-    _clipToBg(t, from, to, fade) {
+    _followFrame() {
+        const f = this._follow;
+        if (!f || this._destroyed)
+            return;
         const c = this.content;
+        const x = this._bgRun.value('x'), w = this._bgRun.value('w'), h = this._bgRun.value('h');
+        if (!f.reveal) {
+            c.translation_x = Math.round(x + w / 2 - f.to.cx);
+            return;
+        }
         // the clip is a rectangle; keep it off the pill's round ends
-        const inset = Math.ceil(to.r * 0.15);
-        const x0 = from.cx - from.w / 2, x1 = (to.cx ?? this.cx) - to.w / 2;
-        const clip = e => {
-            const w = from.w + (to.w - from.w) * e;
-            const h = from.h + (to.h - from.h) * e;
-            const x = x0 + (x1 - x0) * e;
-            c.set_clip(x + inset - c.x, -c.y, Math.max(0, w - 2 * inset), Math.max(0, h));
-            if (fade)
-                c.opacity = Math.round(255 * Math.min(1, Math.max(0, 2 * e - 1)));
-        };
-        clip(0);
-        // new-frame runs as the timeline advances, before layout: no allocation is touched
-        const id = t.connect('new-frame', () => clip(t.get_progress()));
-        t.connect('stopped', () => {
-            if (!this._destroyed && this._follow?.t === t)
-                this._resetContentTransform();
-        });
-        this._follow = {t, id, fade};
+        const inset = Math.ceil(radiusAt(h, f.to.r) * 0.15);
+        c.set_clip(x + inset - c.x, -c.y, Math.max(0, w - 2 * inset), Math.max(0, h));
+        if (f.fade) {
+            const dw = Math.abs(f.to.w - f.from.w), dh = Math.abs(f.to.h - f.from.h);
+            const e = dw >= dh ? progressOf(f.from.w, f.to.w, w) : progressOf(f.from.h, f.to.h, h);
+            c.opacity = Math.round(255 * Math.min(1, Math.max(0, 2 * e - 1)));
+        }
     }
 
     _resetContentTransform() {
         const c = this.content;
         const f = this._follow;
-        if (f) {
-            f.t.disconnect(f.id);
-            this._follow = null;
-            // retargeted mid-reveal: finish the fade instead of leaving it part-way
-            if (f.fade && c.opacity < 255)
-                c.ease({opacity: 255, duration: 100, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
-        }
+        this._follow = null;
+        // retargeted mid-reveal: finish the fade instead of leaving it part-way
+        if (f?.fade && c.opacity < 255)
+            c.ease({opacity: 255, duration: FADES.out.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         c.remove_clip();
-        c.remove_transition('translation-x');
         c.translation_x = 0;
     }
 
     // Press feedback for the idle pill and activities without an expanded presentation;
-    // also how a non-expandable activity shows an alert.
+    // also how a non-expandable activity shows an alert (design/motion "Nhấn pill"): the bg
+    // shrinks 4 px each way on `snap`, held PRESS_HOLD, then springs back on `snap` — from
+    // where it is, with its speed.
     pulse() {
         if (this._destroyed)
             return;
         const rest = this.currentShape();
-        // from the compact when it is open: the bar's press shape (32 + 4 px) would squash
-        // it under its content (a click raising a session's terminal, 2026-11-07)
+        // from the compact when it is open: the bar's press shape would squash it under its
+        // content (a click raising a session's terminal, 2026-11-07)
         const press = this._compact
-            ? {...rest, w: rest.w + 8, h: rest.h + 4}
+            ? {...rest, w: rest.w - 4, h: rest.h - 4}
             : this._s.press(this.restShape());
-        this._morphTo = null;
-        this.bg.remove_all_transitions();
-        this.bg.set_style(this._bgStyle(press));
-        this.bg.ease({
-            x: (press.cx ?? this.cx) - press.w / 2, width: press.w, height: press.h,
-            duration: 120, mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onStopped: finished => {
-                if (finished)
-                    this._morph(rest, PRESS_MS);
+        const t0 = GLib.get_monotonic_time();
+        let back = false;
+        this._morph(press, 'snap');
+        this._bgRun.to({}, 'snap', {
+            onFrame: () => {
+                if (back || GLib.get_monotonic_time() - t0 < PRESS_HOLD * 1000)
+                    return;
+                back = true;
+                this._morph(this.currentShape(), 'snap');
+            },
+            onDone: finished => {
+                if (finished && !back)
+                    this._morph(this.currentShape(), 'snap');
             },
         });
     }
@@ -482,7 +487,7 @@ export class Pill {
         this._syncDot();
         this._setContent(panel ?? buildExpanded(this.activity), false);
         this._layoutContent();
-        this._morph(this.currentShape(), SHAPE_MS); // fades the content in with the reveal
+        this._morph(this.currentShape(), 'open'); // fades the content in with the reveal
     }
 
     collapse() {
@@ -497,7 +502,7 @@ export class Pill {
         this._setContent(this._restingContent(), false);
         this._layoutContent();
         this._collapsing = true;
-        this._morph(this.currentShape(), SHAPE_MS);
+        this._morph(this.currentShape(), 'close');
         this._fadeContent();
     }
 
@@ -505,7 +510,7 @@ export class Pill {
     _fadeContent() {
         this.content.remove_transition('opacity');
         this.content.opacity = 0;
-        this.content.ease({opacity: 255, duration: 150, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+        this.content.ease({opacity: 255, duration: FADES.in.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
     }
 
     // --- content ------------------------------------------------------------------
@@ -602,7 +607,7 @@ export class Pill {
         if (old) {
             this._pendingIn = actor;
             old.ease({
-                opacity: 0, duration: 100,
+                opacity: 0, duration: FADES.out.ms,
                 onComplete: () => {
                     if (this.content.child === old)
                         this.content.set_child(null);
@@ -642,7 +647,7 @@ export class Pill {
         // gone with the actor; no timer to clean up.
         const id = actor.connect('notify::allocation', () => {
             actor.disconnect(id);
-            actor.ease({opacity: 255, duration: 200, delay: from ? 0 : 100, onStopped: done});
+            actor.ease({opacity: 255, duration: FADES.in.ms, delay: from ? 0 : FADES.out.ms, onStopped: done});
         });
     }
 
@@ -659,7 +664,7 @@ export class Pill {
         });
     }
 
-    _applyContentSize(duration = SIZE_MS) {
+    _applyContentSize(spring = 'size') {
         if (!this.expanded) {
             // natural size, not the allocation: another relayout may already be queued
             // (an icon finished loading). The content has been allocated once by now,
@@ -685,7 +690,7 @@ export class Pill {
         this._layoutContent();
         // the idle pill opens on Home's panel and its missed compact too
         if (this.activity || this.expanded || this._compact)
-            this._morph(this.currentShape(), duration);
+            this._morph(this.currentShape(), spring);
     }
 
     _contentX() {
@@ -736,7 +741,7 @@ export class Pill {
             return;
         // a card whose buttons show on hover (a notification's, design/alerts-and-asks)
         if (this._compact && this._cardOnHover && this.hoverCounts !== this._builtHovered)
-            this._swapResting(SIZE_MS);
+            this._swapResting('size');
         if (this.hovered) {
             this._clearGrace();
             if (!this._compact && !this._compactId && this._hasCompact()) {
@@ -768,7 +773,7 @@ export class Pill {
             }
         }
         if (!this._compact)
-            this._morph(this.currentShape(), SIZE_MS);
+            this._morph(this.currentShape(), 'snap');   // hover on and off (design/motion)
     }
 
     // The amber light's compact (INDICATORS.md): on the centre pill, while amber.
@@ -782,7 +787,7 @@ export class Pill {
         this._compact = true;
         this._syncDot();
         this._island._compactShown(this, true);
-        this._swapResting(SHAPE_MS);  // a shape morph that uncovers its content (SPEC §5)
+        this._swapResting('move');  // a shape morph that uncovers its content (SPEC §5)
     }
 
     _clearGrace() {
@@ -810,20 +815,20 @@ export class Pill {
     _stopCompact() {
         if (!this._dropCompact() || this.expanded)
             return;
-        this._swapResting(COMPACT_OUT_MS);
+        this._swapResting('close');
         // _applyContentSize morphs an activity's pill back; the idle pill (its compact is
         // the amber Missed list) is left to the island at rest, which does not move it:
         // without this its bg stayed at the compact's size around the clock (2026-11-06)
         if (!this.activity)
-            this._morph(this.currentShape(), COMPACT_OUT_MS);
+            this._morph(this.currentShape(), 'close');
     }
 
     // Compact in or out: a content of another size. Measure and place it now, before
     // this frame paints; waiting for notify::width (next frame) showed the new text for
     // one frame at the old place, unclipped, before the bg started to uncover it.
-    _swapResting(duration = SIZE_MS) {
+    _swapResting(spring = 'size') {
         this._setContent(this._restingContent(), false);
-        this._applyContentSize(duration);
+        this._applyContentSize(spring);
     }
 
     // --- leaving ------------------------------------------------------------------------
@@ -832,9 +837,9 @@ export class Pill {
     leave(onGone) {
         this._stopCompact();
         this.bg.reactive = this.content.reactive = false;
-        this.bg.ease({opacity: 0, duration: 200, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+        this.bg.ease({opacity: 0, duration: FADES.in.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         this.content.ease({
-            opacity: 0, duration: 200, mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            opacity: 0, duration: FADES.in.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onStopped: () => {
                 this.destroy();
                 onGone?.(this);
@@ -859,6 +864,7 @@ export class Pill {
         this._pendingIn?.destroy();      // waiting for a fade, never parented
         this._pendingIn = undefined;
         this._fadingIn = null;
+        this._bgRun.destroy();
         this.bg.destroy();
         this.content.destroy();
     }

@@ -47,6 +47,7 @@ src/buoy@murilegus/
     │   │   ├── presentation.js presentation data → render plan (2026-11-01)
     │   │   ├── shapes.js       the pill's sizes from the monitor and the em (rule 11)
     │   │   ├── home.js         Home's plan: the main card, the row of tiles and its fill rules (design/home, 2026-11-12)
+    │   │   ├── motion.js       the springs and fades (design/motion), pure: the spring's closed form, settling (2026-11-13)
     │   │   ├── tabs.js         which tabs exist, where an open starts (2026-11-02)
     │   │   ├── keys.js         keyboard: an ask's keys, ←/→ steps (2026-11-03)
     │   │   ├── settings.js     prefs: which page each schema key goes to, samples (2026-11-03)
@@ -71,6 +72,7 @@ src/buoy@murilegus/
     │   └── ui/             actors. Imports anything in kit/, never a module
     │       ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
     │       ├── pill.js         one pill: content, sizing, hover → compact, morph (2026-11-01; tier names 2026-11-05)
+    │       ├── spring.js       springs on the frame clock: one Clutter.Timeline per actor, stopped once settled (2026-11-13)
     │       ├── home.js         the panel a click opens: tab strip + tab body (Home: the main card
     │       │                   and the row of tiles, design/home 2026-11-12; kind, standalone)
     │       ├── styles.js       a module's stylesheet.css, loaded while it runs (Stylesheets, below)

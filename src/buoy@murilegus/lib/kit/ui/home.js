@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
+import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
@@ -14,6 +15,13 @@ import {daypartAt} from '../model/daypart.js';
 import {compactMetrics} from '../model/shapes.js';
 import {planStrip, stripOrder, tabActivities, findTab, HOME} from '../model/tabs.js';
 import {step} from '../model/keys.js';
+import {FADES, LIST_SHIFT, TAB_SHIFT} from '../model/motion.js';
+import {SpringRunner, afterLayout, slideIn} from './spring.js';
+
+// a strip button's tab id (kit/ui/home.js _stripPlaces)
+const tabIds = new WeakMap();
+// a body leaving on a tab switch: its spring, and whether a tab.js keeps it (_leave)
+const leaving = new WeakMap();
 
 /** @import Gio from 'gi://Gio' */
 
@@ -175,8 +183,25 @@ export class Home {
             x_expand: true, y_expand: true,
         });
         this.actor.add_child(this._column);
-        // one rounded group that hugs its tabs (Notchy's strip)
-        this._stripBox = new St.BoxLayout({style_class: 'buoy-tabs', x_align: Clutter.ActorAlign.START});
+        // the body a tab switch leaves, fading where it stood (_leave): over the column, no input
+        this._leaving = new St.Widget({x_expand: true, y_expand: true, reactive: false});
+        this.actor.add_child(this._leaving);
+        // one rounded group that hugs its tabs (Notchy's strip); the selected tab's pill is
+        // a marker of its own behind the row, so it slides to the next tab (design/motion
+        // "Đổi tab")
+        // (the default fixed layout: the row at 0, 0 of the padding box, the marker placed)
+        this._stripGroup = new St.Widget({
+            style_class: 'buoy-tabs', x_align: Clutter.ActorAlign.START, y_align: Clutter.ActorAlign.CENTER,
+        });
+        this._marker = new St.Widget({style_class: 'buoy-tab-marker', visible: false});
+        this._markerRun = new SpringRunner(this._marker, ({x, w}) => {
+            this._marker.set_position(Math.round(x), 0);
+            this._marker.set_size(Math.max(0, Math.round(w)), this._stripBox.height);
+        });
+        this._stripBox = new St.BoxLayout({style_class: 'buoy-tabs-row'});
+        this._stripGroup.add_child(this._marker);
+        this._stripGroup.add_child(this._stripBox);
+        this._stripLater = null;     // the strip's slide, waiting for its layout (afterLayout)
         this._body = new St.ScrollView({
             style_class: 'buoy-panel-body', x_expand: true,
             hscrollbar_policy: St.PolicyType.NEVER, vscrollbar_policy: St.PolicyType.AUTOMATIC,
@@ -191,7 +216,7 @@ export class Home {
         // the head 56: the strip and ⚙ are 32, 12 from the top (design/expanded)
         this._header.set_height(metrics.button);
         this._column.set_style(`padding: ${(metrics.head - metrics.button) / 2}px ${EDGE}px ${EDGE}px; spacing: ${(metrics.head - metrics.button) / 2}px;`);
-        this._header.add_child(this._stripBox);
+        this._header.add_child(this._stripGroup);
         this._header.add_child(new St.Widget({x_expand: true}));
         const prefs = new St.Button({
             style_class: 'buoy-tab buoy-gear', can_focus: true, accessible_name: 'Settings',
@@ -204,6 +229,7 @@ export class Home {
         this._column.add_child(this._body);
         this.actor.connect('destroy', () => {
             this._gone = true;
+            this._stripLater?.();
             this._destroyTabs();
         });
         // The body takes what the cap leaves after the strip and padding (font scaling
@@ -276,9 +302,19 @@ export class Home {
         this._closeMenu(false);
         if (id !== HOME || this._current !== HOME)
             this._page = null;       // Home opens on its card and row
+        // a switch slides (design/motion "Đổi tab"): the marker and the icons on `snap`, the
+        // body in from 12 px on the side it goes to; a first open or the same tab again does not
+        const order = stripOrder(this._strip);
+        const from = this._current;
+        const dir = from !== null && from !== id ? Math.sign(order.indexOf(id) - order.indexOf(from)) || 1 : 0;
+        const before = this._stripPlaces();
         this._current = id;
         this._renderStrip();
-        this._setBody(this._buildBody(findTab(this._strip, id)));
+        this._slideStrip(before, from !== id);
+        const body = this._buildBody(findTab(this._strip, id));
+        this._setBody(body, dir);
+        if (dir)
+            slideIn(body, dir * TAB_SHIFT, 'snap', FADES.in.ms);
         if (id === HOME && this._missed.length)
             this._onMissedSeen?.();  // the amber light goes off; the list stays (stack)
     }
@@ -292,7 +328,9 @@ export class Home {
         if (this._current !== HOME || !this._page || this._gone)
             return false;
         this._page = null;
-        this._setBody(this._homeBody());
+        const body = this._homeBody();
+        this._setBody(body);
+        slideIn(body, -LIST_SHIFT, 'move', FADES.in.ms);   // back: from the left
         return true;
     }
 
@@ -332,6 +370,7 @@ export class Home {
             this._stripBox.add_child(this._tabButton(t, t.id));
         if (slot)
             this._stripBox.add_child(this._tabButton(slot, slot.id));
+        this._marker.visible = this._current !== null && stripOrder(this._strip).includes(this._current);
         if (more.length) {
             const button = this._button({icon: 'view-more-symbolic', label: null}, 'More tabs');
             button.checked = this._menu !== null;
@@ -347,6 +386,62 @@ export class Home {
         }
     }
 
+    // Where each tab sits in the row now ({id: {x, w}}; the row is at the group's 0), read
+    // before the strip is rebuilt, for the slide to start from.
+    _stripPlaces() {
+        const places = new Map();
+        if (!this._stripBox.has_allocation())
+            return places;
+        for (const b of this._stripBox.get_children()) {
+            const id = tabIds.get(b);
+            if (id === undefined || !b.has_allocation())
+                continue;
+            const box = b.get_allocation_box();
+            places.set(id, {x: box.x1 + b.translation_x, w: box.x2 - box.x1});
+        }
+        return places;
+    }
+
+    // After the new strip's layout: the marker springs from where it was to the selected
+    // tab (placed at once the first time); every tab that was there before springs from its
+    // old place to its new one (the selected one is wider: it has its title, which fades in).
+    _slideStrip(before, switched) {
+        this._stripLater?.();
+        this._stripLater = afterLayout(() => {
+            this._stripLater = null;
+            if (this._gone)
+                return;
+            const now = this._stripPlaces();
+            const sel = now.get(this._current);
+            if (sel) {
+                if (this._markerRun.value('x') === null || !switched)
+                    this._markerRun.set({x: sel.x, w: sel.w});
+                else
+                    this._markerRun.to({x: sel.x, w: sel.w}, 'snap');
+            }
+            if (!switched)
+                return;
+            for (const b of this._stripBox.get_children()) {
+                const id = tabIds.get(b);
+                const was = before.get(id), is = now.get(id);
+                if (id === this._current) {
+                    const label = /** @type {St.Button} */ (b).child?.get_children().find(c => c instanceof St.Label);
+                    if (label) {
+                        label.opacity = 0;
+                        label.ease({opacity: 255, duration: FADES.in.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+                    }
+                }
+                if (!was || !is || Math.abs(was.x - is.x) < 0.5)
+                    continue;
+                const run = new SpringRunner(b, v => {
+                    b.translation_x = Math.round(v.t);
+                });
+                run.set({t: was.x - is.x});
+                run.to({t: 0}, 'snap', {onDone: () => run.destroy()});
+            }
+        });
+    }
+
     // Like Notchy: the active tab shows its icon and title, the others only their icon
     // (the title stays their accessible name).
     // The slot looks like any other tab (no ▾, 2026-11-02); ⋯ changes what sits in it.
@@ -354,6 +449,7 @@ export class Home {
         const active = id === this._current;
         const button = this._button({icon: tab.icon, label: active ? tab.label : null, badge: tab.badge}, tab.label);
         button.checked = active;
+        tabIds.set(button, id);
         button.connect('clicked', () => this.select(id));
         return button;
     }
@@ -391,11 +487,12 @@ export class Home {
         // Allocation boxes (each relative to its parent), not screen positions: those can
         // still be mid-way through a morph's slide.
         const header = this._header.get_allocation_box();
+        const group = this._stripGroup.get_allocation_box();
         const strip = this._stripBox.get_allocation_box();
         const more = this._moreButton.get_allocation_box();
-        const left = this._column.x + header.x1 + strip.x1;
+        const left = this._column.x + header.x1 + group.x1 + strip.x1;
         const right = Math.max(0, Math.round(this.actor.width - (left + more.x2)));
-        const top = Math.round(this._column.y + header.y1 + strip.y2 + 6);
+        const top = Math.round(this._column.y + header.y1 + group.y2 + 6);
         const layer = new St.BoxLayout({x_expand: true, y_expand: true, reactive: true});
         for (const signal of ['button-press-event', 'touch-event']) {
             layer.connect(signal, (_a, ev) => {
@@ -442,7 +539,15 @@ export class Home {
 
     // --- body ---------------------------------------------------------------------------
 
-    _setBody(actor) {
+    /**
+     * @param {Clutter.Actor} actor  the new body
+     * @param {number} [leave]  a tab switch's direction (-1, +1): the old body fades out
+     *   and moves 12 px the other way where it stood (design/motion "Đổi tab"); 0: it goes
+     */
+    _setBody(actor, leave = 0) {
+        // back before it finished leaving (a quick switch there and back): it is the body again
+        if (actor.get_parent() === this._leaving)
+            this._unleave(actor);
         // a module Card's actor is kept for the rest of this open: out of the old layout
         // first, which goes
         for (const card of this._cards.values()) {
@@ -452,12 +557,59 @@ export class Home {
         // a tab.js actor is kept for the rest of this open; anything else is rebuilt
         const kept = new Set([...this._tabs.values()].map(t => t.actor));
         for (const old of this._view.get_children()) {
-            if (kept.has(old))
+            if (old === actor)
+                continue;
+            if (leave)
+                this._leave(old, leave, kept.has(old));
+            else if (kept.has(old))
                 this._view.remove_child(old);
             else
                 old.destroy();
         }
-        this._view.add_child(actor);
+        if (actor.get_parent() !== this._view)
+            this._view.add_child(actor);
+    }
+
+    // The old body leaves where it stood: moved onto the layer over the column at its place
+    // and size, it fades out (100 ms) and moves TAB_SHIFT the other way (`snap`), then goes —
+    // a tab.js actor is only taken off, to be shown again later.
+    _leave(old, dir, kept) {
+        const at = old.apply_relative_transform_to_point(this.actor, new Graphene.Point3D({x: 0, y: 0, z: 0}));
+        const [w, h] = [old.width, old.height];
+        old.remove_all_transitions();
+        this._view.remove_child(old);
+        this._leaving.add_child(old);
+        old.set_position(Math.round(at.x), Math.round(at.y));
+        old.set_size(w, h);
+        const run = new SpringRunner(old, v => {
+            old.translation_x = Math.round(v.t);
+        });
+        run.set({t: old.translation_x});
+        run.to({t: -dir * TAB_SHIFT}, 'snap');
+        leaving.set(old, {run, kept});
+        old.ease({
+            opacity: 0, duration: FADES.out.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onStopped: finished => {
+                if (!finished || old.get_parent() !== this._leaving)
+                    return;     // taken back meanwhile (_unleave)
+                if (kept)
+                    this._unleave(old);
+                else
+                    old.destroy();
+            },
+        });
+    }
+
+    // Off the leaving layer, as it was before it left
+    _unleave(actor) {
+        leaving.get(actor)?.run.destroy();
+        leaving.delete(actor);
+        actor.remove_all_transitions();
+        this._leaving.remove_child(actor);
+        actor.fixed_position_set = false;
+        actor.set_size(-1, -1);
+        actor.translation_x = 0;
+        actor.opacity = 255;
     }
 
     _buildBody(tab) {
@@ -806,7 +958,9 @@ export class Home {
 
     _showPage(page) {
         this._page = page;
-        this._setBody(this._homeBody());
+        const body = this._homeBody();
+        this._setBody(body);
+        slideIn(body, LIST_SHIFT, 'move', FADES.in.ms);    // a page pushed in from the right
     }
 
     // ‹ (back to Home, also Esc), the title and its count, an action

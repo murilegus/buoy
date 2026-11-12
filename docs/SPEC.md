@@ -782,28 +782,37 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 
 ## 5. Motion
 
-- Background actor eases `x / width / height`; content fades (100 ms out, 200 ms in).
-- `EASE_OUT_BACK`, 460 ms shape (into the compact too) · 360 ms out of the compact · 240 ms
-  size (a longer text) · 120/300 ms
-  press · 360 ms merge (2026-11-06, Ethan: a fifth slower than the first 380/200/250/300).
-- A long shrink bounces at most 12 px (2026-11-06, Ethan): EASE_OUT_BACK goes ~10 % of a
-  move past its end, which on expanded → minimal (560 → 168 px) cut 39 px into the text.
-  A shrink whose bounce would pass 12 px shrinks to 12 px short of its size (70 % of the
-  time, ease-out cubic), then settles out to it (ease-in-out); shorter shrinks (compact →
-  minimal, ~120 px) and every grow keep Clutter's own (`kit/model/shapes.js` `shrinkStop`).
-- Compact (2026-11-05): a pill growing into its compact is a shape morph (460 ms) and
-  grows by far more than 25 %, so it uncovers its content as expanded does (below);
-  neighbour pills fade where they stand (100 ms out, 200 ms in).
-- Border radius snaps at transition start.
-- Content never moves or scales during a morph. On expand (and any morph that grows the
-  pill by more than 25%) it sits at its final place and the background **uncovers** it:
-  the content is clipped to the background on every frame of the background's own
-  transition, so it shows exactly as fast as the pill opens, and its opacity follows the
-  same progress (0 → full from halfway), so a word the edge still cuts stays faint; on
-  collapse the same clip
-  keeps it inside through the undershoot. A slide (slide-to-fill, merge) moves the
-  content with its background on the same curve (2026-11-02: before, the expanded text
-  showed at full width while the background was still compact).
+*Rewritten 2026-11-13 (FEATURES M4 "Motion"); the curves, times and each move are in
+[docs/design](design/index.md) (Motion, Chuyển động), the numbers in its tokens.*
+
+- **Springs for every move, size and shape** (`kit/model/motion.js`, run on the frame
+  clock by `kit/ui/spring.js`: one Clutter.Timeline per actor, stopped once settled, none
+  at rest). Each is a perceived duration and a bounce, as Apple's: `snap` (hover, press,
+  the tab marker), `size` (a content's new size), `move` (into the compact, slides,
+  merge), `open` (expanded, an alert, an ask), `close` (every shrink back). Only growing
+  bounces; a move to a smaller shape takes `close`, which never passes its size (the
+  two-step shrink of 2026-11-06, `shrinkStop`, is gone).
+- **Cut short, a move goes on** from where it is with the speed it has (a hover in and out
+  at once, an alert mid-way).
+- **The radius follows the height**: on the way it is the larger of the old and new radius,
+  never more than half the height; at the end, the shape's own.
+- **Content never moves or scales during a morph** (until M4 "Motion: shared parts"). On
+  expand, into the compact, and any morph that grows the pill by more than 25 %, it sits at
+  its final place and the background uncovers it: clipped to the background every frame of
+  the background's springs, its opacity following the same progress (full from halfway);
+  on collapse the same clip keeps it inside. A slide (slide-to-fill, merge) moves the
+  content with its background. Neighbour pills fade where they stand under a compact.
+- **Fades** are plain: 100 ms out, 200 ms in. Hover, press and checked change colours over
+  120 ms (St's `transition-duration`).
+- **Press**: 4 px smaller each way on `snap`, held 90 ms, back on `snap`.
+- **Tab switch**: the selected tab's pill is a marker behind the row; it springs to the new
+  tab on `snap`, the tabs between spring to their new places, the new title fades in; the
+  old body fades out where it stood and moves 12 px back, the new one comes in from 12 px
+  on the side it goes to. Home's lists in place (Missed, +K) come
+  in from 24 px on the right on `move`; back, from the left.
+- **Animations off** (`enable-animations`): every move is at its end at once;
+  `slow-down-factor` stretches every spring, as Shell's own `ease()`
+  (`misc/animationUtils.js` `adjustAnimationTime`).
 
 ## 6. Modules for v0.1
 

@@ -158,6 +158,10 @@ Idle không có gì chuyển động; idle đổi nội dung là một lần `id
 
 ## Chỗ trong code
 
+**Đã làm** (2026-11-13, FEATURES M4 "Motion"): lò xo, bộ chạy, morph, hover, nhấn, bo góc,
+đổi tab (thân cũ mờ đi và lùi 12 px tại chỗ, thân mới tới), danh sách tại chỗ, CSS state, tắt
+animation. **Chưa**: phần chung đi tới chỗ mới (M4 "Motion: shared parts").
+
 - `lib/kit/model/motion.js` (mới, thuần): các token; `spring({d, bounce})` → vị trí và vận tốc theo
   thời gian, lúc lắng; đổi đích giữ vận tốc. Test: ζ = 1 − bounce, vọt quá, lúc lắng, đổi đích.
 - `lib/kit/ui/` (mới, cạnh `pill.js`): một bộ chạy lò xo trên `Clutter.Timeline` (frame clock),
