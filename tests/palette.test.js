@@ -93,7 +93,9 @@ for (let i; (i = en.next_file(null));) {
 ok(files.length >= 7, `the main stylesheet and the modules' (${files.length})`);
 
 const COLOUR = /(#[0-9a-fA-F]{3,8}\b|rgba\([^)]*\)|st-transparentize\([^)]*\)\)?|-st-accent-fg-color|-st-accent-color|\btransparent\b)/;
-const PROPS = new Set(['color', 'background-color', 'border', 'border-color', 'box-shadow']);  // box-shadow: the focus ring
+// box-shadow: the focus ring; -barlevel-*: Shell's Slider (ui/barLevel.js), the Media tab's seek bar
+const PROPS = new Set(['color', 'background-color', 'border', 'border-color', 'box-shadow',
+    '-barlevel-background-color', '-barlevel-active-background-color']);
 // the ring of the tab's dot is the background under it mixed on black (design/colours "Giá
 // trị suy ra"): one or two fills laid on black
 const FILLS = ['fill-0', 'fill-1', 'fill-2', 'fill-3', 'fill-4'].map(r => parse(ROLES[r])[3]);

@@ -16,10 +16,9 @@ import {compactMetrics} from '../model/shapes.js';
 import {planStrip, stripOrder, tabActivities, findTab, HOME} from '../model/tabs.js';
 import {step} from '../model/keys.js';
 import {FADES, LIST_SHIFT, TAB_SHIFT} from '../model/motion.js';
-import {SpringRunner, afterLayout, slideIn} from './spring.js';
+import {SpringRunner, slideIn} from './spring.js';
+import {SlidingRow} from './strip.js';
 
-// a strip button's tab id (kit/ui/home.js _stripPlaces)
-const tabIds = new WeakMap();
 // a body leaving on a tab switch: its spring, and whether a tab.js keeps it (_leave)
 const leaving = new WeakMap();
 
@@ -188,20 +187,10 @@ export class Home {
         this.actor.add_child(this._leaving);
         // one rounded group that hugs its tabs (Notchy's strip); the selected tab's pill is
         // a marker of its own behind the row, so it slides to the next tab (design/motion
-        // "Đổi tab")
-        // (the default fixed layout: the row at 0, 0 of the padding box, the marker placed)
-        this._stripGroup = new St.Widget({
-            style_class: 'buoy-tabs', x_align: Clutter.ActorAlign.START, y_align: Clutter.ActorAlign.CENTER,
-        });
-        this._marker = new St.Widget({style_class: 'buoy-tab-marker', visible: false});
-        this._markerRun = new SpringRunner(this._marker, ({x, w}) => {
-            this._marker.set_position(Math.round(x), 0);
-            this._marker.set_size(Math.max(0, Math.round(w)), this._stripBox.height);
-        });
-        this._stripBox = new St.BoxLayout({style_class: 'buoy-tabs-row'});
-        this._stripGroup.add_child(this._marker);
-        this._stripGroup.add_child(this._stripBox);
-        this._stripLater = null;     // the strip's slide, waiting for its layout (afterLayout)
+        // "Đổi tab", kit/ui/strip.js)
+        this._strip_ = new SlidingRow({groupClass: 'buoy-tabs', rowClass: 'buoy-tabs-row', markerClass: 'buoy-tab-marker'});
+        this._stripGroup = this._strip_.group;
+        this._stripBox = this._strip_.row;
         this._body = new St.ScrollView({
             style_class: 'buoy-panel-body', x_expand: true,
             hscrollbar_policy: St.PolicyType.NEVER, vscrollbar_policy: St.PolicyType.AUTOMATIC,
@@ -229,7 +218,6 @@ export class Home {
         this._column.add_child(this._body);
         this.actor.connect('destroy', () => {
             this._gone = true;
-            this._stripLater?.();
             this._destroyTabs();
         });
         // The body takes what the cap leaves after the strip and padding (font scaling
@@ -307,10 +295,9 @@ export class Home {
         const order = stripOrder(this._strip);
         const from = this._current;
         const dir = from !== null && from !== id ? Math.sign(order.indexOf(id) - order.indexOf(from)) || 1 : 0;
-        const before = this._stripPlaces();
+        const before = this._strip_.places();
         this._current = id;
-        this._renderStrip();
-        this._slideStrip(before, from !== id);
+        this._renderStrip(before, from !== id);
         const body = this._buildBody(findTab(this._strip, id));
         this._setBody(body, dir);
         if (dir)
@@ -363,14 +350,15 @@ export class Home {
 
     // --- strip ------------------------------------------------------------------------
 
-    _renderStrip() {
+    // before, switched: a tab switch slides the marker and the tabs (kit/ui/strip.js); any
+    // other redraw (a badge, ⋯ opened) puts the marker on the current tab at once
+    _renderStrip(before = new Map(), switched = false) {
         this._stripBox.destroy_all_children();
         const {tabs, slot, more} = this._strip;
         for (const t of tabs)
             this._stripBox.add_child(this._tabButton(t, t.id));
         if (slot)
             this._stripBox.add_child(this._tabButton(slot, slot.id));
-        this._marker.visible = this._current !== null && stripOrder(this._strip).includes(this._current);
         if (more.length) {
             const button = this._button({icon: 'view-more-symbolic', label: null}, 'More tabs');
             button.checked = this._menu !== null;
@@ -384,62 +372,7 @@ export class Home {
             this._moreButton = button;
             this._stripBox.add_child(button);
         }
-    }
-
-    // Where each tab sits in the row now ({id: {x, w}}; the row is at the group's 0), read
-    // before the strip is rebuilt, for the slide to start from.
-    _stripPlaces() {
-        const places = new Map();
-        if (!this._stripBox.has_allocation())
-            return places;
-        for (const b of this._stripBox.get_children()) {
-            const id = tabIds.get(b);
-            if (id === undefined || !b.has_allocation())
-                continue;
-            const box = b.get_allocation_box();
-            places.set(id, {x: box.x1 + b.translation_x, w: box.x2 - box.x1});
-        }
-        return places;
-    }
-
-    // After the new strip's layout: the marker springs from where it was to the selected
-    // tab (placed at once the first time); every tab that was there before springs from its
-    // old place to its new one (the selected one is wider: it has its title, which fades in).
-    _slideStrip(before, switched) {
-        this._stripLater?.();
-        this._stripLater = afterLayout(() => {
-            this._stripLater = null;
-            if (this._gone)
-                return;
-            const now = this._stripPlaces();
-            const sel = now.get(this._current);
-            if (sel) {
-                if (this._markerRun.value('x') === null || !switched)
-                    this._markerRun.set({x: sel.x, w: sel.w});
-                else
-                    this._markerRun.to({x: sel.x, w: sel.w}, 'snap');
-            }
-            if (!switched)
-                return;
-            for (const b of this._stripBox.get_children()) {
-                const id = tabIds.get(b);
-                const was = before.get(id), is = now.get(id);
-                if (id === this._current) {
-                    const label = /** @type {St.Button} */ (b).child?.get_children().find(c => c instanceof St.Label);
-                    if (label) {
-                        label.opacity = 0;
-                        label.ease({opacity: 255, duration: FADES.in.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
-                    }
-                }
-                if (!was || !is || Math.abs(was.x - is.x) < 0.5)
-                    continue;
-                const run = new SpringRunner(b, v => {
-                    b.translation_x = Math.round(v.t);
-                });
-                run.set({t: was.x - is.x});
-                run.to({t: 0}, 'snap', {onDone: () => run.destroy()});
-            }
-        });
+        this._strip_.slide(before, stripOrder(this._strip).includes(this._current) ? this._current : null, switched);
     }
 
     // Like Notchy: the active tab shows its icon and title, the others only their icon
@@ -449,7 +382,7 @@ export class Home {
         const active = id === this._current;
         const button = this._button({icon: tab.icon, label: active ? tab.label : null, badge: tab.badge}, tab.label);
         button.checked = active;
-        tabIds.set(button, id);
+        this._strip_.tag(button, id);
         button.connect('clicked', () => this.select(id));
         return button;
     }

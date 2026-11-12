@@ -12,8 +12,8 @@
  * without news, one rule for every waiting activity (2026-11-07); playing again clears it.
  *
  * The event (source.js): {id, title, artist, album, art, appName, status, canPrev,
- * canNext, canSeek, position, length, at (ms), shuffle, loop, ad,
- * compactOnHover, raise(), onAction(id, value?)}.
+ * canNext, canSeek, position, length, at (ms), shuffle, loop, ad, appIcon (the player's app's
+ * Gio.Icon, for the Media tab's chips), compactOnHover, raise(), onAction(id, value?)}.
  */
 
 import {SETTLE_MS} from '../../kit/model/activity.js';
@@ -60,10 +60,12 @@ export default {
         const app = str(ev.appName);
         const art = {art: str(ev.art) || null, icon: ICON};
         return {
-            attributes: {title, artist, album: str(ev.album), art: art.art, app},
+            attributes: {title, artist, album: str(ev.album), art: art.art, app, appIcon: ev.appIcon ?? null},
+            // what the player can do: the Media tab shows every control and disables the rest
+            // (design/media, 2026-11-13)
             state: {
-                status: ev.status, canSeek: ev.canSeek === true, shuffle: ev.shuffle ?? null,
-                loop: ev.loop ?? null, live: liveOf(ev),
+                status: ev.status, canSeek: ev.canSeek === true, canPrev: ev.canPrev === true,
+                canNext: ev.canNext === true, shuffle: ev.shuffle ?? null, loop: ev.loop ?? null, live: liveOf(ev),
             },
             leading: art,
             text: artist ? `${title} · ${artist}` : title,    // a profile `title` is the registry's

@@ -1,40 +1,46 @@
 import Clutter from 'gi://Clutter';
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
-import {EmptyState, iconProps} from '../../kit/ui/present/elements.js';
-import {marquee} from '../../kit/ui/present/motion.js';
+import {EmptyState, iconProps, makeElement} from '../../kit/ui/present/elements.js';
+import {eqGlyph, marquee} from '../../kit/ui/present/motion.js';
 import {tick} from '../../kit/ui/present/parts.js';
-import {livePosition, mediaTimes} from '../../kit/model/presentation.js';
-import {artSize, metaLine, ART_MIN} from './layout.js';
+import {element, livePosition, mediaTimes} from '../../kit/model/presentation.js';
+import {FADES, TAB_SHIFT} from '../../kit/model/motion.js';
+import {SpringRunner, afterLayout, slideIn} from '../../kit/ui/spring.js';
+import {SlidingRow} from '../../kit/ui/strip.js';
+import {artSide, cardHeight, chipNames, controls, seekOf, subLine} from './layout.js';
+
+const NOTE = 'audio-x-generic-symbolic';
+const ART_RADIUS = 8;
+// the card's height until the tab has been measured (1920's: the body 212)
+let knownBodyH = 212;
 
 /**
- * The Media tab (FEATURES M3 "media", 2026-11-05): what the compact has no room for.
- * Layout A (2026-11-08, Ethan: the tab left the panel's lower part empty):
+ * The Media tab (design/media, M1, 2026-11-13): what the compact has no room for.
  *
- *   top row   the players' chips, when there is more than one — one per player, its
- *             app's name (each app has one player; a browser's is whichever tab plays)
- *   art       a square as tall as the room under that row (layout.js `artSize`): the
- *             cover in it (a 16:9 thumbnail comes out cropped to the square: St.Icon's
- *             texture-cache load), on a grey tile with the note for none
- *   column    title (scrolls when long) / artist / album · app, ↗ beside them (open the
- *             player's window); then, at the bottom, a
- *             slider to seek (when the player can) with elapsed and remaining, and
- *             shuffle · ⏮ · ⏯ · ⏭ · repeat (off → all → one), those the player has
+ *   chips   with more than one player, a row of chips above the card: each player's logo,
+ *           its app's name and the equaliser while it plays; the chosen one's fill a marker
+ *           that slides to the next (kit/ui/strip.js, as the tab strip). Past the row's width
+ *           only the chosen chip keeps its name.
+ *   card    fill-1, r 16, as Home's main card: the art 8 in (the card less 16), the title,
+ *           "artist · player", the album, ↗ (open the player's window); at its foot the seek
+ *           bar with its times and shuffle · ⏮ · ⏯ · ⏭ · repeat — always all of them, those
+ *           the player can't disabled (no hover, no press; Ethan, 2026-11-13).
  *
- * No volume here (Ethan: a mixer gets its own place, FEATURES "Sound tab"). It reads the
- * kit's activities (`update`, kit/ui/home.js) and acts through each one's `onAction`.
+ * Switching players moves as the tab strip does: the card's old content fades out and moves
+ * 12 px back, the new comes from 12 px. Opened from a player's pill or compact, its chip is
+ * the chosen one (`from`, 2026-11-07). No volume here (a mixer gets its own place). It reads
+ * the kit's activities (`update`, kit/ui/home.js) and acts through each one's `onAction`.
  */
 export class MediaTab {
     /**
      * @param {object} [kit]
      * @param {function():void} [kit.close]  the island, after an action
-     * @param {?string} [kit.from]  the activity whose pill opened the island: its chip is
-     *   chosen (a click on Firefox's pill shows Firefox, not the first player; 2026-11-07)
+     * @param {?string} [kit.from]  the activity whose pill opened the island: its chip is chosen
      */
     constructor({close = null, from = null} = {}) {
         this._close = close;
@@ -43,15 +49,17 @@ export class MediaTab {
             x_expand: true, y_expand: true,
         });
         this._list = [];
-        this._chosen = from;     // the chip shown: the pill it was opened from, then the user's pick
+        this._chosen = from;      // the chip shown: the pill it was opened from, then the user's pick
         this._dragging = false;
-        this._pending = false;   // a list came during a drag: render after it
-        this._art = ART_MIN;     // the art's side, measured from the tab (_fit)
-        this._tile = null;
-        this._cover = null;      // the cover's icon in the tile, when the player sends one
-        this._body = null;       // the art and the column, under the top row
-        this._top = null;        // the players' chips, with more than one
+        this._pending = false;    // a list came during a drag: render after it
+        this._chips = null;       // SlidingRow, with more than one player
+        this._chipsKey = '';      // what the chips show: rebuilt only when it changes
+        this._card = null;        // the card: its content stacked (BinLayout), the old one leaving
+        this._content = null;
+        this._bodyH = knownBodyH;
         this._fitLater = 0;
+        this._chipsLater = null;
+        this.actor.connect('notify::height', () => this._fitLaterOnce());
     }
 
     /** @param {object[]} activities  this tab's media activities, stack order */
@@ -68,8 +76,52 @@ export class MediaTab {
         return this._list.find(a => a.id === this._chosen) ?? this._list[0] ?? null;
     }
 
-    // measured once the tab has its size, just before the next redraw (as the Calendar
-    // tab's month: modules/calendar/tab.js)
+    // --- the whole tab --------------------------------------------------------------------
+
+    /**
+     * @param {number} [dir]  a switch of player: -1 / +1, the side the new one comes from
+     * @param {?Map} [before]  the chips' places before (SlidingRow.places)
+     */
+    _render(dir = 0, before = null) {
+        const a = this._current;
+        if (!a) {
+            this._clear();
+            this.actor.add_child(new EmptyState('Nothing playing', {pose: 'idle'}));
+            return;
+        }
+        if (this.actor.get_children().some(c => c instanceof EmptyState))
+            this._clear();
+        this._renderChips(a, dir !== 0, before);
+        if (!this._card) {
+            this._card = new St.Widget({
+                style_class: 'buoy-media-card', layout_manager: new Clutter.BinLayout(), x_expand: true,
+            });
+            this.actor.add_child(this._card);
+        }
+        this._card.set_height(cardHeight(this._bodyH, this._list.length));
+        const next = this._buildContent(a);
+        const old = this._content;
+        this._content = next;
+        this._card.add_child(next);
+        if (old && dir)
+            leave(old, dir);
+        else
+            old?.destroy();
+        if (dir)
+            slideIn(next, dir * TAB_SHIFT, 'snap', FADES.in.ms);
+        this._fitLaterOnce();
+    }
+
+    _clear() {
+        this._chipsLater?.();
+        this._chipsLater = null;
+        this.actor.destroy_all_children();
+        this._chips = this._card = this._content = null;
+        this._chipsKey = '';
+    }
+
+    // The body's height (the scroll view the kit put the tab in), measured once the tab has
+    // its size, just before the next redraw; the card and the art follow it.
     _fitLaterOnce() {
         if (this._fitLater)
             return;
@@ -81,140 +133,140 @@ export class MediaTab {
     }
 
     _fit() {
-        const body = this._body;
-        if (!body?.mapped)
+        if (!this.actor.mapped)
             return;
-        // the room: the panel's viewport (the scroll view around the tab, its height fixed
-        // by the expanded shape) less the tab's padding and the top row — not the body's
-        // own height, which grows with the art and would keep a too-big art (and a
-        // scrollbar) once it had one
         let view = this.actor.get_parent();
         while (view && !(view instanceof St.ScrollView))
             view = view.get_parent();
         const node = this.actor.get_theme_node();
-        // the last allocations: `width` / `height` give the natural size instead while a
-        // relayout is queued (clutter-actor.c clutter_actor_get_width), which is often so
-        // just before a redraw
-        const height = (view ?? this.actor).get_allocation_box().get_height();
-        const top = this._top ? this._top.get_allocation_box().get_height() + node.get_length('spacing') : 0;
-        const art = artSize(height - node.get_vertical_padding() - top, body.get_allocation_box().get_width());
-        if (art === this._art)
+        const h = Math.floor((view ?? this.actor).get_allocation_box().get_height() - node.get_vertical_padding());
+        if (!(h > 0) || h === this._bodyH)
             return;
-        this._art = art;
-        this._sizeTile();
+        this._bodyH = knownBodyH = h;
+        if (this._content)
+            this._render();          // the card and the art at their size, no motion
     }
 
-    _render() {
-        this.actor.destroy_all_children();
-        this._tile = this._body = this._top = this._cover = null;
-        const a = this._current;
-        if (!a) {
-            this.actor.add_child(new EmptyState('Nothing playing', {pose: 'idle'}));
+    // --- the players' chips ---------------------------------------------------------------
+
+    _renderChips(current, switched, before) {
+        if (this._list.length < 2) {
+            this._chipsLater?.();
+            this._chipsLater = null;
+            this._chips?.group.destroy();
+            this._chips = null;
+            this._chipsKey = '';
             return;
         }
-        this._top = this._topRow(a);
-        if (this._top)
-            this.actor.add_child(this._top);
-        // y_expand: the room left under the top row; the art takes its height (_fit)
-        this._body = new St.BoxLayout({style_class: 'buoy-media-body', x_expand: true, y_expand: true});
-        this._body.connect('notify::height', () => this._fitLaterOnce());
-        this._body.connect('notify::width', () => this._fitLaterOnce());
-        // Home lays a tab out before it is on screen (kit/ui/home.js _setBody): a size given
-        // while unmapped is fitted once it maps
-        this._body.connect('notify::mapped', () => this._fitLaterOnce());
-        this._body.add_child(this._artTile(a));
+        const key = JSON.stringify([current.id, this._list.map(a => [a.id, a.attributes?.app, a.state?.status])]);
+        if (this._chips && key === this._chipsKey && !switched)
+            return;
+        this._chipsKey = key;
+        if (!this._chips) {
+            this._chips = new SlidingRow({groupClass: 'buoy-media-chips', rowClass: 'buoy-media-chips-row', markerClass: 'buoy-media-chip-marker'});
+            this.actor.insert_child_at_index(this._chips.group, 0);
+        }
+        const row = this._chips.row;
+        const places = before ?? this._chips.places();
+        row.destroy_all_children();
+        const labels = [];
+        for (const a of this._list) {
+            const chosen = a === current;
+            const box = new St.BoxLayout({style_class: 'buoy-media-chip-box'});
+            const app = a.attributes?.app || a.app || '';
+            const logo = a.attributes?.appIcon
+                ? new St.Icon({gicon: a.attributes.appIcon, icon_size: 16})
+                : new St.Icon({...iconProps(NOTE), icon_size: 16});
+            logo.y_align = Clutter.ActorAlign.CENTER;
+            box.add_child(logo);
+            const name = new St.Label({text: app, y_align: Clutter.ActorAlign.CENTER});
+            box.add_child(name);
+            labels.push(name);
+            if (a.state?.status === 'Playing')
+                box.add_child(eqGlyph());
+            const chip = new St.Button({
+                style_class: `buoy-media-chip${chosen ? ' buoy-media-chip-on' : ''}`,
+                child: box, can_focus: true, accessible_name: app || 'Player',
+            });
+            chip.connect('clicked', () => this._choose(a.id));
+            this._chips.tag(chip, a.id);
+            row.add_child(chip);
+        }
+        // Which chips keep their name is known once they are measured: the row shows from the
+        // frame after, when the names that do not fit are gone (one frame unseen)
+        row.opacity = 0;
+        const chosenIndex = this._list.indexOf(current);
+        this._chipsLater?.();
+        this._chipsLater = afterLayout(() => {
+            this._chipsLater = null;
+            if (!this._chips || this._chips.row !== row)
+                return;
+            const gap = row.get_theme_node().get_length('spacing') || 6;
+            const widths = row.get_children().map((chip, i) => {
+                const [, named] = chip.get_preferred_width(-1);
+                const [, text] = labels[i].get_preferred_width(-1);
+                const spacing = /** @type {St.Widget} */ (/** @type {St.Button} */ (chip).child).get_theme_node().get_length('spacing');
+                return {named, logo: named - text - spacing};
+            });
+            chipNames(widths, chosenIndex, this.actor.width, gap).forEach((named, i) => {
+                labels[i].visible = named;
+            });
+            this._chips.slide(places, current.id, switched);
+            this._chipsLater = afterLayout(() => {
+                this._chipsLater = null;
+                row.opacity = 255;
+            });
+        });
+    }
+
+    _choose(id) {
+        if (id === this._current?.id)
+            return;
+        const from = this._list.indexOf(this._current);
+        const to = this._list.findIndex(a => a.id === id);
+        const before = this._chips?.places() ?? null;
+        this._chosen = id;
+        this._render(Math.sign(to - from) || 1, before);
+    }
+
+    // --- the card's content -----------------------------------------------------------------
+
+    _buildContent(a) {
+        const cardH = cardHeight(this._bodyH, this._list.length);
+        const side = artSide(cardH);
+        const box = new St.BoxLayout({style_class: 'buoy-media-content', x_expand: true, y_expand: true});
+        box.add_child(this._art(a, side));
         const column = new St.BoxLayout({
             style_class: 'buoy-media-column', orientation: Clutter.Orientation.VERTICAL,
             x_expand: true, y_expand: true,
         });
-        const text = this._text(a);
-        const open = this._openButton(a);
-        if (open) {
-            const head = new St.BoxLayout({style_class: 'buoy-media-head', x_expand: true});
-            head.add_child(text);
-            head.add_child(open);
-            column.add_child(head);
-        } else {
-            column.add_child(text);
-        }
+        const head = new St.BoxLayout({style_class: 'buoy-media-head', x_expand: true});
+        head.add_child(this._text(a));
+        head.add_child(this._openButton(a));
+        column.add_child(head);
         column.add_child(new St.Widget({y_expand: true}));
-        const live = a.state?.live;
-        if (live)
-            column.add_child(this._position(a, live));
+        column.add_child(this._position(a));
         column.add_child(this._transport(a));
-        this._body.add_child(column);
-        this.actor.add_child(this._body);
-        this._fitLaterOnce();
+        box.add_child(column);
+        return box;
     }
 
-    // the players' chips; only with more than one player
-    _topRow(a) {
-        if (this._list.length < 2)
-            return null;
-        const row = new St.BoxLayout({style_class: 'buoy-media-top', x_expand: true});
-        row.add_child(this._chips(a));
-        return row;
-    }
-
-    _artTile(a) {
+    // the cover, the card less 16, r 8; without one, a fill-2 tile with the note
+    _art(a, side) {
         const uri = a.attributes?.art;
-        // the note in the middle of the grey tile, the cover over it: a cover that is
-        // missing, still loading or fails to load (no fallback icon, which would be drawn
-        // at the art's size) leaves the note showing
-        this._tile = new St.Widget({
-            style_class: 'buoy-media-tile', layout_manager: new Clutter.BinLayout(),
-            y_align: Clutter.ActorAlign.START,
-        });
-        this._tile.add_child(new St.Icon({
-            ...iconProps('audio-x-generic-symbolic'), icon_size: 24,
-            x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER, x_expand: true, y_expand: true,
-        }));
-        this._cover = null;
+        const bin = new St.Bin({width: side, height: side, y_align: Clutter.ActorAlign.START});
         if (uri) {
-            // through the texture cache, async, as Shell's own media message
-            // (ui/messageList.js MediaMessage); not a CSS background-image, which St loads
-            // at once and keeps for good (st-texture-cache.c
-            // st_texture_cache_load_file_to_cairo_surface, POLICY_FOREVER) — a browser
-            // writes a new thumbnail file per track
-            this._cover = new St.Icon({
-                style_class: 'buoy-media-art',
-                gicon: new Gio.FileIcon({file: Gio.File.new_for_uri(uri)}),
-            });
-            this._tile.add_child(this._cover);
+            bin.set_child(makeElement(element({art: uri, icon: NOTE}), 'expanded', a, {art: side, artRadius: ART_RADIUS, icon: 32}));
+            return bin;
         }
-        this._sizeTile();
-        return this._tile;
-    }
-
-    _sizeTile() {
-        if (!this._tile)
-            return;
-        this._tile.set_size(this._art, this._art);
-        if (this._cover)
-            this._cover.icon_size = this._art;
-    }
-
-    _chips(current) {
-        const row = new St.BoxLayout({style_class: 'buoy-media-chips', x_expand: true});
-        for (const a of this._list) {
-            const chip = new St.Button({
-                style_class: `buoy-media-chip${a === current ? ' buoy-media-chip-on' : ''}`,
-                label: a.attributes?.app || a.app, can_focus: true,
-            });
-            chip.connect('clicked', () => {
-                this._chosen = a.id;
-                this._render();
-            });
-            row.add_child(chip);
-        }
-        return row;
+        bin.style_class = 'buoy-media-tile';
+        bin.set_child(new St.Icon({...iconProps(NOTE), icon_size: 32}));
+        return bin;
     }
 
     _text(a) {
         const at = a.attributes ?? {};
-        const text = new St.BoxLayout({
-            style_class: 'buoy-media-text', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
-        });
+        const text = new St.BoxLayout({style_class: 'buoy-media-text', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
         const line = (t, cls) => {
             if (!t)
                 return;
@@ -222,46 +274,49 @@ export class MediaTab {
             l.clutter_text.ellipsize = Pango.EllipsizeMode.END;
             text.add_child(l);
         };
-        const title = at.title || a.text;
-        if (title)
-            text.add_child(marquee(title, 'buoy-media-title'));   // scrolls when long
-        line(at.artist, 'buoy-media-artist');
-        line(metaLine(at), 'buoy-media-album');
+        text.add_child(marquee(at.title || a.text || '', 'buoy-media-title'));   // runs when long
+        line(subLine(at), 'buoy-media-sub');
+        line(at.album, 'buoy-media-album');
         return text;
     }
 
-    // ↗: the player's window (MPRIS Raise), then the island closes; Yaru's
-    // external-link, Adwaita's window-new where Yaru is not the theme
+    // ↗: the player's window, then the island closes; disabled without an app to raise
     _openButton(a) {
         const app = a.attributes?.app;
-        if (!app)
-            return null;
-        const open = new St.Button({
-            style_class: 'buoy-media-button buoy-media-open', can_focus: true,
-            child: new St.Icon({...iconProps('external-link-symbolic'), icon_size: 14}),
-            accessible_name: `Open ${app}`, y_align: Clutter.ActorAlign.START,
+        const b = roundButton({
+            icon: 'external-link-symbolic', kind: 'skip', enabled: Boolean(app), on: false,
+            label: app ? `Open ${app}` : 'Open the player',
         });
-        open.connect('clicked', () => {
+        b.y_align = Clutter.ActorAlign.START;
+        b.connect('clicked', () => {
             a.onAction?.('raise');
             this._close?.();
         });
-        return open;
+        return b;
     }
 
-    _position(a, live) {
+    // The seek bar, always: it moves the track when the player can seek a track with a length;
+    // else it stays (empty for a stream) and does nothing (design/media)
+    _position(a) {
         const box = new St.BoxLayout({style_class: 'buoy-media-position', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
-        const seekable = a.state?.canSeek === true;
-        const slider = new Slider(live.position / live.length);
-        slider.reactive = slider.can_focus = seekable;
+        const {live, enabled} = seekOf(a.state);
+        const slider = new Slider(live ? live.position / live.length : 0);
+        slider.add_style_class_name('buoy-media-seek');
+        if (!enabled)
+            slider.add_style_class_name('buoy-media-seek-off');
+        slider.reactive = slider.can_focus = enabled;
         slider.accessible_name = 'Position';
         const times = new St.BoxLayout({x_expand: true});
-        const elapsed = new St.Label({style_class: 'buoy-live-time'});
-        const left = new St.Label({style_class: 'buoy-live-time'});
+        const off = live ? '' : ' buoy-media-time-off';
+        const elapsed = new St.Label({style_class: `buoy-media-time${off}`, text: '--:--'});
+        const left = new St.Label({style_class: `buoy-media-time${off}`, text: '--:--'});
         times.add_child(elapsed);
         times.add_child(new St.Widget({x_expand: true}));
         times.add_child(left);
         box.add_child(slider);
         box.add_child(times);
+        if (!live)
+            return box;
 
         let setting = false;
         const show = pos => {
@@ -287,32 +342,22 @@ export class MediaTab {
         slider.connect('notify::value', () => {
             if (this._dragging)
                 [elapsed.text, left.text] = mediaTimes(slider.value * live.length, live.length);
-            else if (!setting && seekable)
+            else if (!setting && enabled)
                 a.onAction?.('seek', slider.value * live.length);
         });
+        show(livePosition(live, Date.now()));
         tick(box, () => show(livePosition(live, Date.now())),
             () => live.playing && livePosition(live, Date.now()) < live.length);
         return box;
     }
 
+    // shuffle · ⏮ · ⏯ · ⏭ · repeat, always all five (layout.js controls)
     _transport(a) {
         const row = new St.BoxLayout({style_class: 'buoy-media-transport', x_align: Clutter.ActorAlign.CENTER});
-        const st = a.state ?? {};
-        const button = (id, icon, cls = '', on = false) => {
-            const b = new St.Button({
-                style_class: `buoy-media-button ${cls}${on ? ' buoy-media-on' : ''}`,
-                child: new St.Icon({...iconProps(icon), icon_size: cls ? 20 : 16}), can_focus: true, accessible_name: id,
-            });
-            b.connect('clicked', () => a.onAction?.(id));
-            return b;
-        };
-        if (st.shuffle !== null && st.shuffle !== undefined)
-            row.add_child(button('shuffle', 'media-playlist-shuffle-symbolic', '', st.shuffle));
-        for (const act of a.actions ?? [])
-            row.add_child(button(act.id, act.icon, act.id === 'playpause' ? 'buoy-media-play' : 'buoy-media-skip'));
-        if (st.loop) {
-            const icon = st.loop === 'Track' ? 'media-playlist-repeat-song-symbolic' : 'media-playlist-repeat-symbolic';
-            row.add_child(button('loop', icon, '', st.loop !== 'None'));
+        for (const c of controls(a.state)) {
+            const b = roundButton(c);
+            b.connect('clicked', () => a.onAction?.(c.id));
+            row.add_child(b);
         }
         return row;
     }
@@ -321,8 +366,36 @@ export class MediaTab {
         if (this._fitLater)
             global.compositor.get_laters().remove(this._fitLater);
         this._fitLater = 0;
-        this._tile = this._body = this._top = this._cover = null;
+        this._chipsLater?.();
+        this._chipsLater = null;
+        this._chips = this._card = this._content = null;
         this._close = null;
         this.actor.destroy();
     }
+}
+
+// A round 32 (design/media): `toggle` without a fill when off, fill-3 when on; `skip` fill-2;
+// `main` cream. Disabled: fg-disabled, not reactive (no hover, no press), not focusable.
+function roundButton({icon, kind, enabled, on, label}) {
+    const b = new St.Button({
+        style_class: `buoy-media-round buoy-media-${kind}${on ? ' buoy-media-on' : ''}${enabled ? '' : ' buoy-media-off'}`,
+        child: new St.Icon({...iconProps(icon), icon_size: 16}),
+        reactive: enabled, can_focus: enabled, accessible_name: label, width: 32, height: 32,
+    });
+    return b;
+}
+
+// The card's old content leaves where it stands (it shares the card's BinLayout with the new
+// one): it fades out and moves TAB_SHIFT the other way, then goes
+function leave(old, dir) {
+    old.reactive = false;
+    const run = new SpringRunner(old, v => {
+        old.translation_x = Math.round(v.t);
+    });
+    run.set({t: 0});
+    run.to({t: -dir * TAB_SHIFT}, 'snap');
+    old.ease({
+        opacity: 0, duration: FADES.out.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+        onStopped: () => old.destroy(),
+    });
 }

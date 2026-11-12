@@ -1,36 +1,99 @@
 /**
- * The Media tab's sizes and words, pure (tab.js draws them; tests/media.test.js).
+ * The Media tab's sizes, controls and words, pure (tab.js draws them; tests/media.test.js).
  *
- * Layout A (2026-11-08, Ethan): the art is a square as tall as the tab's room, so the tab
- * fills the panel's expanded height at every size; the track, the players and the
- * controls stand in the column beside it.
+ * design/media (2026-11-13, Ethan, M1): the body is one card as Home's main card — the
+ * art 8 in, as tall as the card less 16 — the text column beside it, the seek bar and the
+ * transport at its foot; every control always there, disabled where the player can't.
+ * With more than one player, a row of chips above the card.
  */
 
-export const ART_MIN = 96;
-export const ART_MAX = 280;
-/** the art never takes more than this share of the tab's width: the column needs the rest */
-export const ART_SHARE = 0.4;
+/** The card's inset around the art (design/media "Kích thước"). */
+export const ART_INSET = 8;
+/** A chip's height and the gap under the chips' row. */
+export const CHIP_H = 32;
+export const CHIP_GAP = 8;
 
 /**
- * @param {number} room  the tab's content height, px
- * @param {number} width  the tab's content width, px
- * @returns {number} the art's side: the room, at most ART_SHARE of the width, even, within
- *   ART_MIN–ART_MAX
+ * @param {number} cardH  the card's height, px
+ * @returns {number} the art's side: the card less its inset above and below, never below 0
  */
-export function artSize(room, width) {
-    const tall = Number.isFinite(room) ? room : 0;
-    const wide = Number.isFinite(width) ? Math.floor(width * ART_SHARE) : 0;
-    const side = Math.min(tall, wide);
-    return Math.min(ART_MAX, Math.max(ART_MIN, side - (side % 2)));
+export function artSide(cardH) {
+    return Math.max(0, Math.floor(Number.isFinite(cardH) ? cardH : 0) - 2 * ART_INSET);
 }
 
 /**
- * The line under the artist: the album and the player's name ("Single · Rhythmbox",
- * "YouTube · Firefox" never invented: only what the player sends).
+ * @param {number} bodyH  the tab's height, px
+ * @param {number} players  how many
+ * @returns {number} the card's height: the body, less the chips' row with more than one
+ */
+export function cardHeight(bodyH, players) {
+    const h = Number.isFinite(bodyH) ? Math.floor(bodyH) : 0;
+    return Math.max(0, players > 1 ? h - CHIP_H - CHIP_GAP : h);
+}
+
+/**
+ * The line under the title: "artist · player" (only what the player sends).
  *
  * @param {object} at  the activity's attributes
  * @returns {string} '' when neither
  */
-export function metaLine(at = {}) {
-    return [at.album, at.app].filter(t => typeof t === 'string' && t.trim()).join(' · ');
+export function subLine(at = {}) {
+    return [at.artist, at.app].filter(t => typeof t === 'string' && t.trim()).join(' · ');
+}
+
+/**
+ * The five controls, always all of them (Ethan, 2026-11-13): those the player can't are
+ * disabled. `kind`: 'toggle' (no fill when off, fill-3 when on), 'skip' (fill-2), 'main'
+ * (cream).
+ *
+ * @param {object} state  the activity's state: {status, canPrev, canNext, shuffle, loop}
+ *   (shuffle: boolean or null when the player has none; loop: 'None'|'Playlist'|'Track' or null)
+ * @returns {{id: string, icon: string, kind: string, enabled: boolean, on: boolean, label: string}[]}
+ */
+export function controls(state = {}) {
+    const playing = state.status === 'Playing';
+    const loop = typeof state.loop === 'string' ? state.loop : null;
+    return [
+        {
+            id: 'shuffle', icon: 'media-playlist-shuffle-symbolic', kind: 'toggle', label: 'Shuffle',
+            enabled: typeof state.shuffle === 'boolean', on: state.shuffle === true,
+        },
+        {id: 'prev', icon: 'media-skip-backward-symbolic', kind: 'skip', label: 'Previous', enabled: state.canPrev === true, on: false},
+        {
+            id: 'playpause', icon: playing ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic',
+            kind: 'main', label: playing ? 'Pause' : 'Play', enabled: true, on: false,
+        },
+        {id: 'next', icon: 'media-skip-forward-symbolic', kind: 'skip', label: 'Next', enabled: state.canNext === true, on: false},
+        {
+            id: 'loop', icon: loop === 'Track' ? 'media-playlist-repeat-song-symbolic' : 'media-playlist-repeat-symbolic',
+            kind: 'toggle', label: 'Repeat', enabled: loop !== null, on: loop === 'Playlist' || loop === 'Track',
+        },
+    ];
+}
+
+/**
+ * The seek bar: always there; it moves the track only when the player can seek and the
+ * track has a length (design/media: a stream's bar stays empty and disabled).
+ *
+ * @param {object} state  {canSeek, live: ?{position, length, at, playing}}
+ * @returns {{live: ?object, enabled: boolean}}
+ */
+export function seekOf(state = {}) {
+    const live = state.live && state.live.length > 0 ? state.live : null;
+    return {live, enabled: live !== null && state.canSeek === true};
+}
+
+/**
+ * Which chips keep their name (design/media "Nhiều player"): all of them when they fit the
+ * row; else only the chosen one, the others their logo.
+ *
+ * @param {{named: number, logo: number}[]} widths  each chip's width with and without its name
+ * @param {number} chosen  the chosen chip's index
+ * @param {number} room  the row's width
+ * @param {number} gap  between chips
+ * @returns {boolean[]} named, per chip
+ */
+export function chipNames(widths, chosen, room, gap) {
+    const all = widths.reduce((n, w) => n + w.named, 0) + Math.max(0, widths.length - 1) * gap;
+    return widths.map((_w, i) => all <= room || i === chosen);
 }
