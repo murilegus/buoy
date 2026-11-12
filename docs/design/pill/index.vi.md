@@ -25,8 +25,6 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
   mọi chỗ của 2026-11-10). Code hiện tại lệch nhau: idle dùng 7 (`.buoy-idle-zones`, thêm ở #107)
   cộng `padding-left: 2px`, minimal dùng 8 (`.buoy-minimal`).
 
-![Khoảng quanh chữ 8 / 6 / 4, ở 1× và phóng 2× đầu trái — chốt 6](images/gap.vi.png)
-
 - Leading: icon buổi trong ngày và icon thời tiết **24**, đầy ô 24 ([Icon](../icons/index.vi.md));
   Bu giữ **20** giữa ô 24, vì lưới 10 × 10 chỉ nét ở bội số của 10 ([Bu](../mascot/index.vi.md)).
   **Chốt** (Ethan, 2026-11-11; icon thay 20 trong ô 24)
