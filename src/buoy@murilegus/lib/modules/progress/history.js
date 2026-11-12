@@ -30,8 +30,9 @@ export class DoneHistory {
     }
 
     /**
-     * @param {{key?: string, appId?: string, at: number}} row  at: ms; `key` (else
-     *   `appId`) says which rows are the same thing: adding it again moves it up
+     * @param {{key?: string, appId?: string, at: number, [field: string]: any}} row  at: ms;
+     *   `key` (else `appId`) says which rows are the same thing: adding it again moves it up;
+     *   the rest is the row's own (name, icon, …)
      */
     add(row) {
         const key = keyOf(row);

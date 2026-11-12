@@ -18,6 +18,14 @@ export default defineConfig([
                 beforeColon: false,
                 afterColon: true,
             }],
+            // Shell's options, plus the parentheses of a JSDoc cast, `/** @type {T} */ (x)`,
+            // which is how `pnpm check` (tsc) is told a type
+            'no-extra-parens': ['error', 'all', {
+                conditionalAssign: false,
+                nestedBinaryExpressions: false,
+                returnAssign: false,
+                allowParensAfterCommentPattern: '@type',
+            }],
             'prefer-arrow-callback': 'error',
             'prefer-const': ['error', {
                 destructuring: 'all',

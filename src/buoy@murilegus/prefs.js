@@ -48,11 +48,11 @@ const TILE_RADIUS = TILE / 6;     // hello.svg: rx 20 on 120
  * (2026-11-05). use_markup goes first: GObject sets construct properties in no promised
  * order, and a subtitle set before it is still parsed.
  *
- * @param {Function} Cls  an Adw.PreferencesRow subclass
- * @param {object} props  its properties; title and subtitle are set afterwards
- * @param {string} [props.title]
- * @param {string} [props.subtitle]
- * @returns {Adw.PreferencesRow}
+ * @template {Adw.PreferencesRow & {subtitle: string}} T
+ * @param {new (props: object) => T} Cls  an Adw row class with a subtitle
+ * @param {{title?: string, subtitle?: string, [prop: string]: any}} props  its properties;
+ *   title and subtitle are set afterwards
+ * @returns {T}
  */
 function textRow(Cls, {title = '', subtitle, ...props}) {
     const row = new Cls({...props, use_markup: false});
@@ -105,7 +105,7 @@ function describe(loc) {
     };
 }
 
-const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+const rgb = hex => /** @type {[number, number, number]} */ ([1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255));
 
 function roundedRect(cr, x, y, w, h, r) {
     cr.newSubPath();
@@ -117,6 +117,7 @@ function roundedRect(cr, x, y, w, h, r) {
 }
 
 export default class BuoyPreferences extends ExtensionPreferences {
+    // @ts-expect-error -- synchronous; Shell's is async, and extensionPrefsDialog.js awaits it (fine on a plain return)
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
         this._settings = settings;
@@ -453,7 +454,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const children = nested.map(n => {
             const child = this._row(schema.get_key(n));
             row.add_row(child);
-            return [n, child];
+            return /** @type {[string, Gtk.Widget]} */ ([n, child]);
         });
         const sync = () => {
             const value = this._settings.get_string(name);
@@ -629,7 +630,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         }
 
         const sync = () => {
-            const locations = weather.get_value('locations').deepUnpack();
+            const locations = /** @type {GLib.Variant[]} */ (weather.get_value('locations').deepUnpack());
             const first = locations.length ? world.deserialize(locations[0]) : null;
             place.subtitle = first ? placeLabel(describe(first)) : 'None yet';
             const automatic = this._settings.get_boolean('idle-weather-automatic');
@@ -637,7 +638,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
             off.visible = automatic && !locating;
             row.subtitle = weatherNote({automatic, locating, locations}) ?? description;
         };
-        for (const [settings, signal] of [[weather, 'changed::locations'], [location, 'changed::enabled']]) {
+        for (const [settings, signal] of /** @type {Array<[?Gio.Settings, string]>} */ (
+            [[weather, 'changed::locations'], [location, 'changed::enabled']])) {
             const id = settings?.connect(signal, sync);
             if (id)
                 this._drops.push(() => settings.disconnect(id));
@@ -650,7 +652,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         let shown = [];
         const pick = city => {
             const key = v => v.print(true);
-            const list = weather.get_value('locations').deepUnpack();
+            const list = /** @type {GLib.Variant[]} */ (weather.get_value('locations').deepUnpack());
             weather.set_value('locations', new GLib.Variant('av', withPlace(list, city.serialize(), key)));
             this._settings.set_boolean('idle-weather-automatic', false);
             search.text = '';
@@ -660,7 +662,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         // (adw-expander-row.c `adw_expander_row_add_row` appends there) — after the field.
         search.connect('changed', () => {
             cities ??= citiesOf(world).map(loc => ({loc, ...describe(loc)}));
-            const list = search.get_parent();
+            const list = /** @type {Gtk.ListBox} the expander's, see above */ (search.get_parent());
             for (const r of shown)
                 list.remove(r);
             shown = searchPlaces(cities, search.text).map((c, i) => {
@@ -744,8 +746,9 @@ export default class BuoyPreferences extends ExtensionPreferences {
     _planRow(p, key) {
         const k = p.enableKey ? key(p.enableKey) : null;
         const description = p.planOnly ? k.get_description() : PLAN_LINES[p.id] ?? '';
-        // a plan with keys opens to them; one without (the next event) is a plain row
-        const row = textRow(p.keys.length ? Adw.ExpanderRow : Adw.ActionRow, {
+        // a plan with keys opens to them; one without (the next event) is a plain row. Typed
+        // as the expander: the plain row never reaches add_row or `expanded` below.
+        const row = textRow(/** @type {typeof Adw.ExpanderRow} */ (p.keys.length ? Adw.ExpanderRow : Adw.ActionRow), {
             title: k ? k.get_summary() : p.id, subtitle: description,
         });
         for (const name of p.keys)
@@ -777,7 +780,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         row.add_prefix(handle);
         const drop = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.MOVE);
         drop.connect('drop', (_t, id) => {
-            const next = movePlan(stack(), id, p.id);
+            const next = movePlan(stack(), /** @type {string} a TYPE_STRING target's */ (id), p.id);
             if (next.join() !== stack().join())
                 this._settings.set_strv('idle-auto-plans', next);
             return true;
@@ -1086,15 +1089,17 @@ export default class BuoyPreferences extends ExtensionPreferences {
         let displays = [];
         const list = Gdk.Display.get_default()?.get_monitors();
         for (let i = 0; i < (list?.get_n_items() ?? 0); i++) {
-            const connector = list.get_item(i).get_connector();
+            const connector = /** @type {Gdk.Monitor} */ (list.get_item(i)).get_connector();
             if (connector)
                 displays.push({connector, name: connector, builtin: false, primary: false});
         }
+        /** @type {[string, string, string]} bus name, object path, interface */
         const DC = ['org.gnome.Mutter.DisplayConfig', '/org/gnome/Mutter/DisplayConfig', 'org.gnome.Mutter.DisplayConfig'];
         const ask = () => Gio.DBus.session.call(...DC, 'GetCurrentState', null, null,
             Gio.DBusCallFlags.NONE, -1, null, (bus, res) => {
                 try {
-                    const [, monitors, logical] = bus.call_finish(res).recursiveUnpack();
+                    const [, monitors, logical] = /** @type {[number, any[], any[], object]} */ (
+                        bus.call_finish(res).recursiveUnpack());
                     displays = displaysFromState(monitors, logical);
                     sync();
                 } catch (e) {

@@ -93,16 +93,17 @@ export function luminance(r, g, b) {
     return 0.2126 * LINEAR[r] + 0.7152 * LINEAR[g] + 0.0722 * LINEAR[b];
 }
 
+/** @typedef {[number, number, number]} RGB */
 /**
  * @param {string} s  `#rgb`, `#rrggbb` or GDK's `#rrrrggggbbbb` (primary-color's default)
- * @returns {number[]} [r, g, b] 0–255; black when it does not parse
+ * @returns {RGB} [r, g, b] 0–255; black when it does not parse
  */
 export function parseColor(s) {
     const hex = /^#([0-9a-f]+)$/i.exec(s ?? '')?.[1];
     if (!hex || hex.length % 3 || hex.length > 12)
         return [0, 0, 0];
     const n = hex.length / 3, max = 16 ** n - 1;
-    return [0, 1, 2].map(i => Math.round(parseInt(hex.slice(i * n, (i + 1) * n), 16) / max * 255));
+    return /** @type {RGB} */ ([0, 1, 2].map(i => Math.round(parseInt(hex.slice(i * n, (i + 1) * n), 16) / max * 255)));
 }
 
 /**
@@ -121,7 +122,8 @@ export function patternLuminance({primary, secondary, shading}, x, width) {
         return luminance(...a);
     const b = parseColor(secondary);
     const t = width > 1 ? Math.min(1, Math.max(0, x / (width - 1))) : 0;
-    return luminance(...a.map((c, i) => Math.round(c + (b[i] - c) * t)));
+    const mixed = /** @type {RGB} */ (a.map((c, i) => Math.round(c + (b[i] - c) * t)));
+    return luminance(...mixed);
 }
 
 function sample(img, area, x, y, back) {

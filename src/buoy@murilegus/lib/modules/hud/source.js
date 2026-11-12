@@ -99,7 +99,9 @@ export class OsdSource extends Source {
         try {
             // the stream stays open while the module is on; opening a sysfs attribute does
             // not wait on a device
-            this._fnStream = Gio.File.new_for_path(`${LEDS}/${name}/brightness_hw_changed`).read(null);
+            // a local file's stream is a GLocalFileInputStream, which has get_fd()
+            this._fnStream = /** @type {Gio.FileInputStream & {get_fd(): number}} */ (
+                Gio.File.new_for_path(`${LEDS}/${name}/brightness_hw_changed`).read(null));
         } catch {
             return;                       // the driver gives no change events
         }
@@ -147,6 +149,7 @@ export class OsdSource extends Source {
     // its prototype is reached from the output slider Quick Settings holds (ui/panel.js
     // _volumeOutput); both sliders share it. Returns whether the sliders are hooked.
     _feedbackOnVolumeSliders() {
+        /** @type {any} StreamSlider's prototype, which Shell does not export */
         let proto = Main.panel.statusArea.quickSettings?._volumeOutput?.quickSettingsItems?.[0] ?? null;
         while (proto && !Object.hasOwn(proto, '_sliderChanged'))
             proto = Object.getPrototypeOf(proto);

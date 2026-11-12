@@ -5,6 +5,8 @@ import Shell from 'gi://Shell';
 
 import {CODE, DECLARATIONS, cornerUniforms, frameInActor, onTopEdge, wantsCorners} from './lib/kit/model/rounded.js';
 
+/** @import Gio from 'gi://Gio' */
+
 const EFFECT = 'buoy-corners';
 
 // One Shell.GLSLEffect per window on the top edge (ui/lightbox.js RadialShaderEffect pattern):
@@ -18,7 +20,8 @@ class CornersEffect extends Shell.GLSLEffect {
 
     /** @param {object} u  cornerUniforms() */
     setUniforms(u) {
-        this._loc ??= {
+        // `??=` would declare no field for tsc
+        this._loc = this._loc ?? {
             box: this.get_uniform_location('buoy_box'),
             frame: this.get_uniform_location('buoy_frame'),
             pixel: this.get_uniform_location('buoy_pixel'),

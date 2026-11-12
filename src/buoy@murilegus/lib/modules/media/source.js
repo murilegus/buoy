@@ -57,6 +57,7 @@ class Player {
             'changed', () => this._changed(),
             'notify::can-play', () => this._onChange(this), this);
         this.extra = null;
+        // @ts-expect-error -- a makeProxyWrapper() wrapper is called with new, as in Shell's mpris.js; @girs types a plain function
         new PlayerProxy(Gio.DBus.session, busName, PATH, (proxy, error) => {
             if (error || this._cancel.is_cancelled())
                 return;
@@ -99,7 +100,7 @@ class Player {
             new GLib.Variant('(ss)', [IFACE, 'Position']), new GLib.VariantType('(v)'),
             Gio.DBusCallFlags.NONE, -1, this._cancel, (conn, res) => {
                 try {
-                    const [v] = conn.call_finish(res).deepUnpack();
+                    const [v] = /** @type {[GLib.Variant]} */ (conn.call_finish(res).deepUnpack());
                     this.position = Number(v.deepUnpack()) / 1000;
                     this.at = Date.now();
                     this._onChange(this);
@@ -212,7 +213,7 @@ export class MprisSource extends Source {
         this._ownerId = bus.signal_subscribe('org.freedesktop.DBus', 'org.freedesktop.DBus',
             'NameOwnerChanged', '/org/freedesktop/DBus', NAMESPACE, Gio.DBusSignalFlags.MATCH_ARG0_NAMESPACE,
             (_c, _s, _p, _i, _n, params) => {
-                const [name, oldOwner, newOwner] = params.deepUnpack();
+                const [name, oldOwner, newOwner] = /** @type {string[]} */ (params.deepUnpack());
                 if (oldOwner)
                     this._remove(name);
                 if (newOwner)
@@ -221,7 +222,7 @@ export class MprisSource extends Source {
         bus.call('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus', 'ListNames',
             null, new GLib.VariantType('(as)'), Gio.DBusCallFlags.NONE, -1, this._cancel, (c, res) => {
                 try {
-                    const [names] = c.call_finish(res).deepUnpack();
+                    const [names] = /** @type {[string[]]} */ (c.call_finish(res).deepUnpack());
                     names.filter(n => n.startsWith(PREFIX)).forEach(n => this._add(n));
                 } catch {
                     // cancelled by disable()

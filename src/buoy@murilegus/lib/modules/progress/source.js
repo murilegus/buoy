@@ -39,6 +39,8 @@ const UNITY = 'com.canonical.Unity';
 export class LauncherEntrySource extends Source {
     enable(stack, registry = null, settings = null) {
         super.enable(stack, registry, settings);
+        /** @type {?function(string, ?number): void} set by ProgressSource before enable() */
+        this.onFraction;  // eslint-disable-line no-unused-expressions -- declares it for tsc
         this._apps = new Map();     // appId → {state, sender, id (stack), background}
         this._watched = new Set();  // Shell.App whose windows-changed we follow
         const bus = Gio.DBus.session;
@@ -46,13 +48,13 @@ export class LauncherEntrySource extends Source {
             null, null);
         this._updateId = bus.signal_subscribe(null, IFACE, 'Update', null, null,
             Gio.DBusSignalFlags.NONE, (_c, sender, _p, _i, _s, params) => {
-                const [uri, props] = params.deepUnpack();
+                const [uri, props] = /** @type {[string, object]} */ (params.deepUnpack());
                 this._update(sender, appIdOf(uri), unpack(props));
             });
         this._ownerId = bus.signal_subscribe('org.freedesktop.DBus', 'org.freedesktop.DBus',
             'NameOwnerChanged', '/org/freedesktop/DBus', null, Gio.DBusSignalFlags.NONE,
             (_c, _s, _p, _i, _n, params) => {
-                const [name, , owner] = params.deepUnpack();
+                const [name, , owner] = /** @type {string[]} */ (params.deepUnpack());
                 if (!owner)
                     this._gone(name);
             });

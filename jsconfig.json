@@ -9,5 +9,5 @@
         "strict": false,
         "types": ["@girs/gjs", "@girs/gjs/dom", "@girs/gnome-shell"],
     },
-    "include": ["src/**/*.js", "ambient.d.ts"],
+    "include": ["src/**/*.js", "ambient.d.ts", "typelibs.d.ts"],
 }

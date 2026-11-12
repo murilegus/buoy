@@ -53,7 +53,7 @@ export function appOfBusName(name, {bus = Gio.DBus.session} = {}) {
             'GetConnectionUnixProcessID', new GLib.Variant('(s)', [name]), new GLib.VariantType('(u)'),
             Gio.DBusCallFlags.NONE, 1000, null, (conn, res) => {
                 try {
-                    const [pid] = conn.call_finish(res).deepUnpack();
+                    const [pid] = /** @type {[number]} */ (conn.call_finish(res).deepUnpack());
                     appOfPid(pid).then(app => resolve({pid, app}), () => resolve({pid, app: null}));
                 } catch {
                     resolve({pid: 0, app: null});

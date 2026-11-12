@@ -163,6 +163,7 @@ export function displaysFromState(monitors, logical) {
 export function dockMonitorChoices(displays, current) {
     const sorted = [...displays.filter(d => d.builtin), ...displays.filter(d => !d.builtin)];
     const p = sorted.findIndex(d => d.primary);
+    /** @type {Array<[string, string]>} */
     const list = [['all', 'All displays'], ['primary', p < 0 ? 'Primary Display' : `Primary Display (${p + 1})`]];
     sorted.forEach((d, i) => list.push([d.connector, `${i + 1}. ${d.name}`]));
     if (!list.some(([v]) => v === current))

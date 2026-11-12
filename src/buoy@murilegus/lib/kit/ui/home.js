@@ -12,6 +12,8 @@ import {clockTime} from '../model/presentation.js';
 import {planStrip, stripOrder, tabActivities, findTab, homeChips, homeColumns, HOME} from '../model/tabs.js';
 import {step} from '../model/keys.js';
 
+/** @import Gio from 'gi://Gio' */
+
 const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edge
 const STRIP_H = 60; // first guess for the strip + panel padding; measured once laid out
 const CHIP_MAX = 240; // a Home chip ellipsizes past this
@@ -40,6 +42,10 @@ function badged(glyph) {
 // Children with y_expand share the room left over (Home's blocks).
 const BodyView = GObject.registerClass(
 class BodyView extends St.BoxLayout {
+    /**
+     * @param {number} forWidth
+     * @returns {[number, number]}
+     */
     vfunc_get_preferred_height(forWidth) {
         const [min, nat] = super.vfunc_get_preferred_height(forWidth);
         return [min, Math.max(nat, this[FILL] ?? 0)];
@@ -82,9 +88,9 @@ export class Home {
      * @param {object[]} opts.list  visible activities (stack order)
      * @param {string} opts.tab  the tab to start on (tabs.js tabFor)
      * @param {number} opts.maxHeight  the expanded height cap
-     * @param {{slot: string, pinned: string[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`
+     * @param {{slot?: string, pinned?: string[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`
      * @param {function(string):void} [opts.onSlot]  a standalone tab was chosen from ⋯
-     * @param {function():void} [opts.onPrefs]  ⚙ was clicked
+     * @param {function():void} [opts.onPrefs]  the ⚙ button was clicked
      * @param {function():void} [opts.onClose]  close the island (a tab's action is done)
      * @param {object[]} [opts.missed]  stack.missed, newest first: Home's Missed section
      * @param {function():void} [opts.onMissedSeen]  Home was shown with that section

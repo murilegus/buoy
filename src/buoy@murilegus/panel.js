@@ -21,6 +21,7 @@ import {Wallpaper} from './wallpaper.js';
 let look = {mode: 'hover', radius: 16, opacity: 17};
 
 // What reworkPanel(true) changed on the left box, to put back on disable.
+/** @type {?Record<string, any>} */
 let saved = null;
 
 // The left cluster's own content (SPEC §1), first in _leftBox while enabled.
@@ -515,6 +516,7 @@ class LeftCluster {
             this._menuManager.addMenu(this._menu);
         }
         this._menu.setApp(app);
+        // @ts-expect-error -- true acts as PopupAnimation.SLIDE (boxpointer.js open: `animate & …`)
         this._menu.open(true);
     }
 

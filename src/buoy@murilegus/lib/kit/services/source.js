@@ -1,3 +1,7 @@
+/** @import Gio from 'gi://Gio' */
+/** @import {ActivityStack} from '../model/stack.js' */
+/** @import {Registry} from './registry.js' */
+
 /**
  * Base class for a module's source.js. A source watches one system facility
  * and calls stack.surface / update / end. Event-driven only — never poll
