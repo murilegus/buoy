@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon} from '../../render/lib.js';
+import {SCALE as SC, C, icon, SAMPLE} from '../../render/lib.js';
 const out = ARGV[0];
 const W = 24 + 4 * 404 + 3 * 28 + 24, H = 360;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
@@ -40,7 +40,7 @@ function card(x, y, {buttons = false, shared = false, hold = ''} = {}) {
     shape(x, y, w, h, 28);
     if (shared) { fill([1, 1, 1, C.FILL2], x + 14, y + 8, 40, 40, 10); fill([.45, .2, .5, 1], x + 25, y + 19, 18, 18, 4.5); }
     else avatar(x + 14, y + 8);
-    text(shared ? 'Slack' : 'Mira Vale', x + 66, y + 10, {wt: 600});
+    text(shared ? 'Slack' : SAMPLE.person, x + 66, y + 10, {wt: 600});
     text(shared ? 'Thông báo mới · bây giờ' : 'Slack · #design · bây giờ', x + 66, y + 30, {sz: SUB, a: C.FG_MUTED});
     cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(x + w - 30, y + 28, 16, 0, 2 * Math.PI); cr.fill(); icon(cr, 'xmark', x + w - 38, y + 20, 16);
     if (lines) text(BODY, x + 14, y + 64, {sz: SUB, a: .85, maxW: w - 28, lines});
@@ -55,17 +55,17 @@ function card(x, y, {buttons = false, shared = false, hold = ''} = {}) {
     return h;
 }
 function pill(cx, y, label) {
-    const e = text(label, 0, 0, {wt: 600, measure: true}), pw = Math.max(133, 8 + 24 + 8 + e.width + 8), x = cx - pw / 2;
+    const e = text(label, 0, 0, {wt: 600, measure: true}), pw = Math.max(131, 8 + 24 + 6 + e.width + 8), x = cx - pw / 2;
     shape(x, y, pw, 32, 16);
-    fill([.45, .2, .5, 1], x + 10, y + 6, 20, 20, 5);
-    text(label, x + 40, y + 7, {wt: 600});
+    fill([.45, .2, .5, 1], x + 8, y + 4, 24, 24, 6);   // the app's logo filling the leading 24
+    text(label, x + 38, y + 7, {wt: 600});
 }
 const xs = [0, 1, 2, 3].map(i => 24 + i * (404 + 28)), TOP = 46;
 const heads = ['1 · Tới: card tự mở trên pill, không nút (5 s)', '2 · Rê chuột: hiện hàng nút, giữ lại', '3 · Hết 5 s: thu về pill, tiêu đề đầy đủ', '4 · Đang chia sẻ màn hình: chỉ tên app'];
 heads.forEach((t, i) => text(t, xs[i], 14, {sz: 9, wt: 700}));
 card(xs[0], TOP, {hold: 'Như banner GNOME: tên, nguồn, 2 dòng thân; × vẫn có. Cao 104.'});
 card(xs[1], TOP, {buttons: true, hold: 'Như banner GNOME khi rê chuột: hiện nút của app. Cao 152; đếm giờ dừng.'});
-pill(xs[2] + 202, TOP, 'New message from Mira Vale');
+pill(xs[2] + 202, TOP, `New message from ${SAMPLE.person}`);
 text('Pill: tiêu đề đầy đủ của thông báo, như app gửi (không sửa riêng cho app nào);', xs[2], TOP + 44, {sz: 8, a: .7});
 text('rê chuột mở lại card, có nút.', xs[2], TOP + 60, {sz: 8, a: .7});
 card(xs[3], TOP, {shared: true, hold: 'Như hiện nay (NOTIFICATIONS §5): không tên người, không thân.'});

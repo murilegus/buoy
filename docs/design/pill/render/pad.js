@@ -1,12 +1,11 @@
-// Side padding 4 / 6 / 8 / 10 / 14 around the same 117 px content; dashed = 4 px concentric inset (2026-11-09).
+// Side padding 4 / 6 / 8 / 10 / 14 around the same 115 px content (gap 6 after the leading, 2026-11-12); dashed = 4 px concentric inset (2026-11-09).
 // gjs -m pad.js out.png
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x} from '../../render/lib.js';
-const SUN = ['....Y.....','.Y..Y..Y..','..Y...Y...','....YY....','YY.YYYY.YY','...YYYY...','....YY....','..Y...Y...','.Y..Y..Y..','....Y.....'];
+import {SCALE as SC, fit, width1x, colourIcon} from '../../render/lib.js';
 const rows = [[4, 'pad 4 — ô 24 đồng tâm đầu bo, đều 4 mọi phía'], [6, 'pad 6'], [8, 'pad 8'], [10, 'pad 10'], [14, 'pad 14 — hiện tại']];
-const W = 560, ROW = 44, CX = 140, CONTENT = 24 + 8 + 85;
+const W = 560, ROW = 44, CX = 140, CONTENT = 24 + 6 + 85;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, ROW * rows.length * SC);
 const cr = new cairo.Context(surf);
 cr.scale(SC, SC);
@@ -23,9 +22,9 @@ rows.forEach(([p, note], i) => {
   cr.setDash([2, 2], 0); rr(px + 4.5, py + 4.5, pw - 9, 23, 11.5); cr.setSourceRGBA(1, .45, .45, .8); cr.stroke(); cr.setDash([], 0);
   const zx = px + p, by = py + 4;
   cr.setSourceRGBA(.4, .8, 1, .8); cr.rectangle(zx + .5, by + .5, 23, 23); cr.stroke();
-  SUN.forEach((r, yy) => [...r].forEach((c, xx) => { if (c === 'Y') { cr.setSourceRGB(1, .82, .4); cr.rectangle(zx + 2 + xx * 2, by + 2 + yy * 2, 2, 2); cr.fill(); } }));
+  colourIcon(cr, 'daypart-noon', zx, by, 24);   // the leading fills its 24 box
   font(11, 600); L.set_text('88:88:88 PM', -1); fit(L, cr, width1x(L.get_font_description(), '88:88:88 PM')); const th = L.get_pixel_extents()[1].height;
-  cr.setSourceRGB(1, 1, 1); cr.moveTo(zx + 24 + 8, py + Math.round((32 - th) / 2)); PangoCairo.show_layout(cr, L);
+  cr.setSourceRGB(1, 1, 1); cr.moveTo(zx + 24 + 6, py + Math.round((32 - th) / 2)); PangoCairo.show_layout(cr, L);
   font(8, 400); PangoCairo.update_layout(cr, L); cr.setSourceRGBA(1, 1, 1, .75); L.set_text(`${pw}×32  ${note}`, -1); cr.moveTo(240, py + 9); PangoCairo.show_layout(cr, L);
 });
 surf.writeToPNG(ARGV[0]);

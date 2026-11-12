@@ -9,7 +9,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {taskState, icon, C, GREY, drawBu} from '../../render/lib.js';
+import {taskState, icon, C, GREY, drawBu, SAMPLE} from '../../render/lib.js';
 
 const SC = 3, W = 700, R = 28, PAD = 14, CW = 340, X = 40;
 const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED, CY = [.4, .85, 1], RD = [1, .5, .5];   // CY, RD: guide marks
@@ -101,7 +101,7 @@ for (const it of ROWS) {
     if (it.kind === 'head') {
         grad(lx, y + 8, 40, 10, ...ART); guide(lx, y + 8, 40, 40);
         const tx = lx + 40 + 12;
-        text('Lumen Coast', tx, y + 9, 11, 600, W1); text('Harbor Lights · Mira Vale', tx, y + 29, 9.5, 400, G);
+        text(SAMPLE.track, tx, y + 9, 11, 600, W1); text(SAMPLE.sub, tx, y + 29, 9.5, 400, G);
         round(xr - 16, y + R, '⏸'); guide(xr - 32, y + 12, 32, 32, 16);
         dim(x, lx, y - 4, '14'); dim(lx, lx + 40, y - 4, '40'); dim(lx + 40, tx, y - 4, '12');
         dim(xr - 32, xr, y - 4, '32'); dim(xr, x + pw, y - 4, '14');
@@ -114,7 +114,7 @@ for (const it of ROWS) {
     if (it.kind === 'media') {
         const ax = x + 8, tx = ax + 72 + 12;
         grad(ax, y + 8, 72, 20, ...ART); guide(ax, y + 8, 72, 72, 20);
-        text('Lumen Coast', tx, y + 10, 11, 600, W1); text('Harbor Lights · Mira Vale', tx, y + 30, 9.5, 400, G);
+        text(SAMPLE.track, tx, y + 10, 11, 600, W1); text(SAMPLE.sub, tx, y + 30, 9.5, 400, G);
         round(xr - 16, y + R, '⏸');
         const by = y + 60;
         cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(tx, by, xr - tx, 4, 2); cr.fill();
@@ -210,7 +210,7 @@ for (const it of ROWS) {
             grad(lx, y + 8, 40, 10, [.55, .8, .65], [.2, .4, .6]);
             rr(lx + 24, y + 32, 18, 18, 5); cr.setSourceRGB(0, 0, 0); cr.fill();
             cr.setSourceRGB(.3, .55, .95); rr(lx + 26, y + 34, 14, 14, 3.5); cr.fill();
-            text('Mira Vale', lx + 52, y + 9, 11, 600, W1); text('Slack · 2 min', lx + 52, y + 29, 9.5, 400, G);
+            text(SAMPLE.person, lx + 52, y + 9, 11, 600, W1); text('Slack · 2 min', lx + 52, y + 29, 9.5, 400, G);
             round(xr - 16, y + R, '×');
         }
         const labels = it.buttons ?? (it.ask ? ['Deny', 'Allow', 'Always'] : ['Reply', 'Mark as read']);

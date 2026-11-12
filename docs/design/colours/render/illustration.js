@@ -108,15 +108,15 @@ head('Gần màu trạng thái', 32, 490);
 function pill(x, y, iconName, label, left, right) {
     font(11, 600); L.set_text(label, -1); fit(L, cr, width1x(L.get_font_description(), label));
     const tw = Math.round(width1x(L.get_font_description(), label)), th = L.get_pixel_extents()[1].height;
-    const pw = 8 + 24 + 8 + tw + 8 + (left ? 20 : 0) + (right ? 20 : 0);
+    const pw = 8 + 24 + 6 + tw + 8 + (left ? 20 : 0) + (right ? 20 : 0);
     rr(x + .5, y + .5, pw - 1, 31, 15.5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve();
     cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke();
     const dot = (cx, c) => { cr.setSourceRGB(...hex(c)); cr.arc(cx, y + 16, 4, 0, 2 * Math.PI); cr.fill(); };
     if (left) dot(x + 16, left);
     if (right) dot(x + pw - 16, right);
     const zx = x + 8 + (left ? 20 : 0);
-    icon(iconName, zx + 2, y + 6, 20);
-    cr.setSourceRGB(1, 1, 1); cr.moveTo(zx + 32, y + Math.round((32 - th) / 2)); PangoCairo.show_layout(cr, L);
+    icon(iconName, zx, y + 4, 24);   // the daypart icons fill the leading 24 (design/icons)
+    cr.setSourceRGB(1, 1, 1); cr.moveTo(zx + 30, y + Math.round((32 - th) / 2)); PangoCairo.show_layout(cr, L);
 }
 pill(32, 516, 'daypart-dawn', '5:48 AM', null, STATE.mic);
 text('cam đào cạnh chấm mic', 32, 554, {sz: 7.5, a: .6});

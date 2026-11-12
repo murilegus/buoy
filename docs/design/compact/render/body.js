@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, taskState, icon, C, GREY, drawBu} from '../../render/lib.js';
+import {SCALE as SC, taskState, icon, C, GREY, drawBu, SAMPLE} from '../../render/lib.js';
 const R = 28, PAD = 14, LEAD = 40, IND = 12, PW = 340, TX = PAD + LEAD + IND;   // text column at 66
 const W = 1120, colX = [20, 520];
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, 760 * SC);
@@ -41,13 +41,13 @@ let y = 30;
 label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', colX[0], 8); label('Đề xuất — dùng cột dưới leading', colX[1], 8);
 // 1) media + bar
 { const h = 88;
-  let x = colX[0]; panel(x, y, h); head(x, y, 'Lumen Coast', 'Harbor Lights · Mira Vale'); bar(x, y + 64, x + TX, x + PW - PAD); waste(x, y, h);
-  x = colX[1]; panel(x, y, h); head(x, y, 'Lumen Coast', 'Harbor Lights · Mira Vale'); bar(x, y + 64, x + PAD + 6, x + PW - PAD - 6);
+  let x = colX[0]; panel(x, y, h); head(x, y, SAMPLE.track, SAMPLE.sub); bar(x, y + 64, x + TX, x + PW - PAD); waste(x, y, h);
+  x = colX[1]; panel(x, y, h); head(x, y, SAMPLE.track, SAMPLE.sub); bar(x, y + 64, x + PAD + 6, x + PW - PAD - 6);
   text('thanh dài hết bề ngang', x + PW + 8, y + 60, 8, 400, W1, .6); y += h + 22; }
 // 1b) media, big art spanning head + bar
 { const h = 88, x = colX[1]; label('…hoặc ảnh bìa 72 chiếm cả hai hàng', x, y - 16); panel(x, y, h);
   art(x + 8, y + 8, 72, 20); const tx = x + 8 + 72 + 12;   // inset 8 → r 28 − 8 = 20, concentric
-  text('Lumen Coast', tx, y + 10, 11, 600, W1); text('Harbor Lights · Mira Vale', tx, y + 30, 9.5, 400, G);
+  text(SAMPLE.track, tx, y + 10, 11, 600, W1); text(SAMPLE.sub, tx, y + 30, 9.5, 400, G);
   roundBtn(x + PW - PAD - 16, y + R, '⏸');
   bar(x, y + 60, tx, x + PW - PAD - 6); y += h + 30; }
 // 2) rows: Claude's task list (2026-11-11), on the 16 rhythm: 56 + 8 + 3 × 16 + 8 = 120
@@ -62,7 +62,7 @@ label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 
 // 3) card
 { let x = colX[0];
   const nI = text(NOTI, 0, 0, 9.5, 400, G2, 1, true, PW - PAD - TX).lines, hI = snap(56 + nI * 16 + 6 + 28 + 12);
-  panel(x, y, hI); head(x, y, 'Mira Vale', 'Slack · 2 min', CARD, '×'); waste(x, y, hI);
+  panel(x, y, hI); head(x, y, SAMPLE.person, 'Slack · 2 min', CARD, '×'); waste(x, y, hI);
   text(NOTI, x + TX, y + 56, 9.5, 400, G2, 1, false, PW - PAD - TX);
   { const by = y + hI - 12 - 28, bw = (PW - PAD - TX - 8) / 2;
     ['Reply', 'Mark as read'].forEach((t, k) => { cr.setSourceRGBA(1, 1, 1, C.FILL2); rr(x + TX + k * (bw + 8), by, bw, 28, 14); cr.fill();
@@ -70,7 +70,7 @@ label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 
   text(`${nI} dòng · ${hI}`, x + PW + 8, y + 10, 8, 400, W1, .6);
   x = colX[1];
   const nF = text(NOTI, 0, 0, 9.5, 400, G2, 1, true, PW - 2 * PAD - 4).lines, hF = snap(56 + nF * 16 + 6 + 32 + 12);
-  panel(x, y, hF); head(x, y, 'Mira Vale', 'Slack · 2 min', CARD, '×');
+  panel(x, y, hF); head(x, y, SAMPLE.person, 'Slack · 2 min', CARD, '×');
   text(NOTI, x + PAD + 2, y + 56, 9.5, 400, G2, 1, false, PW - 2 * PAD - 4);
   { const by = y + hF - 12 - 32, bw = (PW - 24 - 8) / 2;   // inset 12, h 32, r 16 = concentric with r 28
     ['Reply', 'Mark as read'].forEach((t, k) => { cr.setSourceRGBA(1, 1, 1, C.FILL2); rr(x + 12 + k * (bw + 8), by, bw, 32, 16); cr.fill();

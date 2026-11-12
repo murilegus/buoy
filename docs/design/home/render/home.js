@@ -11,7 +11,7 @@ import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
 import GLib from 'gi://GLib';
 import cairo from 'cairo';
-import {SCALE as SC, C, drawBu, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, drawBu, icon as gicon, SAMPLE} from '../../render/lib.js';
 const [out, MODE] = ARGV;
 // Buoy's colour icons (weather, daypart), the ones the extension ships
 const COLOUR = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]),
@@ -115,12 +115,12 @@ function heroMusic(x, y, w, h) {
     art(x + 8, ay, s, 8);
     const tx = x + 8 + s + 12, x1 = x + w - 14;
     if (h < TALL) {   // low: the buttons top right, the bar at the foot of the text column
-        text('Lumen Coast', tx, y + 12, {wt: 600}); text('Harbor Lights · Mira Vale', tx, y + 32, {sz: SUB, a: C.FG_MUTED});
+        text(SAMPLE.track, tx, y + 12, {wt: 600}); text(SAMPLE.sub, tx, y + 32, {sz: SUB, a: C.FG_MUTED});
         [['forward-step-fill', 0], ['pause-fill', 1], ['backward-step-fill', 0]].forEach(([n, m], i) => round(x + w - 28 - i * 40, y + 28, n, m));
         bar(tx, y + h - 34, x1 - tx);
         text('1:24', tx, y + h - 26, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, y + h - 26, {sz: SUB, a: C.FG_SUBTLE, right: true});
     } else {          // tall: the title larger, the bar, the buttons centred under it
-        text('Lumen Coast', tx, ay + 6, {sz: 14, wt: 700}); text('Harbor Lights · Mira Vale', tx, ay + 32, {sz: SUB, a: C.FG_MUTED});
+        text(SAMPLE.track, tx, ay + 6, {sz: 14, wt: 700}); text(SAMPLE.sub, tx, ay + 32, {sz: SUB, a: C.FG_MUTED});
         const by = ay + s - 40;
         bar(tx, by - 30, x1 - tx);
         text('1:24', tx, by - 22, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, by - 22, {sz: SUB, a: C.FG_SUBTLE, right: true});
@@ -167,8 +167,8 @@ const ITEMS = {
     claude: {ic: 'bu', val: '2 / 3', cap: 'Claude Code', det: ['Run pnpm test', 'buoy']},
     dl: {ic: 'arrow-down-to-line', val: '42%', cap: 'report.pdf', det: ['2.1 MB/s', 'còn 30 s']},
     timer: {ic: 'alarm', val: '12:40', cap: 'Pomodoro', det: ['vòng 2 / 4', '']},
-    call: {ic: 'smartphone', val: '3:12', cap: 'Mira Vale', det: ['đang gọi', '']},
-    music: {ic: 'music-note', val: 'Lofi', cap: 'Lumen Coast', det: ['Harbor Lights', '']},
+    call: {ic: 'smartphone', val: '3:12', cap: SAMPLE.person, det: ['đang gọi', '']},
+    music: {ic: 'music-note', val: '1:24', cap: SAMPLE.track, det: [SAMPLE.artist, '']},
     wx: {ic: 'weather-few-clouds', val: '31°', cap: 'Ít mây', det: ['cảm giác 34°', 'gió 12 km/h'], wide: true},
     up: {ic: 'calendar', val: '3:00', cap: 'Design review', det: ['25 phút nữa', 'phòng 3'], wide: true},
     bat: {ic: 'battery-charging', val: '82%', cap: 'Pin', det: ['đang sạc', 'còn 4 giờ']},
@@ -278,16 +278,16 @@ if (MODE === 'lists') {
     home(x0, 50, EW, EH, 'music', ['missed', 'claude', 'dl', 'timer', 'call'], G, '1 · Home: ô Bị nhỡ đầu hàng, ô +K cuối hàng', {bellDot: true});
     list(x1, 50, EW, EH, '2 · Bấm Bị nhỡ: danh sách thay thẻ chính và hàng ô', 'Bị nhỡ · 7', [
         ['bell', 'Thông báo · 3', 'Slack, Zalo, Gmail', '2:41 PM'],
-        ['smartphone', 'Cuộc gọi nhỡ', 'Mira Vale · Điện thoại', '2:40 PM'],
+        ['smartphone', 'Cuộc gọi nhỡ', `${SAMPLE.person} · Điện thoại`, '2:40 PM'],
         ['arrow-down-to-line', 'report.pdf đã tải xong', 'Tải về', '2:38 PM'],
         ['alarm', 'Pomodoro hết giờ', 'Hẹn giờ', '2:30 PM'],
         ['bu', 'Claude Code xong', 'buoy · 3 / 3', '2:12 PM']], {amber: true, action: 'xmark', bellDot: true});
     list(x2, 50, EW, EH, '3 · Bấm +K: mọi activity đang chạy, theo stack', 'Đang diễn ra · 5', [
-        ['music-note', 'Lumen Coast', 'Harbor Lights', '1:24'],
+        ['music-note', SAMPLE.track, SAMPLE.artist, '1:24'],
         ['bu', 'Claude Code', 'Run pnpm test', '2 / 3'],
         ['arrow-down-to-line', 'report.pdf', '2.1 MB/s', '42%'],
         ['alarm', 'Pomodoro', 'vòng 2 / 4', '12:40'],
-        ['smartphone', 'Mira Vale', 'đang gọi', '3:12']]);
+        ['smartphone', SAMPLE.person, 'đang gọi', '3:12']]);
     note(x1, 50 + EH + 8, ['Hàng 32 một dòng; bấm hàng mở chỗ của nó (thông báo → tab Thông báo, mục Nhỡ khi vắng)', 'và hàng rời danh sách; × xoá hết; ‹ hoặc Esc về Home.']);
     note(x2, 50 + EH + 8, ['Cùng khuôn danh sách; bấm hàng mở tab của activity đó.', 'Dài hơn 5 hàng thì danh sách cuộn, chỉ ở đây.']);
     note(x0, 50 + EH + 8, ['Bị nhỡ đếm cả thông báo chưa xem và việc kết thúc lúc không thấy.']);

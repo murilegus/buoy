@@ -7,7 +7,7 @@ import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
 import {SCALE as SC, C, icon} from '../../render/lib.js';
 const out = ARGV[0];
-const W = 24 + 404 + 40 + 133 * 3 + 16 + 24, H = 170;
+const W = 24 + 404 + 40 + 131 * 3 + 16 + 24, H = 170;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
 const cr = new cairo.Context(surf); cr.scale(SC, SC); cr.setSourceRGB(...C.WALL); cr.paint();
 const L = PangoCairo.create_layout(cr); PangoCairo.context_set_resolution(L.get_context(), 96);
@@ -45,11 +45,11 @@ const px = x + w + 40;
 text('Sau đó: mỗi app một pill, chỉ tên app', px, 12, {sz: 9, wt: 700});
 // the newest first (PRIORITY); the trailing count from 2 on, as in NOTIFICATIONS §2
 [['Gmail', 1], ['Telegram', 2], ['Slack', 3]].forEach(([a, n], i) => {
-    const bx = px + i * (133 + 8);
-    shape(bx, y + 12, 133, 32, 16);
+    const bx = px + i * (131 + 8);
+    shape(bx, y + 12, 131, 32, 16);
     logo(bx + 10, y + 18, 20, APPS[a]);
     text(a, bx + 40, y + 19, {wt: 600});
-    if (n > 1) text(String(n), bx + 133 - 20, y + 19, {wt: 600, a: C.FG_MUTED});
+    if (n > 1) text(String(n), bx + 131 - 20, y + 19, {wt: 600, a: C.FG_MUTED});
 });
 ['Không thân, không ảnh, không nút; bấm không mở gì (mở app hay tab sẽ lộ nội dung).',
  'Cả đợt tính là bị nhỡ: nội dung bị ẩn nên chưa ai đọc; xem lại trong Bị nhỡ sau khi dừng chia sẻ.',

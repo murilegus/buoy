@@ -24,6 +24,7 @@ Các thay đổi ở đây chưa có trong code: chúng là các mục redesign 
 | [Tab](tabs/index.vi.md) | thanh tab, từng tab (đang mở) |
 | [Icon](icons/index.vi.md) | icon buổi trong ngày và thời tiết |
 | [Bu](mascot/index.vi.md) | cỡ của Bu trong mỗi dạng |
+| [Chuyển động](motion/index.vi.md) | lò xo kiểu Dynamic Island, từng chuyển, tương tác, khi bị cắt ngang |
 
 ## Quy tắc chung
 
@@ -39,6 +40,10 @@ Các thay đổi ở đây chưa có trong code: chúng là các mục redesign 
 - **Độ rộng đo từ chữ thật khi chạy,** không viết cứng: cùng một chữ rộng khác nhau theo font và
   theo tỷ lệ màn hình. **Chốt**
 - **Một chuyển dạng là một lần nở ra:** minimal < compact < expanded, ở mọi màn hình. **Chốt**
+- **Một bộ nội dung mẫu cho mọi hình**, để các hình so được với nhau, ở một chỗ (`render/lib.js`
+  `SAMPLE`, `COVER`). Nhạc: bài **Sóng Ngoài Khơi** của **Hải Đăng**, trên Spotify (pill "Sóng Ngoài
+  Khơi · Hải Đăng", phụ đề "Hải Đăng · Spotify"), ảnh bìa gradient chéo cam → tím. Người: **Quỳnh
+  Trâm**, gọi tắt **Trâm** (tin Slack ở #design, cuộc gọi). **Chốt** (Ethan, 2026-11-12)
 
 ## Vẽ lại ảnh
 

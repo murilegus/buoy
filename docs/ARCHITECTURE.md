@@ -200,6 +200,8 @@ docs/design/
     ├── index.vi.md     purpose, anatomy, sizes, states, decisions (date, who), open, code
     ├── images/         x.vi.png (labels in Vietnamese), x.en.png (English, with the translation);
     │                   each page links its own (mkdocs-static-i18n serves both as x.png)
+    ├── clips/          x.vi.png, motion as an animated PNG (30 fps, design/motion, 2026-11-12): an
+    │                   image, so GitHub and the site both play it; scripts/apng.py makes it
     └── render/         the gjs scripts that draw those images
 ```
 

@@ -21,12 +21,12 @@ const expW = even(Math.min(760, Math.max(560, W * .28)));
 // cluster widths measured on Ethan's machine (Looking Glass, 2026-11-09): _leftBox 93, _rightBox 293
 const leftC = Number(ARGV[3] ?? 93), rightC = Number(ARGV[4] ?? 293), MARGIN = 12, GAP = 8;
 const measured = ARGV[3] === undefined;
-const idle = 133, minMax = Math.min(even(24 * EM), even(expW * .6)), cmpMax = Math.min(even(28 * EM), even(expW * .72));
+const idle = 131, minMax = Math.min(even(24 * EM), even(expW * .6)), cmpMax = Math.min(even(28 * EM), even(expW * .72));
 for (const [x, w, t] of [[4, leftC, `cụm trái ${leftC}${measured ? '' : ' (giả định)'}`], [W - 4 - rightC, rightC, `_rightBox ${rightC}${measured ? '' : ' (giả định)'}`]]) {
   cr.setSourceRGBA(1, 1, 1, .1); rr(x, 4, w, 32, 16); cr.fill(); text(t, x + 14, 12, 8.5, 400, W1, .7); }
 const cx = W / 2, p1x = cx - minMax / 2;
 function pill(x, w, label, sub) { rr(x + .5, 4.5, w - 1, 31, 15.5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve(); cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke();
-  cr.setSourceRGB(.95, .6, .4); rr(x + 8, 8, 24, 24, 7); cr.fill(); text(label, x + 39, 11, 11, 600, W1); if (sub) { const e = text(sub, 0, 0, 11, 600, W1, 1, true); text(sub, x + w - 8 - e.width, 11, 11, 600, W1, .55); } }
+  cr.setSourceRGB(.95, .6, .4); rr(x + 8, 8, 24, 24, 7); cr.fill(); text(label, x + 38, 11, 11, 600, W1); if (sub) { const e = text(sub, 0, 0, 11, 600, W1, 1, true); text(sub, x + w - 8 - e.width, 11, 11, 600, W1, .55); } }
 pill(p1x, minMax, 'Weekly sync with design team', '3:00 PM');
 let x = p1x + minMax, lx = p1x;
 if (sym) {

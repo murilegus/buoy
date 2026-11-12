@@ -37,7 +37,7 @@ pages, Bu, About, greeting first run and What's new, `install.sh`, README, last 
 
 ## M4 — Redesign and "Wow" pack (v0.2) `[ ]`
 
-The design docs first, then the six redesign items in order (the restructure only moves files),
+The design docs first, then the seven redesign items in order (the restructure only moves files),
 one branch each, shipped together as 0.2. Sizes are in [docs/design](design/index.md).
 
 | | Item | Done when |
@@ -46,6 +46,7 @@ one branch each, shipped together as 0.2. Sizes are in [docs/design](design/inde
 | [x] | Restructure: kit, stylesheet, icons | ARCHITECTURE first; kit in `model/` `services/` `ui/`, `present.js` split by tier; a lint check of the import boundaries; one stylesheet in sections plus each tab's CSS beside its module, loaded by kit (not `@import`); `icons/color` and `icons/symbolic`; `install.sh` of 0.1 still works; nothing visible changes |
 | [ ] | Colours by role | as design/colours: the stylesheet uses only the palette's roles, checked by `tests/palette.test.js`; lights amber `#FF9F0A`, red `#FF453A`; Bu's lamps, stale Bu at 50 %, Bu's tile `#000`; high contrast; INDICATORS and MASCOT updated |
 | [ ] | Sizes in em: the bar and the pill | as design/pill, icons and mascot; nothing clipped at scale 1 and 2, with Large Text and a wide font; SPEC §2, §4 updated |
+| [ ] | Motion | as design/motion: springs (`kit/model/motion.js`, unit-tested: ζ, overshoot, settling, retarget) for every move, size and shape, run on the frame clock; velocity kept when cut short; fades and CSS states; the radius follows the height; tab switch and in-place lists; animations off and slow-down-factor honoured; `shrinkStop` gone; SPEC §5 updated |
 | [ ] | Compact and the notification card | as design/compact and alerts-and-asks; a notification arrives as an alert (its card without buttons for 5 s, the buttons on hover, then the pill with its full title); seen only when its card had 5 s while you were present; bursts in turns (1 s each, 2 waiting, same app merged), paused by hover; on a shared screen a burst is one compact, all missed; SPEC §2, §4 and NOTIFICATIONS §2–§3 updated |
 | [ ] | The lights at the ends | as design/pill; SPEC §2, §2a-i, §2a-ii updated |
 | [ ] | Expanded on the same rhythm | as design/expanded and design/home (the main card and the row of tiles); SPEC §3, §4 updated |

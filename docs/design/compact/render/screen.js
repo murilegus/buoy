@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x, C, drawBu, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, C, drawBu, icon as gicon, SAMPLE} from '../../render/lib.js';
 const out = ARGV[0];
 // Gravity UI (design/icons): video for recording, display-pulse for sharing, music-note for music
 const {RED, CREAM, WALL} = C;
@@ -37,20 +37,20 @@ function rr(x, y, w, h, r) {
 const icon = (name, x, y, s, rgb = [1, 1, 1]) => gicon(cr, name, x, y, s, rgb);
 const dot = (cx, cy, rgb) => { cr.setSourceRGB(...rgb); cr.arc(cx, cy, 4, 0, 2 * Math.PI); cr.fill(); };
 
-// a pill: leading 20, gap 8, text 1em 600; min 133 (idle); a light or dot on either end widens both
+// a pill: leading 24, gap 6, text 1em 600; min 131 (idle); a light or dot on either end widens both
 // ends by 20 (design/pill)
 function pill(cx, y, {lead, label, left = null, right = null, bu = false}) {
-    const tw = w1(label, 11, 600), inner = Math.max(133 - 16, 20 + 8 + tw), lit = left || right;
+    const tw = w1(label, 11, 600), inner = Math.max(131 - 16, 24 + 6 + tw), lit = left || right;
     const pw = inner + 16 + (lit ? 40 : 0), x = Math.round(cx - pw / 2);
     rr(x + .5, y + .5, pw - 1, 31, 15.5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve();
     cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke();
     if (left) dot(x + 16, y + 16, left);
     if (right) dot(x + pw - 16, y + 16, right);
-    const zx = x + 8 + (lit ? 20 : 0) + Math.round((inner - 20 - 8 - tw) / 2);
+    const zx = x + 8 + (lit ? 20 : 0) + Math.round((inner - 24 - 6 - tw) / 2);
     if (bu) drawBu(cr, 'ask', zx + 2, y + 6, 2);   // Bu 20, the ask pose: its lamp red
-    else icon(lead, zx + 2, y + 8, 16);
-    const e = text(label, zx + 28, 0, {sz: 11, wt: 600, a: 0, exact: true});
-    text(label, zx + 28, y + Math.round((32 - e.height) / 2), {sz: 11, wt: 600, a: 1, exact: true});
+    else icon(lead, zx + 4, y + 8, 16);
+    const e = text(label, zx + 30, 0, {sz: 11, wt: 600, a: 0, exact: true});
+    text(label, zx + 30, y + Math.round((32 - e.height) / 2), {sz: 11, wt: 600, a: 1, exact: true});
     return [x, pw];
 }
 function bar(y, caption) {
@@ -64,10 +64,10 @@ bar(32, 'Chỉ quay: pill 1 là bản ghi, đồng hồ chạy; chấm đỏ bê
 pill(W / 2, 36, {lead: 'video', label: '0:42', right: RED});
 bar(96, 'Quay và nghe nhạc: bản ghi (55) đứng trước nhạc (10); nhạc sang pill phụ.');
 const [px, pw] = pill(W / 2, 100, {lead: 'video', label: '0:42', right: RED});
-pill(px + pw + 8 + 133 / 2, 100, {lead: 'music-note', label: 'Lofi'});
+pill(px + pw + 8 + 131 / 2, 100, {lead: 'music-note', label: '1:24'});
 bar(160, 'Claude Code hỏi trong lúc quay: ask (cần bạn) lên pill 1, đèn đỏ trái; bản ghi sang pill phụ; chấm đỏ vẫn ở pill 1.');
 const [qx, qw] = pill(W / 2, 164, {bu: true, label: 'Cần trả lời', left: RED, right: RED});
-pill(qx + qw + 8 + 133 / 2, 164, {lead: 'video', label: '0:42'});
+pill(qx + qw + 8 + 131 / 2, 164, {lead: 'video', label: '0:42'});
 
 // 2. compacts on hover
 text('Hover: compact', 16, 232, {sz: 10, wt: 700, a: 1});

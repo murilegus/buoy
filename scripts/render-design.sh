@@ -7,6 +7,14 @@ set -eu
 cd "$(dirname "$0")/../docs/design"
 
 r() { script=$1; out=$2; shift 2; gjs -m "$script" "$out" "$@"; }
+# clip <mode> <out.png>: a render script's frames (30 fps) as an animated PNG, which GitHub and the
+# site both play inline (scripts/apng.py, Pillow)
+clip() {
+  frames="$(mktemp -d)"
+  gjs -m motion/render/motion.js "$frames" "$1"
+  python3 -I ../../scripts/apng.py "$frames" "$2" 30
+  rm -rf "${frames:?}"
+}
 
 # colours
 r colours/render/roles.js colours/images/roles.vi.png
@@ -49,5 +57,10 @@ r expanded/render/expanded.js expanded/images/expanded.vi.png
 
 # home
 for m in states anatomy fill lists screen; do r home/render/home.js home/images/$m.vi.png $m; done
+
+# motion
+for m in curves compact expanded tabs; do r motion/render/motion.js motion/images/$m.vi.png $m; done
+mkdir -p motion/clips
+for m in compact expanded tabs; do clip clip-$m motion/clips/$m.vi.png; done
 
 echo "docs/design: images redrawn"
