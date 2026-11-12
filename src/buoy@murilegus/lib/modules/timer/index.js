@@ -9,4 +9,6 @@ export default {
     source: null,
     adapter: {},
     tab: TimerTab,
+    // in ⋯, not the strip (Ethan, 2026-11-13)
+    tabInMore: true,
 };
