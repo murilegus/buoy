@@ -27,8 +27,9 @@ và cách từng chuyển diễn ra; số dùng chung ở [Bảng số](../token
 - **Không blur** (luật 8). Chỗ Apple dùng blur khi đổi nội dung, Buoy dùng độ mờ và mép hình. **Chốt**
 - **Phần chung đi tới chỗ mới**, như HIG (Live Activities): "animating existing elements to their new
   positions rather than removing and animating them back in". Phần có ở cả hai dạng (leading, tên)
-  đi cùng nền bằng cùng lò xo: leading 20 của minimal lớn lên và tới chỗ leading 40 của compact, tên
-  tới chỗ tên. Phần chỉ có ở một dạng (đèn, equaliser, phụ đề, thanh, nút) vẫn như nay: phần đi thì
+  đi cùng nền bằng cùng lò xo: leading 24 của pill lớn lên và tới chỗ leading của compact (40 ở phần
+  đầu 56, ảnh bìa 72 ở nhạc 88), tên tới chỗ tên. Phần chỉ có ở một dạng (đèn, equaliser, phụ đề,
+  thanh, giờ, nút) vẫn như nay: phần đi thì
   `fade-out`, phần đến thì lộ theo mép nền. Thay luật "nội dung không dời, không đổi cỡ trong lúc
   morph" của SPEC §5 (2026-11-02), luật đó đặt ra vì chữ của expanded từng hiện đủ rộng khi nền còn
   nhỏ; mép nền vẫn cắt mọi thứ nên lỗi đó không quay lại. Chỉ dời bằng `translation` và phóng bằng
@@ -61,19 +62,21 @@ nguyên.
 
 ![Pill thành compact và về lại: đề xuất và hiện nay (chạy thật, 30 fps; đề xuất ở trên, hiện nay ở dưới)](clips/compact.vi.png)
 
-**Pill ↔ compact.** Rê chuột 300 ms: nền nở bằng `move` từ chính pill (đỉnh đứng yên, nở xuống và
-sang hai bên quanh tâm). Leading và tên đi tới chỗ của chúng trong compact cùng nền; đèn và
-equaliser đi bằng `fade-out` ngay; phụ đề và thanh đứng sẵn ở chỗ cuối, lộ theo mép nền, độ mờ đi từ
-0 ở nửa đường tới đủ ở cuối. Pill bên cạnh mờ tại chỗ (`fade-out`). Rời chuột: đợi 200 ms, rồi
-`close`; leading và tên đi về chỗ cũ, phụ đề và thanh `fade-out`, đèn và equaliser `fade-in` từ nửa
-đường. **Đề xuất**
+**Pill ↔ compact** (hình vẽ compact nhạc 88). Rê chuột 300 ms: nền nở bằng `move` từ chính pill
+(đỉnh đứng yên, nở xuống và sang hai bên quanh tâm; cao 32 → 88, bo theo chiều cao 16 → 28). Leading
+24 lớn lên thành ảnh bìa 72 (× 3, bo 6 → 20) và đi từ (28, 4) tới (8, 8); tên đi tới chỗ tên, 12 sau
+ảnh bìa; cả hai cùng nền. Đèn, " · Hải Đăng" và equaliser đi bằng `fade-out` ngay; phụ đề, nút,
+thanh và giờ đứng sẵn ở chỗ cuối, lộ theo mép nền, độ mờ đi từ 0 ở nửa đường tới đủ ở cuối. Ảnh bìa
+luôn cách mép trên và dưới của nền ít nhất 4 nên không bị cắt. Pill bên cạnh mờ tại chỗ
+(`fade-out`). Rời chuột: đợi 200 ms, rồi `close`; ảnh bìa và tên đi về chỗ cũ, phụ đề, nút, thanh
+và giờ `fade-out`, đèn và equaliser `fade-in` từ nửa đường. **Đề xuất**
 
 ![Pill thành expanded, hai pill phụ gộp vào; rồi thu về](images/expanded.vi.png)
 
 ![Pill thành expanded và thu về: đề xuất và hiện nay (chạy thật, 30 fps; đề xuất ở trên, hiện nay ở dưới)](clips/expanded.vi.png)
 
 **Pill → expanded.** Bấm: nền nở bằng `open`. Khi tab mở ra có cùng activity (thẻ chính của Home,
-tab Media), leading của pill đi tới ảnh của nó ở đó (20 → 88) và tên tới chỗ tên; phần còn lại
+tab Media), leading của pill đi tới ảnh của nó ở đó (24 → 88) và tên tới chỗ tên; phần còn lại
 (thanh tab, thân tab) đứng sẵn ở chỗ cuối, lộ theo mép nền. Tab khác: mọi thứ lộ theo mép, nội dung
 pill `fade-out`. Pill phụ trượt vào giữa bằng `move` và mờ đi ở nửa sau (gộp). **Thu về:** ngược
 lại: ảnh và tên đi về pill bằng `close`, phần còn lại `fade-out`; pill phụ trượt ra bằng `move` và

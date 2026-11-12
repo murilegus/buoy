@@ -77,9 +77,9 @@ function shape(x, y, w, h, alpha = 1) {
     cr.setSourceRGBA(1, 1, 1, C.BORDER * alpha); cr.setLineWidth(1); cr.stroke();
 }
 function clipTo(x, y, w, h) { cr.newPath(); rr(x, y, w, h, Math.min(h / 2, 28)); cr.clip(); }
-const art = (x, y, s, a = 1) => { // the sample cover (lib.js COVER)
+const art = (x, y, s, a = 1, r = s / 4) => { // the sample cover (lib.js COVER)
     const g = new cairo.LinearGradient(x, y, x + s, y + s); g.addColorStopRGBA(0, ...COVER[0], a); g.addColorStopRGBA(1, ...COVER[1], a);
-    cr.newPath(); rr(x, y, s, s, s / 4); cr.setSource(g); cr.fill();
+    cr.newPath(); rr(x, y, s, s, r); cr.setSource(g); cr.fill();
 };
 const caption = (t, x, y, opts = {}) => text(t, x, y, {sz: 8, a: .8, ...opts});
 function title(t, x, y, maxW = 0) {
@@ -152,13 +152,16 @@ function curves() {
 // wider than hinted at 1×, and " · artist" must start where the drawn title ends.
 const BY = ` · ${SAMPLE.artist}`;
 let TITLE_W = 0;
-const PILL = {w: 0, h: 32, lead: {x: 28, y: 4, s: 24}, title: {x: 58, y: 8, sz: 11}};
-const COMPACT = {w: 404, h: 88, lead: {x: 14, y: 8, s: 40}, title: {x: 66, y: 10, sz: 11}};
-const EXP = {w: 560, h: 280, lead: {x: 20, y: 64, s: 88}, title: {x: 120, y: 74, sz: 13}};
+// The compact is media 88 (design/compact): the art 72 at 8 with bo 20, the text 12 after it, the
+// round button 14 from the right edge, the bar and the times under the text; as wide as the
+// compact's anatomy drawing (340).
+const PILL = {w: 0, h: 32, lead: {x: 28, y: 4, s: 24, r: 6}, title: {x: 58, y: 8, sz: 11}};
+const COMPACT = {w: 340, h: 88, lead: {x: 8, y: 8, s: 72, r: 20}, title: {x: 92, y: 10, sz: 11}};
+const EXP = {w: 560, h: 280, lead: {x: 20, y: 64, s: 88, r: 22}, title: {x: 120, y: 74, sz: 13}};
 function shared(cx, y, from, to, x, a = 1) {
     const at = (f, k) => ({x: cx - f.w / 2 + f[k].x, y: y + f[k].y});
     const l0 = at(from, 'lead'), l1 = at(to, 'lead'), t0 = at(from, 'title'), t1 = at(to, 'title');
-    art(lerp(l0.x, l1.x, x), lerp(l0.y, l1.y, x), lerp(from.lead.s, to.lead.s, x), a);
+    art(lerp(l0.x, l1.x, x), lerp(l0.y, l1.y, x), lerp(from.lead.s, to.lead.s, x), a, lerp(from.lead.r, to.lead.r, x));
     text(SAMPLE.track, lerp(t0.x, t1.x, x), lerp(t0.y, t1.y, x), {sz: lerp(from.title.sz, to.title.sz, x), wt: 600, a});
 }
 function pillRest(cx, y, a) { // the light, " · artist" and the equaliser: only the pill has them
@@ -168,12 +171,16 @@ function pillRest(cx, y, a) { // the light, " · artist" and the equaliser: only
     text(BY, x + PILL.title.x + TITLE_W, y + PILL.title.y, {sz: 11, wt: 600, a});
     for (let i = 0; i < 4; i++) fill([1, 1, 1, a], x + PILL.w - 26 + i * 5, y + 11 + (i % 2) * 3, 3, 10 - (i % 2) * 3, 1);
 }
-function compactRest(cx, y, a) { // the subtitle and the bar: only the compact has them
+function compactRest(cx, y, a) { // the subtitle, the button, the bar, the times: only the compact has them
     if (a <= 0) return;
-    const x = cx - COMPACT.w / 2;
-    text(SAMPLE.sub, x + 66, y + 30, {sz: SUB, a: a * C.FG_MUTED});
-    fill([1, 1, 1, .2 * a], x + 66, y + 64, COMPACT.w - 66 - 18, 4, 2);
-    fill([1, 1, 1, a], x + 66, y + 64, (COMPACT.w - 84) * .38, 4, 2);
+    const x = cx - COMPACT.w / 2, tx = x + COMPACT.title.x, xr = x + COMPACT.w - 14, by = y + 60;
+    text(SAMPLE.sub, tx, y + 30, {sz: 9.5, a: a * C.FG_MUTED});
+    cr.newPath(); cr.arc(xr - 16, y + 28, 16, 0, 2 * Math.PI); cr.setSourceRGBA(...C.CREAM, a); cr.fill();
+    icon(cr, 'pause-fill', xr - 24, y + 20, 16, C.BLACK, a);
+    fill([1, 1, 1, C.FILL3 * a], tx, by, xr - tx, 4, 2);
+    fill([1, 1, 1, a], tx, by, (xr - tx) * .38, 4, 2);
+    text('1:24', tx, by + 7, {sz: 8.5, a: .5 * a});
+    text('-2:11', xr, by + 7, {sz: 8.5, a: .5 * a, right: true});
 }
 const REST = {pill: pillRest, compact: compactRest, expanded: (cx, y, a) => panel(cx, y, a)};
 // travel false: today's rule (SPEC §5), the shared parts leave and arrive like the rest
@@ -383,7 +390,7 @@ function clipCompact() {
             else if (ph.dir === 1)
                 morph(24, fy, CW, PILL, COMPACT, mine ? grow(ph.ms / 1000) : backOut(ph.ms / 460), ph.ms, rest, mine);
             else
-                morph(24, fy, CW, COMPACT, PILL, mine ? shrink(ph.ms / 1000) : todayShrink(ph.ms / 1000, .36, 271), ph.ms, back, mine);
+                morph(24, fy, CW, COMPACT, PILL, mine ? shrink(ph.ms / 1000) : todayShrink(ph.ms / 1000, .36, COMPACT.w - PILL.w), ph.ms, back, mine);
         });
         return cr.getTarget();
     });
