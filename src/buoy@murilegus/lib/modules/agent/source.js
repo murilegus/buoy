@@ -11,7 +11,7 @@ import {lingerMs} from '../../kit/model/settings.js';
 import {
     AGENTS, DESKTOP_APP, ENTER, NEXT, OTHER_TEXT, SKIP, STOP, STOP_REPLY, SUBMIT, TIMEOUT, answered, answersOf, interrupted, stopping, askOf,
     desktopRoute, desktopShown, isQuestion, newAnswers, parseEvent, pickAnswer, questionLook, questionReply, questionsOf, reply, settles, step,
-    tasksFromFiles,
+    tasksFromFiles, projectOf,
 } from './adapter.js';
 
 const KIND = 'agent';
@@ -130,8 +130,11 @@ export class AgentSource extends Source {
             this._show(done);
             return STOP_REPLY;
         }
+        // a folder whose repository is known already: its name at once, in this same update
+        if (res.rec.cwd && res.rec.cwd !== old?.cwd && this._roots.has(res.rec.cwd))
+            res.rec = {...res.rec, project: this._roots.get(res.rec.cwd) ?? projectOf(res.rec.cwd)};
         this._remember(key, res.rec);
-        if (res.rec.cwd && res.rec.cwd !== old?.cwd)
+        if (res.rec.cwd && res.rec.cwd !== old?.cwd && !this._roots.has(res.rec.cwd))
             this._nameProject(key, res.rec.cwd);
         // met in its middle (Buoy started after the session did): its task list from
         // Claude's own files, ahead of the next task tool call
@@ -404,9 +407,11 @@ export class AgentSource extends Source {
             this._roots.set(cwd, name);
         }
         const rec = this._sessions?.get(key);
-        if (!name || !rec || rec.cwd !== cwd || rec.project === name)
+        // outside any repository: the folder's name (the project it kept may be another one's)
+        const project = name ?? projectOf(cwd);
+        if (!rec || rec.cwd !== cwd || rec.project === project)
             return;
-        this._sessions.set(key, {...rec, project: name});
+        this._sessions.set(key, {...rec, project});
         if (this._stack?.has(this._activityId(rec)))
             this._show(this._sessions.get(key));
     }
