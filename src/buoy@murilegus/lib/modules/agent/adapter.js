@@ -17,6 +17,8 @@ import {sinceText} from '../../kit/model/presentation.js';
 
 /** The agents this module knows, by the `source` the hook sends (CODING-AGENTS.md §1). */
 export const AGENTS = {claude: 'Claude'};
+/** The agent's product, as an ask's card names it ("Claude Code wants to run"). */
+const PRODUCTS = {claude: 'Claude Code'};
 
 /** No news for this long → stale: the renderer dims it, Bu `stale` (§3). Working or done
  * alike (Ethan, 2026-11-07: one minute for both; was 2 min while working). */
@@ -28,6 +30,38 @@ export const PARTY_AFTER = 10 * 60 * 1000;
 
 /** The buttons, in order (§4). Always only when Claude Code sent a suggestion. */
 export const DENY = 'Deny', ALLOW = 'Allow', ALWAYS = 'Always';
+/** The compact's ■: stops the turn, as Desktop's Stop (source.js _stop). */
+export const STOP = 'stop';
+/**
+ * The synchronous PostToolUse hook's answer once ■ was pressed (hooks.js STOP_EVENT):
+ * Claude stops, the session stays (hooks.md, the common `continue` / `stopReason`).
+ */
+export const STOP_REPLY = JSON.stringify({continue: false, stopReason: 'Stopped from Buoy'});
+
+/**
+ * ■ pressed: the turn stops at Claude's next tool call; till then the compact says so.
+ *
+ * @param {object} rec
+ * @returns {object}
+ */
+export function stopping(rec) {
+    return {...rec, stopRequested: true, title: 'Stopping…', safeTitle: 'Stopping…'};
+}
+
+/**
+ * The stop answered: the turn is over, the session waits for you (no Stop event follows a
+ * hook's stop for sure, so Buoy says it itself; a Stop that does come changes nothing).
+ *
+ * @param {object} rec
+ * @param {number} now
+ * @returns {object}
+ */
+export function interrupted(rec, now) {
+    return {
+        ...rec, stopRequested: false, interrupted: true, stopped: true, finishedAt: now, subagents: 0,
+        pose: 'idle', title: 'Stopped', safeTitle: 'Stopped', lastAt: now,
+    };
+}
 /** The ask's fallback after `activity-linger`: not a button, so never pressed. */
 export const TIMEOUT = '\u0000timeout';
 
@@ -200,12 +234,130 @@ export function newRecord(source, ev) {
         id: ev.session_id, source, cwd: str(ev.cwd), project: projectOf(ev.cwd),
         shown: false, startedAt: 0, finishedAt: 0, lastAt: 0,
         pose: 'think', title: 'Thinking', safeTitle: 'Thinking', sessionTitle: null,
-        subagents: 0, stopped: false,
+        subagents: 0, stopped: false, tasks: [],
     };
 }
 
+// --- Claude's task list (design/compact "Hàng của Claude Code", 2026-11-11) ----------------
+// TaskCreate's input has the `subject`, its result the `id`; TaskUpdate's input the `taskId`
+// and the `status` (pending → in_progress → completed, or deleted). Checked in Claude Code
+// 2.1.319; Claude also writes each to ~/.claude/tasks/<session_id>/<id>.json (source.js reads
+// them when Buoy starts in the middle of a session).
+const TASK_STATUS = new Set(['pending', 'in_progress', 'completed']);
+
+function taskId(v) {
+    if (typeof v === 'number' && Number.isFinite(v))
+        return String(v);
+    if (typeof v === 'string')
+        return str(v);
+    return isPlain(v) ? taskId(v.id ?? v.taskId ?? v.task?.id) : null;
+}
+
+/**
+ * The session's task list after a tool call, or null when the call is not about tasks.
+ *
+ * @param {object[]} tasks  [{id, subject, status, doneAt}] in the order Claude made them
+ * @param {object} ev  a PostToolUse
+ * @param {number} now  ms
+ * @returns {?object[]}
+ */
+export function taskStep(tasks, ev, now) {
+    const i = isPlain(ev?.tool_input) ? ev.tool_input : {};
+    if (ev?.tool_name === 'TaskCreate') {
+        const id = taskId(ev.tool_response), subject = str(i.subject);
+        if (!id || !subject)
+            return null;
+        return [...tasks.filter(t => t.id !== id), {id, subject, status: 'pending', startedAt: 0, doneAt: 0}];
+    }
+    if (ev?.tool_name === 'TaskUpdate') {
+        const id = taskId(i.taskId ?? i.id);
+        if (!id || !tasks.some(t => t.id === id))
+            return null;
+        if (i.status === 'deleted')
+            return tasks.filter(t => t.id !== id);
+        return tasks.map(t => {
+            if (t.id !== id)
+                return t;
+            const status = TASK_STATUS.has(i.status) ? i.status : t.status;
+            const doneAt = status === 'completed' && t.status !== 'completed' ? now : t.doneAt;
+            const startedAt = status === 'in_progress' && t.status !== 'in_progress' ? now : t.startedAt;
+            return {...t, status, subject: str(i.subject) ?? t.subject, startedAt, doneAt};
+        });
+    }
+    return null;
+}
+
+/**
+ * The task list from Claude's own files (~/.claude/tasks/<session_id>/<id>.json), for a
+ * session Buoy meets in its middle.
+ *
+ * @param {Array<{name: string, text: ?string}>} files
+ * @returns {object[]}  in the order of their ids
+ */
+export function tasksFromFiles(files) {
+    const tasks = [];
+    for (const {name, text} of files) {
+        let t = null;
+        try {
+            t = JSON.parse(text ?? '');
+        } catch {
+            continue;
+        }
+        const id = taskId(t?.id) ?? str(String(name).replace(/\.json$/, ''));
+        const subject = str(t?.subject);
+        if (!id || !subject || t.status === 'deleted')
+            continue;
+        tasks.push({id, subject, status: TASK_STATUS.has(t.status) ? t.status : 'pending', startedAt: 0, doneAt: 0});
+    }
+    const n = id => /^\d+$/.test(id) ? Number(id) : Infinity;
+    return tasks.sort((a, b) => n(a.id) - n(b.id) || a.id.localeCompare(b.id));
+}
+
+// done ✓, being done ▶, to do ○ (design/icons: Gravity UI's check, play-fill, circle)
+const TASK_ICON = {completed: 'check', in_progress: 'play-fill', pending: 'circle'};
+
+/**
+ * The compact's rows: up to three tasks; with more, the one just done, the one being done
+ * and the next (design/compact). A task to do is dimmed, its icon and its text; a task done
+ * says how long it took, when Buoy saw it start.
+ *
+ * @param {object[]} tasks
+ * @returns {object[]}  rows {icon, text, dim, detail?}
+ */
+export function taskRows(tasks) {
+    let shown = tasks;
+    if (tasks.length > 3) {
+        const done = tasks.filter(t => t.status === 'completed');
+        const justDone = done.reduce((a, t) => !a || t.doneAt >= a.doneAt ? t : a, null);
+        const doing = tasks.find(t => t.status === 'in_progress') ?? null;
+        const next = tasks.find(t => t.status === 'pending' && t !== doing) ?? null;
+        const pick = new Set([justDone, doing, next].filter(Boolean));
+        // fewer than three that way: the next ones to do, then the last ones done
+        for (const t of [...tasks.filter(x => x.status === 'pending'), ...done.reverse()]) {
+            if (pick.size >= 3)
+                break;
+            pick.add(t);
+        }
+        shown = tasks.filter(t => pick.has(t));
+    }
+    return shown.map(t => ({
+        icon: TASK_ICON[t.status], text: t.subject, dim: t.status === 'pending',
+        ...t.status === 'completed' && t.startedAt > 0 && t.doneAt >= t.startedAt
+            ? {detail: durationText(t.doneAt - t.startedAt)} : {},
+    }));
+}
+
+/**
+ * @param {object[]} tasks
+ * @returns {string}  "2 / 5": done and being done, of all
+ */
+export function taskProgress(tasks) {
+    const n = tasks.filter(t => t.status !== 'pending').length;
+    return `${n} / ${tasks.length}`;
+}
+
 const working = (rec, now) => ({
-    ...rec, shown: true, stopped: false, finishedAt: 0,
+    ...rec, shown: true, stopped: false, finishedAt: 0, interrupted: false,
     startedAt: rec.shown && !rec.stopped && rec.startedAt ? rec.startedAt : now,
 });
 
@@ -242,7 +394,8 @@ export function isQuestion(ev) {
 export function step(rec, ev, now, source = 'claude') {
     let r = rec ?? newRecord(source, ev);
     if (str(ev.cwd))
-        r = {...r, cwd: str(ev.cwd), project: projectOf(ev.cwd)};
+        // the project changes with the folder; the source may name it better (its git root)
+        r = str(ev.cwd) === r.cwd ? r : {...r, cwd: str(ev.cwd), project: projectOf(ev.cwd)};
     if (str(ev.session_title))                    // any event once the session has one (/rename)
         r = {...r, sessionTitle: str(ev.session_title)};
     const out = (next, {show = next.shown, end = false, alert = false} = {}) =>
@@ -255,20 +408,24 @@ export function step(rec, ev, now, source = 'claude') {
     case 'SessionStart':
         return out(r, {show: false});
     case 'UserPromptSubmit':
-        // the prompt itself is never kept (§7)
+        // the prompt itself is never kept (§7); a new turn: a ■ pending on the last is gone
         r = working(set('think', 'Thinking'), now);
-        return out({...r, subagents: 0});
+        return out({...r, subagents: 0, stopRequested: false});
     case 'PreToolUse': {
         const d = toolDoing(ev.tool_name, ev.tool_input, r.cwd);
         r = working(r, now);
-        if (sub && r.subagents > 0)
-            return out({...r, pose: 'busy'});    // the parent still says it works with them (§2)
+        if ((sub && r.subagents > 0) || r.stopRequested)
+            return out({...r, pose: 'busy'});    // it works with subagents (§2), or is stopping
         return out({...r, pose: 'busy', title: d.title, safeTitle: d.safeTitle});
     }
-    case 'PostToolUse':
+    case 'PostToolUse': {
+        const tasks = taskStep(r.tasks ?? [], ev, now);
+        if (tasks)
+            r = {...r, tasks};
         if (!r.shown || r.stopped)
-            return none();
+            return tasks ? out(r, {show: false}) : none();
         return out({...r, pose: 'busy'});
+    }
     case 'PostToolUseFailure':
         if (!r.shown || r.stopped)
             return none();
@@ -315,8 +472,8 @@ export function step(rec, ev, now, source = 'claude') {
             return none();
         return out(set('busy', 'Working'));
     case 'Stop': {
-        if (!r.shown)
-            return none();
+        if (!r.shown || r.interrupted)
+            return none();                         // ■ stopped it: it says Stopped already
         const took = r.startedAt ? now - r.startedAt : 0;
         const pose = took > PARTY_AFTER ? 'party' : 'done';
         const title = took >= 60000 ? `Done in ${durationText(took)}` : 'Done';
@@ -361,29 +518,46 @@ export function answered(rec, now) {
  */
 export function agent(rec) {
     const label = labelOf(rec);
+    const tasks = Array.isArray(rec.tasks) ? rec.tasks : [];
     const shared = rec.shared === true;
+    const doing = shared ? rec.safeTitle : rec.title;
     const pose = rec.pose;
     // a question waiting in Claude's card: the pill asks as a prompt's does (QUESTION_TITLE)
     const question = !rec.stopped && pose === 'ask' && rec.title === QUESTION_TITLE;
+    // the pill (design/pill "Claude Code ở pill 1", C + D, 2026-11-12): the project, then
+    // what it does — the task being done when Claude keeps a list, else its step — and the
+    // time it has run, or the list's progress; done, the time is in its words
+    const current = !shared && !rec.stopped ? tasks.find(t => t.status === 'in_progress') : null;
     let trailing = null;
-    if (!rec.stopped && rec.startedAt > 0)
+    if (!rec.stopped && tasks.length)
+        trailing = {text: taskProgress(tasks)};
+    else if (!rec.stopped && rec.startedAt > 0)
         trailing = {since: rec.startedAt};
-    else if (rec.finishedAt && rec.startedAt)
-        trailing = {text: durationText(rec.finishedAt - rec.startedAt)};
     let staleAfter = 0;
     if (rec.stopped)
         staleAfter = DONE_STALE;
     else if (WORKING.has(pose))
         staleAfter = STALE_MS;
     return {
-        text: question ? `${label} needs your answer` : label,
+        text: `${rec.project ?? AGENTS[rec.source] ?? 'Agent'} · ${current?.subject ?? doing}`,
         leading: {mascot: pose},
         trailing,
-        // hover: which session (its name, or the label), then what it is doing (§2)
+        // ■ while a turn runs, when Buoy's hooks can stop it (the synchronous PostToolUse,
+        // hooks.js): the compact's round button, cream (design/compact); never in the pill
+        actions: rec.canStop === true && !rec.stopped && !rec.stopRequested && WORKING.has(pose)
+            ? [{id: STOP, icon: 'stop-fill'}] : [],
+        minimalAction: false,
+        // hover: which session (its name, or the label), then what it is doing (§2); with a
+        // task list, its progress and the tasks as rows (design/compact) — not while the
+        // screen is shared: a task names files and commands as a command does (§7)
         compact: {
             leading: {mascot: pose},
-            text: hoverName(rec),
-            subtitle: shared ? rec.safeTitle : rec.title,
+            // with a task list the project is in the subtitle: the session's name, or the
+            // agent's product (design/compact: "Claude Code" over "buoy · 2 / 3")
+            text: tasks.length ? nameOf(rec) ?? PRODUCTS[rec.source] ?? label : hoverName(rec),
+            subtitle: tasks.length ? `${rec.project ?? label} · ${taskProgress(tasks)}` : doing,
+            rows: tasks.length && !shared ? taskRows(tasks) : [],
+            transport: true,      // its buttons: ■
         },
         // the kind's 35 (docs/PRIORITY.md); a question waits as a prompt, at the ask's 90 —
         // set every time, an update merges; waiting for you is tier 1, done steps back
@@ -478,11 +652,39 @@ export function askOf(rec, ev, {shared = false} = {}) {
         options,
         look: {
             leading: {mascot: 'ask'},
-            compact: {leading: {mascot: 'ask'}, text: hoverName(rec), subtitle: want, transport: true},
+            // a card at the compact's size, kept until answered (design/alerts-and-asks "Ask"):
+            // Bu, what it asks, "project · tool", the command; no ×, a button answers
+            compact: {card: {picture: {mascot: 'ask'}, ...askCard(rec, ev, question, {shared})}},
             expanded: {leading: {mascot: 'ask'}, center: {title: question, subtitle: name ? `${name} · ${want}` : want}},
             minimalAction: false,
         },
     };
+}
+
+/**
+ * The ask's card (design/alerts-and-asks "Ask"): a command is "Claude Code wants to run" over
+ * "buoy · Bash" with the command as the body (2 lines); an edit "Allow edits to shapes.js?"
+ * without a body; any other tool the question with what it wants. Sharing the screen hides
+ * the command and the file (§7).
+ *
+ * @param {object} rec  the session's record
+ * @param {object} ev  the PermissionRequest
+ * @param {string} question  the ask's question
+ * @param {{shared: boolean}} opts
+ * @returns {{title: string, app: string, body: ?string}}
+ */
+function askCard(rec, ev, question, {shared}) {
+    const tool = str(ev.tool_name) ?? 'a tool';
+    const i = isPlain(ev.tool_input) ? ev.tool_input : {};
+    const app = `${rec?.project ?? projectOf(rec?.cwd) ?? hoverName(rec)} · ${tool}`;
+    if (COMMANDS.has(tool))
+        return {title: `${PRODUCTS[rec?.source] ?? 'The agent'} wants to run`, app, body: shared ? null : str(i.command)};
+    if (EDITS.has(tool)) {
+        const file = shared ? null : str(i.file_path ?? i.notebook_path)?.split('/').at(-1);
+        return {title: file ? `Allow edits to ${file}?` : 'Allow edits to a file?', app, body: null};
+    }
+    const d = toolDoing(tool, i, rec?.cwd);
+    return {title: question, app, body: shared ? d.safeWant : d.want};
 }
 
 // every field of `asked` is in `got`, the same (`got` may have more)

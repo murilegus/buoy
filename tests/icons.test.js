@@ -3,6 +3,7 @@
 // technical contract (24 grid, flat, solid, nothing loaded at runtime), the palette (none of
 // the status light colours), that the family shares its parts (one cloud, one horizon…),
 // and, rendered at 24 px, that the horizon and the arc are whole pixels.
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 
@@ -155,6 +156,26 @@ if (Rsvg) {
         const free = ARC.filter(([x, y]) => hex(px, n, x, y) === '#6B737C');
         ok(free.length >= 4, `${name}: at least four arc pixels show in full, ${free.length} do`);
     }
+}
+
+// The symbolic icons (Gravity UI's and Buoy's own, icons/symbolic): St draws them in the
+// text colour, so none carries a colour of its own — a dot in red would read as a light
+// (design/colours "Một màu một nghĩa"; Gravity's bell-dot came with #f33, 2026-11-12)
+{
+    const sym = GLib.build_filenamev([dir, '..', 'symbolic']);
+    const en = Gio.File.new_for_path(sym).enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
+    let n = 0;
+    for (let info; (info = en.next_file(null));) {
+        const name = info.get_name();
+        if (!name.endsWith('.svg'))
+            continue;
+        ok(name.endsWith('-symbolic.svg'), `${name}: named -symbolic.svg, so St recolours it`);
+        const svg = new TextDecoder().decode(GLib.file_get_contents(GLib.build_filenamev([sym, name]))[1]);
+        for (const m of svg.matchAll(/(?:fill|stroke)="([^"]+)"/g))
+            ok(['currentColor', 'none', '#fff', '#ffffff'].includes(m[1]), `${name}: ${m[0]} is a colour of its own`);
+        n++;
+    }
+    ok(n >= 30, `the symbolic icons: ${n}`);
 }
 
 print('icons: ok');

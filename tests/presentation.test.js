@@ -241,6 +241,18 @@ eq(planCompact({compact: {}}), null, 'empty compact → no compact');
         'card plan keeps the compact fields empty');
 }
 eq(planCompact({compact: {card: {icon: 'x'}}}), null, 'a card with no name, title or body: none');
+{
+    // an ask is a card (design/alerts-and-asks "Ask"): Bu as its picture, keys on its buttons
+    const ask = planCompact({
+        kind: 'ask', compact: {card: {picture: {mascot: 'ask'}, title: 'Allow?'}},
+        actions: [{id: 'Deny', label: 'Deny'}, {id: 'Allow', label: 'Allow'}],
+    });
+    eq(ask.card.picture, {type: 'mascot', pose: 'ask'}, 'an ask card: Bu asking leads');
+    eq(ask.actions.map(a => [a.id, a.key, a.main === true]), [['Deny', 'd', false], ['Allow', 'a', true]],
+        'an ask card: its keys; the second option is the main answer, cream');
+    const note = planCompact({kind: 'notification', compact: {card: {title: 'Hi'}}, actions: [{id: 'r', label: 'Reply'}]});
+    eq(note.actions[0].key, undefined, 'a notification card: no keys');
+}
 eq(planCompact({compact: {card: {app: 'Mail', at: 'soon', picture: {text: 'no'}}}}).card,
     {header: {icon: null, text: 'Mail', at: null}, title: null, body: null, picture: null, close: null},
     'bad time, a text picture, no close: dropped');
@@ -271,8 +283,8 @@ eq(planCompact({compact: {card: {title: 'T'}}, actions: 'x'}).actions, [], 'card
         {text: 'two'}, {text: 'three'}, {text: 'four'}];
     const r = planCompact({compact: {rows: rowsIn}});
     eq(r.rows.map(x => x.text), ['one', 'two', 'three'], 'rows: blank and non-objects dropped, at most 3');
-    eq(r.rows[0], {icon: {type: 'icon', icon: 'a-symbolic'}, text: 'one', detail: '1:00'}, 'a row');
-    eq(r.rows[1], {icon: null, text: 'two', detail: null}, 'a row without icon or detail');
+    eq(r.rows[0], {icon: {type: 'icon', icon: 'a-symbolic'}, text: 'one', detail: '1:00', dim: false}, 'a row');
+    eq(r.rows[1], {icon: null, text: 'two', detail: null, dim: false}, 'a row without icon or detail');
     eq(r.tall, true, 'rows → tall');
     eq(planCompact({compact: {rows: 'no'}}), null, 'rows must be a list');
     const long = 'x'.repeat(500);

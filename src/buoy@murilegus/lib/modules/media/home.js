@@ -4,6 +4,7 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {progressBar, tick} from '../../kit/ui/present/parts.js';
+import {iconProps} from '../../kit/ui/present/elements.js';
 import {livePosition} from '../../kit/model/presentation.js';
 
 const ART = 56;
@@ -121,7 +122,7 @@ export class MediaHome {
             const play = act.id === 'playpause';
             const b = new St.Button({
                 style_class: `buoy-media-button ${play ? 'buoy-home-media-play' : 'buoy-media-skip'}`,
-                child: new St.Icon({icon_name: act.icon, icon_size: play ? 18 : 16}),
+                child: new St.Icon({...iconProps(act.icon), icon_size: play ? 18 : 16}),
                 can_focus: true, accessible_name: act.label ?? act.id,
             });
             b.connect('clicked', () => a.onAction?.(act.id));

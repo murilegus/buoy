@@ -5,12 +5,14 @@ import Shell from 'gi://Shell';
 import {Source} from '../../kit/services/source.js';
 import {appOfBusName} from '../../kit/services/apps.js';
 import {listInfos, readText} from '../../kit/services/files.js';
+import {installed} from './hooks.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
 import {lingerMs} from '../../kit/model/settings.js';
-import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step} from './adapter.js';
+import {AGENTS, DESKTOP_APP, STOP, STOP_REPLY, TIMEOUT, answered, interrupted, stopping, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step, tasksFromFiles} from './adapter.js';
 
 const KIND = 'agent';
 const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
+const MAX_TASK_FILES = 100;   // a session's task list, read once when met in its middle
 
 /**
  * Coding agents' sessions in the pill (docs/CODING-AGENTS.md): the hook script calls
@@ -42,6 +44,8 @@ export class AgentSource extends Source {
         this._sessions = new Map();     // `${source}:${session_id}` → record
         this._asks = new Map();         // same key → {event, askId, watch}
         this._apps = new Map();         // same key → Shell.App, or null: none (looked up once)
+        this._stopping = new Set();     // keys whose ■ was pressed: the next PostToolUse stops the turn
+        this._roots = new Map();        // a cwd → its git repository's name (null: none), read once
         // same key → {uri, shown} for a session in Claude Desktop: its deep link and the
         // session Desktop shows, read ahead without blocking (kit/services/files.js) so a click
         // decides at once (_raise); refreshed on each of its events
@@ -50,6 +54,23 @@ export class AgentSource extends Source {
         this._sharing = new SharingWatch(() => this._sharingChanged());
         this._dbus = dbus;
         dbus?.setAgent((source, text, info) => this.event(source, text, info));
+        this._canStop = false;
+        this._checkHooks();
+    }
+
+    // ■ shows only when Buoy's hooks stop a turn: this Buoy's, PostToolUse waited on
+    // (hooks.js installed(): 'all'); an older install is told to update in prefs. Read now
+    // and when a session starts, never more often.
+    async _checkHooks() {
+        const reads = this._reads;
+        const text = await readText(GLib.build_filenamev([GLib.get_home_dir(), '.claude', 'settings.json']), reads);
+        if (reads?.is_cancelled())
+            return;
+        let state = 'none';
+        try {
+            state = installed(JSON.parse(text ?? ''));
+        } catch {}
+        this._canStop = state === 'all';
     }
 
     disable() {
@@ -95,7 +116,25 @@ export class AgentSource extends Source {
             this._forget(key);
             return '';
         }
+        // ■ was pressed: this tool call's hook answers the stop (hooks.js STOP_EVENT); a new
+        // prompt or the turn's own end drops it
+        if (ev.hook_event_name === 'UserPromptSubmit' || ev.hook_event_name === 'Stop')
+            this._stopping.delete(key);
+        if (ev.hook_event_name === 'PostToolUse' && this._stopping.delete(key)) {
+            const done = interrupted(res.rec, Date.now());
+            this._remember(key, done);
+            this._show(done);
+            return STOP_REPLY;
+        }
         this._remember(key, res.rec);
+        if (res.rec.cwd && res.rec.cwd !== old?.cwd)
+            this._nameProject(key, res.rec.cwd);
+        // met in its middle (Buoy started after the session did): its task list from
+        // Claude's own files, ahead of the next task tool call
+        if (!old && source === 'claude') {
+            this._readTasks(key);
+            this._checkHooks();
+        }
         if (res.show) {
             this._show(res.rec, {
                 alert: res.alert && !this._quiet(key), renew: res.rec.stopped && !old?.stopped,
@@ -130,11 +169,15 @@ export class AgentSource extends Source {
         if (!this._registry)
             return;
         this._watchSharing(true);
-        const a = this._registry.build(KIND, rec.source, {...rec, shared: this._sharing.shared});
+        const key = `${rec.source}:${rec.id}`;
+        const a = this._registry.build(KIND, rec.source, {...rec, shared: this._sharing.shared, canStop: this._canStop});
         if (!a)
             return;
-        const key = `${rec.source}:${rec.id}`;
         a.onPress = opts => this._raise(key, opts);
+        a.onAction = id => {
+            if (id === STOP)
+                this._stop(key);
+        };
         // its prompt's pill stands for it meanwhile: one pill per session (§4, Ethan)
         a.hidden = this._asks?.has(key) ?? false;
         if (this._stack.has(a.id) && !renew)
@@ -162,6 +205,7 @@ export class AgentSource extends Source {
             this._stack.end(this._activityId(rec));
         this._sessions.delete(key);
         this._apps.delete(key);
+        this._stopping.delete(key);
         this._desktop.delete(key);
         if (![...this._sessions.values()].some(r => this._stack.has(this._activityId(r))))
             this._watchSharing(false);
@@ -263,6 +307,64 @@ export class AgentSource extends Source {
         }
     }
 
+    // ■ (Ethan 2026-11-12: as Desktop's Stop): the turn stops at Claude's next tool call —
+    // the synchronous PostToolUse hook answers `continue: false` (hooks.js STOP_EVENT) —
+    // and the session stays, waiting for you. Meanwhile the compact says it is stopping.
+    _stop(key) {
+        const rec = this._sessions?.get(key);
+        if (!rec || rec.stopped)
+            return;
+        this._stopping.add(key);
+        this._sessions.set(key, stopping(rec));
+        this._show(this._sessions.get(key));
+    }
+
+    // The project is the git repository Claude works in, not the folder it stands in
+    // (Ethan 2026-11-12: `buoy/src` showed "src"): up from the cwd to the folder with `.git`;
+    // in a git worktree its `.git` file points into the main repository's .git/worktrees/.
+    // No repository: the folder's name (adapter.js projectOf) stays.
+    async _nameProject(key, cwd) {
+        let name = this._roots.get(cwd);
+        if (name === undefined) {
+            name = await repoName(cwd, this._reads);
+            if (this._reads?.is_cancelled())
+                return;
+            this._roots.set(cwd, name);
+        }
+        const rec = this._sessions?.get(key);
+        if (!name || !rec || rec.cwd !== cwd || rec.project === name)
+            return;
+        this._sessions.set(key, {...rec, project: name});
+        if (this._stack?.has(this._activityId(rec)))
+            this._show(this._sessions.get(key));
+    }
+
+    // ~/.claude/tasks/<session_id>/<id>.json (design/compact "Hàng của Claude Code")
+    async _readTasks(key) {
+        const reads = this._reads;
+        const id = this._sessions?.get(key)?.id;
+        if (!id || !/^[\w-]+$/.test(id))
+            return;
+        const dir = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_home_dir(), '.claude', 'tasks', id]));
+        let infos;
+        try {
+            infos = await listInfos(dir, 'standard::name', reads);
+        } catch {
+            return;                       // no list: rows are its steps, as before
+        }
+        const names = infos.map(i => i.get_name()).filter(n => n.endsWith('.json')).slice(0, MAX_TASK_FILES);
+        const files = await Promise.all(names.map(async name => ({name, text: await readText(dir.get_child(name), reads)})));
+        const rec = this._sessions?.get(key);
+        if (reads.is_cancelled() || !rec || rec.tasks?.length)
+            return;                       // a task tool call came first: it is newer
+        const tasks = tasksFromFiles(files);
+        if (!tasks.length)
+            return;
+        this._sessions.set(key, {...rec, tasks});
+        if (this._stack?.has(this._activityId(rec)))
+            this._show(this._sessions.get(key));
+    }
+
     // Claude Desktop's files for this session (§6), ahead of a click
     async _readDesktop(key) {
         const reads = this._reads;
@@ -331,6 +433,30 @@ export class AgentSource extends Source {
 
 const DESKTOP_SESSIONS = ['Claude', 'claude-code-sessions'];
 const MAX_DESKTOP_FILES = 200;
+
+/**
+ * The git repository a folder is in: its name, the main repository's for a worktree.
+ *
+ * @param {string} cwd
+ * @param {?Gio.Cancellable} cancellable
+ * @returns {Promise<?string>} null outside a repository (up to the home folder or /)
+ */
+async function repoName(cwd, cancellable) {
+    const home = GLib.get_home_dir();
+    for (let dir = cwd, i = 0; dir && dir !== '/' && dir !== home && i < 24; dir = GLib.path_get_dirname(dir), i++) {
+        // eslint-disable-next-line no-await-in-loop -- one folder after the other, up
+        if (await readText(GLib.build_filenamev([dir, '.git', 'HEAD']), cancellable) !== null)
+            return GLib.path_get_basename(dir);
+        // eslint-disable-next-line no-await-in-loop
+        const link = await readText(GLib.build_filenamev([dir, '.git']), cancellable);
+        const main = link?.match(/^gitdir:\s*(.+?)\/\.git\/worktrees\//m)?.[1];
+        if (main)
+            return GLib.path_get_basename(main);
+        if (link !== null)
+            return GLib.path_get_basename(dir);      // a submodule's .git file: its own folder
+    }
+    return null;
+}
 
 /**
  * Claude Desktop's deep link to a session (adapter.js desktopRoute), read ahead of a click

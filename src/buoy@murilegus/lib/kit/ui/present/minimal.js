@@ -25,17 +25,21 @@ function leadingCell(e, activity, cell) {
 }
 
 // One line in the pill: minimal.
-function pillBox(p, activity, maxWidth, buttons, {cell, gap, buttonGap} = METRICS) {
+function pillBox(p, activity, maxWidth, buttons, {cell, gap, buttonGap} = METRICS, side = false) {
     if (!p.leading && !p.text && !p.trailing && !buttons.length && !p.badge)
         return null;
     const box = new St.BoxLayout({style_class: 'buoy-minimal', y_align: Clutter.ActorAlign.CENTER});
-    // the gaps scale with the em, so they are the island's numbers, not the stylesheet's
-    box.set_style(`spacing: ${gap}px;${maxWidth > 0 ? ` max-width: ${maxWidth}px;` : ''}`);
+    // the gaps scale with the em, so they are the island's numbers, not the stylesheet's; a
+    // side pill fills its fixed width: the leading at the left edge, the trailing (and +N
+    // after it) at the right (design/pill "Pill phụ", B, 2026-11-12)
+    const width = maxWidth > 0 ? ` ${side ? 'width' : 'max-width'}: ${maxWidth}px;` : '';
+    box.set_style(`spacing: ${gap}px;${width}`);
     const actions = buttons.map(a => actionButton(a, activity));
     actions[0]?.set_style(`margin-left: ${buttonGap - gap}px;`);  // trailing → button: 8
     addAll(box, [
         lightDot(p.light),           // edge slot first: the zones nudge inward (SPEC §2a)
         leadingCell(p.leading, activity, cell),
+        side ? new St.Widget({x_expand: true}) : null,
         p.text ? label(p.text, 'buoy-text', true) : null,
         makeElement(p.trailing?.type === 'bar' && !p.text ? {...p.trailing, long: true} : p.trailing, 'minimal'),
         ...actions,
@@ -59,7 +63,7 @@ function pillBox(p, activity, maxWidth, buttons, {cell, gap, buttonGap} = METRIC
 export function buildMinimal(activity, {maxWidth = 0, light, more, side = false, metrics = METRICS} = {}) {
     const p = planMinimal(activity, {light, more, side});
     // a side pill has no room for a button: its compact carries them
-    return pillBox(p, activity, maxWidth, p.action && !side ? [p.action] : [], metrics);
+    return pillBox(p, activity, maxWidth, p.action && !side ? [p.action] : [], metrics, side);
 }
 
 /**

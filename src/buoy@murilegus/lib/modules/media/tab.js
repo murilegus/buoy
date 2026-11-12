@@ -6,7 +6,7 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
-import {EmptyState} from '../../kit/ui/present/elements.js';
+import {EmptyState, iconProps} from '../../kit/ui/present/elements.js';
 import {marquee} from '../../kit/ui/present/motion.js';
 import {tick} from '../../kit/ui/present/parts.js';
 import {livePosition, mediaTimes} from '../../kit/model/presentation.js';
@@ -301,7 +301,7 @@ export class MediaTab {
         const button = (id, icon, cls = '', on = false) => {
             const b = new St.Button({
                 style_class: `buoy-media-button ${cls}${on ? ' buoy-media-on' : ''}`,
-                child: new St.Icon({icon_name: icon, icon_size: cls ? 20 : 16}), can_focus: true, accessible_name: id,
+                child: new St.Icon({...iconProps(icon), icon_size: cls ? 20 : 16}), can_focus: true, accessible_name: id,
             });
             b.connect('clicked', () => a.onAction?.(id));
             return b;

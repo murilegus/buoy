@@ -1,6 +1,6 @@
 // Run: gjs -m tests/shapes.test.js   (pure; no Shell needed)
 import {
-    shapesFor, compactCx, COMPACT_MIN, COMPACT_H, CARD_MAX_H, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop,
+    shapesFor, compactCx, compactMetrics, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop,
     EM_1, IDLE_TEXT_1EM, pillMetrics, idleSample,
 } from '../src/buoy@murilegus/lib/kit/model/shapes.js';
 
@@ -12,7 +12,8 @@ function eq(actual, expected, msg) {
         throw new Error(`${msg}: expected ${e}, got ${a}`);
 }
 
-eq([GAP, OVERSHOOT, PILL_GAP, COMPACT_MIN, COMPACT_H, CARD_MAX_H], [4, 20, 8, 240, [56, 88, 120], 160], 'constants');
+eq([GAP, OVERSHOOT, PILL_GAP], [4, 20, 8], 'constants');
+const COMPACT_MIN = 240, COMPACT_TALL = 152;
 
 // --- derivation per monitor width ------------------------------------------
 // expanded width = 28 % of the monitor, clamped to [560, 760], snapped to even px;
@@ -22,8 +23,9 @@ const CASES = [
     // minimal: min(24em, 0.6 × expanded), tokens "Độ rộng tối đa trên thanh": 336 / 352
     {width: 1366, expW: 560, expH: 280, minimalMax: 336, wideMax: 448, compactMax: 404, containerW: 1366},
     {width: 1920, expW: 560, expH: 280, minimalMax: 336, wideMax: 448, compactMax: 404, containerW: 1920},
-    {width: 2560, expW: 716, expH: 358, minimalMax: 352, wideMax: 572, compactMax: 516, containerW: 2560},
-    {width: 3440, expW: 760, expH: 380, minimalMax: 352, wideMax: 608, compactMax: 548, containerW: 3440},
+    // compact: min(28em, 0.72 × expanded), tokens: 404 / 410
+    {width: 2560, expW: 716, expH: 358, minimalMax: 352, wideMax: 572, compactMax: 410, containerW: 2560},
+    {width: 3440, expW: 760, expH: 380, minimalMax: 352, wideMax: 608, compactMax: 410, containerW: 3440},
 ];
 
 for (const c of CASES) {
@@ -56,24 +58,27 @@ for (const c of CASES) {
     eq(s.minimal(5000, 'bogus').w, c.minimalMax, `${at} unknown hint behaves as normal`);
     eq([s.minimal(200).h, s.minimal(200).r], [32, 16], `${at} minimal keeps pill height`);
 
-    // compact (SPEC §4): 0.72 × expanded, content-fit down to 240, 56 or 88 tall, r 24
-    eq(s.compactMax, c.compactMax, `${at} compactMax = 0.72 × expanded`);
-    eq(s.compact(5000, 40), {w: c.compactMax, h: 56, r: 24}, `${at} compact capped, one row`);
-    eq(s.compact(10, 10).w, COMPACT_MIN, `${at} compact never below 240`);
-    eq(s.compact(300.4, 40).w, 330, `${at} compact content-fit + 28, even`);
-    eq(s.compact(300, 40).h, 56, `${at} 40 px of content (leading 40) → 56`);
-    eq(s.compact(300, 41).h, 88, `${at} more than one row → 88`);
-    eq(s.compact(300, 72).h, 88, `${at} a bar under a 40 px row still 88`);
-    eq(s.compact(300, 82).h, 98, `${at} a title and 3 rows: content-fit (82 + 16)`);
-    eq(s.compact(300, 81).h, 98, `${at} content-fit heights are even`);
-    eq(s.compact(300, 200).h, 120, `${at} taller content stops at 120`);
-    // a card (a notification, NOTIFICATIONS.md §3): content-fit up to 160, never under 56
-    const card = {card: true};
-    eq(s.compact(c.compactMax - 28, 134, card), {w: c.compactMax, h: 150, r: 24}, `${at} card: full width, content-fit (134 + 16)`);
-    eq(s.compact(c.compactMax - 28, 59, card).h, 76, `${at} card: a short one is not rounded up to 88`);
-    eq(s.compact(c.compactMax - 28, 300, card).h, CARD_MAX_H, `${at} card stops at 160`);
-    eq(s.compact(c.compactMax - 28, 10, card).h, 56, `${at} card never under 56`);
-    eq(s.compact(300, 200, {card: false}).h, 120, `${at} not a card: 120 still`);
+    // compact (design/compact): its content lays out its own paddings, so the compact is the
+    // content's size: content-fit width from 240 to the cap, heights 56 + 16n up to 152, r 28
+    eq(s.compactMax, c.compactMax, `${at} compactMax = min(28em, 0.72 × expanded)`);
+    // one width whatever the content: content-fit is the pill's alone (Ethan 2026-11-12)
+    for (const w of [0, 10, 300.4, 5000])
+        eq(s.compact(w, 56), {w: c.compactMax, h: 56, r: 28}, `${at} compact(${w}): always min(28em, 0.72 × expanded)`);
+    eq(s.compact(300, 40).h, 56, `${at} less than the head: still the head, 56`);
+    eq(s.compact(300, 56).h, 56, `${at} the head alone: 56`);
+    eq(s.compact(300, 57).h, 72, `${at} a pixel more: one row more, 72`);
+    eq(s.compact(300, 88).h, 88, `${at} media with its bar: 88`);
+    eq(s.compact(300, 120).h, 120, `${at} three rows: 56 + 8 + 48 + 8 = 120`);
+    eq(s.compact(300, 300).h, COMPACT_TALL, `${at} taller content stops at 152`);
+    for (let need = 0; need <= 200; need += 7) {
+        const h = s.compact(300, need).h;
+        if ((h - 56) % 16 !== 0 || h < 56 || h > COMPACT_TALL)
+            throw new Error(`${at} compact(${need}).h = ${h} is not 56 + 16n up to 152`);
+    }
+    // a card (a notification, NOTIFICATIONS.md §3): the same width, its height by rows
+    eq(s.compact(100, 136), {w: c.compactMax, h: 136, r: 28}, `${at} card: one line 136`);
+    eq(s.compact(100, 152).h, 152, `${at} card with two lines: 152`);
+    eq(s.compact(100, 104).h, 104, `${at} card without buttons (an alert): 104`);
 
     // where a compact opens: on its pill, shifted only to stay GAP inside the screen
     const W = s.container.w, cw = c.compactMax;
@@ -92,7 +97,7 @@ for (const c of CASES) {
         throw new Error(`${at} press(wide minimal) ${press.w}x${press.h} overflows container`);
     if (s.expanded.w > s.container.w || s.expanded.h > s.container.h)
         throw new Error(`${at} expanded overflows container`);
-    if (COMPACT_H[2] > s.container.h)
+    if (COMPACT_TALL > s.container.h)
         throw new Error(`${at} compact overflows container`);
 
     // every resting shape is whole and even-wide, so it centres on a whole pixel
@@ -126,7 +131,7 @@ eq(shapesFor({width: 800}, PANEL_H).expanded.w, 560, 'small monitor never goes b
     const s = shapesFor({width: 1920}, PANEL_H, {expandedWidth: 600});
     eq(s.expanded, {w: 600, h: 300, r: 28}, 'override expanded (h is the content cap)');
     eq(s.container, {w: 1920, h: 340}, 'override container (the monitor)');
-    eq(s.compactMax, 432, 'override: compact 0.72 × 600');
+    eq(s.compactMax, 410, 'override: 0.72 × 600 = 432, but 28em = 410 is less');
     eq(s.minimal(5000).w, 352, 'override: 0.6 × 600 = 360, but 24em = 352 is less');
     eq(s.idle, {w: 132, h: 32, r: 16}, 'override leaves idle alone');
 }
@@ -168,6 +173,17 @@ eq(shapesFor({width: 1920}, PANEL_H, {}).expanded.w, 560, 'empty opts = derived'
 }
 
 // --- the em (design "Đơn vị là em": Large Text and the font size scale bar and pill) ----
+eq(compactMetrics(), {
+    head: 56, lead: 40, vpad: 8, side: 14, gap: 12, row: 16, maxRows: 6, radius: 28, button: 32,
+    art: 72, artInset: 8, artRadius: 20, rowIcon: 16, badge: 18, bodyGap: 8, actionsGap: 12, edge: 12, min: 240,
+}, 'the compact at 1em: tokens');
+{
+    const m = compactMetrics(EM_1 * 1.25);
+    eq([m.head, m.lead, m.row, m.radius, m.button, m.art, m.min], [70, 50, 20, 35, 40, 90, 300], 'the compact with Large Text');
+    const s = shapesFor({width: 1920}, 50, {em: EM_1 * 1.25});
+    eq([s.compact(100, 70).h, s.compact(100, 71).h, s.compact(100, 999).h], [70, 90, 190], 'Large Text: 70 + 20n up to 190');
+    eq(s.compactMax, 404, 'Large Text: 28em = 513, 0.72 × 560 = 404 caps');
+}
 eq(Math.round(EM_1 * 100) / 100, 14.67, '1em = 11 pt at 96 dpi');
 eq(pillMetrics(), {inset: 4, pad: 8, gap: 6, buttonGap: 8, hover: 12, press: 18}, 'the pill at 1em: tokens');
 eq(pillMetrics(EM_1 * 1.25), {inset: 5, pad: 10, gap: 8, buttonGap: 10, hover: 16, press: 22}, 'Large Text (1.25)');

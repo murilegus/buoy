@@ -4,10 +4,10 @@ import GLib from 'gi://GLib';
 
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
-    agent, answered, askOf, isQuestion, QUESTION_TITLE, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    STOP, STOP_REPLY, agent, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
-    ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, commandFor, hooksNote, install, installed, isOurs, uninstall,
+    ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, STOP_EVENT, STOP_HOOK_TIMEOUT, commandFor, hooksNote, install, installed, isOurs, uninstall,
 } from '../src/buoy@murilegus/lib/modules/agent/hooks.js';
 import {Registry} from '../src/buoy@murilegus/lib/kit/services/registry.js';
 import {PRIORITY as KIT_PRIORITY, SETTLE_MS, tierOf, validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
@@ -106,22 +106,23 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq([isScratch(SCR), isScratch(CWD), projectOf(SCR), worktreeOf(SCR)], [true, false, null, null],
         'a scratch workspace: no project, no worktree');
     const fresh = agent(last([[{...ev('UserPromptSubmit'), cwd: SCR}]]).rec);
-    eq([fresh.text, fresh.compact.text], ['Claude', 'New session'], 'minimal "Claude"; hover "New session" until it has a title');
+    eq([fresh.text, fresh.compact.text], ['Claude · Thinking', 'New session'], 'no project: "Claude · what it does"; hover "New session" until it has a title');
     const titled = agent(last([[{...ev('SessionStart', {session_title: 'Permission test'}), cwd: SCR}], [{...ev('UserPromptSubmit'), cwd: SCR}]]).rec);
-    eq([titled.text, titled.compact.text], ['Claude', 'Permission test'], 'with a title: the title on hover');
+    eq([titled.text, titled.compact.text], ['Claude · Thinking', 'Permission test'], 'with a title: the title on hover');
     const moved = last([[{...ev('UserPromptSubmit'), cwd: SCR}], [ev('PreToolUse', {tool_name: 'Read', tool_input: {}})]]).rec;
-    eq(agent(moved).text, 'Claude · buoy', 'moved to a folder: its next event names the project');
+    eq(agent(moved).text, 'buoy · Reading a file', 'moved to a folder: its next event names the project');
     const req = {...ev(ASK_EVENT, {tool_name: 'mcp__ccd_directory__change_directory', tool_input: {}}), cwd: SCR};
     const q = askOf(last([[{...ev('UserPromptSubmit'), cwd: SCR}], [req]]).rec, req);
-    eq([q.question, q.look.compact.text], ['Claude needs your OK', 'New session'], 'its prompt: the same names');
+    eq([q.question, q.look.compact.card.app], ['Claude needs your OK', 'New session · mcp__ccd_directory__change_directory'],
+        'its prompt: the session, the tool');
 }
 {
     const r = last([[ev('SessionStart', {source: 'startup', session_title: 'Buoy — Weather icons'})], [ev('UserPromptSubmit')]]);
     const a = agent(r.rec);
-    eq([a.text, a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Buoy — Weather icons', 'Thinking'],
-        'minimal: the label only; hover: the session\'s name, then what it does');
+    eq([a.text, a.compact.text, a.compact.subtitle], ['buoy · Thinking', 'Buoy — Weather icons', 'Thinking'],
+        'minimal: the project · what it does (design/pill C); hover: the session\'s name, then what it does');
     const wt = agent(last([[{...ev('UserPromptSubmit'), cwd: `${CWD}/.claude/worktrees/w1`}]]).rec);
-    eq([wt.text, wt.compact.text], ['Claude · buoy', 'w1'], 'a worktree: the repository\'s label, the slug on hover');
+    eq([wt.text, wt.compact.text], ['buoy · Thinking', 'w1'], 'a worktree: the repository, the slug on hover');
     const plain = agent(last([[ev('UserPromptSubmit')]]).rec);
     eq(plain.compact.text, 'Claude · buoy', 'no name: the label');
 }
@@ -227,21 +228,23 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
 {
     const rec = last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Edit', tool_input: {file_path: `${CWD}/src/a/b/c.js`}})]]).rec;
     const a = agent({...rec, shared: false});
-    eq([a.text, a.leading, a.trailing], ['Claude · buoy', {mascot: 'busy'}, {since: T0}], 'minimal: Bu, the name, the elapsed time');
+    eq([a.text, a.leading, a.trailing], ['buoy · Editing src/…/c.js', {mascot: 'busy'}, {since: T0}],
+        'minimal: Bu, the project · what it does, the elapsed time (design/pill C)');
     eq([a.compact.text, a.compact.subtitle], ['Claude · buoy', 'Editing src/…/c.js'], 'compact: which session, what it does');
     eq([a.priority, a.needsYou, a.staleAfter, a.ttl ?? 0], [35, false, STALE_MS, 0],
         'working: the kind\'s 35, set every time (a question raises it), stale after 1 min, no end');
     eq(a.pressFirst, true, 'a click brings the terminal up first, else the tab (§2)');
     eq(a.linger, false, 'working: it does not wait, it never lingers out');
     const s = agent({...rec, shared: true});
-    eq([s.compact.text, s.compact.subtitle], ['Claude · buoy', 'Editing a file'], 'sharing the screen: no file name (§7)');
+    eq([s.text, s.compact.text, s.compact.subtitle], ['buoy · Editing a file', 'Claude · buoy', 'Editing a file'], 'sharing the screen: no file name (§7)');
     if (JSON.stringify(s).includes('c.js'))
         throw new Error('sharing: the path appears nowhere');
     const turn = agent({...last([[ev('UserPromptSubmit')], [ev('Notification', {notification_type: 'idle_prompt'})]]).rec});
     eq([turn.needsYou, turn.staleAfter, turn.linger], [true, 0, true], 'waiting for you: needs you, never stale, lingers out');
     const done = agent(last([[ev('UserPromptSubmit')], [ev('Stop'), 4 * MIN]]).rec);
-    eq([done.needsYou, done.linger, done.ttl ?? 0, done.staleAfter, done.trailing], [false, true, 0, DONE_STALE, {text: '4 min'}],
-        'done: waits (ends after activity-linger), dims after 10 s, the time frozen');
+    eq([done.needsYou, done.linger, done.ttl ?? 0, done.staleAfter, done.trailing, done.text],
+        [false, true, 0, DONE_STALE, null, 'buoy · Done in 4 min'],
+        'done: waits (ends after activity-linger), dims after 10 s, its time in its words, no trailing');
     eq([DONE_STALE, SETTLE_MS, STALE_MS], [10000, 10000, MIN], 'done dims (and steps back) after 10 s; working after 1 min');
     eq([KIT_PRIORITY.agent, KIT_PRIORITY.ask, KIT_PRIORITY.media], [35, 90, 10], 'the kinds\' priorities');
     // the tiers (docs/PRIORITY.md): through the kit, as the stack ranks them
@@ -293,13 +296,21 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     const rec = last([[ev('UserPromptSubmit')], [req]]).rec;
     const q = askOf(rec, req);
     eq([q.question, q.options], ['Claude · buoy needs your OK', [DENY, ALLOW, ALWAYS]], 'Deny · Allow · Always');
-    eq([q.look.expanded.center, q.look.compact.text, q.look.compact.subtitle, q.look.compact.transport, q.look.leading],
-        [{title: 'Claude · buoy needs your OK', subtitle: 'Run: pnpm test'}, 'Claude · buoy', 'Run: pnpm test', true, {mascot: 'ask'}],
-        'the ask: Bu ask, what it wants, the buttons in the compact');
+    eq([q.look.expanded.center, q.look.compact.card, q.look.leading],
+        [{title: 'Claude · buoy needs your OK', subtitle: 'Run: pnpm test'},
+            {picture: {mascot: 'ask'}, title: 'Claude Code wants to run', app: 'buoy · Bash', body: 'pnpm test'},
+            {mascot: 'ask'}],
+        'the ask: a card (design/alerts-and-asks "Ask"): Bu, "wants to run", project · tool, the command');
     const titled = {...rec, sessionTitle: 'Buoy — Weather icons'};
-    eq([askOf(titled, req).look.compact.text, askOf(titled, req).look.expanded.center.subtitle],
-        ['Buoy — Weather icons', 'Buoy — Weather icons · Run: pnpm test'], 'a named session: which one asks');
-    eq(askOf(rec, req, {shared: true}).look.compact.subtitle, 'Run a command', 'sharing: no command');
+    eq(askOf(titled, req).look.expanded.center.subtitle, 'Buoy — Weather icons · Run: pnpm test', 'a named session: which one asks');
+    eq(askOf(rec, req, {shared: true}).look.compact.card.body, null, 'sharing: no command');
+    const editReq = ev(ASK_EVENT, {tool_name: 'Edit', tool_input: {file_path: '/home/u/buoy/src/shapes.js'}});
+    eq(askOf(rec, editReq).look.compact.card, {picture: {mascot: 'ask'}, title: 'Allow edits to shapes.js?', app: 'buoy · Edit', body: null},
+        'an edit: "Allow edits to shapes.js?", no body');
+    eq(askOf(rec, editReq, {shared: true}).look.compact.card.title, 'Allow edits to a file?', 'an edit while sharing: no file name');
+    const web = ev(ASK_EVENT, {tool_name: 'WebFetch', tool_input: {url: 'https://example.com/a'}});
+    eq([askOf(rec, web).look.compact.card.title, askOf(rec, web).look.compact.card.app], ['Claude · buoy needs your OK', 'buoy · WebFetch'],
+        'another tool: the question, what it wants as the body');
     const plain = ev(ASK_EVENT, {tool_name: 'Bash', tool_input: {command: 'ls'}});
     eq(askOf(rec, plain).options, [DENY, ALLOW], 'no suggestion: no Always');
     eq(askOf(rec, {...plain, permission_suggestions: []}).options, [DENY, ALLOW], 'an empty list: no Always');
@@ -360,7 +371,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(after.rec.pose === 'ask', false, 'answered (its result): back to work');
     const pill = agent({...asked.rec, shared: false});
     eq([pill.text, pill.compact.subtitle, pill.needsYou, pill.linger, pill.priority],
-        ['Claude · buoy needs your answer', 'Needs your answer', true, false, 90],
+        ['buoy · Needs your answer', 'Needs your answer', true, false, 90],
         'the pill asks as a prompt\'s does: its words, needs you, no linger, the ask\'s 90');
     eq(agent({...after.rec, shared: false}).priority, 35, 'back to work: the kind\'s 35 again (set every time)');
 }
@@ -394,7 +405,12 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq([isOurs({command: 'my-hook.sh'}), isOurs(null)], [false, false], 'others are not');
 
     const empty = install({}, cmd);
-    eq(Object.keys(empty.hooks), [...REPORTS, ASK_EVENT], 'every event, once');
+    eq(Object.keys(empty.hooks), [...REPORTS, STOP_EVENT, ASK_EVENT], 'every event, once');
+    eq(empty.hooks[STOP_EVENT], [{hooks: [{type: 'command', command: cmd, timeout: STOP_HOOK_TIMEOUT}]}],
+        'PostToolUse is waited on, briefly: its answer can stop the turn (■)');
+    eq([STOP_EVENT, REPORTS.includes(STOP_EVENT)], ['PostToolUse', false], 'PostToolUse is no report any more');
+    const older = {...empty, hooks: {...empty.hooks, PostToolUse: [{hooks: [{type: 'command', command: cmd, async: true}]}]}};
+    eq(installed(older), 'some', 'an older Buoy\'s PostToolUse in the background: some (prefs offers to update)');
     eq(empty.hooks.Stop, [{hooks: [{type: 'command', command: cmd, async: true}]}], 'a report runs in the background');
     eq(empty.hooks[ASK_EVENT], [{hooks: [{type: 'command', command: cmd, timeout: ASK_HOOK_TIMEOUT}]}],
         'the permission hook waits, past the longest ask timeout');
@@ -437,6 +453,97 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(note({found: false}), 'Claude Code not found', 'no Claude Code');
     eq(note({error: 'not a JSON object'}).startsWith('~/.claude/settings.json could not be read'), true, 'a bad file is left alone');
     eq(note({state: 'some'}).startsWith('Part of'), true, 'partly installed');
+}
+
+// --- Claude's task list as the compact's rows (design/compact "Hàng của Claude Code") ------------
+{
+    const create = (id, subject) => ev('PostToolUse', {tool_name: 'TaskCreate', tool_input: {subject}, tool_response: {task: {id, subject}}});
+    const update = (taskId, status) => ev('PostToolUse', {tool_name: 'TaskUpdate', tool_input: {taskId, status}, tool_response: {}});
+    let tasks = taskStep([], create('1', 'Edit shapes.js'), 1);
+    eq(tasks, [{id: '1', subject: 'Edit shapes.js', status: 'pending', startedAt: 0, doneAt: 0}], 'TaskCreate: its subject, the id from its result');
+    eq(taskStep([], ev('PostToolUse', {tool_name: 'TaskCreate', tool_input: {subject: 'x'}, tool_response: {id: 7}}), 1)[0].id, '7',
+        'a numeric id, at the result\'s top');
+    eq([taskStep([], ev('PostToolUse', {tool_name: 'TaskCreate', tool_input: {}, tool_response: {id: '1'}}), 1),
+        taskStep([], ev('PostToolUse', {tool_name: 'Read', tool_input: {}}), 1)], [null, null], 'no subject, or not a task tool: none');
+    tasks = taskStep(tasks, create('2', 'Run pnpm test'), 2);
+    tasks = taskStep(tasks, create('3', 'Update the docs'), 3);
+    tasks = taskStep(tasks, update('1', 'completed'), 10);
+    tasks = taskStep(tasks, update('2', 'in_progress'), 11);
+    eq(tasks.map(t => [t.id, t.status, t.doneAt]), [['1', 'completed', 10], ['2', 'in_progress', 0], ['3', 'pending', 0]],
+        'TaskUpdate: its status; when it was done');
+    eq(taskStep(tasks, update('9', 'completed'), 12), null, 'an unknown task: nothing changes');
+    eq(taskStep(tasks, update('3', 'deleted'), 12).map(t => t.id), ['1', '2'], 'deleted: gone');
+    eq(taskRows(tasks), [
+        {icon: 'check', text: 'Edit shapes.js', dim: false},
+        {icon: 'play-fill', text: 'Run pnpm test', dim: false},
+        {icon: 'circle', text: 'Update the docs', dim: true},
+    ], 'three tasks: all, ✓ ▶ ○, the one to do dimmed (Gravity UI icons)');
+    eq(taskProgress(tasks), '2 / 3', 'progress: done and being done, of all');
+    // more than three: the one just done, the one being done, the next
+    let five = tasks;
+    five = taskStep(five, create('4', 'Review'), 20);
+    five = taskStep(five, create('5', 'Push'), 21);
+    five = taskStep(five, update('2', 'completed'), 30);
+    five = taskStep(five, update('3', 'in_progress'), 31);
+    eq(taskRows(five).map(r => r.text), ['Run pnpm test', 'Update the docs', 'Review'], 'five: just done, doing, next');
+    eq(taskProgress(five), '3 / 5', 'five: progress');
+    const allDone = five.map(t => ({...t, status: 'completed', doneAt: Number(t.id)}));
+    eq(taskRows(allDone).map(r => r.text), ['Update the docs', 'Review', 'Push'], 'all done: the last three done');
+
+    // through step(): rows and progress on the compact; none while the screen is shared
+    const rec = last([[ev('UserPromptSubmit')], [create('1', 'Edit shapes.js')], [create('2', 'Run pnpm test')], [update('1', 'completed')]]).rec;
+    const a = agent(rec);
+    eq([a.compact.text, a.compact.subtitle, a.compact.rows.map(r => r.icon)], ['Claude Code', 'buoy · 1 / 2', ['check', 'circle']],
+        'the compact: "Claude Code" over project · progress, the tasks');
+    eq(agent({...rec, sessionTitle: 'Weather icons'}).compact.text, 'Weather icons', 'a named session: its name on top');
+    // the pill with a task list (design/pill D): the task being done, the list's progress
+    const doingTask = step(rec, update('2', 'in_progress'), T0 + 50).rec;
+    eq([agent(doingTask).text, agent(doingTask).trailing], ['buoy · Run pnpm test', {text: '2 / 2'}], 'D: the task ▶, progress (done and being done) for the time');
+    eq([agent(rec).text, agent(rec).trailing.text], ['buoy · Thinking', '1 / 2'], 'none being done: its step, the progress still');
+    eq(agent({...doingTask, shared: true}).text, 'buoy · Thinking', 'sharing: the step\'s safe words, never a task\'s');
+    // how long a task took, when Buoy saw it start
+    let timed = taskStep([], create('1', 'Edit'), 0);
+    timed = taskStep(timed, update('1', 'in_progress'), 1000);
+    timed = taskStep(timed, update('1', 'completed'), 13000);
+    eq(taskRows(timed)[0].detail, durationText(12000), 'a task done: how long it took');
+    eq('detail' in taskRows(taskStep(timed, update('1', 'pending'), 14000))[0], false, 'not done: no time');
+    const s = agent({...rec, shared: true});
+    eq([s.compact.subtitle, s.compact.rows], ['buoy · 1 / 2', []], 'sharing the screen: the progress, no task names (§7)');
+    eq(agent(last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Read', tool_input: {file_path: 'a.js'}})]]).rec).compact.rows, [],
+        'no task list: no rows, what it does in the subtitle');
+
+    // ~/.claude/tasks/<session>/<id>.json, for a session met in its middle
+    eq(tasksFromFiles([
+        {name: '2.json', text: JSON.stringify({id: '2', subject: 'Run pnpm test', status: 'in_progress'})},
+        {name: '10.json', text: JSON.stringify({id: '10', subject: 'Push', status: 'pending'})},
+        {name: '1.json', text: JSON.stringify({id: '1', subject: 'Edit shapes.js', status: 'completed'})},
+        {name: '3.json', text: JSON.stringify({id: '3', subject: 'Gone', status: 'deleted'})},
+        {name: 'x.json', text: 'not json'},
+        {name: '4.json', text: JSON.stringify({id: '4'})},
+    ]).map(t => [t.id, t.status]), [['1', 'completed'], ['2', 'in_progress'], ['10', 'pending']],
+    'the files: in their ids\' order, deleted, broken and nameless ones left out');
+}
+
+// --- ■: the turn stops at Claude's next tool call, as Desktop's Stop -----------------------
+{
+    const run2 = last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Bash', tool_input: {command: 'pnpm test'}})]]).rec;
+    eq(agent(run2).actions, [], 'no ■ without hooks that can stop (an older install)');
+    eq(agent({...run2, canStop: true}).actions, [{id: STOP, icon: 'stop-fill'}], 'a turn running, hooks that stop: ■ (Gravity stop-fill)');
+    eq([agent({...run2, canStop: true}).compact.transport, agent({...run2, canStop: true}).minimalAction], [true, false],
+        'in the compact, never in the pill');
+    const asked = stopping({...run2, canStop: true});
+    eq([asked.stopRequested, agent(asked).compact.subtitle, agent(asked).actions], [true, 'Stopping…', []], 'pressed: "Stopping…", no ■ twice');
+    eq(step(asked, ev('PreToolUse', {tool_name: 'Read', tool_input: {file_path: 'a.js'}}), T0 + 5).rec.title, 'Stopping…',
+        'a tool call meanwhile keeps saying it is stopping');
+    const stopped = interrupted(asked, T0 + 9);
+    eq([stopped.stopped, stopped.title, stopped.pose, agent({...stopped, canStop: true}).actions], [true, 'Stopped', 'idle', []],
+        'answered: the turn is over, the session waits');
+    eq(step(stopped, ev('Stop'), T0 + 10).show, false, 'a Stop after it changes nothing: it says Stopped');
+    const again = step(stopped, ev('UserPromptSubmit'), T0 + 20).rec;
+    eq([again.stopped, again.interrupted, again.stopRequested, again.title], [false, false, false, 'Thinking'], 'a new prompt: working again');
+    eq(JSON.parse(STOP_REPLY), {continue: false, stopReason: 'Stopped from Buoy'}, 'the hook\'s answer (hooks.md continue / stopReason)');
+    eq(agent({...last([[ev('UserPromptSubmit')], [ev('Notification', {notification_type: 'idle_prompt'})]]).rec, canStop: true}).actions, [],
+        'waiting for you: nothing to stop');
 }
 
 print('agent: ok');

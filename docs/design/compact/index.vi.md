@@ -13,7 +13,9 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
 - Phần đầu 56 = pill idle × 1.75: leading 40, trên dưới 8, hai bên 14. Chữ không phóng theo;
   phần đầu chứa hai dòng (tiêu đề 1em, phụ đề 0.85em). Nút là hình tròn 32, tâm nằm trên đường
   giữa phần đầu (y = 28), cùng hàng với leading. **Chốt** (Ethan, 2026-11-11)
-- Rộng 16em … min(28em, 0.72 × expanded): 240 … 404 ở 1920. **Chốt**
+- **Rộng cố định** min(28em, 0.72 × expanded): 404 ở 1920, 410 ở 2560. Không co theo nội dung: co
+  thì nút tròn đứng sát chữ và mỗi compact một cỡ, trông xấu; co theo nội dung chỉ ở pill. **Chốt**
+  (Ethan, 2026-11-12; trước là 16em … min(…), co theo nội dung)
 - Không có đèn trong compact ([Pill](../pill/index.vi.md#đèn-ở-hai-đầu-buoy-light-trái-privacy-dot-phải)). **Chốt**
 
 ## Nhạc

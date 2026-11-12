@@ -102,6 +102,37 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 ![1920, pill phụ bên phải (hiện tại)](images/bar-1920.vi.png)
 ![1366, pill phụ bên phải (hiện tại): vừa 1 pill phụ](images/bar-1366.vi.png)
 
+## Pill phụ: leading, trailing và +N
+
+Pill phụ cố định 132 nên nội dung không lấp đầy; trước đây cả nhóm (leading, trailing, `+N`) canh
+giữa, mỗi pill một chỗ khác nhau. Chọn **B**. **Chốt** (Ethan, 2026-11-12)
+
+![Pill phụ: A canh giữa (hiện tại), B hai đầu, C hai đầu và +N thay trailing](images/side.vi.png)
+
+- **A** — hiện tại: cả nhóm canh giữa.
+- **B** (chọn) — hai đầu: leading sát lề trái, trailing sát lề phải như mọi pill; có `+N` thì `+N` ở
+  lề phải, trailing lùi vào trước nó (khoảng 6). Pill nào cũng cùng một bố cục.
+- **C** — như B, nhưng có `+N` thì `+N` thay trailing (giá trị đó xem ở compact).
+
+## Claude Code ở pill 1
+
+Chọn **C**, và **D** khi Claude có danh sách việc. **Chốt** (Ethan, 2026-11-12)
+
+![Claude Code ở pill 1: A hiện tại, B chỉ dự án, C dự án · việc đang làm, D tiến độ](images/claude.vi.png)
+
+- **A** — hiện tại: "Claude · dự án", thời gian chạy.
+- **B** — chỉ dự án: Bu đã cho biết đó là Claude.
+- **C** (chọn) — dự án · việc đang làm (như dòng phụ của compact, cắt "…" ở độ rộng tối đa), thời
+  gian chạy: "buoy · Running pnpm test · 1 min", "buoy · Waiting for you", "buoy · Done in 12 min"
+  (xong thì thời gian nằm trong chữ).
+- **D** (chọn, khi có danh sách việc) — dự án · việc đang làm trong danh sách (▶), và tiến độ `2 / 5`
+  thay thời gian.
+- **Dự án** là tên repo git (thư mục có `.git`, lần ngược từ `cwd`; worktree thì repo chính), không
+  phải thư mục Claude đang đứng: chạy trong `buoy/src` vẫn là "buoy". Không có repo thì tên thư mục.
+  **Chốt** (Ethan, 2026-11-12)
+- **Tên phiên** (`/rename` của Claude Code, tên phiên của Claude Desktop) không lên pill, chỉ ở tiêu
+  đề compact: tên dài (4–44 ký tự) sẽ đẩy việc đang làm ra "…". **Chốt** (Ethan, 2026-11-12)
+
 ## Phương án đã cân nhắc
 
 ![Lề ngang 4 / 6 / 8 / 10 / 14 — chọn 8](images/pad.vi.png)

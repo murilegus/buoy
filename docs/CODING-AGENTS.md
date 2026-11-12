@@ -20,9 +20,10 @@ checked and what still waits for a real session).
    first prompt to the session's end. It says which project, what Claude is doing and
    for how long; Bu's pose says how it is going.
 2. **Never slow Claude down.** Every hook that only reports runs in the background
-   (`async`). Only the permission prompt waits, because a person has to answer it. If
-   Buoy is off or missing, the hook returns at once and Claude Code goes on as without
-   Buoy.
+   (`async`). The permission prompt waits, because a person has to answer it; and
+   `PostToolUse` waits a few ms for Buoy's answer, so the compact's ■ can stop the turn
+   (2026-11-12, Ethan: as Desktop's Stop). If Buoy is off or missing, the hook returns at
+   once and Claude Code goes on as without Buoy.
 3. **The terminal stays the source of truth.** Buoy shows and answers; it never stores
    prompts, transcripts or permissions of its own. "Always" writes the rule Claude Code
    itself suggested, where Claude Code keeps it.
@@ -76,8 +77,10 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   so the hooks of `~/.claude/settings.json` run for its sessions too; each is a pill like a
   terminal's. Sessions are stored in one place (`~/.claude/projects/…`) and can be
   resumed from either: a resumed session keeps its `session_id`, so its pill.
-- **Label**: "Claude · {project}", the project being the last part of `cwd` — for a
-  Claude Code worktree (`<repo>/.claude/worktrees/<slug>`) the repository's. The agent's
+- **Label**: "Claude · {project}", the project being the git repository Claude works in:
+  up from `cwd` to the folder with `.git`, a git worktree's main repository (its `.git`
+  file), so `buoy/src` and `buoy/.claude/worktrees/<slug>` are both "buoy" (2026-11-12,
+  Ethan: the last part of `cwd` said "src"); no repository, the last part of `cwd`. The agent's
   name always leads the text (MASCOT.md: Bu does not say which agent it is). Sessions of
   one project share it in the minimal pill: no number there (Ethan, 2026-11-07).
   A Claude Desktop session opened on no folder runs in Desktop's own scratch workspace
@@ -85,15 +88,19 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   so the label is "Claude" alone and the hover says "New session" until the session has
   a title (Ethan, 2026-11-07). Moved to a folder, its next event names the project
   ("Claude · buoy", seen 2026-11-07).
-- **The session's name**, on hover only: its title when Claude Code sends one
+- **The session's name**, on hover only (kept off the pill again 2026-11-12, Ethan: the
+  project stays short there and the step keeps its room): its title when Claude Code sends one
   (`session_title`, on `SessionStart` and later events once the session has a title:
   Claude Desktop names every session, the CLI after `/rename` — both seen 2026-11-07), whole — "Buoy — Optimization and security
   check" as it is (Ethan, 2026-11-07); else its worktree's slug; else the label. Titles seen on this machine are 4–44 characters; none
   is cut by Buoy, the renderer ellipsizes.
-- **Minimal**: Bu (the pose, §3) · "Claude · buoy" · elapsed since the prompt, "4 min"
-  (a new kit element `{since}`, the twin of `{until}`: "<1 min", "4 min", "1 h 5 min";
-  read every 20 s only while shown, so the text changes within 20 s of the minute).
-  Done freezes it: the run's length.
+- **Minimal** (2026-11-12, Ethan, design/pill "Claude Code ở pill 1", C + D): Bu (the pose,
+  §3) · "{project} · {what it does}" — the compact's subtitle, "buoy · Running pnpm test",
+  "buoy · Waiting for you", "buoy · Done in 4 min" (no project: "Claude · …") — · elapsed
+  since the prompt, "4 min" (the kit element `{since}`: "<1 min", "4 min", "1 h 5 min"; read
+  every 20 s only while shown). With a task list: the task being done ("buoy · Run pnpm
+  test") and the list's progress, "2 / 5", for the time. Done: no time beside it, it is in
+  the words. A side pill keeps Bu and the time (or progress) at its two ends.
 - **Compact** (hover): title — which session (its name, else the label); subtitle — what
   it is doing, in one line ("Thinking", "Running pnpm test", "Editing src/…/pill.js",
   "Fetching example.com", "Waiting for you", "Done in 4 min"); commands, paths and URLs
@@ -147,7 +154,7 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 | `SessionStart` | — | — | remembered (cwd, model), nothing shown |
 | `UserPromptSubmit` | `think` | "Thinking" | surfaces the pill; the elapsed time restarts |
 | `PreToolUse` | `busy` | by tool: "Running {command}", "Editing {path}", "Reading {path}", "Searching for {pattern}", "Fetching {host}", "Searching the web for {query}", "Starting a subagent: {description}" (`Agent`, once `Task`), "Using {server} {tool}" (MCP), "Using {tool}" | the compact's subtitle; inside a subagent (`agent_id`) the parent keeps "Working with N subagents" |
-| `PostToolUse` | `busy` | unchanged | clears an `error` |
+| `PostToolUse` | `busy` | unchanged | clears an `error`; `TaskCreate` (its `subject`, the result's `id`) and `TaskUpdate` (`taskId`, `status`) keep the session's task list: the compact reads "Claude Code" over "{project} · 2 / 5" with up to 3 tasks as rows — done ✓, being done ▶, to do ○ dimmed; with more, the one just done, the one being done, the next — and none while the screen is shared (§7). Met in its middle, Buoy reads `~/.claude/tasks/<session_id>/*.json` once (2026-11-12, design/compact) |
 | `PostToolUseFailure` | `error` | "Something failed" | until the next event |
 | `SubagentStart` / `SubagentStop` | `busy` | "Working with a subagent", "… with 2 subagents"; "Working" when the last stops | the parent keeps working |
 | `PermissionRequest` | `ask` | "Needs your OK · Run: pnpm test" | §4; after the prompt, with no other news: `busy` "Working" (so it can go stale) |
@@ -179,8 +186,10 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
   "Run: pnpm test", "Edit: src/…/pill.js", "Fetch: example.com", "Use: {mcp_server}
   {tool}" — the command or path on one line, ellipsized, after the session's name when it
   has one ("Buoy — Weather icons · Run: pnpm test"); buttons **Deny · Allow · Always** (Always
-  only when Claude Code sent `permission_suggestions`). Its compact: the session's name
-  (else the label), what it wants, the buttons.
+  only when Claude Code sent `permission_suggestions`). Its compact is a card held on the
+  pill until answered (2026-11-12, design/alerts-and-asks "Ask"): Bu; "Claude Code wants to
+  run" over "{project} · Bash" with the command as its body (2 lines), "Allow edits to
+  {file}?" for an edit, else the question with what it wants; the buttons, Allow cream.
 - **The answer** (Buoy builds the stdout, the script prints it):
 
   | Button | stdout |
@@ -278,10 +287,19 @@ my Claude Code sessions", its subtitle the state ("Hooks installed in
   supported by JSON so none are lost. Each entry's command is
   `gjs -m '<extension>/hooks/claude.js'`; Buoy recognises its own entries by
   `buoy@murilegus/hooks/claude.js` in the command, wherever the extension is installed.
-  Reporting events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`,
+  Reporting events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`,
   `PostToolUseFailure`, `SubagentStart`, `SubagentStop`, `Notification`, `PreCompact`,
-  `PostCompact`, `Stop`, `StopFailure`, `SessionEnd`) get `"async": true`;
-  `PermissionRequest` is synchronous with `timeout` 1810. No matcher: every tool. A
+  `PostCompact`, `Stop`, `StopFailure`, `SessionEnd`) get `"async": true`; `PostToolUse` is
+  synchronous with `timeout` 5 (the stop, below); `PermissionRequest` synchronous with
+  `timeout` 1810. An older install (its `PostToolUse` in the background) reads as partly
+  installed: the switch offers to update it, and the compact shows no ■ until then.
+- **■, stop the turn** (2026-11-12, Ethan): as Claude Desktop's Stop or Esc, not the
+  session. Pressed, the session's pill says "Stopping…"; the next `PostToolUse` answers
+  `{"continue": false, "stopReason": "Stopped from Buoy"}` (hooks.md: Claude stops, the
+  session stays), and the pill says "Stopped". A long command or a turn of text only
+  without a tool call runs to its end first: hooks cannot reach into a turn, and no
+  signal or API stops one from outside (a SIGINT or SIGTERM ends the whole process,
+  checked in a PTY). Only while a turn runs (`think`, `busy`, `compact`); never in the pill. No matcher: every tool. A
   file that is not a JSON object (comments, a typo) is never written.
 - **Off**: removes exactly Buoy's entries (and an event's list left empty), nothing else.
 - Claude Code reloads the file by itself: running sessions pick the change up.

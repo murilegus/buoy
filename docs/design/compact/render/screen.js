@@ -87,7 +87,7 @@ function compact(x, y, {lead, title, sub, w = 300}) {
 }
 const notes = (x, y, lines) => lines.forEach((l, i) => text(l, x, y + i * 13, {sz: 7.5, a: .65}));
 const b1 = compact(16, 256, {lead: 'video', title: 'Đang quay màn hình', sub: '0:42 · từ 14:03'});
-notes(16, 322, ['Rộng: tối thiểu 16em (240), ở đây theo chữ.', 'Cao 56, chỉ phần đầu; bo 28.',
+notes(16, 322, ['Rộng cố định min(28em, 0.72 × expanded), 404 ở 1920.', 'Cao 56, chỉ phần đầu; bo 28.',
     'Leading 40: nền fill-2, icon trắng.', 'Tiêu đề 1em 600 fg; dòng dưới 0.85em fg-subtle,', 'đồng hồ chạy và giờ bắt đầu.',
     'Dừng: nút tròn 32, fill-inverse, stop-fill đen;', `cách mép phải 14, tâm y = 28.`]);
 compact(400, 256, {lead: 'display-pulse', title: 'Đang chia sẻ màn hình', sub: '12:05 · từ 13:51'});
