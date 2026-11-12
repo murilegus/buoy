@@ -5,7 +5,9 @@ import weather, {
     REFRESH, DEFAULT_REFRESH, keys, ticks, refreshMs, degrees, conditionOf, isWet, windText, present, relevance,
     ART, artFor, card,
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
-import {readInfo, nextHour, unitNames} from '../src/buoy@murilegus/lib/modules/weather/read.js';
+import {
+    readInfo, nextHour, unitNames, IP_ONLY_METRES, goodFix, nextFix, locateOutcome, shouldRetry, RETRY_MS,
+} from '../src/buoy@murilegus/lib/modules/weather/read.js';
 import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
@@ -209,5 +211,79 @@ eq([unitNames('invalid', 'x'), unitNames(null, undefined)], [{temperature: 'DEFA
     const long = 'Thành phố Hồ Chí Minh, Việt Nam, a place name far longer than the block';
     eq(card({...state, place: long}).place, long, 'Home card: a long place is kept whole (the block ellipsizes)');
 }
+
+// --- "Use my location": which fix becomes the place (2026-11-12, #188) ------------------------
+{
+    const wifi = {latitude: 10.78, longitude: 106.7, accuracy: 40};          // Ho Chi Minh City, Wi-Fi
+    const city = {latitude: 10.8, longitude: 106.65, accuracy: 3000};       // a warm city-level ask
+    const ip = {latitude: 21.03, longitude: 105.85, accuracy: 25000};       // Hanoi, IP only
+    eq(IP_ONLY_METRES, 20000, 'IP-only from 20 km');
+    eq([goodFix(wifi), goodFix(city), goodFix(ip)], [true, true, false], 'Wi-Fi and city fixes good, 25 km IP-only');
+
+    // good first fix
+    eq(nextFix(wifi), {use: wifi, held: null, done: true}, 'a good first fix: the place at once, the ask ends');
+    eq(nextFix(city, {previous: 'good'}), {use: city, held: null, done: true},
+        'a good fix replaces any earlier place');
+
+    // IP-only, then good
+    let step = nextFix(ip, {previous: 'good'});
+    eq(step, {use: null, held: ip, done: false}, 'IP-only first: held, keep waiting');
+    step = nextFix(wifi, {held: step.held, previous: 'good'});
+    eq(step, {use: wifi, held: null, done: true}, 'then a Wi-Fi fix: it is the place, not the IP one');
+
+    // IP-only only
+    step = nextFix(ip, {previous: 'good'});
+    eq(nextFix(null, {held: step.held, final: true, previous: 'good'}), {use: null, held: ip, done: true},
+        'time up with only IP-only fixes and a place from a good fix: the place stays');
+    eq(nextFix(null, {held: ip, final: true, previous: null}), {use: ip, held: ip, done: true},
+        'time up with only IP-only fixes and no place at all: the IP fix, as the last resort');
+    eq(nextFix(null, {held: ip, final: true, previous: 'weak'}).use, ip,
+        'a place that was itself an IP guess: a newer IP fix may replace it');
+    eq(nextFix(null, {final: true, previous: null}), {use: null, held: null, done: true},
+        'time up with no fix at all: nothing written');
+    eq(nextFix(ip, {final: true, previous: null}).use, ip, 'an IP-only fix arriving as the time is up, no place: used');
+
+    // held: the finest IP-only fix
+    const coarse = {...ip, accuracy: 100000}, fine = {...ip, accuracy: 22000};
+    eq(nextFix(coarse, {held: fine}).held, fine, 'a coarser IP-only fix does not replace a finer one held');
+    eq(nextFix(fine, {held: coarse}).held, fine, 'a finer IP-only fix replaces a coarser one held');
+    eq(nextFix({...ip, accuracy: NaN}, {held: fine}).held, fine, 'an unknown accuracy loses to a known one');
+
+    // exactly at the threshold
+    eq(goodFix({...wifi, accuracy: IP_ONLY_METRES}), false, 'exactly 20 km: IP-only');
+    eq(goodFix({...wifi, accuracy: IP_ONLY_METRES - 1}), true, 'just under 20 km: good');
+    eq(nextFix({...ip, accuracy: IP_ONLY_METRES}, {previous: 'good'}).done, false, 'exactly 20 km: wait for a better one');
+
+    // missing or NaN accuracy
+    const noAcc = {latitude: 10.78, longitude: 106.7};
+    eq([goodFix(noAcc), goodFix({...noAcc, accuracy: NaN}), goodFix({...noAcc, accuracy: null}),
+        goodFix({...noAcc, accuracy: -1}), goodFix({...noAcc, accuracy: Infinity})], [false, false, false, false, false],
+    'missing, NaN, null, negative or infinite accuracy: counts as IP-only');
+    eq(nextFix({...noAcc, accuracy: NaN}, {previous: 'good'}), {use: null, held: {...noAcc, accuracy: NaN}, done: false},
+        'NaN accuracy: held, not the place');
+    eq(nextFix(null, {held: noAcc, final: true, previous: 'good'}).use, null,
+        'no accuracy, time up, a good place: the place stays');
+
+    // no position
+    eq([goodFix(null), goodFix({accuracy: 40}), goodFix({latitude: NaN, longitude: 106.7, accuracy: 40})],
+        [false, false, false], 'no coordinates: not a fix');
+    eq(nextFix({latitude: NaN, longitude: 1, accuracy: 25000}), {use: null, held: null, done: false},
+        'a fix without coordinates is not held');
+    eq(nextFix(null, {held: {accuracy: 25000}, final: true}), {use: null, held: null, done: true},
+        'a held value without coordinates is never used');
+    eq(nextFix(), {use: null, held: null, done: false}, 'no arguments: wait');
+}
+
+// --- how an ask ended, for prefs (2026-11-12) ------------------------------------------------
+{
+    const wifi = {latitude: 10.79, longitude: 106.66, accuracy: 40}, ip = {latitude: 21.03, longitude: 105.83, accuracy: 25000};
+    eq(locateOutcome({use: wifi, held: null}), 'wifi', 'a good fix made the place: by Wi-Fi');
+    eq(locateOutcome({use: ip, held: ip}), 'ip', 'an IP guess made the place');
+    eq(locateOutcome({use: null, held: ip}), 'kept', 'only IP, the place kept');
+    eq([locateOutcome({use: null, held: null}), locateOutcome()], ['none', 'none'], 'nothing came');
+}
+eq(RETRY_MS, 120000, 'the second ask: 2 min later');
+eq(['ip', 'kept', 'none', 'wifi'].map(o => shouldRetry(o, false)), [true, true, true, false], 'no Wi-Fi fix: ask once more');
+eq(['ip', 'kept', 'none'].map(o => shouldRetry(o, true)), [false, false, false], 'only once');
 
 print('weather: ok');

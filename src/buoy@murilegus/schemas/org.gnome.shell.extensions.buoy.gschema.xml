@@ -171,6 +171,33 @@
       <summary>Use my location</summary>
       <description>Where you are, with Location Services on. Off, the city below.</description>
     </key>
+    <key name="idle-weather-locate-now" type="x">
+      <default>0</default>
+      <summary>Refresh the place and the weather now</summary>
+      <description>Prefs' refresh button writes the time (µs); Buoy then locates again, Wi-Fi first, and fetches the weather.</description>
+    </key>
+    <key name="idle-weather-located" type="s">
+      <choices>
+        <choice value=''/>
+        <choice value='wifi'/>
+        <choice value='ip'/>
+        <choice value='kept'/>
+        <choice value='none'/>
+      </choices>
+      <default>''</default>
+      <summary>How the last locate ended</summary>
+      <description>Written by Buoy: wifi (a good fix), ip (an IP guess used), kept (only IP, the place kept), none (no fix).</description>
+    </key>
+    <key name="idle-weather-located-at" type="x">
+      <default>0</default>
+      <summary>When the last locate ended</summary>
+      <description>Written by Buoy, ms since the epoch.</description>
+    </key>
+    <key name="idle-weather-updated-at" type="x">
+      <default>0</default>
+      <summary>When the weather last came</summary>
+      <description>Written by Buoy, ms since the epoch.</description>
+    </key>
     <key name="idle-weather-refresh" type="s">
       <choices>
         <choice value="30m"/>

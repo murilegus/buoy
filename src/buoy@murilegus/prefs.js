@@ -11,7 +11,7 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 import {
     planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, switchOn, switchValue, GNOME_CLOCK, GNOME_DOCK,
     NESTED, SLIDERS, choiceLabel, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState,
-    donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote, weatherNote, placeLabel,
+    donationLinks, addFolder, shortPath, MAX_FOLDERS, idleOffNote, weatherNote, placeStatus, LOCATE_WAIT_MS, placeLabel,
     searchPlaces, withPlace, WEATHER_UNITS, PLAN_LINES, withPlan, movePlan, planRows,
 } from './lib/kit/model/settings.js';
 import {slugOf, profileDir} from './lib/kit/services/registry.js';
@@ -130,6 +130,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
         // window would touch its destroyed rows (EGO review asks every source removed)
         this._openLater = 0;
         this._plansLater = 0;
+        this._weatherTick = 0;       // the place row's "2 min ago" and its spinner's end
         window.connect('close-request', () => {
             for (const id of this._ids)
                 settings.disconnect(id);
@@ -137,7 +138,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
                 drop();
             this._ids = [];
             this._drops = [];
-            for (const later of ['_openLater', '_plansLater']) {
+            for (const later of ['_openLater', '_plansLater', '_weatherTick']) {
                 if (this[later])
                     GLib.source_remove(this[later]);
                 this[later] = 0;
@@ -610,7 +611,24 @@ export default class BuoyPreferences extends ExtensionPreferences {
             ? new Gio.Settings({schema_id: 'org.gnome.system.location'}) : null;
         const world = GWeather.Location.get_world();
 
-        const place = new Adw.ActionRow({title: 'Place'});
+        // the place, with a refresh button (2026-11-12, Ethan: A): "Current location" while
+        // "Use my location" is on, "City" off; Buoy in the Shell answers the button (the weather
+        // module's source.js: it locates, Wi-Fi first, and fetches), and its subtitle says how
+        // that went (kit/model/settings.js placeStatus)
+        const place = new Adw.ActionRow({title: 'Current location'});
+        const warn = new Gtk.Image({icon_name: 'dialog-warning-symbolic', valign: Gtk.Align.CENTER, visible: false});
+        warn.add_css_class('warning');
+        const refreshIcon = new Gtk.Image({icon_name: 'view-refresh-symbolic'});
+        const spinner = new Gtk.Spinner({spinning: true});
+        const refresh = new Gtk.Button({child: refreshIcon, valign: Gtk.Align.CENTER});
+        refresh.add_css_class('flat');
+        refresh.add_css_class('circular');
+        refresh.connect('clicked', () => {
+            this._settings.set_int64('idle-weather-locate-now', GLib.get_real_time());
+            sync();
+        });
+        place.add_suffix(warn);
+        place.add_suffix(refresh);
         // "Use my location" with Location Services off: say so where it is switched on
         const off = new Adw.ActionRow({
             title: 'Location Services is off', subtitle: 'Turn it on to follow where you are',
@@ -632,9 +650,23 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const sync = () => {
             const locations = /** @type {GLib.Variant[]} */ (weather.get_value('locations').deepUnpack());
             const first = locations.length ? world.deserialize(locations[0]) : null;
-            place.subtitle = first ? placeLabel(describe(first)) : 'None yet';
             const automatic = this._settings.get_boolean('idle-weather-automatic');
             const locating = location?.get_boolean('enabled') ?? false;
+            const st = placeStatus({
+                automatic, locating, place: first ? placeLabel(describe(first)) : null,
+                located: this._settings.get_string('idle-weather-located'),
+                locatedAt: this._settings.get_int64('idle-weather-located-at'),
+                updatedAt: this._settings.get_int64('idle-weather-updated-at'),
+                asked: this._settings.get_int64('idle-weather-locate-now') / 1000, now: Date.now(),
+            });
+            place.title = st.title;
+            place.subtitle = st.subtitle;
+            warn.visible = st.warn;
+            refresh.visible = st.button;
+            refresh.sensitive = !st.busy;
+            refresh.child = st.busy ? spinner : refreshIcon;
+            refresh.tooltip_text = automatic ? 'Find where you are again and refresh the weather' : 'Refresh the weather';
+            refresh.update_property([Gtk.AccessibleProperty.LABEL], [refresh.tooltip_text]);
             off.visible = automatic && !locating;
             row.subtitle = weatherNote({automatic, locating, locations}) ?? description;
         };
@@ -644,8 +676,17 @@ export default class BuoyPreferences extends ExtensionPreferences {
             if (id)
                 this._drops.push(() => settings.disconnect(id));
         }
-        this._ids.push(this._settings.connect('changed::idle-weather-automatic', sync));
+        for (const key of ['idle-weather-automatic', 'idle-weather-locate-now', 'idle-weather-located-at', 'idle-weather-updated-at'])
+            this._ids.push(this._settings.connect(`changed::${key}`, sync));
         sync();
+        // "2 min ago" moves, and a refresh nobody answers (Buoy off) stops spinning after
+        // LOCATE_WAIT_MS: one tick while the window is open, removed with it
+        if (!this._weatherTick) {
+            this._weatherTick = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, Math.ceil(LOCATE_WAIT_MS / 4000), () => {
+                sync();
+                return GLib.SOURCE_CONTINUE;
+            });
+        }
 
         // GWeather's cities, read once on the first search (some 4000, a few ms)
         let cities = null;

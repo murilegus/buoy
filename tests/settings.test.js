@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {MAX_FOLDERS as progressMaxFolders} from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
-import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, withPlan, movePlan, planRows, weatherNote, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER, lingerMs} from
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, withPlan, movePlan, planRows, PLACES, weatherNote, placeStatus, agoWords, LOCATE_WAIT_MS, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER, lingerMs} from
     '../src/buoy@murilegus/lib/kit/model/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/services/dbus.js';
 
@@ -244,9 +244,9 @@ eq(schema.get_key('idle-weather-automatic').get_default_value().unpack(), true, 
 }
 eq(schema.get_key('idle-clock-style').get_range().recursiveUnpack(), ['enum', ['icon-text', 'icon-time', 'icon', 'text', 'time']],
     'clock styles, SPEC §2a');
-// idle-content and the stack's own idle-auto-… keys are the page's; every other idle- key
-// is a plan's
-for (const name of order.filter(n => n.startsWith('idle-') && n !== 'idle-content' && !n.startsWith('idle-auto-'))) {
+// idle-content and the stack's own idle-auto-… keys are the page's; a plan's bookkeeping
+// (PLACES null: the weather's refresh) is nobody's row; every other idle- key is a plan's
+for (const name of order.filter(n => n.startsWith('idle-') && n !== 'idle-content' && !n.startsWith('idle-auto-') && PLACES[n] !== null)) {
     const under = plan.plans.filter(p => p.keys.includes(name));
     eq(under.length, 1, `${name}: under exactly one plan on the Island page`);
     eq(name.startsWith(`idle-${under[0].id}-`), true, `${name}: under its own plan`);
@@ -466,5 +466,33 @@ eq(donationLinks({kofi: 'a/b?c'})[0].uri, 'https://ko-fi.com/a%2Fb%3Fc', 'a hand
 eq(donationLinks({custom: ['https://me.example/coffee/', 'http://plain.example', 'javascript:alert(1)']}),
     [{label: 'me.example/coffee', uri: 'https://me.example/coffee/'}], 'custom: https URLs only, shown without the scheme');
 eq(donationLinks({nope: 'x'}), [], 'unknown services ignored');
+
+// --- the place row's refresh (prefs weather, 2026-11-12) ---------------------------------------
+{
+    const now = 10 * 3600 * 1000;
+    const base = {automatic: true, locating: true, place: 'Ho Chi Minh City', located: 'wifi', locatedAt: now - 120000, updatedAt: now - 60000, asked: 0, now};
+    const st = o => placeStatus({...base, ...o});
+    eq(st({}), {title: 'Current location', subtitle: 'Ho Chi Minh City · by Wi-Fi · 2 min ago', busy: false, warn: false, button: true},
+        'on, by Wi-Fi: "Current location", the source and when');
+    eq(st({automatic: false}).title, 'City', 'off: "City" (a picked one, not where you are)');
+    eq(st({automatic: false}).subtitle, 'Ho Chi Minh City · weather 1 min ago', 'off: when the weather came');
+    eq([st({located: 'ip'}).subtitle, st({located: 'ip'}).warn], ['Ho Chi Minh City · guessed from the network, about 25 km', true],
+        'an IP guess used: said, in the warning colour');
+    eq([st({located: 'kept'}).subtitle, st({located: 'kept'}).warn], ['Ho Chi Minh City · no Wi-Fi fix, kept this place', true],
+        'only IP, the place kept: said');
+    eq(st({located: 'none'}).subtitle, 'Ho Chi Minh City', 'no fix: the place alone');
+    eq(st({asked: now - 1000, locatedAt: now - 120000}), {title: 'Current location', subtitle: 'Locating…', busy: true, warn: false, button: true},
+        'asked, no answer yet: locating');
+    eq(st({asked: now - 1000, locatedAt: now - 500}).busy, false, 'answered after the click: done');
+    eq(st({asked: now - LOCATE_WAIT_MS, locatedAt: 0}).busy, false, 'no answer in 20 s (Buoy off): the spinner stops');
+    eq(st({automatic: false, asked: now - 1000, updatedAt: now - 60000}).subtitle, 'Updating the weather…', 'off: only the weather');
+    eq(st({locating: false}), {title: 'Current location', subtitle: 'Ho Chi Minh City · Location Services is off', busy: false, warn: true, button: false},
+        'Location Services off: no button, said');
+    eq(st({place: null}).subtitle, 'None yet', 'no place yet');
+    eq(st({automatic: false, place: null}).subtitle, 'None yet: search for a city below', 'off, no city');
+    eq(st({locatedAt: 0}).subtitle, 'Ho Chi Minh City · by Wi-Fi', 'no time recorded: without it');
+    eq([agoWords(now, now), agoWords(now - 59999, now), agoWords(now - 60000, now), agoWords(now - 7200000, now), agoWords(now - 3 * 86400000, now), agoWords(now + 5000, now)],
+        ['just now', 'just now', '1 min ago', '2 h ago', '3 days ago', 'just now'], 'ago words');
+}
 
 console.log('settings: ok');
