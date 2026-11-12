@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
+import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
@@ -19,6 +20,8 @@ import {SpringRunner, afterLayout, slideIn} from './spring.js';
 
 // a strip button's tab id (kit/ui/home.js _stripPlaces)
 const tabIds = new WeakMap();
+// a body leaving on a tab switch: its spring, and whether a tab.js keeps it (_leave)
+const leaving = new WeakMap();
 
 /** @import Gio from 'gi://Gio' */
 
@@ -180,6 +183,9 @@ export class Home {
             x_expand: true, y_expand: true,
         });
         this.actor.add_child(this._column);
+        // the body a tab switch leaves, fading where it stood (_leave): over the column, no input
+        this._leaving = new St.Widget({x_expand: true, y_expand: true, reactive: false});
+        this.actor.add_child(this._leaving);
         // one rounded group that hugs its tabs (Notchy's strip); the selected tab's pill is
         // a marker of its own behind the row, so it slides to the next tab (design/motion
         // "Đổi tab")
@@ -306,7 +312,7 @@ export class Home {
         this._renderStrip();
         this._slideStrip(before, from !== id);
         const body = this._buildBody(findTab(this._strip, id));
-        this._setBody(body);
+        this._setBody(body, dir);
         if (dir)
             slideIn(body, dir * TAB_SHIFT, 'snap', FADES.in.ms);
         if (id === HOME && this._missed.length)
@@ -533,7 +539,15 @@ export class Home {
 
     // --- body ---------------------------------------------------------------------------
 
-    _setBody(actor) {
+    /**
+     * @param {Clutter.Actor} actor  the new body
+     * @param {number} [leave]  a tab switch's direction (-1, +1): the old body fades out
+     *   and moves 12 px the other way where it stood (design/motion "Đổi tab"); 0: it goes
+     */
+    _setBody(actor, leave = 0) {
+        // back before it finished leaving (a quick switch there and back): it is the body again
+        if (actor.get_parent() === this._leaving)
+            this._unleave(actor);
         // a module Card's actor is kept for the rest of this open: out of the old layout
         // first, which goes
         for (const card of this._cards.values()) {
@@ -543,12 +557,59 @@ export class Home {
         // a tab.js actor is kept for the rest of this open; anything else is rebuilt
         const kept = new Set([...this._tabs.values()].map(t => t.actor));
         for (const old of this._view.get_children()) {
-            if (kept.has(old))
+            if (old === actor)
+                continue;
+            if (leave)
+                this._leave(old, leave, kept.has(old));
+            else if (kept.has(old))
                 this._view.remove_child(old);
             else
                 old.destroy();
         }
-        this._view.add_child(actor);
+        if (actor.get_parent() !== this._view)
+            this._view.add_child(actor);
+    }
+
+    // The old body leaves where it stood: moved onto the layer over the column at its place
+    // and size, it fades out (100 ms) and moves TAB_SHIFT the other way (`snap`), then goes —
+    // a tab.js actor is only taken off, to be shown again later.
+    _leave(old, dir, kept) {
+        const at = old.apply_relative_transform_to_point(this.actor, new Graphene.Point3D({x: 0, y: 0, z: 0}));
+        const [w, h] = [old.width, old.height];
+        old.remove_all_transitions();
+        this._view.remove_child(old);
+        this._leaving.add_child(old);
+        old.set_position(Math.round(at.x), Math.round(at.y));
+        old.set_size(w, h);
+        const run = new SpringRunner(old, v => {
+            old.translation_x = Math.round(v.t);
+        });
+        run.set({t: old.translation_x});
+        run.to({t: -dir * TAB_SHIFT}, 'snap');
+        leaving.set(old, {run, kept});
+        old.ease({
+            opacity: 0, duration: FADES.out.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onStopped: finished => {
+                if (!finished || old.get_parent() !== this._leaving)
+                    return;     // taken back meanwhile (_unleave)
+                if (kept)
+                    this._unleave(old);
+                else
+                    old.destroy();
+            },
+        });
+    }
+
+    // Off the leaving layer, as it was before it left
+    _unleave(actor) {
+        leaving.get(actor)?.run.destroy();
+        leaving.delete(actor);
+        actor.remove_all_transitions();
+        this._leaving.remove_child(actor);
+        actor.fixed_position_set = false;
+        actor.set_size(-1, -1);
+        actor.translation_x = 0;
+        actor.opacity = 255;
     }
 
     _buildBody(tab) {

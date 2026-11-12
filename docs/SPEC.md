@@ -806,8 +806,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
   120 ms (St's `transition-duration`).
 - **Press**: 4 px smaller each way on `snap`, held 90 ms, back on `snap`.
 - **Tab switch**: the selected tab's pill is a marker behind the row; it springs to the new
-  tab on `snap`, the tabs between spring to their new places, the new title fades in, the
-  body comes in from 12 px on the side it goes to. Home's lists in place (Missed, +K) come
+  tab on `snap`, the tabs between spring to their new places, the new title fades in; the
+  old body fades out where it stood and moves 12 px back, the new one comes in from 12 px
+  on the side it goes to. Home's lists in place (Missed, +K) come
   in from 24 px on the right on `move`; back, from the left.
 - **Animations off** (`enable-animations`): every move is at its end at once;
   `slow-down-factor` stretches every spring, as Shell's own `ease()`
