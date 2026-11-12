@@ -65,6 +65,7 @@ export function validate(a) {
         needsYou: false,
         style: 'standard',
         alert: false,
+        alertStays: false,
         keyline: null,
         actions: [],
         sizeHint: 'normal',

@@ -7,10 +7,11 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 
 import {Source} from '../../kit/services/source.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
-import {DISMISS, actionIndex, shownElsewhere, waitedInQueue} from './adapter.js';
+import {DISMISS, Turns, actionIndex, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
 const REPLACE_KEY = 'notification-replace-banners';
+const SHARED_ID = 'notification:buoy:shared';
 
 /**
  * GNOME's banners as pills (docs/NOTIFICATIONS.md). Shell decides when a notification
@@ -37,6 +38,13 @@ const REPLACE_KEY = 'notification-replace-banners';
  *   menu's own count, `unseenCount` less the queue (ui/dateMenu.js MessagesIndicator) —
  *   the buoy light is amber (stack.flagMissed), until the tab or GNOME's list shows them.
  *   Watched on each source's `notify::count` and the queue, as the date menu does.
+ * - A burst (design/alerts-and-asks "Nhiều thông báo cùng lúc"): one card at a time, in turns
+ *   (adapter.js Turns). A turn begins as an alert (surfaced anew: pill 1); the kit says when
+ *   its card may give way (onAlertState) and when it closed (onAlertDone), and the next
+ *   begins after the current call. Seen only by the kit's onSeen; the rest are missed.
+ * - The screen shared: a single one is a card with the app's name only (§5); from the second,
+ *   the burst is one compact (adapter.js sharedBurst) that takes the card's place; each app
+ *   keeps its pill behind it. Seen never: the content was hidden.
  * - No timer of its own: the pill's 6 s are its ttl. When they run out, the app's transient
  *   notifications go, as GNOME's banner destroys one when it hides (ui/messageTray.js
  *   `_hideNotificationCompleted`: EXPIRED) — Shell's screenshot and screencast notices
@@ -48,6 +56,11 @@ export class NotificationSource extends Source {
         // app id → {key, list (alive, oldest first), seen, shown, id}
         this._pills = new Map();
         this._serial = 0;
+        // notifications whose card is up as an alert, not yet seen nor missed: not counted
+        // unseen (the amber light) while you may still read them (design/alerts-and-asks)
+        this._pending = new Set();
+        this._turns = new Turns();
+        this._burst = null;         // a shared screen's burst: {apps: Map app → {name, icon, count}, at}
         this._queuedAt = new WeakMap();
         this._sharing = new SharingWatch(() => this._redrawAll());
         this._injections = new InjectionManager();
@@ -82,6 +95,9 @@ export class NotificationSource extends Source {
         Main.messageTray.getSources().forEach(src => src.disconnectObject(this));
         this._stack?.flagMissed(KIND, false);
         this._queuedAt = null;
+        this._turns?.clear();
+        this._pending?.clear();
+        this._endBurst();
         for (const [app, pill] of this._pills ?? [])
             this._drop(app, pill);
         this._pills = null;
@@ -104,7 +120,7 @@ export class NotificationSource extends Source {
         Promise.resolve().then(() => {
             this._countPending = false;
             if (this._stack)
-                this._stack.flagMissed(KIND, unseenCount(Main.messageTray) > 0);
+                this._stack.flagMissed(KIND, unseenCount(Main.messageTray, this._pending) > 0);
         });
     }
 
@@ -137,10 +153,10 @@ export class NotificationSource extends Source {
 
     _take(n, held = false) {
         this._queuedAt.delete(n);
-        // what the banner does when it shows (`_updateShowingNotification`); one that
-        // waited while nobody could see it stays unseen (§1)
-        if (!held)
-            n.acknowledged = true;
+        // the banner's sound (`_updateShowingNotification`); it is seen only when its card
+        // had 5 s while you were there, or you hovered or clicked it (the kit's onSeen,
+        // design/alerts-and-asks, 2026-11-12) — not when it shows, as v0.1 had it. One that
+        // waited while nobody could see it (full screen, locked) gets no card: missed (§1)
         n.playSound();
         if (!n.source)
             return;
@@ -150,7 +166,7 @@ export class NotificationSource extends Source {
         if (shownElsewhere(app, n.id, progressOn))
             return;
         let pill = this._pills.get(app);
-        if (pill && !this._live(pill)) {     // its pill ended (the ttl): start afresh
+        if (pill && !this._keeps(app, pill)) {     // its pill ended (the ttl): start afresh
             this._drop(app, pill);
             pill = null;
         }
@@ -165,7 +181,132 @@ export class NotificationSource extends Source {
             n.connectObject('destroy', () => this._gone(app, n), this);
         }
         pill.list = [...pill.list.filter(x => x !== n), n];
-        this._show(app, {anew: fresh});
+        if (held) {
+            this._show(app, {anew: fresh});
+        } else if (this._sharing.shared && (this._burst || this._turns.current || this._turns.waiting.length)) {
+            this._joinBurst(app, n);
+        } else {
+            const out = this._turns.arrive(app, n, n.urgency === MessageTray.Urgency.CRITICAL);
+            out.missed.forEach(x => this._pending.delete(x));
+            if (!out.missed.includes(n))
+                this._pending.add(n);       // up or waiting: you may still read it
+            if (out.start)
+                this._begin(out.start);
+            else if (out.show)              // the card up, in place; under the pointer quietly
+                this._show(app, {alert: !out.show.hovered});
+            // no card for these: their app's pill only (if no turn of its own shows it)
+            for (const t of out.dropped) {
+                if (!this._turns.busy(t.app) && this._pills.has(t.app))
+                    this._show(t.app, {anew: true});
+            }
+        }
+        this._countLater();
+    }
+
+    // The screen shared and a card up or waiting: one compact for them all (design/alerts-
+    // and-asks "Khi chia sẻ màn hình"). The turns join it; it takes the card's place first,
+    // then the apps' pills drop their turns quietly behind it. All of it is missed.
+    _joinBurst(app, n) {
+        const starting = !this._burst;
+        const joined = starting ? [this._turns.current, ...this._turns.waiting].filter(Boolean) : [];
+        if (starting) {
+            this._burst = {apps: new Map(), at: 0};
+            this._turns.clear();
+        }
+        for (const t of [...joined, {app, item: n, count: 1}]) {
+            this._pending.delete(t.item);
+            const src = t.item.source;
+            const e = this._burst.apps.get(t.app) ?? {name: src?.title ?? t.app, icon: src?.icon ?? null, count: 0};
+            e.count += t.count;
+            this._burst.apps.set(t.app, e);
+            this._burst.at = Math.max(this._burst.at, msOf(t.item.datetime) || Date.now());
+        }
+        const a = sharedBurst({
+            apps: [...this._burst.apps.values()], at: this._burst.at,
+            close: () => this._endBurst(),
+            alertDone: () => Promise.resolve().then(() => this._endBurst()),
+        });
+        if (!a)
+            return;
+        if (starting || !this._stack.has(SHARED_ID))
+            this._stack.surface({...a, id: SHARED_ID, kind: KIND, app: 'buoy', alert: true});
+        else
+            this._stack.update(SHARED_ID, a);
+        for (const x of new Set([...joined.map(t => t.app), app])) {
+            if (this._pills.has(x))
+                this._show(x, {anew: x === app && !joined.some(t => t.app === app)});
+        }
+    }
+
+    _endBurst() {
+        if (!this._burst)
+            return;
+        this._burst = null;
+        if (this._stack?.has(SHARED_ID))
+            this._stack.end(SHARED_ID);
+    }
+
+    // A turn's card: its app's pill surfaced anew (pill 1, its ttl from now) as an alert.
+    _begin(turn) {
+        this._pending.add(turn.item);
+        if (this._pills.has(turn.app))
+            this._show(turn.app, {anew: true, alert: true});
+        else
+            this._turns.end(turn.key);
+    }
+
+    // The next turn, after the current call: the kit's word comes from inside its render.
+    _stepLater() {
+        if (this._stepPending)
+            return;
+        this._stepPending = true;
+        Promise.resolve().then(() => {
+            this._stepPending = false;
+            if (!this._stack)
+                return;
+            let next;
+            while ((next = this._turns.step()) && !this._pills.get(next.app)?.list.includes(next.item))
+                this._turns.end(next.key);       // its notification went meanwhile
+            if (next)
+                this._begin(next);
+        });
+    }
+
+    // The kit's onAlertState for the card up: given way, hovered.
+    _turnState(key, state) {
+        if (this._turns.state(key, state))
+            this._stepLater();
+    }
+
+    /**
+     * @param {string} app
+     * @param {object} pill
+     * @returns {boolean} the app's pill is up, or a turn of it shows or waits
+     */
+    _keeps(app, pill) {
+        return this._live(pill) || this._turns.busy(app);
+    }
+
+    // The kit's onSeen: its card had its 5 s while you were there, or you hovered it.
+    _seenOne(n) {
+        if (this._pending.delete(n) || n.source)
+            n.acknowledged = true;
+        this._countLater();
+    }
+
+    // The card closed: seen (onSeen came first) or missed, as GNOME's list counts it. Its
+    // turn over, the next begins; the app's pill drops the turn's count.
+    _alertDone(app, n, key) {
+        this._pending.delete(n);
+        if (this._turns.end(key)) {
+            const pill = this._pills?.get(app);
+            Promise.resolve().then(() => {
+                if (pill && this._pills?.get(app) === pill && this._live(pill) && !this._turns.busy(app))
+                    this._show(app, {anew: false});
+            });
+        }
+        this._stepLater();
+        this._countLater();
     }
 
     _gone(app, n) {
@@ -173,6 +314,8 @@ export class NotificationSource extends Source {
         if (!pill)
             return;
         pill.list = pill.list.filter(x => x !== n);
+        this._turns.gone(n);
+        this._pending.delete(n);
         // after the current call: a GTK app's replacement comes in it (§2)
         Promise.resolve().then(() => this._settle(app, pill));
     }
@@ -181,9 +324,9 @@ export class NotificationSource extends Source {
         if (!this._stack || this._pills?.get(app) !== pill)
             return;
         // nothing left, or its pill already ended: an older notification never comes back
-        if (!pill.list.length || !this._live(pill))
+        if (!pill.list.length || !this._keeps(app, pill))
             this._drop(app, pill);
-        else if (pill.shown !== pill.list.at(-1))
+        else if (this._live(pill) && pill.shown !== this._face(app, pill).n)
             this._show(app, {anew: false});
     }
 
@@ -200,9 +343,18 @@ export class NotificationSource extends Source {
             this._sharing.stop();
     }
 
-    _show(app, {anew}) {
+    // What the app's pill shows: the card up's notification while its turn is on (`turn`),
+    // else the newest.
+    _face(app, pill) {
+        const t = this._turns.current;
+        const turn = t?.app === app && pill.list.includes(t.item) ? t : null;
+        return {n: turn?.item ?? pill.list.at(-1), turn};
+    }
+
+    _show(app, {anew = false, alert = false}) {
         const pill = this._pills.get(app);
-        const n = pill.list.at(-1);
+        const {n, turn} = this._face(app, pill);
+        const key = turn?.key ?? null;
         const src = n.source;
         this._sharing.start();
         const own = n.gicon ?? null;
@@ -224,6 +376,12 @@ export class NotificationSource extends Source {
             activate: () => this._activate(pill, n),
             onAction: id => this._act(pill, n, id),
             expire: () => this._expire(pill),
+            // a shared screen hides the content: never seen (design/alerts-and-asks)
+            seen: this._sharing.shared ? null : () => this._seenOne(n),
+            alertDone: () => this._alertDone(app, n, key),
+            burst: turn?.count ?? 0,
+            alertKey: key,
+            alertState: turn ? state => this._turnState(key, state) : null,
         });
         pill.shown = n;
         const live = this._live(pill);
@@ -233,15 +391,17 @@ export class NotificationSource extends Source {
             pill.id = null;
             return;
         }
-        if (live && !anew && this._stack.update(pill.id, a))
+        if (live && !anew && this._stack.update(pill.id, a, {alert}))
             return;
-        pill.id = this._stack.surface(a);
+        pill.id = this._stack.surface({...a, alert});
     }
 
     // The banner's click (ui/messageList.js NotificationMessage vfunc_clicked).
     _activate(pill, n) {
-        if (pill.list.includes(n))
+        if (pill.list.includes(n)) {
+            this._seenOne(n);         // clicked: seen (design/alerts-and-asks)
             n.activate();
+        }
         return true;
     }
 
@@ -275,12 +435,15 @@ function monotonicMs() {
 
 /**
  * @param {MessageTray.MessageTray} tray
+ * @param {Set<MessageTray.Notification>} [showing]  cards up now, not yet seen nor missed
  * @returns {number} notifications nobody has seen, as the date menu counts them (ui/dateMenu.js
- *   MessagesIndicator `_updateCount`): the queue's are about to show
+ *   MessagesIndicator `_updateCount`): the queue's are about to show, the cards up may
+ *   still be read
  */
-function unseenCount(tray) {
+function unseenCount(tray, showing = new Set()) {
     const unseen = tray.getSources().reduce((sum, src) => sum + src.unseenCount, 0);
-    return Math.max(0, unseen - tray.queueCount);
+    const up = [...showing].filter(n => !n.acknowledged && n.source).length;
+    return Math.max(0, unseen - tray.queueCount - up);
 }
 
 /** @returns {boolean} GNOME's list has notifications (the tab's bell has a dot) */

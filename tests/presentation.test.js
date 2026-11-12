@@ -254,8 +254,16 @@ eq(planCompact({compact: {card: {icon: 'x'}}}), null, 'a card with no name, titl
     eq(note.actions[0].key, undefined, 'a notification card: no keys');
 }
 eq(planCompact({compact: {card: {app: 'Mail', at: 'soon', picture: {text: 'no'}}}}).card,
-    {header: {icon: null, text: 'Mail', at: null}, title: null, body: null, picture: null, close: null},
-    'bad time, a text picture, no close: dropped');
+    {header: {icon: null, text: 'Mail', at: null}, title: null, body: null, picture: null, close: null, actionsOnHover: false},
+    'bad time, a text picture, no close: dropped; buttons always shown');
+eq(planCompact({compact: {card: {title: 'T', actionsOnHover: true}}}).card.actionsOnHover, true,
+    'a card can show its buttons only under the pointer (a notification\'s alert)');
+eq(planCompact({compact: {card: {title: 'T', actionsOnHover: 'yes'}}}).card.actionsOnHover, false,
+    'actionsOnHover: only true counts');
+eq(planCompact({compact: {card: {title: 'T', picture: {stack: ['a', null, 'b', 'c', 'd']}}}}).card.picture,
+    {type: 'stack', icons: [{type: 'icon', icon: 'a'}, {type: 'icon', icon: 'b'}, {type: 'icon', icon: 'c'}]},
+    'a stack picture: up to three logos, the empty ones dropped');
+eq(planCompact({compact: {card: {title: 'T', picture: {stack: []}}}}).card.picture, null, 'an empty stack: no picture');
 eq(planCompact({compact: {card: {title: 'T'}}, actions: 'x'}).actions, [], 'card without actions: no row');
 {
     const acts = [{id: 'prev', icon: 'p-symbolic'}, {id: 'pp', icon: 'q-symbolic'},

@@ -261,6 +261,8 @@
    message under it, the buttons in a row; geometry in present/compact.js */
 .buoy-card-title { font-weight: 600; }
 /* the app's logo on the picture's corner, ringed in the island's black */
+/* a shared screen's burst: the apps' logos on a tile (design/alerts-and-asks) */
+.buoy-card-logos { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-card-badge { border-radius: 6px; border: 2px solid #000; /* surface */ background-color: #000; /* surface */ }
 /* two lines (presentation.js MAX_CARD_LINES): Pango keeps whole lines within its max-height */
 .buoy-card-body { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }

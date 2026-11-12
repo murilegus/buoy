@@ -197,6 +197,23 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(island.log.at(-1), 'show n alert', 'surface with alert: true');
 }
 
+// --- an alert that gets no card is done at once, unseen (design/alerts-and-asks) ----
+{
+    const {island, stack} = setup();
+    const done = [];
+    const note = id => ({id, kind: 'notification', onAlertDone: seen => done.push(`${id} ${seen}`)});
+    stack.surface({...note('a'), alert: true});
+    eq([island.log.at(-1), done], ['show a alert', []], 'shown: the island has its card, nothing done yet');
+    stack.setUnseen(true);
+    stack.update('a', {}, {alert: true});
+    eq(done, ['a false'], 'the island hidden: its alert is done, unseen');
+    stack.setUnseen(false);
+    stack.update('a', {text: 'x'});
+    eq(done, ['a false'], 'no alert asked: nothing done');
+    stack.surface({...note('h'), hidden: true, alert: true});
+    eq(done, ['a false', 'h false'], 'not shown (hidden): done, unseen');
+}
+
 // --- alert on a covered activity: shown for ALERT_MS, then the top returns -----------
 {
     const {clock, island, stack} = setup();

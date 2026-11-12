@@ -182,13 +182,14 @@ function rowList(rows, m) {
  * @param {number} [opts.maxWidth]  the compact's width (its content carries its paddings)
  * @param {string} [opts.light]  unused: the light is the pill's, never the compact's
  * @param {object} [opts.metrics]  kit/model/shapes.js compactMetrics at the em
+ * @param {boolean} [opts.hovered]  the pointer is on it: a card's buttons on hover show
  * @returns {?Clutter.Actor} null when the activity has no compact
  */
-export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMetrics()} = {}) {
+export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMetrics(), hovered = false} = {}) {
     const p = planCompact(activity, {light});
     if (!p)
         return null;
-    return p.card ? cardBox(p, activity, maxWidth, metrics) : compactBox(p, activity, maxWidth, metrics);
+    return p.card ? cardBox(p, activity, maxWidth, metrics, hovered) : compactBox(p, activity, maxWidth, metrics);
 }
 
 // A card (NOTIFICATIONS.md §3, design/compact "Card thông báo"): the head as every compact's
@@ -197,7 +198,7 @@ export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMe
 // lines of 16, 8 under the head, and the buttons in a row 12 from the edges, 32 tall, 12
 // above and below: 136 with one line, 152 with two (104 without buttons). The compact's full
 // width. A click on it but a button is the pill's click (island.js).
-function cardBox(p, activity, maxWidth, m) {
+function cardBox(p, activity, maxWidth, m, hovered = false) {
     const c = p.card;
     const box = new St.BoxLayout({style_class: 'buoy-card', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
     if (maxWidth > 0)
@@ -222,7 +223,8 @@ function cardBox(p, activity, maxWidth, m) {
         c.close ? closeButton(c.close, activity, m) : null,
     ], m));
 
-    const hasActions = p.actions.length > 0;
+    // a notification's alert shows its buttons only under the pointer (104 → 136 / 152)
+    const hasActions = p.actions.length > 0 && (!c.actionsOnHover || hovered);
     if (c.body) {
         const body = wrapped(c.body, 'buoy-card-body');
         body.set_style(`margin: ${px(m.bodyGap)} ${px(m.side)} ${hasActions ? 0 : px(m.vpad)}; max-height: ${px(2 * m.row)};`);
@@ -249,6 +251,8 @@ function cardBox(p, activity, maxWidth, m) {
 // The card's leading: the picture with the app's logo on its lower right corner, or the
 // logo alone at 40.
 function avatar(c, activity, m) {
+    if (c.picture?.type === 'stack')
+        return logoStack(c.picture.icons, activity, m);
     if (!c.picture) {
         // no picture: the app's logo at 40, without a badge (design/compact "Card thông báo")
         const logo = makeElement(c.header.icon, 'compact', activity, {icon: m.lead, art: m.lead});
@@ -270,6 +274,28 @@ function avatar(c, activity, m) {
     stack.add_child(ring);
     ring.set_position(m.lead - m.badge + 2, m.lead - m.badge + 2);
     return stack;
+}
+
+// The apps' logos stacked on a fill-2 tile (design/alerts-and-asks "Khi chia sẻ màn hình"): at
+// 40, logos 16 at (6, 6), (18, 6), (12, 18), the later on top; scaled with the lead.
+const STACK_AT = [[6, 6], [18, 6], [12, 18]];
+function logoStack(icons, activity, m) {
+    const k = m.lead / 40;
+    const tile = new St.Widget({
+        style_class: 'buoy-card-logos', width: m.lead, height: m.lead,
+        layout_manager: new Clutter.FixedLayout(),
+    });
+    tile.set_style(`border-radius: ${px(m.lead / 4)};`);
+    icons.forEach((e, i) => {
+        const logo = makeElement(e, 'minimal', activity, {icon: Math.round(16 * k)});
+        if (!logo)
+            return;
+        if ('icon_size' in logo)
+            logo.icon_size = Math.round(16 * k);
+        tile.add_child(logo);
+        logo.set_position(Math.round(STACK_AT[i][0] * k), Math.round(STACK_AT[i][1] * k));
+    });
+    return tile;
 }
 
 // Wrapped and ellipsized at its max-height (MAX_CARD_LINES lines): Clutter.Text gives

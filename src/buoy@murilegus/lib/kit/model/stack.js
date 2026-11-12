@@ -62,6 +62,11 @@ export function order(a, b) {
 
 /** How long an alert keeps an activity up, its compact open (design/alerts-and-asks: 5 s). */
 export const ALERT_MS = 5000;
+/**
+ * The least an alert's card shows before another waiting may take its place: a burst's turn
+ * (design/alerts-and-asks "Nhiều thông báo cùng lúc": 1 s).
+ */
+export const ALERT_TURN_MS = 1000;
 
 const MAX_DELAY = 2 ** 31 - 1;          // GLib timeouts are 32-bit ms; longer waits re-arm
 const MISSED_MAX = 5;
@@ -594,6 +599,7 @@ export class ActivityStack {
     }
 
     _render({changed = null, alert = null} = {}) {
+        const asked = alert;
         if (this._unseen)
             alert = null;            // the island is hidden: nothing to draw attention to
         if (alert)
@@ -627,6 +633,10 @@ export class ActivityStack {
         }
 
         this._updateLight();
+        // an alert that gets no card (the island hidden, the activity not shown) is done at
+        // once, unseen: its owner moves on (a burst of notifications, design/alerts-and-asks)
+        if (asked && !(list.length && shown.includes(alert)))
+            this._items.get(asked)?.onAlertDone?.(false);
     }
 
     // An alert on an activity the island is not showing brings it to the centre for

@@ -122,11 +122,16 @@ function clock(seconds) {
  * @param {*} e  one leading/trailing/region value from an adapter
  * @param {object} [opts]
  * @param {boolean} [opts.leading]  the leading zone: the only place Bu may be
- * @returns {?object} {type: 'icon'|'glyph'|'art'|'ring'|'bar'|'text'|'mascot', …} or null
+ * @returns {?object} {type: 'icon'|'glyph'|'art'|'ring'|'bar'|'text'|'mascot'|'stack', …} or null
  */
 export function element(e, {leading = false} = {}) {
     if (!isPlain(e))
         return icon(e);
+    // the apps' logos stacked, up to three: a burst on a shared screen (design/alerts-and-asks)
+    if (Array.isArray(e.stack)) {
+        const icons = e.stack.map(icon).filter(x => x?.type === 'icon').slice(0, 3);
+        return icons.length ? {type: 'stack', icons} : null;
+    }
     if ('mascot' in e) {
         const pose = leading ? poseName(e.mascot) : null;
         if (pose) {
@@ -311,6 +316,9 @@ function planCard(c, p, light) {
             header, title, body,
             picture: el && el.type !== 'text' ? el : null,
             close: str(c.close),
+            // its buttons only under the pointer (a notification's alert, as GNOME 50's
+            // banner: design/alerts-and-asks "Thông báo")
+            actionsOnHover: c.actionsOnHover === true,
         },
         leading: null, text: null, subtitle: null, trailing: null,
         actions: acts,

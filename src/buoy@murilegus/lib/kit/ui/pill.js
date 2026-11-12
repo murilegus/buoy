@@ -70,6 +70,8 @@ export class Pill {
         this._hoverLater = 0;
         this._compactId = 0;
         this._held = false;          // the island holds the compact open (an alert, an ask)
+        this._ignoreHover = false;   // held open under a resting pointer: not hovered till it leaves
+        this._builtHovered = false;  // the compact's card was built for a pointer on it
         this._morphTo = null;        // target of the running bg transition
         this._collapsing = false;    // until the collapse morph lands: bg clips the content
         this._follow = null;         // {t, id}: bg transition the content clip follows
@@ -104,6 +106,11 @@ export class Pill {
         return this._compact;
     }
 
+    /** The pointer is on it, and counts: not a pointer it opened under (holdCompact). */
+    get hoverCounts() {
+        return this.hovered && !this._ignoreHover;
+    }
+
     /** It has a compact to open (the activity's, the idle plan's, the amber list). */
     get hasCompact() {
         return this._hasCompact();
@@ -118,11 +125,14 @@ export class Pill {
      */
     holdCompact(held) {
         this._held = held;
+        // a card that opens under a resting pointer is not hovered until the pointer leaves
+        // and comes back (Shell's banner, ui/messageTray.js _onNotificationHoverChanged)
+        this._ignoreHover = held && this.hovered;
         if (held) {
             this._clearGrace();
             this._openCompact();
-        } else if (!this.hovered) {
-            this._stopCompact();
+        } else if (!this.hoverCounts) {
+            this._stopCompact();     // a pointer it opened under does not keep it
         }
     }
 
@@ -158,7 +168,9 @@ export class Pill {
      */
     configure(activity, {role = 'centre', light = 'off', more = 0, fade = false} = {}) {
         const same = (activity?.id ?? null) === this.id;
-        if (!same)
+        // a held card takes another activity in place (a burst's next turn): it stays open,
+        // its content cross-fades (design/alerts-and-asks)
+        if (!same && !this._held)
             this._stopCompact();
         this.id = activity?.id ?? null;
         this.activity = activity;
@@ -486,7 +498,10 @@ export class Pill {
         const shown = this._compactOf();
         if (!shown)
             return null;
-        return buildCompact(shown, {maxWidth, metrics, light: this.role === 'centre' ? this.light : null});
+        const plan = planCompact(shown);
+        this._cardOnHover = plan?.card?.actionsOnHover === true;
+        this._builtHovered = this.hoverCounts;
+        return buildCompact(shown, {maxWidth, metrics, hovered: this._builtHovered, light: this.role === 'centre' ? this.light : null});
     }
 
     // What the compact shows besides the missed list: the activity, or the idle plan
@@ -670,9 +685,14 @@ export class Pill {
             return;
         // hover holds its ttl (SPEC §2e) — open too: a greeting being read stays (2026-11-08,
         // Ethan: hovered, it still closed at 12 s)
-        this._island._holdHovered(this, this.hovered);
+        if (!this.hovered)
+            this._ignoreHover = false;
+        this._island._holdHovered(this, this.hoverCounts);
         if (this.expanded)
             return;
+        // a card whose buttons show on hover (a notification's, design/alerts-and-asks)
+        if (this._compact && this._cardOnHover && this.hoverCounts !== this._builtHovered)
+            this._swapResting(SIZE_MS);
         if (this.hovered) {
             this._clearGrace();
             if (!this._compact && !this._compactId && this._hasCompact()) {
