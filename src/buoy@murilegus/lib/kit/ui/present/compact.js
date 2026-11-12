@@ -85,7 +85,9 @@ function underText(actor, m, {leading = true} = {}) {
 // The compact (SPEC §2, §4): the grown pill.
 function compactBox(p, activity, maxWidth, m) {
     const box = new St.BoxLayout({style_class: 'buoy-compact', orientation: Clutter.Orientation.VERTICAL});
-    box.set_style(`min-width: ${px(m.min)};${maxWidth > 0 ? ` max-width: ${px(maxWidth)};` : ''}`);
+    // one width for every compact (shapes.js compact): its buttons at the right edge
+    if (maxWidth > 0)
+        box.set_style(`width: ${px(maxWidth)};`);
     const btns = buttons(p.actions, activity, m);
     // media with its position: the art 72 takes the head and the bar's row, 8 from the
     // edges, radius 20 (design/compact "Nhạc"): 8 + 72 + 8 = 88
@@ -175,7 +177,7 @@ function rowList(rows, m) {
  *
  * @param {object} activity  presentation data (+ onAction)
  * @param {object} [opts]
- * @param {number} [opts.maxWidth]  the compact's widest (its content carries its paddings)
+ * @param {number} [opts.maxWidth]  the compact's width (its content carries its paddings)
  * @param {string} [opts.light]  unused: the light is the pill's, never the compact's
  * @param {object} [opts.metrics]  kit/model/shapes.js compactMetrics at the em
  * @returns {?Clutter.Actor} null when the activity has no compact

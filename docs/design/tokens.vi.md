@@ -36,7 +36,7 @@ về đây thay vì chép số. Số px tính cho 1em = 11pt ≈ 14.67 px và l�
 | Card thông báo | thân cách đầu 8, cách nút 12; nút cách mép 12, cao 32, bo 16 | 136 / 152 | Chốt |
 | Ask | như card | 120 / 136 / 152 | Chốt |
 | Hỏi nhiều lựa chọn | hàng 32 mỗi lựa chọn | tới 280 | Chốt (Ethan, 2026-11-11) |
-| Rộng | 16em … min(28em, 0.72 × expanded) | 240 … 404 ở 1920 | Chốt |
+| Rộng | cố định min(28em, 0.72 × expanded); co theo nội dung chỉ ở pill | 404 ở 1920, 410 ở 2560 | Chốt (Ethan, 2026-11-12; trước là 16em … min(…), co theo nội dung) |
 
 ## Expanded
 
@@ -59,7 +59,7 @@ cụm. **Chốt**
 |---|---|---|---|---|
 | Idle, pill phụ | 131 | 131 | 131 | 131 |
 | Minimal, pill 1 | 131 | min(24em, 0.6 × expanded, khoảng trống) | 336 | 352 |
-| Compact | 16em ≈ 240 | min(28em, 0.72 × expanded) | 404 | 410 |
+| Compact | cố định | min(28em, 0.72 × expanded) | 404 | 410 |
 | Expanded | 560 | 760 | 560 | 716 / 760 |
 
 ## Chữ

@@ -9,7 +9,7 @@ import cairo from 'cairo';
 import {SCALE as SC, C, icon, SAMPLE} from '../../render/lib.js';
 const out = ARGV[0];
 
-const R = 28, PW = 340, H1 = 136, W = 2 * PW + 3 * 24 + 220, TOP = 34, GAP = 70;
+const R = 28, PW = 404, H1 = 136, W = 2 * PW + 3 * 24 + 220, TOP = 34, GAP = 70;
 const H = TOP + 2 * (H1 + GAP) + 10;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
 const cr = new cairo.Context(surf);

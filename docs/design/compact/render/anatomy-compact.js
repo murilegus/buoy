@@ -11,7 +11,7 @@ import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
 import {taskState, icon, C, GREY, drawBu, SAMPLE} from '../../render/lib.js';
 
-const SC = 3, W = 700, R = 28, PAD = 14, CW = 340, X = 40;
+const SC = 3, W = 760, R = 28, PAD = 14, CW = 404, X = 40;   // the compact at 1920: min(28em, 0.72 × expanded)
 const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED, CY = [.4, .85, 1], RD = [1, .5, .5];   // CY, RD: guide marks
 const ART = [[.95, .55, .35], [.35, .25, .75]];
 const ALL = [
@@ -239,5 +239,5 @@ for (const it of ROWS) {
     }
     y += h + GAPY;
 }
-text(`Rộng ${ROWS[0].w ?? CW} ở đây; compact rộng 16em … min(28em, 0.72 × expanded) = 240 … 404 ở 1920.`, X, H - 22, 6.5, 400, W1, .75);
+text(`Rộng ${ROWS[0].w ?? CW} ở đây; compact rộng cố định min(28em, 0.72 × expanded): 404 ở 1920, 410 ở 2560 (Ethan, 2026-11-12).`, X, H - 22, 6.5, 400, W1, .75);
 surf.writeToPNG(ARGV[0]);

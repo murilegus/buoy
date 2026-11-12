@@ -7,7 +7,7 @@ import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
 import {SCALE as SC, C, GREY, icon, SAMPLE} from '../../render/lib.js';
-const R = 28, PAD = 14, LEAD = 40, TX = PAD + LEAD + 12, PW = 340, W = 760;
+const R = 28, PAD = 14, LEAD = 40, TX = PAD + LEAD + 12, PW = 404, W = 860;
 const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED;   // subtitle and body: fg-muted
 const cards = [
   {avatar: true, msg: 'Pushed the pill shapes to the branch — can you review the compact and the card before the 3 PM sync?', buttons: ['Reply', 'Mark as read'], note: 'ảnh đại diện + logo app'},

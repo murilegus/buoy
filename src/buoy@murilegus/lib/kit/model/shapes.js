@@ -132,11 +132,13 @@ export function shapesFor(monitor, panelH, opts = {}) {
                 hint === 'wide' ? even(expW * 0.8) : minimalCap),
             h, r: radius(h),
         }),
-        // compact from its content's natural size, paddings included; the island places it
-        // (top edge kept). Heights step by rows: 56 + 16n up to 152, for every compact, the
-        // card too (design/compact "Kích thước"); a card takes the full width.
-        compact: (contentW, contentH, {card = false} = {}) => ({
-            w: card ? compactMax : clamp(evenUp(Math.ceil(contentW)), cm.min, compactMax),
+        // compact: one width, min(28em, 0.72 × expanded), whatever it holds — content-fit is
+        // the pill's alone (Ethan 2026-11-12: a content-fit compact put its buttons beside
+        // the text, and looked wrong). Its height from its content, paddings included, by
+        // rows: 56 + 16n up to 152 (design/compact "Kích thước"). The island places it (top
+        // edge kept).
+        compact: (_contentW, contentH) => ({
+            w: compactMax,
             h: Math.min(compactTall,
                 cm.head + Math.max(0, Math.ceil((Math.ceil(contentH) - cm.head) / cm.row)) * cm.row),
             r: cm.radius,

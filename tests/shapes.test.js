@@ -61,9 +61,9 @@ for (const c of CASES) {
     // compact (design/compact): its content lays out its own paddings, so the compact is the
     // content's size: content-fit width from 240 to the cap, heights 56 + 16n up to 152, r 28
     eq(s.compactMax, c.compactMax, `${at} compactMax = min(28em, 0.72 × expanded)`);
-    eq(s.compact(5000, 56), {w: c.compactMax, h: 56, r: 28}, `${at} compact capped, the head alone`);
-    eq(s.compact(10, 10).w, COMPACT_MIN, `${at} compact never below 240`);
-    eq(s.compact(300.4, 56).w, 302, `${at} compact content-fit, even (no padding added)`);
+    // one width whatever the content: content-fit is the pill's alone (Ethan 2026-11-12)
+    for (const w of [0, 10, 300.4, 5000])
+        eq(s.compact(w, 56), {w: c.compactMax, h: 56, r: 28}, `${at} compact(${w}): always min(28em, 0.72 × expanded)`);
     eq(s.compact(300, 40).h, 56, `${at} less than the head: still the head, 56`);
     eq(s.compact(300, 56).h, 56, `${at} the head alone: 56`);
     eq(s.compact(300, 57).h, 72, `${at} a pixel more: one row more, 72`);
@@ -75,13 +75,10 @@ for (const c of CASES) {
         if ((h - 56) % 16 !== 0 || h < 56 || h > COMPACT_TALL)
             throw new Error(`${at} compact(${need}).h = ${h} is not 56 + 16n up to 152`);
     }
-    // a card (a notification, NOTIFICATIONS.md §3): content-fit up to 160, never under 56
-    const card = {card: true};
-    eq(s.compact(100, 136, card), {w: c.compactMax, h: 136, r: 28}, `${at} card: full width, one line 136`);
-    eq(s.compact(100, 152, card).h, 152, `${at} card with two lines: 152`);
-    eq(s.compact(100, 104, card).h, 104, `${at} card without buttons (an alert): 104`);
-    eq(s.compact(100, 300, card).h, COMPACT_TALL, `${at} card stops at 152`);
-    eq(s.compact(100, 10, card).h, 56, `${at} card never under 56`);
+    // a card (a notification, NOTIFICATIONS.md §3): the same width, its height by rows
+    eq(s.compact(100, 136), {w: c.compactMax, h: 136, r: 28}, `${at} card: one line 136`);
+    eq(s.compact(100, 152).h, 152, `${at} card with two lines: 152`);
+    eq(s.compact(100, 104).h, 104, `${at} card without buttons (an alert): 104`);
 
     // where a compact opens: on its pill, shifted only to stay GAP inside the screen
     const W = s.container.w, cw = c.compactMax;

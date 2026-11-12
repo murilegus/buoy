@@ -245,7 +245,7 @@ export class Pill {
     // The grown pill: from its content's size, centred on the pill and kept on screen;
     // `cx` says where (the other shapes centre on this.cx).
     compactShape() {
-        const shape = this._s.compact(this._compactW, this._compactH, {card: this._compactCard === true});
+        const shape = this._s.compact(this._compactW, this._compactH);
         return {...shape, cx: compactCx(this.cx, shape.w, this._s.container.w)};
     }
 
@@ -481,14 +481,11 @@ export class Pill {
         // the content carries its own paddings (design/compact): it is the compact's size
         const maxWidth = this._s.compactMax, metrics = this._s.compactMetrics;
         const missed = this._missed();
-        this._compactCard = false;
         if (missed)
             return buildMissedCompact(missed, {maxWidth, metrics});
         const shown = this._compactOf();
         if (!shown)
             return null;
-        // a card (a notification) takes the compact's full width (shapes.js compact)
-        this._compactCard = planCompact(shown)?.card !== undefined;
         return buildCompact(shown, {maxWidth, metrics, light: this.role === 'centre' ? this.light : null});
     }
 
