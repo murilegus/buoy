@@ -1,11 +1,12 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
+import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {shapesFor, GAP, PILL_GAP} from '../model/shapes.js';
+import {shapesFor, idleSample, PILL_GAP} from '../model/shapes.js';
 import {Pill} from './pill.js';
 import {Home} from './home.js';
 import {showKeys} from './present/elements.js';
@@ -92,6 +93,20 @@ export class Island {
         // GNOME's high contrast (St.Settings, the a11y key Shell reloads its own theme on,
         // ui/main.js _loadDefaultStylesheet): the stylesheets raise four roles under buoy-hc
         // (design/colours "Tương phản cao").
+        // a text's width is laid out at the device scale (design/pill "Idle": the clock is
+        // 85 px at 1×, 90 at 1.25–2×), so a new scale measures it again, after the layout
+        // that found it (clutter-actor.c resource-scale-changed)
+        this._opts = {};
+        this._scaleLater = 0;
+        this.actor.connect('resource-scale-changed', () => {
+            if (this._scaleLater)
+                return;
+            this._scaleLater = global.compositor.get_laters().add(Meta.LaterType.BEFORE_REDRAW, () => {
+                this._scaleLater = 0;
+                this.reposition(this._opts);
+                return GLib.SOURCE_REMOVE;
+            });
+        });
         this._a11y = St.Settings.get();
         this._hcId = this._a11y.connect('notify::high-contrast', () => this._syncContrast());
         this._syncContrast();
@@ -122,18 +137,57 @@ export class Island {
     }
 
     // Recompute derived sizes for the current monitor and re-centre. Called on enable,
-    // monitors-changed and when `expanded-width` changes.
+    // monitors-changed, a theme change (font, Large Text: St.ThemeContext `changed`), the
+    // bar's height and when `expanded-width` changes.
     reposition(opts = {}) {
+        this._opts = opts;
         const m = Main.layoutManager.primaryMonitor;
         if (!m)
             return;
-        this._s = shapesFor(m, Main.panel.height, opts);
+        this._s = shapesFor(m, Main.panel.height, {...opts, ...this._measure()});
         this.actor.set_size(this._s.container.w, this._s.container.h);
         this.actor.set_position(
             Math.round(m.x + (m.width - this._s.container.w) / 2),
-            m.y + GAP);
+            m.y + this._s.inset);
         this._updateCapacity();
         this._apply(false);
+    }
+
+    // The em and the idle clock's widest text, read from a hidden idle pill's label: the
+    // font is the pill's own (`.buoy-content` inherits the stage's, as the bar's text), and
+    // a width is the font's, not a number (design/pill "Idle", "Font và tỷ lệ màn hình").
+    // The em is St's: the font's size × resolution / 72 (st-theme-node.c
+    // get_length_from_term), Large Text being in the resolution.
+    _measure() {
+        if (!this.actor.get_stage())
+            return {};
+        const content = new St.Bin({style_class: 'buoy-content', opacity: 0});
+        const box = new St.BoxLayout({style_class: 'buoy-idle'});
+        content.set_child(box);
+        this.actor.add_child(content);
+        const width = text => {
+            const l = new St.Label({style_class: 'buoy-text buoy-idle-text', text});
+            box.add_child(l);
+            const [, w] = l.get_preferred_width(-1);
+            l.destroy();
+            return w;
+        };
+        const font = box.get_theme_node().get_font();
+        const size = font.get_size() / Pango.SCALE;
+        const em = font.get_size_is_absolute() ? size
+            : size * St.ThemeContext.get_for_stage(global.stage).get_resolution() / 72;
+        // the widest digit (not every font's figures are even), and the wider of AM/PM
+        let digit = '8', most = -1;
+        for (const d of '0123456789') {
+            const w = width(d.repeat(6));
+            if (w > most)
+                [digit, most] = [d, w];
+        }
+        const [am, pm] = [0, 12].map(hour => GLib.DateTime.new_local(2000, 1, 1, hour, 0, 0).format('%p') ?? '');
+        const meridiem = width(am) >= width(pm) ? am : pm;
+        const idleTextW = width(idleSample(digit, meridiem.trim()));
+        content.destroy();
+        return {em, idleTextW};
     }
 
     // --- API used by ActivityStack --------------------------------------
@@ -724,6 +778,10 @@ export class Island {
         if (this._layoutLater) {
             global.compositor.get_laters().remove(this._layoutLater);
             this._layoutLater = 0;
+        }
+        if (this._scaleLater) {
+            global.compositor.get_laters().remove(this._scaleLater);
+            this._scaleLater = 0;
         }
         Main.panel._rightBox.disconnect(this._rightBoxId);
         this._a11y.disconnect(this._hcId);

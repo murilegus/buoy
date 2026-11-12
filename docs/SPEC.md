@@ -233,7 +233,7 @@ square against the screen edge or dock.
 
 Three tiers (decided 2026-11-05, Ethan), named by size: **minimal** < **compact** <
 **expanded**. Apple's words, not Apple's mapping (CONTRACT.md §2):
-- **minimal** — resting in the bar: one line, 32 px tall, one to three pills.
+- **minimal** — resting in the bar: one line, 32 px tall at 1em (it grows with the font), one to three pills.
 - **compact** — on hover: the hovered pill itself grows in place into a short panel, 56 to
   120 px tall, over the top of windows (and the system cluster, if it must). No Apple
   equivalent; it replaces the old hover peek, which only swapped a pill's content.
@@ -244,8 +244,8 @@ The code uses these names since 2026-11-05 (before: compact for minimal, peek fo
 
 | State | When | Shape | Interaction |
 |---|---|---|---|
-| **Idle** | no activity | `IDLE` 120×32 r16; content per `idle-content` (§2a) | hover → +10 % width, +2 height, and with the amber light the missed list as a compact; press → +16 % pulse; **click → open Home** |
-| **Minimal** | one or more activities | pill 1 (highest priority) at screen centre, content-fit; up to two side pills to its right, each a fixed 120×32, as many as fit before the system cluster (§2c) | hover a pill 300 ms → its compact; **click → that activity's tab**, Home on the `+N` badge or while the missed list shows (2026-11-04) |
+| **Idle** | no activity | 132×32 r16 at 1× (as wide as the clock at its longest, measured: §4); content per `idle-content` (§2a) | hover → +0.75em width, +2 height, and with the amber light the missed list as a compact; press → a pulse; **click → open Home** |
+| **Minimal** | one or more activities | pill 1 (highest priority) at screen centre, content-fit; up to two side pills to its right, each the idle's size, as many as fit before the system cluster (§2c) | hover a pill 300 ms → its compact; **click → that activity's tab**, Home on the `+N` badge or while the missed list shows (2026-11-04) |
 | **Compact** | the pointer rests on a pill | the hovered pill grows in place: top edge kept, width 0.72 × expanded (content-fit, ≥ 240), height 56 for one row, 88 with a bar, content-fit up to 120 for rows; a notification's card full width, up to 160 (§4, NOTIFICATIONS.md §3) | the activity's compact content (media: transport and seek bar), or the amber missed list instead (INDICATORS.md); its buttons run their action, a click elsewhere on it = the pill's click; never takes the keyboard; collapses 200 ms after the pointer leaves |
 | **Expanded** | opened from idle, minimal or compact by a click; by the stack for `ask` / transient; for ~2 s by an alert | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open), at once; clicks inside do nothing, buttons run their action (decided 2026-11-01) |
 
@@ -308,7 +308,7 @@ the plan (idle) or the adapter (minimal). **Edge slots exist only when they have
 something to say**: no light → no slot, the three zones take the full pill; a light or
 dot appears → that zone nudges inward and the pill grows a few px (one small morph).
 The grey "off" light is drawn only in idle `none`, so an empty pill never looks broken;
-idle `none` keeps the full 120 px.
+idle `none` keeps the full idle width (§4).
 
 ### 2a-i. The buoy light (left edge slot, idle, minimal and compact)
 
@@ -451,7 +451,7 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
 - **Pill 1** is the highest priority, at screen centre, content-fit as when it is alone
   (120 … 0.6 × expanded, `wide` 0.8; §4). It never narrows because others run
   (2026-11-05, Ethan: before, every pill was squeezed to ≤ expanded/3).
-- **Side pills 2 and 3** share one fixed shape, 120 × 32 (the idle size): leading, a short
+- **Side pills 2 and 3** share one fixed shape, the idle size (132 × 32 at 1×, §4): leading, a short
   trailing (equaliser, `40%`, `4:59`) and the `+N` badge; their text is dropped. The
   adapter's data is the same for every pill, so the short value that matters goes in
   `trailing` (CONTRACT.md §3). Their full content is their compact.
@@ -727,12 +727,17 @@ go when expanded closes; each one's data lives only that long (rule 8).
 *Decided 2026-10-30: derived, not fixed.*
 
 > **v0.2 redesign:** the new sizes are decided in [Design](design/index.md) (in Vietnamese
-> first). This section describes v0.1, as the code is today; it changes with the M4 redesign
-> items (FEATURES).
+> first; the numbers in `design/tokens.vi.md`). The bar and the pill follow it since
+> 2026-11-12 (M4 "Sizes in em"); compact, the card and expanded are as in v0.1 below until
+> their own M4 items.
 
 All sizes are logical px; HiDPI is handled by St/Clutter. `kit/model/shapes.js#shapesFor()`
-derives everything from two inputs — the monitor's logical width `W` and the panel
-height — and is recomputed on `monitors-changed` or when `expanded-width` changes.
+derives everything from the monitor's logical width `W`, the panel height and the **em**
+(the font's size × resolution / 72, as St reads `em`: 14.67 px at 11 pt; Large Text and the
+font setting change it, and the bar and the pill scale with it, design "Đơn vị là em") —
+and is recomputed on `monitors-changed`, a theme change (font, Large Text), the bar's height,
+a new device scale (the idle clock is measured again) or when `expanded-width` changes.
+The design's px are at 1em and scale by em / 14.67, rounded to whole px.
 A function, not breakpoints: no jumps when moving between monitors.
 Every width is snapped to an even whole px (2026-11-01), so a shape centred in the even-wide
 container sits on whole pixels — no half-pixel edges; radius = ⌊h/2⌋.
@@ -742,18 +747,21 @@ container is sized to that cap.
 
 | Thing | Rule | 1920 | 2560 | 3440 |
 |---|---|---|---|---|
-| pill height `h` | panel 40 − 2×4 | 32 | 32 | 32 |
-| idle | `h × 3.75` wide, r = h/2 | 120×32 | 120×32 | 120×32 |
-| hover / press | +10 % / +16 % width, +2 / +4 height (a pill before or without its compact) | 132×34 / 140×36 from idle | | |
-| minimal, pill 1 | content + 28 (rounded up), clamped to [idle, 0.6×expanded] (`'wide'` hint → 0.8) | ≤ 336 | ≤ 430 | ≤ 456 |
-| minimal, pills 2–3 | fixed, the idle size | 120×32 | 120×32 | 120×32 |
+| bar | 2.75em (`#panel.buoy`) | 40 | 40 | 40 |
+| pill height `h` | bar − 2 × 0.25em; its content box h − 2 × 0.25em, the leading's cell | 32 (cell 24) | 32 | 32 |
+| idle | 8 + cell + 6 + the idle clock's widest text + 8, the text measured at run time on the pill's label: the font's widest digit, `88∶88∶88` and the wider of AM/PM (design/pill "Idle"); r = h/2 | 132×32 at 1× (Ubuntu Sans: 126; DejaVu Sans: 146; scale 2: +6) | | |
+| hover / press | +0.75em / +1.25em width, +2 / +4 height (a pill before or without its compact) | 144×34 / 150×36 from idle | | |
+| minimal, pill 1 | content + 2 × 8 (rounded up), clamped to [idle, min(24em, 0.6 × expanded)] (`'wide'` hint → 0.8 × expanded) | ≤ 336 | ≤ 352 | ≤ 352 |
+| minimal, pills 2–3 | fixed, the idle size | 132×32 | 132×32 | 132×32 |
 | compact | width 0.72 × expanded, content-fit down to 240; height 56 (one row), 88 (a bar), content-fit up to 120 for rows (a title and 3 rows measure 72 px, so the missed list is 88; a 40 px leading over 3 rows needs more — measured in Shell 50.1, 2026-11-05); a **card** (a notification, NOTIFICATIONS.md §3, 2026-11-07) takes the full width and its content's height up to 160; r 24; top edge at the pill's (2026-11-05) | ≤ 404 × 56/88/≤120, card ≤ 160 | ≤ 516 | ≤ 548 |
 | expanded | width `clamp(0.28 × W, 560, 760)` or `expanded-width` (≤ W − 40); height fits content, at most width/2; r 28 | 560 × ≤280 | 716 × ≤358 | 760 × ≤380 |
 | container | the monitor's width (2026-11-05, was expanded + 20 each side: a compact may open on any pill, up to 4 px from the screen edge), expanded's cap + 40 tall; never reactive at rest, so it takes no clicks (Clutter picks only reactive actors, `clutter_actor_should_pick`) | 1920 | 2560 | 3440 |
 
-Leading element per tier (2026-11-05): 20 px minimal, 40 compact, 56 expanded; Bu
-20 / 40 / 50, whole multiples of its 10-cell grid (MASCOT.md). Up to 1 action in
-minimal, 3 in compact and expanded.
+Leading element per tier: in minimal a cell of 24 at 1em (30 with Large Text) that a cover
+or a colour icon fills, a symbolic icon 16 and Bu 20 centred in it (2026-11-12, design/pill);
+40 compact, 56 expanded; Bu 20 / 40 / 50, whole multiples of its 10-cell grid (MASCOT.md).
+In minimal the gaps are 6 (cell → text → trailing) and 8 before a button. The text is 1em,
+weight 600, even figures. Up to 1 action in minimal, 3 in compact and expanded.
 
 Inside expanded, Home and tabs use flowing layouts (`St.BoxLayout`, `x_expand`); the one
 content breakpoint is below ~600 px, where Home goes from 4 cells to 2 columns.
@@ -854,7 +862,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 6. **eject** — mount-added with one-tap eject (downloads moved to v0.1, §6c, 2026-11-06).
 7. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
-8. **several pills** — pill 1 plus up to two 120 px side pills (§2c).
+8. **several pills** — pill 1 plus up to two idle-sized side pills (§2c).
 9. **clipboard** — the copied feedback (§2e, v0.1) and, with `clipboard-history`, the
     Clipboard tab (M5): text, links, colours and images (`St.Clipboard.get_content`);
     search, pin, delete, clear, 1–9 to paste; a row sets the clipboard, closes the island and

@@ -1,11 +1,13 @@
 // A shape is {w, h, r}. All values are logical px — GNOME's HiDPI scale is applied by
-// St/Clutter, never here. Sizes derive from the monitor's logical width and the panel
-// height; recomputed on monitors-changed or when `expanded-width` changes. Nothing polls.
+// St/Clutter, never here. Sizes derive from the monitor's logical width, the panel height
+// and the em (the font's size: Large Text and the font setting scale the pill with the
+// bar, docs/design "Đơn vị là em"); recomputed on monitors-changed, when the theme's font
+// or resolution changes, and when `expanded-width` changes. Nothing polls.
 //
 // Every width is an even integer, so is the container: the island centres a shape at
 // (container.w − w) / 2, which then lands on a whole pixel and edges stay sharp.
 
-export const GAP = 4;          // pill ↔ screen edge
+export const GAP = 4;          // pill ↔ screen edge (a compact near it)
 export const OVERSHOOT = 20;   // container margin so EASE_OUT_BACK never clips
 export const PILL_GAP = 8;     // between side-by-side pills (SPEC §2c)
 
@@ -15,6 +17,49 @@ const evenUp = v => 2 * Math.ceil(v / 2);      // content must still fit
 const evenDown = v => 2 * Math.floor(v / 2);   // must stay within a bound
 const radius = h => Math.floor(h / 2);         // never more than half the height
 
+// The design's px are at 1em = 11 pt at 96 dpi (docs/design/tokens.vi.md); at another em
+// each scales by em / EM_1 and rounds to whole px.
+export const EM_1 = 11 * 96 / 72;   // 14.67
+
+/**
+ * The pill's sizes at an em (design/pill, tokens "Thanh và pill"), whole px.
+ *
+ * @param {number} [em]  one em in logical px: the font's size × resolution / 72, as St reads
+ *   `em` in CSS (st-theme-node.c get_length_from_term)
+ * @returns {{inset: number, pad: number, gap: number, buttonGap: number, hover: number,
+ *   press: number}}
+ */
+export function pillMetrics(em = EM_1) {
+    const k = (em > 0 ? em : EM_1) / EM_1;
+    return {
+        inset: Math.round(4 * k),       // 0.25em: bar → pill, and pill → content box, each side
+        pad: Math.round(8 * k),         // the pill's edge → its content box, sideways
+        gap: Math.round(6 * k),         // leading cell → text, text → trailing
+        buttonGap: Math.round(8 * k),   // trailing → a button
+        hover: even(12 * k),            // 0.75em wider under the pointer (was × 1.10)
+        press: even(18 * k),            // pressed: about 0.5em past the hover (was × 1.16)
+    };
+}
+
+// What the idle clock takes at 1× with SF Pro Display 11 (design/pill "Idle"): the width
+// when nothing measured it yet (tests, before the first reposition).
+export const IDLE_TEXT_1EM = 85;
+
+/**
+ * The idle pill keeps room for its widest plan, the clock at its longest (design/pill
+ * "Idle"): two-digit hours, minutes and seconds in the font's widest digit, with Shell's
+ * ratio sign U+2236 (as WallClock writes the time), and the wider of AM/PM.
+ *
+ * @param {string} digit  the font's widest digit, measured
+ * @param {string} [meridiem]  the locale's wider of AM/PM; empty when it has none
+ * @returns {string}
+ */
+export function idleSample(digit, meridiem = '') {
+    const d = /^[0-9]$/.test(digit) ? digit : '8';
+    const t = `${d}${d}\u2236${d}${d}\u2236${d}${d}`;
+    return meridiem ? `${t} ${meridiem}` : t;
+}
+
 // Compact (SPEC §2, §4, 2026-11-05): the hovered pill grown in place. Content-fit width
 // between COMPACT_MIN and 0.72 × expanded; 56 for one row, 88 with a bar, and content-fit
 // up to 120 when rows need more (a title and 3 rows measure ~82 px); radius 24.
@@ -23,25 +68,36 @@ export const COMPACT_H = Object.freeze([56, 88, 120]);
 // A card (a notification, NOTIFICATIONS.md §3, 2026-11-07): full width, content-fit up to
 // this — a header, a picture beside a title and 2 lines, a row of buttons measure ~150.
 export const CARD_MAX_H = 160;
-const COMPACT_PAD = 14;                             // each side, as the pill's content
+export const COMPACT_PAD = 14;                      // each side (design/compact redoes it)
 const COMPACT_VPAD = 8;                             // top and bottom
 
 /**
  * @param {{width:number}} monitor   Main.layoutManager.primaryMonitor (logical px)
- * @param {number} panelH            Main.panel.height (40 with Buoy's CSS)
- * @param {{expandedWidth?:number}} [opts]  `expanded-width`; 0 or unset = derived
+ * @param {number} panelH            Main.panel.height (2.75em = 40 with Buoy's CSS)
+ * @param {object} [opts]
+ * @param {number} [opts.expandedWidth]  `expanded-width`; 0 or unset = derived
+ * @param {number} [opts.em]  one em in logical px; unset = EM_1
+ * @param {number} [opts.idleTextW]  the idle clock's widest text, measured; unset = 85 at 1em
  * @returns {object} idle/side/expanded/container shapes, hover/press/minimal/compact
- *   builders, compactMax
+ *   builders, compactMax, and the pill's metrics (pad, cell, gap, buttonGap, inset)
  */
 export function shapesFor(monitor, panelH, opts = {}) {
-    const h = panelH - 2 * GAP;                                    // 32
+    const em = opts.em > 0 ? opts.em : EM_1;
+    const m = pillMetrics(em);
+    const h = panelH - 2 * m.inset;                                // 32 = bar − 2 × 0.25em
+    const cell = h - 2 * m.inset;                                  // 24, the leading's cell
     // Like iOS: width is fixed per screen, height follows content (below).
     const maxW = evenDown(monitor.width - 2 * OVERSHOOT);          // container fits on screen
     const expW = opts.expandedWidth > 0
         ? Math.min(even(opts.expandedWidth), maxW)
         : even(clamp(monitor.width * 0.28, 560, 760));             // 1920→560, 2560→716, 3440→760
     const expH = Math.round(expW / 2);
-    const idleW = even(h * 3.75);                                  // ≈ iPhone compact (Apple's) ratio
+    // 8 + 24 + 6 + the clock + 8 (design/pill "Idle"): 131 → 132 at 1×, even
+    const textW = opts.idleTextW > 0 ? opts.idleTextW : IDLE_TEXT_1EM * em / EM_1;
+    const idleW = evenUp(2 * m.pad + cell + m.gap + Math.ceil(textW));
+    // pill 1's cap: 24em, so the text never grows with the screen, and 0.6 × expanded so
+    // minimal < compact < expanded (tokens "Độ rộng tối đa trên thanh"); `wide` 0.8 × expanded
+    const minimalCap = Math.min(evenDown(24 * em), even(expW * 0.6));
     const compactMax = Math.max(COMPACT_MIN, even(expW * 0.72));   // 404 / 516 / 548
     // The container spans the monitor: a compact may open on any pill and goes up to
     // GAP from the screen edge (SPEC §2c). It is not reactive at rest, so it eats no
@@ -52,13 +108,13 @@ export function shapesFor(monitor, panelH, opts = {}) {
         idle: {w: idleW, h, r: radius(h)},
         // side pills 2 and 3 (SPEC §2c): one fixed shape, the idle size
         side: {w: idleW, h, r: radius(h)},
-        hover: base => ({w: even(base.w * 1.10), h: h + 2, r: radius(h + 2)}),
-        press: base => ({w: even(base.w * 1.16), h: h + 4, r: radius(h + 4)}),
+        hover: base => ({w: even(base.w + m.hover), h: h + 2, r: radius(h + 2)}),
+        press: base => ({w: even(base.w + m.press), h: h + 4, r: radius(h + 4)}),
         // minimal (the pill in the bar, SPEC §2), content-fit; `hint` is a discrete size hint
         // from the adapter, never px. Pill 1 keeps it however many pills share the bar.
         minimal: (contentW, hint = 'normal') => ({
-            w: clamp(evenUp(Math.ceil(contentW) + 28), idleW,
-                even(expW * (hint === 'wide' ? 0.8 : 0.6))),
+            w: clamp(evenUp(Math.ceil(contentW) + 2 * m.pad), idleW,
+                hint === 'wide' ? even(expW * 0.8) : minimalCap),
             h, r: radius(h),
         }),
         // compact from its content's natural size; the island places it (top edge kept)
@@ -74,6 +130,9 @@ export function shapesFor(monitor, panelH, opts = {}) {
         // h is the cap: expanded fits its content up to this height (CONTRACT.md §5.4)
         expanded: {w: expW, h: expH, r: 28},
         container: {w: containerW, h: expH + 2 * OVERSHOOT},
+        // the pill's own metrics (design/pill): its content box sits pad in from each side
+        // and inset from top and bottom; the leading takes a cell × cell square
+        em, pad: m.pad, inset: m.inset, cell, gap: m.gap, buttonGap: m.buttonGap,
     };
 }
 

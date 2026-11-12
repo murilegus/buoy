@@ -1,7 +1,10 @@
 // Run: gjs -m tests/shapes.test.js   (pure; no Shell needed)
-import {shapesFor, compactCx, COMPACT_MIN, COMPACT_H, CARD_MAX_H, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop} from '../src/buoy@murilegus/lib/kit/model/shapes.js';
+import {
+    shapesFor, compactCx, COMPACT_MIN, COMPACT_H, CARD_MAX_H, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop,
+    EM_1, IDLE_TEXT_1EM, pillMetrics, idleSample,
+} from '../src/buoy@murilegus/lib/kit/model/shapes.js';
 
-const PANEL_H = 40; // Buoy's panel height (stylesheet.css)
+const PANEL_H = 40; // Buoy's panel height at 1em (stylesheet.css: 2.75em)
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -16,35 +19,38 @@ eq([GAP, OVERSHOOT, PILL_GAP, COMPACT_MIN, COMPACT_H, CARD_MAX_H], [4, 20, 8, 24
 // height = w / 2.
 const CASES = [
     // container: the monitor's width, so a compact can open on any pill (SPEC §2c)
+    // minimal: min(24em, 0.6 × expanded), tokens "Độ rộng tối đa trên thanh": 336 / 352
     {width: 1366, expW: 560, expH: 280, minimalMax: 336, wideMax: 448, compactMax: 404, containerW: 1366},
     {width: 1920, expW: 560, expH: 280, minimalMax: 336, wideMax: 448, compactMax: 404, containerW: 1920},
-    {width: 2560, expW: 716, expH: 358, minimalMax: 430, wideMax: 572, compactMax: 516, containerW: 2560},
-    {width: 3440, expW: 760, expH: 380, minimalMax: 456, wideMax: 608, compactMax: 548, containerW: 3440},
+    {width: 2560, expW: 716, expH: 358, minimalMax: 352, wideMax: 572, compactMax: 516, containerW: 2560},
+    {width: 3440, expW: 760, expH: 380, minimalMax: 352, wideMax: 608, compactMax: 548, containerW: 3440},
 ];
 
 for (const c of CASES) {
     const s = shapesFor({width: c.width}, PANEL_H);
     const at = `@${c.width}`;
 
-    // idle does not depend on the monitor: pill height = panel − 2·GAP
-    eq(s.idle, {w: 120, h: 32, r: 16}, `${at} idle`);
+    // idle does not depend on the monitor: 8 + 24 + 6 + 85 + 8 = 131 → 132 (even), and the
+    // pill = bar − 2 × 0.25em
+    eq(s.idle, {w: 132, h: 32, r: 16}, `${at} idle`);
     eq(s.expanded, {w: c.expW, h: c.expH, r: 28}, `${at} expanded`);
     eq(s.container, {w: c.containerW, h: c.expH + 2 * OVERSHOOT}, `${at} container`);
     if (s.container.w > c.width)
         throw new Error(`${at} container wider than the monitor`);
 
     // side pills 2 and 3: one fixed shape, the idle size (SPEC §2c, 2026-11-05)
-    eq(s.side, {w: 120, h: 32, r: 16}, `${at} side pill is 120 × 32`);
+    eq(s.side, {w: 132, h: 32, r: 16}, `${at} side pill is the idle's 132 × 32`);
 
-    // hover / press grow from whatever base they get
-    eq(s.hover(s.idle), {w: 132, h: 34, r: 17}, `${at} hover(idle)`);
-    eq(s.press(s.idle), {w: 140, h: 36, r: 18}, `${at} press(idle)`);
+    // hover / press grow by a fixed em amount, whatever the base (design/pill: 0.75em = 12)
+    eq(s.hover(s.idle), {w: 144, h: 34, r: 17}, `${at} hover(idle): + 12, + 2`);
+    eq(s.press(s.idle), {w: 150, h: 36, r: 18}, `${at} press(idle): + 18, + 4`);
+    eq(s.hover(s.minimal(5000)).w, c.minimalMax + 12, `${at} hover adds 12 at the cap too, not 10 %`);
 
-    // minimal: content + 28 px padding rounded up to even, floor at idle width, cap by hint
+    // minimal: content + 2 × 8 padding rounded up to even, floor at idle width, cap by hint
     eq(s.minimal(0), s.idle, `${at} minimal(0) floors at idle`);
-    eq(s.minimal(50).w, 120, `${at} minimal(50) still idle width`);
-    eq(s.minimal(100.2).w, 130, `${at} minimal rounds content width up to even`);
-    eq(s.minimal(102).w, 130, `${at} minimal keeps an even fit as is`);
+    eq(s.minimal(100.2).w, 132, `${at} minimal(100) still idle width`);
+    eq(s.minimal(120.2).w, 138, `${at} minimal rounds content width up to even (121 + 16)`);
+    eq(s.minimal(122).w, 138, `${at} minimal keeps an even fit as is`);
     eq(s.minimal(5000).w, c.minimalMax, `${at} minimal cap (normal)`);
     eq(s.minimal(5000, 'wide').w, c.wideMax, `${at} minimal cap (wide)`);
     eq(s.minimal(5000, 'bogus').w, c.minimalMax, `${at} unknown hint behaves as normal`);
@@ -121,8 +127,8 @@ eq(shapesFor({width: 800}, PANEL_H).expanded.w, 560, 'small monitor never goes b
     eq(s.expanded, {w: 600, h: 300, r: 28}, 'override expanded (h is the content cap)');
     eq(s.container, {w: 1920, h: 340}, 'override container (the monitor)');
     eq(s.compactMax, 432, 'override: compact 0.72 × 600');
-    eq(s.minimal(5000).w, 360, 'override caps minimal at 60 %');
-    eq(s.idle, {w: 120, h: 32, r: 16}, 'override leaves idle alone');
+    eq(s.minimal(5000).w, 352, 'override: 0.6 × 600 = 360, but 24em = 352 is less');
+    eq(s.idle, {w: 132, h: 32, r: 16}, 'override leaves idle alone');
 }
 eq(shapesFor({width: 1366}, PANEL_H, {expandedWidth: 900}).expanded.w, 900,
     'override wins over the monitor clamp (above 760)');
@@ -145,12 +151,12 @@ eq(shapesFor({width: 1920}, PANEL_H, {}).expanded.w, 560, 'empty opts = derived'
 // --- panel height drives pill height ---------------------------------------
 {
     const s = shapesFor({width: 1920}, 32);
-    eq(s.idle, {w: 90, h: 24, r: 12}, 'panel 32 → idle');
-    eq(s.hover(s.idle), {w: 100, h: 26, r: 13}, 'panel 32 → hover');
+    eq(s.idle, {w: 124, h: 24, r: 12}, 'panel 32 → pill 24, cell 16: 8 + 16 + 6 + 85 + 8');
+    eq(s.hover(s.idle), {w: 136, h: 26, r: 13}, 'panel 32 → hover');
 }
 {
     const s = shapesFor({width: 1920}, 41);
-    eq(s.idle, {w: 124, h: 33, r: 16}, 'odd pill height → radius floors');
+    eq(s.idle, {w: 132, h: 33, r: 16}, 'odd pill height → radius floors');
     eq(s.press(s.idle).r, 18, 'odd pill height → press radius');
 }
 
@@ -158,8 +164,41 @@ eq(shapesFor({width: 1920}, PANEL_H, {}).expanded.w, 560, 'empty opts = derived'
 {
     const a = shapesFor({width: 1920}, PANEL_H);
     a.idle.w = 1;
-    eq(shapesFor({width: 1920}, PANEL_H).idle.w, 120, 'results are not shared');
+    eq(shapesFor({width: 1920}, PANEL_H).idle.w, 132, 'results are not shared');
 }
+
+// --- the em (design "Đơn vị là em": Large Text and the font size scale bar and pill) ----
+eq(Math.round(EM_1 * 100) / 100, 14.67, '1em = 11 pt at 96 dpi');
+eq(pillMetrics(), {inset: 4, pad: 8, gap: 6, buttonGap: 8, hover: 12, press: 18}, 'the pill at 1em: tokens');
+eq(pillMetrics(EM_1 * 1.25), {inset: 5, pad: 10, gap: 8, buttonGap: 10, hover: 16, press: 22}, 'Large Text (1.25)');
+eq(pillMetrics(EM_1 * 2), {inset: 8, pad: 16, gap: 12, buttonGap: 16, hover: 24, press: 36}, 'twice the font');
+eq(pillMetrics(0), pillMetrics(), 'no em: the design\'s');
+{
+    const s = shapesFor({width: 1920}, PANEL_H);
+    eq([s.em, s.pad, s.inset, s.cell, s.gap, s.buttonGap], [EM_1, 8, 4, 24, 6, 8], 'metrics at 1em: content box 24');
+}
+{
+    // Large Text: the bar is 2.75em = 50, the pill 40 and its cell 30 (design/mascot: Bu keeps 20 in it)
+    const em = EM_1 * 1.25, s = shapesFor({width: 1920}, 50, {em});
+    eq([s.idle.h, s.cell, s.pad, s.gap], [40, 30, 10, 8], 'Large Text: pill 40, cell 30');
+    eq(s.idle.w, 166, 'Large Text idle: 10 + 30 + 8 + 107 (85 × 1.25) + 10 = 165 → 166');
+    eq(s.minimal(5000).w, 336, 'Large Text: 24em = 440, but 0.6 × expanded = 336 still caps');
+    eq(shapesFor({width: 3440}, 50, {em}).minimal(5000).w, 440, 'Large Text on a wide screen: 24em = 440');
+    eq(s.hover(s.idle), {w: 182, h: 42, r: 21}, 'Large Text hover: + 16');
+}
+{
+    // measured, not written: the clock is 90 at 1.25–2× (design/pill), so idle is 136 there
+    const s = shapesFor({width: 1920}, PANEL_H, {idleTextW: 90});
+    eq([s.idle.w, s.side.w], [136, 136], 'a measured clock of 90 → idle and side pills 136');
+    eq(shapesFor({width: 1920}, PANEL_H, {idleTextW: 103}).idle.w, 150, 'DejaVu Sans (103): 149 → 150');
+    eq(shapesFor({width: 1920}, PANEL_H, {idleTextW: 84.3}).idle.w, 132, 'fractional text rounds up');
+    for (const bad of [0, -5, NaN, undefined, null])
+        eq(shapesFor({width: 1920}, PANEL_H, {idleTextW: bad}).idle.w, 132, `idleTextW ${bad}: the 1× default`);
+    eq(IDLE_TEXT_1EM, 85, 'SF Pro Display 11 at 1×');
+}
+eq(idleSample('8', 'AM'), '88\u223688\u223688 AM', 'the clock at its longest, Shell\'s ratio sign');
+eq(idleSample('0'), '00\u223600\u223600', 'no meridiem: 24 h locale');
+eq(idleSample('x', 'PM'), '88\u223688\u223688 PM', 'not a digit: 8');
 
 // --- the morph's bounce (2026-11-06: expanded → minimal bounced into its text) ----------------
 {

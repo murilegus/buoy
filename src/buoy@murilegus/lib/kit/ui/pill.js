@@ -7,9 +7,8 @@ import {buildCompact, buildMissedCompact} from './present/compact.js';
 import {buildExpanded} from './present/expanded.js';
 import {buildIdle, buildMinimal} from './present/minimal.js';
 import {planCompact, planExpanded, keyline} from '../model/presentation.js';
-import {compactCx, shrinkStop} from '../model/shapes.js';
+import {compactCx, shrinkStop, COMPACT_PAD} from '../model/shapes.js';
 
-const PAD = 14;          // content + 2·PAD = pill width (shapes add 28)
 const COMPACT_DELAY = 300;  // ms of hover before the pill grows into its compact (SPEC §2)
 const COMPACT_GRACE = 200;  // ms the compact stays after the pointer leaves it (SPEC §2c)
 const MERGE_MS = 360;    // side pills sliding into / out of an expanded one (SPEC §2c)
@@ -214,7 +213,7 @@ export class Pill {
     restShape() {
         // idle: the idle size, wider only for a plan that needs it (content-fit as minimal)
         if (!this.activity)
-            return this._contentW > this._s.idle.w - 2 * PAD ? this._s.minimal(this._contentW) : this._s.idle;
+            return this._contentW > this._s.idle.w - 2 * this._s.pad ? this._s.minimal(this._contentW) : this._s.idle;
         if (this.role === 'side')
             return this._s.side;
         return this._s.minimal(this._contentW, this.activity.sizeHint);
@@ -442,18 +441,21 @@ export class Pill {
         const compact = this._compact ? this._compactContent() : null;
         if (compact)
             return compact;
+        // the content box: the pill less its padding each side (design/pill), the leading
+        // in its cell, the gaps of the em
+        const s = this._s, pad = 2 * s.pad, metrics = {cell: s.cell, gap: s.gap, buttonGap: s.buttonGap};
         if (!this.activity)
-            return buildIdle({width: this._s.idle.w - 2 * PAD, maxWidth: this._s.minimal(Infinity).w - 2 * PAD, light, plan: this._island.idle});
+            return buildIdle({width: s.idle.w - pad, maxWidth: s.minimal(Infinity).w - pad, light, plan: this._island.idle, metrics});
         if (this.role === 'side')
-            return buildMinimal(this.activity, {maxWidth: this._s.side.w - 2 * PAD, more: this.more, side: true});
-        const capW = this._s.minimal(Infinity, this.activity.sizeHint).w;
-        return buildMinimal(this.activity, {maxWidth: capW - 2 * PAD, light, more: this.more});
+            return buildMinimal(this.activity, {maxWidth: s.side.w - pad, more: this.more, side: true, metrics});
+        const capW = s.minimal(Infinity, this.activity.sizeHint).w;
+        return buildMinimal(this.activity, {maxWidth: capW - pad, light, more: this.more, metrics});
     }
 
     // The amber missed list over the activity's own compact (INDICATORS.md), else that;
     // the idle pill's is its plan's (weather: feels like, wind, humidity — SPEC §2a)
     _compactContent() {
-        const maxWidth = this._s.compactMax - 2 * PAD;
+        const maxWidth = this._s.compactMax - 2 * COMPACT_PAD;
         const missed = this._missed();
         this._compactCard = false;
         if (missed)
