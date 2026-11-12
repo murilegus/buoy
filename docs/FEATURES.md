@@ -37,7 +37,7 @@ pages, Bu, About, greeting first run and What's new, `install.sh`, README, last 
 
 ## M4 — Redesign and "Wow" pack (v0.2) `[ ]`
 
-The design docs first, then the seven redesign items in order (the restructure only moves files),
+The design docs first, then the eight redesign items in order (the restructure only moves files),
 one branch each, shipped together as 0.2. Sizes are in [docs/design](design/index.md). Motion
 comes after the layouts it moves between (compact, the lights, expanded): its shared parts travel
 to their places there (2026-11-12, Ethan).
@@ -48,14 +48,15 @@ to their places there (2026-11-12, Ethan).
 | [x] | Restructure: kit, stylesheet, icons | ARCHITECTURE first; kit in `model/` `services/` `ui/`, `present.js` split by tier; a lint check of the import boundaries; one stylesheet in sections plus each tab's CSS beside its module, loaded by kit (not `@import`); `icons/color` and `icons/symbolic`; `install.sh` of 0.1 still works; nothing visible changes |
 | [x] | Colours by role | as design/colours: the stylesheet uses only the palette's roles, checked by `tests/palette.test.js`; lights amber `#FF9F0A`, red `#FF453A`; Bu's lamps, stale Bu at 50 %, Bu's tile `#000`; high contrast; INDICATORS and MASCOT updated |
 | [x] | Sizes in em: the bar and the pill | as design/pill, icons and mascot; nothing clipped at scale 1 and 2, with Large Text and a wide font; SPEC §2, §4 updated |
-| [ ] | Compact and the notification card | as design/compact and alerts-and-asks; a notification arrives as an alert (its card without buttons for 5 s, the buttons on hover, then the pill with its full title); seen only when its card had 5 s while you were present; bursts in turns (1 s each, 2 waiting, same app merged), paused by hover; on a shared screen a burst is one compact, all missed; SPEC §2, §4 and NOTIFICATIONS §2–§3 updated |
+| [ ] | Compact layout | as design/compact: 56 + 16n tall, radius 28, media 88 with its 72 art, rows with their 16 icons, the card's head, body and buttons (136 / 152); an alert opens its pill's compact in place and an ask is a card at compact size (design/alerts-and-asks "Alert", "Ask"); SPEC §2, §4 updated |
+| [ ] | Notifications as alerts | as design/alerts-and-asks "Thông báo": a notification arrives as an alert (its card without buttons for 5 s, the buttons on hover, then the pill with its full title); urgent ones keep their buttons and stay; seen only when its card had 5 s while you were present (a presence watch: the core idle monitor's 1 s, as Shell's banner); bursts in turns (1 s each, 2 waiting, same app merged), paused by hover; on a shared screen a burst is one compact, all missed; NOTIFICATIONS §1–§3 updated |
 | [ ] | The lights at the ends | as design/pill; SPEC §2, §2a-i, §2a-ii updated |
 | [ ] | Expanded on the same rhythm | as design/expanded and design/home (the main card and the row of tiles); SPEC §3, §4 updated |
 | [ ] | Motion | as design/motion: springs (`kit/model/motion.js`, unit-tested: ζ, overshoot, settling, retarget) for every move, size and shape, run on the frame clock; velocity kept when cut short; fades and CSS states; the radius follows the height; tab switch and in-place lists; animations off and slow-down-factor honoured; `shrinkStop` gone; SPEC §5 updated |
 | [ ] | Phone via GSConnect | Grab/Be ride, OTP (30 s), Zalo/Messenger with avatar, call Mute/Reply SMS; adapters in `modules/phone/apps/` |
 | [ ] | Attention on another workspace | click switches workspace and focuses (Mutter `demands-attention`) |
 | [ ] | Headphones / display plugged | choose on the pill; replaces GNOME's jack dialog when on |
-| [ ] | Buoy light, the rest | red's hover line; away (GNOME's session idle, after `idle-delay`), the lock screen and DND call `stack.setUnseen()`; a presence watch (core idle monitor, as Shell's banner) (INDICATORS, design/alerts-and-asks) |
+| [ ] | Buoy light, the rest | red's hover line; away (GNOME's session idle, after `idle-delay`), the lock screen and DND call `stack.setUnseen()`, with the presence watch of "Notifications as alerts" (INDICATORS, design/alerts-and-asks) |
 | [ ] | Power | charging, full, low; "18 W — slow"; "full in 42 min" (UPower) |
 | [ ] | Bluetooth device | connected, with its battery |
 | [ ] | USB / phone / webcam plugged | mount with one-tap eject |
@@ -84,6 +85,7 @@ Developer modules opt-in, off by default; the Calendar and Clipboard tabs on (SP
 | [ ] | News idle plan | ≤ 1 fetch / 30 min, only while in `idle-auto-plans`; headline · source; click opens it |
 | [ ] | Exchange rate / stocks idle plan | same fetch rule; relevance 70 past the user's threshold |
 | [ ] | Localisation en + vi | gettext, greeting strings included |
+| [ ] | Claude Code's questions in Buoy | as design/alerts-and-asks "Hỏi nhiều lựa chọn": AskUserQuestion answered in a card (one row per choice, Other typed in place, Next / Back / Submit), sent once as `answers`; tried first through PermissionRequest in an interactive session; CODING-AGENTS updated |
 
 ## Deferred
 
