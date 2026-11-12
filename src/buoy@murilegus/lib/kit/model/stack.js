@@ -252,9 +252,13 @@ export class ActivityStack {
      *   CODING-AGENTS.md §4)
      * @param {boolean} [opts.quiet]  never jumps open nor alerts: it waits in its pill,
      *   answered from the compact or a click (the asker's own window is focused, §6)
+     * @param {?Function} [opts.onInput]  (id, value) for what the ask's look sends that is
+     *   not one of `options` — a choice picked, text typed, Next (a card of choices,
+     *   design/alerts-and-asks "Hỏi nhiều lựa chọn"); the asker may then update() the ask's
+     *   `compact` and `actions`, which need not be `options` (only those answer)
      * @returns {Promise<?string>}
      */
-    ask(id, question, options, {app = 'system', timeoutMs = 0, fallback = null, look = {}, quiet = false} = {}) {
+    ask(id, question, options, {app = 'system', timeoutMs = 0, fallback = null, look = {}, quiet = false, onInput = null} = {}) {
         if (!options?.length)
             throw new Error(`ask(${id}) needs at least one option`);
         this._settle(id, null);
@@ -270,7 +274,9 @@ export class ActivityStack {
             this.surface({
                 id, kind: 'ask', app, text: question, alert: !quiet, expanded: true, ...own, quiet: !!quiet,
                 actions: options.map(o => ({id: o, label: o})),
-                onAction: choice => this.answer(id, choice), // ui/present/ buttons
+                // ui/present/ buttons; the rest of the look's input goes to the asker
+                onAction: (choice, value) => options.includes(choice)
+                    ? this.answer(id, choice) : this._asks.has(id) && onInput?.(choice, value),
             });
             if (timeoutMs > 0)
                 this._arm(id, 'ask', timeoutMs, () => this._settle(id, fallback));

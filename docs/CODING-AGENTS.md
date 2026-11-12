@@ -215,14 +215,25 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
 - **Answered elsewhere, with more** (2026-11-08, Ethan: Submit in Claude left the pill
   asking for an OK). The tool's result settles the prompt when every field asked for is
   still in its input — the answer may add some (Desktop's card adds `answers`).
-- **A question is not a permission** (2026-11-08, Ethan). Claude Code's `AskUserQuestion`
-  asks the user to pick from options, in Claude's own card: Buoy shows no Deny · Allow
-  for it. Its `PermissionRequest` gets no decision at once (the hook prints `''`) and the
-  session's own pill asks as a prompt does — it stops the session the same (Ethan): Bu's
-  hand up (`ask`), "Claude · buoy needs your answer", needs you, the `ask` kind's priority
-  (90) while it stands, no linger; a click brings the session up. The card's own
-  `permission_prompt` notification changes nothing; its result sends the session back
-  to work.
+- **A question is answered in Buoy** (2026-11-12, design/alerts-and-asks "Hỏi nhiều lựa
+  chọn"; replaces "A question is not a permission", 2026-11-08). Claude Code's
+  `AskUserQuestion` comes as a `PermissionRequest` whose hook waits, as a permission's does:
+  Buoy shows a card of choices at the compact's width — Bu, the question, "Claude Code ·
+  buoy · 1 / 3"; a row of 32 per choice (round mark for one, square for many) and Other
+  last, typed in place (a click in it takes the keyboard: the island's modal grab, Esc lets
+  go and the text stays); Skip · Next before the last question, Back · Submit on it (Skip ·
+  Submit for one). Up to expanded's height (280 at 1920). What is chosen and typed stays in
+  the source, in memory, till Submit sends it all at once: `allow` with `updatedInput` = the
+  input plus `answers` = {question: answer} (one choice its label, many joined by ", ",
+  Other's text after them; a question left empty left out). Skip, the `activity-linger`
+  timeout, nothing chosen, or an answer in Claude's own card: the hook prints `''` and the
+  question stays Claude's — the session's own pill asks as before (Bu's hand up, "Needs
+  your answer", the `ask` kind's priority, a click brings the session up). While the screen
+  is shared (§7) — or for a question Buoy cannot show (no options) — no card: Claude's own;
+  a card open when sharing starts closes, what was chosen dropped (Ethan, 2026-11-13).
+  Tried 2026-11-13 in an interactive session (Claude Code 2.1.319): the terminal shows its
+  own dialog while the hook waits; Submit in Buoy closes it and Claude reads the answers,
+  free text and labels mixed (design/alerts-and-asks "Đã thử").
 - **Hook timeout**: the `PermissionRequest` entry gets `timeout` 1810 s, above the longest
   `activity-linger` (30 min), so Buoy always answers before Claude Code gives up.
 - **Not opened** (the red light instead, INDICATORS): fullscreen, Do Not Disturb, the

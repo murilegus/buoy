@@ -242,6 +242,24 @@ eq(planCompact({compact: {}}), null, 'empty compact → no compact');
 }
 eq(planCompact({compact: {card: {icon: 'x'}}}), null, 'a card with no name, title or body: none');
 {
+    // an ask's choices (design/alerts-and-asks "Hỏi nhiều lựa chọn"): rows to pick, Other typed
+    const choices = {
+        multi: true,
+        items: [{id: 'pick:0', label: ' GJS ', detail: 'Runs in Shell', selected: true}, {id: 'pick:1', label: 'TS'}, {id: '', label: 'x'}, {id: 'y'}],
+        other: {id: 'other', textId: 'other-text', enterId: 'enter', selected: 1, text: ' a ', hint: 'Type your own answer'},
+    };
+    const c = planCompact({kind: 'ask', compact: {card: {title: 'Which?', choices}}, actions: [{id: 'Back'}, {id: 'Submit'}]}).card.choices;
+    eq(c.items, [{id: 'pick:0', label: 'GJS', detail: 'Runs in Shell', selected: true}, {id: 'pick:1', label: 'TS', detail: null, selected: false}],
+        'choices: rows with an id and a label, trimmed; selected only when true');
+    eq([c.multi, c.other], [true, {id: 'other', textId: 'other-text', enterId: 'enter', selected: false, text: ' a ', hint: 'Type your own answer'}],
+        'choices: many, Other with its text as typed');
+    const many = Array.from({length: 9}, (_, i) => ({id: `p${i}`, label: `L${i}`}));
+    eq(planCompact({compact: {card: {title: 'Q', choices: {items: many}}}}).card.choices.items.length, 6, 'choices: at most six rows');
+    eq([planCompact({compact: {card: {title: 'Q', choices: {items: []}}}}).card.choices, planCompact({compact: {card: {title: 'Q', choices: 'x'}}}).card.choices,
+        planCompact({compact: {card: {title: 'Q'}}}).card.choices], [null, null, null], 'no rows and no Other, or none at all: no choices');
+    eq(planCompact({compact: {card: {title: 'Q', choices: {items: [], other: {id: 'o'}}}}}).card.choices.other.id, 'o', 'Other alone is enough');
+}
+{
     // an ask is a card (design/alerts-and-asks "Ask"): Bu as its picture, keys on its buttons
     const ask = planCompact({
         kind: 'ask', compact: {card: {picture: {mascot: 'ask'}, title: 'Allow?'}},
@@ -254,7 +272,7 @@ eq(planCompact({compact: {card: {icon: 'x'}}}), null, 'a card with no name, titl
     eq(note.actions[0].key, undefined, 'a notification card: no keys');
 }
 eq(planCompact({compact: {card: {app: 'Mail', at: 'soon', picture: {text: 'no'}}}}).card,
-    {header: {icon: null, text: 'Mail', at: null}, title: null, body: null, picture: null, close: null, actionsOnHover: false},
+    {header: {icon: null, text: 'Mail', at: null}, title: null, body: null, picture: null, close: null, actionsOnHover: false, choices: null},
     'bad time, a text picture, no close: dropped; buttons always shown');
 eq(planCompact({compact: {card: {title: 'T', actionsOnHover: true}}}).card.actionsOnHover, true,
     'a card can show its buttons only under the pointer (a notification\'s alert)');

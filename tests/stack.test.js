@@ -533,6 +533,34 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.top.compact, {card: {title: 'Edit a.js?'}}, 'a caller\'s own compact replaces the default card');
 }
 {
+    // a card of choices (design/alerts-and-asks "Hỏi nhiều lựa chọn"): what is not an option
+    // goes to the asker's onInput, which may change the buttons; only an option answers
+    const {stack} = setup();
+    const got = [];
+    const p = stack.ask('c', 'Which?', ['Skip', 'Submit'], {onInput: (id, value) => got.push([id, value])});
+    stack.top.onAction('pick:1');
+    stack.top.onAction('other-text', 'Vala');
+    eq(got, [['pick:1', undefined], ['other-text', 'Vala']], 'onInput: a choice, then the text with its value');
+    eq(stack.top?.id, 'c', 'input does not answer');
+    stack.update('c', {actions: [{id: 'Skip'}, {id: 'Next'}]});
+    stack.top.onAction('Next');
+    eq([got.at(-1), stack.top?.id], [['Next', undefined], 'c'], 'a button that is not an option (Next) is input too');
+    eq(stack.answer('c', 'Next'), false, 'Next never answers');
+    stack.top.onAction('Submit');
+    eq(await p, 'Submit', 'an option answers, even when not shown');
+    const n = got.length;
+    const q = stack.ask('d', 'Which?', ['Skip'], {onInput: id => got.push(id)});
+    const late = stack.top.onAction;
+    stack.end('d');
+    late('pick:0');
+    eq([await q, got.length], [null, n], 'ended: its input no longer reaches the asker');
+    const plain = stack.ask('e', 'Allow?', ['Deny', 'Allow']);
+    stack.top.onAction('pick:0');
+    eq(stack.top?.id, 'e', 'no onInput: other ids are ignored');
+    stack.end('e');
+    await plain;
+}
+{
     const {clock, stack} = setup();
     const p = stack.ask('q', 'Allow?', ['Deny', 'Allow'], {timeoutMs: 10000, fallback: 'Deny'});
     clock.advance(10000);

@@ -382,6 +382,162 @@ export function isQuestion(ev) {
     return QUESTION_TOOLS.has(ev?.tool_name);
 }
 
+// --- Claude's questions, answered in Buoy (design/alerts-and-asks "Hỏi nhiều lựa chọn") -----
+// AskUserQuestion's input: {questions: [{question, header, multiSelect, options: [{label,
+// description}]}]}; the answer goes back once for every question, as the PermissionRequest's
+// `allow` with `updatedInput` = the input plus `answers` = {question: answer} (hooks.md).
+
+/** The card's buttons: Skip and Submit answer the ask, Next and Back only move. */
+export const SKIP = 'Skip', SUBMIT = 'Submit', NEXT = 'Next', BACK = 'Back';
+/** What the card sends that is not a button: a choice's row, the Other row, its text, Enter. */
+export const PICK = 'pick:', OTHER = 'other', OTHER_TEXT = 'other-text', ENTER = 'enter';
+export const OTHER_HINT = 'Type your own answer';
+
+/**
+ * @param {object} ev  a PermissionRequest of AskUserQuestion
+ * @returns {?object[]} [{question, header, multi, options: [{label, detail}]}], or null when
+ *   there is nothing Buoy can show (no question with options)
+ */
+export function questionsOf(ev) {
+    const list = isPlain(ev?.tool_input) && Array.isArray(ev.tool_input.questions) ? ev.tool_input.questions : [];
+    const qs = [];
+    for (const q of list) {
+        const options = (Array.isArray(q?.options) ? q.options : [])
+            .map(o => ({label: str(o?.label), detail: str(o?.description)}))
+            .filter(o => o.label);
+        if (!str(q?.question) || !options.length)
+            return null;              // one Buoy cannot show: Claude's own card answers all
+        qs.push({question: str(q.question), header: str(q.header), multi: q.multiSelect === true, options});
+    }
+    return qs.length ? qs : null;
+}
+
+/**
+ * The answers so far, in memory only (CODING-AGENTS rule 3): nothing chosen yet.
+ *
+ * @param {object[]} qs  questionsOf()
+ * @returns {{at: number, picks: string[][], other: Array<{on: boolean, text: string}>}}
+ */
+export function newAnswers(qs) {
+    return {at: 0, picks: qs.map(() => []), other: qs.map(() => ({on: false, text: ''}))};
+}
+
+/**
+ * The card's input applied: a row chosen (one: it alone; many: toggled), Other chosen or its
+ * text typed, Next / Back. Nothing is lost moving between questions.
+ *
+ * @param {object[]} qs
+ * @param {object} state  newAnswers()
+ * @param {string} input  PICK + index, OTHER, OTHER_TEXT, NEXT, BACK
+ * @param {*} [value]  OTHER_TEXT's text
+ * @returns {object} the new state (the same when the input means nothing)
+ */
+export function pickAnswer(qs, state, input, value) {
+    const i = state.at, q = qs[i];
+    if (!q)
+        return state;
+    const at = (list, v) => list.map((x, j) => j === i ? v : x);
+    if (input === NEXT)
+        return i < qs.length - 1 ? {...state, at: i + 1} : state;
+    if (input === BACK)
+        return i > 0 ? {...state, at: i - 1} : state;
+    if (input === OTHER_TEXT)
+        return {...state, other: at(state.other, {...state.other[i], text: typeof value === 'string' ? value : ''})};
+    if (input === OTHER) {
+        const on = q.multi ? !state.other[i].on : true;
+        return {...state, picks: q.multi ? state.picks : at(state.picks, []), other: at(state.other, {...state.other[i], on})};
+    }
+    if (typeof input === 'string' && input.startsWith(PICK)) {
+        const label = q.options[Number(input.slice(PICK.length))]?.label;
+        if (!label)
+            return state;
+        const had = state.picks[i];
+        if (!q.multi)
+            return {...state, picks: at(state.picks, [label]), other: at(state.other, {...state.other[i], on: false})};
+        const picks = had.includes(label) ? had.filter(l => l !== label) : q.options.map(o => o.label).filter(l => l === label || had.includes(l));
+        return {...state, picks: at(state.picks, picks)};
+    }
+    return state;
+}
+
+/**
+ * @param {object[]} qs
+ * @param {object} state
+ * @returns {{[question: string]: string}} {question: answer} for every question answered: the
+ *   label; many labels joined by ", "; Other's text, after the labels (design: tried
+ *   2026-11-10, Claude reads them whole). A question left empty is left out.
+ */
+export function answersOf(qs, state) {
+    /** @type {{[question: string]: string}} */
+    const out = {};
+    qs.forEach((q, i) => {
+        const text = state.other[i].on ? str(state.other[i].text) : null;
+        const parts = [...state.picks[i], ...text ? [text] : []];
+        if (parts.length)
+            out[q.question] = parts.join(', ');
+    });
+    return out;
+}
+
+/**
+ * The question being asked, as a card (design/alerts-and-asks "Hỏi nhiều lựa chọn"): Bu, the
+ * question, "Claude Code · buoy · 1 / 3"; a row of 32 per choice, Other last; Skip · Next
+ * before the last question, Back · Submit on it (Skip · Submit for a single one).
+ *
+ * @param {object} rec  the session's record
+ * @param {object[]} qs
+ * @param {object} state
+ * @returns {{question: string, actions: object[], look: object}}  look: the ask's
+ *   presentation (kit stack.ask `look`), actions its buttons now
+ */
+export function questionLook(rec, qs, state) {
+    const i = state.at, q = qs[i];
+    const last = i === qs.length - 1;
+    const count = qs.length > 1 ? ` · ${i + 1} / ${qs.length}` : '';
+    const app = `${PRODUCTS[rec?.source] ?? 'The agent'} · ${rec?.project ?? hoverName(rec)}${count}`;
+    let buttons = [SKIP, NEXT];
+    if (last)
+        buttons = i > 0 ? [BACK, SUBMIT] : [SKIP, SUBMIT];
+    const other = state.other[i];
+    return {
+        question: q.question,
+        actions: buttons.map(b => ({id: b, label: b})),
+        look: {
+            leading: {mascot: 'ask'},
+            compact: {
+                card: {
+                    picture: {mascot: 'ask'}, title: q.question, app,
+                    choices: {
+                        multi: q.multi,
+                        items: q.options.map((o, j) => ({
+                            id: `${PICK}${j}`, label: o.label, detail: o.detail, selected: state.picks[i].includes(o.label),
+                        })),
+                        other: {id: OTHER, textId: OTHER_TEXT, enterId: ENTER, selected: other.on, text: other.text, hint: OTHER_HINT},
+                    },
+                },
+            },
+            minimalAction: false,
+        },
+    };
+}
+
+/**
+ * The hook's stdout for the questions answered: `allow` with the input and its `answers`
+ * (hooks.md PermissionRequest `updatedInput`). Nothing answered: '' (no decision, Claude's
+ * own card stays).
+ *
+ * @param {object} ev  the PermissionRequest
+ * @param {{[question: string]: string}} answers  answersOf()
+ * @returns {string}
+ */
+export function questionReply(ev, answers) {
+    if (!isPlain(answers) || !Object.keys(answers).length)
+        return '';
+    const input = isPlain(ev?.tool_input) ? ev.tool_input : {};
+    const decision = {behavior: 'allow', updatedInput: {...input, answers}};
+    return JSON.stringify({hookSpecificOutput: {hookEventName: 'PermissionRequest', decision}});
+}
+
 /**
  * One hook event applied to a session (CODING-AGENTS.md §3).
  *

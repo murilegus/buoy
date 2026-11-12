@@ -10,6 +10,7 @@ import {shapesFor, idleSample, PILL_GAP} from '../model/shapes.js';
 import {Pill} from './pill.js';
 import {Home} from './home.js';
 import {showKeys} from './present/elements.js';
+import {TYPE_ENTRY} from './present/compact.js';
 import {planCompact, planExpanded, planMissed} from '../model/presentation.js';
 import {ALERT_MS, ALERT_TURN_MS, pillWindow} from '../model/stack.js';
 import {planStrip, pressTarget} from '../model/tabs.js';
@@ -85,6 +86,9 @@ export class Island {
         this._capturedId = 0;
         this._capturedOn = null;
         this._grab = null;
+        this._typing = null;        // the pill whose card's Other is typed in (_typeIn)
+        this._typingSoon = false;
+        this._lettingGo = false;
         this._focusId = undefined;  // keyboard on the closed island: the ringed pill's id
         this._focusIndex = 0;       //   (null = idle pill); undefined = no keyboard focus
         this._layoutLater = 0;
@@ -802,13 +806,21 @@ export class Island {
     }
 
     _letGo() {
+        this._typing = null;
         this._setFocus(undefined);
         this._unlisten();
         if (this._grab) {
+            // popModal gives the key focus back, maybe to a card's entry: that is no click
+            this._lettingGo = true;
             Main.popModal(this._grab);
+            this._lettingGo = false;
             this._grab = null;
             this.actor.reactive = false;
         }
+        // nor may the entry keep it: any stage key focus takes the keys from the windows
+        // (mutter src/core/events.c stage_has_key_focus)
+        if (global.stage.key_focus?.get_parent?.()?.name === TYPE_ENTRY)
+            global.stage.set_key_focus(null);
         this._syncKeys();
     }
 
@@ -850,11 +862,69 @@ export class Island {
     _syncKeys() {
         const pill = this._open ?? (this._held?.how === 'ask' ? this._held.pill : null);
         if (pill && !this._home && pill.activity?.kind === 'ask')
-            showKeys(pill.content.child, this._grab !== null);
+            showKeys(pill.content.child, this._grab !== null && !this._typing);
+        this._syncType();
+    }
+
+    /**
+     * A card's Other is typed in (design/alerts-and-asks "Hỏi nhiều lựa chọn": a click in it
+     * gives Buoy the keyboard, SPEC §2): the modal grab, as Super+B takes it, and the entry
+     * gets the key focus — now, or once the card rebuilt with it (choosing Other).
+     *
+     * @param {object} pill  the pill whose card it is
+     */
+    _typeIn(pill) {
+        if (this._destroyed || this._lettingGo || Main.modalCount > (this._grab ? 1 : 0))
+            return;                 // someone else's popup has the keyboard, or ours goes
+        this._typing = pill;
+        this._typingSoon = true;    // Other just chosen: its entry comes with the rebuild
+        this._syncType();
+    }
+
+    // The entry to type in, after every rebuild of its card: focused while typing; gone (Other
+    // turned off, the ask answered), the keyboard goes back.
+    _syncType() {
+        const pill = this._typing;
+        if (!pill)
+            return;
+        const entry = findNamed(pill.content?.child, TYPE_ENTRY);
+        const soon = this._typingSoon;
+        this._typingSoon = false;
+        if (!entry) {
+            if (soon)
+                return;
+            this._typing = null;
+            if (this._grab && !this._open)
+                this._letGo();
+            return;
+        }
+        if (!this._grab) {
+            this._takeKeyboard(pill);
+            this._listen();
+        }
+        if (global.stage.key_focus !== entry.clutter_text) {
+            entry.clutter_text.grab_key_focus();
+            entry.clutter_text.set_cursor_position(-1);
+            showKeys(pill.content.child, false);    // letters are the entry's now
+        }
+    }
+
+    // The key focus is in the entry being typed in
+    _inEntry() {
+        const focus = global.stage.key_focus;
+        return !!this._typing && focus instanceof Clutter.Text && focus.get_parent()?.name === TYPE_ENTRY;
     }
 
     _onKey(ev) {
         const sym = ev.get_key_symbol();
+        // typing in a card's Other: every key is the entry's (Enter its own `activate`); Esc
+        // lets the keyboard go, the text stays
+        if (this._inEntry()) {
+            if (sym !== Clutter.KEY_Escape)
+                return Clutter.EVENT_PROPAGATE;
+            this._letGo();
+            return Clutter.EVENT_STOP;
+        }
         if (sym === Clutter.KEY_Escape) {
             if (this._home?.back())
                 return Clutter.EVENT_STOP;   // Home's Missed or Ongoing list: back to Home
@@ -1053,4 +1123,18 @@ export class Island {
         this._leaving.clear();
         this.actor.destroy();
     }
+}
+
+// The first actor of that name in a tree of St actors, or null
+function findNamed(actor, name) {
+    if (!actor)
+        return null;
+    if (actor.name === name)
+        return actor;
+    for (const c of actor.get_children()) {
+        const f = findNamed(c, name);
+        if (f)
+            return f;
+    }
+    return null;
 }
