@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x, C, drawBu, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, C, drawBu, icon as gicon, SAMPLE} from '../../render/lib.js';
 const out = ARGV[0];
 // Gravity UI (design/icons): video for recording, display-pulse for sharing, music-note for music
 const {RED, CREAM, WALL} = C;
@@ -64,7 +64,7 @@ bar(32, 'Chỉ quay: pill 1 là bản ghi, đồng hồ chạy; chấm đỏ bê
 pill(W / 2, 36, {lead: 'video', label: '0:42', right: RED});
 bar(96, 'Quay và nghe nhạc: bản ghi (55) đứng trước nhạc (10); nhạc sang pill phụ.');
 const [px, pw] = pill(W / 2, 100, {lead: 'video', label: '0:42', right: RED});
-pill(px + pw + 8 + 133 / 2, 100, {lead: 'music-note', label: 'Lumen Coast'});
+pill(px + pw + 8 + 133 / 2, 100, {lead: 'music-note', label: '1:24'});
 bar(160, 'Claude Code hỏi trong lúc quay: ask (cần bạn) lên pill 1, đèn đỏ trái; bản ghi sang pill phụ; chấm đỏ vẫn ở pill 1.');
 const [qx, qw] = pill(W / 2, 164, {bu: true, label: 'Cần trả lời', left: RED, right: RED});
 pill(qx + qw + 8 + 133 / 2, 164, {lead: 'video', label: '0:42'});

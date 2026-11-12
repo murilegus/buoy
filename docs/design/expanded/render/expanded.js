@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, GREY, drawBu, icon} from '../../render/lib.js';
+import {SCALE as SC, C, GREY, drawBu, icon, SAMPLE} from '../../render/lib.js';
 const EW = 560, R = 28, W = 1120, H = 340;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
 const cr = new cairo.Context(surf);
@@ -47,7 +47,7 @@ const bu = (x, y, cell) => drawBu(cr, 'wave', x, y, cell);
   const cx = x + 12, cw = EW - 24, hy = y + 56, hh = 104, ty = hy + hh + 8, tw = (cw - 3 * 8) / 4;
   cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL1); rr(cx, hy, cw, hh, 16); cr.fill();
   tile(cx + 8, hy + 8, 88, 8, [.95, .55, .35], [.35, .25, .75]);
-  text('Lumen Coast', cx + 108, hy + 12, 11, 600, W1); text('Harbor Lights · Spotify', cx + 108, hy + 32, 9.35, 400, G);
+  text(SAMPLE.track, cx + 108, hy + 12, 11, 600, W1); text(SAMPLE.sub, cx + 108, hy + 32, 9.35, 400, G);
   cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(cx + 108, hy + 70, cw - 122, 4, 2); cr.fill();
   cr.setSourceRGB(1, 1, 1); rr(cx + 108, hy + 70, (cw - 122) * .38, 4, 2); cr.fill();
   [['forward-step-fill', 0], ['pause-fill', 1], ['backward-step-fill', 0]].forEach(([n, m], i) => {

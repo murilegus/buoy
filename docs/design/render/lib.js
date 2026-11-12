@@ -23,9 +23,16 @@ export const C = Object.freeze({
     WALL: [0.20, 0.17, 0.35],
 });
 export const GREY = Object.freeze({MUTED: [.70, .70, .70], SUBTLE: [.50, .50, .50]});
-// The one sample cover (design/index "Một bộ nội dung mẫu"): Lumen Coast by Harbor Lights, a
+// The one sample cover (design/index "Một bộ nội dung mẫu"): the cover of SAMPLE.track, a
 // diagonal gradient from the top left
 export const COVER = Object.freeze([[.95, .55, .35], [.35, .25, .75]]);
+// The one sample content (design/index "Một bộ nội dung mẫu"): every drawing takes its words from
+// here, so a new sample is one edit and every image is redrawn the same
+export const SAMPLE = Object.freeze((() => {
+    // short: what a reply button calls the person (a Vietnamese name goes by its last word)
+    const track = 'Sóng Ngoài Khơi', artist = 'Hải Đăng', app = 'Spotify', person = 'Quỳnh Trâm', short = 'Trâm';
+    return {track, artist, app, sub: `${artist} · ${app}`, person, short};
+})());
 
 // the width a label has at 1× (hinted, as on a scale-1 screen)
 const meas1 = new cairo.Context(new cairo.ImageSurface(cairo.Format.ARGB32, 4, 4));

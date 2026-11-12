@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, drawBu, icon} from '../../render/lib.js';
+import {SCALE as SC, C, drawBu, icon, SAMPLE} from '../../render/lib.js';
 const out = ARGV[0];
 
 const W = 16 + 2 * (560 + 16), H = 350;
@@ -46,7 +46,7 @@ function home(X, title, {border, subtle, disabled}) {
     // the main card
     const cx = X + 12, cy = Y + 56, cw = PW - 24;
     fill(C.FILL1, cx, cy, cw, 104, 16); fill(C.FILL2, cx + 8, cy + 8, 88, 88, 8);
-    text('Lumen Coast', cx + 108, cy + 12, {sz: 11, wt: 600}); text('Harbor Lights · Spotify', cx + 108, cy + 32, {sz: 9.35, a: C.FG_MUTED});
+    text(SAMPLE.track, cx + 108, cy + 12, {sz: 11, wt: 600}); text(SAMPLE.sub, cx + 108, cy + 32, {sz: 9.35, a: C.FG_MUTED});
     round(cx + cw - 28, cy + 28, 'forward-step-fill', {a: disabled}); round(cx + cw - 68, cy + 28, 'pause-fill', {main: true}); round(cx + cw - 108, cy + 28, 'backward-step-fill');
     fill(C.FILL3, cx + 108, cy + 70, cw - 122, 4, 2); fill(1, cx + 108, cy + 70, (cw - 122) * .45, 4, 2);
     text('1:24', cx + 108, cy + 78, {sz: 9.35, a: subtle}); text('-1:41', cx + cw - 14, cy + 78, {sz: 9.35, a: subtle, right: true});

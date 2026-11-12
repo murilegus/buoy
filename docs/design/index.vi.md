@@ -40,10 +40,10 @@ Các thay đổi ở đây chưa có trong code: chúng là các mục redesign 
 - **Độ rộng đo từ chữ thật khi chạy,** không viết cứng: cùng một chữ rộng khác nhau theo font và
   theo tỷ lệ màn hình. **Chốt**
 - **Một chuyển dạng là một lần nở ra:** minimal < compact < expanded, ở mọi màn hình. **Chốt**
-- **Một bộ nội dung mẫu cho mọi hình**, để các hình so được với nhau. Nhạc: bài **Lumen Coast** của
-  **Harbor Lights**, trên Spotify (pill "Lumen Coast · Harbor Lights", phụ đề "Harbor Lights ·
-  Spotify"), ảnh bìa gradient chéo cam → tím (`render/lib.js` `COVER`). Người: **Mira Vale** (tin
-  Slack ở #design, cuộc gọi). **Chốt** (Ethan, 2026-11-12)
+- **Một bộ nội dung mẫu cho mọi hình**, để các hình so được với nhau, ở một chỗ (`render/lib.js`
+  `SAMPLE`, `COVER`). Nhạc: bài **Sóng Ngoài Khơi** của **Hải Đăng**, trên Spotify (pill "Sóng Ngoài
+  Khơi · Hải Đăng", phụ đề "Hải Đăng · Spotify"), ảnh bìa gradient chéo cam → tím. Người: **Quỳnh
+  Trâm**, gọi tắt **Trâm** (tin Slack ở #design, cuộc gọi). **Chốt** (Ethan, 2026-11-12)
 
 ## Vẽ lại ảnh
 

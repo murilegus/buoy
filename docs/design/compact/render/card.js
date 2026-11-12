@@ -6,7 +6,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, GREY, icon} from '../../render/lib.js';
+import {SCALE as SC, C, GREY, icon, SAMPLE} from '../../render/lib.js';
 const R = 28, PAD = 14, LEAD = 40, TX = PAD + LEAD + 12, PW = 340, W = 760;
 const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED;   // subtitle and body: fg-muted
 const cards = [
@@ -45,7 +45,7 @@ for (const c of cards) {
   } else {
     grad(lx, ly, LEAD, 10, [.95, .75, .3], [.85, .5, .2]);
   }
-  text(c.avatar ? 'Mira Vale' : c.title, x + TX, y + 9, 11, 600, W1);
+  text(c.avatar ? SAMPLE.person : c.title, x + TX, y + 9, 11, 600, W1);
   text(c.avatar ? 'Slack · 2 min' : `${c.app} · now`, x + TX, y + 29, 9.5, 400, G);
   cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(x + PW - PAD - 16, y + R, 16, 0, 2 * Math.PI); cr.fill();
   icon(cr, 'xmark', x + PW - PAD - 16 - 8, y + R - 8, 16, W1);

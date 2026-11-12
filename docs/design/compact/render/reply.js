@@ -6,7 +6,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon} from '../../render/lib.js';
+import {SCALE as SC, C, icon, SAMPLE} from '../../render/lib.js';
 const out = ARGV[0];
 
 const R = 28, PW = 340, H1 = 136, W = 2 * PW + 3 * 24 + 220, TOP = 34, GAP = 70;
@@ -48,7 +48,7 @@ function card(x, y, title, row) {
     cr.setSource(g); rr(x + 14, y + 8, 40, 40, 10); cr.fill();
     rr(x + 38, y + 32, 18, 18, 5); cr.setSourceRGB(0, 0, 0); cr.fill();
     cr.setSourceRGB(.3, .55, .95); rr(x + 40, y + 34, 14, 14, 3.5); cr.fill();   // the app's logo: not a state colour
-    text('Mira Vale', x + 66, y + 9, {sz: 11, wt: 600});
+    text(SAMPLE.person, x + 66, y + 9, {sz: 11, wt: 600});
     text('Tin nhắn · Pixel 8 · 2 min', x + 66, y + 29, {rgb: C.WHITE, a: C.FG_MUTED});
     fill(C.FILL2, x + PW - 46, y + 12, 32, 32, 16); icon(cr, 'xmark', x + PW - 38, y + 20, 16);
     // body: one line, from the leading column (design/compact)
@@ -71,7 +71,7 @@ function field(x, by, {value = '', caret = true, focus = true} = {}) {
         if (caret) { cr.setSourceRGB(1, 1, 1); cr.rectangle(x + 26 + Math.min(e.width, fw - 28) + 1, by + 9, 1.5, 14); cr.fill(); }
     } else {
         if (caret) { cr.setSourceRGB(1, 1, 1); cr.rectangle(x + 26, by + 9, 1.5, 14); cr.fill(); }
-        text('Trả lời Mira…', x + 30, mid('Trả lời Mira…', by, 32, {}), {a: C.FG_SUBTLE});
+        text(`Trả lời ${SAMPLE.short}…`, x + 30, mid(`Trả lời ${SAMPLE.short}…`, by, 32, {}), {a: C.FG_SUBTLE});
     }
     send(x + PW - 12 - 16, by + 16, Boolean(value));
 }

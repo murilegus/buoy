@@ -10,7 +10,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, COVER, icon} from '../../render/lib.js';
+import {SCALE as SC, C, COVER, icon, SAMPLE} from '../../render/lib.js';
 const [out, MODE] = ARGV;
 // stills at 3× (lib.js SCALE); the clips at 2×, frames for scripts/render-design.sh to encode
 const S = MODE.startsWith('clip-') ? 2 : SC;
@@ -46,6 +46,10 @@ function canvas(W, H) {
     const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * S, H * S);
     cr = new cairo.Context(surf); cr.scale(S, S); cr.setSourceRGB(...C.WALL); cr.paint();
     L = PangoCairo.create_layout(cr); PangoCairo.context_set_resolution(L.get_context(), 96);
+    if (!PILL.w) {
+        TITLE_W = text(SAMPLE.track, 0, 0, {sz: 11, wt: 600, measure: true}).width;
+        PILL.w = Math.ceil(56 + TITLE_W + text(BY, 0, 0, {sz: 11, wt: 600, measure: true}).width + 8 + 18 + 12);
+    }
     return surf;
 }
 function text(t, x, y, {sz = 11, wt = 400, rgb = W1, a = 1, right = false, centre = false, measure = false} = {}) {
@@ -140,25 +144,33 @@ function curves() {
 // left; during a morph a shared part goes from its place in one form to its place in the other on
 // the same spring as the background (design/motion: "Phần chung đi tới chỗ mới"). The rest fades out
 // (what leaves) or is uncovered by the background's edge (what arrives).
-const PILL = {w: 173, h: 32, lead: {x: 28, y: 6, s: 20}, title: {x: 56, y: 8, sz: 11}};
+// The pill is as wide as its content (minimal is content-fit up to its cap, design/tokens): light and
+// art, its text "title · artist" (media/adapter.js), the equaliser, the margin. The title travels;
+// " · artist" is the pill's own and fades like the light.
+// Measured on the canvas it is drawn on (canvas() sets them once): text laid out at 3× is a little
+// wider than hinted at 1×, and " · artist" must start where the drawn title ends.
+const BY = ` · ${SAMPLE.artist}`;
+let TITLE_W = 0;
+const PILL = {w: 0, h: 32, lead: {x: 28, y: 6, s: 20}, title: {x: 56, y: 8, sz: 11}};
 const COMPACT = {w: 404, h: 88, lead: {x: 14, y: 8, s: 40}, title: {x: 66, y: 10, sz: 11}};
 const EXP = {w: 560, h: 280, lead: {x: 20, y: 64, s: 88}, title: {x: 120, y: 74, sz: 13}};
 function shared(cx, y, from, to, x, a = 1) {
     const at = (f, k) => ({x: cx - f.w / 2 + f[k].x, y: y + f[k].y});
     const l0 = at(from, 'lead'), l1 = at(to, 'lead'), t0 = at(from, 'title'), t1 = at(to, 'title');
     art(lerp(l0.x, l1.x, x), lerp(l0.y, l1.y, x), lerp(from.lead.s, to.lead.s, x), a);
-    text('Lumen Coast', lerp(t0.x, t1.x, x), lerp(t0.y, t1.y, x), {sz: lerp(from.title.sz, to.title.sz, x), wt: 600, a});
+    text(SAMPLE.track, lerp(t0.x, t1.x, x), lerp(t0.y, t1.y, x), {sz: lerp(from.title.sz, to.title.sz, x), wt: 600, a});
 }
-function pillRest(cx, y, a) { // the light and the equaliser: only the pill has them
+function pillRest(cx, y, a) { // the light, " · artist" and the equaliser: only the pill has them
     if (a <= 0) return;
     const x = cx - PILL.w / 2;
     fill([...C.AMBER, a], x + 12, y + 12, 8, 8, 4);
-    for (let i = 0; i < 4; i++) fill([1, 1, 1, a], x + PILL.w - 32 + i * 5, y + 11 + (i % 2) * 3, 3, 10 - (i % 2) * 3, 1);
+    text(BY, x + PILL.title.x + TITLE_W, y + PILL.title.y, {sz: 11, wt: 600, a});
+    for (let i = 0; i < 4; i++) fill([1, 1, 1, a], x + PILL.w - 30 + i * 5, y + 11 + (i % 2) * 3, 3, 10 - (i % 2) * 3, 1);
 }
 function compactRest(cx, y, a) { // the subtitle and the bar: only the compact has them
     if (a <= 0) return;
     const x = cx - COMPACT.w / 2;
-    text('Harbor Lights · Spotify', x + 66, y + 30, {sz: SUB, a: a * C.FG_MUTED});
+    text(SAMPLE.sub, x + 66, y + 30, {sz: SUB, a: a * C.FG_MUTED});
     fill([1, 1, 1, .2 * a], x + 66, y + 64, COMPACT.w - 66 - 18, 4, 2);
     fill([1, 1, 1, a], x + 66, y + 64, (COMPACT.w - 84) * .38, 4, 2);
 }
@@ -213,7 +225,7 @@ function panel(cx, y, a) {
     fill([1, 1, 1, .12 * a], x + EXP.w - 44, y + 12, 32, 32, 16);
     icon(cr, 'gear', x + EXP.w - 36, y + 20, 16, W1, a);
     fill([1, 1, 1, .08 * a], x + 12, y + 56, EXP.w - 24, 104, 16);
-    text('Harbor Lights', x + 120, y + 96, {sz: SUB, a: a * C.FG_MUTED});
+    text(SAMPLE.artist, x + 120, y + 96, {sz: SUB, a: a * C.FG_MUTED});
     for (let i = 0; i < 4; i++) fill([1, 1, 1, .08 * a], x + 12 + i * (128 + 2), y + 168, 128 - 6, 100, 16);
 }
 function expanded() {
@@ -283,12 +295,12 @@ function body(x, y, w, h, kind, a, dx) {
     cr.save(); cr.translate(dx, 0);
     if (kind === 'home') {
         fill([1, 1, 1, .08 * a], x, y, w, 60, 16); art(x + 8, y + 8, 44, a);
-        text('Lumen Coast', x + 62, y + 14, {sz: 10, wt: 700, a});
+        text(SAMPLE.track, x + 62, y + 14, {sz: 10, wt: 700, a});
         for (let i = 0; i < 3; i++) fill([1, 1, 1, .08 * a], x + i * (w / 3), y + 68, w / 3 - 6, 48, 12);
     } else {
         art(x + 8, y + 4, 96, a);
-        text('Lumen Coast', x + 116, y + 20, {sz: 12, wt: 700, a});
-        text('Harbor Lights', x + 116, y + 40, {sz: SUB, a: a * C.FG_MUTED});
+        text(SAMPLE.track, x + 116, y + 20, {sz: 12, wt: 700, a});
+        text(SAMPLE.artist, x + 116, y + 40, {sz: SUB, a: a * C.FG_MUTED});
         fill([1, 1, 1, .2 * a], x + 116, y + 74, w - 124, 4, 2);
     }
     cr.restore();
