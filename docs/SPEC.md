@@ -783,7 +783,7 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 ## 5. Motion
 
 *Rewritten 2026-11-13 (FEATURES M4 "Motion"); the curves, times and each move are in
-[docs/design/motion](design/motion/index.vi.md), the numbers in its tokens.*
+[docs/design](design/index.md) (Motion, Chuyển động), the numbers in its tokens.*
 
 - **Springs for every move, size and shape** (`kit/model/motion.js`, run on the frame
   clock by `kit/ui/spring.js`: one Clutter.Timeline per actor, stopped once settled, none
