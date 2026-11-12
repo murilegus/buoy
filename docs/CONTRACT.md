@@ -47,7 +47,10 @@ D-Bus API ──────────────────────┘ 
   compact: {leading, text, subtitle, trailing, transport, progress, rows}  // the hover tier (Buoy's
                                        // own; was `peek`); transport = ≤3 actions; progress 0..1 or
                                        // live {position, length, at, playing} (ms), which runs with
-                                       // elapsed and remaining while shown; rows ≤ 3
+                                       // elapsed and remaining while shown; rows
+                                       // [{icon, text, detail, dim, rank}] ≤ 16: the compact
+                                       // draws the 3 of lowest rank (ties: first), in order;
+                                       // Home's main card as many as fit (2026-11-13)
 }
 ```
 

@@ -291,10 +291,13 @@ export function planMinimal(p, {light, more, side = false} = {}) {
  * @param {object} p  presentation data (an activity)
  * @param {object} [opts]
  * @param {string} [opts.light]  the stack's light
- * @returns {?object} {leading, text, subtitle, trailing, actions, progress, rows, tall,
- *   keyline, stale, light} or null; `tall`: a bar or rows (88 px, else 56)
+ * @param {number} [opts.maxRows]  rows to draw: 3, the compact's; more where there is room
+ *   (Home's main card, rowsThatFit)
+ * @returns {?object} {leading, text, subtitle, trailing, actions, progress, rows,
+ *   rowsAvailable, tall, keyline, stale, light} or null; `tall`: a bar or rows (88 px, else
+ *   56); rowsAvailable: every row it has
  */
-export function planCompact(p, {light} = {}) {
+export function planCompact(p, {light, maxRows = MAX_ROWS} = {}) {
     if (!isPlain(p.compact))
         return null;
     const c = p.compact;
@@ -309,7 +312,8 @@ export function planCompact(p, {light} = {}) {
         trailing: element(c.trailing),
         actions: c.transport === true ? actions(p.actions, MAX_ACTIONS.compact) : [],
         ...progressOf(c.progress),
-        rows: rows(c.rows),
+        rows: pickRows(rows(c.rows), maxRows),
+        rowsAvailable: rows(c.rows).length,
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
         light: lead.light,
@@ -324,8 +328,8 @@ export function planCompact(p, {light} = {}) {
 /**
  * How many of a compact's rows fit a given height (Home's main card, design/home: the card
  * takes the height the row of tiles leaves; 2026-11-13, #216: an agent's 3 task rows ran
- * past it): as many as fit under the head with 8 above and below, from the first; none,
- * the head alone (56). The card is still a button: its click opens the activity's tab,
+ * past it; 2026-11-13, Ethan: at 2560 the tall card stood half empty): as many of the rows
+ * it has as fit under the head with 8 above and below; none, the head alone (56). The card is still a button: its click opens the activity's tab,
  * where every row is.
  *
  * @param {?object} plan  planCompact()
@@ -334,7 +338,7 @@ export function planCompact(p, {light} = {}) {
  * @returns {number} rows to draw
  */
 export function rowsThatFit(plan, height, m) {
-    const has = plan?.rows?.length ?? 0;
+    const has = plan?.rowsAvailable ?? plan?.rows?.length ?? 0;
     return Math.max(0, Math.min(has, Math.floor((height - m.head - 2 * m.vpad) / m.row)));
 }
 
@@ -401,6 +405,8 @@ function planCard(c, p, light) {
 }
 
 export const MAX_ROWS = 3;
+/** The most rows a compact keeps for where there is room (Home's main card, 3440 tall). */
+export const MAX_LIST_ROWS = 16;
 
 // A static fraction, or a live position (media): its fraction when read, and `live` for
 // the renderer to run it on.
@@ -477,8 +483,31 @@ function rows(list) {
         return [];
     return list
         .filter(r => isPlain(r) && str(r.text))
-        .slice(0, MAX_ROWS)
-        .map(r => ({icon: icon(r.icon), text: str(r.text), detail: str(r.detail), dim: r.dim === true}));
+        .slice(0, MAX_LIST_ROWS)
+        .map((r, i) => ({
+            icon: icon(r.icon), text: str(r.text), detail: str(r.detail), dim: r.dim === true,
+            rank: isNum(r.rank) ? r.rank : i,
+        }));
+}
+
+/**
+ * A compact's rows to draw: all when they fit; else the `max` of lowest `rank` (an
+ * adapter's say in what matters most: an agent's task just done, being done and next),
+ * ties by place, shown in their own order. Without ranks: the first ones.
+ *
+ * @param {object[]} list  rows()
+ * @param {number} max
+ * @returns {object[]}  rows {icon, text, detail, dim}
+ */
+export function pickRows(list, max) {
+    const k = Math.max(0, Math.floor(max));
+    let kept = list;
+    if (list.length > k) {
+        const keep = new Set(list.map((r, i) => [r.rank, i]).sort((a, b) => a[0] - b[0] || a[1] - b[1])
+            .slice(0, k).map(([, i]) => i));
+        kept = list.filter((_r, i) => keep.has(i));
+    }
+    return kept.map(({rank: _rank, ...r}) => r);
 }
 
 function region(r, name) {

@@ -129,6 +129,20 @@ eq(batteryTile({present: true, percentage: 140, state: 2}).value, '100%', 'clamp
     check(80, 0, 'no room for a row: the head alone');
     check(0, 0, 'no height: none, never negative');
     check(400, 3, 'room to spare: never more than it has');
+    // more rows than the compact's 3 where there is room (2026-11-13, Ethan: 2560 stood half empty)
+    const tenRows = Array.from({length: 10}, (_, i) => ({text: `t${i}`, rank: i === 6 ? 0 : i + 1}));
+    const ten = {id: 'c', kind: 'agent', text: 'x', compact: {text: 'Buoy', rows: tenRows}};
+    const many = planCompact(ten);
+    if (many.rows.length !== 3 || many.rowsAvailable !== 10)
+        throw new Error('the compact draws 3 of its 10');
+    if (rowsThatFit(many, 200, m) !== 8)
+        throw new Error('200 (2560, tall): 8 rows, (200 − 72) / 16');
+    const eight = planCompact(ten, {maxRows: 8});
+    if (eight.rows.map(r => r.text).join() !== 't0,t1,t2,t3,t4,t5,t6,t7')
+        throw new Error(`eight: the lowest ranks, in order (got ${eight.rows.map(r => r.text)})`);
+    const thirty = Array.from({length: 30}, (_, i) => ({text: `${i}`}));
+    if (rowsThatFit(planCompact({id: 'd', kind: 'x', text: 'y', compact: {text: 'y', rows: thirty}}), 2000, m) !== 16)
+        throw new Error('at most 16 rows kept');
     if (rowsThatFit(planCompact({id: 'b', kind: 'x', text: 'y', compact: {text: 'y'}}), 400, m) !== 0)
         throw new Error('no rows: zero');
     if (rowsThatFit(null, 400, m) !== 0)

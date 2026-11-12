@@ -22,9 +22,11 @@ lại mỗi lần Home mở và mỗi khi stack đổi, nên Home không bao gi�
   (Ethan, 2026-11-11)
 - Activity chưa có thẻ chính riêng dùng compact của nó (phần đầu 56 và thân) đặt trong thẻ, nên chỉ
   nhạc, câu hỏi của Claude Code, cuộc gọi và lời chào cần thiết kế riêng. **Chốt** (Ethan, 2026-11-12)
-- Compact trong thẻ chỉ giữ số hàng vừa chiều cao của thẻ (56 + 8 + 16n + 8, từ hàng đầu; không
-  vừa hàng nào thì chỉ phần đầu 56), và thẻ cắt theo khung của nó: ở 1920 dạng thấp (104) việc của
-  Claude còn 2 hàng, ở 2560 đủ 3. Bấm thẻ mở tab, nơi có mọi hàng. (2026-11-13, #216)
+- Compact trong thẻ vẽ số hàng vừa chiều cao của thẻ (56 + 8 + 16n + 8; không vừa hàng nào thì
+  chỉ phần đầu 56), ít hay nhiều hơn 3 hàng của compact, và thẻ cắt theo khung của nó. Hàng nào giữ
+  trước do adapter xếp (`rank`): việc của Claude giữ việc vừa xong, việc đang làm, việc kế, rồi các
+  việc kế tiếp, rồi các việc xong gần nhất. Ở 1920 dạng thấp (104): 2 hàng; ở 2560 (168): 6. Bấm
+  thẻ mở tab, nơi có mọi hàng. **Chốt** (Ethan, 2026-11-13, #216: "trống card nhiều quá" ở 2560)
 
 ## Kích thước
 

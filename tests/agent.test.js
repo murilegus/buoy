@@ -12,7 +12,7 @@ import {
 } from '../src/buoy@murilegus/lib/modules/agent/hooks.js';
 import {Registry} from '../src/buoy@murilegus/lib/kit/services/registry.js';
 import {PRIORITY as KIT_PRIORITY, SETTLE_MS, tierOf, validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
-import {planCompact, planExpanded, planMinimal} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
+import {pickRows, planCompact, planExpanded, planMinimal} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -475,9 +475,9 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(taskStep(tasks, update('9', 'completed'), 12), null, 'an unknown task: nothing changes');
     eq(taskStep(tasks, update('3', 'deleted'), 12).map(t => t.id), ['1', '2'], 'deleted: gone');
     eq(taskRows(tasks), [
-        {icon: 'object-select-symbolic', text: 'Edit shapes.js', dim: false},
-        {icon: 'media-playback-start-symbolic', text: 'Run pnpm test', dim: false},
-        {icon: 'task-todo-symbolic', text: 'Update the docs', dim: true},
+        {icon: 'object-select-symbolic', text: 'Edit shapes.js', dim: false, rank: 0},
+        {icon: 'media-playback-start-symbolic', text: 'Run pnpm test', dim: false, rank: 1},
+        {icon: 'task-todo-symbolic', text: 'Update the docs', dim: true, rank: 2},
     ], 'three tasks: all, ✓ ▶ ○, the one to do dimmed (Gravity UI icons)');
     eq(taskProgress(tasks), '2 / 3', 'progress: done and being done, of all');
     // more than three: the one just done, the one being done, the next
@@ -486,10 +486,17 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     five = taskStep(five, create('5', 'Push'), 21);
     five = taskStep(five, update('2', 'completed'), 30);
     five = taskStep(five, update('3', 'in_progress'), 31);
-    eq(taskRows(five).map(r => r.text), ['Run pnpm test', 'Update the docs', 'Review'], 'five: just done, doing, next');
+    eq(taskRows(five).map(r => r.text), ['Edit shapes.js', 'Run pnpm test', 'Update the docs', 'Review', 'Push'],
+        'five: every task, in order (2026-11-13: Home\'s main card draws as many as fit)');
+    const three = list => pickRows(list, 3).map(r => r.text);
+    eq(three(taskRows(five)), ['Run pnpm test', 'Update the docs', 'Review'], 'the compact\'s three: just done, doing, next');
+    eq(pickRows(taskRows(five), 4).map(r => r.text), ['Run pnpm test', 'Update the docs', 'Review', 'Push'],
+        'four: then the next to do');
+    eq(pickRows(taskRows(five), 5).map(r => r.text).length, 5, 'room for all: all');
+    eq(pickRows(taskRows(five), 0), [], 'no room: none');
     eq(taskProgress(five), '3 / 5', 'five: progress');
     const allDone = five.map(t => ({...t, status: 'completed', doneAt: Number(t.id)}));
-    eq(taskRows(allDone).map(r => r.text), ['Update the docs', 'Review', 'Push'], 'all done: the last three done');
+    eq(three(taskRows(allDone)), ['Update the docs', 'Review', 'Push'], 'all done: the last three done');
 
     // through step(): rows and progress on the compact; none while the screen is shared
     const rec = last([[ev('UserPromptSubmit')], [create('1', 'Edit shapes.js')], [create('2', 'Run pnpm test')], [update('1', 'completed')]]).rec;
@@ -682,7 +689,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(brief(taskStep(mixed, plan({advance: true}), 2000)).filter(x => x.startsWith('plan:')).length, 3, 'advance moves the plan only');
     eq(taskStep([], {tool_name: 'mcp__other__update_plan', tool_input: {items}}, 1), null, 'another server\'s tool of the same name: not the plan');
     eq(planStep([], {}, 1), [], 'no input: nothing');
-    eq(taskRows(tasks).length, 3, 'its rows, as tasks');
+    eq(pickRows(taskRows(tasks), 3).length, 3, 'its rows, as tasks');
 
     // the turn's end: wrap_up checks every task off (2026-11-13, Ethan: "phải đánh dấu tất cả task xong")
     const WRAP = {hook_event_name: 'PostToolUse', tool_name: 'mcp__ccd_turn__wrap_up', tool_input: {recap: 'Done.'}};

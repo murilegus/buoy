@@ -185,7 +185,7 @@ function rowList(rows, m) {
  * @param {object} activity  presentation data (+ onAction)
  * @param {object} [opts]
  * @param {number} [opts.maxWidth]  the compact's width (its content carries its paddings)
- * @param {number} [opts.maxHeight]  a height to fit: rows past it are left out (Home's main card)
+ * @param {number} [opts.maxHeight]  a height to fit: as many rows as fit (Home's main card)
  * @param {string} [opts.light]  unused: the light is the pill's, never the compact's
  * @param {object} [opts.metrics]  kit/model/shapes.js compactMetrics at the em
  * @param {boolean} [opts.hovered]  the pointer is on it: a card's buttons on hover show
@@ -196,14 +196,13 @@ function rowList(rows, m) {
  * @returns {?Clutter.Actor} null when the activity has no compact
  */
 export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, onType = null} = {}) {
-    const p = planCompact(activity, {light});
+    let p = planCompact(activity, {light});
     if (!p)
         return null;
-    // a height to fit (Home's main card): only the rows that fit (presentation.js rowsThatFit)
-    if (maxHeight > 0 && p.rows?.length) {
-        p.rows = p.rows.slice(0, rowsThatFit(p, maxHeight, metrics));
-        p.tall = p.progress !== null || p.rows.length > 0;
-    }
+    // a height to fit (Home's main card): as many of its rows as fit, fewer or more than the
+    // compact's 3 (presentation.js rowsThatFit, pickRows)
+    if (maxHeight > 0 && p.rowsAvailable > 0)
+        p = planCompact(activity, {light, maxRows: rowsThatFit(p, maxHeight, metrics)});
     return p.card ? cardBox(p, activity, maxWidth, metrics, hovered, actionsEnd, onType) : compactBox(p, activity, maxWidth, metrics);
 }
 

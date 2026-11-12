@@ -399,31 +399,25 @@ export function tasksFromFiles(files) {
 const TASK_ICON = {completed: 'object-select-symbolic', in_progress: 'media-playback-start-symbolic', pending: 'task-todo-symbolic'};
 
 /**
- * The compact's rows: up to three tasks; with more, the one just done, the one being done
- * and the next (design/compact). A task to do is dimmed, its icon and its text; a task done
- * says how long it took, when Buoy saw it start.
+ * The compact's rows: every task, in order, ranked by what to keep when not all fit: the one
+ * just done, the one being done and the next first (the compact draws those 3,
+ * design/compact), then the next ones to do, then the last ones done (Home's main card,
+ * where there is room for more, 2026-11-13). A task to do is dimmed, its icon and its text;
+ * a task done says how long it took, when Buoy saw it start.
  *
  * @param {object[]} tasks
- * @returns {object[]}  rows {icon, text, dim, detail?}
+ * @returns {object[]}  rows {icon, text, dim, rank, detail?}
  */
 export function taskRows(tasks) {
-    let shown = tasks;
-    if (tasks.length > 3) {
-        const done = tasks.filter(t => t.status === 'completed');
-        const justDone = done.reduce((a, t) => !a || t.doneAt >= a.doneAt ? t : a, null);
-        const doing = tasks.find(t => t.status === 'in_progress') ?? null;
-        const next = tasks.find(t => t.status === 'pending' && t !== doing) ?? null;
-        const pick = new Set([justDone, doing, next].filter(Boolean));
-        // fewer than three that way: the next ones to do, then the last ones done
-        for (const t of [...tasks.filter(x => x.status === 'pending'), ...done.reverse()]) {
-            if (pick.size >= 3)
-                break;
-            pick.add(t);
-        }
-        shown = tasks.filter(t => pick.has(t));
-    }
-    return shown.map(t => ({
-        icon: TASK_ICON[t.status], text: t.subject, dim: t.status === 'pending',
+    const done = tasks.filter(t => t.status === 'completed');
+    const justDone = done.reduce((a, t) => !a || t.doneAt >= a.doneAt ? t : a, null);
+    const doing = tasks.find(t => t.status === 'in_progress') ?? null;
+    const next = tasks.find(t => t.status === 'pending' && t !== doing) ?? null;
+    const order = [...new Set([justDone, doing, next, ...tasks.filter(x => x.status === 'pending'),
+        ...done.reverse(), ...tasks].filter(Boolean))];
+    const rank = new Map(order.map((t, k) => [t, k]));
+    return tasks.map(t => ({
+        icon: TASK_ICON[t.status], text: t.subject, dim: t.status === 'pending', rank: rank.get(t),
         ...t.status === 'completed' && t.startedAt > 0 && t.doneAt >= t.startedAt
             ? {detail: durationText(t.doneAt - t.startedAt)} : {},
     }));
