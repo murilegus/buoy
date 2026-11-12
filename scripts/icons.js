@@ -2,7 +2,7 @@
 //
 // The daypart and weather icons: 19 colour SVGs on a 16 px grid, always on black, shown
 // at 20 px in the idle pill and 40 px in the hover card. Design source, not a build step:
-// it rewrites src/buoy@murilegus/icons/{daypart,weather}-*.svg, then renders docs/icons.png
+// it rewrites src/buoy@murilegus/icons/color/{daypart,weather}-*.svg, then renders docs/icons.png
 // (a 20 px row, a grid at 40 px with names, five mock idle pills). Chosen 2026-11-06
 // (Ethan: palette A, soft blue cloud). Every part carries an id (sun, moon, cloud, rain,
 // snow, bolt, wind, horizon, arc) so a tab can split an icon into layers and animate them.
@@ -11,7 +11,7 @@ import GLib from 'gi://GLib';
 import Rsvg from 'gi://Rsvg';
 
 const here = GLib.path_get_dirname(import.meta.url.replace('file://', ''));
-const ICONS = `${here}/../src/buoy@murilegus/icons`;
+const ICONS = `${here}/../src/buoy@murilegus/icons/color`;
 const sheetOnly = ARGV[0] === '--sheet-only';
 const args = sheetOnly ? ARGV.slice(1) : ARGV;
 const SHEET = args[0] ?? `${here}/../docs/icons.png`;

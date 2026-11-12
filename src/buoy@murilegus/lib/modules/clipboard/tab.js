@@ -1,7 +1,7 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 
-import {EmptyState} from '../../kit/present.js';
+import {EmptyState} from '../../kit/ui/present/elements.js';
 
 // TODO M5 "Clipboard tab" (history, search, pin; excludes password managers).
 // Built when chosen from ⋯ or its pinned tab, destroyed when expanded closes.

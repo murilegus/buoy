@@ -5,14 +5,14 @@ import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {shapesFor, GAP, PILL_GAP} from './shapes.js';
+import {shapesFor, GAP, PILL_GAP} from '../model/shapes.js';
 import {Pill} from './pill.js';
 import {Home} from './home.js';
-import {showKeys} from './present.js';
-import {planExpanded, planMissed} from './presentation.js';
-import {ALERT_MS, pillWindow} from './stack.js';
-import {planStrip, pressTarget} from './tabs.js';
-import {actionForKey, step} from './keys.js';
+import {showKeys} from './present/elements.js';
+import {planExpanded, planMissed} from '../model/presentation.js';
+import {ALERT_MS, pillWindow} from '../model/stack.js';
+import {planStrip, pressTarget} from '../model/tabs.js';
+import {actionForKey, step} from '../model/keys.js';
 
 const MAX_PILLS = 3;       // SPEC §2c
 const CLUSTER_MARGIN = 12; // keep side pills this far from the system cluster
@@ -33,7 +33,7 @@ const SCROLL_GAP_MS = 400; // one plan per scroll gesture on the idle pill (auto
  *                 raises it and dims the others where they stand, one compact at a time
  *   open          a click grows that pill into the expanded panel at the centre; the
  *                 others slide in and fade (merge); closing splits them again. A click
- *                 opens Home's panel (kit/home.js: tab strip + tab) on the tab its context
+ *                 opens Home's panel (kit/ui/home.js: tab strip + tab) on the tab its context
  *                 picks (SPEC §2b: idle and +N → Home, a pill → its kind's tab). The stack
  *                 opens the centre pill's own expanded view without a strip (`expand`:
  *                 transient, ask; an alert for ALERT_MS). Only a click outside closes it,
@@ -42,7 +42,7 @@ const SCROLL_GAP_MS = 400; // one plan per scroll gesture on the idle pill (auto
  *   keyboard      (SPEC §2c) `keybind-focus` (Super+B) takes the keyboard: a ring on the
  *                 centre pill, ←/→ move it, Enter opens that pill as a click would, Esc
  *                 or Super+B again lets go. Open: ←/→ walk the tabs, an ask's buttons
- *                 answer to their key (kit/keys.js, printed on them), Esc closes. On a
+ *                 answer to their key (kit/model/keys.js, printed on them), Esc closes. On a
  *                 pill the stack opened (ask, alert) Super+B takes the keyboard for it.
  *
  * Structure: an invisible container as wide as the monitor (a compact may open on any
@@ -79,11 +79,11 @@ export class Island {
         this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
         // set by the extension: the stack's missed history, and telling it it was seen
         this.missed = {list: () => [], seen: null, open: null, clear: null};
-        // the idle plan's presentation data (kit/idle.js), null = `none`; and told when
+        // the idle plan's presentation data (kit/services/idle.js), null = `none`; and told when
         // the idle pill starts or stops being on screen, so its clock runs only then
         this.idle = null;
         this.onIdleShown = null;
-        this.onIdleScroll = null;   // (step) → handled: kit/idle.js in `auto`
+        this.onIdleScroll = null;   // (step) → handled: kit/services/idle.js in `auto`
         this._idleShown = false;
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
@@ -168,7 +168,7 @@ export class Island {
     }
 
     /**
-     * The idle plan's presentation data (kit/idle.js); null = idle-content `none`. The
+     * The idle plan's presentation data (kit/services/idle.js); null = idle-content `none`. The
      * idle pill shows it at once, without a fade (one change, SPEC §2a).
      *
      * @param {?object} data

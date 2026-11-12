@@ -2,9 +2,9 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {BuoyDBus, PATH, VERSION, check} from '../src/buoy@murilegus/lib/kit/dbus.js';
-import {ActivityStack} from '../src/buoy@murilegus/lib/kit/stack.js';
-import {Registry, parseProfile} from '../src/buoy@murilegus/lib/kit/registry.js';
+import {BuoyDBus, PATH, VERSION, check} from '../src/buoy@murilegus/lib/kit/services/dbus.js';
+import {ActivityStack} from '../src/buoy@murilegus/lib/kit/model/stack.js';
+import {Registry, parseProfile} from '../src/buoy@murilegus/lib/kit/services/registry.js';
 
 const IFACE = 'org.gnome.Shell.Extensions.Buoy';
 
@@ -163,7 +163,7 @@ async function main() {
     const got = [];
     const sub = client.signal_subscribe(dest, IFACE, 'Action', PATH, null, Gio.DBusSignalFlags.NONE,
         (_c, _s, _p, _i, _n, params) => got.push(params.deepUnpack()));
-    stack.get('dbus:build-42').onAction('stop');   // what a button press does (present.js)
+    stack.get('dbus:build-42').onAction('stop');   // what a button press does (kit/ui/present/)
     await tick(50);
     eq(got, [['build-42', 'stop']], 'a pressed button reaches the caller as Action(id, action)');
     client.signal_unsubscribe(sub);

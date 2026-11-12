@@ -3,8 +3,8 @@ import GLib from 'gi://GLib';
 
 import clock, {STYLES, DEFAULT_STYLE, WORDS, keys, iconFor, present, relevance} from
     '../src/buoy@murilegus/lib/modules/clock/idle.js';
-import {DAYPARTS} from '../src/buoy@murilegus/lib/kit/daypart.js';
-import {planIdle} from '../src/buoy@murilegus/lib/kit/presentation.js';
+import {DAYPARTS} from '../src/buoy@murilegus/lib/kit/model/daypart.js';
+import {planIdle} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -29,7 +29,7 @@ eq(relevance(), {score: 10}, 'auto: the floor (SPEC §2a-iii)');
 const files = DAYPARTS.map(iconFor);
 eq(new Set(files).size, 6, 'six dayparts, six different icons');
 for (const [i, uri] of files.entries()) {
-    ok(uri.startsWith('file://') && uri.endsWith(`/icons/daypart-${DAYPARTS[i]}.svg`), `${DAYPARTS[i]}: ${uri}`);
+    ok(uri.startsWith('file://') && uri.endsWith(`/icons/color/daypart-${DAYPARTS[i]}.svg`), `${DAYPARTS[i]}: ${uri}`);
     const path = GLib.filename_from_uri(uri)[0];
     ok(GLib.file_test(path, GLib.FileTest.EXISTS), `${DAYPARTS[i]}: the file exists (${path})`);
     const svg = new TextDecoder().decode(GLib.file_get_contents(path)[1]);

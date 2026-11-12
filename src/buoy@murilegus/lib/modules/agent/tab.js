@@ -2,7 +2,8 @@ import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {EmptyState, buildElement, dimStale} from '../../kit/present.js';
+import {buildElement, EmptyState} from '../../kit/ui/present/elements.js';
+import {dimStale} from '../../kit/ui/present/motion.js';
 
 /**
  * The Claude Code tab (CODING-AGENTS.md §2, Ethan 2026-11-07): every session the island
@@ -11,7 +12,7 @@ import {EmptyState, buildElement, dimStale} from '../../kit/present.js';
  * session's terminal up (the activity's onPress) and closes the island. Asks of other
  * callers (D-Bus `Ask()`, kind `ask` is this module's) get a row of their own.
  *
- * It reads the kit's activities (`update`, kit/home.js): kind `agent` and kind `ask`.
+ * It reads the kit's activities (`update`, kit/ui/home.js): kind `agent` and kind `ask`.
  */
 export class AgentsTab {
     /** @param {{close?: function():void}} [kit]  close(): the island, after an action */

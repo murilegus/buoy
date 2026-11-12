@@ -4,8 +4,8 @@ import Shell from 'gi://Shell';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {Source} from '../../kit/source.js';
-import {slugOf} from '../../kit/registry.js';
+import {Source} from '../../kit/services/source.js';
+import {slugOf} from '../../kit/services/registry.js';
 import {nextRate, ownerOf, partialOf, renameOf, ringFor, watchedFolders} from './adapter.js';
 import {downloadHistory} from './history.js';
 

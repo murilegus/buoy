@@ -2,7 +2,7 @@
 import {
     BAND, STEP, bandProfile, contrastFor, glyphTint, imageArea, lightGlyph, luminance, parseColor,
     patternLuminance, spanLuminance, textFor, wallpaperSource,
-} from '../src/buoy@murilegus/lib/kit/contrast.js';
+} from '../src/buoy@murilegus/lib/kit/model/contrast.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

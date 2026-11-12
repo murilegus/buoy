@@ -2,11 +2,11 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
 
-import {Source} from '../../kit/source.js';
-import {appOfBusName} from '../../kit/apps.js';
-import {listInfos, readText} from '../../kit/files.js';
-import {SharingWatch} from '../../kit/sharing.js';
-import {lingerMs} from '../../kit/settings.js';
+import {Source} from '../../kit/services/source.js';
+import {appOfBusName} from '../../kit/services/apps.js';
+import {listInfos, readText} from '../../kit/services/files.js';
+import {SharingWatch} from '../../kit/services/sharing.js';
+import {lingerMs} from '../../kit/model/settings.js';
 import {AGENTS, DESKTOP_APP, TIMEOUT, answered, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step} from './adapter.js';
 
 const KIND = 'agent';
@@ -14,17 +14,17 @@ const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
 
 /**
  * Coding agents' sessions in the pill (docs/CODING-AGENTS.md): the hook script calls
- * D-Bus `Agent` (kit/dbus.js) with each event; this keeps one record per session, shows
+ * D-Bus `Agent` (kit/services/dbus.js) with each event; this keeps one record per session, shows
  * it through the registry (adapter.js `agent`), and turns a permission prompt into a
  * kit ask whose answer goes back as the hook's stdout.
  *
  * - No timer of its own: the 30 s end after Stop is the activity's ttl, stale its
- *   staleAfter, the ask's timeout the stack's (kit/stack.js).
+ *   staleAfter, the ask's timeout the stack's (kit/model/stack.js).
  * - The session's window (§6): the hook's bus peer's pid (GetConnectionUnixProcessID),
  *   then /proc/<pid>/stat up the parents until Shell knows a window of that pid — once
  *   per session. Focused = that app has the focus: then nothing jumps open.
  * - The screen shared or recorded (Shell's own indicators, ui/status/remoteAccess.js
- *   ScreenSharingIndicator / ScreenRecordingIndicator `visible`, kit/sharing.js): commands, paths and URLs
+ *   ScreenSharingIndicator / ScreenRecordingIndicator `visible`, kit/services/sharing.js): commands, paths and URLs
  *   are hidden (§7). Watched only while a session is shown.
  * - A waiting permission hook that goes away (Claude Code answered in the terminal, the
  *   session was interrupted) leaves the bus: its ask ends, no answer.
@@ -35,7 +35,7 @@ export class AgentSource extends Source {
      * @param {?object} registry
      * @param {?Gio.Settings} settings
      * @param {object} [opts]
-     * @param {object} [opts.dbus]  kit/dbus.js BuoyDBus: answers `Agent` while enabled
+     * @param {object} [opts.dbus]  kit/services/dbus.js BuoyDBus: answers `Agent` while enabled
      */
     enable(stack, registry = null, settings = null, {dbus = null} = {}) {
         super.enable(stack, registry, settings);
@@ -43,7 +43,7 @@ export class AgentSource extends Source {
         this._asks = new Map();         // same key → {event, askId, watch}
         this._apps = new Map();         // same key → Shell.App, or null: none (looked up once)
         // same key → {uri, shown} for a session in Claude Desktop: its deep link and the
-        // session Desktop shows, read ahead without blocking (kit/files.js) so a click
+        // session Desktop shows, read ahead without blocking (kit/services/files.js) so a click
         // decides at once (_raise); refreshed on each of its events
         this._desktop = new Map();
         this._reads = new Gio.Cancellable();

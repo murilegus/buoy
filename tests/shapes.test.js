@@ -1,5 +1,5 @@
 // Run: gjs -m tests/shapes.test.js   (pure; no Shell needed)
-import {shapesFor, compactCx, COMPACT_MIN, COMPACT_H, CARD_MAX_H, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop} from '../src/buoy@murilegus/lib/kit/shapes.js';
+import {shapesFor, compactCx, COMPACT_MIN, COMPACT_H, CARD_MAX_H, GAP, OVERSHOOT, PILL_GAP, BACK_SHARE, SHRINK_BOUNCE, shrinkStop} from '../src/buoy@murilegus/lib/kit/model/shapes.js';
 
 const PANEL_H = 40; // Buoy's panel height (stylesheet.css)
 

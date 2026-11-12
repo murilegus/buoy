@@ -6,7 +6,7 @@ import weather, {
     ART, artFor, card,
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
 import {readInfo, nextHour, unitNames} from '../src/buoy@murilegus/lib/modules/weather/read.js';
-import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
+import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -51,7 +51,7 @@ eq([windText(null), windText(kph(-1, 3)), windText({speed: 'x'})], [null, null, 
 eq(ART.length, 13, 'one per GNOME condition icon, and the two night ones');
 for (const name of ART) {
     const uri = artFor(`weather-${name}-symbolic`);
-    if (!uri?.startsWith('file://') || !uri.endsWith(`/icons/weather-${name}.svg`))
+    if (!uri?.startsWith('file://') || !uri.endsWith(`/icons/color/weather-${name}.svg`))
         throw new Error(`${name}: its icon file: ${uri}`);
     const path = GLib.filename_from_uri(uri)[0];
     if (!GLib.file_test(path, GLib.FileTest.EXISTS))

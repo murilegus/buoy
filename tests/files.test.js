@@ -2,7 +2,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {readText, listNames, ppidOf} from '../src/buoy@murilegus/lib/kit/files.js';
+import {readText, listNames, ppidOf} from '../src/buoy@murilegus/lib/kit/services/files.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

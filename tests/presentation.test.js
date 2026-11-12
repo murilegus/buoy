@@ -2,7 +2,7 @@
 import {
     element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, planMissed, clockTime,
     MAX_ACTIONS, MAX_ROWS, livePosition, mediaTimes, sinceText, untilText, agoText,
-} from '../src/buoy@murilegus/lib/kit/presentation.js';
+} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
 import hud from '../src/buoy@murilegus/lib/modules/hud/adapter.js';
@@ -158,7 +158,7 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
     eq(e.grow, 'center', 'priority tie keeps center');
 }
 
-// ask (kit/stack.js shape): question + one button in minimal, every option in expanded
+// ask (kit/model/stack.js shape): question + one button in minimal, every option in expanded
 {
     const ask = {
         text: 'Allow edit?', expanded: true,
@@ -172,7 +172,7 @@ eq(planExpanded({text: 'x', expanded: 'yes'}), null, 'non-object, non-true expan
         'no keys without kind ask (only asks are answered from the keyboard)');
     const three = [{id: 'Deny', label: 'Deny'}, {id: 'Allow', label: 'Allow'}, {id: 'Always', label: 'Always'}];
     const keyed = planExpanded({...ask, kind: 'ask', actions: three});
-    eq(keyed.actions.map(a => a.key), ['d', '2', '3'], 'ask expanded: each action carries its key (kit/keys.js)');
+    eq(keyed.actions.map(a => a.key), ['d', '2', '3'], 'ask expanded: each action carries its key (kit/model/keys.js)');
     eq(planMinimal({...ask, kind: 'ask'}).action, {id: 'Deny', label: 'Deny', icon: null}, 'minimal ask action has no key');
 }
 

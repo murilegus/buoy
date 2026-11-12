@@ -6,7 +6,8 @@ import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
-import {EmptyState, FillBox, buildElement} from '../../kit/present.js';
+import {buildElement, EmptyState} from '../../kit/ui/present/elements.js';
+import {FillBox} from '../../kit/ui/present/parts.js';
 import {agenda, dayRows, dayStart} from './agenda.js';
 import {EventReader} from './events.js';
 import {CELL_MIN, cellFont, cellSize, isWeekend, monthDays, monthTitle, pickedTitle, stepDay, weekdayInitials} from './month.js';

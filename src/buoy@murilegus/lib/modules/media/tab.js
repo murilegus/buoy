@@ -6,8 +6,10 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
-import {EmptyState, marquee, tick} from '../../kit/present.js';
-import {livePosition, mediaTimes} from '../../kit/presentation.js';
+import {EmptyState} from '../../kit/ui/present/elements.js';
+import {marquee} from '../../kit/ui/present/motion.js';
+import {tick} from '../../kit/ui/present/parts.js';
+import {livePosition, mediaTimes} from '../../kit/model/presentation.js';
 import {artSize, metaLine, ART_MIN} from './layout.js';
 
 /**
@@ -25,7 +27,7 @@ import {artSize, metaLine, ART_MIN} from './layout.js';
  *             shuffle · ⏮ · ⏯ · ⏭ · repeat (off → all → one), those the player has
  *
  * No volume here (Ethan: a mixer gets its own place, FEATURES "Sound tab"). It reads the
- * kit's activities (`update`, kit/home.js) and acts through each one's `onAction`.
+ * kit's activities (`update`, kit/ui/home.js) and acts through each one's `onAction`.
  */
 export class MediaTab {
     /**
@@ -117,7 +119,7 @@ export class MediaTab {
         this._body = new St.BoxLayout({style_class: 'buoy-media-body', x_expand: true, y_expand: true});
         this._body.connect('notify::height', () => this._fitLaterOnce());
         this._body.connect('notify::width', () => this._fitLaterOnce());
-        // Home lays a tab out before it is on screen (kit/home.js _setBody): a size given
+        // Home lays a tab out before it is on screen (kit/ui/home.js _setBody): a size given
         // while unmapped is fitted once it maps
         this._body.connect('notify::mapped', () => this._fitLaterOnce());
         this._body.add_child(this._artTile(a));

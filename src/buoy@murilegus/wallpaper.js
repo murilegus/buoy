@@ -4,7 +4,7 @@ import GLib from 'gi://GLib';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {bandProfile, imageArea, wallpaperSource} from './lib/kit/contrast.js';
+import {bandProfile, imageArea, wallpaperSource} from './lib/kit/model/contrast.js';
 
 // Decoded width: the band is 40 px of a 1080–2160 px tall monitor, so a 512 px wide copy
 // still gives a few rows of it, and the decode stays small.
@@ -12,7 +12,7 @@ const DECODE_WIDTH = 512;
 
 /**
  * The wallpaper Shell draws on the primary monitor (the panel's), as a luminance profile
- * of its top band for kit/contrast.js (`cluster-contrast = auto`, SPEC §1, 2026-11-04).
+ * of its top band for kit/model/contrast.js (`cluster-contrast = auto`, SPEC §1, 2026-11-04).
  * Signals only: the background and color-scheme keys (the file Shell picks depends on
  * both, js/ui/background.js getBackground) and `monitors-changed`. The image is decoded
  * once per change of what is drawn, asynchronously and downscaled; a monitor change only

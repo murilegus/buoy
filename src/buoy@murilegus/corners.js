@@ -3,7 +3,7 @@ import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 
-import {CODE, DECLARATIONS, cornerUniforms, frameInActor, onTopEdge, wantsCorners} from './lib/kit/rounded.js';
+import {CODE, DECLARATIONS, cornerUniforms, frameInActor, onTopEdge, wantsCorners} from './lib/kit/model/rounded.js';
 
 const EFFECT = 'buoy-corners';
 
@@ -33,7 +33,7 @@ class CornersEffect extends Shell.GLSLEffect {
 /**
  * Rounded top corners on windows whose top edge meets the see-through bar (SPEC §1a,
  * 2026-11-02; tiled and top-edge 2026-11-04): maximized, tiled, or moved up against it
- * (kit/rounded.js onTopEdge, wantsCorners). Each normal window is watched for maximize,
+ * (kit/model/rounded.js onTopEdge, wantsCorners). Each normal window is watched for maximize,
  * fullscreen and moves; while it is on the top edge its actor carries the effect, and only
  * then are its size and scale watched to keep the arcs on the frame's top corners.
  * Signals only: `window-created`, `workareas-changed`, `notify::maximized-*`,

@@ -1,7 +1,7 @@
 import {EventReader} from './events.js';
 
 /**
- * The next-event plan's feed (kit/idle.js): made while the plan is the one in use, gone
+ * The next-event plan's feed (kit/services/idle.js): made while the plan is the one in use, gone
  * with it. Its state is events.js's ({hasCalendars, events}); each change re-presents.
  * Shown, it brings the date menu's calendar back to today (events.js `ensureToday`), so
  * the day the pill speaks of is loaded. No timer: the kit's wall clock moves the time.

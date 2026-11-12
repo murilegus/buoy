@@ -146,8 +146,8 @@ pill's content instead of adding a pill.
 The compact of the other kinds (a leading, one title, one subtitle, buttons beside them,
 56 / 88 / 120 px) is too tight for a message (Ethan, 2026-11-07: "at least like GNOME's
 banner"). A notification's compact is a **card** — GNOME's banner layout inside the
-island's black: a kit shape (`compact.card`, `kit/presentation.js` planCard,
-`kit/present.js`), the first user; the screenshot notice (§7) and later a phone message or
+island's black: a kit shape (`compact.card`, `kit/model/presentation.js` planCard,
+`kit/ui/present/compact.js`), the first user; the screenshot notice (§7) and later a phone message or
 a calendar alert may use it too.
 
 ```
@@ -196,7 +196,7 @@ for an `ask` while Do Not Disturb is SPEC §2a-i's (FEATURES "Buoy light").
 
 - **Screen shared or recorded** (Shell's own indicators, `ui/status/remoteAccess.js`
   ScreenSharingIndicator / ScreenRecordingIndicator `visible`, the same watch the agent
-  module uses, `kit/sharing.js`): the pill's text is the app's name; the card keeps its
+  module uses, `kit/services/sharing.js`): the pill's text is the app's name; the card keeps its
   header (app, time, ×) and says "New notification" (or "N notifications") as its title,
   with no body and no picture. The actions stay: their labels are the app's, not the
   message. Watched only while a notification pill is up; a change re-draws it at once.
@@ -229,7 +229,7 @@ List                                             An app's view (a stack clicked)
 
 - **The tab's icon:** GNOME's bell, with a dot at its top right while the list has any
   notification (2026-11-08, Ethan). The kit draws it over the icon (a module's `badge()`,
-  `kit/tabs.js`): small, in the icon's own grey (white on the open tab; no amber: one
+  `kit/model/tabs.js`): small, in the icon's own grey (white on the open tab; no amber: one
   look with the strip), ringed in the strip's colour so it reads as cut out of the bell,
   as Yaru's `message-indicator-symbolic` (the bell with a dot Ubuntu's top bar shows;
   GNOME's own is a bare dot). Not that icon itself (Ethan: one look on every theme). Read when the strip is planned, so only while the island is

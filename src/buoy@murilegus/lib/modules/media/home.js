@@ -3,8 +3,8 @@ import Gio from 'gi://Gio';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {progressBar, tick} from '../../kit/present.js';
-import {livePosition} from '../../kit/presentation.js';
+import {progressBar, tick} from '../../kit/ui/present/parts.js';
+import {livePosition} from '../../kit/model/presentation.js';
 
 const ART = 56;
 
@@ -16,7 +16,7 @@ const ART = 56;
  * buttons opens the Media tab, which has the rest: the other players, seeking, shuffle and
  * repeat. Nothing playing → not ready, and Home leaves the card out.
  *
- * It reads the kit's activities (`update`, kit/home.js) and acts through each one's
+ * It reads the kit's activities (`update`, kit/ui/home.js) and acts through each one's
  * `onAction`, as the Media tab does. The bar moves once a second only while it is on
  * screen and the track plays (kit `tick`, rule 8).
  */

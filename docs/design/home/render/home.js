@@ -15,7 +15,7 @@ import {SCALE as SC, C, drawBu, icon as gicon} from '../../render/lib.js';
 const [out, MODE] = ARGV;
 // Buoy's colour icons (weather, daypart), the ones the extension ships
 const COLOUR = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]),
-    '..', '..', '..', '..', 'src', 'buoy@murilegus', 'icons']);
+    '..', '..', '..', '..', 'src', 'buoy@murilegus', 'icons', 'color']);
 
 // ---- the rules ------------------------------------------------------------------------------------
 const PAD = 12, HEAD = 56, GAP = 8, TILE_H = 100, TILE_MIN = 120, WIDE = 200, TALL = 160, ART_MAX = 160;

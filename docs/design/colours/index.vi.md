@@ -178,7 +178,8 @@ Khoảng cách (ΔE, dưới 20 là gần, dễ nhầm ở cỡ nhỏ):
 ## Giữ một nguồn
 
 St không đọc biến CSS (`st-theme-node.c` của Shell 50 không xử lý `var()`), và Buoy không có bước
-build. Một test (`tests/palette.test.js`) đọc `stylesheet.css`, và báo lỗi khi gặp một
+build. Một test (`tests/palette.test.js`) đọc `stylesheet.css` và `lib/modules/*/stylesheet.css`
+(CSS của từng module, từ 2026-11-12), và báo lỗi khi gặp một
 màu không nằm trong bảng, kèm vai trò gần nhất. CSS ghi giá trị thật, comment ghi tên vai trò.
 **Chốt** (Ethan, 2026-11-11)
 

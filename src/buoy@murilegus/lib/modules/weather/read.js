@@ -26,7 +26,7 @@ const SPEEDS = ['default', 'ms', 'kph', 'mph', 'knots', 'bft'];
  * locale only (an en_US session gets °F and mph); the choice lives in GNOME Weather's own
  * keys, `org.gnome.GWeather4` `temperature-unit` and `speed-unit`, which the app reads and
  * passes in, as Buoy does now (2026-11-06, Ethan: °C set there, the pill showed °F). Buoy's
- * first enable sets them to °C and km/h where the user never had (kit/settings.js
+ * first enable sets them to °C and km/h where the user never had (kit/model/settings.js
  * GNOME_WEATHER); `default` is Automatic in prefs: the locale's.
  *
  * @param {*} temperature  `temperature-unit`

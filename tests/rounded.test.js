@@ -2,7 +2,7 @@
 import {
     ART_CODE, ART_DECLARATIONS, CODE, DECLARATIONS, artCoverage, artRadius, cornerUniforms, coverage,
     effectBox, frameInActor, onTopEdge, wantsCorners,
-} from '../src/buoy@murilegus/lib/kit/rounded.js';
+} from '../src/buoy@murilegus/lib/kit/model/rounded.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

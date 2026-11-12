@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   The one source of Buoy's settings: prefs.js reads summaries, descriptions and ranges
-  from here (lib/kit/settings.js places each key). A module's own keys are named
+  from here (lib/kit/model/settings.js places each key). A module's own keys are named
   `<module id>-…`. A key enters this file with the item that implements it.
 -->
 <schemalist>

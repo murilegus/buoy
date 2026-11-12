@@ -6,14 +6,15 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {WindowCorners} from './corners.js';
 import {applyGnomeDefaults, reworkPanel, setClusterBackground, setContrast, setLeftEmpty} from './panel.js';
-import {GNOME_CLOCK, GNOME_DOCK, GNOME_WEATHER, lingerMs} from './lib/kit/settings.js';
-import {Island} from './lib/kit/island.js';
-import {IdleContent} from './lib/kit/idle.js';
-import {forgetStarts, setMascotRest} from './lib/kit/present.js';
-import {ActivityStack} from './lib/kit/stack.js';
-import {Registry, profileDir, slugOf} from './lib/kit/registry.js';
-import {BuoyDBus} from './lib/kit/dbus.js';
-import {reloadModule} from './lib/kit/devtools.js';
+import {GNOME_CLOCK, GNOME_DOCK, GNOME_WEATHER, lingerMs} from './lib/kit/model/settings.js';
+import {Island} from './lib/kit/ui/island.js';
+import {IdleContent} from './lib/kit/services/idle.js';
+import {forgetStarts, setMascotRest} from './lib/kit/ui/present/motion.js';
+import {ActivityStack} from './lib/kit/model/stack.js';
+import {Registry, profileDir, slugOf} from './lib/kit/services/registry.js';
+import {BuoyDBus} from './lib/kit/services/dbus.js';
+import {reloadModule} from './lib/kit/services/devtools.js';
+import {loadStyle, unloadStyle} from './lib/kit/ui/styles.js';
 
 import media from './lib/modules/media/index.js';
 import notification from './lib/modules/notification/index.js';
@@ -151,8 +152,8 @@ export default class BuoyExtension extends Extension {
         this._settings.connectObject('changed::dev-mode', devMode, this);
     }
 
-    // _active: every running module, {m, src} (src null without a source); devtools.js
-    // reloadModule() swaps one entry
+    // _active: every running module, {m, src, style} (src null without a source, style
+    // null without a stylesheet.css); devtools.js reloadModule() swaps one entry
     _syncModules() {
         for (const m of MODULES) {
             const on = this._settings.get_boolean(`modules-${m.id}`);
@@ -173,19 +174,25 @@ export default class BuoyExtension extends Extension {
         let src = null;
         if (m.source) {
             src = new m.source();
-            // dbus: the agent module answers D-Bus `Agent` (kit/dbus.js setAgent);
+            // dbus: the agent module answers D-Bus `Agent` (kit/services/dbus.js setAgent);
             // extension: this, for a source that needs Buoy's own metadata or prefs (the
             // greeting) — not Extension.lookupByURL (EGO review)
             src.enable(this._stack, this._registry, this._settings, {dbus: this._dbus, extension: this});
         }
-        this._active.push({m, src});
+        this._active.push({m, src, style: this._loadStyle(m.id)});
     }
 
-    // A source ends what it surfaced in disable() (kit/source.js).
+    // its own CSS while it runs (kit/ui/styles.js, ARCHITECTURE "Stylesheets")
+    _loadStyle(id) {
+        return loadStyle(this.dir, id);
+    }
+
+    // A source ends what it surfaced in disable() (kit/services/source.js).
     _stopModule(entry) {
         entry.src?.disable();
         for (const kind of entry.m.kinds)
             this._registry.unregister(kind);
+        unloadStyle(entry.style);
         this._active = this._active.filter(a => a !== entry);
     }
 

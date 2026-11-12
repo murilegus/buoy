@@ -4,8 +4,8 @@ import GLib from 'gi://GLib';
 import {
     FRAMES, POSES, PALETTE, FOREGROUND, LIGHT_LAMPS, FRAME_MS, ONCE_FRAMES, SIZE,
     poseName, moves, lampColour, frameAt, cells, HELLO_MS, helloAt,
-} from '../src/buoy@murilegus/lib/kit/mascot.js';
-import {element, planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/presentation.js';
+} from '../src/buoy@murilegus/lib/kit/model/mascot.js';
+import {element, planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -36,7 +36,7 @@ for (const [head, ...rows] of blocks) {
     docLamps[pose] = lamp;
 }
 
-eq(Object.keys(FRAMES).sort(), Object.keys(docFrames).sort(), 'kit/mascot.js has exactly the frames of MASCOT.md');
+eq(Object.keys(FRAMES).sort(), Object.keys(docFrames).sort(), 'kit/model/mascot.js has exactly the frames of MASCOT.md');
 for (const [name, rows] of Object.entries(docFrames))
     eq(FRAMES[name], rows, `${name}: grid matches MASCOT.md`);
 eq(Object.keys(POSES).length, 13, '13 poses');

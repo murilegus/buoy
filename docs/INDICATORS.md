@@ -123,7 +123,7 @@ The one place an app may put its colour on the pill — Apple's `keylineTint`. I
 
 Slot width 10 px + 6 px gap. When a slot appears the neighbouring zone nudges inward and
 the pill grows by that amount (one short morph). Both slots are inserted by
-`kit/present.js`; adapters and idle plans cannot draw into them.
+`kit/ui/present/`; adapters and idle plans cannot draw into them.
 
 ## Accessibility
 

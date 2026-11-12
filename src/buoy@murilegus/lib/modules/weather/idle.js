@@ -14,7 +14,7 @@
  *   next         the first forecast within the next hour
  */
 
-import {DEFAULT_STARTS, normaliseStarts} from '../../kit/daypart.js';
+import {DEFAULT_STARTS, normaliseStarts} from '../../kit/model/daypart.js';
 
 /** How often the client is asked again while the idle pill shows it, in minutes. */
 export const REFRESH = Object.freeze({'30m': 30, '1h': 60});
@@ -23,7 +23,7 @@ export const DEFAULT_REFRESH = '30m';
 /** This plan's own keys (ARCHITECTURE rule 9: shown under it on the Island page). */
 export const keys = Object.freeze(['idle-weather-automatic', 'idle-weather-refresh']);
 
-/** No wall clock: nothing here changes with the minute (kit/idle.js). */
+/** No wall clock: nothing here changes with the minute (kit/services/idle.js). */
 export const ticks = false;
 
 /**
@@ -108,7 +108,7 @@ export function windText(wind) {
 
 const ICON = 'weather-overcast-symbolic';
 
-// Our own colour icon per condition (icons/weather-<condition>.svg, 2026-11-06, Ethan: the
+// Our own colour icon per condition (icons/color/weather-<condition>.svg, 2026-11-06, Ethan: the
 // symbolic ones read flat next to the clock's daypart icons): one family with the
 // dayparts, drawn by scripts/icons.js (#131, palette A, none of the status colours). Night
 // has its own only where GWeather has one (clear, few clouds).
@@ -128,7 +128,7 @@ export function artFor(icon) {
         return null;
     // the extension's root: this file is <root>/lib/modules/weather/idle.js (no URL in gjs)
     const root = import.meta.url.split('/').slice(0, -4).join('/');
-    return `${root}/icons/weather-${art}.svg`;
+    return `${root}/icons/color/weather-${art}.svg`;
 }
 
 /**

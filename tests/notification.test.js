@@ -3,9 +3,9 @@ import adapter, {
     TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, sharedLine, cardText, stackGroups, countText, rowText,
     HELD_MS, waitedInQueue,
 } from '../src/buoy@murilegus/lib/modules/notification/adapter.js';
-import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
-import {validate, tierOf} from '../src/buoy@murilegus/lib/kit/activity.js';
-import {Registry} from '../src/buoy@murilegus/lib/kit/registry.js';
+import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
+import {validate, tierOf} from '../src/buoy@murilegus/lib/kit/model/activity.js';
+import {Registry} from '../src/buoy@murilegus/lib/kit/services/registry.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

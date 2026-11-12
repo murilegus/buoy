@@ -12,7 +12,7 @@ into a language). B is what Isle and GSConnect do; contributors recognise it.
 ```
 src/buoy@murilegus/
 ├── metadata.json
-├── stylesheet.css
+├── stylesheet.css          the kit's and the panel's CSS, in sections (Stylesheets, below)
 ├── extension.js            enable(): panel → kit → load enabled modules
 ├── panel.js                top bar rework: left cluster (app/workspace), bare tray, system cluster (QS + clock)
 ├── wallpaper.js            the wallpaper Shell draws, decoded once per change, for cluster-contrast (2026-11-04)
@@ -20,44 +20,68 @@ src/buoy@murilegus/
 ├── reach.js                the Overview's workspace backgrounds grow under the see-through bar, so closing it ends on the whole wallpaper (2026-11-04)
 ├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
 ├── prefs.js                Adw prefs: Island, Modules (one row per module, in groups: live in the pill,
-│                           quick feedback, tabs, Bu — kit/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
+│                           quick feedback, tabs, Bu — kit/model/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
 │                           2026-11-04), Windows (corners, 2026-11-04), About (version, Bu,
 │                           metadata `donations` as "Support Buoy", `dev-mode`)
 ├── schemas/                GSettings: the one source of every key, its summary and range
 ├── hooks/                  claude.js: Claude Code's hook (run by Claude Code, never by Buoy),
 │                           installed from prefs; stdin → D-Bus `Agent` (CODING-AGENTS.md, 2026-11-07)
-├── icons/                  the daypart and weather colour SVGs (one family, scripts/icons.js is the
-│                           source and draws docs/icons.png; 2026-11-06) and the lock-key symbolics
+├── icons/
+│   ├── color/              the daypart and weather colour SVGs (one family, scripts/icons.js is the
+│   │                       source and draws docs/icons.png; 2026-11-06)
+│   └── symbolic/           `<name>-symbolic.svg`, tinted by St with the text colour (the lock keys)
 └── lib/
-    ├── kit/                FRAMEWORK — stable API; the only thing modules import
-    │   ├── activity.js     contract (CONTRACT.md §1), validate + normalise
-    │   ├── stack.js        pure (no Shell; an injected clock): surface / update / end / schedule / ask; the pill order (PRIORITY.md);
-    │   │                   ttl, stale, transient, alert; `apps-hidden` filter; missed history;
-    │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
-    │   ├── presentation.js presentation data → render plan; pure, unit-tested (2026-11-01)
-    │   ├── present.js      render plan → St actors. ONLY place content actors are made
-    │   │                   (cover art: St.Icon, loaded async, rounded by a Shell.GLSLEffect —
-    │   │                   not a CSS background-image, which St keeps in its texture cache)
-    │   ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
-    │   ├── pill.js         one pill: content, sizing, hover → compact, morph (2026-11-01; tier names 2026-11-05)
-    │   ├── home.js         the panel a click opens: tab strip + tab body (Home: Missed, chips,
-    │   │                   the modules' blocks in two columns, 2026-11-08; kind, standalone)
-    │   ├── tabs.js         which tabs exist, where an open starts; pure, unit-tested (2026-11-02)
-    │   ├── keys.js         keyboard: an ask's keys, ←/→ steps; pure, unit-tested (2026-11-03)
-    │   ├── settings.js     prefs: which page each schema key goes to, samples; pure (2026-11-03)
-    │   ├── cluster.js      what the left cluster shows (app / workspace / hover); pure (2026-11-04)
-    │   ├── contrast.js     wallpaper placement + luminance → dark or light text per side; pure (2026-11-04)
-    │   ├── rounded.js      which windows get round top corners, where the arcs fall, the shader; pure (2026-11-04)
-    │   ├── daypart.js      hour → dawn…night from `daypart-starts`; pure (2026-11-03)
-    │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
-    │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()` (pure; kit/idle.js runs the one timer while idle, 2026-11-08)
-    │   ├── mascot.js       Bu: 13 pose grids, lamp rule, frame timing, pure; MASCOT.md is the source (2026-11-03; eyes data with M4)
-    │   ├── registry.js     app-id normalisation table; adapter resolution
-    │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
-    │   ├── files.js        small files read without blocking the Shell: readText, listInfos/listNames, ppidOf (EGO review, 2026-11-09)
-    │   ├── sharing.js      the screen shared or recorded, from Shell's indicators (agent, notification; 2026-11-07)
-    │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
-    │   └── shapes.js
+    ├── kit/                FRAMEWORK — stable API; the only thing modules import. Three layers
+    │   │                   (2026-11-12, FEATURES M4 "Restructure"); `eslint.config.js` checks who
+    │   │                   imports what (rule 1, 2), `tests/boundaries.mjs` checks that check
+    │   ├── settings.js     re-exports model/settings.js: the path 0.1's install.sh imports on
+    │   │                   --uninstall (Outside the extension); keep it
+    │   ├── model/          pure: no St, Clutter, Meta, Shell, Main, Gio, no files; GLib only (a
+    │   │   │               timer, a variant). Imports model/ only. Unit-tested with plain gjs
+    │   │   ├── activity.js     contract (CONTRACT.md §1), validate + normalise
+    │   │   ├── stack.js        an injected clock: surface / update / end / schedule / ask; the pill order (PRIORITY.md);
+    │   │   │                   ttl, stale, transient, alert; `apps-hidden` filter; missed history;
+    │   │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
+    │   │   ├── presentation.js presentation data → render plan (2026-11-01)
+    │   │   ├── shapes.js       the pill's sizes from the monitor (rule 11)
+    │   │   ├── tabs.js         which tabs exist, where an open starts (2026-11-02)
+    │   │   ├── keys.js         keyboard: an ask's keys, ←/→ steps (2026-11-03)
+    │   │   ├── settings.js     prefs: which page each schema key goes to, samples (2026-11-03)
+    │   │   ├── cluster.js      what the left cluster shows (app / workspace / hover) (2026-11-04)
+    │   │   ├── contrast.js     wallpaper placement + luminance → dark or light text per side (2026-11-04)
+    │   │   ├── rounded.js      which windows get round top corners, where the arcs fall, the shader (2026-11-04)
+    │   │   ├── daypart.js      hour → dawn…night from `daypart-starts` (2026-11-03)
+    │   │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()` (2026-11-08)
+    │   │   └── mascot.js       Bu: 13 pose grids, lamp rule, frame timing; MASCOT.md is the source (2026-11-03)
+    │   ├── services/       the Shell side without actors: buses, files, Shell's objects, the
+    │   │   │               one wall clock. Imports model/ and services/, never ui/, St or Clutter
+    │   │   ├── registry.js     app-id normalisation table; adapter resolution; app profiles
+    │   │   ├── source.js       the base class of a module's source.js
+    │   │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
+    │   │   ├── files.js        small files read without blocking the Shell: readText, listInfos/listNames, ppidOf (EGO review, 2026-11-09)
+    │   │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
+    │   │   ├── sharing.js      the screen shared or recorded, from Shell's indicators (agent, notification; 2026-11-07)
+    │   │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
+    │   │   └── devtools.js     `dev-mode`'s module hot swap
+    │   └── ui/             actors. Imports anything in kit/, never a module
+    │       ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
+    │       ├── pill.js         one pill: content, sizing, hover → compact, morph (2026-11-01; tier names 2026-11-05)
+    │       ├── home.js         the panel a click opens: tab strip + tab body (Home: Missed, chips,
+    │       │                   the modules' blocks in two columns, 2026-11-08; kind, standalone)
+    │       ├── styles.js       a module's stylesheet.css, loaded while it runs (Stylesheets, below)
+    │       └── present/        render plan → St actors. The ONLY place content actors are made,
+    │           │               one file per tier (2026-11-12; was present.js)
+    │           ├── parts.js        labels, meters (ring, bar, level, live position), timed labels,
+    │           │                   tick(), FillBox, progressBar()
+    │           ├── motion.js       what moves, each by rule 8: the marquee, Bu and his stillness,
+    │           │                   the equaliser, typed text; dimStale()
+    │           ├── elements.js     one element of presentation data as an actor (cover art: St.Icon,
+    │           │                   loaded async, rounded by a Shell.GLSLEffect — not a CSS
+    │           │                   background-image, which St keeps in its texture cache), action
+    │           │                   buttons and their keys, the light, EmptyState
+    │           ├── minimal.js      the pill in the bar and the idle pill
+    │           ├── compact.js      the hover tier: the compact, the card, Missed's
+    │           └── expanded.js     the expanded view
     └── modules/            FEATURES — one self-contained folder each
         └── <id>/
             ├── index.js    export default {id, kinds, source, adapter, tab?,
@@ -81,7 +105,7 @@ src/buoy@murilegus/
             │               2026-11-08): a class, `new Block({open, close, changed,
             │               settings})` → {actor, ready, update?(activities), refresh?(),
             │               destroy()}; made the first time Home shows, kept for the open
-            │               (kit/home.js moves its actor between layouts), destroyed when
+            │               (kit/ui/home.js moves its actor between layouts), destroyed when
             │               expanded closes; `ready` false → left out; `changed()` when
             │               `ready` flips; column 'start' (Now playing) or 'end'
             ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
@@ -93,8 +117,10 @@ src/buoy@murilegus/
             ├── feed.js     the Shell side of an idle plan with data of its own (optional;
             │               weather 2026-11-06, calendar 2026-11-08): index.js `feed`, `new Feed(onChanged)` →
             │               {state, shown(shown, opts), destroy()}; `state` is the plan's
-            │               `ctx.data`. Made by kit/idle.js while its plan is the one in use,
+            │               `ctx.data`. Made by kit/services/idle.js while its plan is the one in use,
             │               told when the idle pill shows so it fetches only then (rule 8)
+            ├── stylesheet.css  its own CSS: its tab's and its Home block's (optional;
+            │               Stylesheets, below)
             └── apps/       per-app overrides, <slug>.js, same method names as adapter.js
 ```
 
@@ -104,6 +130,25 @@ A module may keep more pure files beside these when they are worth testing alone
 `layout.js`: the Media tab's art size and meta line, 2026-11-08) and a
 Shell-side reader its feed and tab share (calendar's `events.js`: the date menu's event
 source, 2026-11-08).
+
+### Stylesheets
+
+*2026-11-12, FEATURES M4 "Restructure".* `stylesheet.css` holds the panel's and the kit's
+CSS in sections, in this order: the panel, the pill and its content, compact, the card, Home
+and the tab strip. A module's own CSS (its tab, its Home block) is
+`lib/modules/<id>/stylesheet.css`; `kit/ui/styles.js` loads it when the module starts and
+unloads it when it stops (rule 6: off, nothing of it is loaded), as Shell loads an
+extension's (`ui/extensionSystem.js` `_loadExtensionStylesheet`: `St.Theme.load_stylesheet`,
+no `@import`). Shell's theme reload carries them over (`ui/main.js` `loadTheme`). Two rules
+follow from St:
+
+- At equal specificity **`stylesheet.css` wins over a module's**: St matches the stylesheets
+  loaded last first, and a later match wins (`st-theme.c` `st_theme_load_stylesheet` prepends,
+  `_st_theme_get_matched_properties` sorts stably by specificity); Shell loads Buoy's before
+  `enable()`. A module rule that restyles a kit class names its own container too
+  (`.buoy-agents-line .buoy-agents-time` over `.buoy-label`).
+- A module's selectors are its own: classes named `buoy-<its words>-…`, used only by its
+  files; the kit's classes are styled only in `stylesheet.css`.
 
 ### Module kinds
 
@@ -127,7 +172,9 @@ idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone t
 
 `install.sh` (repo root) installs, updates and removes Buoy for one user without EGO, from
 a GitHub release, a zip or a clone; it uses the installed extension's own `hooks.js` and
-`kit/settings.js` (pure) on removal. A tag `v<version-name>` publishes a release
+`lib/kit/settings.js` (pure) on removal. Both paths stay: the install.sh of 0.1 and later
+imports them from whatever version is installed (since 2026-11-12 `lib/kit/settings.js`
+re-exports `kit/model/settings.js`). A tag `v<version-name>` publishes a release
 (`.github/workflows/release.yml`, `scripts/release-check.sh`) with
 `docs/releases/<version-name>.md` as its notes; `tests/metadata.test.js` keeps the version's
 name the same in metadata.json, notes.js and package.json, and checks that metadata's
@@ -183,9 +230,16 @@ fields and order: [PROFILES.md](PROFILES.md).
 ## Rules
 
 1. **Modules import `kit/` only.** Never another module. Modules talk through activities.
+   Inside the kit, `model/` imports model/ and GLib only, `services/` never imports `ui/`,
+   St or Clutter, and nothing in the kit imports a module. `pnpm lint` checks these
+   (`eslint.config.js`, `no-restricted-imports`; its cases in `tests/boundaries.mjs`,
+   2026-11-12).
 2. **`kit/` may import `Main`/Shell. `adapter.js` and `apps/*.js` may not** — no `St`, no
    `Main`, no timers. They are pure functions `event → presentation data`, testable with `gjs`.
-   `source.js` and `tab.js` may use Shell APIs.
+   `source.js` and `tab.js` may use Shell APIs. So `adapter.js`, `apps/*.js`, `idle.js` and
+   `hooks.js` import only their own module's files and `kit/model/`, and prefs.js nothing
+   that needs the Shell (`kit/ui/`, `St`, `Main`, a module's source, tab, home or feed),
+   checked by `pnpm lint` as rule 1 (2026-11-12).
 3. **Adapters return data, never actors.** Shape of the data is fixed by `presentation.js`:
    `{leading, text, trailing, expanded:{leading,trailing,center,bottom}, actions, ttl,
    priority, keyline, style, sizeHint, onPress, compact}` (`compact` = the hover tier, was
@@ -196,12 +250,13 @@ fields and order: [PROFILES.md](PROFILES.md).
 4. **Per-app overrides live under the module of the kind they override.** An app present
    in two kinds has two small files. No central `apps/<app>/` folder.
 5. **One slug per app** across every source (MPRIS bus name, desktop id, notification
-   app name) — the table lives in `kit/registry.js`; modules only see the slug.
+   app name) — the table lives in `kit/services/registry.js`; modules only see the slug.
 6. **Module off = not imported** (`modules-<id>` false): no signal connected, no actor
    created, zero cost. Hiding an app (`apps-hidden`) is a stack filter, not an adapter concern.
 7. **No code loaded at runtime** (EGO rule). User customisation is JSON profiles only:
    icon, title template, hide body, priority, ttl, simple regex. Logic needs a PR. Also for
-   EGO review: no synchronous file IO in the Shell process (`kit/files.js` reads async);
+   EGO review: no synchronous file IO in the Shell process (`kit/services/files.js` reads
+   async; the one exception is St's own stylesheet load, as Shell does it);
    signals tied to their owner with `connectObject` / `disconnectObject`; the Extension object
    is passed down from `extension.js`, never looked up by URL.
 8. **No polling while closed; no blur; nothing animating while idle.** A source that must
@@ -228,7 +283,7 @@ fields and order: [PROFILES.md](PROFILES.md).
    plan, so what the idle pill shows and how is set in one place (2026-11-04, Ethan). A
    module that is only an idle plan (clock, weather) has its switch on its plan's row there too and
    no row on Modules (2026-11-06, Ethan; was a switch-only row on Modules); a module that
-   is more than its plan keeps its row on Modules. Each key has exactly one place: `kit/settings.js` places the rest
+   is more than its plan keeps its row on Modules. Each key has exactly one place: `kit/model/settings.js` places the rest
    and lists the idle plans (prefs cannot import a module, below), and
    `tests/settings.test.js` fails on a key with no place or no text, or an `idle-<plan>-…`
    key anywhere but under its plan. A key enters the schema with the item that implements it, so prefs
@@ -243,7 +298,7 @@ fields and order: [PROFILES.md](PROFILES.md).
     destroys it when expanded closes; closed costs nothing however many are enabled.
 11. **Adapters never return measurements.** No `width`, `height`, `x`, px, or monitor
     queries — only content plus discrete hints (`size: 'wide'`, region `priority`). Sizes
-    are derived in `kit/shapes.js` from the monitor; the renderer fits content (ellipsize
+    are derived in `kit/model/shapes.js` from the monitor; the renderer fits content (ellipsize
     text, drop low-priority regions). An adapter written on one screen behaves on every screen.
 
 ## Settings model

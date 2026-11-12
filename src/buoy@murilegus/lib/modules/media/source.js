@@ -3,8 +3,8 @@ import GLib from 'gi://GLib';
 
 import {MprisPlayer} from 'resource:///org/gnome/shell/ui/mpris.js';
 
-import {appOfBusName} from '../../kit/apps.js';
-import {Source} from '../../kit/source.js';
+import {appOfBusName} from '../../kit/services/apps.js';
+import {Source} from '../../kit/services/source.js';
 
 /**
  * Media players (FEATURES M3 "media"). Each MPRIS player is one activity from the moment
@@ -17,7 +17,7 @@ import {Source} from '../../kit/source.js';
  * Metadata (track id, length, album), Position, CanSeek, Shuffle and LoopStatus, and
  * sends SetPosition. All signals: MPRIS emits no Position changes (only Seeked), so the
  * position is read once on each status, track or seek change and the renderer runs it
- * on from there while shown (present.js, ARCHITECTURE rule 8). Players are found as
+ * on from there while shown (kit/ui/present/, ARCHITECTURE rule 8). Players are found as
  * Shell's MprisSource does, on NameOwnerChanged.
  */
 
@@ -125,7 +125,7 @@ class Player {
     // The player comes up, on its playing tab (2026-11-07, Ethan): Shell's MprisPlayer.raise
     // activates the app from `DesktopEntry`, else calls Raise() — Chrome sends neither a
     // DesktopEntry nor CanRaise, so nothing came up, and Firefox's window came up on
-    // whichever tab it showed. Now: the app from the player's bus pid (kit/apps.js),
+    // whichever tab it showed. Now: the app from the player's bus pid (kit/services/apps.js),
     // activated by Shell (always allowed), then the player's own Raise(): a browser then
     // switches to the playing tab itself (Firefox does; Chrome cannot: CanRaise false).
     async _raise(time) {

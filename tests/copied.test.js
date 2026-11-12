@@ -1,9 +1,9 @@
-// Run: gjs -m tests/clipboard.test.js   (no Shell needed; adapters are pure)
+// Run: gjs -m tests/copied.test.js   (no Shell needed; adapters are pure)
 import adapter, {
     TTL, contentOf, imageMime, filesMime, filesOf, oneLine, filesText, copiedHere,
 } from '../src/buoy@murilegus/lib/modules/copied/adapter.js';
-import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
-import {validate, FEEDBACK} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
+import {validate, FEEDBACK} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

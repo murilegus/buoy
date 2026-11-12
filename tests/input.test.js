@@ -1,7 +1,7 @@
 // Run: gjs -m tests/input.test.js   (no Shell needed; adapters are pure)
 import adapter, {TTL, ICON, PANEL, labelOf, shouldFlash, CHAIN_MS, switchStep, primaryModifier} from '../src/buoy@murilegus/lib/modules/input/adapter.js';
-import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/presentation.js';
-import {FEEDBACK, PRIORITY, validate} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
+import {FEEDBACK, PRIORITY, validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

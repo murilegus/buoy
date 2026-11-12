@@ -3,7 +3,7 @@ import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
-import {Source} from '../../kit/source.js';
+import {Source} from '../../kit/services/source.js';
 import {contentOf, copiedHere, filesMime, filesOf, imageMime} from './adapter.js';
 
 const ID = 'copied';

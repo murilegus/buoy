@@ -8,9 +8,9 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {AppMenu} from 'resource:///org/gnome/shell/ui/appMenu.js';
 
-import {clusterFill, fallbackIcons, leftCluster} from './lib/kit/cluster.js';
-import {contrastFor, spanLuminance} from './lib/kit/contrast.js';
-import {gnomeDefaults} from './lib/kit/settings.js';
+import {clusterFill, fallbackIcons, leftCluster} from './lib/kit/model/cluster.js';
+import {contrastFor, spanLuminance} from './lib/kit/model/contrast.js';
+import {gnomeDefaults} from './lib/kit/model/settings.js';
 import {TrayGlyphs} from './glyphs.js';
 import {reachUnderBar, wallpaperUnderBar} from './reach.js';
 import {Wallpaper} from './wallpaper.js';
@@ -146,7 +146,7 @@ export function setContrast(mode) {
     applyContrast();
 }
 
-// Each side gets the text its stretch of the wallpaper wants (kit/contrast.js); the class
+// Each side gets the text its stretch of the wallpaper wants (kit/model/contrast.js); the class
 // only changes when the answer does, so a relayout costs a few additions.
 function applyContrast() {
     const mon = Main.layoutManager.primaryMonitor;
@@ -172,7 +172,7 @@ function applyContrast() {
 
 /**
  * Once per install, per group: GNOME's own keys get Buoy's defaults where the user never
- * set them (kit/settings.js gnomeDefaults) — the clock (the time alone, 24-hour) and Ubuntu
+ * set them (kit/model/settings.js gnomeDefaults) — the clock (the time alone, 24-hour) and Ubuntu
  * Dock (bottom, hiding, 32 px, primary display; Ethan 2026-11-04). The values are shared
  * with Settings, which shows the same keys; nothing is reverted on disable (the lock
  * screen disables Buoy too). A group whose schema is not installed writes nothing.
@@ -212,7 +212,7 @@ export function setLeftEmpty(mode) {
 
 // The stylesheet's transition-duration fades the change in both directions.
 // Filled as GNOME fills a panel button, so it reads like a tray button's hover: the
-// cluster's own foreground (the theme's, or the contrast's text) at kit/cluster.js
+// cluster's own foreground (the theme's, or the contrast's text) at kit/model/cluster.js
 // clusterFill's alpha. The system cluster keeps it, a step up, while its
 // menu is open, as a panel button stays :checked (its own highlight is off, see the
 // stylesheet).
@@ -415,7 +415,7 @@ function appIcon(app) {
     return new St.Icon({gicon: own ?? fallback, fallback_gicon: fallback, style_class: 'buoy-app-icon'});
 }
 
-// [▣ app · ⊞ 2] or [⊞ 2] (kit/cluster.js decides). Click toggles the Overview,
+// [▣ app · ⊞ 2] or [⊞ 2] (kit/model/cluster.js decides). Click toggles the Overview,
 // right-click opens the app's menu (Shell's own AppMenu, as on a dash icon), scroll
 // switches workspace (Main.wm.handleWorkspaceScroll, the Overview's own limiter). Every
 // update comes from a signal: focus, workspace, names, Overview, the cluster's hover.

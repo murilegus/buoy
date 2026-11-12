@@ -16,7 +16,7 @@
  * compactOnHover, raise(), onAction(id, value?)}.
  */
 
-import {SETTLE_MS} from '../../kit/activity.js';
+import {SETTLE_MS} from '../../kit/model/activity.js';
 
 export const ICON = 'audio-x-generic-symbolic';
 export const PAUSED_ICON = 'media-playback-pause-symbolic';

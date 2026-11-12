@@ -90,10 +90,10 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 
 ## Chỗ trong code
 
-- `lib/kit/home.js` — viết lại theo bố cục này: thẻ chính, hàng ô, quy tắc lấp, ô rộng; bỏ mục
+- `lib/kit/ui/home.js` — viết lại theo bố cục này: thẻ chính, hàng ô, quy tắc lấp, ô rộng; bỏ mục
   Bị nhỡ, chip và hai cột khối.
-- `CONTRACT.md`, `lib/kit/activity.js` — ô của một activity lấy từ minimal của nó (leading → icon,
+- `CONTRACT.md`, `lib/kit/model/activity.js` — ô của một activity lấy từ minimal của nó (leading → icon,
   nhãn → số); một trường mới cho phần nhìn nhanh (thời tiết, lịch, pin, điện thoại, hẹn giờ).
 - `lib/modules/weather/`, `lib/modules/calendar/` — ô rộng; thời tiết dùng icon màu ở 24 và 48.
-- `lib/kit/stack.js` — Bị nhỡ đếm cả thông báo chưa xem (từ `flagMissed` của module notifications).
+- `lib/kit/model/stack.js` — Bị nhỡ đếm cả thông báo chưa xem (từ `flagMissed` của module notifications).
 - SPEC §3 viết lại (thay "Missed", chip và các khối), §4 (Home không còn 56 + 32n).

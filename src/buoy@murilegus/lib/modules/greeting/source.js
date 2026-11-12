@@ -2,7 +2,7 @@ import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {Source} from '../../kit/source.js';
+import {Source} from '../../kit/services/source.js';
 import {caseOf, noteFor} from './adapter.js';
 import notes from './notes.js';
 

@@ -7,7 +7,7 @@ import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
 import GLib from 'gi://GLib';
 import Rsvg from 'gi://Rsvg?version=2.0';
-import {frameAt, cells, lampColour} from '../../../src/buoy@murilegus/lib/kit/mascot.js';
+import {frameAt, cells, lampColour} from '../../../src/buoy@murilegus/lib/kit/model/mascot.js';
 
 export const SCALE = 3;
 
@@ -70,7 +70,7 @@ export function taskState(cr, kind, x, y, s = 16) {
     icon(cr, name, x, y, s, [1, 1, 1], a);
 }
 
-// Bu from the extension's own grids (kit/mascot.js), with the lamps as decided (design/colours,
+// Bu from the extension's own grids (kit/model/mascot.js), with the lamps as decided (design/colours,
 // 2026-11-11; the code still has the old ones until "Colours by role"). cell = px per grid cell.
 export const LAMPS = Object.freeze({idle: '#C8C6BD', done: '#B4E33D', party: '#B4E33D', busy: '#3D9BFF',
     wave: '#FFE14D', think: '#FF7EB6', compact: '#5AD8F5', error: '#8A8880', missed: '#FF9F0A', ask: '#FF453A'});

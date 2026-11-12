@@ -9,9 +9,9 @@ import {
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, commandFor, hooksNote, install, installed, isOurs, uninstall,
 } from '../src/buoy@murilegus/lib/modules/agent/hooks.js';
-import {Registry} from '../src/buoy@murilegus/lib/kit/registry.js';
-import {PRIORITY as KIT_PRIORITY, SETTLE_MS, tierOf, validate} from '../src/buoy@murilegus/lib/kit/activity.js';
-import {planCompact, planExpanded, planMinimal} from '../src/buoy@murilegus/lib/kit/presentation.js';
+import {Registry} from '../src/buoy@murilegus/lib/kit/services/registry.js';
+import {PRIORITY as KIT_PRIORITY, SETTLE_MS, tierOf, validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
+import {planCompact, planExpanded, planMinimal} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);

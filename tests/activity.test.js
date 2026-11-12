@@ -1,5 +1,5 @@
 // Run: gjs -m tests/activity.test.js
-import {validate, PRIORITY} from '../src/buoy@murilegus/lib/kit/activity.js';
+import {validate, PRIORITY} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 
 const a = validate({id: 'media:spotify:1', kind: 'media'});
 if (a.priority !== PRIORITY.media)

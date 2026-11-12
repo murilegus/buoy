@@ -11,7 +11,7 @@ export default {
     title: 'Claude Code',
     // Claude's tray glyph, the white one for a dark bar, as Claude Desktop installs it
     // (Ethan 2026-11-07: the tray's mark, not the app icon); not shipped with Buoy, and
-    // without Claude Desktop the strip's generic icon (kit/present.js iconProps)
+    // without Claude Desktop the strip's generic icon (kit/ui/present/elements.js iconProps)
     icon: '/usr/lib/claude-desktop/resources/TrayIconLinux-Dark.png',
     // the tab only while a session or a prompt is there (Ethan, 2026-11-07)
     tabWhileLive: true,

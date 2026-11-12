@@ -263,7 +263,7 @@ export class ActivityStack {
             this.surface({
                 id, kind: 'ask', app, text: question, alert: !quiet, expanded: true, ...own, quiet: !!quiet,
                 actions: options.map(o => ({id: o, label: o})),
-                onAction: choice => this.answer(id, choice), // present.js buttons
+                onAction: choice => this.answer(id, choice), // ui/present/ buttons
             });
             if (timeoutMs > 0)
                 this._arm(id, 'ask', timeoutMs, () => this._settle(id, fallback));

@@ -4,7 +4,7 @@ import GLib from 'gi://GLib';
 import GWeather from 'gi://GWeather';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {withPlace} from '../../kit/settings.js';
+import {withPlace} from '../../kit/model/settings.js';
 import {refreshMs} from './idle.js';
 import {readInfo, unitNames} from './read.js';
 

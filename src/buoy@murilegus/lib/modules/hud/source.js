@@ -7,8 +7,8 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {listNames, readText} from '../../kit/files.js';
-import {Source} from '../../kit/source.js';
+import {listNames, readText} from '../../kit/services/files.js';
+import {Source} from '../../kit/services/source.js';
 import {isFnLockLed, ledOn} from './adapter.js';
 
 const ID = 'hud';
@@ -16,9 +16,9 @@ const ID = 'hud';
 // the extension's root: this file is <root>/lib/modules/hud/source.js
 const ROOT = import.meta.url.split('/').slice(0, -4).join('/');
 const LOCK_ICONS = {
-    caps: `${ROOT}/icons/caps-lock-symbolic.svg`,
-    num: `${ROOT}/icons/num-lock-symbolic.svg`,
-    fn: `${ROOT}/icons/fn-lock-symbolic.svg`,
+    caps: `${ROOT}/icons/symbolic/caps-lock-symbolic.svg`,
+    num: `${ROOT}/icons/symbolic/num-lock-symbolic.svg`,
+    fn: `${ROOT}/icons/symbolic/fn-lock-symbolic.svg`,
 };
 const LEDS = '/sys/class/leds';
 const STORM = 20;           // more wake-ups than this in a second: the watch gives up
@@ -80,7 +80,7 @@ export class OsdSource extends Source {
     }
 
     // Read-only and event-driven: a watch on brightness_hw_changed, re-armed by reading it.
-    // Finding the LED and its first state is read without blocking the Shell (kit/files.js,
+    // Finding the LED and its first state is read without blocking the Shell (kit/services/files.js,
     // EGO review); disable() cancels it if it is still going.
     async _watchFnLock() {
         const reads = this._fnReads = new Gio.Cancellable();

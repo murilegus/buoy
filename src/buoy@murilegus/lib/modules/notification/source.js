@@ -5,8 +5,8 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {Source} from '../../kit/source.js';
-import {SharingWatch} from '../../kit/sharing.js';
+import {Source} from '../../kit/services/source.js';
+import {SharingWatch} from '../../kit/services/sharing.js';
 import {DISMISS, actionIndex, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
@@ -31,7 +31,7 @@ const REPLACE_KEY = 'notification-replace-banners';
  * - Held: one that waited in Shell's queue (full screen, busy, locked) shows when the
  *   screen is back but stays unseen, so the tab counts it as missed (§1). Its time in the
  *   queue is stamped on the tray's `queue-changed`.
- * - The screen shared or recorded (kit/sharing.js): the text hides (§5), watched only
+ * - The screen shared or recorded (kit/services/sharing.js): the text hides (§5), watched only
  *   while a pill is up.
  * - Unseen (§2): while GNOME's list holds notifications nobody has seen — the date
  *   menu's own count, `unseenCount` less the queue (ui/dateMenu.js MessagesIndicator) —

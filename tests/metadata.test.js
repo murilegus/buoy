@@ -2,7 +2,7 @@
 // metadata.json and the schema must agree, or getSettings() throws in enable().
 import GLib from 'gi://GLib';
 
-import {donationLinks} from '../src/buoy@murilegus/lib/kit/settings.js';
+import {donationLinks} from '../src/buoy@murilegus/lib/kit/model/settings.js';
 
 const ROOT = GLib.path_get_dirname(GLib.path_get_dirname(
     GLib.filename_from_uri(import.meta.url)[0]));

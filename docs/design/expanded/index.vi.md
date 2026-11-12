@@ -21,6 +21,6 @@ không mở expanded ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dù
 
 ## Chỗ trong code
 
-- `lib/kit/shapes.js` — chiều cao expanded theo 56 + 16n, tối đa rộng/2.
-- `lib/kit/island.js` — expanded chỉ mở khi bấm hoặc cho transient.
+- `lib/kit/model/shapes.js` — chiều cao expanded theo 56 + 16n, tối đa rộng/2.
+- `lib/kit/ui/island.js` — expanded chỉ mở khi bấm hoặc cho transient.
 - SPEC §2 (bảng các dạng), §2b (thanh tab), §4 (bảng kích thước).

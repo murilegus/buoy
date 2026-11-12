@@ -12,8 +12,8 @@
  * Field names checked against code.claude.com/docs/en/hooks on 2026-11-07 (§12).
  */
 
-import {PRIORITY, SETTLE_MS} from '../../kit/activity.js';
-import {sinceText} from '../../kit/presentation.js';
+import {PRIORITY, SETTLE_MS} from '../../kit/model/activity.js';
+import {sinceText} from '../../kit/model/presentation.js';
 
 /** The agents this module knows, by the `source` the hook sends (CODING-AGENTS.md §1). */
 export const AGENTS = {claude: 'Claude'};

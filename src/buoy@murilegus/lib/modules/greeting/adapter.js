@@ -11,7 +11,7 @@
  *   onMore()    "…and more": open prefs on About → What's new
  */
 
-import {TYPE_MS, typingMs} from '../../kit/presentation.js';
+import {TYPE_MS, typingMs} from '../../kit/model/presentation.js';
 
 /** How long the greeting stays once its last line is in (Ethan, 2026-11-08). */
 export const SHOW_MS = 12000;
