@@ -25,6 +25,11 @@ và cách từng chuyển diễn ra; số dùng chung ở [Bảng số](../token
 - **Bo góc đi theo chiều cao**: bo = min(cao / 2, bo của dạng đích), không đổi ngay ở đầu chuyển như
   nay. **Đề xuất**
 - **Không blur** (luật 8). Chỗ Apple dùng blur khi đổi nội dung, Buoy dùng độ mờ và mép hình. **Chốt**
+- **Phần chung đi tới chỗ mới hay mờ đi rồi hiện lại?** HIG (Live Activities) khuyên giữ bố cục cũ
+  nhiều nhất có thể, "animating existing elements to their new positions rather than removing and
+  animating them back in": leading của minimal (20) lớn lên và đi tới chỗ leading của compact (40),
+  tên đi tới chỗ tên. SPEC §5 hiện nói ngược lại: nội dung không dời, không đổi cỡ trong lúc morph,
+  chỉ lộ theo mép nền (đang làm như vậy, hình bên dưới vẽ như vậy). **Mở**
 
 ## Lò xo và độ mờ
 
@@ -121,6 +126,19 @@ Idle không có gì chuyển động; idle đổi nội dung là một lần `id
   xuất**
 - Khung chứa island chừa ít nhất 12 px quanh hình cho phần vọt quá (`OVERSHOOT` 20 như nay). **Đề
   xuất**
+
+## Nguồn
+
+- WWDC23 "Animate with springs": lò xo tả bằng thời gian cảm nhận và độ nảy, công thức đổi ra độ cứng
+  và giảm chấn; lò xo giữ vận tốc khi bị đổi đích; bounce 0 là lò xo đa dụng nhất, trên khoảng 0.4 là
+  quá đà cho giao diện.
+- HIG, Live Activities: compact, minimal, expanded; alert mở expanded rồi thu lại; "Animate layout
+  changes"; tránh để phần tử chồng nhau khi chuyển, trong danh sách chỉ phần tử dời chỗ chuyển động,
+  phần còn lại mờ đi rồi hiện lại; chuyển động của Live Activity tối đa 2 s; bo đồng tâm, lề đều.
+  Trang không ghi thời gian hay đường cong của Dynamic Island.
+- HIG, Motion: chuyển động có mục đích, ngắn và chính xác; ít chuyển động cho thao tác lặp lại nhiều;
+  "Let people cancel motion": không bắt người dùng đợi chuyển động xong; không dựa riêng vào chuyển
+  động để báo tin.
 
 ## Chỗ trong code
 
