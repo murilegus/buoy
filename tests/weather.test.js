@@ -6,7 +6,7 @@ import weather, {
     ART, artFor, card,
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
 import {
-    readInfo, nextHour, unitNames, IP_ONLY_METRES, goodFix, nextFix, locateOutcome,
+    readInfo, nextHour, unitNames, IP_ONLY_METRES, goodFix, nextFix, locateOutcome, shouldRetry, RETRY_MS,
 } from '../src/buoy@murilegus/lib/modules/weather/read.js';
 import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
@@ -282,5 +282,8 @@ eq([unitNames('invalid', 'x'), unitNames(null, undefined)], [{temperature: 'DEFA
     eq(locateOutcome({use: null, held: ip}), 'kept', 'only IP, the place kept');
     eq([locateOutcome({use: null, held: null}), locateOutcome()], ['none', 'none'], 'nothing came');
 }
+eq(RETRY_MS, 120000, 'the second ask: 2 min later');
+eq(['ip', 'kept', 'none', 'wifi'].map(o => shouldRetry(o, false)), [true, true, true, false], 'no Wi-Fi fix: ask once more');
+eq(['ip', 'kept', 'none'].map(o => shouldRetry(o, true)), [false, false, false], 'only once');
 
 print('weather: ok');

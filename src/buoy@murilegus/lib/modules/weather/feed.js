@@ -7,7 +7,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {withPlace} from '../../kit/model/settings.js';
 import {refreshMs} from './idle.js';
-import {goodFix, locateOutcome, nextFix, readInfo, unitNames} from './read.js';
+import {RETRY_MS, goodFix, locateOutcome, nextFix, readInfo, shouldRetry, unitNames} from './read.js';
 
 // As long as Geoclue may take for a first fix before this ask gives up (Wi-Fi scan, IP)
 const LOCATE_TIMEOUT = 15;
@@ -61,6 +61,9 @@ export class WeatherFeed {
         this._automatic = true;
         this._locating = null;            // the Geoclue ask running (_locate)
         this._waiting = null;             // waiting for another feed's ask (shared)
+        this._retryId = 0;                // the second ask, RETRY_MS after one with no Wi-Fi fix
+        this._retried = false;            //   it already came in this round
+        this._retryDone = null;           // source.js waits for it
         this._weakPlace = null;           // placeKey of the place an IP-only fix wrote last
         this._client = Main.panel.statusArea.dateMenu?._weatherItem?._weatherClient ?? null;
         // when the client last had news; its own _lastUpdate (set on every `updated`)
@@ -148,6 +151,10 @@ export class WeatherFeed {
      */
     shown(shown, opts = {}) {
         this._stopTimer();
+        if (!shown && this._retryId && !this._retryDone) {
+            GLib.source_remove(this._retryId);   // hidden: nothing runs (rule 8); source.js's waits
+            this._retryId = 0;
+        }
         if (!shown || !this._client)
             return;
         this._every = refreshMs(opts);
@@ -174,6 +181,7 @@ export class WeatherFeed {
     // client fetch on its own, the same place is an update
     _ask() {
         this._fetched = Date.now();       // asked: the next ask is a full interval away
+        this._retried = false;            // a new round: one retry again
         if (!this._automatic || !locationOn()) {
             this._client?.update();
             return;
@@ -232,6 +240,7 @@ export class WeatherFeed {
             }
             if (!ask.simple) {
                 recordLocate('none');
+                this._armRetry('none');
                 this._endLocate(ask, false);
                 return;
             }
@@ -252,6 +261,7 @@ export class WeatherFeed {
         if (!step.done)
             return;
         recordLocate(locateOutcome(step));
+        this._armRetry(locateOutcome(step));
         let moved = false;
         if (step.use) {
             try {
@@ -284,6 +294,35 @@ export class WeatherFeed {
         answerWaiters(ask, moved);
     }
 
+    // No Wi-Fi fix: ask once more in RETRY_MS (read.js shouldRetry), the scan is usually there
+    // by then; the weather follows a new place, or is asked for again
+    _armRetry(outcome) {
+        if (this._retryId || !shouldRetry(outcome, this._retried))
+            return;
+        this._retryId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RETRY_MS / 1000, () => {
+            this._retryId = 0;
+            this._retried = true;
+            this._locate(moved => {
+                if (!moved)
+                    this._client?.update();
+                const done = this._retryDone;
+                this._retryDone = null;
+                done?.();
+            });
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    /** @returns {boolean} a second ask is due or running (source.js keeps the feed for it) */
+    get retryPending() {
+        return this._retryId !== 0 || this._retryDone !== null;
+    }
+
+    /** @param {function():void} fn  called once the second ask ended */
+    whenRetried(fn) {
+        this._retryDone = fn;
+    }
+
     _stopTimer() {
         if (this._timer)
             GLib.source_remove(this._timer);
@@ -292,6 +331,10 @@ export class WeatherFeed {
 
     destroy() {
         this._stopTimer();
+        if (this._retryId)
+            GLib.source_remove(this._retryId);
+        this._retryId = 0;
+        this._retryDone = null;
         this._waitFetch = null;
         this._units?.disconnectObject(this);
         this._units = null;

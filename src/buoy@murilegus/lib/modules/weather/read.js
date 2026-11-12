@@ -196,6 +196,23 @@ export function locateOutcome({use = null, held = null} = {}) {
     return held ? 'kept' : 'none';
 }
 
+/** A locate that found no Wi-Fi fix is asked once more this long after (2026-11-13). */
+export const RETRY_MS = 2 * 60 * 1000;
+
+/**
+ * Whether to ask once more (2026-11-13, Ethan): Geoclue often answers by IP alone right after
+ * login or resume — its Wi-Fi list from wpa_supplicant is still empty ("No WiFi networks
+ * found"), or BeaconDB times out — and a couple of minutes later the scan is there. Once,
+ * not again and again.
+ *
+ * @param {string} outcome  locateOutcome's
+ * @param {boolean} retried  this was already the second ask
+ * @returns {boolean}
+ */
+export function shouldRetry(outcome, retried) {
+    return !retried && outcome !== 'wifi';
+}
+
 // a finer accuracy wins; a known one beats an unknown one; a tie goes to the newer fix
 function finer(fix, than) {
     const a = finite(fix.accuracy) && fix.accuracy >= 0 ? fix.accuracy : Infinity;

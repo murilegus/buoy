@@ -5,8 +5,10 @@ import {WeatherFeed} from './feed.js';
 import {keys} from './idle.js';
 
 const ASK = 'idle-weather-locate-now';
-// the most a refresh may take: Geoclue's 15 s, then the fetch (feed.js LOCATE_TIMEOUT)
+// the most a refresh may take: Geoclue's 15 s, then the fetch (feed.js LOCATE_TIMEOUT); with
+// its second ask (no Wi-Fi fix, read.js RETRY_MS) that much again after it
 const CAP_SECONDS = 40;
+const RETRY_CAP_SECONDS = 120 + 40;
 
 /**
  * Prefs' refresh button for the weather (2026-11-12, Ethan; design prefs weather refresh A):
@@ -22,6 +24,7 @@ export class WeatherSource extends Source {
         super.enable(stack, registry, settings, opts);
         this._feed = null;
         this._cap = 0;
+        this._waitingRetry = false;
         this._settings?.connectObject(`changed::${ASK}`, () => this._refresh(), this);
     }
 
@@ -44,6 +47,18 @@ export class WeatherSource extends Source {
         if (this._cap)
             GLib.source_remove(this._cap);
         this._cap = 0;
+        // no Wi-Fi fix yet: the feed asks once more in 2 min; it stays for that, capped
+        if (this._feed?.retryPending && !this._waitingRetry) {
+            this._waitingRetry = true;
+            this._feed.whenRetried(() => this._end());
+            this._cap = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RETRY_CAP_SECONDS, () => {
+                this._cap = 0;
+                this._end();
+                return GLib.SOURCE_REMOVE;
+            });
+            return;
+        }
+        this._waitingRetry = false;
         const feed = this._feed;
         this._feed = null;
         // after the current call: the feed's own `changed` handler is calling back
@@ -53,6 +68,7 @@ export class WeatherSource extends Source {
 
     disable() {
         this._settings?.disconnectObject(this);
+        this._waitingRetry = true;      // no waiting for a second ask: the feed goes now
         this._end();
         super.disable();
     }
