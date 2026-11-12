@@ -61,10 +61,17 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
 - Không đủ chỗ trên một hàng: chip không chọn chỉ còn logo (và ba vạch nếu đang phát); chip đang
   chọn luôn đủ tên. **Đề xuất**
 - Một player: không có hàng chip, thẻ cao hết thân. **Chốt** (Ethan, 2026-11-13)
+- **Đổi player chuyển động như thanh tab** ([Chuyển động](../motion/index.vi.md) "Đổi tab"): nền chọn
+  `fill-3` là một lớp riêng sau hàng chip, trượt và đổi rộng sang chip mới bằng `snap`; chip cũ thu
+  về logo, tên mờ đi; chip mới nở ra, tên hiện dần; các chip giữa dời chỗ bằng `snap`. Thẻ: nội dung
+  cũ mờ đi và lùi 12 px, nội dung mới tới từ 12 px theo hướng đi; thẻ không đổi cỡ. **Chốt** (Ethan,
+  2026-11-13)
+
+![Đổi player khi có 5 player: lúc bấm, giữa chừng, xong](images/switch.vi.png)
 
 ## Tương tác
 
-- Bấm chip: đổi player, thẻ đổi nội dung bằng `fade-out` / `fade-in`, không đổi cỡ. **Đề xuất**
+- Bấm chip: đổi player, chuyển động như thanh tab (ở "Nhiều player"). **Chốt** (Ethan, 2026-11-13)
 - Kéo thanh: seek khi thả; trong lúc kéo, giờ đã phát đi theo tay. Bấm một chỗ trên thanh: tới đó.
   **Đề xuất**
 - Nút, chip, ↗: đổi màu theo `state` (120 ms) khi hover và nhấn; nút mờ không đổi. **Đề xuất**
@@ -78,4 +85,6 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
 - `lib/modules/media/stylesheet.css` — thẻ, chip, nút mờ.
 - `lib/modules/media/adapter.js` — mỗi activity nói player làm được gì (`canSeek`, `canGoPrevious`,
   `canGoNext`, `shuffle`, `loopStatus` của MPRIS), để tab biết nút nào mờ.
-- Vẽ lại: `render/media.js` (`options`, `anatomy`, `states`, `players`).
+- `lib/kit/ui/home.js` — vạch chọn và cách dời chỗ của thanh tab (`_stripPlaces`, `_slideStrip`)
+  tách thành một phần dùng chung để hàng chip dùng lại.
+- Vẽ lại: `render/media.js` (`options`, `anatomy`, `states`, `players`, `switch`).

@@ -8,7 +8,9 @@
 //             only play/pause, nothing playing
 //   players — several players at once: two (one paused), three (two playing, the second
 //             chosen), five (the chips past the row's width keep only their logo)
-// gjs -m media.js out.png <options|anatomy|states|players>
+//   switch  — five players, Spotify → Firefox in three frames, as the tab strip moves (Ethan,
+//             2026-11-13): the chosen fill slides and widens, the chips move to their places
+// gjs -m media.js out.png <options|anatomy|states|players|switch>
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
@@ -29,10 +31,11 @@ function canvas(W, H) {
     L = PangoCairo.create_layout(cr); PangoCairo.context_set_resolution(L.get_context(), 96);
     return surf;
 }
-function text(t, x, y, {sz = 11, wt = 400, rgb = W1, a = 1, measure = false, right = false, maxW = 0} = {}) {
+function text(t, x, y, {sz = 11, wt = 400, rgb = W1, a = 1, measure = false, right = false, maxW = 0, wrap = false} = {}) {
     const d = Pango.FontDescription.from_string('SF Pro Display'); d.set_size(sz * Pango.SCALE); d.set_weight(wt);
     L.set_font_description(d); const at = new Pango.AttrList(); at.insert(Pango.attr_font_features_new('tnum')); L.set_attributes(at);
-    L.set_width(maxW ? maxW * Pango.SCALE : -1); L.set_ellipsize(maxW ? Pango.EllipsizeMode.END : Pango.EllipsizeMode.NONE);
+    L.set_width(maxW ? maxW * Pango.SCALE : -1); L.set_ellipsize(maxW && !wrap ? Pango.EllipsizeMode.END : Pango.EllipsizeMode.NONE);
+    L.set_wrap(Pango.WrapMode.WORD);
     L.set_text(t, -1); PangoCairo.update_layout(cr, L);
     const e = L.get_pixel_extents()[1];
     if (!measure) { cr.setSourceRGBA(...rgb, a); cr.moveTo(right ? x - e.width : x, y); PangoCairo.show_layout(cr, L); }
@@ -303,5 +306,58 @@ if (MODE === 'players') {
         'Không đủ chỗ: chip không chọn chỉ còn logo (và ba vạch nếu đang phát); chip đang chọn luôn đủ tên.',
         'Một player: không có hàng chip, thẻ cao hết thân.',
     ].forEach((t, k) => text(`• ${t}`, x, y + 22 + k * 30, {sz: 9, a: .85, maxW: EW}));
+    surf.writeToPNG(out);
+}
+
+if (MODE === 'switch') {
+    const players = [
+        {name: 'Spotify', playing: true}, {name: 'Firefox', playing: true}, {name: 'Rhythmbox'}, {name: 'VLC'},
+        {name: 'Chromium', playing: true},
+    ];
+    // each chip's width with the chosen one named (the others logo only)
+    const widthOf = (p, named) => named
+        ? 12 + 16 + 6 + text(p.name, 0, 0, {sz: 9.5, wt: 600, measure: true}).width + (p.playing ? 18 : 0) + 14
+        : 12 + 16 + (p.playing ? 16 : 0) + 12;
+    const layout = chosen => {
+        let x = 0;
+        return players.map((p, i) => {
+            const w = widthOf(p, i === chosen); const c = {x, w}; x += w + 6; return c;
+        });
+    };
+    const W = 600, ROW = 70;
+    const surf = canvas(W, 40 + 3 * ROW + 70);
+    const A = layout(0), B = layout(1);
+    text('Đổi player (5 player, Spotify → Firefox): như thanh tab', 30, 16, {sz: 11, wt: 700});
+    const ease = t => 1 - (1 - t) * (1 - t) * (1 - t);
+    [[0, 'Lúc bấm'], [.45, 'Giữa chừng (snap)'], [1, 'Xong, khoảng 240 ms']].forEach(([t, cap], f) => {
+        const y = 50 + f * ROW, x0 = 30, e = ease(t);
+        text(cap, x0, y - 4, {sz: 8, a: .7});
+        fill([0, 0, 0, 1], x0 - 8, y + 10, W - 44, CHIP_H + 16, 24);
+        const lerp = (a, b) => a + (b - a) * e;
+        players.forEach((p, i) => {
+            const cx = x0 + lerp(A[i].x, B[i].x), w = lerp(A[i].w, B[i].w);
+            fill([1, 1, 1, C.FILL2], cx, y + 18, w, CHIP_H, 16);
+        });
+        // the chosen fill: one marker that slides and widens
+        fill([1, 1, 1, C.FILL3], x0 + lerp(A[0].x, B[1].x), y + 18, lerp(A[0].w, B[1].w), CHIP_H, 16);
+        players.forEach((p, i) => {
+            const cx = x0 + lerp(A[i].x, B[i].x), w = lerp(A[i].w, B[i].w);
+            logo(p.name, cx + 12, y + 26);
+            // the bars keep to the chip's right end; the old name fades out, the new one fades
+            // in, clipped before the bars as the chip narrows or widens
+            const a = i === 0 ? 1 - e : i === 1 ? e : 0;
+            const ex = p.playing ? cx + w - 24 : cx + w - 12;
+            if (a > 0.02) {
+                cr.save(); cr.newPath(); cr.rectangle(cx + 30, y + 18, Math.max(0, ex - 4 - cx - 30), CHIP_H); cr.clip();
+                text(p.name, cx + 34, y + 27, {sz: 9.5, wt: 600, a});
+                cr.restore();
+            }
+            if (p.playing)
+                eq(ex, y + 28, (i === 0 && e < .5) || (i === 1 && e >= .5) ? 1 : C.FG_MUTED);
+        });
+    });
+    text('Nền chọn (fill-3) trượt và đổi rộng bằng snap; chip cũ thu về logo, tên mờ đi; chip mới nở ra, tên hiện dần; ' +
+        'các chip giữa dời chỗ bằng snap. Thẻ: nội dung cũ mờ đi và lùi 12 px, nội dung mới tới từ 12 px theo hướng đi.',
+    30, 50 + 3 * ROW + 6, {sz: 8.5, a: .8, maxW: W - 60, wrap: true});
     surf.writeToPNG(out);
 }
