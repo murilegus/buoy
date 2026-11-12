@@ -7,7 +7,7 @@ import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, helloAt, lampColour, moves} from '../../model/mascot.js';
-import {TYPE_MS, typedSplit} from '../../model/presentation.js';
+import {TYPE_MS, typedLine, typedSplit} from '../../model/presentation.js';
 import {label} from './parts.js';
 
 // What moves, each only as ARCHITECTURE rule 8 allows: the marquee, Bu, the equaliser and
@@ -440,9 +440,10 @@ export function eqGlyph({paused = false} = {}) {
 
 /**
  * Typed in (GREETING.md principle 7): the labels fill a character at a time, one after
- * another. The text not yet typed is there but transparent (Pango alpha), so the size never
- * moves while it types. How far it got comes from when this activity first showed it, so a
- * rebuild (an update, a re-render) goes on where it was. One timer while mapped and
+ * another. The text not yet typed is there but transparent (Pango alpha; a line not begun is
+ * hidden whole, model/presentation.js typedLine), so the size never moves while it types.
+ * How far it got comes from when this activity first showed it, so a rebuild (an update, a
+ * re-render) goes on where it was. One timer while mapped and
  * typing; none once all is in, unmapped, destroyed, or with animations off (whole at once).
  *
  * @param {St.Label[]} labels
@@ -455,10 +456,9 @@ export function typeIn(labels, activity) {
     const total = texts.reduce((n, t) => n + [...t].length, 0);
     const start = startOf(`${activity?.id}\u0000${activity?._seq}\u0000typed`);
     const draw = chars => typedSplit(texts, chars).forEach((n, i) => {
-        const all = [...texts[i]];
-        const shown = GLib.markup_escape_text(all.slice(0, n).join(''), -1);
-        const rest = GLib.markup_escape_text(all.slice(n).join(''), -1);
-        labels[i].clutter_text.set_markup(rest ? `${shown}<span alpha="1">${rest}</span>` : shown);
+        const {visible, markup} = typedLine(texts[i], n);
+        labels[i].clutter_text.set_markup(markup);
+        labels[i].opacity = visible ? 255 : 0;
     });
     let timer = 0;
     const stop = () => {
