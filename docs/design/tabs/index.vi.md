@@ -1,6 +1,6 @@
 # Tab
 
-**Mở.** Thiết kế chi tiết của thanh tab và từng tab chưa làm. Trang này sẽ có thanh tab,
+**Mở.** Trang này có thanh tab và luật chung; mỗi tab có trang riêng. Trang này sẽ có thanh tab,
 mỗi tab theo loại (Media, Notifications, Transfers, Timer, Calendar…) và các tab standalone
 (Clipboard), mỗi cái một trang theo cùng khuôn với các phần khác.
 
@@ -11,3 +11,8 @@ mỗi tab theo loại (Media, Notifications, Transfers, Timer, Calendar…) và 
 các tab chỉ hiện khi có activity (Claude Code, Transfers…) ở chỗ kế cuối, slot cuối luôn là tab
 chọn từ ⋯ (Clipboard khi chưa chọn), Timer trong ⋯. Device là mục M4 riêng, chỉ thiết kế và hiển thị tab (từng phần có mục implement riêng): ba nhóm Máy này (pin,
 chế độ nguồn), Không dây (Bluetooth, điện thoại như một thiết bị: pin, tìm máy; cuộc gọi, tin nhắn, Grab… ở tab Phone riêng), Đang cắm (USB, màn hình, tai nghe). **Chốt**
+
+## Từng tab
+
+- [Media](../media/index.vi.md) — thẻ như Home, chip cho nhiều player, nút và thanh luôn đủ.
+- Device — mục M4 riêng (thiết kế chưa vẽ).
