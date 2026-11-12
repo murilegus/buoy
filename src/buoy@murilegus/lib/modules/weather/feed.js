@@ -6,7 +6,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {withPlace} from '../../kit/model/settings.js';
 import {refreshMs} from './idle.js';
-import {readInfo, unitNames} from './read.js';
+import {goodFix, nextFix, readInfo, unitNames} from './read.js';
 
 // As long as Geoclue may take for a first fix before this ask gives up (Wi-Fi scan, IP)
 const LOCATE_TIMEOUT = 15;
@@ -32,9 +32,11 @@ const LOCATE_TIMEOUT = 15;
  *   Geoclue once, as `org.gnome.Shell` (a system app in /etc/geoclue/geoclue.conf, as
  *   Shell's own client does), at city accuracy, and writes the nearest GWeather city first
  *   in `org.gnome.shell.weather` `locations` when it changed — the client follows that key
- *   (`_onLocationsChanged`) and fetches. Geoclue is stopped right after: nothing tracks the
- *   position between asks. Needs Location Services (`org.gnome.system.location`); off,
- *   the last place stays. Off, the place is the city picked in prefs.
+ *   (`_onLocationsChanged`) and fetches. An IP-only fix (≥ 20 km) waits for a better one
+ *   and never replaces a place found by a good fix (`_locate`, 2026-11-12, #188). Geoclue
+ *   is stopped as soon as the ask ends: nothing tracks the position between asks. Needs
+ *   Location Services (`org.gnome.system.location`); off, the last place stays. Off, the
+ *   place is the city picked in prefs.
  */
 export class WeatherFeed {
     /** @param {function(): void} onChanged  the state changed: present again */
@@ -43,7 +45,8 @@ export class WeatherFeed {
         this._timer = 0;
         this._every = 0;
         this._automatic = true;
-        this._locating = null;            // the Gio.Cancellable of a Geoclue ask running
+        this._locating = null;            // the Geoclue ask running (_locate)
+        this._weakPlace = null;           // placeKey of the place an IP-only fix wrote last
         this._client = Main.panel.statusArea.dateMenu?._weatherItem?._weatherClient ?? null;
         // when the client last had news; its own _lastUpdate (set on every `updated`)
         // when it already has data, so enabling does not fetch what it fetched a minute ago
@@ -118,36 +121,92 @@ export class WeatherFeed {
         });
     }
 
-    /** @param {function(boolean): void} done  whether the place changed */
+    /**
+     * Where we are, from Geoclue (SPEC §2a weather, 2026-11-12, #188); read.js nextFix
+     * decides on each fix. A good one is the place at once. An IP-only one (20 km or
+     * coarser: usual right after login, and Hanoi for any Vietnamese ISP) makes the ask keep
+     * the client and wait on Simple's `notify::location` (as Shell's own misc/weather.js
+     * `_updateLocationMonitoring` does) for a better one, up to LOCATE_TIMEOUT. Time up with
+     * only IP-only fixes: one never replaces a place from a good fix or the user; with no
+     * place, or one that was itself an IP guess, it is the place as the last resort.
+     * Geoclue is stopped as soon as the ask ends (stopAsk).
+     *
+     * @param {function(boolean): void} done  whether the place changed
+     */
     _locate(done) {
         if (this._locating)
             return;
-        const cancel = new Gio.Cancellable();
-        this._locating = cancel;
-        const timeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, LOCATE_TIMEOUT, () => {
-            cancel.cancel();
+        const ask = {cancel: new Gio.Cancellable(), simple: null, held: null, notifyId: 0, timeout: 0, done};
+        this._locating = ask;
+        ask.timeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, LOCATE_TIMEOUT, () => {
+            ask.timeout = 0;
+            if (ask.simple)
+                this._onFix(ask, null);   // fixes came, none good: decide with the one held
+            else
+                ask.cancel.cancel();      // none yet: Simple.new fails, the place stays
             return GLib.SOURCE_REMOVE;
         });
-        Geoclue.Simple.new('org.gnome.Shell', Geoclue.AccuracyLevel.CITY, cancel, (_o, res) => {
-            if (!cancel.is_cancelled())
-                GLib.source_remove(timeout);
-            let simple = null, moved = false;
+        Geoclue.Simple.new('org.gnome.Shell', Geoclue.AccuracyLevel.CITY, ask.cancel, (_o, res) => {
             try {
-                simple = Geoclue.Simple.new_finish(res);
-                const {latitude, longitude} = simple.get_location();
-                moved = setPlace(GWeather.Location.get_world().find_nearest_city(latitude, longitude));
+                ask.simple = Geoclue.Simple.new_finish(res);
             } catch (e) {
                 // denied (Location Services off for this user), no fix in time, no
                 // Geoclue: the last place stays, and prefs says why
                 console.debug(`Buoy: weather: no location: ${e.message}`);
             }
-            // stop it now: nothing tracks the position between two asks
-            simple?.get_client()?.call_stop(null, null);
-            if (this._locating !== cancel)
-                return;                       // destroyed meanwhile
-            this._locating = null;
-            done(moved);
+            if (this._locating !== ask) {
+                stopAsk(ask);                 // destroyed meanwhile
+                return;
+            }
+            if (!ask.simple) {
+                this._endLocate(ask, false);
+                return;
+            }
+            ask.notifyId = ask.simple.connect('notify::location', s => this._onFix(ask, fixOf(s)));
+            this._onFix(ask, fixOf(ask.simple));
         });
+    }
+
+    /**
+     * @param {object} ask  the running ask (_locate)
+     * @param {?import('./read.js').Fix} fix  the fix just given; null: the time is up
+     */
+    _onFix(ask, fix) {
+        if (this._locating !== ask)
+            return;
+        const step = nextFix(fix, {held: ask.held, final: !fix, previous: this._previousPlace()});
+        ask.held = step.held;
+        if (!step.done)
+            return;
+        let moved = false;
+        if (step.use) {
+            try {
+                const city = GWeather.Location.get_world().find_nearest_city(step.use.latitude, step.use.longitude);
+                moved = setPlace(city);
+                // a place from an IP guess: a later IP-only fix may still replace it
+                this._weakPlace = city && !goodFix(step.use) ? placeKey(city.serialize()) : null;
+            } catch (e) {
+                console.debug(`Buoy: weather: no place for the fix: ${e.message}`);
+            }
+        }
+        this._endLocate(ask, moved);
+    }
+
+    // where the place first in `locations` came from (read.js nextFix `previous`): none,
+    // the IP-only fix this feed wrote last ('weak'), else a good fix or the user ('good')
+    _previousPlace() {
+        const first = placeList()[0];
+        if (!first)
+            return null;
+        return this._weakPlace && placeKey(first) === this._weakPlace ? 'weak' : 'good';
+    }
+
+    _endLocate(ask, moved) {
+        stopAsk(ask);
+        if (this._locating !== ask)
+            return;
+        this._locating = null;
+        ask.done(moved);
     }
 
     _stopTimer() {
@@ -160,8 +219,10 @@ export class WeatherFeed {
         this._stopTimer();
         this._units?.disconnectObject(this);
         this._units = null;
-        this._locating?.cancel();
+        const ask = this._locating;
         this._locating = null;
+        if (ask)
+            stopAsk(ask);
         this._client?.disconnectObject(this);
         this._client = null;
         this._onChanged = () => {};
@@ -183,14 +244,51 @@ function locationOn() {
 function setPlace(city) {
     if (!city)
         return false;
-    const settings = new Gio.Settings({schema_id: 'org.gnome.shell.weather'});
-    const list = /** @type {GLib.Variant[]} */ (settings.get_value('locations').deepUnpack());
+    const list = placeList();
     const place = city.serialize();
-    const key = v => v.print(true);
-    if (list.length && key(list[0]) === key(place))
+    if (list.length && placeKey(list[0]) === placeKey(place))
         return false;
-    settings.set_value('locations', new GLib.Variant('av', withPlace(list, place, key)));
+    new Gio.Settings({schema_id: 'org.gnome.shell.weather'})
+        .set_value('locations', new GLib.Variant('av', withPlace(list, place, placeKey)));
     return true;
+}
+
+// `org.gnome.shell.weather` `locations` (av), one level unpacked
+function placeList() {
+    const settings = new Gio.Settings({schema_id: 'org.gnome.shell.weather'});
+    return /** @type {GLib.Variant[]} */ (settings.get_value('locations').deepUnpack());
+}
+
+// a serialized GWeather.Location as `locations` compares them
+const placeKey = v => v.print(true);
+
+/**
+ * End a Geoclue ask in whatever state it is: its timeout removed, Simple.new cancelled if
+ * still running, its `notify::location` disconnected, Geoclue stopped (nothing tracks the
+ * position between two asks). Safe to call twice.
+ *
+ * @param {object} ask  _locate's
+ */
+function stopAsk(ask) {
+    if (ask.timeout)
+        GLib.source_remove(ask.timeout);
+    ask.timeout = 0;
+    ask.cancel.cancel();
+    const simple = ask.simple;
+    ask.simple = null;
+    if (!simple)
+        return;
+    if (ask.notifyId)
+        simple.disconnect(ask.notifyId);
+    ask.notifyId = 0;
+    simple.get_client()?.call_stop(null, null);
+}
+
+// Geoclue.Simple's location (a LocationProxy: Latitude, Longitude, Accuracy in metres) as
+// read.js's plain Fix
+function fixOf(simple) {
+    const loc = simple?.get_location();
+    return loc ? {latitude: loc.latitude, longitude: loc.longitude, accuracy: loc.accuracy} : null;
 }
 
 function settingsOf(id) {

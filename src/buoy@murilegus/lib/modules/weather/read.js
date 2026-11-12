@@ -114,3 +114,77 @@ export function readInfo(info, {now, units, place = null}) {
         updated: now,
     };
 }
+
+// --- "Use my location": which Geoclue fix becomes the place (2026-11-12, #188) ----------------
+
+/**
+ * A fix this coarse or coarser is IP-only, in metres. Geoclue (2.7, BeaconDB) asks by IP
+ * alone when the Wi-Fi interface is not ready or knows fewer than 2 access points
+ * (`gclue_wifi_create_query`, `gclue_mozilla_create_query`) — usual right after login —
+ * and that answer comes with 25 km; a Wi-Fi fix is tens of metres, a warm city-level one
+ * a few km. Vietnamese ISP addresses resolve to Hanoi wherever you are.
+ */
+export const IP_ONLY_METRES = 20000;
+
+/**
+ * @typedef {object} Fix  a Geoclue location, read off its proxy
+ * @property {number} latitude
+ * @property {number} longitude
+ * @property {number} accuracy  metres (Geoclue's `Accuracy`)
+ */
+
+/**
+ * @param {?Fix} fix
+ * @returns {boolean} a usable position (finite coordinates)
+ */
+const placed = fix => finite(fix?.latitude) && finite(fix?.longitude);
+
+/**
+ * @param {?Fix} fix
+ * @returns {boolean} good enough to be the place: an accuracy under IP_ONLY_METRES. A
+ *   missing, NaN or negative accuracy says nothing, so it counts as IP-only.
+ */
+export function goodFix(fix) {
+    const a = fix?.accuracy;
+    return placed(fix) && finite(a) && a >= 0 && a < IP_ONLY_METRES;
+}
+
+/**
+ * One step of a "Use my location" ask (modules/weather/feed.js `_locate`), pure: called with
+ * each fix Geoclue gives (`Geoclue.Simple`'s first location, then each `notify::location`)
+ * and once more, with no fix, when the ask's time is up.
+ *
+ * - A good fix is the place, at once; the ask ends.
+ * - An IP-only fix is held (the finest of them) and the ask waits for a better one.
+ * - Time up with only IP-only fixes: the held one never replaces a place found by a good
+ *   fix (`previous` 'good': a Wi-Fi fix, or a city the user picked, which an IP guess is no
+ *   better than). With no place at all, or one that was itself an IP guess, it is used as
+ *   the last resort: a city in the right country beats no weather (2026-11-12, #188).
+ *
+ * @param {?Fix} fix  the fix just given; null when the time is up
+ * @param {object} [ctx]
+ * @param {?Fix} [ctx.held]  the IP-only fix held so far
+ * @param {boolean} [ctx.final]  the time is up
+ * @param {?('good'|'weak')} [ctx.previous]  where the place already first in `locations`
+ *   came from: a good fix or the user ('good'), an IP-only fix ('weak'), none (null)
+ * @returns {{use: ?Fix, held: ?Fix, done: boolean}} `use`: the fix to make the place (null:
+ *   leave the place as it is); `held`: to pass to the next step; `done`: stop asking
+ */
+export function nextFix(fix, {held = null, final = false, previous = null} = {}) {
+    if (goodFix(fix))
+        return {use: fix, held: null, done: true};
+    if (placed(fix) && (!placed(held) || finer(fix, held)))
+        held = fix;
+    if (!placed(held))
+        held = null;
+    if (!final)
+        return {use: null, held, done: false};
+    return {use: held && previous !== 'good' ? held : null, held, done: true};
+}
+
+// a finer accuracy wins; a known one beats an unknown one; a tie goes to the newer fix
+function finer(fix, than) {
+    const a = finite(fix.accuracy) && fix.accuracy >= 0 ? fix.accuracy : Infinity;
+    const b = finite(than.accuracy) && than.accuracy >= 0 ? than.accuracy : Infinity;
+    return a <= b;
+}
