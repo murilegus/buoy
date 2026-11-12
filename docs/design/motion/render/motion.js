@@ -48,7 +48,7 @@ function canvas(W, H) {
     L = PangoCairo.create_layout(cr); PangoCairo.context_set_resolution(L.get_context(), 96);
     if (!PILL.w) {
         TITLE_W = text(SAMPLE.track, 0, 0, {sz: 11, wt: 600, measure: true}).width;
-        PILL.w = Math.ceil(56 + TITLE_W + text(BY, 0, 0, {sz: 11, wt: 600, measure: true}).width + 8 + 18 + 12);
+        PILL.w = Math.ceil(PILL.title.x + TITLE_W + text(BY, 0, 0, {sz: 11, wt: 600, measure: true}).width + 6 + 18 + 8);
     }
     return surf;
 }
@@ -151,7 +151,7 @@ function curves() {
 // wider than hinted at 1×, and " · artist" must start where the drawn title ends.
 const BY = ` · ${SAMPLE.artist}`;
 let TITLE_W = 0;
-const PILL = {w: 0, h: 32, lead: {x: 28, y: 6, s: 20}, title: {x: 56, y: 8, sz: 11}};
+const PILL = {w: 0, h: 32, lead: {x: 28, y: 4, s: 24}, title: {x: 58, y: 8, sz: 11}};
 const COMPACT = {w: 404, h: 88, lead: {x: 14, y: 8, s: 40}, title: {x: 66, y: 10, sz: 11}};
 const EXP = {w: 560, h: 280, lead: {x: 20, y: 64, s: 88}, title: {x: 120, y: 74, sz: 13}};
 function shared(cx, y, from, to, x, a = 1) {
@@ -165,7 +165,7 @@ function pillRest(cx, y, a) { // the light, " · artist" and the equaliser: only
     const x = cx - PILL.w / 2;
     fill([...C.AMBER, a], x + 12, y + 12, 8, 8, 4);
     text(BY, x + PILL.title.x + TITLE_W, y + PILL.title.y, {sz: 11, wt: 600, a});
-    for (let i = 0; i < 4; i++) fill([1, 1, 1, a], x + PILL.w - 30 + i * 5, y + 11 + (i % 2) * 3, 3, 10 - (i % 2) * 3, 1);
+    for (let i = 0; i < 4; i++) fill([1, 1, 1, a], x + PILL.w - 26 + i * 5, y + 11 + (i % 2) * 3, 3, 10 - (i % 2) * 3, 1);
 }
 function compactRest(cx, y, a) { // the subtitle and the bar: only the compact has them
     if (a <= 0) return;
@@ -230,7 +230,7 @@ function panel(cx, y, a) {
 }
 function expanded() {
     const CW = 760, W = 24 + 3 * CW + 2 * 12 + 24, H = 2 * (40 + 2 * 330) + 40, surf = canvas(W, H);
-    const SIDE = 133, GAP = 8;
+    const SIDE = 131, GAP = 8;
     const rows = [
         {t: 'Bấm → expanded: nền nở bằng open (500 ms, bounce 0.25); ảnh và tên của pill đi tới thẻ chính của Home; thanh tab và phần còn lại lộ theo mép nền; hai pill phụ trượt vào giữa bằng move và mờ ở nửa sau',
             spring: SPRING.open, from: PILL, to: EXP, ms: [0, 80, 160, 260, 400, 640], open: true, rest: {from: pillRest, to: REST.expanded}},
@@ -388,7 +388,7 @@ function clipCompact() {
     });
 }
 function clipExpanded() {
-    const CW = 760, W = CW + 48, ROW = 330, H = 2 * ROW + 16, SIDE = 133, GAP = 8;
+    const CW = 760, W = CW + 48, ROW = 330, H = 2 * ROW + 16, SIDE = 131, GAP = 8;
     const grow = spring(SPRING.open), shrink = spring(SPRING.close), slide = spring(SPRING.move);
     frames(2.8, t => {
         const surf = canvas(W, H), ph = phase(t, .3, 1.7);

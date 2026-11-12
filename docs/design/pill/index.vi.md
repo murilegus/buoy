@@ -3,7 +3,7 @@
 Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (pill 1 ở giữa), và tối
 đa hai **pill phụ** bên phải. Số dùng chung ở [Bảng số](../tokens.vi.md).
 
-![Idle 133 × 32 với đầy đủ số đo, và 173 khi có hai đèn](images/anatomy.vi.png)
+![Idle 131 × 32 với đầy đủ số đo, và 171 khi có hai đèn](images/anatomy.vi.png)
 
 ## Kích thước
 
@@ -18,10 +18,12 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
   (gnome-shell-sass `_default-colors.scss` `$border_opacity: .9`, `_colors.scss`); 15 % trên nền
   đen chỉ khác 12 % có 7 mức xám (#262626 so với #1f1f1f), và trên hình nền sáng thì nền đen mới
   là thứ tách pill ra. **Chốt** (Ethan, 2026-11-10)
-- Khoảng giữa các phần là **8**, một giá trị cho mọi chỗ: ô leading 24 → chữ, chữ → trailing,
-  trailing → nút. Icon đầy ô 24 nên cách mép pill 8 và cách chữ 8; Bu 20 nằm giữa ô 24 nên cách 10. Code hiện
-  tại lệch nhau: idle dùng 7 (`.buoy-idle-zones`, thêm ở #107) cộng `padding-left: 2px`, minimal
-  dùng 8 (`.buoy-minimal`). **Chốt** (Ethan, 2026-11-10)
+- Khoảng **6** giữa ô leading 24 → chữ và chữ → trailing; **8** giữa trailing → nút. Mép pill là nửa
+  hình tròn bán kính 16 ôm sát góc ô leading, nên lề 8 trông hẹp hơn 8, còn khoảng 8 giữa hai cạnh
+  thẳng (ô và chữ) trông xa hơn; 6 làm ba khoảng trông đều. Icon đầy ô 24 nên cách mép pill 8 và
+  cách chữ 6; Bu 20 nằm giữa ô 24 nên cách 8. **Chốt** (Ethan, 2026-11-12; thay một giá trị 8 cho
+  mọi chỗ của 2026-11-10). Code hiện tại lệch nhau: idle dùng 7 (`.buoy-idle-zones`, thêm ở #107)
+  cộng `padding-left: 2px`, minimal dùng 8 (`.buoy-minimal`).
 - Leading: icon buổi trong ngày và icon thời tiết **24**, đầy ô 24 ([Icon](../icons/index.vi.md));
   Bu giữ **20** giữa ô 24, vì lưới 10 × 10 chỉ nét ở bội số của 10 ([Bu](../mascot/index.vi.md)).
   **Chốt** (Ethan, 2026-11-11; icon thay 20 trong ô 24)
@@ -42,11 +44,11 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 ## Idle
 
 - Idle chừa sẵn chỗ cho plan rộng nhất (đồng hồ `88∶88∶88 AM`), để pill không giật khi giờ đổi
-  từ 1 chữ số sang 2: 8 + 24 + 8 + 85 + 8 = **133 ≈ 9em**. Độ rộng **đo từ nhãn chữ thật khi
+  từ 1 chữ số sang 2: 8 + 24 + 6 + 85 + 8 = **131 ≈ 9em**. Độ rộng **đo từ nhãn chữ thật khi
   chạy**, không viết cứng. **Chốt**
   - Trong GNOME Shell 50 ảo (chế độ Ubuntu, SF Pro Display 11), cùng một `St.Label` rộng 85 px ở
     tỷ lệ 1×, **90** ở 1.25× / 1.5× / 2× (tỷ lệ lẻ dàn chữ ở tỷ lệ làm tròn lên) và 88 ở 3×. Viết
-    cứng 133 thì ở màn HiDPI đồng hồ bị cắt thành "12∶59∶59 A…"; đo khi chạy thì idle tự lên 138.
+    cứng 131 thì ở màn HiDPI đồng hồ bị cắt thành "12∶59∶59 A…"; đo khi chạy thì idle tự lên 136.
   - Đồng hồ của Shell dùng ký tự U+2236 `∶`, không phải dấu hai chấm: phải đo bằng đúng chuỗi
     đồng hồ thật.
 
@@ -74,7 +76,7 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
   tối đa. **Chốt**
 - Chấm 8, đúng tâm hình tròn đầu (Ø32), cách mép 16 (số chẵn nên phủ trọn pixel). **Chốt**
 - Mỗi đầu nở thêm **bán kính đầu bo + nửa chấm** = 16 + 4 = **20**; nội dung từ 8 → 28, nên từ mép
-  chấm đến nội dung đúng bằng lề 8. Idle 133 → 173. **Chốt** (2026-11-10)
+  chấm đến nội dung đúng bằng lề 8. Idle 131 → 171. **Chốt** (2026-11-10)
 - Chỉ có một đèn thì vẫn nở cả hai đầu, để nội dung luôn ở giữa. **Chốt** (Ethan, 2026-11-10)
 - Độ rộng tối đa là của **cả pill, tính cả đèn**, không ngoại lệ cho đèn: khi đã chạm tối đa, chữ
   dài cắt bằng "…" như mọi chữ dài khác. Pill 1 ở 1920 vẫn tối đa 336, có đèn hay không. **Chốt**
@@ -87,7 +89,7 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
   hai cụm ([Bảng số](../tokens.vi.md#độ-rộng-tối-đa-trên-thanh)). **Chốt**
 - Tối đa **2 pill phụ, bên phải** pill 1 (như SPEC §2c). Đặt hai bên đã cân nhắc: cân hơn và ở 1366
   vừa 2 pill phụ, nhưng thứ tự ưu tiên không còn đọc theo một chiều. **Chốt** (Ethan, 2026-11-11)
-- Pill phụ 2–3 cố định 133, bằng idle (leading, một giá trị ngắn, `+N`). **Chốt** (Ethan, 2026-11-11)
+- Pill phụ 2–3 cố định 131, bằng idle (leading, một giá trị ngắn, `+N`). **Chốt** (Ethan, 2026-11-11)
 - Hover: mọi pill rộng thêm cố định 0.75em (12 px), thay cho +10 % (pill 336 sẽ nở tới 34); chiều
   cao vẫn cộng 2 như nay (32 → 34, `kit/model/shapes.js`). **Chốt** (Ethan, 2026-11-11)
 - Hai cụm trên máy Ethan, đo bằng Looking Glass: `Main.panel._leftBox` 93, `_rightBox` 293. Ở
@@ -115,7 +117,7 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 - `lib/kit/model/shapes.js` — `idleW = even(h × 3.75)` → đo từ plan rộng nhất; giới hạn độ rộng tính
   bằng em.
 - `stylesheet.css` — `#panel.buoy` cao 40px → 2.75em; chữ trong pill 13px → 1em; `.buoy-light`
-  7 → 8, ở tâm hình tròn đầu; `.buoy-idle-zones` spacing 7 → 8 và bỏ `padding-left: 2px` của
-  `.buoy-idle`; `.buoy-text` đậm 600 và số đều như `.buoy-idle-text`.
+  7 → 8, ở tâm hình tròn đầu; `.buoy-idle-zones` spacing 7 → 6 và bỏ `padding-left: 2px` của
+  `.buoy-idle`; `.buoy-minimal` spacing 8 → 6, nút giữ 8 sau trailing (`margin-left: 2px`); `.buoy-text` đậm 600 và số đều như `.buoy-idle-text`.
 - SPEC §2 cấu trúc pill ("that zone nudges inward" → pill nở ra ở hai đầu), §2a-i/ii (đèn), §2c
-  (tối đa 2 pill phụ bên phải, pill phụ 133), bảng kích thước §4.
+  (tối đa 2 pill phụ bên phải, pill phụ 131), bảng kích thước §4.

@@ -1,4 +1,4 @@
-// The idle clock pill at weight 400 / 600 / 700 with an 8 px gap after the 24 leading box
+// The idle clock pill at weight 400 / 600 / 700 with a 6 px gap after the 24 leading box (2026-11-12)
 // (2026-11-10). gjs -m weight.js out.png
 // Left column: drawn at 1 device px a logical px (a scale-1 screen), then enlarged 2× with nearest
 // so the real pixels show. Right column: drawn at device scale 2 (HiDPI). Each pill's width comes
@@ -7,11 +7,11 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
+import {colourIcon} from '../../render/lib.js';
 
 const OUT = 2, LABEL = 120, STRIP = 250, COLGAP = 24, HEAD = 44, ROW = 70, FOOT = 64;
 const W = LABEL + 2 * STRIP + COLGAP + 16, H = HEAD + 3 * ROW + FOOT;
-const PAD = 8, BOX = 24, GAP = 8, CLOCK = '10∶45∶30 AM', WIDEST = '88∶88∶88 AM';
-const SUN = ['....Y.....', '.Y..Y..Y..', '..Y...Y...', '....YY....', 'YY.YYYY.YY', '...YYYY...', '....YY....', '..Y...Y...', '.Y..Y..Y..', '....Y.....'];
+const PAD = 8, BOX = 24, GAP = 6, CLOCK = '10∶45∶30 AM', WIDEST = '88∶88∶88 AM';
 const WALL = [0.20, 0.17, 0.35], WHITE = [1, 1, 1];
 const ROWS = [[400, '400 · regular'], [600, '600 · đang chốt'], [700, '700 · như thanh']];
 
@@ -44,9 +44,7 @@ function strip(cr, wt) {
     rr(cr, px + .5, 4.5, pw - 1, 31, 15.5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve();
     cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke();
     const x0 = px + PAD;
-    SUN.forEach((row, yy) => [...row].forEach((c, xx) => {
-        if (c === 'Y') { cr.setSourceRGB(1, .82, .4); cr.rectangle(x0 + 2 + xx * 2, 8 + 2 + yy * 2, 2, 2); cr.fill(); }
-    }));
+    colourIcon(cr, 'daypart-noon', x0, 8, 24);   // the leading fills its 24 box
     show(cr, CLOCK, x0 + BOX + GAP, 20, 11, wt, WHITE);
     return {pw, px, tw};
 }
@@ -70,7 +68,7 @@ ROWS.forEach(([wt, name], i) => {
     // 2×: straight onto the 2× canvas
     cr.save(); cr.translate(colX[1], y); const m2 = strip(cr, wt); cr.restore();
     [[0, m1], [1, m2]].forEach(([c, m]) => {
-        show(cr, `pill ${m.pw} = 8 + 24 + 8 + chữ ${m.tw} + 8`, colX[c] + m.px, y + 50, 6.5, 400, WHITE, .7, false);
+        show(cr, `pill ${m.pw} = 8 + 24 + 6 + chữ ${m.tw} + 8`, colX[c] + m.px, y + 50, 6.5, 400, WHITE, .7, false);
     });
 });
 const fy = HEAD + 3 * ROW + 8;

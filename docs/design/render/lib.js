@@ -72,6 +72,14 @@ export function icon(cr, name, x, y, s = 16, rgb = [1, 1, 1], a = 1) {
     cr.maskSurface(m, x * SCALE, y * SCALE); cr.restore();
 }
 
+// Buoy's own colour icon (src/…/icons/color: daypart, weather), drawn as the vector it is
+const COLOUR = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]),
+    '..', '..', '..', 'src', 'buoy@murilegus', 'icons', 'color']);
+export function colourIcon(cr, name, x, y, s = 24) {
+    const v = new Rsvg.Rectangle(); v.x = x; v.y = y; v.width = s; v.height = s;
+    Rsvg.Handle.new_from_file(`${COLOUR}/${name}.svg`).render_document(cr, v);
+}
+
 // A task's state in Claude Code's rows (design/compact, 2026-11-11): done `check`, doing
 // `play-fill`, to do `circle` dimmed (fg-subtle), white, s at (x, y).
 const TASK = {done: ['check', 1], doing: ['play-fill', 1], todo: ['circle', .5]};

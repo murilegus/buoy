@@ -55,10 +55,10 @@ function card(x, y, {buttons = false, shared = false, hold = ''} = {}) {
     return h;
 }
 function pill(cx, y, label) {
-    const e = text(label, 0, 0, {wt: 600, measure: true}), pw = Math.max(133, 8 + 24 + 8 + e.width + 8), x = cx - pw / 2;
+    const e = text(label, 0, 0, {wt: 600, measure: true}), pw = Math.max(131, 8 + 24 + 6 + e.width + 8), x = cx - pw / 2;
     shape(x, y, pw, 32, 16);
-    fill([.45, .2, .5, 1], x + 10, y + 6, 20, 20, 5);
-    text(label, x + 40, y + 7, {wt: 600});
+    fill([.45, .2, .5, 1], x + 8, y + 4, 24, 24, 6);   // the app's logo filling the leading 24
+    text(label, x + 38, y + 7, {wt: 600});
 }
 const xs = [0, 1, 2, 3].map(i => 24 + i * (404 + 28)), TOP = 46;
 const heads = ['1 · Tới: card tự mở trên pill, không nút (5 s)', '2 · Rê chuột: hiện hàng nút, giữ lại', '3 · Hết 5 s: thu về pill, tiêu đề đầy đủ', '4 · Đang chia sẻ màn hình: chỉ tên app'];

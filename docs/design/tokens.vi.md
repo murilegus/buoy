@@ -13,13 +13,14 @@ về đây thay vì chép số. Số px tính cho 1em = 11pt ≈ 14.67 px và l�
 | Pill, bo | 16 | nửa chiều cao | Chốt |
 | Khung nội dung | cao 24, trên dưới mỗi bên 4 | | Chốt |
 | Lề ngang | 8 | trước là 14 (`PAD`) | Chốt |
-| Khoảng giữa các phần | 8 | leading → chữ → trailing → nút | Chốt |
+| Khoảng leading → chữ, chữ → trailing | 6 | trước là 8: mép tròn làm 8 trông xa hơn lề | Chốt (Ethan, 2026-11-12) |
+| Khoảng trailing → nút | 8 | | Chốt |
 | Leading | icon 24, đầy khung nội dung 24; Bu 20 giữa ô 24 (lưới 10 × 10) | | Chốt (Ethan, 2026-11-11) |
 | Viền | 1 px, trắng 12 %, nằm trong hình | | Chốt |
-| Idle | rộng theo plan rộng nhất, đo khi chạy: 133 ở 1×, 138 ở 1.25–2× | | Chốt |
+| Idle | rộng theo plan rộng nhất, đo khi chạy: 131 ở 1×, 136 ở 1.25–2× | 8 + 24 + 6 + chữ + 8 | Chốt |
 | Chấm đèn | 8, ở tâm hình tròn đầu (cách mép 16) | chỉ trên pill 1 | Chốt |
-| Mỗi đầu nở khi có đèn | 20 = bán kính 16 + nửa chấm 4 | idle 133 → 173 | Chốt |
-| Pill phụ | 133, bằng idle; tối đa 2, bên phải | | Chốt (Ethan, 2026-11-11) |
+| Mỗi đầu nở khi có đèn | 20 = bán kính 16 + nửa chấm 4 | idle 131 → 171 | Chốt |
+| Pill phụ | 131, bằng idle; tối đa 2, bên phải | | Chốt (Ethan, 2026-11-11) |
 | Hover | rộng cộng 0.75em (12), cao cộng 2 như nay (32 → 34) | thay cho × 1.10 | Chốt (Ethan, 2026-11-11) |
 
 ## Compact
@@ -56,8 +57,8 @@ cụm. **Chốt**
 
 | | Nhỏ nhất | Lớn nhất | 1366 / 1920 | 2560 / 3440 |
 |---|---|---|---|---|
-| Idle, pill phụ | 133 | 133 | 133 | 133 |
-| Minimal, pill 1 | 133 | min(24em, 0.6 × expanded, khoảng trống) | 336 | 352 |
+| Idle, pill phụ | 131 | 131 | 131 | 131 |
+| Minimal, pill 1 | 131 | min(24em, 0.6 × expanded, khoảng trống) | 336 | 352 |
 | Compact | 16em ≈ 240 | min(28em, 0.72 × expanded) | 404 | 410 |
 | Expanded | 560 | 760 | 560 | 716 / 760 |
 
