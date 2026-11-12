@@ -59,9 +59,7 @@ nguyên.
 
 ![Pill thành compact và về lại, từng khung](images/compact.vi.png)
 
-<video src="clips/compact.webm" autoplay loop muted playsinline controls width="100%" title="Pill thành compact và về lại: đề xuất và hiện nay"></video>
-
-*Clip thật (60 fps), đề xuất ở trên, hiện nay ở dưới: [compact.vi.webm](clips/compact.vi.webm).*
+![Pill thành compact và về lại: đề xuất và hiện nay (chạy thật, 30 fps; đề xuất ở trên, hiện nay ở dưới)](clips/compact.vi.png)
 
 **Pill ↔ compact.** Rê chuột 300 ms: nền nở bằng `move` từ chính pill (đỉnh đứng yên, nở xuống và
 sang hai bên quanh tâm). Leading và tên đi tới chỗ của chúng trong compact cùng nền; đèn và
@@ -72,9 +70,7 @@ equaliser đi bằng `fade-out` ngay; phụ đề và thanh đứng sẵn ở ch
 
 ![Pill thành expanded, hai pill phụ gộp vào; rồi thu về](images/expanded.vi.png)
 
-<video src="clips/expanded.webm" autoplay loop muted playsinline controls width="100%" title="Pill thành expanded và thu về: đề xuất và hiện nay"></video>
-
-*Clip thật (60 fps), đề xuất ở trên, hiện nay ở dưới: [expanded.vi.webm](clips/expanded.vi.webm).*
+![Pill thành expanded và thu về: đề xuất và hiện nay (chạy thật, 30 fps; đề xuất ở trên, hiện nay ở dưới)](clips/expanded.vi.png)
 
 **Pill → expanded.** Bấm: nền nở bằng `open`. Khi tab mở ra có cùng activity (thẻ chính của Home,
 tab Media), leading của pill đi tới ảnh của nó ở đó (20 → 88) và tên tới chỗ tên; phần còn lại
@@ -89,9 +85,7 @@ chuột (`close`). Card trong một đợt tin giữ nguyên: nội dung `fade-o
 
 ![Đổi tab: vạch chọn trượt, thân đổi theo hướng; danh sách mở tại chỗ](images/tabs.vi.png)
 
-<video src="clips/tabs.webm" autoplay loop muted playsinline controls width="100%" title="Đổi tab Home ↔ Media: đề xuất và hiện nay"></video>
-
-*Clip thật (60 fps), đề xuất ở trên, hiện nay ở dưới: [tabs.vi.webm](clips/tabs.vi.webm).*
+![Đổi tab Home ↔ Media: đề xuất và hiện nay (chạy thật, 30 fps; đề xuất ở trên, hiện nay ở dưới)](clips/tabs.vi.png)
 
 **Đổi tab.** Vạch chọn (nền `fill-3` cao 24) trượt và đổi rộng sang tab mới bằng `snap`; các icon
 dời chỗ cũng bằng `snap` vì tab được chọn rộng hơn (có tên). Tên tab cũ `fade-out`, tên tab mới
