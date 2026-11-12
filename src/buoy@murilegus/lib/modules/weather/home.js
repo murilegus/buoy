@@ -4,10 +4,13 @@ import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
+import {fallbackIcon, iconProps} from '../../kit/ui/present/elements.js';
+
 import {WeatherFeed} from './feed.js';
 import {card, keys} from './idle.js';
 
 const ICON = 36;
+const OVERCAST = 'weather-overcast-symbolic';
 const WEATHER_APP = 'org.gnome.Weather.desktop';
 
 /**
@@ -78,8 +81,9 @@ export class WeatherHome {
         const symbolic = typeof c.leading === 'object' ? c.leading.icon : c.leading;
         this._box.add_child(new St.Icon({
             style_class: 'buoy-home-weather-icon', icon_size: ICON, y_align: Clutter.ActorAlign.CENTER,
-            ...art ? {gicon: new Gio.FileIcon({file: Gio.File.new_for_uri(art)})} : {icon_name: symbolic},
-            fallback_icon_name: symbolic || 'weather-overcast-symbolic',
+            ...art
+                ? {gicon: new Gio.FileIcon({file: Gio.File.new_for_uri(art)}), fallback_gicon: fallbackIcon(symbolic || OVERCAST)}
+                : iconProps(symbolic || OVERCAST, OVERCAST),
         }));
         const text = new St.BoxLayout({
             orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_align: Clutter.ActorAlign.CENTER,

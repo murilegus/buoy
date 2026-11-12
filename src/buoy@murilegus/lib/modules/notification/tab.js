@@ -7,7 +7,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
-import {EmptyState} from '../../kit/ui/present/elements.js';
+import {EmptyState, fallbackIcon, iconProps} from '../../kit/ui/present/elements.js';
 import {tick} from '../../kit/ui/present/parts.js';
 import {agoText} from '../../kit/model/presentation.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
@@ -180,7 +180,7 @@ export class NotificationsTab {
     _appBar(g) {
         const bar = new St.BoxLayout({style_class: 'buoy-ntab-bar', x_expand: true});
         const back = new St.BoxLayout({style_class: 'buoy-nback-line'});
-        back.add_child(new St.Icon({icon_name: 'go-previous-symbolic', icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
+        back.add_child(new St.Icon({...iconProps('go-previous-symbolic'), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
         back.add_child(new St.Label({text: `${g.appName} · ${g.items.length}`, y_align: Clutter.ActorAlign.CENTER}));
         const button = new St.Button({
             style_class: 'buoy-nback', can_focus: true, accessible_name: 'Back', child: back,
@@ -285,7 +285,7 @@ export class NotificationsTab {
         const x = new St.Button({
             style_class: 'buoy-nclose', can_focus: true,
             accessible_name: onOpen ? `Dismiss ${appName}` : 'Dismiss',
-            child: new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}),
+            child: new St.Icon({...iconProps('window-close-symbolic'), icon_size: 12}),
             y_align: Clutter.ActorAlign.CENTER,
         });
         x.connect('clicked', () => {
@@ -331,14 +331,14 @@ function cardIcon(n, avatar) {
     return new St.Icon({
         style_class: 'buoy-ncard-icon', icon_size: ICON, y_align: Clutter.ActorAlign.CENTER,
         gicon: gicon ?? n.gicon ?? null,
-        fallback_icon_name: 'preferences-system-notifications-symbolic',
+        fallback_gicon: fallbackIcon('preferences-system-notifications-symbolic'),
     });
 }
 
 function chipButton(text, icon, onClick) {
     const box = new St.BoxLayout({style_class: 'buoy-nchip-line'});
     if (icon)
-        box.add_child(new St.Icon({icon_name: icon, icon_size: 14, y_align: Clutter.ActorAlign.CENTER}));
+        box.add_child(new St.Icon({...iconProps(icon), icon_size: 14, y_align: Clutter.ActorAlign.CENTER}));
     box.add_child(new St.Label({text, y_align: Clutter.ActorAlign.CENTER}));
     const b = new St.Button({
         style_class: 'buoy-nchip', can_focus: true, accessible_name: text, child: box,

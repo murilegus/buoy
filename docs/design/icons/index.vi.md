@@ -46,18 +46,52 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   bo mềm, hợp chữ trong pill. **Chốt** (Ethan, 2026-11-11)
 - Nút nhạc (lùi, dừng/phát, tiến) và ▶ trong hàng dùng bản `-fill`; còn lại bản thường. **Chốt** (Ethan,
   2026-11-11)
-- Tab thông báo khi có tin chưa đọc: `bell-dot` thay `bell`. **Chốt** (Ethan, 2026-11-11)
-- Icon theo vai trò:
+- Tab thông báo khi có tin chưa đọc: `bell-dot` thay `bell` (thay chấm CSS trên chuông). **Chốt**
+  (Ethan, 2026-11-11)
+- **Tên file theo theme**: mỗi icon ship là `<tên>-symbolic.svg` với đúng tên Yaru/Adwaita đặt
+  cho icon đó (`window-close`, `media-playback-pause`, `audio-volume-high`, `go-home`…), để thiếu
+  file nào thì St tự dùng icon cùng tên của theme. Tên Gravity chỉ còn là nguồn hình trong
+  `render/gravity-ui/`. Ý nào theme không có tên thì Buoy đặt tên riêng, không có icon dự phòng:
+  `notifications-unread` (bell-dot), `task-todo` (circle-dashed), `caps-lock`, `num-lock`, `fn-lock`.
+  **Chốt** (Ethan, 2026-11-12)
+- **Mọi icon symbolic Buoy vẽ** (tab, nút, hàng, HUD/OSD, media, lịch, tải về, đã chép) là hình
+  Gravity hoặc Buoy tự vẽ, kể cả HUD và các nút trước đây lấy icon theme. Giữ của GNOME: `prefs.js`
+  (một app Adwaita), cụm hệ thống (SPEC §1), logo app, icon màu buổi và thời tiết. **Chốt**
+  (Ethan, 2026-11-12)
+- Icon theo vai trò (bảng ở `render/symbolic-map.js`, hình dưới): **Chốt** (Ethan, 2026-11-12;
+  vai trò Home, tab, nút nhạc, đóng, cài đặt, xong, việc chờ, gửi, pin, Bluetooth từ 2026-11-11)
 
-  | Vai trò | Icon |
-  |---|---|
-  | Home, Media, Thông báo, Lịch | `house`, `music-note`, `bell` / `bell-dot`, `calendar` |
-  | Thiết bị, Hẹn giờ, Tải về, Thêm | `smartphone`, `alarm`, `arrow-down-to-line`, `ellipsis-vertical` |
-  | Lùi, dừng, tiến, phát | `backward-step-fill`, `pause-fill`, `forward-step-fill`, `play-fill` |
-  | Đóng, cài đặt, xong | `xmark`, `gear`, `check` |
-  | Dừng, việc chờ, gửi | `stop-fill`, `circle`, `arrow-right` |
-  | Quay màn hình, chia sẻ màn hình | `video`, `display-pulse` |
-  | Pin, Bluetooth (Buoy tự vẽ) | `battery`, `battery-full`, `battery-low`, `battery-charging`, `bluetooth` |
+  | Vai trò | File (`<tên>-symbolic.svg`) | Hình |
+  |---|---|---|
+  | Home, tab chung, lưới app, cài đặt, tab ⋯ | `go-home`, `view-app-grid`, `view-grid`, `emblem-system`, `view-more` | `house`, `layout-cells-large` (×2), `gear`, `ellipsis-vertical` |
+  | Đóng, xong | `window-close`, `object-select` | `xmark`, `check` |
+  | Thông báo, có tin chưa đọc, quay lại | `preferences-system-notifications`, `notifications-unread`, `go-previous` | `bell`, `bell-dot`, `chevron-left` |
+  | Không làm phiền bật, tắt | `weather-clear-night`, `notifications-disabled` | `moon`, `bell-slash` |
+  | Media; lùi, phát, dừng, tiến, dừng hẳn | `audio-x-generic`; `media-skip-backward`, `media-playback-start`, `-pause`, `media-skip-forward`, `media-playback-stop` | `music-note`; `backward-step-fill`, `play-fill`, `pause-fill`, `forward-step-fill`, `stop-fill` |
+  | Trộn bài, lặp, lặp một bài, mở app | `media-playlist-shuffle`, `media-playlist-repeat`, `-repeat-song`, `external-link` | `shuffle`, tự vẽ, tự vẽ, `arrow-up-right-from-square` |
+  | Lịch, tháng sau, giờ, hẹn giờ, thiết bị | `x-office-calendar`, `go-next`, `preferences-system-time`, `alarm`, `phone` | `calendar`, `chevron-right`, `clock`, `alarm`, `smartphone` |
+  | Pin, đầy, yếu, đang sạc | `battery-good`, `battery-full`, `battery-low`, `battery-good-charging` | tự vẽ |
+  | Tải về, mở thư mục, mở tệp, tệp chữ | `folder-download`, `folder-open`, `document-open`, `text-x-generic` | `arrow-down-to-line`, `folder-open`, `file`, `file-text` |
+  | Đã chép, mật khẩu, ảnh, clipboard | `edit-copy`, `dialog-password`, `image-x-generic`, `edit-paste` | `copy`, `key`, `picture`, tự vẽ |
+  | Bàn phím, thư (mẫu), thời tiết (dự phòng) | `input-keyboard`, `mail-unread`, `weather-overcast` | `keyboard`, `envelope`, `cloud` |
+  | Việc chờ, gửi, quay màn hình, chia sẻ màn hình | `task-todo`, `mail-send`, `media-record`, `screen-shared` | `circle-dashed`, `arrow-right`, `video`, `display-pulse` |
+  | Âm lượng: tắt tiếng hoặc 0, ≤ 33 %, còn lại | `audio-volume-muted`, `-low`, `-medium` / `-high` / `-overamplified` | `volume-slash`, `volume-low`, `volume` |
+  | Mic: tắt tiếng hoặc 0, mọi mức | `microphone-sensitivity-muted`, `-low` / `-medium` / `-high`, `audio-input-microphone` | `microphone-slash`, `microphone` |
+  | Độ sáng màn hình, đèn bàn phím | `display-brightness`, `keyboard-brightness` | `sun`, tự vẽ |
+  | Touchpad bật, tắt | `input-touchpad`, `touchpad-disabled` | tự vẽ |
+  | Caps Lock, Num Lock, Fn Lock | `caps-lock`, `num-lock`, `fn-lock` | `arrow-shape-up-from-line`, tự vẽ, tự vẽ |
+  | Khoá xoay, mở khoá xoay, đẩy đĩa, không có gì phát | `rotation-locked`, `rotation-allowed`, `media-eject`, `action-unavailable` | `arrows-rotate-right-slash`, `arrows-rotate-right`, tự vẽ, `ban` |
+  | Bluetooth bật, tắt; máy bay bật, tắt | `bluetooth-active`, `bluetooth-disabled`; `airplane-mode`, `airplane-mode-disabled` | tự vẽ, tự vẽ; `plane`, tự vẽ |
+  | Màn hình riêng tư bật, tắt; bảng vẽ | `screen-privacy`, `screen-privacy-disabled`; `input-tablet` | `eye-slash`, `eye`; `pencil` |
+
+- Việc chờ của Claude Code: `circle-dashed` của Gravity thay `circle`. **Chốt** (Ethan, 2026-11-12)
+- Âm lượng và mic ở mức 0 dùng icon tắt tiếng như Shell (`ui/status/volume.js` `getIcon`), dù gsd
+  gửi `-low`. **Chốt** (Ethan, 2026-11-12)
+- HUD nói Bluetooth và chế độ máy bay bằng chữ của Buoy, như Caps Lock: "Bluetooth on / off",
+  "Airplane Mode on / off", thay chữ của gsd ("Bluetooth Enabled"…). **Chốt** (Ethan, 2026-11-12)
+- Icon một màu đặc, không có phần mờ trong file: St đặt độ mờ của cả icon theo màu chữ, nên icon
+  chỉ mờ khi CSS của Buoy cho nó màu mờ (tab không chọn: `fg-muted`); phần mờ .5 là cách của Yaru,
+  không phải của Buoy. **Chốt** (Ethan, 2026-11-12)
 - **Cỡ 16 ở mọi chỗ**: thanh tab, nút 32, pill, hàng 16 (Claude Code, bị nhỡ). **Chốt** (Ethan,
   2026-11-11)
 - **Thanh tab**: cao 32, bo 16. Tab đang chọn: nền `fill-3` cao 24 (cách mép 4), icon 16 và tên
@@ -67,6 +101,8 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   còn lại `fill-2`, icon trắng; hover `fill-3`, nhấn `fill-4`. **Chốt** (Ethan, 2026-11-11)
 
 ![Icon symbolic ở thanh tab, nút tròn và hàng](images/symbolic.vi.png)
+
+![Mọi icon symbolic theo vai trò: tên file, hình và các icon Buoy tự vẽ ở 1×](images/roles.vi.png)
 
 *Icon trong hình là của Gravity UI; SVG và LICENSE ở `render/gravity-ui/`.*
 
@@ -78,6 +114,18 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   + 1.5, mép ngoài ở .5, mép trong ở số nguyên như `smartphone` của Gravity; đầu nét tròn. SVG ở
   `render/own/`. **Chốt** (Ethan, 2026-11-11)
 - Đầu tiên: pin (bốn mức) và Bluetooth, như hình dưới. **Chốt** (Ethan, 2026-11-12)
+- **Gravity trước**: icon nào cũng tìm trong Gravity UI trước; không có thì đề xuất một hình vẽ
+  theo cách của Gravity; chỉ sau đó mới cùng Ethan quyết có để icon theme cùng tên dự phòng hay
+  không. Không bao giờ để theme thế chỗ mà không ai biết (`tests/icons.test.js` đòi mọi tên icon
+  trong code có file của Buoy). **Chốt** (Ethan, 2026-11-12)
+- **Bản gạch chéo** theo cách của Gravity (`volume-slash`, `microphone-slash`): nét gạch 1.5 từ
+  (2.5, 2.5) tới (13.5, 13.5); hình chạm nét ở phía dưới-trái, chừa khe 1.5 ở phía trên-phải, cắt
+  bằng `clipPath` (không dùng mask: St ép `fill` của mọi path theo màu chữ). **Chốt** (Ethan,
+  2026-11-12)
+- Đợt hai (OSD và các nút): đèn bàn phím (bàn phím thấp với ba tia), touchpad bật / tắt, đẩy đĩa
+  (tam giác bo như `triangle-up` trên một thanh), Num Lock (khung `square-hashtag` với số 1 của
+  `circle-number-1`), Fn Lock (khung đó với chữ fn), lặp và lặp một bài, clipboard, Bluetooth tắt,
+  máy bay tắt (`plane` gạch chéo). Script: `render/draw-own.js`. **Chốt** (Ethan, 2026-11-12)
 
 ![Icon tự vẽ cạnh icon của Gravity, ở 16 và ở 1× phóng 4](images/own.vi.png)
 
@@ -86,9 +134,13 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
 - `scripts/icons.js` — vẽ lại 19 icon trên lưới 24; chạy lại để ghi
   `src/buoy@murilegus/icons/color/{daypart,weather}-*.svg` và `docs/icons.png`.
 - Cỡ icon trong pill tính bằng em để lớn theo chữ lớn.
-- `src/buoy@murilegus/icons/symbolic/` — chép các SVG Gravity UI đang dùng, đổi tên `<tên>-symbolic.svg`, kèm
-  LICENSE của Gravity UI. Tên đuôi `-symbolic.svg` để St tô bằng màu chữ như icon của theme
-  (`st-icon-theme.c` `st_icon_info_load_symbolic_svg`), như `caps-lock-symbolic.svg` đã có.
+- `src/buoy@murilegus/icons/symbolic/` — `<tên theme>-symbolic.svg`, kèm LICENSE của Gravity UI;
+  `scripts/symbolic-icons.js` ghi lại cả thư mục từ bảng `render/symbolic-map.js` (hình Gravity
+  ở `render/gravity-ui/`, hình Buoy tự vẽ ở `render/own/`, vẽ bởi `render/draw-own.js`). Tên đuôi
+  `-symbolic.svg` để St tô bằng màu chữ như icon của theme (`st-icon-theme.c`
+  `st_icon_info_load_symbolic_svg`).
+- `kit/ui/present/elements.js` `iconProps(name)` — file của Buoy cùng tên trước, rồi icon theme;
+  mọi `St.Icon` của Buoy đi qua nó (hoặc `fallbackIcon` cho icon dự phòng).
 
 `docs/icons.png` và `scripts/icons.js` ở nguyên chỗ cũ cho tới khi các docs ở gốc `docs/` được làm
 gọn lại (Ethan, 2026-11-10).

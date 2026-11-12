@@ -18,8 +18,8 @@ const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edg
 const STRIP_H = 60; // first guess for the strip + panel padding; measured once laid out
 const CHIP_MAX = 240; // a Home chip ellipsizes past this
 
-// what the strip draws: its tabs and their dots
-const stripKey = strip => strip.tabs.map(t => `${t.id}${t.badge ? '•' : ''}`).join();
+// what the strip draws: its tabs, their icons and dots
+const stripKey = strip => strip.tabs.map(t => `${t.id}${t.badge ? '•' : ''}:${t.icon}`).join();
 
 // A tab's icon with a dot at its top right (the Notifications tab while GNOME's list has
 // some, 2026-11-08), as GNOME's date menu shows its message indicator.
@@ -153,7 +153,7 @@ export class Home {
         this._header.add_child(new St.Widget({x_expand: true}));
         const prefs = new St.Button({
             style_class: 'buoy-tab buoy-gear', can_focus: true, accessible_name: 'Settings',
-            child: new St.Icon({icon_name: 'emblem-system-symbolic', icon_size: 16}),
+            child: new St.Icon({...iconProps('emblem-system-symbolic'), icon_size: 16}),
             y_align: Clutter.ActorAlign.CENTER,
         });
         prefs.connect('clicked', () => this._onPrefs?.());
@@ -288,7 +288,7 @@ export class Home {
         if (slot)
             this._stripBox.add_child(this._tabButton(slot, slot.id));
         if (more.length) {
-            const button = this._button({icon: 'view-more-horizontal-symbolic', label: null}, 'More tabs');
+            const button = this._button({icon: 'view-more-symbolic', label: null}, 'More tabs');
             button.checked = this._menu !== null;
             button.connect('clicked', () => {
                 if (this._menu)
@@ -367,10 +367,10 @@ export class Home {
         layer.add_child(menu);
         for (const t of this._strip.more) {
             const box = new St.BoxLayout({style_class: 'buoy-menu-row-box', x_expand: true});
-            box.add_child(new St.Icon({icon_name: t.icon, icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
+            box.add_child(new St.Icon({...iconProps(t.icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
             box.add_child(new St.Label({text: t.label, y_align: Clutter.ActorAlign.CENTER, x_expand: true}));
             if (t.id === this._strip.slot?.id)
-                box.add_child(new St.Icon({icon_name: 'object-select-symbolic', icon_size: 14, y_align: Clutter.ActorAlign.CENTER}));
+                box.add_child(new St.Icon({...iconProps('object-select-symbolic'), icon_size: 14, y_align: Clutter.ActorAlign.CENTER}));
             const row = new St.Button({style_class: 'buoy-menu-row', child: box, can_focus: true, accessible_name: t.label});
             row.connect('clicked', () => {
                 this._onSlot?.(t.id);
@@ -585,7 +585,7 @@ export class Home {
         // icon-only, as the Transfers tab's (2026-11-06, Ethan); the name stays for a11y
         const clear = new St.Button({
             style_class: 'buoy-home-clear', can_focus: true, accessible_name: 'Clear missed',
-            child: new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}),
+            child: new St.Icon({...iconProps('window-close-symbolic'), icon_size: 12}),
             y_align: Clutter.ActorAlign.CENTER,
         });
         clear.connect('clicked', () => {
@@ -600,7 +600,7 @@ export class Home {
         for (const m of this._missed) {
             const tab = this._strip.tabs.find(t => t.type === 'kind' && t.kinds.includes(m.kind));
             const content = new St.BoxLayout({style_class: 'buoy-missed-row', x_expand: true});
-            content.add_child(new St.Icon({icon_name: tab?.icon ?? 'view-app-grid-symbolic', icon_size: 16}));
+            content.add_child(new St.Icon({...iconProps(tab?.icon ?? 'view-app-grid-symbolic'), icon_size: 16}));
             content.add_child(new St.Label({text: m.text ?? m.kind, style_class: 'buoy-text', y_align: Clutter.ActorAlign.CENTER}));
             if (tab)
                 content.add_child(new St.Label({text: tab.label, style_class: 'buoy-missed-source', y_align: Clutter.ActorAlign.CENTER}));

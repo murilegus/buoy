@@ -4,7 +4,11 @@
  * the source hands it what the OSD was given (icon, label, level) and an opener for
  * Settings; it never measures.
  *
- * Event: {id, iconName, gicon?, label?, level?, maxLevel?, lock?: 'caps'|'num', on?, open?}
+ * Event: {id, iconName, gicon?, label?, level?, maxLevel?, lock?: 'caps'|'num'|'fn', on?, open?}
+ *
+ * The leading icon is the OSD's theme name: Buoy ships a file under that name for each
+ * (design/icons "Icon symbolic", kit/ui/present/elements.js iconProps), so it is drawn as
+ * the rest of Buoy is; `gicon` is only for an icon that has no name (a file, bytes).
  */
 
 /** Feedback lasts ~1.5 s; a repeat updates the pill and restarts it (SPEC §2e). */
@@ -22,7 +26,21 @@ const WORDS = {
     'action-unavailable-symbolic': 'Nothing playing',
 };
 
+// Radio toggles say on / off as the lock keys do (Ethan, 2026-11-12), in place of gsd's
+// "Bluetooth Enabled", "Airplane Mode Disabled" (gsd-media-keys-manager.c, the rfkill reply;
+// its "Hardware Airplane Mode" says on too)
+const TOGGLES = {
+    'bluetooth-active-symbolic': 'Bluetooth on',
+    'bluetooth-disabled-symbolic': 'Bluetooth off',
+    'airplane-mode-symbolic': 'Airplane Mode on',
+    'airplane-mode-disabled-symbolic': 'Airplane Mode off',
+};
+
 const LOCKS = {caps: 'Caps Lock', num: 'Num Lock', fn: 'Fn Lock'};
+
+// At 0 the level icon is the muted one, as Shell's own sliders draw it (ui/status/volume.js
+// StreamSlider.getIcon); gsd sends -low there (get_icon_name_for_volume)
+const ZERO = {volume: 'audio-volume-muted-symbolic', mic: 'microphone-sensitivity-muted-symbolic'};
 
 const PANELS = {
     volume: 'gnome-sound-panel.desktop',
@@ -99,8 +117,9 @@ const hasLevel = v => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 export default {
     osd(ev) {
         const name = typeof ev.iconName === 'string' ? ev.iconName : '';
-        const icon = ev.gicon ?? (name || null);
         const fam = family(name);
+        const zero = hasLevel(ev.level) && ev.level <= 0 ? ZERO[fam] : null;
+        const icon = zero ?? ev.gicon ?? (name || null);
         const panel = panelFor(fam);
         // Every field is set, null when unused: the source updates one pill in place and
         // stack.update merges, so a toggle after a level must clear the old bar.
@@ -125,7 +144,7 @@ export default {
                 sizeHint: 'wide',
             };
         }
-        const text = ev.label || WORDS[name] || null;
+        const text = TOGGLES[name] ?? (ev.label || WORDS[name] || null);
         if (!text && !icon)
             return null;
         return {...base, text};

@@ -10,16 +10,24 @@ import {element} from '../../model/presentation.js';
 import {LONG_BAR, bodyFill, file, label, levelBar, meter, sinceLabel, untilLabel} from './parts.js';
 import {eqGlyph, mascot} from './motion.js';
 
-// Buoy's own symbolic icons (design/icons "Icon symbolic"): Gravity UI's, and the ones
-// Buoy draws in its style, in icons/symbolic as <name>-symbolic.svg; St recolours such a
-// file in the text colour as it does a theme's symbolic icon (st-icon-theme.c, a GFileIcon
-// whose uri ends in -symbolic.svg). A plan names them as Gravity does: `check`, `play-fill`.
+// Buoy's own symbolic icons (design/icons "Icon symbolic"): Gravity UI's, and the ones Buoy
+// draws in its style, in icons/symbolic as <theme name>-symbolic.svg. Each takes the name
+// GNOME's theme gives the same icon, so a name Buoy has no file for is the theme's, and a
+// plan names icons as the theme does (`window-close-symbolic`). St recolours such a file in
+// the text colour as it does a theme's symbolic icon (st-icon-theme.c
+// st_icon_info_load_symbolic_svg, a GFileIcon whose uri ends in -symbolic.svg).
 // lib/kit/ui/present/ → the extension's icons/symbolic
 const OWN_DIR = Gio.File.new_for_uri(import.meta.url).get_parent().resolve_relative_path('../../../../icons/symbolic');
 let ownNames = null;
 
-function ownIcon(name) {
-    if (typeof name !== 'string' || name.includes('/') || name.endsWith('-symbolic'))
+/**
+ * Buoy's own file for an icon name, with or without `-symbolic`.
+ *
+ * @param {*} name
+ * @returns {?Gio.FileIcon}
+ */
+export function ownIcon(name) {
+    if (typeof name !== 'string' || name.includes('/'))
         return null;
     if (!ownNames) {
         ownNames = new Set();
@@ -34,7 +42,8 @@ function ownIcon(name) {
             console.warn(`Buoy: its icons: ${e.message}`);
         }
     }
-    return ownNames.has(name) ? new Gio.FileIcon({file: OWN_DIR.get_child(`${name}-symbolic.svg`)}) : null;
+    const base = name.replace(/-symbolic$/, '');
+    return ownNames.has(base) ? new Gio.FileIcon({file: OWN_DIR.get_child(`${base}-symbolic.svg`)}) : null;
 }
 
 /**
@@ -158,24 +167,32 @@ class EmptyState extends St.Bin {
 });
 
 /**
- * An icon by theme name, or by absolute path to an image another app installed (Claude
- * Desktop's tray glyph, the Claude Code tab, 2026-11-07); a missing file shows the
- * generic icon instead.
+ * What an St.Icon shows when its own does not load: Buoy's file of that name, else the theme's.
  *
- * @param {string} icon
+ * @param {string} name  a theme icon name
+ * @returns {Gio.Icon} for `fallback_gicon`
+ */
+export function fallbackIcon(name) {
+    return ownIcon(name) ?? new Gio.ThemedIcon({name});
+}
+
+/**
+ * An icon by theme name, Buoy's own file of that name first; or by absolute path to an
+ * image another app installed (Claude Desktop's tray glyph, the Claude Code tab,
+ * 2026-11-07). One that does not load shows `fallback` instead, Buoy's own first too.
+ *
+ * @param {*} icon
+ * @param {string} [fallback]  a theme icon name
  * @returns {object} St.Icon properties
  */
-export function iconProps(icon) {
+export function iconProps(icon, fallback = 'view-app-grid-symbolic') {
+    const props = {fallback_gicon: fallbackIcon(fallback)};
     const own = ownIcon(icon);
     if (own)
-        return {gicon: own, fallback_icon_name: 'view-app-grid-symbolic'};
-    if (typeof icon === 'string' && icon.startsWith('/')) {
-        return {
-            gicon: new Gio.FileIcon({file: Gio.File.new_for_path(icon)}),
-            fallback_icon_name: 'view-app-grid-symbolic',
-        };
-    }
-    return {icon_name: icon, fallback_icon_name: 'view-app-grid-symbolic'};
+        return {...props, gicon: own};
+    if (typeof icon === 'string' && icon.startsWith('/'))
+        return {...props, gicon: new Gio.FileIcon({file: Gio.File.new_for_path(icon)})};
+    return {...props, icon_name: icon};
 }
 
 /**
@@ -222,8 +239,8 @@ export function makeElement(e, mode, activity = null, sizes = {}) {
     case 'art': {
         const icon = new St.Icon({
             style_class: 'buoy-art', icon_size: size.art,
+            fallback_gicon: fallbackIcon(e.fallback ?? 'audio-x-generic-symbolic'),
             gicon: e.gicon ?? new Gio.FileIcon({file: file(e.src)}),
-            fallback_icon_name: e.fallback ?? 'audio-x-generic-symbolic',
         });
         const r = sizes.artRadius ?? ART_RADIUS[mode];
         return r ? roundArt(icon, size.art, r) : icon;

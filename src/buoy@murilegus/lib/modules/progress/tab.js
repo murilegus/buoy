@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {EmptyState} from '../../kit/ui/present/elements.js';
+import {EmptyState, iconProps} from '../../kit/ui/present/elements.js';
 import {progressBar} from '../../kit/ui/present/parts.js';
 import {clockTime} from '../../kit/model/presentation.js';
 import {downloadedDetail} from './adapter.js';
@@ -123,7 +123,7 @@ export class TransfersTab {
         const row = new St.BoxLayout({style_class: 'buoy-transfers-line', x_expand: true});
         row.add_child(new St.Icon({
             style_class: 'buoy-transfers-icon', icon_size: ICON, y_align: Clutter.ActorAlign.CENTER,
-            ...icon && typeof icon === 'object' ? {gicon: icon} : {icon_name: icon || 'folder-download-symbolic'},
+            ...icon && typeof icon === 'object' ? {gicon: icon} : iconProps(icon || 'folder-download-symbolic'),
         }));
         const text = new St.BoxLayout({
             orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_align: Clutter.ActorAlign.CENTER,
@@ -151,7 +151,7 @@ export class TransfersTab {
             const b = new St.Button({
                 style_class: 'buoy-transfers-action', can_focus: true, accessible_name: act.label,
                 y_align: Clutter.ActorAlign.CENTER,
-                child: new St.Icon({icon_name: act.icon, icon_size: ACTION_ICON}),
+                child: new St.Icon({...iconProps(act.icon), icon_size: ACTION_ICON}),
             });
             b.connect('clicked', () => act.run?.());
             const say = () => {
@@ -175,7 +175,7 @@ function header(text, clearName = null, onClear = null) {
     box.add_child(new St.Widget({x_expand: true}));
     const clear = new St.Button({
         style_class: 'buoy-transfers-clear', can_focus: true, accessible_name: clearName,
-        child: new St.Icon({icon_name: 'window-close-symbolic', icon_size: 12}),
+        child: new St.Icon({...iconProps('window-close-symbolic'), icon_size: 12}),
         y_align: Clutter.ActorAlign.CENTER,
     });
     clear.connect('clicked', () => onClear());

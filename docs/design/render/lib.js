@@ -81,8 +81,8 @@ export function colourIcon(cr, name, x, y, s = 24) {
 }
 
 // A task's state in Claude Code's rows (design/compact, 2026-11-11): done `check`, doing
-// `play-fill`, to do `circle` dimmed (fg-subtle), white, s at (x, y).
-const TASK = {done: ['check', 1], doing: ['play-fill', 1], todo: ['circle', .5]};
+// `play-fill`, to do `circle-dashed` dimmed (fg-subtle), white, s at (x, y).
+const TASK = {done: ['check', 1], doing: ['play-fill', 1], todo: ['circle-dashed', .5]};
 export function taskState(cr, kind, x, y, s = 16) {
     const [name, a] = TASK[kind] ?? TASK.todo;
     icon(cr, name, x, y, s, [1, 1, 1], a);

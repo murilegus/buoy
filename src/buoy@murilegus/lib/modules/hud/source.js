@@ -13,13 +13,6 @@ import {isFnLockLed, ledOn} from './adapter.js';
 
 const ID = 'hud';
 
-// the extension's root: this file is <root>/lib/modules/hud/source.js
-const ROOT = import.meta.url.split('/').slice(0, -4).join('/');
-const LOCK_ICONS = {
-    caps: `${ROOT}/icons/symbolic/caps-lock-symbolic.svg`,
-    num: `${ROOT}/icons/symbolic/num-lock-symbolic.svg`,
-    fn: `${ROOT}/icons/symbolic/fn-lock-symbolic.svg`,
-};
 const LEDS = '/sys/class/leds';
 const STORM = 20;           // more wake-ups than this in a second: the watch gives up
 
@@ -175,8 +168,9 @@ export class OsdSource extends Source {
         const at = levels?.[Main.layoutManager.primaryIndex] ??
             Object.values(levels ?? {}).find(l => l) ?? null;
         const maxLevel = at?.maxLevel > 0 ? at.maxLevel : 1;
+        // a themed icon goes by its name, which Buoy has its own file for (design/icons)
         this._show({
-            iconName: nameOf(icon), gicon: icon ?? null, label: label ?? null,
+            iconName: nameOf(icon), gicon: icon && !(icon instanceof Gio.ThemedIcon) ? icon : null, label: label ?? null,
             level: typeof at?.level === 'number' ? at.level : null, maxLevel,
         });
     }
@@ -192,9 +186,9 @@ export class OsdSource extends Source {
         this._num = num;
     }
 
+    // Buoy's own caps-lock, num-lock, fn-lock icons (design/icons): the theme has none
     _lock(which, on) {
-        const gicon = new Gio.FileIcon({file: Gio.File.new_for_uri(LOCK_ICONS[which])});
-        this._show({lock: which, on, iconName: `${which}-lock-symbolic`, gicon});
+        this._show({lock: which, on, iconName: `${which}-lock-symbolic`});
     }
 
     _show(ev) {

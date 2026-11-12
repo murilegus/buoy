@@ -53,6 +53,7 @@ to their places there (2026-11-12, Ethan).
 | [ ] | The lights at the ends | as design/pill; SPEC §2, §2a-i, §2a-ii updated |
 | [ ] | Expanded on the same rhythm | as design/expanded and design/home (the main card and the row of tiles); SPEC §3, §4 updated |
 | [ ] | Motion | as design/motion: springs (`kit/model/motion.js`, unit-tested: ζ, overshoot, settling, retarget) for every move, size and shape, run on the frame clock; velocity kept when cut short; fades and CSS states; the radius follows the height; tab switch and in-place lists; animations off and slow-down-factor honoured; `shrinkStop` gone; SPEC §5 updated |
+| [x] | Symbolic icons from Gravity UI | as design/icons "Icon symbolic" and "Icon tự vẽ": every symbolic icon Buoy draws (tabs, buttons, rows, HUD/OSD, media, calendar, downloads, copied) is a Gravity UI drawing or Buoy's own in its style, shipped as `icons/symbolic/<theme name>-symbolic.svg` so a missing file falls back to the theme's icon of that name; the HUD says airplane mode and Bluetooth on/off; GNOME's own stay in prefs, the system cluster and app logos |
 | [ ] | Phone via GSConnect | Grab/Be ride, OTP (30 s), Zalo/Messenger with avatar, call Mute/Reply SMS; adapters in `modules/phone/apps/` |
 | [ ] | Attention on another workspace | click switches workspace and focuses (Mutter `demands-attention`) |
 | [ ] | Headphones / display plugged | choose on the pill; replaces GNOME's jack dialog when on |

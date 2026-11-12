@@ -313,8 +313,9 @@ export function tasksFromFiles(files) {
     return tasks.sort((a, b) => n(a.id) - n(b.id) || a.id.localeCompare(b.id));
 }
 
-// done ✓, being done ▶, to do ○ (design/icons: Gravity UI's check, play-fill, circle)
-const TASK_ICON = {completed: 'check', in_progress: 'play-fill', pending: 'circle'};
+// done ✓, being done ▶, to do ◌ (design/icons: Gravity UI's check, play-fill, circle-dashed;
+// the theme has no name for ◌, task-todo is Buoy's)
+const TASK_ICON = {completed: 'object-select-symbolic', in_progress: 'media-playback-start-symbolic', pending: 'task-todo-symbolic'};
 
 /**
  * The compact's rows: up to three tasks; with more, the one just done, the one being done
@@ -545,7 +546,7 @@ export function agent(rec) {
         // ■ while a turn runs, when Buoy's hooks can stop it (the synchronous PostToolUse,
         // hooks.js): the compact's round button, cream (design/compact); never in the pill
         actions: rec.canStop === true && !rec.stopped && !rec.stopRequested && WORKING.has(pose)
-            ? [{id: STOP, icon: 'stop-fill'}] : [],
+            ? [{id: STOP, icon: 'media-playback-stop-symbolic'}] : [],
         minimalAction: false,
         // hover: which session (its name, or the label), then what it is doing (§2); with a
         // task list, its progress and the tasks as rows (design/compact) — not while the

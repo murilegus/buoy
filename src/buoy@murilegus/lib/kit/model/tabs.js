@@ -37,14 +37,19 @@ const title = id => id.charAt(0).toUpperCase() + id.slice(1);
 const iconName = v => typeof v === 'string' && v.trim() ? v.trim() : null;
 const hasExpanded = a => planExpanded(a) !== null;
 
+// A module's badge: its `badgeIcon` in place of its icon (the Notifications tab's bell-dot,
+// design/icons 2026-11-11), else a dot on the icon
 function badgeOf(m) {
-    return typeof m.badge === 'function' && m.badge() === true ? {badge: true} : {};
+    if (typeof m.badge !== 'function' || m.badge() !== true)
+        return {};
+    return iconName(m.badgeIcon) ? {icon: m.badgeIcon.trim()} : {badge: true};
 }
 
 /**
  * @param {object[]} modules  enabled modules, in order: {id, kinds, tab?, title?, icon?,
- *   tabWhileLive?, noTab?, badge?}; `badge()` true: the tab's icon carries a dot (the
- *   Notifications tab while GNOME's list has some, 2026-11-08)
+ *   tabWhileLive?, noTab?, badge?, badgeIcon?}; `badge()` true: the tab shows `badgeIcon`
+ *   (the Notifications tab's bell with a dot while GNOME's list has some, 2026-11-08), or
+ *   without one, its icon carries a dot
  * @param {object[]} list  visible activities (stack order)
  * @param {object} [opts]
  * @param {string} [opts.slot]  `tabs-slot`

@@ -45,9 +45,9 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
   `PostToolUse`; Claude cũng ghi danh sách ở `~/.claude/tasks/<session_id>/<id>.json`, nên Buoy
   bật lại giữa phiên vẫn đọc được. Thử với Claude Code 2.1.319 (2026-11-11); bản này không còn
   `TodoWrite`.
-- Ba trạng thái: **xong** `check`, **đang làm** `play-fill`, **chờ** `circle` ([Icon](../icons/index.vi.md));
+- Ba trạng thái: **xong** `check`, **đang làm** `play-fill`, **chờ** `circle-dashed` ([Icon](../icons/index.vi.md));
   việc chờ mờ như stale, cả icon lẫn chữ. Trắng, không màu ([Bảng màu](../colours/index.vi.md)),
-  đứng yên. **Chốt** (Ethan, 2026-11-11)
+  đứng yên. **Chốt** (Ethan, 2026-11-11; chờ là `circle-dashed` thay `circle`, 2026-11-12)
 - Nhiều hơn 3 việc: hiện việc vừa xong, việc đang làm, việc kế tiếp; dòng dưới tiêu đề ghi tiến độ
   (`buoy · 2 / 5`).
 - Claude không lập danh sách việc: hàng là các bước gần nhất (lời gọi tool), như dòng
