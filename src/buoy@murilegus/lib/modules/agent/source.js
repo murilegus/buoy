@@ -290,6 +290,7 @@ export class AgentSource extends Source {
         const waitMs = lingerMs(this._settings?.get_string('activity-linger'));
         const quiet = this._quiet(key);
         const entry = this._newAsk(key, rec, ev, askId, sender);
+        entry.question = true;
         let state = newAnswers(qs);
         const lookNow = () => questionLook(this._sessions?.get(key) ?? rec, qs, state);
         const first = lookNow();
@@ -493,8 +494,16 @@ export class AgentSource extends Source {
             this._sharing.stop();
     }
 
-    // the screen started or stopped being shared: re-draw what shows
+    // the screen started or stopped being shared: re-draw what shows. A question's card closes
+    // (Ethan 2026-11-13, design/alerts-and-asks "Hỏi nhiều lựa chọn"): what was chosen is
+    // dropped and the question is Claude's again, its session's pill asks
     _sharingChanged() {
+        if (this._sharing.shared) {
+            for (const [key, entry] of [...this._asks?.entries() ?? []]) {
+                if (entry.question)
+                    this._settleAsk(key);
+            }
+        }
         for (const rec of this._sessions?.values() ?? []) {
             if (this._stack?.has(this._activityId(rec)))
                 this._show(rec);

@@ -161,6 +161,10 @@ is not a permission" (CODING-AGENTS.md, 2026-11-08).
   nối bằng ", "; Other là chữ đã gõ (chọn nhiều có cả Other thì chữ đó nối sau các nhãn). Không gửi
   từng câu được: tài liệu chỉ có một `answers` cho cả lần gọi
   ([hooks reference](https://code.claude.com/docs/en/hooks.md)).
+- **Khi chia sẻ hoặc quay màn hình**: không có card. Câu hỏi và lựa chọn là nội dung của phiên,
+  giấu như lệnh và thông báo; pill của phiên giơ tay "Needs your answer", trả lời trong Claude Code.
+  Đang có card mà bắt đầu chia sẻ thì card đóng, những gì đã chọn bỏ đi, câu hỏi về lại Claude.
+  **Chốt** (Ethan, 2026-11-13)
 - **Skip**: Buoy không trả lời, câu hỏi ở lại trong Claude Code như hiện nay. Nếu Claude không nhận
   chữ tự do qua đường Buoy dùng: câu nào chọn Other thì Buoy không trả lời cả lần gọi mà đưa Claude
   Code lên để gõ ở đó.
@@ -177,10 +181,14 @@ làm permission host, vì không có host thì `-p` không đưa tool này cho m
   `The user answered: "câu 1"="trả lời 1", "câu 2"="trả lời 2". Read the answers carefully…`.
 - `allow` mà không có `answers`: Claude nhận "The user did not answer the questions."
 - Dấu phẩy trong chữ không được thoát: Claude chỉ thấy một chuỗi.
-- **Chưa thử được** đường **PermissionRequest** (đường Buoy đang dùng): trong `-p`, quyết định của
-  hook này bị permission host lấn (host trả deny thì Claude nhận "HOST DENIED" dù hook đã trả lời),
-  nên phải thử trong một phiên tương tác thật khi làm code. Thiếu một câu trong `answers` cũng chưa
-  rõ.
+- Trong `-p`, quyết định của hook **PermissionRequest** bị permission host lấn (host trả deny thì
+  Claude nhận "HOST DENIED" dù hook đã trả lời), nên thử tiếp trong phiên tương tác.
+
+2026-11-13, Claude Code 2.1.319, Haiku, **phiên tương tác** (pty, chỉ nạp settings tạm có hook của
+Buoy, hook gọi Shell headless trên bus thử): AskUserQuestion có PermissionRequest; terminal hiện hộp
+của Claude cùng lúc với card của Buoy. Trả lời ở card (Blue; Apple + Other "Durian, ripe"), Submit:
+hộp của Claude đóng, Claude nhận `"Which colour?"="Blue"`, `"Which fruits?"="Apple, Durian, ripe"`.
+Thiếu một câu trong `answers` vẫn chưa thử.
 
 ## Chỗ trong code
 

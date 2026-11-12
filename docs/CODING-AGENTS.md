@@ -229,9 +229,11 @@ is a pulse where it stands: the pill has no expanded presentation (kit island.js
   timeout, nothing chosen, or an answer in Claude's own card: the hook prints `''` and the
   question stays Claude's — the session's own pill asks as before (Bu's hand up, "Needs
   your answer", the `ask` kind's priority, a click brings the session up). While the screen
-  is shared (§7) — or for a question Buoy cannot show (no options) — no card: Claude's own.
-  Answering through `PermissionRequest` was tried in a `-p` session only for PreToolUse
-  (design/alerts-and-asks "Đã thử"); in an interactive session it is still to be tried.
+  is shared (§7) — or for a question Buoy cannot show (no options) — no card: Claude's own;
+  a card open when sharing starts closes, what was chosen dropped (Ethan, 2026-11-13).
+  Tried 2026-11-13 in an interactive session (Claude Code 2.1.319): the terminal shows its
+  own dialog while the hook waits; Submit in Buoy closes it and Claude reads the answers,
+  free text and labels mixed (design/alerts-and-asks "Đã thử").
 - **Hook timeout**: the `PermissionRequest` entry gets `timeout` 1810 s, above the longest
   `activity-linger` (30 min), so Buoy always answers before Claude Code gives up.
 - **Not opened** (the red light instead, INDICATORS): fullscreen, Do Not Disturb, the
