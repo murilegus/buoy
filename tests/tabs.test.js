@@ -85,7 +85,7 @@ eq(planStrip([launcher], [], {slot: 'clipboard'}).slot?.id, 'launcher', 'the fir
 s = planStrip([media, clip, launcher], [act('m', 'media', {expanded: true})], {pinned: ['clipboard'], slot: 'clipboard'});
 eq(ids(s), [HOME, 'media', 'clipboard'], 'pinned (settings) standalone tabs follow the kind tabs');
 eq(s.slot?.id, 'launcher', 'a pinned tab is never also in the slot: the first free one is');
-eq(s.more.map(t => t.id), ['clipboard', 'launcher'], '⋯ still lists pinned ones');
+eq(s.more.map(t => t.id), ['launcher'], '⋯ lists only the free ones: a pinned tab is on the strip for good (2026-11-13)');
 eq(planStrip([clip], [], {pinned: ['clipboard']}).slot, null, 'every standalone tab pinned: no slot');
 eq(ids(planStrip([media], [], {pinned: ['media', 'nope']})), [HOME, 'media'], 'pinning a kind module or unknown id adds nothing');
 
@@ -195,3 +195,40 @@ eq(stripOrder({tabs: [{id: HOME}], slot: null, more: []}), [HOME], 'no slot: Hom
 
 
 print('tabs: ok');
+
+// --- the strip as Ethan set it (2026-11-13): fixed · pinned · live · slot ------------
+{
+    const noti = {id: 'notification', kinds: ['notification'], tab: true};
+    const transfers = {...progress, tab: true, tabWhileLive: true};
+    const timerMore = {...timer, tabInMore: true};
+    const cal = {id: 'calendar', kinds: [], tab: true};
+    const agents = {id: 'agent', kinds: ['agent', 'ask'], tab: true, tabWhileLive: true};
+    const all = [media, noti, transfers, timerMore, cal, agents, clip];
+    let st = planStrip(all, [], {pinned: ['calendar']});
+    eq(ids(st), [HOME, 'media', 'notification', 'calendar'], 'nothing running: Home, Media, Notifications, Calendar');
+    eq(st.slot?.id, 'clipboard', 'the slot: Clipboard until another is chosen from ⋯');
+    eq(st.more.map(t => t.id), ['clipboard', 'timer'], '⋯: the free standalone tabs, then the ones kept there; pinned Calendar not');
+    eq(st.more.at(-1), {id: 'timer', type: 'standalone', label: 'Timer', icon: 'view-app-grid-symbolic', kinds: []},
+        'a tabInMore tab is a tab like a standalone one');
+    st = planStrip(all, [act('p', 'progress'), act('a', 'agent'), act('d', 'deploy', {expanded: true})], {pinned: ['calendar']});
+    eq(ids(st), [HOME, 'media', 'notification', 'calendar', 'progress', 'agent', 'kind:deploy'],
+        'live tabs come after the pinned ones, just before the slot, in module order, unclaimed kinds last');
+    eq(stripOrder(st).at(-1), 'clipboard', 'the slot stays last');
+    eq(planStrip(all, [act('t', 'timer')], {pinned: ['calendar']}).tabs.some(t => t.id === 'timer'), false,
+        'a timer running keeps Timer in ⋯ (its kind stays claimed, no stray tab)');
+    eq(planStrip(all, [], {pinned: ['calendar'], slot: 'timer'}).slot?.id, 'timer', 'Timer chosen from ⋯: in the slot');
+    eq(planStrip(all, [], {pinned: [], slot: ''}).slot?.id, 'calendar', 'Calendar unpinned: free again, first in the slot');
+    eq(ids(planStrip([cal, clip], [], {pinned: ['clipboard', 'calendar']})), [HOME, 'calendar', 'clipboard'],
+        'pinned tabs in module order');
+    eq(ids(planStrip([{...timer, tabInMore: true, tab: undefined}], [])), [HOME, 'timer'],
+        'tabInMore without tab.js: an ordinary kind tab');
+}
+
+// --- Device: pinned after Calendar by default, out of ⋯ (2026-11-13) ------------------
+{
+    const cal = {id: 'calendar', kinds: [], tab: true};
+    const device = {id: 'device', kinds: [], tab: true, icon: 'computer-symbolic'};
+    const st = planStrip([media, cal, device, clip], [], {pinned: ['calendar', 'device']});
+    eq(ids(st), [HOME, 'media', 'calendar', 'device'], 'Calendar then Device, pinned');
+    eq([st.slot?.id, st.more.map(t => t.id)], ['clipboard', ['clipboard']], 'neither in ⋯ nor the slot');
+}

@@ -12,4 +12,6 @@ export default {
     source: ProgressSource,
     adapter,
     tab: TransfersTab,
+    // the tab only while a transfer is there (Ethan, 2026-11-13)
+    tabWhileLive: true,
 };

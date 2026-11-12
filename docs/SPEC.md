@@ -253,7 +253,7 @@ Rules:
 - Pill closed = live activities only, no UI chrome. Expanded = Notchy-style panel.
 - Expanded opens **Home** from idle, or the **activity's own tab** from its pill (minimal or
   compact).
-- A tab strip exists only inside Expanded (Home · Media · Timer · …). Pill never shows tabs.
+- A tab strip exists only inside Expanded (Home · Media · Notifications · Calendar · …). Pill never shows tabs.
 - Activity ends → removed immediately. `ttl` for short-lived ones (feedback §2e,
   notifications).
 - **What only waits goes after `activity-linger`** (5, 10, 20 or 30 minutes; 5 by
@@ -407,13 +407,22 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
 - The tab strip exists only inside expanded, and only when a click opened it; the stack's
   own opens (alert, ask, transient) show the activity's expanded view without a strip.
   Tabs = modules that ship `tab.js`; Home is always first; order follows §6.
-- **Kind tabs** (decided 2026-11-02): every enabled module with kinds has its tab, always
-  shown, running or not (default strip: Home · Media · Notifications · Transfers · Timer ·
-  [Calendar] · ⋯; Timer is a stub module until its roadmap item); until it ships `tab.js` the tab shows its activities' expanded
-  views (top first) or stays empty. Modules whose kinds are only feedback (osd, copied;
-  §2e) have no kind tab; a module with only a `tab.js` (Clipboard, 2026-11-07) is a
-  standalone tab, in the slot and ⋯ (2026-11-05). Kinds no module claims (D-Bus callers) get a tab while one of their
-  activities has an expanded presentation, after the module tabs.
+- **The strip** (2026-11-13, Ethan): `[Home] [fixed] [pinned] [live] [slot] [⋯]` —
+  Home · Media · Notifications · Calendar · Devices (its body "Coming soon" until M4
+  "Device tab") · the live tabs · the slot (Clipboard until another is chosen) · ⋯.
+  - **Fixed**: every enabled module with kinds has its kind tab, running or not, in module
+    order (§6); until it ships `tab.js` the tab shows its activities' expanded views (top
+    first) or stays empty. Modules whose kinds are only feedback (osd, copied; §2e) have no
+    kind tab; a module with only a `tab.js` (Clipboard, 2026-11-07) is a standalone tab, in
+    the slot and ⋯ (2026-11-05).
+  - **Pinned**: standalone tabs pinned in settings (`tabs-pinned`, Calendar and Devices by
+    default).
+  - **Live**, the cells before the slot: a module with `tabWhileLive` has its tab only while
+    one of its activities is there (Claude Code 2026-11-07, Transfers 2026-11-13); kinds no
+    module claims (D-Bus callers) get a tab while one of their activities has an expanded
+    presentation, after them.
+  - **In ⋯**: a module with `tabInMore` keeps its kind tab in ⋯, like a standalone tab (Timer,
+    2026-11-13, until its roadmap item says otherwise).
 - **Strip look** (2026-11-02, after Notchy): one rounded group hugging its tabs; the
   active tab shows icon + title on a lighter pill, the others only their icon (the title
   is their accessible name). Every tab has an icon: the module's `icon`, for an unclaimed
@@ -423,31 +432,29 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
   activity's `onPress` if it has one (e.g. raise the player), else Home. An activity with
   `pressFirst` runs its `onPress` before its kind's tab, which opens only when `onPress`
   does nothing (an agent's session: its terminal, else the Claude Code tab; 2026-11-07).
-  A module with `tabWhileLive` has its kind tab only while one of its activities is
-  there (Claude Code, 2026-11-07); every other kind tab is always shown. Tabs can be
-  switched inside expanded, but the next open follows context again — the last tab is not
-  remembered. While open the strip follows the stack: a tab whose last activity ends
+  Tabs can be switched inside expanded, but the next open follows context again — the last
+  tab is not remembered. While open the strip follows the stack: a tab whose last activity ends
   goes back to Home.
 - **Standalone tabs** (decided 2026-10-30, after Notchy's ⋯ menu): a module with `tab.js`
   and `kinds: []`. No source, no activity, no idle plan; it lives only inside expanded.
   This is where tool-like pages go (Clipboard, Launcher, Files, Notes…) without touching
   the pill.
-  - Strip layout: `[Home] [kind tabs of enabled modules] [slot] [⋯]`. The **slot** is the
+  - Strip layout: as above. The **slot** is the
     last cell, drawn like any other tab (no ▾, 2026-11-02): it shows the standalone tab
     last chosen from ⋯ (`tabs-slot`) and stays until changed; until something is chosen it shows the **first enabled standalone tab**
     (2026-11-02). ⋯ opens a **menu floating over the tab** (raised: its own background and
     border, no blur), dropping from ⋯ with its right edge on ⋯'s (not from the left like
     Notchy); it lists every enabled standalone tab and marks the one in the slot. A press
     beside it, ⋯ included, only closes it.
-    Settings can pin some as fixed tabs (`tabs-pinned`), before the slot; a pinned tab is
-    never also in the slot.
+    Settings can pin some as fixed tabs (`tabs-pinned`), after the fixed kind tabs; a
+    pinned tab is never also in the slot, nor in ⋯ (2026-11-13). ⋯ lists the other standalone
+    tabs, then the `tabInMore` ones; the slot is always the last cell (2026-11-13).
   - Reachable only via slot / ⋯ / keybind — never opened by an event.
   - Actor built on first selection, destroyed when expanded closes (optional cache setting);
     closed = zero cost regardless of how many are enabled.
-  - Standalone tabs are **not pinned by default**: a fresh install shows Home + kind tabs,
-    the slot and ⋯. Calendar is the first (2026-11-02; its next-event activity in M4 may make it a kind
-    tab), then Clipboard; both on by default, so Calendar sits in the slot until another is
-    chosen, Clipboard's body "Coming soon" until its M5 item (2026-11-02; was "off by default").
+  - Calendar and Devices are pinned by default (2026-11-13; Calendar was in the slot,
+    2026-11-02), so a fresh install shows Home, the kind tabs, Calendar, Devices, the slot
+    with Clipboard (its body "Coming soon" until its M5 item) and ⋯.
   - May use Shell APIs in `tab.js`; still no polling while closed.
   - Likely first ones: Clipboard, Launcher. Not planned: Calculator, Emoji (GNOME search has them).
 

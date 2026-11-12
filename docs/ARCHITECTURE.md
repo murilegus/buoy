@@ -90,9 +90,11 @@ src/buoy@murilegus/
     └── modules/            FEATURES — one self-contained folder each
         └── <id>/
             ├── index.js    export default {id, kinds, source, adapter, tab?,
-            │               title?, icon?, tabWhileLive?, noTab?, badge?}   title/icon: its
-            │               tab in the strip; tabWhileLive: that tab only while one of its
-            │               activities is there (2026-11-07); noTab: never a tab, its
+            │               title?, icon?, tabWhileLive?, tabInMore?, noTab?, badge?}
+            │               title/icon: its tab in the strip; tabWhileLive: that tab only
+            │               while one of its activities is there, before the slot
+            │               (2026-11-07, -13); tabInMore: its tab in ⋯ like a standalone
+            │               one (2026-11-13); noTab: never a tab, its
             │               activities open on their own (the greeting, 2026-11-08); badge():
             │               a dot on its tab's icon (2026-11-08); home: {Card} or {Glance,
             │               order, wide} — its part of Home (below, 2026-11-12)
@@ -336,7 +338,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `idle-auto-plans` | as | plans `auto` may show, in the order they take turns; default `calendar`, `weather`, `clock` |
 | `idle-auto-interval` | i | minutes per turn of `auto` while idle; default `5`, 2–30 |
 | `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`; bad values → defaults. In the schema since M3 daypart, on the Island page once a plan reads it (2026-11-04) |
-| `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only) |
+| `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only; `['calendar', 'device']` by default) |
 | `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |
 | `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
 | `cluster-background` | s | never \| hover \| always; default `hover` (2026-11-04) |

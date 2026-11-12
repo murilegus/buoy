@@ -69,7 +69,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Không làm phiền bật, tắt | `weather-clear-night`, `notifications-disabled` | `moon`, `bell-slash` |
   | Media; lùi, phát, dừng, tiến, dừng hẳn | `audio-x-generic`; `media-skip-backward`, `media-playback-start`, `-pause`, `media-skip-forward`, `media-playback-stop` | `music-note`; `backward-step-fill`, `play-fill`, `pause-fill`, `forward-step-fill`, `stop-fill` |
   | Trộn bài, lặp, lặp một bài, mở app | `media-playlist-shuffle`, `media-playlist-repeat`, `-repeat-song`, `external-link` | `shuffle`, tự vẽ, tự vẽ, `arrow-up-right-from-square` |
-  | Lịch, tháng sau, giờ, hẹn giờ, thiết bị | `x-office-calendar`, `go-next`, `preferences-system-time`, `alarm`, `phone` | `calendar`, `chevron-right`, `clock`, `alarm`, `smartphone` |
+  | Lịch, tháng sau, giờ, hẹn giờ, điện thoại, tab Thiết bị | `x-office-calendar`, `go-next`, `preferences-system-time`, `alarm`, `phone`, `computer` | `calendar`, `chevron-right`, `clock`, `alarm`, `smartphone`, `display` |
   | Pin, đầy, yếu, đang sạc | `battery-good`, `battery-full`, `battery-low`, `battery-good-charging` | tự vẽ |
   | Tải về, mở thư mục, mở tệp, tệp chữ | `folder-download`, `folder-open`, `document-open`, `text-x-generic` | `arrow-down-to-line`, `folder-open`, `file`, `file-text` |
   | Đã chép, mật khẩu, ảnh, clipboard | `edit-copy`, `dialog-password`, `image-x-generic`, `edit-paste` | `copy`, `key`, `picture`, tự vẽ |

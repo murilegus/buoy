@@ -3,20 +3,24 @@
  * starts on. Pure (no St, no Main), so it runs under plain gjs; kit/ui/home.js builds the
  * actors.
  *
- *   [Home] [kind tabs] [pinned standalone tabs] [slot] [⋯]
+ *   [Home] [fixed kind tabs] [pinned] [live tabs] [slot] [⋯]
  *
+ * (2026-11-13, Ethan: "Home, media, noti, calendar, device, clipboard (cuối), timer vào trong
+ * more, còn lại là khi có thì hiện slot kế cuối")
  * - Home is always first.
- * - A kind tab per enabled module with kinds, in module order (SPEC §6), always shown,
- *   running or not (2026-11-02) — unless the module says `tabWhileLive`: then only while
- *   one of its activities is (Claude Code, 2026-11-07, Ethan). Until the module ships `tab.js` it shows its activities'
- *   own expanded views, or nothing. Modules whose kinds are all feedback for your own
- *   action (osd, copied: SPEC §2b) have no tab, unless one of their activities brings an
- *   expanded presentation. Kinds no module claims (D-Bus callers) get a tab while one of
- *   their activities has an expanded presentation, after the module tabs.
- * - Standalone tabs (`tab.js`, `kinds: []`): the last cell, the slot, shows the one
- *   chosen from ⋯ (`tabs-slot`), or the first enabled one until something is chosen
- *   (2026-11-02); ⋯ lists all of them. Ones pinned in settings (`tabs-pinned`) are fixed
- *   tabs before the slot and never in it.
+ * - Fixed: a kind tab per enabled module with kinds, in module order (SPEC §6), running or
+ *   not. Until the module ships `tab.js` it shows its activities' own expanded views, or
+ *   nothing. Modules whose kinds are all feedback for your own action (osd, copied: SPEC
+ *   §2b) have no tab, unless one of their activities brings an expanded presentation.
+ * - Pinned standalone tabs (`tabs-pinned`, Calendar by default) follow the fixed ones.
+ * - Live, just before the slot: a module with `tabWhileLive` has its tab only while one of
+ *   its activities is there (Claude Code 2026-11-07, Transfers 2026-11-13); kinds no module
+ *   claims (D-Bus callers) get a tab while one of their activities has an expanded
+ *   presentation.
+ * - The slot, last: the tab chosen from ⋯ (`tabs-slot`), else the first free standalone tab
+ *   (Clipboard). ⋯ lists the free standalone tabs (not the pinned ones, 2026-11-13), then
+ *   the kind tabs a module keeps there
+ *   (`tabInMore`: Timer, 2026-11-13), which are tabs like the standalone ones (no kinds).
  * - Where you open from decides the tab (tabFor); nothing remembers the last tab.
  */
 
@@ -47,7 +51,7 @@ function badgeOf(m) {
 
 /**
  * @param {object[]} modules  enabled modules, in order: {id, kinds, tab?, title?, icon?,
- *   tabWhileLive?, noTab?, badge?, badgeIcon?}; `badge()` true: the tab shows `badgeIcon`
+ *   tabWhileLive?, tabInMore?, noTab?, badge?, badgeIcon?}; `badge()` true: the tab shows `badgeIcon`
  *   (the Notifications tab's bell with a dot while GNOME's list has some, 2026-11-08), or
  *   without one, its icon carries a dot
  * @param {object[]} list  visible activities (stack order)
@@ -57,12 +61,18 @@ function badgeOf(m) {
  * @returns {object} {tabs, slot, more}: tabs = [{id, type, label, icon, kinds, badge?}]
  *   (icon always set: module `icon`, else a generic one; `badge: true` only when set),
  *   type 'home' | 'kind' | 'standalone'; slot = the slot's tab or null; more = every
- *   standalone tab for ⋯ (empty: no ⋯)
+ *   free (unpinned) standalone tab for ⋯ (empty: no ⋯)
  */
 export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
     const tabs = [{id: HOME, type: 'home', label: 'Home', icon: 'go-home-symbolic', kinds: []}];
+    const live = [];
+    const inMore = [];
     const shown = kinds => list.some(a => kinds.includes(a.kind) && hasExpanded(a));
     const claimed = new Set();
+    const kindTab = m => ({
+        id: m.id, type: 'kind', label: m.title ?? title(m.id),
+        icon: m.icon ?? GENERIC_ICON, kinds: [...m.kinds], ...badgeOf(m),
+    });
 
     for (const m of modules) {
         if (!m.kinds?.length)
@@ -72,36 +82,42 @@ export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
         // a tab, nor one made for its unclaimed kind
         if (m.noTab)
             continue;
-        if (m.tabWhileLive && !list.some(a => m.kinds.includes(a.kind)))
+        if (m.tabInMore && m.tab) {
+            inMore.push(m);
             continue;
+        }
+        if (m.tabWhileLive) {
+            if (list.some(a => m.kinds.includes(a.kind)))
+                live.push(kindTab(m));
+            continue;
+        }
         // feedback-only: a kind tab only while one of its activities brings an expanded
         // view, and never when its tab.js is the standalone one
-        if (!feedbackOnly(m) || (!m.tab && shown(m.kinds))) {
-            tabs.push({
-                id: m.id, type: 'kind', label: m.title ?? title(m.id),
-                icon: m.icon ?? GENERIC_ICON, kinds: [...m.kinds], ...badgeOf(m),
-            });
-        }
+        if (!feedbackOnly(m) || (!m.tab && shown(m.kinds)))
+            tabs.push(kindTab(m));
     }
     for (const a of list) {
         const id = `kind:${a.kind}`;
-        if (!claimed.has(a.kind) && hasExpanded(a) && !tabs.some(t => t.id === id)) {
+        if (!claimed.has(a.kind) && hasExpanded(a) && !live.some(t => t.id === id)) {
             // no module to ask: the first activity's own icon (`leading` or `leading.icon`)
             const icon = iconName(a.leading) ?? iconName(a.leading?.icon) ?? GENERIC_ICON;
-            tabs.push({id, type: 'kind', label: title(a.kind), icon, kinds: [a.kind]});
+            live.push({id, type: 'kind', label: title(a.kind), icon, kinds: [a.kind]});
         }
     }
 
-    const standalone = modules
-        .filter(m => m.tab && (!m.kinds?.length || feedbackOnly(m)) && m.id !== HOME)
-        .map(m => ({
-            id: m.id, type: 'standalone', label: m.title ?? title(m.id), icon: m.icon ?? GENERIC_ICON, kinds: [],
-            ...badgeOf(m),
-        }));
+    const standalone = [
+        ...modules.filter(m => m.tab && (!m.kinds?.length || feedbackOnly(m)) && m.id !== HOME),
+        ...inMore,
+    ].map(m => ({
+        id: m.id, type: 'standalone', label: m.title ?? title(m.id), icon: m.icon ?? GENERIC_ICON, kinds: [],
+        ...badgeOf(m),
+    }));
     tabs.push(...standalone.filter(t => pinned.includes(t.id)));
+    tabs.push(...live);
     const free = standalone.filter(t => !pinned.includes(t.id));
     const slotTab = free.find(t => t.id === slot) ?? free[0] ?? null;
-    return {tabs, slot: slotTab, more: standalone};
+    // ⋯ lists only what the strip does not show for good: a pinned tab is not in it (2026-11-13)
+    return {tabs, slot: slotTab, more: free};
 }
 
 /**

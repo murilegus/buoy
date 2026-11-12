@@ -494,7 +494,7 @@ export const MODULE_GROUPS = [
     {
         id: 'tabs', title: 'Tabs',
         description: 'A tab of their own, in the strip\'s slot or pinned.',
-        modules: ['calendar', 'clipboard'],
+        modules: ['calendar', 'device', 'clipboard'],
     },
     {
         // a switch for those who would rather Bu kept quiet (2026-11-08, Ethan)
@@ -507,7 +507,7 @@ export const MODULE_GROUPS = [
 // its plan's row, on the Island page.
 
 // Modules whose tab is standalone (SPEC §2b): their row has "Pin to the strip".
-export const STANDALONE = new Set(['calendar', 'clipboard']);
+export const STANDALONE = new Set(['calendar', 'device', 'clipboard']);
 
 /**
  * @param {Array<{name: string}>} keys  schema keys, in schema order

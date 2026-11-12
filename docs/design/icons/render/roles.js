@@ -30,7 +30,7 @@ const ROWS = [
     ['Mở app', 'external-link'],
     ['#', 'Lịch, giờ, thiết bị'],
     ['Lịch', 'x-office-calendar'], ['Tháng sau', 'go-next'], ['Giờ', 'preferences-system-time'], ['Hẹn giờ', 'alarm'],
-    ['Thiết bị', 'phone'], ['Pin', 'battery-good'], ['Pin đầy', 'battery-full'], ['Pin yếu', 'battery-low'],
+    ['Điện thoại', 'phone'], ['Tab Thiết bị', 'computer'], ['Pin', 'battery-good'], ['Pin đầy', 'battery-full'], ['Pin yếu', 'battery-low'],
     ['Pin đang sạc', 'battery-good-charging'],
     ['#', 'Tải về, chép, nhập'],
     ['Tải về', 'folder-download'], ['Mở thư mục', 'folder-open'], ['Mở tệp', 'document-open'], ['Tệp chữ', 'text-x-generic'],

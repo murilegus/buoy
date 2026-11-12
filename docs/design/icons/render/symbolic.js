@@ -44,8 +44,9 @@ fill([1, 1, 1, C.FILL2], sx, sy, 352, 32, 16);
 fill([1, 1, 1, C.FILL3], sx + 4, sy + 4, 80, 24, 12);
 icon('house', sx + 12, sy + 8, 16);
 text('Home', sx + 34, sy + 4, {sz: 9.5, wt: 600, h: 24});
-['music-note', 'bell-dot', 'calendar', 'smartphone',
-    'alarm', 'arrow-down-to-line', 'ellipsis-vertical'].forEach((n, i) => icon(n, sx + 96 + i * 36, sy + 8, 16, C.WHITE, C.FG_MUTED));
+// the strip of 2026-11-13: Media, Notifications, Calendar, Devices, a live tab (Transfers), ⋯
+['music-note', 'bell-dot', 'calendar', 'display',
+    'arrow-down-to-line', 'ellipsis-vertical'].forEach((n, i) => icon(n, sx + 96 + i * 36, sy + 8, 16, C.WHITE, C.FG_MUTED));
 dim(sx + 4, sx + 84, sy - 6, 'tab chọn'); dim(sx + 96, sx + 112, sy - 6, '16');
 text('Cao 32, bo 16. Tab đang chọn: nền fill-3 cao 24 (cách 4), icon 16 và tên 1em 600.', 16, 108, {sz: 7.5, a: .75});
 text('Tab khác: chỉ icon 16, fg-muted 70 %, mỗi ô rộng 36; tên là accessible name.', 16, 121, {sz: 7.5, a: .75});

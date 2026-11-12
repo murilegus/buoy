@@ -37,6 +37,7 @@ export const SYMBOLIC = {
     'preferences-system-time': 'clock',
     'alarm': 'alarm',
     'phone': 'smartphone',
+    'computer': 'display',
     'battery-good': 'own:battery',
     'battery-full': 'own:battery-full',
     'battery-low': 'own:battery-low',

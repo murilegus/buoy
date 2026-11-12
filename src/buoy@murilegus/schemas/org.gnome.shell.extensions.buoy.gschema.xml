@@ -81,6 +81,11 @@
       <summary>Calendar</summary>
       <description>Today and the week ahead in the Calendar tab, and the next event as an idle plan.</description>
     </key>
+    <key name="modules-device" type="b">
+      <default>true</default>
+      <summary>Devices</summary>
+      <description>The Devices tab: this computer, wireless and plugged devices. Pinned after Calendar.</description>
+    </key>
     <key name="modules-input" type="b">
       <default>true</default>
       <summary>Input source</summary>
@@ -218,7 +223,7 @@
       <description>Apps drawn by the default adapter instead of their own.</description>
     </key>
     <key name="tabs-pinned" type="as">
-      <default>[]</default>
+      <default>['calendar', 'device']</default>
       <summary>Pinned tabs</summary>
       <description>Standalone tabs shown in the strip all the time, besides the slot.</description>
     </key>
