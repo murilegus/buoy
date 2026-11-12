@@ -8,7 +8,11 @@ import {listInfos, readText} from '../../kit/services/files.js';
 import {installed} from './hooks.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
 import {lingerMs} from '../../kit/model/settings.js';
-import {AGENTS, DESKTOP_APP, STOP, STOP_REPLY, TIMEOUT, answered, interrupted, stopping, askOf, desktopRoute, desktopShown, isQuestion, parseEvent, reply, settles, step, tasksFromFiles} from './adapter.js';
+import {
+    AGENTS, DESKTOP_APP, ENTER, NEXT, OTHER_TEXT, SKIP, STOP, STOP_REPLY, SUBMIT, TIMEOUT, answered, answersOf, interrupted, stopping, askOf,
+    desktopRoute, desktopShown, isQuestion, newAnswers, parseEvent, pickAnswer, questionLook, questionReply, questionsOf, reply, settles, step,
+    tasksFromFiles,
+} from './adapter.js';
 
 const KIND = 'agent';
 const MAX_SESSIONS = 16;        // records kept; the oldest quiet one goes first
@@ -148,11 +152,18 @@ export class AgentSource extends Source {
         const lookup = sender && this._apps.get(key) === undefined ? this._lookUpApp(key, sender) : null;
         if (this._apps.get(key)?.get_id() === DESKTOP_APP)
             this._readDesktop(key);
-        // a question (AskUserQuestion) is answered in Claude's own card: no Deny / Allow here,
-        // the hook gets no decision at once and the session's pill says it waits
-        if (ev.hook_event_name === 'PermissionRequest' && !isQuestion(ev)) {
-            return (lookup ?? Promise.resolve()).then(() =>
-                this._stack && this._sessions?.has(key) ? this._ask(key, this._sessions.get(key), ev, sender) : '');
+        // a question (AskUserQuestion) is answered in a card of choices (design/alerts-and-asks
+        // "Hỏi nhiều lựa chọn"); one Buoy cannot show, or on a shared screen (§7: the question
+        // and its choices are the session's content), in Claude's own card: the hook gets no
+        // decision at once and the session's pill says it waits
+        const qs = isQuestion(ev) && !this._sharing.shared ? questionsOf(ev) : null;
+        if (ev.hook_event_name === 'PermissionRequest' && (!isQuestion(ev) || qs)) {
+            return (lookup ?? Promise.resolve()).then(() => {
+                if (!this._stack || !this._sessions?.has(key))
+                    return '';
+                const rec = this._sessions.get(key);
+                return qs ? this._askQuestion(key, rec, ev, qs, sender) : this._ask(key, rec, ev, sender);
+            });
         }
         return lookup ? lookup.then(() => '') : '';
     }
@@ -221,6 +232,22 @@ export class AgentSource extends Source {
         // (Ethan 2026-11-07; was `agent-ask-timeout`, 10 min)
         const waitMs = lingerMs(this._settings?.get_string('activity-linger'));
         const quiet = this._quiet(key);
+        const entry = this._newAsk(key, rec, ev, askId, sender);
+        const asked = this._stack.ask(askId, question, options, {
+            app: rec.source, timeoutMs: waitMs, fallback: TIMEOUT, look, quiet,
+        });
+        this._watchFocus(key, entry, quiet);
+        return asked.then(choice => {
+            if (this._asks?.get(key) === entry) {
+                this._dropAsk(key);
+                this._backToWork(key);
+            }
+            return reply(choice, ev);
+        });
+    }
+
+    // The session's open ask: kept while its hook waits; the session's pill hides behind it
+    _newAsk(key, rec, ev, askId, sender) {
         const entry = {event: ev, askId, watch: 0, focusId: 0};
         this._asks.set(key, entry);
         this._show(rec);                  // hidden while the prompt stands for it
@@ -234,28 +261,72 @@ export class AgentSource extends Source {
                     }
                 });
         }
-        const asked = this._stack.ask(askId, question, options, {
-            app: rec.source, timeoutMs: waitMs, fallback: TIMEOUT, look, quiet,
+        return entry;
+    }
+
+    // quiet while its terminal is focused; another app focused, it opens (Ethan
+    // 2026-11-07). Watched only while such an ask waits.
+    _watchFocus(key, entry, quiet) {
+        if (!quiet)
+            return;
+        const tracker = Shell.WindowTracker.get_default();
+        const app = this._apps.get(key);
+        entry.focusId = tracker.connect('notify::focus-app', () => {
+            const now = tracker.focus_app;
+            if (!now || now === app || this._asks?.get(key) !== entry)
+                return;
+            this._unwatchFocus(entry);
+            this._stack?.wake(entry.askId);
         });
-        // quiet while its terminal is focused; another app focused, it opens (Ethan
-        // 2026-11-07). Watched only while such an ask waits.
-        if (quiet) {
-            const tracker = Shell.WindowTracker.get_default();
-            const app = this._apps.get(key);
-            entry.focusId = tracker.connect('notify::focus-app', () => {
-                const now = tracker.focus_app;
-                if (!now || now === app || this._asks?.get(key) !== entry)
+    }
+
+    // Claude's questions answered in Buoy (design/alerts-and-asks "Hỏi nhiều lựa chọn"): one
+    // card, a question at a time; what is chosen and typed stays here, in memory, till Submit
+    // sends it all at once as `answers` — or Skip, the timeout, an answer in Claude's own card
+    // drop it and the question stays Claude's (its hook gets no decision).
+    _askQuestion(key, rec, ev, qs, sender) {
+        this._settleAsk(key);
+        const askId = `${this._activityId(rec)}:ask`;
+        const waitMs = lingerMs(this._settings?.get_string('activity-linger'));
+        const quiet = this._quiet(key);
+        const entry = this._newAsk(key, rec, ev, askId, sender);
+        let state = newAnswers(qs);
+        const lookNow = () => questionLook(this._sessions?.get(key) ?? rec, qs, state);
+        const first = lookNow();
+        const onInput = (id, value) => {
+            if (this._asks?.get(key) !== entry)
+                return;
+            if (id === ENTER) {                  // Enter in Other: Next, or Submit on the last
+                if (state.at === qs.length - 1) {
+                    this._stack?.answer(askId, SUBMIT);
                     return;
-                this._unwatchFocus(entry);
-                this._stack?.wake(askId);
-            });
-        }
+                }
+                id = NEXT;
+            }
+            const next = pickAnswer(qs, state, id, value);
+            if (next === state)
+                return;
+            state = next;
+            if (id === OTHER_TEXT)
+                return;                          // the entry shows it: no rebuild under the caret
+            const l = lookNow();
+            this._stack?.update(askId, {text: l.question, actions: l.actions, ...l.look});
+        };
+        const asked = this._stack.ask(askId, first.question, [SKIP, SUBMIT], {
+            app: rec.source, timeoutMs: waitMs, fallback: SKIP, look: first.look, quiet, onInput,
+        });
+        this._stack.update(askId, {actions: first.actions});   // several: Skip · Next first
+        this._watchFocus(key, entry, quiet);
         return asked.then(choice => {
+            const out = choice === SUBMIT ? questionReply(ev, answersOf(qs, state)) : '';
             if (this._asks?.get(key) === entry) {
                 this._dropAsk(key);
-                this._backToWork(key);
+                if (out)
+                    this._backToWork(key);        // answered: Claude goes on
+                else if (this._sessions?.has(key))
+                    this._show(this._sessions.get(key));   // still Claude's: its pill asks
             }
-            return reply(choice, ev);
+            return out;
         });
     }
 

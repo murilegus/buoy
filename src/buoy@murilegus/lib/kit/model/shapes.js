@@ -151,11 +151,12 @@ export function shapesFor(monitor, panelH, opts = {}) {
         // compact: one width, min(28em, 0.72 × expanded), whatever it holds — content-fit is
         // the pill's alone (Ethan 2026-11-12: a content-fit compact put its buttons beside
         // the text, and looked wrong). Its height from its content, paddings included, by
-        // rows: 56 + 16n up to 152 (design/compact "Kích thước"). The island places it (top
-        // edge kept).
-        compact: (_contentW, contentH) => ({
+        // rows: 56 + 16n up to 152 (design/compact "Kích thước"); a card of choices up to
+        // expanded's height (design/alerts-and-asks "Hỏi nhiều lựa chọn": 280 at 1920). The
+        // island places it (top edge kept).
+        compact: (_contentW, contentH, {choices = false} = {}) => ({
             w: compactMax,
-            h: Math.min(compactTall,
+            h: Math.min(choices ? expH : compactTall,
                 cm.head + Math.max(0, Math.ceil((Math.ceil(contentH) - cm.head) / cm.row)) * cm.row),
             r: cm.radius,
         }),

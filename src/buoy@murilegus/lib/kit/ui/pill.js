@@ -294,7 +294,7 @@ export class Pill {
     // The grown pill: from its content's size, centred on the pill and kept on screen;
     // `cx` says where (the other shapes centre on this.cx).
     compactShape() {
-        const shape = this._s.compact(this._compactW, this._compactH);
+        const shape = this._s.compact(this._compactW, this._compactH, {choices: this._cardChoices === true});
         return {...shape, cx: compactCx(this.cx, shape.w, this._s.container.w)};
     }
 
@@ -540,8 +540,12 @@ export class Pill {
             return null;
         const plan = planCompact(shown);
         this._cardOnHover = plan?.card?.actionsOnHover === true;
+        this._cardChoices = !!plan?.card?.choices;     // taller than a compact (shapes.js)
         this._builtHovered = this.hoverCounts;
-        return buildCompact(shown, {maxWidth, metrics, hovered: this._builtHovered, light: this.role === 'centre' ? this.light : null});
+        return buildCompact(shown, {
+            maxWidth, metrics, hovered: this._builtHovered, light: this.role === 'centre' ? this.light : null,
+            onType: () => this._island._typeIn(this),      // a card's Other: the keyboard
+        });
     }
 
     // What the compact shows besides the missed list: the activity, or the idle plan

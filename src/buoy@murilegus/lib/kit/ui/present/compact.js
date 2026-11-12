@@ -185,14 +185,19 @@ function rowList(rows, m) {
  * @param {boolean} [opts.hovered]  the pointer is on it: a card's buttons on hover show
  * @param {boolean} [opts.actionsEnd]  a card's buttons at their own width, at the bottom
  *   right (Home's main card, design/home B) instead of a row of equal widths
+ * @param {?Function} [opts.onType]  a card's Other is about to be typed in: the island takes
+ *   the keyboard for its entry (island.js _typeIn)
  * @returns {?Clutter.Actor} null when the activity has no compact
  */
-export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false} = {}) {
+export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, onType = null} = {}) {
     const p = planCompact(activity, {light});
     if (!p)
         return null;
-    return p.card ? cardBox(p, activity, maxWidth, metrics, hovered, actionsEnd) : compactBox(p, activity, maxWidth, metrics);
+    return p.card ? cardBox(p, activity, maxWidth, metrics, hovered, actionsEnd, onType) : compactBox(p, activity, maxWidth, metrics);
 }
+
+/** The name of a card's Other entry: the island looks for it to give it the keyboard. */
+export const TYPE_ENTRY = 'buoy-type';
 
 // A card (NOTIFICATIONS.md §3, design/compact "Card thông báo"): the head as every compact's
 // — the picture 40 with the app's logo on its corner (the logo alone, 40, without one), the
@@ -200,7 +205,7 @@ export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMe
 // lines of 16, 8 under the head, and the buttons in a row 12 from the edges, 32 tall, 12
 // above and below: 136 with one line, 152 with two (104 without buttons). The compact's full
 // width. A click on it but a button is the pill's click (island.js).
-function cardBox(p, activity, maxWidth, m, hovered = false, actionsEnd = false) {
+function cardBox(p, activity, maxWidth, m, hovered = false, actionsEnd = false, onType = null) {
     const c = p.card;
     const box = new St.BoxLayout({style_class: 'buoy-card', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
     if (maxWidth > 0)
@@ -232,13 +237,15 @@ function cardBox(p, activity, maxWidth, m, hovered = false, actionsEnd = false) 
         body.set_style(`margin: ${px(m.bodyGap)} ${px(m.side)} ${hasActions ? 0 : px(m.vpad)}; max-height: ${px(2 * m.row)};`);
         box.add_child(body);
     }
+    if (c.choices)
+        box.add_child(choiceList(c.choices, activity, m, onType));
     if (hasActions) {
         const row = new St.BoxLayout({
             style_class: 'buoy-card-actions', x_expand: !actionsEnd,
             x_align: actionsEnd ? Clutter.ActorAlign.END : Clutter.ActorAlign.FILL,
         });
         // under the head with no message: 8 + 12 (design/alerts-and-asks "Ask 120")
-        const above = c.body ? m.actionsGap : m.bodyGap + m.actionsGap;
+        const above = c.body || c.choices ? m.actionsGap : m.bodyGap + m.actionsGap;
         row.set_style(`margin: ${px(above)} ${px(m.edge)} ${px(m.actionsGap)}; height: ${px(m.button)};`);
         row.layout_manager.homogeneous = true;      // equal widths, as GNOME's banner
         for (const a of p.actions) {
@@ -253,6 +260,76 @@ function cardBox(p, activity, maxWidth, m, hovered = false, actionsEnd = false) 
         box.add_child(row);
     }
     return box;
+}
+
+// An ask's choices (design/alerts-and-asks "Hỏi nhiều lựa chọn"): 8 under the head, a row of
+// 32 each, 8 in from the card's edges so the chosen one's fill-1 sits inside the radius: the
+// mark (16, round for one choice, square for many) in the leading's column, the label 1em
+// bold and its description 0.85em muted on the same line, cut with "…". Other last: its hint,
+// or, chosen, an entry in place with the accent's border. Each row is a button: its click
+// is the card's input (onAction with the row's id), never the pill's.
+function choiceList(ch, activity, m, onType) {
+    const list = new St.BoxLayout({style_class: 'buoy-choices', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+    list.set_style(`margin: ${px(m.bodyGap)} ${px(m.artInset)} 0;`);
+    const inset = m.side - m.artInset;                // the leading's column, from the row's edge
+    const row = (id, selected, parts, onClick) => {
+        const face = new St.BoxLayout({x_expand: true});
+        face.set_style(`padding: 0 ${px(inset)}; spacing: ${px(m.gap)};`);
+        const mark = new St.Bin({
+            style_class: `buoy-choice-mark ${ch.multi ? 'buoy-choice-check' : 'buoy-choice-radio'}${selected ? ' buoy-choice-on' : ''}`,
+            width: m.rowIcon, height: m.rowIcon, y_align: Clutter.ActorAlign.CENTER,
+            child: selected ? markInner(ch.multi, m) : null,
+        });
+        const lead = new St.Bin({width: m.lead, child: mark, x_align: Clutter.ActorAlign.CENTER});
+        addAll(face, [lead, ...parts]);
+        const b = new St.Button({
+            style_class: `buoy-choice${selected ? ' buoy-choice-selected' : ''}`, can_focus: true,
+            x_expand: true, height: 2 * m.row, child: face, accessible_name: parts[0]?.text ?? id,
+        });
+        b.set_style(`border-radius: ${px(m.row)};`);
+        b.connect('clicked', onClick ?? (() => activity.onAction?.(id)));
+        return b;
+    };
+    const texts = (name, detail) => {
+        const l = label(name, 'buoy-text buoy-choice-label');
+        const d = detail ? label(detail, 'buoy-choice-detail', true) : null;
+        if (!d)
+            l.x_expand = true;
+        return [l, d].filter(Boolean);
+    };
+    for (const it of ch.items)
+        list.add_child(row(it.id, it.selected, texts(it.label, it.detail)));
+    const o = ch.other;
+    if (o && !o.selected) {
+        list.add_child(row(o.id, false, texts('Other', o.hint), () => {
+            onType?.();                      // the entry about to appear takes the keyboard
+            activity.onAction?.(o.id);
+        }));
+    } else if (o) {
+        const entry = new St.Entry({
+            name: TYPE_ENTRY, style_class: 'buoy-choice-entry', text: o.text, hint_text: o.hint,
+            can_focus: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER,
+        });
+        entry.set_style(`height: ${px(m.button - m.vpad)}; border-radius: ${px((m.button - m.vpad) / 2)};`);
+        const t = entry.clutter_text;
+        t.connect('text-changed', () => activity.onAction?.(o.textId, t.text));
+        t.connect('activate', () => activity.onAction?.(o.enterId));
+        // a click into it (Mutter 50: ClutterText's own click gesture, clutter-text.c
+        // on_click_gesture_pressed, gives it the key focus) takes the keyboard back
+        t.connect('key-focus-in', () => onType?.());
+        // its mark still turns Other off (many choices); the entry is the label
+        const r = row(o.id, true, [entry]);
+        list.add_child(r);
+    }
+    return list;
+}
+
+// The chosen mark's inside: a dot (one choice) or a tick (many), on the accent
+function markInner(multi, m) {
+    if (multi)
+        return new St.Icon({...iconProps('object-select-symbolic'), icon_size: m.rowIcon - 4, style_class: 'buoy-choice-tick'});
+    const dot = Math.round(m.rowIcon * 3 / 8);
+    return new St.Bin({style_class: 'buoy-choice-dot', width: dot, height: dot, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER});
 }
 
 // The card's leading: the picture with the app's logo on its lower right corner, or the

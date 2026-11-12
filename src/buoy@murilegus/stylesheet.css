@@ -273,6 +273,28 @@
 /* an ask's answer (its second option): cream with black text (design/alerts-and-asks "Ask") */
 .buoy-card-actions .buoy-action.buoy-action-main { color: #000; /* fg-on-inverse */ background-color: #f1efe8; /* fill-inverse */ }
 .buoy-card-actions .buoy-action.buoy-action-main:hover { background-color: #fff; /* fill-inverse-hover */ }
+/* An ask's choices (design/alerts-and-asks "Hỏi nhiều lựa chọn"): rows of 32, the chosen one on
+   fill-1; the mark round (one choice) or square (many), the accent's when chosen, as GNOME's
+   own radio and check; Other typed in an entry with the accent's border. Geometry in
+   present/compact.js choiceList. */
+.buoy-choice { color: #fff; /* fg */ }
+.buoy-choice:hover { background-color: rgba(255, 255, 255, 0.04); /* fill-0 */ }
+.buoy-choice.buoy-choice-selected { background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
+.buoy-choice:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-choice-detail { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
+.buoy-choice-mark { border: 2px solid rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-choice-radio { border-radius: 999px; }
+.buoy-choice-check { border-radius: 4px; }
+.buoy-choice-mark.buoy-choice-on { border-color: -st-accent-color; background-color: -st-accent-color; }
+.buoy-choice-dot { border-radius: 999px; background-color: -st-accent-fg-color; }
+.buoy-choice-tick { color: -st-accent-fg-color; }
+.buoy-choice-entry {
+    padding: 0 8px;
+    color: #fff; /* fg */
+    background-color: rgba(255, 255, 255, 0.08); /* fill-1 */
+    border: 2px solid -st-accent-color;   /* caret and selection: the theme's StEntry */
+}
+.buoy-choice-entry .hint-text { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 .buoy-key {
     font-size: 11px;
     font-weight: bold;
@@ -380,6 +402,8 @@
 .buoy-hc .buoy-compact-row-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-compact-row-dim .buoy-compact-row-text, .buoy-hc .buoy-compact-row-dim .buoy-icon { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-live-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-choice-mark { border-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-choice-entry .hint-text { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-key { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ border-color: rgba(255, 255, 255, 0.7); /* border-strong */ }
 .buoy-hc .buoy-empty { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-home-subtitle { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

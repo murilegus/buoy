@@ -4,6 +4,7 @@ import GLib from 'gi://GLib';
 
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
+    BACK, ENTER, NEXT, OTHER, OTHER_HINT, OTHER_TEXT, PICK, SKIP, SUBMIT, answersOf, newAnswers, pickAnswer, questionLook, questionReply, questionsOf,
     STOP, STOP_REPLY, agent, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
@@ -522,6 +523,101 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
         {name: '4.json', text: JSON.stringify({id: '4'})},
     ]).map(t => [t.id, t.status]), [['1', 'completed'], ['2', 'in_progress'], ['10', 'pending']],
     'the files: in their ids\' order, deleted, broken and nameless ones left out');
+}
+
+// --- Claude's questions answered in Buoy (design/alerts-and-asks "Hỏi nhiều lựa chọn") -------
+{
+    const Q1 = {
+        question: 'What should I help with today?', header: 'Task', multiSelect: false, options: [
+            {label: 'Write code', description: 'Scripts, prototypes, new features'},
+            {label: 'Fix a bug', description: 'Debug or review'},
+            {label: 'Docs'},
+        ],
+    };
+    const Q3 = {
+        question: 'Which tools?', header: 'Tools', multiSelect: true, options: [
+            {label: 'GJS', description: 'Runs in GNOME Shell'}, {label: 'TypeScript'}, {label: 'Unit test'},
+        ],
+    };
+    const ask = qs => ev('PermissionRequest', {tool_name: 'AskUserQuestion', tool_input: {questions: qs}});
+    const one = questionsOf(ask([Q1]));
+    eq(one, [{
+        question: Q1.question, header: 'Task', multi: false, options: [
+            {label: 'Write code', detail: 'Scripts, prototypes, new features'}, {label: 'Fix a bug', detail: 'Debug or review'}, {label: 'Docs', detail: null},
+        ],
+    }], 'questionsOf: question, header, one choice, labels with their descriptions');
+    eq([questionsOf(ask([])), questionsOf(ev('PermissionRequest', {tool_name: 'AskUserQuestion'})),
+        questionsOf(ask([{question: 'x', options: []}])), questionsOf(ask([Q1, {question: '', options: Q1.options}]))],
+    [null, null, null, null], 'no questions, no input, no options, one without its text: null (Claude\'s own card answers)');
+    eq(questionsOf(ask([{question: 'x', options: [{label: ''}, {label: 'A'}]}]))[0].options.map(o => o.label), ['A'], 'a choice without a label is left out');
+
+    // one question, one choice
+    let s = newAnswers(one);
+    eq(s, {at: 0, picks: [[]], other: [{on: false, text: ''}]}, 'nothing chosen yet');
+    eq(answersOf(one, s), {}, 'nothing chosen: no answers');
+    s = pickAnswer(one, s, `${PICK}0`);
+    s = pickAnswer(one, s, `${PICK}1`);
+    eq(s.picks, [['Fix a bug']], 'one choice: the last row picked replaces the first');
+    eq(answersOf(one, s), {[Q1.question]: 'Fix a bug'}, 'one choice: its label');
+    eq(pickAnswer(one, s, `${PICK}9`), s, 'a row that is not there: nothing changes');
+    eq(pickAnswer(one, s, 'nonsense'), s, 'an unknown input: nothing changes');
+    s = pickAnswer(one, s, OTHER);
+    eq([s.picks, s.other[0].on], [[[]], true], 'one choice: Other replaces the row');
+    s = pickAnswer(one, s, OTHER_TEXT, '  Vala for text  ');
+    eq(answersOf(one, s), {[Q1.question]: 'Vala for text'}, 'Other: its text, trimmed');
+    eq(answersOf(one, pickAnswer(one, s, OTHER_TEXT, '  ')), {}, 'Other chosen with nothing typed: no answer');
+    eq(pickAnswer(one, s, OTHER).other[0].on, true, 'one choice: Other again stays chosen');
+    eq(pickAnswer(one, pickAnswer(one, s, `${PICK}2`), OTHER).other[0].text, '  Vala for text  ', 'a row then Other again: the text kept as typed');
+
+    // the card: Bu, the question, "Claude Code · buoy", the rows, Skip · Submit
+    const rec = {source: 'claude', project: 'buoy', cwd: CWD};
+    let look = questionLook(rec, one, pickAnswer(one, newAnswers(one), `${PICK}0`));
+    const card = look.look.compact.card;
+    eq([look.question, card.title, card.app, look.actions.map(a => a.id)], [Q1.question, Q1.question, 'Claude Code · buoy', [SKIP, SUBMIT]],
+        'one question: its text, "Claude Code · buoy" without a count, Skip · Submit');
+    eq(card.choices.items.map(r => [r.id, r.label, r.detail, r.selected]),
+        [[`${PICK}0`, 'Write code', 'Scripts, prototypes, new features', true], [`${PICK}1`, 'Fix a bug', 'Debug or review', false], [`${PICK}2`, 'Docs', null, false]],
+        'a row per choice, the chosen one marked');
+    eq([card.choices.multi, card.choices.other.selected, card.choices.other.hint, card.choices.other.id, card.choices.other.textId, card.choices.other.enterId],
+        [false, false, OTHER_HINT, OTHER, OTHER_TEXT, ENTER], 'Other last, its hint while not chosen');
+
+    // three questions: Skip · Next, then Back · Submit on the last; nothing lost moving
+    const three = questionsOf(ask([Q1, {...Q1, question: 'Second?'}, Q3]));
+    let t = newAnswers(three);
+    t = pickAnswer(three, t, `${PICK}0`);
+    look = questionLook(rec, three, t);
+    eq([look.look.compact.card.app, look.actions.map(a => a.id)], ['Claude Code · buoy · 1 / 3', [SKIP, NEXT]], 'first of three: 1 / 3, Skip · Next');
+    eq(pickAnswer(three, t, BACK), t, 'Back on the first: nothing');
+    t = pickAnswer(three, t, NEXT);
+    t = pickAnswer(three, t, NEXT);
+    look = questionLook(rec, three, t);
+    eq([t.at, look.look.compact.card.app, look.actions.map(a => a.id), look.look.compact.card.choices.multi],
+        [2, 'Claude Code · buoy · 3 / 3', [BACK, SUBMIT], true], 'last of three: 3 / 3, Back · Submit, many choices');
+    eq(pickAnswer(three, t, NEXT), t, 'Next on the last: nothing');
+    t = pickAnswer(three, t, `${PICK}2`);
+    t = pickAnswer(three, t, `${PICK}0`);
+    t = pickAnswer(three, t, `${PICK}1`);
+    t = pickAnswer(three, t, `${PICK}1`);
+    eq(t.picks[2], ['GJS', 'Unit test'], 'many: toggled, in the choices\' order');
+    t = pickAnswer(three, t, OTHER);
+    t = pickAnswer(three, t, OTHER_TEXT, 'Vala for text');
+    eq(t.picks[2], ['GJS', 'Unit test'], 'many: Other keeps the rows');
+    eq(pickAnswer(three, t, OTHER).other[2].on, false, 'many: Other toggles off');
+    t = pickAnswer(three, t, BACK);
+    eq([t.at, t.picks[0]], [1, ['Write code']], 'Back: the earlier answers kept');
+    eq(answersOf(three, t), {[Q1.question]: 'Write code', 'Which tools?': 'GJS, Unit test, Vala for text'},
+        'answers: every question answered, labels then the text joined by ", "; the empty one left out');
+
+    // the reply: allow, the input plus its answers; nothing answered, no decision
+    const asked = ask([Q1]);
+    eq(JSON.parse(questionReply(asked, {[Q1.question]: 'Docs'})), {
+        hookSpecificOutput: {
+            hookEventName: 'PermissionRequest', decision: {
+                behavior: 'allow', updatedInput: {questions: [Q1], answers: {[Q1.question]: 'Docs'}},
+            },
+        },
+    }, 'Submit: allow with updatedInput.answers (hooks.md)');
+    eq([questionReply(asked, {}), questionReply(asked, null)], ['', ''], 'nothing answered: no decision');
 }
 
 // --- ■: the turn stops at Claude's next tool call, as Desktop's Stop -----------------------

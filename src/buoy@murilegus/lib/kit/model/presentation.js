@@ -29,7 +29,11 @@
  *   compact.card: {icon, app, at, picture, title, body, close} — a card instead (a
  *         notification, NOTIFICATIONS.md §3, 2026-11-07): a header (icon, app name, the time
  *         since `at`, × running action `close`), a picture, a title, a body of up to 2
- *         lines, then the activity's actions (≤ 3) in a row; full width, up to 160 tall
+ *         lines, then the activity's actions (≤ 3) in a row; full width, up to 160 tall.
+ *         `choices: {multi, items: [{id, label, detail?, selected}], other?: {id, textId,
+ *         enterId, selected, text, hint}}` — an ask's rows of 32 to pick from, Other typed in
+ *         place (design/alerts-and-asks "Hỏi nhiều lựa chọn"); each sends its id through
+ *         onAction, the text as onAction(textId, text), Enter as onAction(enterId)
  *
  * Minimal is one set of data for every pill (CONTRACT.md §3): a side pill drops `text` and
  * keeps leading + trailing, so the short value that matters belongs in `trailing`.
@@ -292,6 +296,30 @@ export function planCompact(p, {light} = {}) {
     return plan;
 }
 
+/** A card's choices: at most this many rows, Other besides (AskUserQuestion has 2–4). */
+export const MAX_CHOICES = 6;
+
+/**
+ * @param {*} c  compact.card.choices
+ * @returns {?object} {multi, items: [{id, label, detail, selected}], other} or null
+ */
+function planChoices(c) {
+    if (!isPlain(c) || !Array.isArray(c.items))
+        return null;
+    const items = c.items
+        .filter(r => isPlain(r) && str(r.id) && str(r.label))
+        .slice(0, MAX_CHOICES)
+        .map(r => ({id: str(r.id), label: str(r.label), detail: str(r.detail), selected: r.selected === true}));
+    const o = c.other;
+    const other = isPlain(o) && str(o.id) ? {
+        id: str(o.id), textId: str(o.textId), enterId: str(o.enterId), selected: o.selected === true,
+        text: typeof o.text === 'string' ? o.text : '', hint: str(o.hint) ?? '',
+    } : null;
+    if (!items.length && !other)
+        return null;
+    return {multi: c.multi === true, items, other};
+}
+
 /** A card's body: at most this many lines, then … (ui/present/compact.js, via its max height). */
 export const MAX_CARD_LINES = 2;
 
@@ -319,6 +347,7 @@ function planCard(c, p, light) {
             // its buttons only under the pointer (a notification's alert, as GNOME 50's
             // banner: design/alerts-and-asks "Thông báo")
             actionsOnHover: c.actionsOnHover === true,
+            choices: planChoices(c.choices),
         },
         leading: null, text: null, subtitle: null, trailing: null,
         actions: acts,

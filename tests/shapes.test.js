@@ -82,6 +82,10 @@ for (const c of CASES) {
     eq(s.compact(300, 88).h, 88, `${at} media with its bar: 88`);
     eq(s.compact(300, 120).h, 120, `${at} three rows: 56 + 8 + 48 + 8 = 120`);
     eq(s.compact(300, 300).h, COMPACT_TALL, `${at} taller content stops at 152`);
+    // a card of choices (design/alerts-and-asks "Hỏi nhiều lựa chọn"): up to expanded's height
+    eq(s.compact(300, 280, {choices: true}).h, Math.min(280, c.expH), `${at} choices: 4 + Other = 280, within expanded`);
+    eq(s.compact(300, 216, {choices: true}).h, 216, `${at} choices: 2 + Other = 216`);
+    eq(s.compact(300, 900, {choices: true}).h, c.expH, `${at} choices: never taller than expanded (${c.expH})`);
     for (let need = 0; need <= 200; need += 7) {
         const h = s.compact(300, need).h;
         if ((h - 56) % 16 !== 0 || h < 56 || h > COMPACT_TALL)
