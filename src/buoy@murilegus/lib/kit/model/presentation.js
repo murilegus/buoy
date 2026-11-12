@@ -72,6 +72,31 @@ export function typedSplit(texts, chars) {
     });
 }
 
+const escapeMarkup = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+
+/**
+ * One typed line at `n` characters in: what is typed shows, the rest is there but
+ * transparent (Pango alpha), so the line keeps its size. A line nothing is typed of yet is
+ * hidden whole (the label's opacity) instead: Mutter 50's ClutterText ignores an alpha span
+ * that starts at the line's first character when its text colour is not opaque (the
+ * subtitles' fg-muted), so the line showed in full before its turn (2026-11-13, Ethan's
+ * intro; seen in the Shell, the source does not say why).
+ *
+ * @param {string} text
+ * @param {number} n  characters typed (typedSplit)
+ * @returns {{visible: boolean, markup: string}}
+ */
+export function typedLine(text, n) {
+    const all = [...text];
+    const k = Math.max(0, Math.min(all.length, Math.floor(n)));
+    if (k === 0)
+        return {visible: all.length === 0, markup: escapeMarkup(text)};
+    const shown = escapeMarkup(all.slice(0, k).join(''));
+    const rest = escapeMarkup(all.slice(k).join(''));
+    return {visible: true, markup: rest ? `${shown}<span alpha="1">${rest}</span>` : shown};
+}
+
 /** ms per typed character (GREETING.md principle 7): the kit types at it, adapters time by it. */
 export const TYPE_MS = 28;
 

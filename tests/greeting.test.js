@@ -1,7 +1,7 @@
 // Run: gjs -m tests/greeting.test.js   (pure: the first run, What's new, their lines)
 import adapter, {SHOW_MS, MAX_NOTES, MORE, INTRO, caseOf, noteFor, linesOf, buSize, releaseLabel, shortcutText} from '../src/buoy@murilegus/lib/modules/greeting/adapter.js';
 import notes from '../src/buoy@murilegus/lib/modules/greeting/notes.js';
-import {planExpanded, typedSplit, typingMs, TYPE_MS, MAX_LINES} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
+import {planExpanded, typedLine, typedSplit, typingMs, TYPE_MS, MAX_LINES} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import {validate, tierOf, PRIORITY} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 
 function eq(actual, expected, msg) {
@@ -92,6 +92,18 @@ eq(typedSplit(['Hi.', 'Hover me.'], 5), [3, 2], 'then the next');
 eq(typedSplit(['Hi.', 'Hover me.'], 99), [3, 9], 'all in, never past the end');
 eq(typedSplit(['⚙ in Home'], 1), [1], 'a character, not a UTF-16 unit');
 eq(typedSplit(['ab'], -3), [0], 'before the start: nothing');
+
+// a typed line (2026-11-13: a line not begun showed in full, its alpha span at index 0 ignored)
+eq(typedLine('⚙ in Home', 0), {visible: false, markup: '⚙ in Home'}, 'not begun: hidden whole, never a span at 0');
+eq(typedLine('Scroll on me', 6), {visible: true, markup: 'Scroll<span alpha="1"> on me</span>'},
+    'begun: typed part, then the rest transparent');
+eq(typedLine('⚙ in', 1), {visible: true, markup: '⚙<span alpha="1"> in</span>'}, 'counts characters, not UTF-16 units');
+eq(typedLine('Hi.', 3), {visible: true, markup: 'Hi.'}, 'all in: no span');
+eq(typedLine('Hi.', 99), {visible: true, markup: 'Hi.'}, 'past the end: all in');
+eq(typedLine('Hi.', -1).visible, false, 'before the start: hidden');
+eq(typedLine('', 0), {visible: true, markup: ''}, 'an empty line is nothing to hide');
+eq(typedLine('a < b & "c"', 2), {visible: true, markup: 'a <span alpha="1">&lt; b &amp; &quot;c&quot;</span>'},
+    'escaped for markup');
 eq(typingMs(['ab', 'c'], 10), 30, 'three characters at 10 ms');
 
 print('greeting: ok');
