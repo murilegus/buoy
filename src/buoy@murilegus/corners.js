@@ -22,10 +22,12 @@ class CornersEffect extends Shell.GLSLEffect {
             box: this.get_uniform_location('buoy_box'),
             frame: this.get_uniform_location('buoy_frame'),
             pixel: this.get_uniform_location('buoy_pixel'),
+            tiled: this.get_uniform_location('buoy_tiled'),
         };
         this.set_uniform_float(this._loc.box, 4, u.box);
         this.set_uniform_float(this._loc.frame, 4, u.frame);
         this.set_uniform_float(this._loc.pixel, 1, [u.pixel]);
+        this.set_uniform_float(this._loc.tiled, 1, [u.tiled]);
         this.queue_repaint();
     }
 });
@@ -167,7 +169,7 @@ export class WindowCorners {
         const [width, height] = s.actor.get_size();
         const frame = frameInActor(win.get_frame_rect(), win.get_buffer_rect());
         s.effect.setUniforms(cornerUniforms({width, height}, frame, this._radius,
-            s.actor.get_resource_scale()));
+            s.actor.get_resource_scale(), win.maximized_vertically));
     }
 
     _detach(s, destroyed = false) {
