@@ -141,7 +141,10 @@ Card không có thân nên chạy lần lượt từng app chỉ thêm nhấp nh
 để bạn chọn trong card của Claude. Quyết định này cho Buoy trả lời được, nên đổi quyết định "A question
 is not a permission" (CODING-AGENTS.md, 2026-11-08).
 
-- Phần đầu 56 (Bu, câu hỏi 1em, "Claude Code · dự án · 1 / 3" 0.85em).
+- Phần đầu 56 (Bu, câu hỏi 1em, "Claude Code · dự án · 1 / 3" 0.85em). Câu hỏi dài hơn chỗ trống thì
+  **chạy chữ như tên bài hát** (đứng yên 2 s ở đầu, rồi trượt sang trái, `marquee`), không cắt "…":
+  câu hỏi là cả nội dung. Cũng vậy với câu hỏi Cho phép / Từ chối. Tên người gửi của thông báo vẫn
+  đứng yên, cắt "…". **Chốt** (Ethan, 2026-11-13)
 - Mỗi lựa chọn một **hàng 32, một dòng**: nhãn 1em đậm, mô tả 0.85em xám cùng dòng, dài thì cắt
   "…". Hai dòng 1em + 0.85em cần 18 + 16 = 34, không vừa 32; nhỏ hơn thì xuống dưới cỡ nhỏ nhất của
   GNOME, 9pt ≈ 0.82em (`%caption` trong gnome-shell-sass `_common.scss`). (Ethan, 2026-11-10)

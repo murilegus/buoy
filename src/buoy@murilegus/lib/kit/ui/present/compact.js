@@ -66,6 +66,11 @@ function lines(title, subtitle, titleClass = 'buoy-compact-title') {
     return box.get_n_children() ? box : null;
 }
 
+// A card's title: one line, scrolling when long (marquee) or ellipsized
+function titleOf(text, runs) {
+    return runs ? marquee(text, 'buoy-text buoy-card-title') : label(text, 'buoy-text buoy-card-title');
+}
+
 // The head: [leading 40] title / subtitle [trailing] [buttons]
 function head(parts, m) {
     const row = new St.BoxLayout({style_class: 'buoy-compact-head', x_expand: true});
@@ -221,7 +226,9 @@ function cardBox(p, activity, maxWidth, m, hovered = false, actionsEnd = false, 
         x_expand: true, y_align: Clutter.ActorAlign.CENTER,
     });
     addAll(text, [
-        c.title ? label(c.title, 'buoy-text buoy-card-title') : null,
+        // an ask's question runs as a long song title does (2026-11-13, Ethan): it is the
+        // whole message; a notification's sender stays still, cut with …
+        c.title ? titleOf(c.title, activity?.kind === 'ask') : null,
         sub.get_n_children() ? sub : null,
     ]);
     box.add_child(head([
