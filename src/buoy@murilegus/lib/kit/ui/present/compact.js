@@ -2,7 +2,7 @@ import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {agoText, planCompact} from '../../model/presentation.js';
+import {agoText, planCompact, rowsThatFit} from '../../model/presentation.js';
 import {compactMetrics} from '../../model/shapes.js';
 import {addAll, label, liveBar, meter, tick, blinkingCaret} from './parts.js';
 import {dimStale, marquee} from './motion.js';
@@ -185,6 +185,7 @@ function rowList(rows, m) {
  * @param {object} activity  presentation data (+ onAction)
  * @param {object} [opts]
  * @param {number} [opts.maxWidth]  the compact's width (its content carries its paddings)
+ * @param {number} [opts.maxHeight]  a height to fit: as many rows as fit (Home's main card)
  * @param {string} [opts.light]  unused: the light is the pill's, never the compact's
  * @param {object} [opts.metrics]  kit/model/shapes.js compactMetrics at the em
  * @param {boolean} [opts.hovered]  the pointer is on it: a card's buttons on hover show
@@ -194,10 +195,14 @@ function rowList(rows, m) {
  *   the keyboard for its entry (island.js _typeIn)
  * @returns {?Clutter.Actor} null when the activity has no compact
  */
-export function buildCompact(activity, {maxWidth = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, onType = null} = {}) {
-    const p = planCompact(activity, {light});
+export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, onType = null} = {}) {
+    let p = planCompact(activity, {light});
     if (!p)
         return null;
+    // a height to fit (Home's main card): as many of its rows as fit, fewer or more than the
+    // compact's 3 (presentation.js rowsThatFit, pickRows)
+    if (maxHeight > 0 && p.rowsAvailable > 0)
+        p = planCompact(activity, {light, maxRows: rowsThatFit(p, maxHeight, metrics)});
     return p.card ? cardBox(p, activity, maxWidth, metrics, hovered, actionsEnd, onType) : compactBox(p, activity, maxWidth, metrics);
 }
 

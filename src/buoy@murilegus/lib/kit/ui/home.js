@@ -591,7 +591,8 @@ export class Home {
 
     _mainCard(plan) {
         const a = plan.main;
-        const bin = new St.Bin({style_class: 'buoy-home-card', x_expand: true, x_align: Clutter.ActorAlign.FILL});
+        // clipped to its box: nothing it holds runs into the row of tiles (#216)
+        const bin = new St.Bin({style_class: 'buoy-home-card', x_expand: true, x_align: Clutter.ActorAlign.FILL, clip_to_allocation: true});
         bin.set_height(plan.mainH);
         if (!a) {
             bin.set_child(this._greeting(plan));
@@ -607,8 +608,9 @@ export class Home {
         }
         // the rest: its compact in the card (design/home: only music, an ask, a call and the
         // greeting have a card of their own); a click on it opens its tab, as the pill's would
-        const content = buildCompact(a, {maxWidth: this._width - 2 * EDGE, metrics: this._metrics, hovered: true, actionsEnd: true}) ??
-            this._headOf(a);
+        const content = buildCompact(a, {
+            maxWidth: this._width - 2 * EDGE, maxHeight: plan.mainH, metrics: this._metrics, hovered: true, actionsEnd: true,
+        }) ?? this._headOf(a);
         const tab = this._tabOf(a);
         if (!tab && !a.onPress) {
             bin.set_child(content);
