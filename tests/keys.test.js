@@ -1,5 +1,5 @@
 // Run: gjs -m tests/keys.test.js   (pure: ask mnemonics, pill navigation)
-import {mnemonics, actionForKey, step} from '../src/buoy@murilegus/lib/kit/model/keys.js';
+import {mnemonics, actionForKey, step, caretBlink} from '../src/buoy@murilegus/lib/kit/model/keys.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -47,5 +47,12 @@ eq(step(2, -1, 3), 1, '← moves left');
 eq(step(0, 1, 1), 0, 'one pill: nowhere to go');
 eq(step(5, -1, 2), 1, 'an index past the end (a pill just ended) is clamped');
 eq(step(0, 1, 0), 0, 'no pills');
+
+// --- the caret's blink, as GNOME's text fields (2026-11-13) -----------------------------------
+eq(caretBlink({blink: true, time: 1200, timeout: 10}), {half: 600, stopAfter: 10000}, 'GNOME\'s defaults: 600 on, 600 off, for 10 s');
+eq(caretBlink({blink: false, time: 1200, timeout: 10}), null, 'blink off: a steady caret');
+eq(caretBlink({blink: true, time: 100, timeout: 10}), null, 'a time too short to read: steady');
+eq(caretBlink({blink: true, time: 1000, timeout: 0}).stopAfter, Infinity, 'no timeout: blinks while focused');
+eq(caretBlink({blink: true, time: NaN, timeout: 10}), null, 'no time: steady');
 
 console.log('keys: ok');

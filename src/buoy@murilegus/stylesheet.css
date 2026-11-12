@@ -292,8 +292,9 @@
     padding: 0 8px;
     color: #fff; /* fg */
     background-color: rgba(255, 255, 255, 0.08); /* fill-1 */
-    border: 2px solid -st-accent-color;   /* caret and selection: the theme's StEntry */
 }
+/* one stroke: the theme's own focus ring (StEntry:focus, gnome-shell-sass focus_ring: inset
+   2px of the accent); a border of Buoy's under it drew two (2026-11-13, Ethan) */
 .buoy-choice-entry .hint-text { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 .buoy-key {
     font-size: 11px;

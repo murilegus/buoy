@@ -141,7 +141,10 @@ Card không có thân nên chạy lần lượt từng app chỉ thêm nhấp nh
 để bạn chọn trong card của Claude. Quyết định này cho Buoy trả lời được, nên đổi quyết định "A question
 is not a permission" (CODING-AGENTS.md, 2026-11-08).
 
-- Phần đầu 56 (Bu, câu hỏi 1em, "Claude Code · dự án · 1 / 3" 0.85em).
+- Phần đầu 56 (Bu, câu hỏi 1em, "Claude Code · dự án · 1 / 3" 0.85em). Câu hỏi dài hơn chỗ trống thì
+  **chạy chữ như tên bài hát** (đứng yên 2 s ở đầu, rồi trượt sang trái, `marquee`), không cắt "…":
+  câu hỏi là cả nội dung. Cũng vậy với câu hỏi Cho phép / Từ chối. Tên người gửi của thông báo vẫn
+  đứng yên, cắt "…". **Chốt** (Ethan, 2026-11-13)
 - Mỗi lựa chọn một **hàng 32, một dòng**: nhãn 1em đậm, mô tả 0.85em xám cùng dòng, dài thì cắt
   "…". Hai dòng 1em + 0.85em cần 18 + 16 = 34, không vừa 32; nhỏ hơn thì xuống dưới cỡ nhỏ nhất của
   GNOME, 9pt ≈ 0.82em (`%caption` trong gnome-shell-sass `_common.scss`). (Ethan, 2026-11-10)
@@ -149,6 +152,10 @@ is not a permission" (CODING-AGENTS.md, 2026-11-08).
 - **Other** là hàng cuối: chưa chọn thì ghi "Type your own answer" màu xám; chọn rồi thì hàng thành
   ô nhập ngay trong card (viền màu nhấn như ô nhập của GNOME). Bấm vào ô thì Buoy nhận bàn phím (bấm
   vào island là của bạn, SPEC §2); Enter hoặc Submit gửi đi. (Ethan, 2026-11-10)
+  Ô chỉ có **một viền**: vòng focus của theme (Buoy bỏ viền riêng của mình, vì hai cái chồng thành
+  hai đường), và **con trỏ nhấp nháy** như ô nhập của GNOME, theo `cursor-blink`, `cursor-blink-time`
+  và `cursor-blink-timeout` của bạn; ô nhập của Shell không nhấp nháy nên Buoy tự làm. **Chốt**
+  (Ethan, 2026-11-13)
 - Cao 56 + 8 + 32 × số hàng + 12 + 32 + 12: 2 lựa chọn + Other = 216, 4 + Other = **280** — vượt
   152 của compact, tối đa bằng expanded (rộng/2); rộng như compact lớn nhất (404 ở 1920).
 - Nhiều câu hỏi thì lần lượt từng câu, "1 / 3" ở dòng phụ: các câu trước câu cuối có Skip · **Next**,
