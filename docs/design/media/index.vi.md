@@ -31,9 +31,18 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
   nhất trừ phần đầu 56 và lề dưới 12). **Chốt** (Ethan, 2026-11-13)
 - Ảnh bìa vuông, cạnh = cao thẻ − 16: **196 / 260 / 292**; cách mép 8, bo 8 (16 − 8, đồng tâm).
   **Chốt** (Ethan, 2026-11-13)
-- Cột chữ cách ảnh 16, cách mép phải 12, trên và dưới 12. Từ trên: tên 1.27em 700 (dài thì chạy
-  như compact), "nghệ sĩ · app" 0.85em `fg-muted`, album 0.85em `fg-subtle`; ↗ tròn 32 `fill-2` ở
-  góc phải trên, mở cửa sổ player. **Chốt** (Ethan, 2026-11-13)
+- Cột chữ cách ảnh 16, cách mép phải 12, trên và dưới 12. Hàng đầu cao 32: tên **1.64em 700**
+  (cao bằng ↗), ↗ tròn 32 `fill-2` bên phải, cùng một hàng. Dưới đó, mỗi dòng hết bề ngang cột:
+  "nghệ sĩ · app" **1em** `fg-muted`, album **1em** `fg-subtle`. **Chốt** (Ethan, 2026-11-13: chữ
+  cũ 1.27em / 0.85em để cột trống nhiều)
+- Dòng dài nào cũng **chạy** như tên bài trong compact (marquee), không cắt "…": tên, "nghệ sĩ ·
+  app", album. **Chốt** (Ethan, 2026-11-13)
+- Các dòng dài chạy **lần lượt**, mỗi lúc một dòng: tên trước, rồi "nghệ sĩ · app", rồi album, rồi
+  lại tên; dòng ngắn bị bỏ qua, một dòng dài duy nhất thì tự lặp. Dòng đang chờ đứng yên ở đầu chữ,
+  phần thừa khuất sau mép cột. **Chốt** (Ethan, 2026-11-13: ba dòng cùng chạy rối mắt)
+
+![Chữ trong cột: trước và sau, chữ dài và chữ ngắn](images/text.vi.png)
+
 - Dưới cùng: thanh cao 4 (`fill-3`, phần đã phát trắng), giờ đã phát và còn lại 0.85em `fg-subtle`
   ngay dưới thanh; rồi hàng nút 32 ở giữa cột, tâm cách nhau 44: ⇄ không nền, ⏮ `fill-2`, ⏯ kem
   (`fill-inverse`, icon đen), ⏭ `fill-2`, ↻ không nền. **Chốt** (Ethan, 2026-11-13)
@@ -92,4 +101,4 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
   `canGoNext`, `shuffle`, `loopStatus` của MPRIS), để tab biết nút nào mờ.
 - `lib/kit/ui/home.js` — vạch chọn và cách dời chỗ của thanh tab (`_stripPlaces`, `_slideStrip`)
   tách thành một phần dùng chung để hàng chip dùng lại.
-- Vẽ lại: `render/media.js` (`options`, `anatomy`, `states`, `players`, `switch`).
+- Vẽ lại: `render/media.js` (`options`, `anatomy`, `states`, `players`, `switch`, `text`).

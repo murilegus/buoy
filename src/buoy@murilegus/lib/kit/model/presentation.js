@@ -97,6 +97,28 @@ export function typedLine(text, n) {
     return {visible: true, markup: rest ? `${shown}<span alpha="1">${rest}</span>` : shown};
 }
 
+/**
+ * Whose turn to run, among long lines that take turns (the Media tab's three, design/media
+ * 2026-11-13, Ethan: one line moves at a time): the first that can run after `last`, going
+ * round; `last` itself again when it is the only one.
+ *
+ * @param {boolean[]} ready  per line: long, shown, animations on
+ * @param {number} last  the line that ran last, -1 for none (then the first ready)
+ * @returns {number} its index, -1 when none can run
+ */
+export function nextTurn(ready, last) {
+    const n = ready.length;
+    if (!n)
+        return -1;
+    const from = Number.isInteger(last) && last >= 0 && last < n ? last : -1;
+    for (let k = 1; k <= n; k++) {
+        const i = (from + k) % n;
+        if (ready[i])
+            return i;
+    }
+    return -1;
+}
+
 /** ms per typed character (GREETING.md principle 7): the kit types at it, adapters time by it. */
 export const TYPE_MS = 28;
 

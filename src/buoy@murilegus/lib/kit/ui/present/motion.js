@@ -7,7 +7,7 @@ import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 import {SIZE as GRID, cells, frameAt, helloAt, lampColour, moves} from '../../model/mascot.js';
-import {TYPE_MS, typedLine, typedSplit} from '../../model/presentation.js';
+import {TYPE_MS, nextTurn, typedLine, typedSplit} from '../../model/presentation.js';
 import {label} from './parts.js';
 
 // What moves, each only as ARCHITECTURE rule 8 allows: the marquee, Bu, the equaliser and
@@ -19,14 +19,19 @@ import {label} from './parts.js';
 // Only while the title overflows, it is mapped and animations are on (ARCHITECTURE
 // rule 8); otherwise it stands still, ellipsized. One Clutter.Timeline on the frame clock;
 // translation only, no relayout.
+//
+// Lines that share a MarqueeTurns take turns (the Media tab's three, design/media
+// 2026-11-13, Ethan): one loop each, one at a time, the others still at their start —
+// clipped, not ellipsized, since they will run.
 const MARQUEE_GAP = 40;       // px between the copies
 const MARQUEE_SPEED = 30;     // px per second
 const MARQUEE_PAUSE = 2000;   // ms at the start of each loop
 
 const Marquee = GObject.registerClass(
 class Marquee extends St.Widget {
-    _init(text, styleClass) {
+    _init(text, styleClass, turns = null) {
         super._init({clip_to_allocation: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER});
+        this._turns = turns;
         this._first = label(text, styleClass);
         this._second = label(text, styleClass);
         this.add_child(this._first);
@@ -54,7 +59,14 @@ class Marquee extends St.Widget {
                 this._settings.disconnect(this._animId);
             this._animId = 0;
             this._stop();
+            this._turns?.remove(this);
         });
+        this._turns?.add(this);
+    }
+
+    /** Long, shown, animations on: it can take a turn. */
+    get ready() {
+        return this._dist > 0 && this.mapped && this._settings.enable_animations;
     }
 
     // Asks for nothing: the column gives what it has, the copies are clipped to it.
@@ -100,21 +112,112 @@ class Marquee extends St.Widget {
 
     _sync() {
         this._stop();
-        if (!this._dist || !this.mapped || !this._settings.enable_animations)
+        if (this._turns) {
+            this._turns.changed(this);
             return;
+        }
+        if (this.ready)
+            this._run(-1);
+    }
+
+    // one loop (`repeat` 0, then `done`) or loops for ever (-1)
+    _run(repeat, done = null) {
+        this._stop();
         const dist = this._dist;
         const scrollMs = dist / MARQUEE_SPEED * 1000;
         this._timeline = new Clutter.Timeline({
-            actor: this, duration: Math.round(MARQUEE_PAUSE + scrollMs), repeat_count: -1,
+            actor: this, duration: Math.round(MARQUEE_PAUSE + scrollMs), repeat_count: repeat,
         });
         this._timeline.connect('new-frame', tl => {
             const t = tl.get_elapsed_time() - MARQUEE_PAUSE;
             const x = t > 0 ? -Math.round(dist * Math.min(t / scrollMs, 1)) : 0;
             this._first.translation_x = this._second.translation_x = x;
         });
+        // stop() does not emit 'completed' (clutter-timeline.c clutter_timeline_stop), so a
+        // loop cut short by _stop() hands no turn on
+        if (done) {
+            this._timeline.connect('completed', () => {
+                this._stop();
+                done();
+            });
+        }
         this._timeline.start();
     }
+
+    /** @param {function():void} done  called once the loop ends where it began */
+    runOnce(done) {
+        this._run(0, done);
+    }
+
+    halt() {
+        this._stop();
+    }
 });
+
+// Who runs among lines that take turns: the kit's only scheduler of them, no timer of its
+// own — each loop's end (its Timeline's 'completed') starts the next (nextTurn).
+class MarqueeTurns {
+    constructor() {
+        /** @type {any[]} */
+        this._lines = [];
+        this._current = null;
+        this._last = -1;
+    }
+
+    add(line) {
+        this._lines.push(line);
+    }
+
+    remove(line) {
+        const i = this._lines.indexOf(line);
+        if (i < 0)
+            return;
+        this._lines.splice(i, 1);
+        if (this._last >= i)
+            this._last--;
+        if (this._current === line) {
+            this._current = null;
+            this._next();
+        }
+    }
+
+    // a line's length, mapping or the setting changed (its own loop already stopped)
+    changed(line) {
+        if (this._current === line) {
+            this._current = null;
+            this._last = this._lines.indexOf(line) - 1;    // it again, if it still can
+        } else if (this._current && !this._current.ready) {
+            this._current.halt();
+            this._current = null;
+        }
+        if (!this._current)
+            this._next();
+    }
+
+    _next() {
+        const i = nextTurn(this._lines.map(l => l.ready), this._last);
+        if (i < 0)
+            return;
+        const line = this._lines[i];
+        this._current = line;
+        this._last = i;
+        line.runOnce(() => {
+            if (this._current !== line)
+                return;
+            this._current = null;
+            this._next();
+        });
+    }
+}
+
+/**
+ * Lines that take turns running (above): pass the same one to each marquee().
+ *
+ * @returns {MarqueeTurns}
+ */
+export function marqueeTurns() {
+    return new MarqueeTurns();
+}
 
 /**
  * A one-line label that scrolls when its text is wider than the room it gets (above);
@@ -122,10 +225,11 @@ class Marquee extends St.Widget {
  *
  * @param {string} text
  * @param {string} styleClass  the label's
+ * @param {?MarqueeTurns} [turns]  shared by lines that take turns (marqueeTurns())
  * @returns {St.Widget}
  */
-export function marquee(text, styleClass) {
-    return new Marquee(text, styleClass);
+export function marquee(text, styleClass, turns = null) {
+    return new Marquee(text, styleClass, turns);
 }
 
 // --- Bu (MASCOT.md) ------------------------------------------------------------------
