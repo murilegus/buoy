@@ -86,6 +86,14 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
 
 ![Đổi player khi có 5 player: lúc bấm, giữa chừng, xong](images/switch.vi.png)
 
+- **Một player: equaliser ở đâu.** Không có hàng chip nên tab không cho biết player đang phát.
+  Bốn chỗ: **A** sau tên bài, trước ↗ (cùng hàng đầu, như ô ⏸ của compact nằm cạnh tên); **B** góc
+  ảnh bìa, trên nền đen mờ; **C** trong nút phát, nghỉ thì equaliser, rê chuột thì ⏸ (như compact;
+  nhưng ở tab, nơi để điều khiển, nút chính bị giấu); **D** cạnh giờ đã chạy. Chỗ được chọn cũng là
+  nơi equaliser của pill bay tới khi mở tab. Em nghiêng về A. **Đề xuất** (2026-11-13)
+
+![Một player: hiện nay và bốn chỗ cho equaliser](images/eq-tab.vi.png)
+
 ## Tương tác
 
 - Bấm chip: đổi player, chuyển động như thanh tab (ở "Nhiều player"). **Chốt** (Ethan, 2026-11-13)

@@ -52,6 +52,10 @@ r $c/reply.js compact/images/reply.vi.png
 r alerts-and-asks/render/notification.js alerts-and-asks/images/notification.vi.png
 r alerts-and-asks/render/shared.js alerts-and-asks/images/shared.vi.png
 
+# media (design/media; chips-1920 is a Shell capture)
+for m in options anatomy states players text switch; do r media/render/media.js media/images/$m.vi.png $m; done
+r media/render/media.js media/images/eq-tab.vi.png eq
+
 # icons
 r icons/render/symbolic.js icons/images/symbolic.vi.png
 r icons/render/own.js icons/images/own.vi.png
