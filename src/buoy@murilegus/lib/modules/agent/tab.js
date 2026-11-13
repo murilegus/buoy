@@ -37,18 +37,43 @@ export class AgentsTab {
             this.actor.add_child(new EmptyState('No Claude Code sessions', {pose: 'idle'}));
             return;
         }
-        // Clear: every stale session at once, when there are two or more (one has its ×)
+        // Two parts when some are stale (2026-11-13, Ethan): Active — what works or asks, and
+        // other callers' prompts — then Stale, with its count and Clear (each row its ×)
         const stale = sessions.filter(s => canDismiss(s, askOf(s) !== null));
-        if (stale.length > 1)
-            this.actor.add_child(this._clearBar(stale));
+        const active = sessions.filter(s => !stale.includes(s));
+        const loose = asks.filter(x => !own.has(x));
+        if (stale.length && (active.length || loose.length))
+            this.actor.add_child(this._section('Active', active.length + loose.length));
         // a prompt whose session is hidden behind it (source.js) or another caller's
-        for (const q of asks.filter(x => !own.has(x)))
+        for (const q of loose)
             this.actor.add_child(this._row(q, q, {name: q.compact?.text ?? q.text, doing: q.compact?.subtitle ?? null}));
-        for (const s of sessions) {
-            this.actor.add_child(this._row(s, askOf(s), {
-                name: s.compact?.text ?? s.text, doing: s.compact?.subtitle ?? null,
-            }));
+        for (const s of active)
+            this.actor.add_child(this._sessionRow(s, askOf(s)));
+        if (!stale.length)
+            return;
+        this.actor.add_child(this._section('Stale', stale.length, () => stale.forEach(s => s.onAction?.(DISMISS))));
+        for (const s of stale)
+            this.actor.add_child(this._sessionRow(s, null));
+    }
+
+    _sessionRow(s, ask) {
+        return this._row(s, ask, {name: s.compact?.text ?? s.text, doing: s.compact?.subtitle ?? null});
+    }
+
+    // A part's head: its name and count; Stale's has Clear (every stale session leaves)
+    _section(title, count, onClear = null) {
+        const bar = new St.BoxLayout({style_class: 'buoy-agents-bar', x_expand: true});
+        bar.add_child(new St.Label({text: `${title} · ${count}`, style_class: 'buoy-agents-count', y_align: Clutter.ActorAlign.CENTER}));
+        bar.add_child(new St.Widget({x_expand: true}));
+        if (onClear) {
+            const clear = new St.Button({
+                style_class: 'buoy-agents-clear', can_focus: true, label: 'Clear', accessible_name: 'Clear the stale sessions',
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            clear.connect('clicked', () => onClear());
+            bar.add_child(clear);
         }
+        return bar;
     }
 
     // Bu · name over what it does · the time; under them a prompt's buttons
@@ -98,21 +123,6 @@ export class AgentsTab {
         if (ask)
             box.add_child(this._buttons(ask));
         return box;
-    }
-
-    // "N stale" · Clear stale (the Notifications tab's bar): every stale session leaves — the
-    // words say which go (2026-11-13, Ethan), not "done": a quiet one is stale too
-    _clearBar(stale) {
-        const bar = new St.BoxLayout({style_class: 'buoy-agents-bar', x_expand: true});
-        bar.add_child(new St.Label({text: `${stale.length} stale`, style_class: 'buoy-agents-count', y_align: Clutter.ActorAlign.CENTER}));
-        bar.add_child(new St.Widget({x_expand: true}));
-        const clear = new St.Button({
-            style_class: 'buoy-agents-clear', can_focus: true, label: 'Clear stale', accessible_name: 'Clear the stale sessions',
-            y_align: Clutter.ActorAlign.CENTER,
-        });
-        clear.connect('clicked', () => stale.forEach(s => s.onAction?.(DISMISS)));
-        bar.add_child(clear);
-        return bar;
     }
 
     // The prompt's answers, as in its expanded view; answering keeps the island open on
