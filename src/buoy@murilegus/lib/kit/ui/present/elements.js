@@ -280,6 +280,47 @@ export function actionButton(a, activity) {
     return button;
 }
 
+/** A rest slot's fade between its two faces (`state`, as a button's own colours). */
+const SLOT_FADE_MS = 120;
+
+/**
+ * A button that shows `rest` while left alone, and itself under the pointer or the keyboard's
+ * focus, one fading into the other where they stand: the media compact's ⏸ and the Media tab's
+ * ↗ with the equaliser at rest (design/compact "Nhạc", design/media "Một player", 2026-11-13,
+ * Ethan). The button keeps its own action and name; the stylesheet draws it by
+ * `buoy-round-rest` (no fill at rest) and `buoy-round-shown`.
+ *
+ * @param {St.Button} b
+ * @param {Clutter.Actor} rest
+ * @returns {St.Button} b
+ */
+export function restSlot(b, rest) {
+    b.add_style_class_name('buoy-round-rest');
+    const face = b.get_child();
+    b.set_child(null);
+    const layer = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true, y_expand: true});
+    rest.x_align = rest.y_align = Clutter.ActorAlign.CENTER;
+    face.x_align = face.y_align = Clutter.ActorAlign.CENTER;
+    face.opacity = 0;
+    layer.add_child(rest);
+    layer.add_child(face);
+    b.set_child(layer);
+    const sync = () => {
+        const shown = b.hover || b.has_key_focus();
+        if (shown)
+            b.add_style_class_name('buoy-round-shown');
+        else
+            b.remove_style_class_name('buoy-round-shown');
+        const ms = St.Settings.get().enable_animations ? SLOT_FADE_MS : 0;
+        rest.ease({opacity: shown ? 0 : 255, duration: ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+        face.ease({opacity: shown ? 255 : 0, duration: ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+    };
+    b.connect('notify::hover', sync);
+    b.connect('key-focus-in', sync);
+    b.connect('key-focus-out', sync);
+    return b;
+}
+
 // An ask's button: its key after the label, shown only while the island holds the
 // keyboard (showKeys); hidden, it takes no room.
 function keyedFace(face, key) {

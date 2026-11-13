@@ -6,7 +6,7 @@ import {agoText, planCompact, rowsThatFit} from '../../model/presentation.js';
 import {compactMetrics} from '../../model/shapes.js';
 import {addAll, label, liveBar, meter, tick, blinkingCaret} from './parts.js';
 import {dimStale, marquee} from './motion.js';
-import {actionButton, iconProps, makeElement} from './elements.js';
+import {actionButton, iconProps, makeElement, restSlot} from './elements.js';
 import {markShared} from './flight.js';
 
 // The compact tier, the hover: the compact, the card, the amber light's. Split out of
@@ -71,36 +71,11 @@ function restOf(p, activity) {
 
 // Play / pause in the media compact's 32 slot (design/compact "Nhạc", 2026-11-13, Ethan): at
 // rest the equaliser alone, moving or low; under the pointer or the keyboard's focus the
-// round button as before (fill-inverse, ⏸ playing, ▶ paused). One fades into the other where
-// they stand (`state`, as the button's own colours); a click plays or pauses.
-const SLOT_FADE_MS = 120;
+// round button as every main one (elements.js restSlot)
 function restButton(a, rest, activity, m) {
     const b = roundButton(a, activity, m);
-    b.add_style_class_name('buoy-round-rest');
     b.accessible_name = a.icon === 'media-playback-start-symbolic' ? 'Play' : 'Pause';
-    const face = b.get_child();
-    b.set_child(null);
-    const layer = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true, y_expand: true});
-    rest.x_align = rest.y_align = Clutter.ActorAlign.CENTER;
-    face.x_align = face.y_align = Clutter.ActorAlign.CENTER;
-    face.opacity = 0;
-    layer.add_child(rest);
-    layer.add_child(face);
-    b.set_child(layer);
-    const sync = () => {
-        const shown = b.hover || b.has_key_focus();
-        if (shown)
-            b.add_style_class_name('buoy-round-shown');
-        else
-            b.remove_style_class_name('buoy-round-shown');
-        const ms = St.Settings.get().enable_animations ? SLOT_FADE_MS : 0;
-        rest.ease({opacity: shown ? 0 : 255, duration: ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
-        face.ease({opacity: shown ? 255 : 0, duration: ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
-    };
-    b.connect('notify::hover', sync);
-    b.connect('key-focus-in', sync);
-    b.connect('key-focus-out', sync);
-    return b;
+    return restSlot(b, rest);
 }
 
 // `activity`: its title is a shared part (flight.js)

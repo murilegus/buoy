@@ -92,8 +92,9 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
   chạy; **E** ô của ↗, như ô ⏸ của compact: lúc nghỉ chỉ equaliser, rê chuột hay focus bàn phím thì
   ↗ hiện lại (`fill-3`). E (Ethan, 2026-11-13: "cùng nút mở external như nút pause ở compact") giữ
   một luật cho compact và tab, ô cùng góc nên equaliser của compact chỉ dời một đoạn ngắn khi mở
-  tab, và ⏸ của tab vẫn luôn hiện. Chỗ được chọn là nơi equaliser của pill bay tới. **Đề xuất**
-  (2026-11-13)
+  tab, và ⏸ của tab vẫn luôn hiện. Chỗ được chọn là nơi equaliser của pill bay tới. **Chốt E**
+  (Ethan, 2026-11-13), cả khi có nhiều player (ô ↗ là của player đang chọn; chip vẫn giữ equaliser
+  của mình)
 
 ![Một player: hiện nay và bốn chỗ cho equaliser](images/eq-tab.vi.png)
 

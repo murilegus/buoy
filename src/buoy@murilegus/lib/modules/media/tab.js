@@ -4,9 +4,9 @@ import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
-import {EmptyState, iconProps, makeElement} from '../../kit/ui/present/elements.js';
+import {EmptyState, iconProps, makeElement, restSlot} from '../../kit/ui/present/elements.js';
 import {markShared} from '../../kit/ui/present/flight.js';
-import {eqGlyph, marquee, marqueeTurns} from '../../kit/ui/present/motion.js';
+import {eqGlyph, eqLeaving, marquee, marqueeTurns} from '../../kit/ui/present/motion.js';
 import {tick} from '../../kit/ui/present/parts.js';
 import {element, livePosition, mediaTimes} from '../../kit/model/presentation.js';
 import {FADES, TAB_SHIFT} from '../../kit/model/motion.js';
@@ -109,7 +109,10 @@ export class MediaTab {
             this.actor.add_child(this._card);
         }
         this._card.set_height(cardHeight(this._bodyH, this._list.length));
+        // the same player paused: its bars come down from where they are (motion.js eqGlyph)
+        eqLeaving(!dir && this._content ? this._content : null);
         const next = this._buildContent(a);
+        eqLeaving(null);
         const old = this._content;
         this._content = next;
         this._card.add_child(next);
@@ -355,7 +358,11 @@ export class MediaTab {
             a.onAction?.('raise');
             this._close?.();
         });
-        return b;
+        // its slot shows the equaliser at rest, ↗ under the pointer or the keyboard's focus,
+        // as the compact's ⏸ (design/media "Một player", 2026-11-13, Ethan); the pill's flies
+        // here (shared parts)
+        const eq = eqGlyph({paused: a.state?.status !== 'Playing', color: a.isStale ? null : a.attributes?.tint});
+        return restSlot(b, markShared(eq, 'eq', a));
     }
 
     // The seek bar, always: it moves the track when the player can seek a track with a length;

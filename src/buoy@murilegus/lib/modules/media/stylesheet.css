@@ -70,3 +70,8 @@
 .buoy-hc .buoy-media-off, .buoy-hc .buoy-media-time-off { color: rgba(255, 255, 255, 0.5); /* fg-disabled */ }
 .buoy-hc .buoy-media-seek-off { -barlevel-active-background-color: rgba(255, 255, 255, 0.5); /* fg-disabled */ }
 .buoy-hc .buoy-home-media-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+/* ↗'s slot (design/media "Một player", 2026-11-13): the equaliser at rest, no fill; ↗ under the
+   pointer or the keyboard's focus as every skip button (kit present/elements.js restSlot) */
+.buoy-media-round.buoy-round-rest { background-color: transparent; }
+.buoy-media-round.buoy-round-rest.buoy-round-shown { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+.buoy-media-round.buoy-round-rest.buoy-round-shown:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
