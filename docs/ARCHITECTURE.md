@@ -48,6 +48,7 @@ src/buoy@murilegus/
     │   │   ├── shapes.js       the pill's sizes from the monitor and the em (rule 11)
     │   │   ├── home.js         Home's plan: the main card, the row of tiles and its fill rules (design/home, 2026-11-12)
     │   │   ├── motion.js       the springs and fades (design/motion), pure: the spring's closed form, settling (2026-11-13)
+    │   │   ├── flight.js       shared parts in flight, pure: where a part takes off, its pose on the way (2026-11-13)
     │   │   ├── tabs.js         which tabs exist, where an open starts (2026-11-02)
     │   │   ├── keys.js         keyboard: an ask's keys, ←/→ steps (2026-11-03)
     │   │   ├── settings.js     prefs: which page each schema key goes to, samples (2026-11-03)
@@ -83,6 +84,8 @@ src/buoy@murilegus/
     │           │                   tick(), FillBox, progressBar()
     │           ├── motion.js       what moves, each by rule 8: the marquee, Bu and his stillness,
     │           │                   the equaliser, typed text; dimStale()
+    │           ├── flight.js       shared parts: markShared() on the leading and the title, Flights
+    │           │                   flies their clones between forms (pill, Home) (2026-11-13)
     │           ├── elements.js     one element of presentation data as an actor (cover art: St.Icon,
     │           │                   loaded async, rounded by a Shell.GLSLEffect — not a CSS
     │           │                   background-image, which St keeps in its texture cache), action

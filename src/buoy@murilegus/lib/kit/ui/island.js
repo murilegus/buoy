@@ -675,8 +675,7 @@ export class Island {
             if (this._compactPill && this._compactPill !== pill)
                 this._compactPill._stopCompact();
             this._compactPill = pill;
-            this.actor.set_child_above_sibling(pill.bg, null);
-            this.actor.set_child_above_sibling(pill.content, null);
+            pill.raise();
             for (const other of this._pills) {
                 if (other !== pill)
                     other.dim(true);
@@ -747,8 +746,7 @@ export class Island {
             });
         }
         pill.expand(this._home?.actor ?? null);
-        this.actor.set_child_above_sibling(pill.bg, null);
-        this.actor.set_child_above_sibling(pill.content, null);
+        pill.raise();
 
         if (how === 'alert')
             this._armAlert();

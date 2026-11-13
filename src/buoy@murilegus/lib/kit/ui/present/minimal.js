@@ -5,6 +5,7 @@ import {planIdle, planMinimal} from '../../model/presentation.js';
 import {addAll, label} from './parts.js';
 import {dimStale} from './motion.js';
 import {actionButton, badge, makeElement} from './elements.js';
+import {markShared} from './flight.js';
 
 // The minimal tier: the pill in the bar, and the idle pill. Split out of present.js
 // (2026-11-12).
@@ -37,9 +38,11 @@ function pillBox(p, activity, maxWidth, buttons, {cell, gap, buttonGap} = METRIC
     const actions = buttons.map(a => actionButton(a, activity));
     actions[0]?.set_style(`margin-left: ${buttonGap - gap}px;`);  // trailing → button: 8
     addAll(box, [
-        leadingCell(p.leading, activity, cell),
+        // the leading and the title fly to their places in the compact and expanded
+        // (design/motion "Phần chung đi tới chỗ mới")
+        markShared(leadingCell(p.leading, activity, cell), 'leading', activity),
         side ? new St.Widget({x_expand: true}) : null,
-        p.text ? label(p.text, 'buoy-text', true) : null,
+        p.text ? markShared(label(p.text, 'buoy-text', true), 'title', activity) : null,
         makeElement(p.trailing?.type === 'bar' && !p.text ? {...p.trailing, long: true} : p.trailing, 'minimal'),
         ...actions,
         p.badge ? badge(p.badge) : null, // +N on the last pill (SPEC §2c)

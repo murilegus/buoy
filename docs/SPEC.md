@@ -800,7 +800,15 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
   at once, an alert mid-way).
 - **The radius follows the height**: on the way it is the larger of the old and new radius,
   never more than half the height; at the end, the shape's own.
-- **Content never moves or scales during a morph** (until M4 "Motion: shared parts"). On
+- **Shared parts go to their new places** (M4 "Motion: shared parts", 2026-11-13; was
+  "content never moves or scales during a morph"). The leading and the title an activity
+  has in both forms — the pill and its compact or card, Home's main card or the Media tab,
+  a Home tile and the tab it opens — fly from where they were to their places on the
+  background's spring (a tile to its tab on `move`): drawn at their end size by a clone,
+  moved and scaled, never laid out again; a title scaled by its font size. The old part is
+  hidden while its clone flies; a place that comes late or is built again meanwhile is
+  found by its mark. Builders mark them (`kit/ui/present/flight.js` markShared); with
+  animations off they are there at once. The rest of the content: on
   expand, into the compact, and any morph that grows the pill by more than 25 %, it sits at
   its final place and the background uncovers it: clipped to the background every frame of
   the background's springs, its opacity following the same progress (full from halfway);

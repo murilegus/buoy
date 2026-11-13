@@ -10,6 +10,7 @@ import {lightSlot, planCompact, planExpanded, keyline} from '../model/presentati
 import {compactCx} from '../model/shapes.js';
 import {FADES, PRESS_HOLD, progressOf, radiusAt, springFor} from '../model/motion.js';
 import {SpringRunner} from './spring.js';
+import {Flights} from './present/flight.js';
 
 const COMPACT_DELAY = 300;  // ms of hover before the pill grows into its compact (SPEC §2)
 const COMPACT_GRACE = 200;  // ms the compact stays after the pointer leaves it (SPEC §2c)
@@ -76,6 +77,13 @@ export class Pill {
         this.content = new St.Bin({style_class: 'buoy-content', reactive: true, track_hover: true});
         parent.add_child(this.bg);
         parent.add_child(this.content);
+        // shared parts in flight between forms, above the content, clipped to the bg
+        // (present/flight.js, design/motion "Phần chung đi tới chỗ mới")
+        // 0 × 0: the clones draw past it, never counting in the island's size
+        this._flightLayer = new Clutter.Actor({reactive: false, width: 0, height: 0});
+        parent.add_child(this._flightLayer);
+        this._flights = new Flights(this._flightLayer, () => this.content);
+        this._span = null;
         this._bgRun = new SpringRunner(this.bg, v => this._applyBg(v));
 
         this.content.connect('notify::width', () => this._contentResized());
@@ -380,11 +388,16 @@ export class Pill {
         if (run.value('x') === null)
             run.set({x: at.x, w: at.w, h: at.h});
         this._followBg(from, shape, spring);
+        this._span = {from: {w: at.w, h: at.h}, to: {w: shape.w, h: shape.h}};
         run.to({x, w: shape.w, h: shape.h}, springFor(spring, from, shape), {
-            onFrame: () => this._followFrame(),
+            onFrame: () => {
+                this._followFrame();
+                this._stepFlights();
+            },
             onDone: finished => {
                 if (!finished || this._destroyed)
                     return;
+                this._flights.land();
                 this._targetR = endR;
                 this.bg.set_style(this._bgStyle({r: radiusAt(this._bgRun.value('h'), endR)}));
                 this._collapsing = false;
@@ -433,6 +446,41 @@ export class Pill {
         }
     }
 
+    // How far the bg has gone on its way, by the size that changes most (as the reveal)
+    _progress() {
+        const s = this._span;
+        if (!s)
+            return 1;
+        const w = this._bgRun.value('w') ?? s.to.w, h = this._bgRun.value('h') ?? s.to.h;
+        const dw = Math.abs(s.to.w - s.from.w), dh = Math.abs(s.to.h - s.from.h);
+        return dw >= dh ? progressOf(s.from.w, s.to.w, w) : progressOf(s.from.h, s.to.h, h);
+    }
+
+    // The shared parts of the form just set take off from `boxes` (Flights.departures, read
+    // before the swap) and go with the bg; with nothing on its way (animations off, the same
+    // shape) they are there at once.
+    _fly(boxes) {
+        if (this._destroyed)
+            return;
+        this._flights.launch(boxes, this.content, this._progress());
+        if (!this._bgRun.running)
+            this._flights.land();
+        else
+            this._stepFlights();
+    }
+
+    _stepFlights() {
+        if (!this._flights.flying || this._destroyed)
+            return;
+        // the bg's edge cuts the parts in flight as it cuts the content
+        const x = this._bgRun.value('x') ?? this.bg.x, w = this._bgRun.value('w') ?? this.bg.width;
+        const h = this._bgRun.value('h') ?? this.bg.height;
+        // the clip is a rectangle; kept off the round ends, as the content's (_followFrame)
+        const inset = Math.ceil(radiusAt(h, this._targetR ?? h / 2) * 0.15);
+        this._flightLayer.set_clip(x + inset, 0, Math.max(0, w - 2 * inset), Math.max(0, h));
+        this._flights.step(this._progress());
+    }
+
     _resetContentTransform() {
         const c = this.content;
         const f = this._follow;
@@ -474,6 +522,13 @@ export class Pill {
         });
     }
 
+    /** Above the other pills: its bg, its content and the parts in flight over them. */
+    raise() {
+        const parent = this.bg.get_parent();
+        for (const a of [this.bg, this.content, this._flightLayer])
+            parent?.set_child_above_sibling(a, null);
+    }
+
     // --- expanded (Island decides when) ---------------------------------------------
 
     /**
@@ -481,6 +536,7 @@ export class Pill {
      *   activity's own expanded presentation (alert, ask, transient)
      */
     expand(panel = null) {
+        const boxes = this._flights.departures(this.content);
         this.expanded = true;
         this._panel = panel;
         this._dropCompact();          // the panel replaces the compact's content
@@ -488,9 +544,11 @@ export class Pill {
         this._setContent(panel ?? buildExpanded(this.activity), false);
         this._layoutContent();
         this._morph(this.currentShape(), 'open'); // fades the content in with the reveal
+        this._fly(boxes);
     }
 
     collapse() {
+        const boxes = this._flights.departures(this.content);
         this.expanded = false;
         this._panel = null;
         // Under the modal grab the pointer left without a leave event, and Clutter still
@@ -504,6 +562,7 @@ export class Pill {
         this._collapsing = true;
         this._morph(this.currentShape(), 'close');
         this._fadeContent();
+        this._fly(boxes);
     }
 
     // Soften the swap between minimal and expanded content (the bg uncovers it).
@@ -787,7 +846,9 @@ export class Pill {
         this._compact = true;
         this._syncDot();
         this._island._compactShown(this, true);
+        const boxes = this._flights.departures(this.content);
         this._swapResting('move');  // a shape morph that uncovers its content (SPEC §5)
+        this._fly(boxes);
     }
 
     _clearGrace() {
@@ -815,12 +876,14 @@ export class Pill {
     _stopCompact() {
         if (!this._dropCompact() || this.expanded)
             return;
+        const boxes = this._flights.departures(this.content);
         this._swapResting('close');
         // _applyContentSize morphs an activity's pill back; the idle pill (its compact is
         // the amber Missed list) is left to the island at rest, which does not move it:
         // without this its bg stayed at the compact's size around the clock (2026-11-06)
         if (!this.activity)
             this._morph(this.currentShape(), 'close');
+        this._fly(boxes);
     }
 
     // Compact in or out: a content of another size. Measure and place it now, before
@@ -836,6 +899,7 @@ export class Pill {
     // Activity gone from the shown pills: fade out where it is, then destroy.
     leave(onGone) {
         this._stopCompact();
+        this._flights.land();
         this.bg.reactive = this.content.reactive = false;
         this.bg.ease({opacity: 0, duration: FADES.in.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         this.content.ease({
@@ -864,8 +928,10 @@ export class Pill {
         this._pendingIn?.destroy();      // waiting for a fade, never parented
         this._pendingIn = undefined;
         this._fadingIn = null;
+        this._flights.land();
         this._bgRun.destroy();
         this.bg.destroy();
         this.content.destroy();
+        this._flightLayer.destroy();
     }
 }

@@ -19,6 +19,7 @@ import {step} from '../model/keys.js';
 import {FADES, LIST_SHIFT, TAB_SHIFT} from '../model/motion.js';
 import {SpringRunner, slideIn} from './spring.js';
 import {SlidingRow} from './strip.js';
+import {Flights, markShared} from './present/flight.js';
 
 // a body leaving on a tab switch: its spring, and whether a tab.js keeps it (_leave)
 const leaving = new WeakMap();
@@ -185,6 +186,17 @@ export class Home {
         // the body a tab switch leaves, fading where it stood (_leave): over the column, no input
         this._leaving = new St.Widget({x_expand: true, y_expand: true, reactive: false});
         this.actor.add_child(this._leaving);
+        // a tile's or the card's leading and title flying to their place in the tab it opens,
+        // over everything (present/flight.js, design/motion "Phần chung đi tới chỗ mới")
+        // 0 × 0 at the top left: the clones draw past it, and never count in Home's size (a
+        // clone as wide as its part widened Home, which widened the part: 1414 → 2218 px)
+        this._flightLayer = new St.Widget({
+            reactive: false, width: 0, height: 0,
+            x_align: Clutter.ActorAlign.START, y_align: Clutter.ActorAlign.START,
+        });
+        this.actor.add_child(this._flightLayer);
+        this._flights = new Flights(this._flightLayer, () => this._view);
+        this._flightRun = null;
         // one rounded group that hugs its tabs (Notchy's strip); the selected tab's pill is
         // a marker of its own behind the row, so it slides to the next tab (design/motion
         // "Đổi tab", kit/ui/strip.js)
@@ -218,6 +230,8 @@ export class Home {
         this._column.add_child(this._body);
         this.actor.connect('destroy', () => {
             this._gone = true;
+            this._flightRun?.destroy();
+            this._flights.land();
             this._destroyTabs();
         });
         // The body takes what the cap leaves after the strip and padding (font scaling
@@ -296,14 +310,41 @@ export class Home {
         const from = this._current;
         const dir = from !== null && from !== id ? Math.sign(order.indexOf(id) - order.indexOf(from)) || 1 : 0;
         const before = this._strip_.places();
+        // where the shared parts are before the switch: a tile's go to its tab
+        const boxes = dir ? this._flights.departures(this._view) : null;
         this._current = id;
         this._renderStrip(before, from !== id);
         const body = this._buildBody(findTab(this._strip, id));
         this._setBody(body, dir);
         if (dir)
             slideIn(body, dir * TAB_SHIFT, 'snap', FADES.in.ms);
+        if (boxes)
+            this._fly(boxes, body);
         if (id === HOME && this._missed.length)
             this._onMissedSeen?.();  // the amber light goes off; the list stays (stack)
+    }
+
+    // The shared parts of the tab just shown take off from `boxes` and land on `move`, the
+    // spring of a slide (design/motion); with animations off they are there at once
+    _fly(boxes, body) {
+        this._flightRun?.destroy();
+        this._flightRun = null;
+        this._flights.launch(boxes, body, 0);
+        if (!this._flights.flying)
+            return;
+        // in thousandths: the runner settles within half a pixel, so 0 … 1 would stop at half way
+        const run = new SpringRunner(this._flightLayer, v => this._flights.step(v.p / 1000));
+        this._flightRun = run;
+        run.set({p: 0});
+        run.to({p: 1000}, 'move', {
+            onDone: () => {
+                if (this._flightRun !== run)
+                    return;         // another switch took over: its own launch landed these
+                this._flights.land();
+                run.destroy();
+                this._flightRun = null;
+            },
+        });
     }
 
     /**
@@ -874,6 +915,7 @@ export class Home {
             : iconOf(t.icon, t.iconSize ?? 16);
         if (lead)
             cell.set_child(lead);
+        markShared(cell, 'leading', t.activity ?? null);   // flies to its tab (design/motion)
         // `since`: how old the tile's data is, in the top right corner, beside the icon
         // (the weather's update time, design/home 2026-11-13); it moves on once a minute
         // while shown
@@ -902,7 +944,7 @@ export class Home {
             col.add_child(value);
         }
         if (t.caption)
-            col.add_child(textLabel(t.caption, 'buoy-home-tile-caption'));
+            col.add_child(markShared(textLabel(t.caption, 'buoy-home-tile-caption'), 'title', t.activity ?? null));
         row.add_child(col);
         if (t.detail && t.width >= DETAIL_FROM) {
             const detail = textLabel(t.detail, 'buoy-home-tile-detail');
