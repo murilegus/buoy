@@ -7,10 +7,14 @@
  *   leading/trailing: 'icon-name' | Gio.Icon | {art (path, URI or Gio.Icon), icon} | {icon} |
  *   {progress: 0..1}
  *                     | {bar: 0..1} | {countdown: s} | {until: ms since the epoch}
- *                     | {since: ms since the epoch} | {text}
+ *                     | {since: ms since the epoch} | {elapsed: ms since the epoch} | {text}
  *                     `until` counts down live, once a second while shown (ui/present/parts.js);
  *                     `since` is its twin, the time since then in minutes ("4 min"), the
- *                     text changing once a minute while shown (CODING-AGENTS.md §2)
+ *                     text changing once a minute while shown (CODING-AGENTS.md §2);
+ *                     `elapsed` counts up from then, `0:42`, once a second while shown
+ *                     (a screen recording's clock, design/compact "Chia sẻ và quay màn hình")
+ *   {icon, backdrop: true}: the icon on a round fill-2 plate where it has a cell of its
+ *                     own (a compact's leading 40: a recording, design/compact)
  *   leading only:     {mascot: '<pose>', icon?} — Bu (MASCOT.md); an unknown pose falls
  *                     back to `icon`, else `idle`; elsewhere only its `icon` counts. A
  *                     stale activity's Bu takes the pose `stale` (MASCOT.md § Poses)
@@ -217,7 +221,7 @@ export function element(e, {leading = false} = {}) {
     }
     const ic = icon(e.icon);
     if (ic)
-        return ic;
+        return e.backdrop === true ? {...ic, backdrop: true} : ic;
     if (isNum(e.progress))
         return {type: 'ring', value: clamp01(e.progress)};
     if (isNum(e.bar)) {
@@ -234,6 +238,8 @@ export function element(e, {leading = false} = {}) {
         return {type: 'until', at: e.until};
     if (isNum(e.since))
         return {type: 'since', at: e.since};
+    if (isNum(e.elapsed))
+        return {type: 'elapsed', at: e.elapsed};
     const text = str(e.text);
     return text ? {type: 'text', text} : null;
 }
@@ -341,7 +347,7 @@ export function planCompact(p, {light, maxRows = MAX_ROWS} = {}) {
     const plan = {
         leading: lead.leading,
         text: str(c.text),
-        subtitle: str(c.subtitle),
+        subtitle: str(c.subtitle) ?? liveSubtitle(c.subtitle),
         trailing: element(c.trailing),
         actions: c.transport === true ? actions(p.actions, MAX_ACTIONS.compact) : [],
         ...progressOf(c.progress),
@@ -522,6 +528,36 @@ export function agoWords(at, now) {
  */
 export function untilText(at, now) {
     return clock(Math.max(0, at - now) / 1000);
+}
+
+/**
+ * @param {number} at  ms since the epoch
+ * @param {number} now
+ * @returns {string} the time since then, `0:42`, `1:02:05` — never negative
+ */
+export function elapsedText(at, now) {
+    return clock(Math.max(0, now - at) / 1000);
+}
+
+// A compact's subtitle that runs (a recording: "0:42 · from 14:03"): `{elapsed, text}`,
+// the clock then the text after it
+function liveSubtitle(v) {
+    if (!isPlain(v) || !isNum(v.elapsed))
+        return null;
+    return {type: 'elapsed', at: v.elapsed, text: str(v.text)};
+}
+
+const DOTS = ['screen', 'cam', 'mic'];
+
+/**
+ * The privacy dot at pill 1's right end (INDICATORS "Privacy dot", design/colours "Chấm
+ * riêng tư", 2026-11-11): one dot, screen › camera › microphone.
+ *
+ * @param {object} [use]  {mic, cam, screen}: what is in use
+ * @returns {?string} 'screen' | 'cam' | 'mic', or null when nothing is
+ */
+export function privacyDot(use = {}) {
+    return DOTS.find(d => use?.[d] === true) ?? null;
 }
 
 function rows(list) {

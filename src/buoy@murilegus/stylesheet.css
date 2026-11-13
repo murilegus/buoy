@@ -220,6 +220,10 @@
 .buoy-light-off { background-color: rgba(255, 255, 255, 0.2); /* light-off */ }
 .buoy-light-missed { background-color: #ff9f0a; /* light-missed */ }
 .buoy-light-waiting { background-color: #ff453a; /* light-waiting */ }
+/* the privacy dot at pill 1's right end (INDICATORS "Privacy dot", design/colours) */
+.buoy-dot-mic { background-color: #bf5af2; /* dot-mic */ }
+.buoy-dot-cam { background-color: #30d158; /* dot-cam */ }
+.buoy-dot-screen { background-color: #ff453a; /* dot-screen */ }
 /* An idle plan (clock…): its zones centred; the time unlike the cluster's clock, bold
    with even figures so the minutes do not shift the icon (SPEC §2a). */
 .buoy-idle-text { font-weight: 600; font-feature-settings: "tnum"; }
@@ -254,6 +258,7 @@
 .buoy-round-row { spacing: 8px; }
 /* The round button 32 of a compact's head: fill-2, the main action (play/pause, stop) cream
    with a black glyph (design/compact "Nút tròn") */
+.buoy-leading-backdrop { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-round { padding: 0; border-radius: 999px; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-round:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
 .buoy-round:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }

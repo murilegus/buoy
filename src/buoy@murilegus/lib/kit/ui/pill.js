@@ -51,6 +51,7 @@ export class Pill {
         this.role = 'centre';
         this.cx = 0;
         this.light = 'off';
+        this.dot = null;             // the privacy dot: 'screen' | 'cam' | 'mic' | null
         this.more = 0;
         this.expanded = false;
         this._panel = null;          // Home's panel while a click has it open (kit/ui/home.js)
@@ -73,6 +74,7 @@ export class Pill {
         this._targetR = 0;           // the radius on the way: never past half the height (_applyBg)
         this._destroyed = false;
         this._dot = null;            // the buoy light at the left end (_syncDot)
+        this._privacyDot = null;     // the privacy dot at the right end (_syncDot)
 
         this.bg = new St.Widget({style_class: 'buoy-island', reactive: true, track_hover: true});
         this.content = new St.Bin({style_class: 'buoy-content', reactive: true, track_hover: true});
@@ -167,11 +169,12 @@ export class Pill {
      * @param {object} [opts]
      * @param {string} [opts.role]  'centre' | 'side'
      * @param {string} [opts.light]  buoy light (drawn on the centre pill only)
+     * @param {?string} [opts.dot]  privacy dot (the centre pill only): 'screen' | 'cam' | 'mic'
      * @param {number} [opts.more]  +N on this pill (the last one)
      * @param {boolean} [opts.fade]  cross-fade though the activity is the same (the idle
      *   pill switching plans in `auto`, SPEC §2a-iii)
      */
-    configure(activity, {role = 'centre', light = 'off', more = 0, fade = false} = {}) {
+    configure(activity, {role = 'centre', light = 'off', dot = null, more = 0, fade = false} = {}) {
         const same = (activity?.id ?? null) === this.id;
         // a held card takes another activity in place (a burst's next turn): it stays open,
         // its content cross-fades (design/alerts-and-asks)
@@ -179,7 +182,7 @@ export class Pill {
             this._stopCompact();
         this.id = activity?.id ?? null;
         this.activity = activity;
-        Object.assign(this, {role, light, more});
+        Object.assign(this, {role, light, dot, more});
         this._syncDot();
         if (this.expanded) {
             if (activity && !this._panel)  // the panel updates itself (Home.update)
@@ -269,7 +272,7 @@ export class Pill {
     restShape() {
         // pill 1 with a light grows at both ends (design/pill "Đèn ở hai đầu"); idle: the
         // idle size, wider only for a plan that needs it (content-fit as minimal)
-        const lit = this._light() !== null;
+        const lit = this._lit();
         if (!this.activity) {
             if (this._contentW > this._s.idle.w - 2 * this._s.pad)
                 return this._s.minimal(this._contentW, 'normal', lit);
@@ -289,25 +292,55 @@ export class Pill {
         return lightSlot(this.light, {idle: !this.activity && !this._island.idle});
     }
 
-    // The dot: at the centre of the left end's round cap (16 from the edge at 1×), drawn on
-    // the bg so it rides the morph; not in a compact, a card or expanded, back as soon as
-    // the pill is (design/pill, 2026-11-10).
+    // The privacy dot pill 1 has at its right end (INDICATORS "Privacy dot"): about the
+    // whole machine, so on pill 1 whatever it shows; side pills never.
+    _privacy() {
+        return this.role === 'centre' && ['screen', 'cam', 'mic'].includes(this.dot) ? this.dot : null;
+    }
+
+    // Pill 1 grows at both ends for either end's dot (design/pill "Chỉ có một đèn thì vẫn
+    // nở cả hai đầu"): the same width with one or both
+    _lit() {
+        return this._light() !== null || this._privacy() !== null;
+    }
+
+    // The dots: at the centre of each end's round cap (16 from the edge at 1×), drawn on
+    // the bg so they ride the morph; not in a compact, a card or expanded, back as soon as
+    // the pill is (design/pill, 2026-11-10). The right one keeps to the bg's right edge as
+    // it grows (an AlignConstraint), 16 in from it.
     _syncDot() {
-        const light = this.expanded || this._compact ? null : this._light();
-        if (!light) {
-            this._dot?.destroy();
-            this._dot = null;
-            return;
+        const hidden = this.expanded || this._compact;
+        const light = hidden ? null : this._light();
+        const privacy = hidden ? null : this._privacy();
+        this._dot = this._endDot(this._dot, light && `buoy-light buoy-light-${light}`, false);
+        this._privacyDot = this._endDot(this._privacyDot, privacy && `buoy-dot buoy-dot-${privacy}`, true);
+    }
+
+    _endDot(actor, styleClass, right) {
+        if (!styleClass) {
+            actor?.destroy();
+            return null;
         }
-        if (!this._dot) {
-            this._dot = new St.Widget({});
-            this.bg.add_child(this._dot);
+        if (!actor) {
+            actor = new St.Widget({});
+            if (right) {
+                actor.add_constraint(new Clutter.AlignConstraint({
+                    source: this.bg, align_axis: Clutter.AlignAxis.X_AXIS, factor: 1,
+                }));
+            }
+            this.bg.add_child(actor);
         }
         const d = this._s.dot, at = Math.round((this._s.idle.h - d) / 2);
-        this._dot.style_class = `buoy-light buoy-light-${light}`;
-        this._dot.set_style(`border-radius: ${d / 2}px;`);
-        this._dot.set_size(d, d);
-        this._dot.set_position(at, at);
+        actor.style_class = styleClass;
+        actor.set_style(`border-radius: ${d / 2}px;`);
+        actor.set_size(d, d);
+        if (right) {
+            actor.y = at;
+            actor.translation_x = -at;
+        } else {
+            actor.set_position(at, at);
+        }
+        return actor;
     }
 
     // The grown pill: from its content's size, centred on the pill and kept on screen;
@@ -588,7 +621,7 @@ export class Pill {
         // the content box: the pill less its padding each side (design/pill), the leading
         // in its cell, the gaps of the em
         // the light's ends come off the cap (design/pill: the cap counts the light)
-        const s = this._s, pad = 2 * s.pad + (this._light() ? 2 * s.ends : 0);
+        const s = this._s, pad = 2 * s.pad + (this._lit() ? 2 * s.ends : 0);
         const metrics = {cell: s.cell, gap: s.gap, buttonGap: s.buttonGap};
         if (!this.activity)
             return buildIdle({width: s.idle.w - 2 * s.pad, maxWidth: s.minimal(Infinity).w - pad, plan: this._island.idle, metrics});

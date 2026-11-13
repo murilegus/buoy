@@ -90,8 +90,9 @@ eq(schema.get_key('cluster-radius').get_range().recursiveUnpack(), ['range', [0,
     'radius stops at 16: half the 32 px cluster, a pill');
 eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_value().unpack()), [16, 17],
     'radius 16 (a pill, like the island) and opacity 17 % by default, a panel button\'s hover (2026-11-04)');
-eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'greeting', 'calendar', 'device', 'input', 'agent', 'copied', 'clipboard'],
+eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'greeting', 'calendar', 'device', 'input', 'agent', 'privacy', 'copied', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet, nor a module that is only an idle plan');
+eq(plan.modules.find(m => m.id === 'privacy')?.keys, ['privacy-dot'], 'privacy: its switch and where the dot shows');
 eq(plan.modules.find(m => m.id === 'greeting')?.keys, ['greeting-updates'], 'greeting: its switch and "a newer Buoy", its bookkeeping hidden');
 eq(MODULE_GROUPS.find(g => g.modules.includes('greeting'))?.title, 'Bu', 'greeting in the Bu group (2026-11-08)');
 eq(plan.plans.find(p => p.id === 'clock').planOnly, true,
@@ -116,7 +117,7 @@ eq(plan.plans.find(p => p.id === 'clock').planOnly, true,
         eq(Boolean(g.title && g.description), true, `group "${g.id}" has a title and a description`);
     }
     eq(plan.groups.map(g => [g.id, g.modules.map(m => m.id)]), [
-        ['live', ['media', 'notification', 'progress', 'timer', 'agent']],
+        ['live', ['media', 'notification', 'progress', 'timer', 'agent', 'privacy']],
         ['feedback', ['hud', 'input', 'copied']],
         ['tabs', ['calendar', 'device', 'clipboard']],
         ['bu', ['greeting']],

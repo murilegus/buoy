@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {livePosition, mediaTimes, sinceText, untilText} from '../../model/presentation.js';
+import {elapsedText, livePosition, mediaTimes, sinceText, untilText} from '../../model/presentation.js';
 import {caretBlink} from '../../model/keys.js';
 
 // The pieces every tier and a module's tab build from: labels, meters, the timed labels,
@@ -253,6 +253,25 @@ export function untilLabel(at) {
     tick(l, () => {
         l.text = untilText(at, Date.now());
     }, () => Date.now() < at);
+    return l;
+}
+
+/**
+ * A clock running from `at` (a screen recording, design/compact "Chia sẻ và quay màn
+ * hình"), once a second while shown, as GNOME's own button (status/remoteAccess.js
+ * ScreenRecordingIndicator); `after` follows it ("0:42 · from 14:03").
+ *
+ * @param {number} at  ms since the epoch
+ * @param {string} [styleClass]
+ * @param {?string} [after]
+ * @returns {St.Label}
+ */
+export function elapsedLabel(at, styleClass = 'buoy-label', after = null) {
+    const l = label('', styleClass);
+    tick(l, () => {
+        const t = elapsedText(at, Date.now());
+        l.text = after ? `${t} · ${after}` : t;
+    });
     return l;
 }
 

@@ -121,6 +121,21 @@
       <summary>Quiet in its terminal</summary>
       <description>While its terminal is focused, a session's pill does not open on its own.</description>
     </key>
+    <key name="modules-privacy" type="b">
+      <default>true</default>
+      <summary>Privacy &amp; screen</summary>
+      <description>A dot on the pill while the microphone, the camera or the screen is in use; a recording or a screen share in the pill, with Stop.</description>
+    </key>
+    <key name="privacy-dot" type="s">
+      <choices>
+        <choice value="pill"/>
+        <choice value="system"/>
+        <choice value="both"/>
+      </choices>
+      <default>'pill'</default>
+      <summary>Show in use</summary>
+      <description>Where the microphone, camera and screen show they are in use: the pill's dot in place of GNOME's icons and buttons, GNOME's alone, or both.</description>
+    </key>
     <key name="modules-copied" type="b">
       <default>true</default>
       <summary>Copied</summary>

@@ -65,6 +65,7 @@ export class Island {
         this._heldId = null;        // the hovered activity whose ttl waits (_holdHovered)
         this._heldPill = null;
         this._light = 'off';
+        this._dot = null;           // the privacy dot (stack.setPrivacy → setDot)
         this._capacity = MAX_PILLS;
         this._compactPill = null;   // the pill whose compact is open (SPEC §2c)
         // a compact the stack opened, held open on its pill (design/alerts-and-asks): an
@@ -480,6 +481,16 @@ export class Island {
             this._apply(true);
     }
 
+    // The privacy dot at pill 1's right end (INDICATORS "Privacy dot"): as the light,
+    // hidden while expanded, the ends grow or shrink with it
+    setDot(dot) {
+        if (dot === this._dot)
+            return;
+        this._dot = dot;
+        if (!this._open)
+            this._apply(true);
+    }
+
     // --- pills ------------------------------------------------------------------------
 
     // The activity under the pointer keeps its ttl (stack.hold, SPEC §2e): one at a time;
@@ -512,6 +523,7 @@ export class Island {
         return {
             role: i === 0 ? 'centre' : 'side',
             light: this._light,
+            dot: this._dot,
             more: i === n - 1 ? more : 0,
         };
     }

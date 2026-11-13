@@ -88,14 +88,23 @@ in place of the activity's compact: answer it there; the pointer leaving closes 
 |---|---|---|---|---|
 | purple `#BF5AF2` | `dot-mic` | microphone in use by some app | Gvc source-output streams | idle, minimal, compact |
 | green `#30D158` | `dot-cam` | camera in use | `Shell.CameraMonitor` | idle, minimal, compact |
-| red `#FF453A` | `dot-screen` | screen is being shared or recorded (the waiting red, on the other side) | screencast / screen-share indicator | idle, minimal, compact |
+| red `#FF453A` | `dot-screen` | screen is being shared or recorded (the waiting red, on the other side) | Shell's screencast (`screenshotUI` `screencast-in-progress`) and Mutter's remote access handles | idle, minimal |
+
+The microphone and the camera are read from GNOME's own Quick Settings indicators (the input
+slider's visibility, not muted; the camera icon bound to `Shell.CameraMonitor`), so Buoy
+counts what GNOME counts (`modules/privacy/source.js`, built 2026-11-14). Not in a compact,
+a card or expanded, like the light.
 
 Precedence when several: red › green › purple (design/colours "Chấm riêng tư", 2026-11-11), one
 dot. Location has no dot, as in GNOME and on Apple's devices.
-Click → expanded Home with the "in use by …" row (app name, since when, Stop for recordings).
+Click → Home. A recording or a share is an activity of its own (kind `screen`, priority
+55): its clock in the pill, Stop in its compact and on Home's card (design/compact). The
+"in use by …" row for the microphone and the camera is not built: Mutter and
+`Shell.CameraMonitor` name no app, and design/home keeps the dot in the pill only.
 
-GNOME's own privacy indicator in the system cluster is hidden while the `privacy` module
-is on (`privacy-dot = pill | system | both`, default `pill`) so the same fact is shown once.
+GNOME's own indicators (camera, microphone and remote access in the system cluster, the
+recording and sharing buttons in the bar) are hidden while the `privacy` module is on
+(`privacy-dot = pill | system | both`, default `pill`) so the same fact is shown once.
 
 ## Keyline tint (the pill's 1 px border)
 

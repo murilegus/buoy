@@ -220,6 +220,7 @@ export const CHOICE_LABELS = {
     },
     'idle-weather-refresh': {'30m': 'Every 30 minutes', '1h': 'Every hour'},
     'activity-linger': {'5m': '5 minutes', '10m': '10 minutes', '20m': '20 minutes', '30m': '30 minutes'},
+    'privacy-dot': {pill: 'Buoy\'s dot', system: 'GNOME\'s icons', both: 'Both'},
     'idle-auto-switch': {'5m': '5 minutes', '10m': '10 minutes', '20m': '20 minutes', '30m': '30 minutes'},
 };
 
@@ -489,7 +490,7 @@ export const MODULE_GROUPS = [
     {
         id: 'live', title: 'Live in the Pill',
         description: 'What stays on the pill while it runs.',
-        modules: ['media', 'notification', 'progress', 'timer', 'agent'],
+        modules: ['media', 'notification', 'progress', 'timer', 'agent', 'privacy'],
     },
     {
         id: 'feedback', title: 'Quick Feedback',

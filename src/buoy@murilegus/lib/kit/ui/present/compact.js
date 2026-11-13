@@ -4,7 +4,7 @@ import St from 'gi://St';
 
 import {agoText, planCompact, rowsThatFit} from '../../model/presentation.js';
 import {compactMetrics} from '../../model/shapes.js';
-import {addAll, label, liveBar, meter, tick, blinkingCaret} from './parts.js';
+import {addAll, elapsedLabel, label, liveBar, meter, tick, blinkingCaret} from './parts.js';
 import {dimStale, marquee} from './motion.js';
 import {actionButton, iconProps, makeElement, restSlot} from './elements.js';
 import {markShared} from './flight.js';
@@ -26,10 +26,16 @@ function cell(e, activity, size) {
     const el = makeElement(e, 'compact', activity, {art: size});
     if (!el)
         return null;
-    return new St.Bin({
+    const bin = new St.Bin({
         style_class: 'buoy-leading', width: size, height: size, child: el,
         x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER,
     });
+    // an icon on its plate (design/compact "Chia sẻ và quay màn hình"): a fill-2 circle
+    if (e?.backdrop === true) {
+        bin.add_style_class_name('buoy-leading-backdrop');
+        bin.set_style(`border-radius: ${size / 2}px;`);
+    }
+    return bin;
 }
 
 // A round button of the head: play/pause and stop are its main action, cream with a black
@@ -39,6 +45,8 @@ const MAIN = new Set(['playpause', 'stop']);
 function roundButton(a, activity, m) {
     const b = actionButton(a, activity);
     b.add_style_class_name(MAIN.has(a.id) ? 'buoy-round buoy-round-main' : 'buoy-round');
+    if (!a.label && a.id === 'stop')
+        b.accessible_name = 'Stop';
     b.set_size(m.button, m.button);
     b.y_align = Clutter.ActorAlign.CENTER;
     return b;
@@ -86,9 +94,19 @@ function lines(title, subtitle, titleClass = 'buoy-compact-title', activity = nu
     });
     addAll(box, [
         title ? markShared(marquee(title, `buoy-text ${titleClass}`), 'title', activity) : null,
-        subtitle ? label(subtitle, 'buoy-compact-subtitle') : null,
+        subtitleOf(subtitle),
     ]);
     return box.get_n_children() ? box : null;
+}
+
+// A string, or a running clock and its text (a recording: "0:42 · from 14:03",
+// presentation.js liveSubtitle)
+function subtitleOf(subtitle) {
+    if (!subtitle)
+        return null;
+    if (typeof subtitle === 'object')
+        return subtitle.type === 'elapsed' ? elapsedLabel(subtitle.at, 'buoy-compact-subtitle', subtitle.text) : null;
+    return label(subtitle, 'buoy-compact-subtitle');
 }
 
 // A card's title: one line, scrolling when long (marquee) or ellipsized

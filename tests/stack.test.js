@@ -102,9 +102,13 @@ class FakeIsland {
         this.log.push(`light ${l}`);
         this.light = l;
     }
+
+    setDot(d) {
+        this.log.push(`dot ${d}`);
+    }
 }
 
-const lastRender = island => island.log.filter(l => !l.startsWith('light')).at(-1);
+const lastRender = island => island.log.filter(l => !l.startsWith('light') && !l.startsWith('dot')).at(-1);
 
 function setup(opts = {}, capacity = 1) {
     const clock = new FakeClock();
@@ -1149,6 +1153,27 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     eq(stack.find(a => a.kind === 'timer'), null, 'none: null');
     stack.end('agent:s1');
     eq(stack.find(a => a.kind === 'agent'), null, 'an ended one is not found');
+}
+
+// --- the privacy dot (setPrivacy, INDICATORS "Privacy dot") ---------------------
+{
+    const {island, stack} = setup();
+    eq(stack.dot, null, 'no dot at first');
+    stack.setPrivacy({mic: true});
+    eq([stack.dot, island.log], ['mic', ['dot mic']], 'mic in use: the purple dot');
+    stack.setPrivacy({mic: true, cam: true});
+    eq(stack.dot, 'cam', 'camera wins over the microphone');
+    stack.setPrivacy({mic: true, cam: true, screen: true});
+    eq(stack.dot, 'screen', 'the screen wins over both');
+    stack.setPrivacy({mic: true, cam: true, screen: true});
+    stack.setPrivacy({screen: true});
+    eq(island.log, ['dot mic', 'dot cam', 'dot screen'], 'setDot only on change');
+    stack.setPrivacy();
+    eq([stack.dot, island.log.at(-1)], [null, 'dot null'], 'nothing in use: no dot');
+    eq(stack.light, 'off', 'the dot never touches the light');
+    stack.surface(media());
+    stack.setPrivacy({cam: true});
+    eq([lastRender(island), stack.dot], ['show media:spotify', 'cam'], 'the dot does not re-render the pills');
 }
 
 console.log('stack: ok');

@@ -125,14 +125,22 @@ chia sẻ: nút cam), có nút Dừng, như dưới đây. **Chốt** (Ethan, 20
   `fill-inverse`, `stop-fill` đen, tâm y = 28.
 - **Dừng:** quay gọi `Main.screenshotUI.stopScreencast()`; chia sẻ gọi `stop()` trên mọi
   `MetaRemoteAccessHandle` chưa phải bản ghi, như nút của GNOME. App quay qua portal (handle có
-  `is-recording`): "Ứng dụng đang quay màn hình". Mutter không đưa tên app.
+  `is-recording`): "Ứng dụng đang quay màn hình". Mutter không đưa tên app. Nút Dừng của app
+  quay chỉ dừng handle của app: handle sinh ra lúc Shell đang dựng bản quay của mình
+  (`screenshot.js` `_startScreencast`, `_screencastStarting`) là của Shell.
 - **Bấm vào pill:** mở Home, nơi bản ghi là thẻ chính hoặc một ô ([Home](../home/index.vi.md));
   không có tab riêng. Dừng chỉ bằng nút,
   để không lỡ tay.
 - Mic và camera không thành activity: chỉ chấm, bấm mở Home.
 
-Cần kiểm khi code: Mutter chỉ báo phiên mới (`new-handle`), không có hàm liệt kê phiên đang có, nên
-khi Buoy bật giữa lúc đang chia sẻ thì chưa biết phiên đó.
+Đã kiểm khi code (2026-11-14): Mutter chỉ báo phiên mới (`new-handle`), nhưng nút chia sẻ và
+icon truy cập từ xa của GNOME giữ sẵn các handle của chúng (`_handles`), nên Buoy bật giữa lúc
+đang chia sẻ hay quay vẫn thấy; đồng hồ của bản quay lấy số giây nút của GNOME đã đếm
+(`_secondsPassed`).
+
+Ảnh trên chụp từ Shell (2026-11-14), theo bố cục pill mới: icon ở leading, đồng hồ ở trailing
+(pill phụ cũng thấy). Trên pill, đồng hồ là trailing nên dùng màu của trailing, không phải chữ
+trắng như bản vẽ cũ.
 
 ## Phương án đã cân nhắc
 

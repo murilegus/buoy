@@ -4,11 +4,13 @@
  */
 export const KINDS = ['media', 'notification', 'progress', 'osd', 'input', 'power', 'device',
     'timer', 'ask', 'agent', 'attention', 'copied', 'phone', 'calendar', 'privacy', 'call',
-    'greeting'];
+    'greeting', 'screen'];
 
 export const PRIORITY = {
     media: 10, timer: 20, calendar: 25, progress: 30, device: 35, agent: 35, power: 40,
-    copied: 45, attention: 50, osd: 60, input: 60, notification: 70, phone: 75, ask: 90, call: 95,
+    copied: 45, attention: 50,
+    screen: 55,     // a recording or a share: before anything running, after the moments (design/compact)
+    osd: 60, input: 60, notification: 70, phone: 75, ask: 90, call: 95,
     greeting: 85,   // Bu's hello comes once and goes: above anything running (GREETING.md §11)
 };
 
