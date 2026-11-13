@@ -2,7 +2,9 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {readText, listNames, ppidOf} from '../src/buoy@murilegus/lib/kit/services/files.js';
+import GdkPixbuf from 'gi://GdkPixbuf';
+
+import {readText, listNames, ppidOf, readPixels} from '../src/buoy@murilegus/lib/kit/services/files.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -61,6 +63,20 @@ for (let i = 0; i < 150; i++)
     GLib.unlink(`${many}/${i}`);
 GLib.rmdir(many);
 GLib.rmdir(empty);
+// --- readPixels: a picture decoded small ----------------------------------------------------
+const pic = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, false, 8, 40, 20);
+pic.fill(0xdb286aff);
+pic.savev(`${dir}/cover.png`, 'png', [], []);
+const px = await readPixels(`${dir}/cover.png`, 4);
+eq([px.width, px.height, px.channels, px.rowstride >= 12], [4, 4, 3, true], 'decoded to side × side, whatever its shape');
+eq([...px.bytes.slice(0, 3)], [0xdb, 0x28, 0x6a], 'its pixels');
+eq((await readPixels(`file://${dir}/cover.png`, 2))?.width, 2, 'a URI works too');
+eq((await readPixels(Gio.File.new_for_path(`${dir}/cover.png`), 2))?.width, 2, 'and a Gio.File');
+eq([await readPixels(`${dir}/missing.png`, 4), await readPixels(`${dir}/a.txt`, 4), await readPixels(dir, 4)], [null, null, null],
+    'missing, not a picture, a folder → null, not a throw');
+eq(await readPixels(`${dir}/cover.png`, 4, off), null, 'cancelled → null');
+GLib.unlink(`${dir}/cover.png`);
+
 GLib.unlink(`${dir}/a.txt`);
 GLib.unlink(`${dir}/b.json`);
 GLib.rmdir(dir);

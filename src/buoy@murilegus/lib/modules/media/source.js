@@ -3,7 +3,9 @@ import GLib from 'gi://GLib';
 
 import {MprisPlayer} from 'resource:///org/gnome/shell/ui/mpris.js';
 
+import {SAMPLE, coverColour} from '../../kit/model/cover.js';
 import {appOfBusName} from '../../kit/services/apps.js';
+import {readPixels} from '../../kit/services/files.js';
 import {Source} from '../../kit/services/source.js';
 
 /**
@@ -44,6 +46,8 @@ class Player {
         this.position = null;        // ms, read at `at`
         this.at = 0;
         this._key = '';              // status + track: a change re-reads the position
+        this.tint = null;            // the cover's main colour, '#rrggbb' (kit/model/cover.js)
+        this._tintOf = null;         // the cover it was read from
         this._cancel = new Gio.Cancellable();
         this.mpris = new MprisPlayer(busName);
         // its app, known before the first click (2026-11-07, Ethan: the first Open was
@@ -96,7 +100,28 @@ class Player {
             this._key = key;
             this._readPosition();
         }
+        this._readTint();
         this._onChange(this);
+    }
+
+    // The cover's main colour, for the equaliser (design/pill "Equaliser"): read once per
+    // cover, decoded small and off the main loop; the pill is told when it is known. A cover
+    // on the web is fetched once more for it (St's own load keeps its pixels to itself).
+    _readTint() {
+        const url = this.mpris.trackCoverUrl || null;
+        if (url === this._tintOf)
+            return;
+        this._tintOf = url;
+        this.tint = null;
+        if (!url)
+            return;
+        readPixels(url, SAMPLE, this._cancel).then(img => {
+            if (this._cancel.is_cancelled() || this._tintOf !== url)
+                return;
+            this.tint = coverColour(img);
+            if (this.tint)
+                this._onChange(this);
+        });
     }
 
     // Position is not in PropertiesChanged (MPRIS): ask once.
@@ -263,7 +288,7 @@ export class MprisSource extends Source {
         return {
             id: p.busName,
             title, artist: (m.trackArtists ?? []).join(', '), album: meta.album,
-            art: m.trackCoverUrl, appName: m.app?.get_name() ?? m.source?.title ?? '',
+            art: m.trackCoverUrl, tint: p.tint, appName: m.app?.get_name() ?? m.source?.title ?? '',
             appIcon: (m.app ?? p.app)?.get_icon() ?? null,
             status: p.status, canPrev: m.canGoPrevious, canNext: m.canGoNext,
             canSeek: p.extra?.CanSeek === true,

@@ -11,7 +11,8 @@
  * Paused, the pill waits (`linger`): the kit ends it after `activity-linger` (5 min)
  * without news, one rule for every waiting activity (2026-11-07); playing again clears it.
  *
- * The event (source.js): {id, title, artist, album, art, appName, status, canPrev,
+ * The event (source.js): {id, title, artist, album, art, tint (the cover's main colour,
+ * '#rrggbb' or null: the equaliser's colour), appName, status, canPrev,
  * canNext, canSeek, position, length, at (ms), shuffle, loop, ad, appIcon (the player's app's
  * Gio.Icon, for the Media tab's chips), compactOnHover, raise(), onAction(id, value?)}.
  */
@@ -59,8 +60,9 @@ export default {
         const artist = str(ev.artist);
         const app = str(ev.appName);
         const art = {art: str(ev.art) || null, icon: ICON};
+        const glyph = playing ? 'eq' : PAUSED_EQ;
         return {
-            attributes: {title, artist, album: str(ev.album), art: art.art, app, appIcon: ev.appIcon ?? null},
+            attributes: {title, artist, album: str(ev.album), art: art.art, tint: str(ev.tint) || null, app, appIcon: ev.appIcon ?? null},
             // what the player can do: the Media tab shows every control and disables the rest
             // (design/media, 2026-11-13)
             state: {
@@ -69,7 +71,8 @@ export default {
             },
             leading: art,
             text: artist ? `${title} · ${artist}` : title,    // a profile `title` is the registry's
-            trailing: playing ? 'eq' : PAUSED_EQ,
+            // in the cover's main colour when the source found one (`tint`, kit/model/cover.js)
+            trailing: str(ev.tint) ? {glyph, color: str(ev.tint)} : glyph,
             // paused, it only waits: the kit ends it after `activity-linger` (5 min), and
             // it dims after SETTLE_MS and steps behind what plays (docs/PRIORITY.md §2)
             linger: !playing,

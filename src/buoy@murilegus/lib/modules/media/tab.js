@@ -203,7 +203,7 @@ export class MediaTab {
             box.add_child(name);
             labels.push(name);
             if (a.state?.status === 'Playing')
-                box.add_child(eqGlyph());
+                box.add_child(eqGlyph({color: a.attributes?.tint}));
             const chip = new St.Button({
                 style_class: `buoy-media-chip${chosen ? ' buoy-media-chip-on' : ''}`,
                 child: box, can_focus: true, accessible_name: app || 'Player',

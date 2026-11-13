@@ -11,7 +11,7 @@ import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
 import GLib from 'gi://GLib';
-import {SCALE as SC, C, COVER, icon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, COVER, EQ, drawEq, icon, SAMPLE} from '../../render/lib.js';
 const [out, MODE] = ARGV;
 // stills at 3× (lib.js SCALE); the clips at 2×, frames for scripts/apng.py
 const S = MODE.startsWith('clip-') ? 2 : SC;
@@ -49,7 +49,7 @@ function canvas(W, H) {
     L = PangoCairo.create_layout(cr); PangoCairo.context_set_resolution(L.get_context(), 96);
     if (!PILL.w) {
         TITLE_W = text(SAMPLE.track, 0, 0, {sz: 11, wt: 600, measure: true}).width;
-        PILL.w = Math.ceil(PILL.title.x + TITLE_W + text(BY, 0, 0, {sz: 11, wt: 600, measure: true}).width + 6 + 18 + 8);
+        PILL.w = Math.ceil(PILL.title.x + TITLE_W + text(BY, 0, 0, {sz: 11, wt: 600, measure: true}).width + 6 + EQ.width + 8);
     }
     return surf;
 }
@@ -169,7 +169,7 @@ function pillRest(cx, y, a) { // the light, " · artist" and the equaliser: only
     const x = cx - PILL.w / 2;
     fill([...C.AMBER, a], x + 12, y + 12, 8, 8, 4);
     text(BY, x + PILL.title.x + TITLE_W, y + PILL.title.y, {sz: 11, wt: 600, a});
-    for (let i = 0; i < 4; i++) fill([1, 1, 1, a], x + PILL.w - 26 + i * 5, y + 11 + (i % 2) * 3, 3, 10 - (i % 2) * 3, 1);
+    drawEq(cr, x + PILL.w - 8 - EQ.width, y + 16, a);
 }
 function compactRest(cx, y, a) { // the subtitle, the button, the bar, the times: only the compact has them
     if (a <= 0) return;

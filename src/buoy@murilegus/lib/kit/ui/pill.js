@@ -6,6 +6,7 @@ import St from 'gi://St';
 import {buildCompact, buildMissedCompact} from './present/compact.js';
 import {buildExpanded} from './present/expanded.js';
 import {buildIdle, buildMinimal} from './present/minimal.js';
+import {eqLeaving} from './present/motion.js';
 import {lightSlot, planCompact, planExpanded, keyline} from '../model/presentation.js';
 import {compactCx} from '../model/shapes.js';
 import {FADES, PRESS_HOLD, progressOf, radiusAt, springFor} from '../model/motion.js';
@@ -187,7 +188,11 @@ export class Pill {
         }
         if (this._compact && !this._hasCompact())
             this._stopCompact();     // its compact went away in this update
+        // the same activity's equaliser, playing until now: a paused one built in its place
+        // comes down from where these bars are (present/motion.js eqGlyph)
+        eqLeaving(same ? this.content.child : null);
         const next = this._restingContent();
+        eqLeaving(null);
         this._setContent(next, same && !fade ? 'follow' : true);
         // the same activity's new content, in place at once: measured and placed now, before
         // this frame paints, as _swapResting does — waiting for notify::width showed a longer

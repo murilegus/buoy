@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, COVER} from '../../render/lib.js';
+import {SCALE as SC, COVER, EQ, drawEq} from '../../render/lib.js';
 const W = 660, H = 120, PW = 336;
 // a title too long for the cap, on purpose: the sample (lib.js SAMPLE) fits, this shows the ellipsis
 const TITLE = 'MƯA TUYỆT VỌNG REMIX - KHẢI ĐĂNG X ĐẠT G';
@@ -17,12 +17,14 @@ function setup(size, px, wt, maxW) { const d = Pango.FontDescription.from_string
   L.set_width(maxW ? Math.floor(maxW) * Pango.SCALE : -1); L.set_ellipsize(maxW ? Pango.EllipsizeMode.END : Pango.EllipsizeMode.NONE); }
 function rr(x, y, w, h, r) { cr.newSubPath(); cr.arc(x + w - r, y + r, r, -Math.PI / 2, 0); cr.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
   cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI); cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI); cr.closePath(); }
-function pill(y, {pad, box, art, artR, size, px, gap, label}) {
+function pill(y, {pad, box, art, artR, size, px, gap, label, six = false}) {
   const x = 16; rr(x + .5, y + .5, PW - 1, 31, 15.5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve(); cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke();
   const bx = x + pad, ax = bx + (box - art) / 2, ay = y + (32 - art) / 2;
   const g = new cairo.LinearGradient(ax, ay, ax + art, ay + art); g.addColorStopRGB(0, ...COVER[0]); g.addColorStopRGB(1, ...COVER[1]); cr.setSource(g); rr(ax, ay, art, art, artR); cr.fill();
-  const eqW = 3 * 4 + 2 * 2, ex = x + PW - pad - eqW;                    // 4 bars 3 wide, gap 2 (.buoy-eq-bar 3×12)
-  [8, 12, 6, 10].forEach((hh, i) => { cr.setSourceRGB(1, 1, 1); rr(ex + i * 4.33, y + 16 - hh / 2, 3, hh, 1.5); cr.fill(); });
+  // then: 4 white bars 3 × 12; decided since: six of 2 × 14 in the cover's colour (2026-11-13)
+  const eqW = six ? EQ.width : 3 * 4 + 2 * 2, ex = x + PW - pad - eqW;
+  if (six) drawEq(cr, ex, y + 16);
+  else [8, 12, 6, 10].forEach((hh, i) => { cr.setSourceRGB(1, 1, 1); rr(ex + i * 4.33, y + 16 - hh / 2, 3, hh, 1.5); cr.fill(); });
   const tx = bx + box + gap, tw = ex - gap - tx;
   setup(size, px, 600, tw); L.set_text(TITLE, -1); const e = L.get_pixel_extents()[1];
   cr.setSourceRGB(1, 1, 1); cr.moveTo(tx, y + Math.round((32 - e.height) / 2)); PangoCairo.show_layout(cr, L);
@@ -30,5 +32,5 @@ function pill(y, {pad, box, art, artR, size, px, gap, label}) {
   setup(8, false, 400, 0); L.set_text(`${label} · chữ có ${Math.round(tw)} px`, -1); cr.setSourceRGBA(1, 1, 1, .8); cr.moveTo(x + PW + 12, y + 9); PangoCairo.show_layout(cr, L);
 }
 pill(14, {pad: 14, box: 20, art: 20, artR: 6, size: 13, px: true, gap: 8, label: 'hiện tại: lề 14, chữ 13 px'});
-pill(66, {pad: 8, box: 24, art: 24, artR: 6, size: 11, px: false, gap: 6, label: 'đã chốt: lề 8, leading 24, khoảng 6, chữ 1em'});
+pill(66, {pad: 8, box: 24, art: 24, artR: 6, size: 11, px: false, gap: 6, six: true, label: 'đã chốt: lề 8, leading 24, khoảng 6, chữ 1em'});
 surf.writeToPNG(ARGV[0]);

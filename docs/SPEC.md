@@ -829,7 +829,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 ## 6. Modules for v0.1
 
 1. **media** — MPRIS (2026-11-05, Ethan): one pill per player from the moment it plays.
-   Minimal: art + title · artist + equaliser while playing (its four bars grow from their
+   Minimal: art + title · artist + equaliser while playing, in the cover's main colour (six
+   bars of 2 × 14, white for a cover without colour; design/pill "Equaliser", 2026-11-13,
+   Ethan; its bars grow from their
    middle, up and down at once, while the pill is on screen, wherever it shows — side pill, Home's Now; still with
    animations off; 2026-11-05, Ethan), paused its bars stopped low, a near flat line
    through the middle (4 · 6 · 4 · 2 px, 2026-11-07, Ethan; was ⏸), no button; a

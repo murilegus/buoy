@@ -24,6 +24,14 @@ eq(p.text, 'Monument Valley · Lumen Coast', 'title · artist');
 eq(p.leading, {art: 'https://i.scdn.co/image/ab', icon: ICON}, 'art with the generic icon behind it');
 eq(p.trailing, 'eq', 'playing: the equaliser');
 eq(adapter.media({...track, status: 'Paused'}, null).trailing, PAUSED_EQ, 'paused: the equaliser stopped low (was ⏸)');
+// the equaliser in the cover's main colour (design/pill "Equaliser", 2026-11-13)
+const tinted = adapter.media({...track, tint: '#db286a'}, null);
+eq(tinted.trailing, {glyph: 'eq', color: '#db286a'}, 'a cover colour: the equaliser takes it');
+eq(adapter.media({...track, tint: '#db286a', status: 'Paused'}, null).trailing, {glyph: PAUSED_EQ, color: '#db286a'}, 'paused: stopped low, the same colour');
+eq([adapter.media({...track, tint: ''}, null).trailing, adapter.media({...track, tint: null}, null).trailing, adapter.media({...track, tint: 7}, null).trailing],
+    ['eq', 'eq', 'eq'], 'no colour (a cover without one, or not read yet): the plain equaliser');
+eq([tinted.attributes.tint, p.attributes.tint], ['#db286a', null], 'the colour as an attribute too: the Media tab\'s chips');
+eq(planMinimal(tinted).trailing, {type: 'glyph', name: 'eq', color: '#db286a'}, 'the pill\'s trailing carries it');
 eq(planMinimal(p).action, null, 'no button in minimal');
 eq(planMinimal(p, {side: true}).text, null, 'side pill: art + glyph only');
 eq([p.onPress, p.onAction], [raise, onAction], 'click raises the player; buttons go to the source');

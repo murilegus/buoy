@@ -43,6 +43,33 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 
 ![Độ đậm 400 / 600 / 700 với khoảng 8, ở 1× và 2× — giữ 600](images/weight.vi.png)
 
+## Equaliser
+
+Ở trailing của pill nhạc và trên chip của tab Media. Số đo ở [Bảng số](../tokens.vi.md).
+
+![Equaliser theo màu bìa: 4 thanh hiện tại, 6 thanh 2 × 12 và 6 thanh 2 × 14](images/eq-colour.vi.png)
+
+- **6 thanh 2 × 14**, khe 2, thay cho 4 thanh 3 × 12: thanh mảnh và cao hơn, gần hình sóng của
+  Dynamic Island. Chọn giữa 2 × 12 và 2 × 14: thanh 2 px cần thêm chiều cao để giữ được màu.
+  **Chốt** (Ethan, 2026-11-13)
+- **Màu chủ đạo của ảnh bìa**, một màu, không gradient: sắc độ mà phần lớn điểm ảnh có màu của bìa
+  cùng mang. Điểm xám, đen, trắng không tính; điểm tối tính như điểm sáng, nên bìa xanh navy cho
+  màu xanh. **Chốt** (Ethan, 2026-11-13)
+- **Nâng sáng tới 4.5:1** trên nền đen của island ([Bảng màu](../colours/index.vi.md), "Tương
+  phản"): giữ sắc độ và độ đậm, chỉ tăng độ sáng. Màu đã đủ sáng thì giữ nguyên. **Chốt**
+  (Ethan, 2026-11-13)
+- **Không có màu thì trắng** (`fg`): bìa đen, xám, đen trắng, không có bìa, hoặc bìa chưa đọc xong.
+  **Chốt** (Ethan, 2026-11-13)
+- Đang dừng: các thanh **hạ xuống trong 200 ms** từ chỗ đang đứng tới hình dừng thấp (2026-11-07),
+  vẫn giữ màu bìa. Chỉ hạ một lần lúc vừa dừng; pill dựng lại khi đang dừng thì thấp sẵn. Tắt
+  animation: thấp ngay. **Chốt** (Ethan, 2026-11-13)
+- Stale: `fg-subtle`, không màu. High contrast của GNOME: luôn `fg`. **Đề xuất**
+- Bìa hổ phách hoặc đỏ cho equaliser gần hoặc trùng màu đèn (`light-missed`, `light-waiting`):
+  **giữ màu của bìa**, không đẩy sắc độ đi và không về trắng. Đèn là một chấm ở đầu trái,
+  equaliser là sáu thanh ở bên phải: hình và chỗ đã phân biệt. **Chốt** (Ethan, 2026-11-13)
+- Không đồng bộ với âm thanh thật: MPRIS không cho mức âm, và "audio visualizer" nằm ngoài phạm vi
+  (SPEC §0). Các thanh chạy theo công thức, mỗi thanh một chu kỳ riêng.
+
 ## Idle
 
 - Idle chừa sẵn chỗ cho plan rộng nhất (đồng hồ `88∶88∶88 AM`), để pill không giật khi giờ đổi
@@ -145,6 +172,10 @@ Chọn **C**, và **D** khi Claude có danh sách việc. **Chốt** (Ethan, 202
 Đã bỏ: idle 146 với lề 14; đèn nở một đầu so với nở cả hai đầu.
 
 ## Chỗ trong code
+
+- `lib/kit/model/cover.js` — màu chủ đạo của bìa và nâng sáng (thuần, `tests/cover.test.js`);
+  `lib/kit/ui/present/motion.js` `eqGlyph` — 6 thanh và màu; `lib/modules/media/source.js`
+  `_readTint` — đọc bìa một lần mỗi bài.
 
 - `lib/kit/ui/pill.js` — `PAD` 14 → 8; hover và nhấn cộng theo em thay cho × 1.10 / × 1.16.
 - `lib/kit/model/shapes.js` — `idleW = even(h × 3.75)` → đo từ plan rộng nhất; giới hạn độ rộng tính

@@ -1,4 +1,6 @@
+import GdkPixbuf from 'gi://GdkPixbuf';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 /**
  * Reading small files without blocking GNOME Shell (EGO review: no synchronous file IO in
@@ -83,4 +85,44 @@ export function ppidOf(stat) {
         return 0;
     // "pid (comm) state ppid …": comm may hold spaces and parentheses
     return Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[1]) || 0;
+}
+
+/**
+ * A picture decoded small, off the main loop (GdkPixbuf's async loader on a stream): for
+ * what only needs its colours, as a cover's main colour (kit/model/cover.js).
+ *
+ * @param {string|Gio.File} file  a path, a URI or a Gio.File
+ * @param {number} side  decoded to side × side (the picture's shape is not kept)
+ * @param {?Gio.Cancellable} [cancellable]
+ * @returns {Promise<?{bytes: Uint8Array, channels: number, rowstride: number, width: number,
+ *   height: number}>} its pixels; null when it cannot be read or is no picture
+ */
+export function readPixels(file, side, cancellable = null) {
+    const uri = typeof file === 'string' && file.includes('://');
+    let f = typeof file === 'string' ? Gio.File.new_for_path(file) : file;
+    if (uri)
+        f = Gio.File.new_for_uri(/** @type {string} */ (file));
+    return new Promise(resolve => {
+        f.read_async(GLib.PRIORITY_LOW, cancellable, (source, res) => {
+            let stream;
+            try {
+                stream = source.read_finish(res);
+            } catch {
+                resolve(null);
+                return;
+            }
+            GdkPixbuf.Pixbuf.new_from_stream_at_scale_async(stream, side, side, false, cancellable, (_s, r) => {
+                let out = null;
+                try {
+                    const px = GdkPixbuf.Pixbuf.new_from_stream_finish(r);
+                    out = {
+                        bytes: px.read_pixel_bytes().toArray(), channels: px.get_n_channels(),
+                        rowstride: px.get_rowstride(), width: px.get_width(), height: px.get_height(),
+                    };
+                } catch {}
+                stream.close_async(GLib.PRIORITY_LOW, null, null);
+                resolve(out);
+            });
+        });
+    });
 }

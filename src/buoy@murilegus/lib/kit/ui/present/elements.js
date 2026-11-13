@@ -246,7 +246,8 @@ export function makeElement(e, mode, activity = null, sizes = {}) {
         return r ? roundArt(icon, size.art, r) : icon;
     }
     case 'glyph':
-        return eqGlyph({paused: e.name === 'eq-paused'});
+        // a stale activity's glyph is the stylesheet's dimmed `fg`, not its own colour
+        return eqGlyph({paused: e.name === 'eq-paused', color: activity?.isStale ? null : e.color});
     case 'ring':
         return meter('ring', e.value, size.ring);
     case 'bar':

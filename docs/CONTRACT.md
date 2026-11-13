@@ -100,7 +100,7 @@ export default { media(a) { ...detect 'Advertisement' → text 'Ad', trailing co
 ```
 
 Leading/trailing values an adapter may return (normalised by `kit/model/presentation.js#element`):
-`'icon-name'` or a `Gio.Icon` (icon) · `'eq'` / `'eq-paused'` (named glyphs: the equaliser, moving or stopped low) · `{art, icon}` (artwork with
+`'icon-name'` or a `Gio.Icon` (icon) · `'eq'` / `'eq-paused'` (named glyphs: the equaliser, moving or stopped low) · `{glyph, color}` (a named glyph in a colour of the activity's own, `'#rrggbb'`: the equaliser in its cover's main colour; anything else is dropped and the glyph is `fg`) · `{art, icon}` (artwork with
 an icon fallback) · `{progress}` (ring) · `{bar, label?, off?}` (a bar; `label` its number
 beside it, `off` dims both — a muted level, 2026-11-05) · `{countdown}` / `{text}` (text) ·
 `{until: ms since the epoch}` (a countdown the renderer runs once a second while shown,

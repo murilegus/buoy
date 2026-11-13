@@ -184,9 +184,10 @@
 .buoy-level-off .buoy-bar, .buoy-level-off .buoy-level-label { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 /* .buoy-art: no border-radius, St.Icon does not clip to it; present/elements.js rounds minimal
    and compact art with a shader (kit/model/rounded.js artRadius), expanded and tabs stay square. */
-/* The equaliser: four bars that grow from their middle while playing (present/motion.js eqGlyph). */
+/* The equaliser: six bars that grow from their middle while playing (present/motion.js
+   eqGlyph); with a cover, each bar takes the cover's main colour over this fg. */
 .buoy-eq { spacing: 2px; }
-.buoy-eq-bar { width: 3px; height: 12px; border-radius: 1px; background-color: #fff; /* fg */ }
+.buoy-eq-bar { width: 2px; height: 14px; border-radius: 1px; background-color: #fff; /* fg */ }
 
 .buoy-expanded { padding: 14px; spacing: 12px; }
 .buoy-expanded-top { spacing: 14px; }
