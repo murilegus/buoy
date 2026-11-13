@@ -698,6 +698,9 @@ export class Home {
         // greeting have a card of their own); a click on it opens its tab, as the pill's would
         const content = buildCompact(a, {
             maxWidth: this._width - 2 * EDGE, maxHeight: plan.mainH, metrics: this._metrics, hovered: true, actionsEnd: true,
+            // the low card: its buttons top right (design/home "Kích thước"), not cut off
+            actionsTop: plan.form === 'low',
+            choiceColumns: 2,
         }) ?? this._headOf(a);
         const tab = this._tabOf(a);
         if (!tab && !a.onPress) {

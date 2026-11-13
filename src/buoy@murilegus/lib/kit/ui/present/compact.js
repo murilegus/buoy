@@ -191,11 +191,14 @@ function rowList(rows, m) {
  * @param {boolean} [opts.hovered]  the pointer is on it: a card's buttons on hover show
  * @param {boolean} [opts.actionsEnd]  a card's buttons at their own width, at the bottom
  *   right (Home's main card, design/home B) instead of a row of equal widths
+ * @param {boolean} [opts.actionsTop]  a card's buttons in its head, before × (Home's low card)
+ * @param {number} [opts.choiceColumns]  an ask's choices in this many columns from 3 of them
+ *   (Home's card: 1920's 212 holds no more in one)
  * @param {?Function} [opts.onType]  a card's Other is about to be typed in: the island takes
  *   the keyboard for its entry (island.js _typeIn)
  * @returns {?Clutter.Actor} null when the activity has no compact
  */
-export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, onType = null} = {}) {
+export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null} = {}) {
     let p = planCompact(activity, {light});
     if (!p)
         return null;
@@ -203,7 +206,7 @@ export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metr
     // compact's 3 (presentation.js rowsThatFit, pickRows)
     if (maxHeight > 0 && p.rowsAvailable > 0)
         p = planCompact(activity, {light, maxRows: rowsThatFit(p, maxHeight, metrics)});
-    return p.card ? cardBox(p, activity, maxWidth, metrics, hovered, actionsEnd, onType) : compactBox(p, activity, maxWidth, metrics);
+    return p.card ? cardBox(p, activity, maxWidth, metrics, {hovered, actionsEnd, actionsTop, choiceColumns, onType}) : compactBox(p, activity, maxWidth, metrics);
 }
 
 /** The name of a card's Other entry: the island looks for it to give it the keyboard. */
@@ -215,7 +218,7 @@ export const TYPE_ENTRY = 'buoy-type';
 // lines of 16, 8 under the head, and the buttons in a row 12 from the edges, 32 tall, 12
 // above and below: 136 with one line, 152 with two (104 without buttons). The compact's full
 // width. A click on it but a button is the pill's click (island.js).
-function cardBox(p, activity, maxWidth, m, hovered = false, actionsEnd = false, onType = null) {
+function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null} = {}) {
     const c = p.card;
     const box = new St.BoxLayout({style_class: 'buoy-card', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
     if (maxWidth > 0)
@@ -236,53 +239,68 @@ function cardBox(p, activity, maxWidth, m, hovered = false, actionsEnd = false, 
         c.title ? titleOf(c.title, activity?.kind === 'ask') : null,
         sub.get_n_children() ? sub : null,
     ]);
+    // a notification's alert shows its buttons only under the pointer (104 → 136 / 152)
+    const hasActions = p.actions.length > 0 && (!c.actionsOnHover || hovered);
     box.add_child(head([
         avatar(c, activity, m),
         text.get_n_children() ? text : null,
+        hasActions && actionsTop ? actionRow(p.actions, activity, m, {top: true}) : null,
         c.close ? closeButton(c.close, activity, m) : null,
     ], m));
 
-    // a notification's alert shows its buttons only under the pointer (104 → 136 / 152)
-    const hasActions = p.actions.length > 0 && (!c.actionsOnHover || hovered);
+    const below = hasActions && !actionsTop;
     if (c.body) {
         const body = wrapped(c.body, 'buoy-card-body');
-        body.set_style(`margin: ${px(m.bodyGap)} ${px(m.side)} ${hasActions ? 0 : px(m.vpad)}; max-height: ${px(2 * m.row)};`);
+        body.set_style(`margin: ${px(m.bodyGap)} ${px(m.side)} ${below ? 0 : px(m.vpad)}; max-height: ${px(2 * m.row)};`);
         box.add_child(body);
     }
     if (c.choices)
-        box.add_child(choiceList(c.choices, activity, m, onType));
-    if (hasActions) {
-        const row = new St.BoxLayout({
-            style_class: 'buoy-card-actions', x_expand: !actionsEnd,
-            x_align: actionsEnd ? Clutter.ActorAlign.END : Clutter.ActorAlign.FILL,
-        });
+        box.add_child(choiceList(c.choices, activity, m, onType, choiceColumns));
+    if (below) {
+        const row = actionRow(p.actions, activity, m, {fill: !actionsEnd});
         // under the head with no message: 8 + 12 (design/alerts-and-asks "Ask 120")
         const above = c.body || c.choices ? m.actionsGap : m.bodyGap + m.actionsGap;
         row.set_style(`margin: ${px(above)} ${px(m.edge)} ${px(m.actionsGap)}; height: ${px(m.button)};`);
-        row.layout_manager.homogeneous = true;      // equal widths, as GNOME's banner
-        for (const a of p.actions) {
-            const b = actionButton(a, activity);
-            b.x_expand = !actionsEnd;
-            if (actionsEnd)
-                b.add_style_class_name('buoy-action-wide');
-            if (a.main)
-                b.add_style_class_name('buoy-action-main');   // an ask's answer: cream
-            row.add_child(b);
-        }
         box.add_child(row);
     }
     return box;
 }
 
-// An ask's choices (design/alerts-and-asks "Hỏi nhiều lựa chọn"): 8 under the head, a row of
-// 32 each, 8 in from the card's edges so the chosen one's fill-1 sits inside the radius: the
-// mark (16, round for one choice, square for many) in the leading's column, the label 1em
-// bold and its description 0.85em muted on the same line, cut with "…". Other last: its hint,
-// or, chosen, an entry in place with the accent's border. Each row is a button: its click
-// is the card's input (onAction with the row's id), never the pill's.
-function choiceList(ch, activity, m, onType) {
+// A card's buttons: under it, a row of equal widths as GNOME's banner (`fill`) or each at
+// its own width, at least 112 (Home's tall card); in its head, at the right before ×, each
+// at its own width (Home's low card, design/home "nút góc phải trên": 136 / 152 do not fit
+// its 104)
+function actionRow(actions, activity, m, {fill = false, top = false} = {}) {
+    const row = new St.BoxLayout({
+        style_class: 'buoy-card-actions', x_expand: fill,
+        x_align: fill ? Clutter.ActorAlign.FILL : Clutter.ActorAlign.END,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    row.layout_manager.homogeneous = fill;
+    if (top)
+        row.set_style(`height: ${px(m.button)};`);
+    for (const a of actions) {
+        const b = actionButton(a, activity);
+        b.x_expand = fill;
+        if (!fill && !top)
+            b.add_style_class_name('buoy-action-wide');
+        if (a.main)
+            b.add_style_class_name('buoy-action-main');   // an ask's answer: cream
+        row.add_child(b);
+    }
+    return row;
+}
+
+// An ask's choices (design/alerts-and-asks "Hỏi nhiều lựa chọn"): 8 under the head, rows of 28, 4
+// apart (a step of 32, 2026-11-13), 8 in from the card's edges so the chosen one's fill-1 sits
+// inside the radius: the mark (16, round for one choice, square for many) in the leading's column,
+// the label 1em bold and its description 0.85em muted on the same line, cut with "…". Other last:
+// its hint, or, chosen, an entry in place with the accent's border. Each row is a button: its
+// click is the card's input (onAction with the row's id), never the pill's.
+function choiceList(ch, activity, m, onType, columns = 1) {
     const list = new St.BoxLayout({style_class: 'buoy-choices', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
-    list.set_style(`margin: ${px(m.bodyGap)} ${px(m.artInset)} 0;`);
+    // 4 between rows and columns: two chosen side by side stay two (2026-11-13, Ethan)
+    list.set_style(`margin: ${px(m.bodyGap)} ${px(m.artInset)} 0; spacing: ${px(m.choiceGap)};`);
     const inset = m.side - m.artInset;                // the leading's column, from the row's edge
     const row = (id, selected, parts, onClick) => {
         const face = new St.BoxLayout({x_expand: true});
@@ -296,9 +314,9 @@ function choiceList(ch, activity, m, onType) {
         addAll(face, [lead, ...parts]);
         const b = new St.Button({
             style_class: `buoy-choice${selected ? ' buoy-choice-selected' : ''}`, can_focus: true,
-            x_expand: true, height: 2 * m.row, child: face, accessible_name: parts[0]?.text ?? id,
+            x_expand: true, height: m.choice, child: face, accessible_name: parts[0]?.text ?? id,
         });
-        b.set_style(`border-radius: ${px(m.row)};`);
+        b.set_style(`border-radius: ${px(m.choice / 2)};`);
         b.connect('clicked', onClick ?? (() => activity.onAction?.(id)));
         return b;
     };
@@ -309,11 +327,10 @@ function choiceList(ch, activity, m, onType) {
             l.x_expand = true;
         return [l, d].filter(Boolean);
     };
-    for (const it of ch.items)
-        list.add_child(row(it.id, it.selected, texts(it.label, it.detail)));
+    const cells = ch.items.map(it => row(it.id, it.selected, texts(it.label, it.detail)));
     const o = ch.other;
     if (o && !o.selected) {
-        list.add_child(row(o.id, false, texts('Other', o.hint), () => {
+        cells.push(row(o.id, false, texts('Other', o.hint), () => {
             onType?.();                      // the entry about to appear takes the keyboard
             activity.onAction?.(o.id);
         }));
@@ -331,8 +348,24 @@ function choiceList(ch, activity, m, onType) {
         // on_click_gesture_pressed, gives it the key focus) takes the keyboard back
         t.connect('key-focus-in', () => onType?.());
         // its mark still turns Other off (many choices); the entry is the label
-        const r = row(o.id, true, [entry]);
-        list.add_child(r);
+        cells.push(row(o.id, true, [entry]));
+    }
+    // Home's card with 3 choices or more: two columns, Other in the grid too (2026-11-13,
+    // Ethan: in one column 3 choices, Other and the buttons need 244, Home has 212)
+    const per = columns > 1 && ch.items.length > 2 ? columns : 1;
+    for (let i = 0; i < cells.length; i += per) {
+        if (per === 1) {
+            list.add_child(cells[i]);
+            continue;
+        }
+        const line = new St.BoxLayout({x_expand: true});
+        line.set_style(`spacing: ${px(m.choiceGap)};`);
+        line.layout_manager.homogeneous = true;
+        const part = cells.slice(i, i + per);
+        part.forEach(c => line.add_child(c));
+        for (let k = part.length; k < per; k++)
+            line.add_child(new St.Widget({x_expand: true}));     // a short last line keeps the grid
+        list.add_child(line);
     }
     return list;
 }

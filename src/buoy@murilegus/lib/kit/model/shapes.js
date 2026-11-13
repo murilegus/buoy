@@ -80,6 +80,7 @@ export function compactMetrics(em = EM_1) {
         art: px(72), artInset: px(8), artRadius: px(20),
         rowIcon: px(16), badge: px(18),   // a row's icon; the app's logo on a card's picture
         bodyGap: px(8), actionsGap: px(12), edge: px(12),   // the card: body, buttons
+        choice: px(28), choiceGap: px(4),         // an ask's choice rows: 28 apart by 4, a step of 32
         min: even(240 * k),                       // 16em, 240 at 1em (tokens)
     };
 }

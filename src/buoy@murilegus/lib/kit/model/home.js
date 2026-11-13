@@ -89,6 +89,9 @@ export function planHome({list, missed = 0, glances = [], width, height}) {
         ...rest.map(activity => ({type: 'activity', activity, units: 1})),
     ];
     let tiles = items;
+    // an ask with choices takes the whole height: the row of tiles waits (wantsWhole)
+    if (wantsWhole(main))
+        return {n, main, tiles: [], units: 0, mainH: Math.max(0, height), form: height >= TALL_FROM ? 'tall' : 'low'};
     if (items.length > n) {
         const shown = items.slice(0, n - 1);
         // +K: what did not fit; its list ("Ongoing") shows every activity, in stack order
@@ -114,6 +117,19 @@ export function planHome({list, missed = 0, glances = [], width, height}) {
     const units = tiles.reduce((sum, t) => sum + t.units, 0);
     const mainH = Math.max(0, height - (tiles.length ? CARD_GAP + TILE_H : 0));
     return {n, main, tiles, units, mainH, form: mainH >= TALL_FROM ? 'tall' : 'low'};
+}
+
+/**
+ * Whether Home's main card takes the whole height: an ask with choices (2026-11-13, Ethan:
+ * its rows and buttons need more than the low card's 104; a notification's buttons go top
+ * right instead and the tiles stay).
+ *
+ * @param {?object} a  the main activity
+ * @returns {boolean}
+ */
+export function wantsWhole(a) {
+    const card = a?.compact?.card;
+    return Boolean(card && typeof card === 'object' && card.choices);
 }
 
 /**

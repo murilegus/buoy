@@ -33,6 +33,16 @@ lại mỗi lần Home mở và mỗi khi stack đổi, nên Home không bao gi�
   trước do adapter xếp (`rank`): việc của Claude giữ việc vừa xong, việc đang làm, việc kế, rồi các
   việc kế tiếp, rồi các việc xong gần nhất. Ở 1920 dạng thấp (104): 2 hàng; ở 2560 (168): 6. Bấm
   thẻ mở tab, nơi có mọi hàng. **Chốt** (Ethan, 2026-11-13, #216: "trống card nhiều quá" ở 2560)
+- Thẻ có nút (thông báo, Claude xin phép) ở dạng thấp: **nút lên góc phải trên**, trước ×, mỗi
+  nút rộng theo chữ; thân dưới phần đầu tối đa 2 dòng (56 + 8 + 32 + 8 = 104), hàng ô giữ nguyên.
+  Nút ở dưới cần 136 / 152 nên bị cắt ở 104. Dạng cao vẫn để nút ở dưới.
+  **Chốt** (Ethan, 2026-11-13)
+- **Câu hỏi nhiều lựa chọn chiếm hết Home**: hàng ô (cả Bị nhỡ) nhường chỗ khi nó là thẻ chính,
+  thẻ cao 212 ở 1920. Từ 3 lựa chọn: **2 cột**, Other cũng trong lưới (một cột thì 3 lựa chọn,
+  Other và nút cần 244). Nút Skip / Submit ở dưới. Câu hỏi đứng sau thẻ chính là một ô như mọi
+  activity. **Chốt** (Ethan, 2026-11-13)
+
+![Thẻ có nút ở 1920: nút góc phải trên; câu hỏi chiếm hết, 2 cột từ 3 lựa chọn](images/card-buttons.vi.png)
 
 ## Kích thước
 

@@ -191,11 +191,12 @@ eq(shapesFor({width: 1920}, PANEL_H, {}).expanded.w, 560, 'empty opts = derived'
 // --- the em (design "Đơn vị là em": Large Text and the font size scale bar and pill) ----
 eq(compactMetrics(), {
     head: 56, lead: 40, vpad: 8, side: 14, gap: 12, row: 16, maxRows: 6, radius: 28, button: 32,
-    art: 72, artInset: 8, artRadius: 20, rowIcon: 16, badge: 18, bodyGap: 8, actionsGap: 12, edge: 12, min: 240,
+    art: 72, artInset: 8, artRadius: 20, rowIcon: 16, badge: 18, bodyGap: 8, actionsGap: 12, edge: 12,
+    choice: 28, choiceGap: 4, min: 240,
 }, 'the compact at 1em: tokens');
 {
     const m = compactMetrics(EM_1 * 1.25);
-    eq([m.head, m.lead, m.row, m.radius, m.button, m.art, m.min], [70, 50, 20, 35, 40, 90, 300], 'the compact with Large Text');
+    eq([m.head, m.lead, m.row, m.radius, m.button, m.art, m.choice, m.choiceGap, m.min], [70, 50, 20, 35, 40, 90, 35, 5, 300], 'the compact with Large Text');
     const s = shapesFor({width: 1920}, 50, {em: EM_1 * 1.25});
     eq([s.compact(100, 70).h, s.compact(100, 71).h, s.compact(100, 999).h], [70, 90, 190], 'Large Text: 70 + 20n up to 190');
     eq(s.compactMax, 404, 'Large Text: 28em = 513, 0.72 × 560 = 404 caps');

@@ -148,6 +148,10 @@ is not a permission" (CODING-AGENTS.md, 2026-11-08).
 - Mỗi lựa chọn một **hàng 32, một dòng**: nhãn 1em đậm, mô tả 0.85em xám cùng dòng, dài thì cắt
   "…". Hai dòng 1em + 0.85em cần 18 + 16 = 34, không vừa 32; nhỏ hơn thì xuống dưới cỡ nhỏ nhất của
   GNOME, 9pt ≈ 0.82em (`%caption` trong gnome-shell-sass `_common.scss`). (Ethan, 2026-11-10)
+- Hàng cao **28, cách nhau 4** (bước vẫn 32): hai lựa chọn đã chọn cạnh nhau không liền nền thành
+  một khối. Cả chọn một lẫn chọn nhiều, cả hàng lẫn cột (Home 2 cột). **Chốt** (Ethan, 2026-11-13)
+
+![Lựa chọn cách nhau 4: pill và Home, chọn nhiều và chọn một](images/choice-gap.vi.png)
 - Dấu chọn 16 ở cột leading: tròn khi chọn một, vuông khi chọn nhiều.
 - **Other** là hàng cuối: chưa chọn thì ghi "Type your own answer" màu xám; chọn rồi thì hàng thành
   ô nhập ngay trong card (viền màu nhấn như ô nhập của GNOME). Bấm vào ô thì Buoy nhận bàn phím (bấm
@@ -156,7 +160,7 @@ is not a permission" (CODING-AGENTS.md, 2026-11-08).
   hai đường), và **con trỏ nhấp nháy** như ô nhập của GNOME, theo `cursor-blink`, `cursor-blink-time`
   và `cursor-blink-timeout` của bạn; ô nhập của Shell không nhấp nháy nên Buoy tự làm. **Chốt**
   (Ethan, 2026-11-13)
-- Cao 56 + 8 + 32 × số hàng + 12 + 32 + 12: 2 lựa chọn + Other = 216, 4 + Other = **280** — vượt
+- Cao 56 + 8 + 32 × số hàng − 4 + 12 + 32 + 12: 2 lựa chọn + Other = 212, 4 + Other = **276** — vượt
   152 của compact, tối đa bằng expanded (rộng/2); rộng như compact lớn nhất (404 ở 1920).
 - Nhiều câu hỏi thì lần lượt từng câu, "1 / 3" ở dòng phụ: các câu trước câu cuối có Skip · **Next**,
   câu cuối có **Back** · **Submit**.
