@@ -28,7 +28,7 @@ import {choose, intervalMs, scrollTo, stackOrder} from '../model/smartstack.js';
  * a smart stack (kit/model/smartstack.js). Each re-rank asks every plan's `relevance(ctx, opts)` and
  * shows the winner; a switch is one cross-fade (the width morphs with it), then nothing.
  * Re-ranks: a feed's change and the wall clock's minute (the shown plan stays while it has
- * something to show), and one turn every `idle-auto-interval`, when the next plan comes. That
+ * something to show), and one turn every `idle-auto-switch`, when the next plan comes. That
  * timer exists only while the idle pill shows with `auto`: gone on an activity, on expand,
  * on a fullscreen window and on disable. Every plan of the stack has its feed while `auto`
  * is on, told that the pill shows (the weather fetches on its interval meanwhile), and the
@@ -187,12 +187,12 @@ export class IdleContent {
         this._clockId = 0;
     }
 
-    // One turn every idle-auto-interval, only while the pill shows with `auto`
+    // One turn every idle-auto-switch, only while the pill shows with `auto`
     _armTurns() {
         this._stopTurns();
         if (!this._auto || !this._island.idleShown)
             return;
-        const ms = intervalMs(this._settings.get_int('idle-auto-interval'));
+        const ms = intervalMs(this._settings.get_string('idle-auto-switch'));
         this._turnId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => {
             this._turnId = 0;
             this._pinned = null;

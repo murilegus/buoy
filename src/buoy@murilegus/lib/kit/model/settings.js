@@ -23,7 +23,9 @@ export const PAGES = ['general', 'modules', 'apps', 'panel'];
 // test fails on a key nobody placed.
 export const PLACES = {
     'idle-content': 'idle',     // Island page, "When idle"
-    'idle-auto-interval': 'idle', // Island page, under Show (SPEC §2a-iii)
+    // Island page, under Show (SPEC §2a-iii); 5, 10, 20 or 30 minutes, as `activity-linger`
+    // (2026-11-13, Ethan; was `idle-auto-interval`, 2–30)
+    'idle-auto-switch': 'idle',
     'idle-auto-plans': null,
     'prefs-page': null,         // bookkeeping: the page prefs opens on (GREETING.md §11)
     'greeting-intro-shown': null,   // bookkeeping; About's "Show Bu's introduction again" resets it
@@ -218,6 +220,7 @@ export const CHOICE_LABELS = {
     },
     'idle-weather-refresh': {'30m': 'Every 30 minutes', '1h': 'Every hour'},
     'activity-linger': {'5m': '5 minutes', '10m': '10 minutes', '20m': '20 minutes', '30m': '30 minutes'},
+    'idle-auto-switch': {'5m': '5 minutes', '10m': '10 minutes', '20m': '20 minutes', '30m': '30 minutes'},
 };
 
 /**

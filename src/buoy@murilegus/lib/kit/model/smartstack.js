@@ -5,7 +5,7 @@
  *
  * - The idle pill turns (2026-11-08, Ethan: "an idle pill just rotates"): every plan with
  *   something to show takes its turn, in `idle-auto-plans` order, round, one per turn
- *   (the kit's timer, `idle-auto-interval`). Between turns (a plan's `changed`, the
+ *   (the kit's timer, `idle-auto-switch`). Between turns (a plan's `changed`, the
  *   minute) the shown plan stays while it has something to show — a re-rank that picks
  *   the same plan changes nothing. The first plan shown is the highest scored.
  * - A plan at HOLD or more holds the pill until its score drops: no turn takes it away
@@ -87,10 +87,10 @@ export function stackOrder(value, running) {
 }
 
 /**
- * @param {*} minutes  `idle-auto-interval`
- * @returns {number} ms between turns: the key's minutes, 2–30, 5 when unset
+ * @param {*} value  `idle-auto-switch`: '5m', '10m', '20m' or '30m' (2026-11-13, Ethan)
+ * @returns {number} ms between turns, 5 minutes for anything else
  */
-export function intervalMs(minutes) {
-    const m = Number.isInteger(minutes) ? Math.min(30, Math.max(2, minutes)) : 5;
-    return m * 60 * 1000;
+export function intervalMs(value) {
+    const m = /^(5|10|20|30)m$/.exec(String(value ?? ''));
+    return (m ? Number(m[1]) : 5) * 60 * 1000;
 }

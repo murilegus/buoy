@@ -66,8 +66,8 @@ eq(stackOrder(['calendar', 'weather', 'clock'], ['clock', 'weather', 'calendar']
 eq(stackOrder(['calendar', 'news', 'clock', 'clock'], ['clock', 'calendar']), ['calendar', 'clock'],
     'unknown or off plans dropped, each once');
 eq([stackOrder(null, ['clock']), stackOrder([3, 'clock'], ['clock'])], [[], ['clock']], 'bad values');
-eq([intervalMs(5), intervalMs(2), intervalMs(30)].map(ms => ms / 60000), [5, 2, 30], 'interval in minutes');
-eq([intervalMs(1), intervalMs(99), intervalMs(undefined), intervalMs(2.5)].map(ms => ms / 60000), [2, 30, 5, 5],
-    'clamped 2–30, 5 when unset or not whole');
+eq(['5m', '10m', '20m', '30m'].map(v => intervalMs(v) / 60000), [5, 10, 20, 30], 'Switch every: its four choices');
+eq([intervalMs('15m'), intervalMs(10), intervalMs(undefined), intervalMs('m'), intervalMs(' 10m')].map(ms => ms / 60000), [5, 5, 5, 5, 5],
+    'anything else: 5 minutes');
 
 print('smartstack: ok');

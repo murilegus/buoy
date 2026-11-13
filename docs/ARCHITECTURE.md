@@ -341,7 +341,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `apps-plain` | as | apps that use the default adapter instead of their override; any app id, slugged |
 | `idle-content` | s | `auto` (default) \| `none` \| any module's idle plan id |
 | `idle-auto-plans` | as | plans `auto` may show, in the order they take turns; default `calendar`, `weather`, `clock` |
-| `idle-auto-interval` | i | minutes per turn of `auto` while idle; default `5`, 2–30 |
+| `idle-auto-switch` | s | minutes per turn of `auto` while idle: `5m` (default), `10m`, `20m`, `30m` (2026-11-13, Ethan; was `idle-auto-interval`, 2–30) |
 | `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`; bad values → defaults. In the schema since M3 daypart; on the Island page, When Idle → Parts of the day: each part's colour icon and a drop-down of the hours it may start at, so none is empty or out of order (2026-11-13) |
 | `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only; `['calendar', 'device']` by default) |
 | `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |

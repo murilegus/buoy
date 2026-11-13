@@ -241,7 +241,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
             const row = this._row(key(name));
             if (name === 'idle-content')
                 this._followPlanSwitches(row, key(name).get_description(), plan.plans);
-            if (name === 'idle-auto-interval')
+            if (name === 'idle-auto-switch')
                 this._onlyWithAuto(row);
             idle.add(row);
         }
