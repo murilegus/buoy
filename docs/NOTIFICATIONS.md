@@ -331,13 +331,20 @@ ids `progress` and `transfer-complete`) are the Transfers pill already (FEATURES
 "progress"): while the progress module is on, they get no notification pill of their own
 (and no banner). Off, they come as any notification.
 
+A coding agent's own notification (2026-11-13, Ethan: one finished turn gave two alerts):
+Claude's app posts one titled by the session ("Buoy — Implementation") when a turn ends or
+waits while you are elsewhere. When its app id says Claude and an agent activity with that
+session's name is on the island (`stack.find`, adapter.js `agentShows`), the agent's pill
+already says it: no notification pill, and the notification is marked read (no amber
+light); GNOME's list keeps it. Any other Claude notification comes as any notification.
+
 ## 11. Tests
 
 - Adapter (`tests/notification.test.js`): title / app-name fallback; count from 2;
   critical → `needsYou`, no ttl; markup stripped and whitespace on one line; actions at
   most 3 then ×, none → × alone; shared → the app's name, no picture, the count line;
   `hideBody` (no body) → the app's name; long text not cut; Files' ids skipped only while
-  progress is on.
+  progress is on; Claude's notification for a session on the island skipped (`agentShows`).
 - Headless Shell: `notify-send` (freedesktop) with actions and a critical one; a GTK app
   (`gapplication`, GNotification); click activates; × dismisses from GNOME's list;
   replace by id; Do Not Disturb on → no pill, critical still; the setting off → GNOME's

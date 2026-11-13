@@ -473,6 +473,21 @@ export class ActivityStack {
         return this._items.get(id) ?? null;
     }
 
+    /**
+     * The first live activity a test accepts (read only): what another module already shows
+     * (the notification module asks for an agent's session, NOTIFICATIONS.md §10).
+     *
+     * @param {function(object): boolean} test
+     * @returns {?object}
+     */
+    find(test) {
+        for (const a of this._items.values()) {
+            if (test(a))
+                return a;
+        }
+        return null;
+    }
+
     get missed() {
         return this._missed.map(m => ({...m}));
     }

@@ -1,6 +1,6 @@
 // Run: gjs -m tests/notification.test.js   (no Shell needed; adapters are pure)
 import adapter, {
-    TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, sharedLine, cardText, stackGroups, countText, rowText,
+    TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, agentShows, sharedLine, cardText, stackGroups, countText, rowText,
     HELD_MS, waitedInQueue, Turns, MAX_WAITING, burstHeader, sharedBurst, missedRow,
 } from '../src/buoy@murilegus/lib/modules/notification/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
@@ -326,5 +326,16 @@ eq(missedRow(3, ['Slack', 'Zalo', 'Slack']), {count: 3, title: 'Notifications', 
     'one row: the count, the apps once each, the Notifications tab');
 eq(missedRow(5, ['A', 'B', 'C', 'D', 'E']).detail, 'A, B, C +2', 'more than three apps: +N');
 eq([missedRow(0, []).detail, missedRow(NaN, null).count, missedRow(2.7, ['<b>x</b>']).count], [null, 0, 2], 'no app, a bad count');
+
+// --- Claude's own notification for a session the agent shows (2026-11-13) ------------------
+{
+    const session = {kind: 'agent', attributes: {name: 'Buoy — Implementation'}};
+    eq(agentShows('com.anthropic.Claude', 'Buoy — Implementation', session), true, 'Claude Desktop, the session on the island: no pill of its own');
+    eq(agentShows('claude-desktop', ' Buoy — Implementation ', session), true, 'any app id that says Claude; spaces ignored');
+    eq(agentShows('com.anthropic.Claude', 'Another session', session), false, 'a session not on the island: a notification');
+    eq(agentShows('com.anthropic.Claude', 'Buoy — Implementation', null), false, 'no agent on the island (the module off): a notification');
+    eq(agentShows('org.gnome.Nautilus', 'Buoy — Implementation', session), false, 'another app with that title: a notification');
+    eq(agentShows('Claude', '', {attributes: {name: ''}}), false, 'no title, no name: never a match');
+}
 
 print('notification: ok');
