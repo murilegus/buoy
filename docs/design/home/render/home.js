@@ -19,7 +19,7 @@ const COLOUR = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_ur
     '..', '..', '..', '..', 'src', 'buoy@murilegus', 'icons', 'color']);
 
 // ---- the rules ------------------------------------------------------------------------------------
-const PAD = 12, HEAD = 56, GAP = 8, TILE_H = 100, TILE_MIN = 120, WIDE = 200, TALL = 160, ART_MAX = 160;
+const PAD = 12, HEAD = 56, GAP = 8, TILE_H = 100, TILE_MIN = 120, WIDE = 200, TALL = 160, ART_MAX = 184;
 // tiles a row holds, each at least TILE_MIN with gaps of 8: 4 at 1920, 5 at 2560 and 3440
 const fitN = cw => Math.floor((cw + GAP) / (TILE_MIN + GAP));
 // the row: activities first (Missed leading), one unit each, N − 1 and "+K" when they overflow;
@@ -134,12 +134,13 @@ function heroMusic(x, y, w, h) {
     const tx = x + 8 + s + 12, x1 = x + w - 14;
     // low and tall alike (2026-11-13, Ethan: "giống 1920 nhưng to lên"): the slot top right, the
     // bar at the foot of the text column; tall, the cover and the title larger
-    const tall = h >= TALL;
-    text(SAMPLE.track, tx, y + 12, tall ? {sz: 14, wt: 700} : {wt: 600});
-    text(SAMPLE.sub, tx, y + (tall ? 38 : 32), {sz: SUB, a: C.FG_MUTED});
-    slot(x + w - 28, y + 28);
-    bar(tx, y + h - 34, x1 - tx);
-    text('1:24', tx, y + h - 26, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, y + h - 26, {sz: SUB, a: C.FG_SUBTLE, right: true});
+    // the text column keeps to the cover's top and bottom (a card over 176 centres its cover)
+    const tall = h >= TALL, by = ay + s;
+    text(SAMPLE.track, tx, ay + 4, tall ? {sz: 14, wt: 700} : {wt: 600});
+    text(SAMPLE.sub, tx, ay + (tall ? 30 : 24), {sz: SUB, a: C.FG_MUTED});
+    slot(x + w - 28, ay + 20);
+    bar(tx, by - 26, x1 - tx);
+    text('1:24', tx, by - 18, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, by - 18, {sz: SUB, a: C.FG_SUBTLE, right: true});
 }
 function heroAsk(x, y, w, h) {
     fill([1, 1, 1, C.FILL1], x, y, w, h, 16);
@@ -363,7 +364,7 @@ if (MODE === 'anatomy') {
     [[tX + 12, tY + 12, 20, 20], [tX + 12, tY + 40, 54, 22], [tX + 12, tY + 68, 80, 14]].forEach(r => cr.rectangle(...r)); cr.stroke();
     note(ax, ay + 314, ['Ô: leading 20 ở 12 (icon 16 ở giữa; Bu 20 lấp đầy; icon màu 24 lố 2 mỗi bên) · số 1.5em 600 ở 40 ·',
         'chú thích 0.85em fg-muted ở 68. Ô rộng từ 200: thêm cột chi tiết bên phải. Thẻ và ô: fill-1, bo 16 = 28 − 12.',
-        'Ảnh bìa của thẻ nhạc: cạnh = cao thẻ − 16, tối đa 160, cách mép 8, bo 8.'], .85);
+        'Ảnh bìa của thẻ nhạc: cạnh = cao thẻ − 16, tối đa 184, cách mép 8 (thẻ cao hơn: ở giữa), bo 8; cột chữ theo mép trên và dưới của ảnh.'], .85);
     const rx = ax, ry = ay + 380;
     ['Tính lại mỗi lần Home mở và mỗi khi stack đổi:',
      '1. N = floor((rộng nội dung + 8) / 128): số ô một hàng, mỗi ô ≥ 120.',
@@ -374,7 +375,7 @@ if (MODE === 'anatomy') {
         text(l, rx, ry + i * 17, {sz: 8.5, a: i ? .85 : 1, wt: i ? 400 : 700}));
     const bx = ax + 560 + 150;
     home(bx, ay, 716, 344, 'music', ACTS, G, '2560 · 716 × 344: N = 5, thẻ chính 168 (dạng cao)');
-    home(bx, ay + 344 + 70, 760, 376, 'music', ACTS, G, '3440 · 760 × 376: N = 5, thẻ chính 200, ảnh bìa 160');
+    home(bx, ay + 344 + 70, 760, 376, 'music', ACTS, G, '3440 · 760 × 376: N = 5, thẻ chính 200, ảnh bìa 184');
     surf.writeToPNG(out);
 }
 

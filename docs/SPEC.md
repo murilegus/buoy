@@ -673,9 +673,9 @@ and never scrolls (`kit/model/home.js` planHome, `kit/ui/home.js`).
   104 / 168 / 200 at 1920 / 2560 / 3440; with no tile, all of it.
 - **The main card** is the stack's first activity with its buttons; with none, the
   **greeting** (Bu waving, "Good afternoon, Ethan", the date). A player has a card of its
-  own (`modules/media/home.js`: the cover as tall as the card less 16, at most 160; under
-  160 the transport at the top right and the bar at the foot, from 160 the title larger and
-  the transport centred under the bar); an ask is its card with its buttons at the bottom
+  own (`modules/media/home.js`: the cover as tall as the card less 16, at most 184; play /
+  pause in one slot at the top right, the equaliser at rest, and the bar at the foot; from 160
+  the same, the title larger (2026-11-13)); an ask is its card with its buttons at the bottom
   right; any other activity shows its compact in the card (or, without one, its leading,
   text and value). A click on it opens its tab.
 - **The tiles** (fill-1, radius 16): N = floor((row + 8) / 128) a row — 4 at 1920, 5 at

@@ -55,8 +55,10 @@ lại mỗi lần Home mở và mỗi khi stack đổi, nên Home không bao gi�
   **Chốt** (Ethan, 2026-11-11)
 - Thẻ và ô: nền `fill-1`, bo **16** (= 28 − 12, đồng tâm). **Chốt** (Ethan, 2026-11-11)
 - Thẻ chính hai dạng: **thấp** dưới 160 (nút góc phải trên, thanh tiến trình ở chân), **cao** từ 160
-  (tên 1.27em 700, nút giữa dưới thanh). Ảnh bìa: cạnh = cao thẻ − 16, tối đa **160**, cách mép 8,
-  bo 8. **Chốt** (Ethan, 2026-11-11)
+  (giống dạng thấp, chỉ ảnh bìa và tên 1.27em 700 lớn hơn). Ảnh bìa: cạnh = cao thẻ − 16, tối đa
+  **184** (cả chiều cao thẻ 200 ở 3440; chỉ thẻ không có hàng ô mới cao hơn: ảnh ở giữa, cột chữ theo
+  mép trên và dưới của ảnh), cách mép 8, bo 8. **Chốt** (Ethan, 2026-11-11; 184 và dạng cao giống
+  dạng thấp: 2026-11-13)
 - Ô: ô leading **20** ở 12 (icon 16 ở giữa; Bu 20 lấp đầy; icon màu 24 lố 2 mỗi bên), số 1.5em 600,
   chú thích 0.85em `fg-muted`. Ô rộng từ **200** thêm cột chi tiết bên phải (0.85em `fg-subtle`).
   **Chốt** (Ethan, 2026-11-11)

@@ -8,8 +8,9 @@ import {eqGlyph, eqLeaving} from '../../kit/ui/present/motion.js';
 import {markShared} from '../../kit/ui/present/flight.js';
 import {livePosition, mediaTimes, element} from '../../kit/model/presentation.js';
 
-/** The cover: the card's height less 8 above and below, at most 160 (design/home). */
-const ART_MAX = 160;
+/** The cover: the card's height less 8 above and below, at most 184 — the whole height of
+ * 3440's card (200); only a card with no tiles under it is taller (design/home, 2026-11-13). */
+const ART_MAX = 184;
 const ART_INSET = 8;
 const ART_RADIUS = 8;
 
@@ -65,9 +66,13 @@ export class MediaCard {
         const cover = markShared(new St.Bin({style_class: 'buoy-home-media-cover', width: size, height: size, child: art}), 'leading', a);
         this._box.add_child(cover);
 
+        // a card taller than its cover (184 at most) centres the cover: the text column keeps
+        // to the cover's top and bottom, as in the low card (design/home, 2026-11-13)
+        const inset = Math.max(0, Math.floor((height - 2 * ART_INSET - size) / 2));
         const col = new St.BoxLayout({
             style_class: 'buoy-home-media-text', orientation: Clutter.Orientation.VERTICAL,
             x_expand: true, y_expand: true,
+            style: inset > 0 ? `padding-top: ${4 + inset}px; padding-bottom: ${4 + inset}px;` : null,
         });
         const head = new St.BoxLayout({x_expand: true});
         const lines = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
