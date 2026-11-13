@@ -331,15 +331,28 @@ class SystemCluster {
             this._dot.box.insert_child_at_index(this._dot.pad, 0);
             this._dot.box.add_child(this._dot.dot);
         }
+        // Put back only from where each container actually is. On lock, Panel's
+        // 'updated' handler (connected before ExtensionManager's) has already moved quick
+        // settings to _rightBox for the lock mode (_updatePanel → _addToPanelBox). When we
+        // are the first extension ExtensionManager._sessionUpdated disables, that happens
+        // inside the same emission, before our own 'updated' handler takes it back; later
+        // ones are disabled after an await, once _place() has run. Where Shell put it is
+        // where it belongs, so leave it there.
+        // Re-adding shows a container that was hidden while it had a parent (clutter-actor.c:
+        // set_show_on_set_parent only clears the flag on an orphan, add_child_internal then
+        // shows it) — the clock _hideIndicators hid for the lock screen, so keep its state.
         [this._qs, this._clock].forEach((b, i) => {
             const {parent, prev} = this._home[i];
-            this.actor.remove_child(b.container);
-            if (!parent)
+            const visible = b.container.visible;
+            if (b.container.get_parent() === this.actor)
+                this.actor.remove_child(b.container);
+            if (!parent || b.container.get_parent())
                 return;
             if (prev?.get_parent() === parent)
                 parent.insert_child_above(b.container, prev);
             else
                 parent.insert_child_at_index(b.container, prev ? parent.get_n_children() : 0);
+            b.container.visible = visible;
         });
         this.actor.destroy();
         this.actor = null;
