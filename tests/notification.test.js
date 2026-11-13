@@ -322,10 +322,15 @@ eq(rowText({title: 'Lan', body: 'Hi', appName: 'Telegram'}, true), {title: 'Tele
 }
 
 // --- Home's Missed row (design/home) ---------------------------------------------------------
-eq(missedRow(3, ['Slack', 'Zalo', 'Slack']), {count: 3, title: 'Notifications', detail: 'Slack, Zalo', tab: 'notification'},
+eq(missedRow(3, ['Slack', 'Zalo', 'Slack']), {count: 3, title: 'Notifications', detail: 'Slack, Zalo', tab: 'notification', icons: []},
     'one row: the count, the apps once each, the Notifications tab');
 eq(missedRow(5, ['A', 'B', 'C', 'D', 'E']).detail, 'A, B, C +2', 'more than three apps: +N');
 eq([missedRow(0, []).detail, missedRow(NaN, null).count, missedRow(2.7, ['<b>x</b>']).count], [null, 0, 2], 'no app, a bad count');
+eq(missedRow(4, [{name: 'Slack', icon: 'slack'}, {name: 'Zalo', icon: '/opt/zalo.png'}, {name: 'Slack', icon: 'slack'}, {name: 'Mail', icon: null}]),
+    {count: 4, title: 'Notifications', detail: 'Slack, Zalo, Mail', tab: 'notification', icons: ['slack', '/opt/zalo.png']},
+    'apps with icons: each once, in order; an app without one has no icon');
+eq(missedRow(1, ['Slack']).icons, [], 'names only: no icons');
+eq(missedRow(2, [{name: '', icon: 'x'}, {name: 'A', icon: '  '}]).icons, [], 'no name, or a blank icon: none');
 
 // --- Claude's own notification for a session the agent shows (2026-11-13) ------------------
 {

@@ -16,6 +16,35 @@ export const TALL_FROM = 160;
 /** A tile this wide or more shows its detail column. */
 export const DETAIL_FROM = 200;
 
+/** Icons in a tile's corner before "+N", at most (the Missed tile's apps). */
+export const CORNER_ICONS = 3;
+
+/**
+ * How many icons a tile's corner holds beside its leading cell, keeping room for "+N": the
+ * tile less its padding (12 each side), the 20 cell and the 8 before the corner; each icon
+ * 16 and its 4 gap, "+N" about 24 (2026-11-13: a 128 tile has room for two and "+N").
+ *
+ * @param {number} width  the tile's
+ * @returns {number} 1 … CORNER_ICONS
+ */
+export function cornerMax(width) {
+    const room = (Number.isFinite(width) ? width : 0) - 24 - 20 - 8;
+    return Math.max(1, Math.min(CORNER_ICONS, Math.floor((room - 24) / 20)));
+}
+
+/**
+ * What the Missed tile's corner shows (design/home, 2026-11-13, Ethan): the apps behind it,
+ * as icons, each once in its first place, up to CORNER_ICONS, then how many more.
+ *
+ * @param {string[]} icons  in order, repeats allowed
+ * @param {number} [max]
+ * @returns {{icons: string[], more: number}}
+ */
+export function cornerIcons(icons, max = CORNER_ICONS) {
+    const all = [...new Set((Array.isArray(icons) ? icons : []).filter(i => typeof i === 'string' && i))];
+    return {icons: all.slice(0, max), more: Math.max(0, all.length - max)};
+}
+
 /**
  * @param {number} width  the row's width (expanded less its 12 each side)
  * @returns {number} N, how many tiles a row holds, each at least TILE_MIN: 4 at 1920, 5 at

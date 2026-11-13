@@ -1,16 +1,17 @@
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {EmptyState, iconProps, makeElement} from './present/elements.js';
+import {EmptyState, fallbackIcon, iconProps, makeElement} from './present/elements.js';
 import {buildCompact} from './present/compact.js';
 import {buildExpanded} from './present/expanded.js';
 import {FILL, label as textLabel, tick} from './present/parts.js';
-import {clockTime, element, livePosition, mediaTimes, planMinimal} from '../model/presentation.js';
-import {planHome, tileOf, tileWidths, greetingLine, TILE_H, CARD_GAP, DETAIL_FROM} from '../model/home.js';
+import {agoWords, clockTime, element, livePosition, mediaTimes, planMinimal} from '../model/presentation.js';
+import {cornerIcons, cornerMax, planHome, tileOf, tileWidths, greetingLine, TILE_H, CARD_GAP, DETAIL_FROM} from '../model/home.js';
 import {daypartAt} from '../model/daypart.js';
 import {compactMetrics} from '../model/shapes.js';
 import {planStrip, stripOrder, tabActivities, findTab, HOME} from '../model/tabs.js';
@@ -22,7 +23,6 @@ import {SlidingRow} from './strip.js';
 // a body leaving on a tab switch: its spring, and whether a tab.js keeps it (_leave)
 const leaving = new WeakMap();
 
-/** @import Gio from 'gi://Gio' */
 
 const MENU_BOTTOM = 12; // space between the ⋯ menu and the panel's bottom edge
 const STRIP_H = 68; // first guess for the head and the panel's padding; measured once laid out
@@ -809,7 +809,9 @@ export class Home {
         if (t.type === 'missed') {
             const tile = this._tileButton({
                 icon: 'preferences-system-notifications-symbolic', value: String(t.count), caption: 'Missed',
-                detail: this._missedDetail(), width,
+                // the apps that really have notifications unseen, by their icons, in the corner
+                // (design/home, 2026-11-13, Ethan: in place of "1 notification")
+                apps: cornerIcons(this._flags.flatMap(f => f.icons ?? []), cornerMax(width)), width,
             }, 'Missed');
             tile.add_style_class_name('buoy-home-tile-missed');
             tile.connect('clicked', () => this._showPage('missed'));
@@ -842,13 +844,6 @@ export class Home {
         return tile;
     }
 
-    // "3 notifications · 4 tasks" on a wide Missed tile
-    _missedDetail() {
-        const notes = this._flags.reduce((sum, f) => sum + f.count, 0);
-        const tasks = this._missed.length;
-        return [notes ? `${notes} notification${notes > 1 ? 's' : ''}` : null, tasks ? `${tasks} task${tasks > 1 ? 's' : ''}` : null]
-            .filter(Boolean).join(' · ') || null;
-    }
 
     /**
      * A tile (design/home "Kích thước"): the leading in a 20 cell at 12, the value 1.5em 600,
@@ -876,7 +871,24 @@ export class Home {
             : iconOf(t.icon, t.iconSize ?? 16);
         if (lead)
             cell.set_child(lead);
-        col.add_child(cell);
+        // `since`: how old the tile's data is, in the top right corner, beside the icon
+        // (the weather's update time, design/home 2026-11-13); it moves on once a minute
+        // while shown
+        // `apps`: {icons, more}, the Missed tile's apps (design/home, 2026-11-13)
+        let corner = null;
+        if (Number.isFinite(t.since))
+            corner = sinceLabel(t.since);
+        else if (t.apps?.icons?.length)
+            corner = appIcons(t.apps);
+        if (corner) {
+            const top = new St.BoxLayout({x_expand: true});
+            top.add_child(cell);
+            top.add_child(new St.Widget({x_expand: true}));
+            top.add_child(corner);
+            col.add_child(top);
+        } else {
+            col.add_child(cell);
+        }
         col.add_child(new St.Widget({y_expand: true}));
         /** @type {?St.Widget} */
         let value = t.value ? textLabel(t.value, '') : null;
@@ -1042,4 +1054,47 @@ export class Home {
     destroy() {
         this.actor.destroy();
     }
+}
+
+/**
+ * "12 min ago" for a tile's corner (design/home, 2026-11-13): small and subtle, moved on once a
+ * minute while shown (parts.js tick; nothing while Home is closed). Also for a module's own
+ * wide tile (the weather's).
+ *
+ * @param {number} at  ms since the epoch
+ * @returns {St.Label}
+ */
+export function sinceLabel(at) {
+    const l = textLabel('', 'buoy-home-tile-since');
+    l.y_align = Clutter.ActorAlign.START;
+    tick(l, () => {
+        l.text = agoWords(at, Date.now());
+    }, () => true, 60);
+    return l;
+}
+
+/**
+ * Apps' icons at 16 for a tile's corner, then "+N" (the Missed tile, design/home 2026-11-13):
+ * each icon a string from Gio.Icon.to_string (or a theme name).
+ *
+ * @param {{icons: string[], more: number}} apps  cornerIcons()
+ * @returns {St.BoxLayout}
+ */
+function appIcons({icons, more}) {
+    const box = new St.BoxLayout({style_class: 'buoy-home-tile-apps', y_align: Clutter.ActorAlign.CENTER});
+    for (const s of icons) {
+        let gicon = null;
+        try {
+            gicon = Gio.Icon.new_for_string(s);
+        } catch {}
+        box.add_child(gicon
+            ? new St.Icon({gicon, icon_size: 16, fallback_gicon: fallbackIcon('view-app-grid-symbolic')})
+            : new St.Icon({...iconProps(s), icon_size: 16}));
+    }
+    if (more > 0) {
+        const l = textLabel(`+${more}`, 'buoy-home-tile-since');
+        l.y_align = Clutter.ActorAlign.CENTER;
+        box.add_child(l);
+    }
+    return box;
 }

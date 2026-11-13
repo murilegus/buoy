@@ -154,7 +154,9 @@ export class NotificationSource extends Source {
             if (!this._stack)
                 return;
             const count = unseenCount(Main.messageTray, this._pending);
-            const apps = Main.messageTray.getSources().filter(src => src.unseenCount > 0).map(src => src.title);
+            // each app's name and its icon, as a string for the stack (Home's Missed corner)
+            const apps = Main.messageTray.getSources().filter(src => src.unseenCount > 0)
+                .map(src => ({name: src.title, icon: iconString(src.icon)}));
             this._stack.flagMissed(KIND, count > 0, missedRow(count, apps));
         });
     }
@@ -521,4 +523,14 @@ export function appIdOf(src) {
  */
 export function msOf(dt) {
     return dt ? dt.to_unix_usec() / 1000 : 0;
+}
+
+// A source's icon as a string that comes back as the same icon (Gio.Icon.to_string /
+// new_for_string); a theme name stays a name
+function iconString(icon) {
+    try {
+        return typeof icon === 'string' ? icon : icon?.to_string?.() ?? null;
+    } catch {
+        return null;
+    }
 }

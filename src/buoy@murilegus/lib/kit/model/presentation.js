@@ -492,6 +492,19 @@ export function agoText(at, now) {
 }
 
 /**
+ * How old something is, as words that stand alone (a Home tile's corner: the weather's
+ * update time, design/home 2026-11-13): "now", "12 min ago", "1 h 5 min ago".
+ *
+ * @param {number} at  ms since the epoch
+ * @param {number} now
+ * @returns {string}
+ */
+export function agoWords(at, now) {
+    const t = agoText(at, now);
+    return t === 'now' ? t : `${t} ago`;
+}
+
+/**
  * @param {number} at  ms since the epoch
  * @param {number} now
  * @returns {string} what is left, `0:29` — never negative

@@ -378,7 +378,8 @@ export class ActivityStack {
      * @param {string} key  the source's, one flag each
      * @param {boolean} on
      * @param {object} [row]  how Home's Missed list shows it (design/home "Bị nhỡ và +K"):
-     *   {count, title, detail, tab} — "Notifications · 3", "Slack, Zalo", the tab a click opens
+     *   {count, title, detail, tab, icons} — "Notifications · 3", "Slack, Zalo", the tab a click
+     *   opens, the apps' icons as strings (the Missed tile's corner)
      */
     flagMissed(key, on, row = {}) {
         if (on)
@@ -388,13 +389,14 @@ export class ActivityStack {
         this._updateLight();
     }
 
-    /** @returns {{key: string, count: number, title: string, detail: ?string, tab: ?string}[]} the flags, as Home lists them */
+    /** @returns {{key: string, count: number, title: string, detail: ?string, tab: ?string, icons: string[]}[]} the flags, as Home lists them */
     get missedFlags() {
         return [...this._flags].map(([key, r]) => ({
             key, count: Number.isInteger(r.count) && r.count > 0 ? r.count : 1,
             title: typeof r.title === 'string' && r.title ? r.title : key,
             detail: typeof r.detail === 'string' && r.detail ? r.detail : null,
             tab: typeof r.tab === 'string' && r.tab ? r.tab : null,
+            icons: Array.isArray(r.icons) ? r.icons.filter(i => typeof i === 'string' && i) : [],
         }));
     }
 

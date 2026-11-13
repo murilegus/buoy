@@ -7,7 +7,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {withPlace} from '../../kit/model/settings.js';
 import {refreshMs} from './idle.js';
-import {RETRY_MS, goodFix, locateOutcome, nextFix, readInfo, shouldRetry, unitNames, useOwnInfo} from './read.js';
+import {RETRY_MS, goodFix, keptReading, locateOutcome, nextFix, readInfo, shouldRetry, unitNames, useOwnInfo} from './read.js';
 
 // As long as Geoclue may take for a first fix before this ask gives up (Wi-Fi scan, IP)
 const LOCATE_TIMEOUT = 15;
@@ -17,6 +17,56 @@ const LOCATE_TIMEOUT = 15;
 // asking too, so two asks never write the place or prefs' status over each other
 // (2026-11-12). {ask, waiters: [function(moved)]}
 let shared = null;
+
+// Buoy's own GWeather.Info (read.js useOwnInfo), one for every feed (2026-11-13, Ethan: Home's
+// weather tile came and went): Home makes a feed each time it opens, and a fresh Info has no
+// weather until its fetch comes back — so the tile was missing, then came and made Home lay
+// out again. Kept with its last weather between feeds, as Shell keeps its client's; it never
+// fetches by itself (each update() is a feed's ask, only while shown: rule 8). Made for a
+// place, replaced when Buoy's place changes, dropped on disable (source.js) and when its
+// place is not wanted any more. {info, id, last, loading, users: Set<function()>}
+let ownInfo = null;
+
+// The last good reading, whichever feed read it (read.js keptReading): a failed fetch leaves
+// GWeather empty, and this is shown instead while it is recent. {state, at, key}
+let lastGood = null;
+
+function ownFor(place) {
+    if (ownInfo?.info.location?.equal?.(place))
+        return ownInfo;
+    dropOwnInfo();
+    const info = new GWeather.Info({
+        application_id: 'org.gnome.Shell',
+        contact_info: 'https://gitlab.gnome.org/GNOME/gnome-shell/-/raw/HEAD/gnome-shell.doap',
+        enabled_providers: GWeather.Provider.METAR | GWeather.Provider.MET_NO | GWeather.Provider.OWM,
+    });
+    info.set_location(place);
+    const o = {info, id: 0, last: 0, loading: false, users: new Set()};
+    o.id = info.connect_after('updated', () => {
+        o.last = Date.now();
+        o.loading = false;
+        [...o.users].forEach(fn => fn());
+    });
+    ownInfo = o;
+    return o;
+}
+
+/** On disable (the weather module's source): Buoy's own Info and the last good reading go. */
+export function dropWeather() {
+    dropOwnInfo();
+    lastGood = null;
+}
+
+// Buoy's own Info goes (disable; a new place)
+function dropOwnInfo() {
+    const o = ownInfo;
+    ownInfo = null;
+    if (!o)
+        return;
+    o.info.disconnect(o.id);
+    o.info.abort?.();
+    o.users.clear();
+}
 
 /**
  * The weather plan's feed (ARCHITECTURE "feed.js"): what idle.js shows, read from GNOME's
@@ -53,7 +103,7 @@ let shared = null;
  *   Vietnamese ISP — so the plan read a place Buoy had not chosen (2026-11-13, Ethan). Then,
  *   when the client's place is not Buoy's (read.js useOwnInfo), the feed reads a GWeather.Info
  *   of its own for Buoy's place, made as Shell makes its own, fetched on the same terms
- *   (only while shown), and dropped when the client is back at Buoy's place.
+ *   (only while shown) — one for every feed, kept with its last weather (ownInfo, below).
  */
 export class WeatherFeed {
     /** @param {function(): void} onChanged  the state changed: present again */
@@ -72,13 +122,15 @@ export class WeatherFeed {
         this._retryDone = null;           // source.js waits for it
         this._weakPlace = null;           // placeKey of the place an IP-only fix wrote last
         this._client = Main.panel.statusArea.dateMenu?._weatherItem?._weatherClient ?? null;
-        this._own = null;                 // {info, id, last, loading}: Buoy's own Info (_pick)
+        this._own = null;                 // the shared own Info while this feed reads it (_pick)
+        this._ownRead = () => this._read();
         this._shown = false;
         // when the client last had news; its own _lastUpdate (set on every `updated`)
         // when it already has data, so enabling does not fetch what it fetched a minute ago
         const last = this._client?.info?.is_valid?.() ? this._client._lastUpdate?.to_unix?.() : 0;
         this._fetched = last > 0 ? last * 1000 : 0;
         this.state = null;
+        this.at = null;                   // the shown reading's own time (ms), for Home's tile
         this._client?.connectObject('changed', () => this._read(), this);
         // the user's units (GNOME Weather's keys): read again when they change
         this._units = settingsOf('org.gnome.GWeather4');
@@ -104,37 +156,25 @@ export class WeatherFeed {
             clientAuto: client._useAutoLocation === true, hasPlace: place !== null, apartKm: apart,
         });
         if (!own) {
-            this._dropOwn();
+            this._leaveOwn();
+            if (ownInfo && !ownInfo.users.size)
+                dropOwnInfo();            // the client is at Buoy's place again
             return;
         }
-        if (this._own?.info.location?.equal?.(place))
+        const o = ownFor(place);
+        if (this._own === o)
             return;
-        this._dropOwn();
-        const info = new GWeather.Info({
-            application_id: 'org.gnome.Shell',
-            contact_info: 'https://gitlab.gnome.org/GNOME/gnome-shell/-/raw/HEAD/gnome-shell.doap',
-            enabled_providers: GWeather.Provider.METAR | GWeather.Provider.MET_NO | GWeather.Provider.OWM,
-        });
-        info.set_location(place);
-        const o = {info, id: 0, last: 0, loading: false};
-        o.id = info.connect_after('updated', () => {
-            o.last = Date.now();
-            o.loading = false;
-            this._read();
-        });
+        this._leaveOwn();
         this._own = o;
-        this._fetched = 0;                // nothing for this place yet: the next show asks
-        if (this._shown)
+        o.users.add(this._ownRead);
+        this._fetched = o.last;           // what it has; none yet for this place: the show asks
+        if (this._shown && !o.last && !o.loading)
             this._update();
     }
 
-    _dropOwn() {
-        const o = this._own;
+    _leaveOwn() {
+        this._own?.users.delete(this._ownRead);
         this._own = null;
-        if (!o)
-            return;
-        o.info.disconnect(o.id);
-        o.info.abort?.();
     }
 
     // what the plan reads now: {hasLocation, loading, info, lastMs}
@@ -152,6 +192,8 @@ export class WeatherFeed {
     _update() {
         const o = this._own;
         if (o) {
+            if (o.loading)
+                return;                   // another feed's fetch is on its way
             o.loading = true;
             o.info.update();
             return;
@@ -162,21 +204,32 @@ export class WeatherFeed {
     _read(notify = true) {
         this._pick();
         const src = this._src();
-        let state = null;
+        let state = null, at = null;
         if (src?.hasLocation) {
             const info = src.info;
             if (!src.loading && info.is_valid()) {
-                this._fetched = Date.now();
+                // the weather's own time, not this read's: a feed made now (Home opens) must
+                // still see an old reading as old and ask, on `idle-weather-refresh`
+                if (src.lastMs > this._fetched)
+                    this._fetched = src.lastMs;
                 this._recordUpdate(src);
             }
-            state = readInfo(info, {now: Date.now(), units: units(this._units), place: placeOf(info.location)});
-            // while loading the info keeps the last values; GWeather drops them on a
-            // location change (info.set_location), which reads as no data — right then
-            if (!state && src.loading && this.state)
-                return;
+            const u = units(this._units);
+            const fresh = readInfo(info, {now: Date.now(), units: u, place: placeOf(info.location)});
+            // GWeather empties the reading as a fetch starts and leaves it empty when one
+            // fails: the last good one stays while it is recent (read.js keptReading)
+            const kept = keptReading({
+                fresh: fresh && !src.loading ? fresh : null, loading: src.loading, kept: lastGood,
+                key: readingKey(info.location, u), at: src.lastMs, now: Date.now(),
+                maxAgeMs: 2 * (this._every || refreshMs({})),
+            });
+            lastGood = kept.kept;
+            state = kept.state;
+            at = state ? kept.kept?.at ?? null : null;
         }
-        const same = JSON.stringify(state) === JSON.stringify(this.state);
+        const same = JSON.stringify(state) === JSON.stringify(this.state) && at === this.at;
         this.state = state;
+        this.at = at;
         if (notify && !same)
             this._onChanged();
     }
@@ -423,7 +476,7 @@ export class WeatherFeed {
         this._units = null;
         this._places?.disconnectObject(this);
         this._places = null;
-        this._dropOwn();
+        this._leaveOwn();
         const ask = this._locating;
         this._locating = null;
         if (ask) {
@@ -437,6 +490,7 @@ export class WeatherFeed {
         this._client = null;
         this._onChanged = () => {};
         this.state = null;
+        this.at = null;
     }
 }
 
@@ -537,6 +591,15 @@ function stopAsk(ask) {
 function fixOf(simple) {
     const loc = simple?.get_location();
     return loc ? {latitude: loc.latitude, longitude: loc.longitude, accuracy: loc.accuracy} : null;
+}
+
+// A reading's place and units: a kept one is shown again only for both the same
+function readingKey(loc, u) {
+    let place = '';
+    try {
+        place = loc?.serialize?.()?.print(true) ?? '';
+    } catch {}
+    return `${place}|${u.display}|${u.speed}`;
 }
 
 function settingsOf(id) {
