@@ -40,6 +40,12 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
 - Các dòng dài chạy **lần lượt**, mỗi lúc một dòng: tên trước, rồi "nghệ sĩ · app", rồi album, rồi
   lại tên; dòng ngắn bị bỏ qua, một dòng dài duy nhất thì tự lặp. Dòng đang chờ đứng yên ở đầu chữ,
   phần thừa khuất sau mép cột. **Chốt** (Ethan, 2026-11-13: ba dòng cùng chạy rối mắt)
+- Thẻ không đủ chỗ cho ba dòng (hai player trở lên ở 1920: thẻ 172, cột 156 mà ba dòng cần 170) thì
+  album **gộp vào dòng 2**: "nghệ sĩ · album · app", một dòng `fg-muted`. Đo thật trước khi vẽ, không
+  theo một cỡ cố định, nên chữ hệ thống lớn hơn cũng được gộp; 2560 và 3440 vẫn ba dòng. **Chốt**
+  (Ethan, 2026-11-13, chọn giữa giữ nguyên, bỏ album và gộp album)
+
+![1920 có chip: hiện nay, bỏ album, gộp album (chụp từ Shell)](images/chips-1920.vi.png)
 
 ![Chữ trong cột: trước và sau, chữ dài và chữ ngắn](images/text.vi.png)
 

@@ -106,6 +106,11 @@ eq([artSide(212), artSide(276), artSide(308), artSide(172)], [196, 260, 292, 156
 eq([artSide(10), artSide(undefined)], [0, 0], 'never negative');
 eq(subLine({artist: 'Hải Đăng', app: 'Spotify', album: 'X'}), 'Hải Đăng · Spotify', 'artist · player; the album has its own line');
 eq([subLine({app: 'Firefox'}), subLine({artist: 'A', app: ' '}), subLine()], ['Firefox', 'A', ''], 'what is there');
+eq(subLine({artist: 'Hải Đăng', app: 'Spotify', album: 'X'}, {album: true}), 'Hải Đăng · X · Spotify', 'album joined: artist · album · player');
+eq([subLine({album: 'X', app: 'VLC'}, {album: true}), subLine({artist: 'A', album: '  '}, {album: true}), subLine({album: 'X'}, {album: true})],
+    ['X · VLC', 'A', 'X'], 'album joined: only what is there');
+eq(subLine({artist: 'A', album: 'X', app: 'P'}, {album: false}), 'A · P', 'album: false keeps it out');
+eq(subLine({}, {album: true}), '', 'album joined, nothing at all');
 
 const ids = list => list.map(k => `${k.id}:${k.enabled ? '+' : '-'}${k.on ? '*' : ''}`);
 eq(ids(controls({status: 'Playing', canPrev: true, canNext: true, shuffle: false, loop: 'None'})),

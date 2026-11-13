@@ -32,13 +32,16 @@ export function cardHeight(bodyH, players) {
 }
 
 /**
- * The line under the title: "artist · player" (only what the player sends).
+ * The line under the title: "artist · player" (only what the player sends). With `album`,
+ * "artist · album · player": the album joins it when the card has no room for its own line
+ * (design/media, 2026-11-13, Ethan: two players' chips at 1920).
  *
  * @param {object} at  the activity's attributes
- * @returns {string} '' when neither
+ * @param {{album?: boolean}} [opts]
+ * @returns {string} '' when none
  */
-export function subLine(at = {}) {
-    return [at.artist, at.app].filter(t => typeof t === 'string' && t.trim()).join(' · ');
+export function subLine(at = {}, {album = false} = {}) {
+    return [at.artist, album ? at.album : null, at.app].filter(t => typeof t === 'string' && t.trim()).join(' · ');
 }
 
 /**

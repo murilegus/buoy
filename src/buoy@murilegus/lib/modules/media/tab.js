@@ -58,7 +58,9 @@ export class MediaTab {
         this._bodyH = knownBodyH;
         this._fitLater = 0;
         this._chipsLater = null;
+        this._lineSet = null;     // the card's lines under the title: {box, at, turns, joined}
         this.actor.connect('notify::height', () => this._fitLaterOnce());
+        this.actor.connect('notify::mapped', () => this._fitLaterOnce());
     }
 
     /** @param {object[]} activities  this tab's media activities, stack order */
@@ -115,7 +117,7 @@ export class MediaTab {
         this._chipsLater?.();
         this._chipsLater = null;
         this.actor.destroy_all_children();
-        this._chips = this._card = this._content = null;
+        this._chips = this._card = this._content = this._lineSet = null;
         this._chipsKey = '';
     }
 
@@ -139,11 +141,29 @@ export class MediaTab {
             view = view.get_parent();
         const node = this.actor.get_theme_node();
         const h = Math.floor((view ?? this.actor).get_allocation_box().get_height() - node.get_vertical_padding());
-        if (!(h > 0) || h === this._bodyH)
+        if (h > 0 && h !== this._bodyH) {
+            this._bodyH = knownBodyH = h;
+            if (this._content)
+                this._render();      // the card and the art at their size, no motion (fits again)
             return;
-        this._bodyH = knownBodyH = h;
-        if (this._content)
-            this._render();          // the card and the art at their size, no motion
+        }
+        this._fitLines();
+    }
+
+    // The album joins the line above when the card has no room for its own (design/media,
+    // 2026-11-13: two players' chips at 1920 leave the column 156 of the 170 it asks).
+    // Measured, not a fixed height, so a larger text size gets it too; before the frame is
+    // painted (BEFORE_REDRAW), so the three lines never show squeezed.
+    _fitLines() {
+        const l = this._lineSet;
+        if (!l || l.joined || !this._content || !l.at.album)
+            return;
+        const [, nat] = this._content.get_preferred_height(-1);
+        if (nat <= cardHeight(this._bodyH, this._list.length) + 0.5)
+            return;
+        l.joined = true;
+        l.box.destroy_all_children();
+        this._addLine(l.box, subLine(l.at, {album: true}), 'buoy-media-sub', l.turns);
     }
 
     // --- the players' chips ---------------------------------------------------------------
@@ -272,17 +292,21 @@ export class MediaTab {
     }
 
     // "artist · player" and the album, each running when long, in turn with the title
-    // (never "…", 2026-11-13, Ethan)
+    // (never "…", 2026-11-13, Ethan); the album may join the first later (_fitLines)
     _lines(at, turns) {
         const box = new St.BoxLayout({style_class: 'buoy-media-text', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
-        for (const [t, cls] of [[subLine(at), 'buoy-media-sub'], [at.album, 'buoy-media-album']]) {
-            if (!t)
-                continue;
-            const line = marquee(t, cls, turns);
-            line.x_expand = true;
-            box.add_child(line);
-        }
+        this._addLine(box, subLine(at), 'buoy-media-sub', turns);
+        this._addLine(box, at.album, 'buoy-media-album', turns);
+        this._lineSet = {box, at, turns, joined: false};
         return box;
+    }
+
+    _addLine(box, text, cls, turns) {
+        if (!text)
+            return;
+        const line = marquee(text, cls, turns);
+        line.x_expand = true;
+        box.add_child(line);
     }
 
     // ↗: the player's window, then the island closes; disabled without an app to raise
