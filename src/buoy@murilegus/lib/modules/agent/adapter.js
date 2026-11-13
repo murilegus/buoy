@@ -74,6 +74,7 @@ export function stopping(rec) {
 export function interrupted(rec, now) {
     return {
         ...rec, stopRequested: false, interrupted: true, stopped: true, finishedAt: now, subagents: 0,
+        steps: allDone(rec.steps ?? []),
         pose: 'idle', title: 'Stopped', safeTitle: 'Stopped', lastAt: now,
     };
 }
@@ -249,8 +250,74 @@ export function newRecord(source, ev) {
         id: ev.session_id, source, cwd: str(ev.cwd), project: projectOf(ev.cwd),
         shown: false, startedAt: 0, finishedAt: 0, lastAt: 0,
         pose: 'think', title: 'Thinking', safeTitle: 'Thinking', sessionTitle: null,
-        subagents: 0, stopped: false, tasks: [],
+        subagents: 0, stopped: false, tasks: [], steps: [],
     };
+}
+
+// --- Claude's last steps, when it keeps no task list (design/compact "Danh sách hàng") -------
+// The tool calls the hooks report, in the compact's words (toolDoing). Only the last three are
+// kept: that is all the compact shows.
+export const MAX_STEPS = 3;
+// the task tools change the list; they are no step of their own
+const TASK_TOOLS = new Set(['TaskCreate', 'TaskUpdate', 'TaskGet', 'TaskList']);
+
+/**
+ * The session's steps after a PreToolUse: the call added, running. The same words as the step
+ * just before (Claude reads one file twice, runs the tests again) replace it: one row, newest.
+ *
+ * @param {object[]} steps  [{id, tool, text, safeText, done}], oldest first
+ * @param {object} ev  a PreToolUse
+ * @param {?string} [cwd]
+ * @returns {object[]}
+ */
+export function addStep(steps, ev, cwd = null) {
+    const name = typeof ev?.tool_name === 'string' ? ev.tool_name : '';
+    // nor is Desktop's plan (update_plan, wrap_up below): it is the task list too
+    if (TASK_TOOLS.has(name) || PLAN_TOOL.test(name) || WRAP_TOOL.test(name))
+        return steps;
+    const d = toolDoing(ev?.tool_name, ev?.tool_input, cwd);
+    const s = {id: str(ev?.tool_use_id), tool: str(ev?.tool_name), text: d.title, safeText: d.safeTitle, done: false};
+    const kept = steps.at(-1)?.text === s.text ? steps.slice(0, -1) : steps;
+    return [...kept, s].slice(-MAX_STEPS);
+}
+
+/**
+ * The session's steps after the call ended (PostToolUse, PostToolUseFailure): that step done
+ * — the one with its tool_use_id, or without one the newest running call of that tool.
+ *
+ * @param {object[]} steps
+ * @param {object} ev
+ * @returns {object[]}
+ */
+export function endStep(steps, ev) {
+    const id = str(ev?.tool_use_id);
+    let i = id ? steps.findIndex(s => s.id === id) : -1;
+    for (let j = steps.length - 1; i < 0 && j >= 0; j--) {
+        if (!steps[j].done && steps[j].tool === str(ev?.tool_name))
+            i = j;
+    }
+    if (i < 0 || steps[i].done)
+        return steps;
+    return steps.map((s, j) => j === i ? {...s, done: true} : s);
+}
+
+/**
+ * @param {object[]} steps
+ * @returns {object[]}  every step done (the turn is over: nothing runs any more)
+ */
+const allDone = steps => steps.some(s => !s.done) ? steps.map(s => ({...s, done: true})) : steps;
+
+/**
+ * The compact's rows without a task list: the last three steps, newest last, ▶ running,
+ * ✓ done (design/compact, the task rows' icons).
+ *
+ * @param {object[]} steps
+ * @returns {object[]}  rows {icon, text, dim}
+ */
+export function stepRows(steps) {
+    return steps.slice(-MAX_STEPS).map(s => ({
+        icon: s.done ? TASK_ICON.completed : TASK_ICON.in_progress, text: s.text, dim: false,
+    }));
 }
 
 // --- Claude's task list (design/compact "Hàng của Claude Code", 2026-11-11) ----------------
@@ -666,24 +733,28 @@ export function step(rec, ev, now, source = 'claude') {
         const tasks = r.tasks ?? [];
         r = working(set('think', 'Thinking'), now);
         const cleared = tasks.length && tasks.every(t => t.status === 'completed') ? [] : tasks;
-        return out({...r, subagents: 0, stopRequested: false, tasks: cleared});
+        // the last turn's steps go with it, as its ticks do: the rows are this turn's
+        return out({...r, subagents: 0, stopRequested: false, tasks: cleared, steps: []});
     }
     case 'PreToolUse': {
         const d = toolDoing(ev.tool_name, ev.tool_input, r.cwd);
         r = working(r, now);
         if ((sub && r.subagents > 0) || r.stopRequested)
             return out({...r, pose: 'busy'});    // it works with subagents (§2), or is stopping
-        return out({...r, pose: 'busy', title: d.title, safeTitle: d.safeTitle});
+        const steps = addStep(r.steps ?? [], ev, r.cwd);
+        return out({...r, pose: 'busy', title: d.title, safeTitle: d.safeTitle, steps});
     }
     case 'PostToolUse': {
         const tasks = taskStep(r.tasks ?? [], ev, now);
         if (tasks)
             r = {...r, tasks};
+        r = {...r, steps: endStep(r.steps ?? [], ev)};
         if (!r.shown || r.stopped)
             return tasks ? out(r, {show: false}) : none();
         return out({...r, pose: 'busy'});
     }
     case 'PostToolUseFailure':
+        r = {...r, steps: endStep(r.steps ?? [], ev)};
         if (!r.shown || r.stopped)
             return none();
         return out(set('error', 'Something failed'));
@@ -734,7 +805,7 @@ export function step(rec, ev, now, source = 'claude') {
         const took = r.startedAt ? now - r.startedAt : 0;
         const pose = took > PARTY_AFTER ? 'party' : 'done';
         const title = took >= 60000 ? `Done in ${durationText(took)}` : 'Done';
-        return out({...set(pose, title), subagents: 0, stopped: true, finishedAt: now},
+        return out({...set(pose, title), subagents: 0, stopped: true, finishedAt: now, steps: allDone(r.steps ?? [])},
             {alert: true});
     }
     case 'StopFailure': {
@@ -742,7 +813,7 @@ export function step(rec, ev, now, source = 'claude') {
             return none();
         return out({
             ...set('error', 'Stopped with an error'), subagents: 0,
-            stopped: true, finishedAt: now,
+            stopped: true, finishedAt: now, steps: allDone(r.steps ?? []),
         }, {alert: true});
     }
     case 'SessionEnd':
@@ -805,15 +876,15 @@ export function agent(rec) {
             ? [{id: STOP, icon: 'media-playback-stop-symbolic'}] : [],
         minimalAction: false,
         // hover: which session (its name, or the label), then what it is doing (§2); with a
-        // task list, its progress and the tasks as rows (design/compact) — not while the
-        // screen is shared: a task names files and commands as a command does (§7)
+        // task list, its progress and the tasks as rows, else its last steps (design/compact)
+        // — not while the screen is shared: a task names files and commands as a command does (§7)
         compact: {
             leading: {mascot: pose},
             // with a task list the project is in the subtitle: the session's name, or the
             // agent's product (design/compact: "Claude Code" over "buoy · 2 / 3")
             text: tasks.length ? nameOf(rec) ?? PRODUCTS[rec.source] ?? label : hoverName(rec),
             subtitle: tasks.length ? `${rec.project ?? label} · ${taskProgress(tasks)}` : doing,
-            rows: tasks.length && !shared ? taskRows(tasks) : [],
+            rows: rowsOf(tasks, rec.steps, shared),
             transport: true,      // its buttons: ■
         },
         // the kind's 35 (docs/PRIORITY.md); a question waits as a prompt, at the ask's 90 —
@@ -828,6 +899,20 @@ export function agent(rec) {
         pressFirst: true,
         attributes: {project: rec.project ?? '', name: nameOf(rec) ?? '', title: shared ? rec.safeTitle : rec.title, pose},
     };
+}
+
+/**
+ * @param {object[]} tasks
+ * @param {*} steps
+ * @param {boolean} shared
+ * @returns {object[]}  the compact's rows: the task list, else the last steps; none shared
+ */
+function rowsOf(tasks, steps, shared) {
+    if (shared)
+        return [];
+    if (tasks.length)
+        return taskRows(tasks);
+    return Array.isArray(steps) ? stepRows(steps) : [];
 }
 
 /**

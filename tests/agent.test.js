@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
     BACK, ENTER, NEXT, OTHER, OTHER_HINT, OTHER_TEXT, PICK, SKIP, SUBMIT, answersOf, newAnswers, pickAnswer, questionLook, questionReply, questionsOf,
-    STOP, STOP_REPLY, DISMISS, canDismiss, agent, newRecord, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, planStep, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    STOP, STOP_REPLY, DISMISS, canDismiss, addStep, endStep, stepRows, agent, newRecord, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, planStep, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, STOP_EVENT, STOP_HOOK_TIMEOUT, commandFor, hooksNote, install, installed, isOurs, uninstall,
@@ -522,8 +522,10 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq('detail' in taskRows(taskStep(timed, update('1', 'pending'), 14000))[0], false, 'not done: no time');
     const s = agent({...rec, shared: true});
     eq([s.compact.subtitle, s.compact.rows], ['buoy · 1 / 2', []], 'sharing the screen: the progress, no task names (§7)');
-    eq(agent(last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Read', tool_input: {file_path: 'a.js'}})]]).rec).compact.rows, [],
-        'no task list: no rows, what it does in the subtitle');
+    const readA = last([[ev('UserPromptSubmit')], [ev('PreToolUse', {tool_name: 'Read', tool_input: {file_path: 'a.js'}})]]).rec;
+    eq(agent({...readA, tasks: rec.tasks}).compact.rows.map(r => r.text), ['Edit shapes.js', 'Run pnpm test'],
+        'a task list and steps: the task list wins');
+    eq(agent(readA).compact.subtitle, 'Reading a.js', 'no task list: what it does in the subtitle still');
 
     // ~/.claude/tasks/<session>/<id>.json, for a session met in its middle
     eq(tasksFromFiles([
@@ -630,6 +632,79 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
         },
     }, 'Submit: allow with updatedInput.answers (hooks.md)');
     eq([questionReply(asked, {}), questionReply(asked, null)], ['', ''], 'nothing answered: no decision');
+}
+
+// --- no task list: the last steps as the compact's rows (design/compact "Danh sách hàng") ------
+{
+    const PLAY = 'media-playback-start-symbolic', DONE = 'object-select-symbolic';
+    const pre = (tool, input, id) => [ev('PreToolUse', {tool_name: tool, tool_input: input, tool_use_id: id})];
+    const post = (tool, id, name = 'PostToolUse') => [ev(name, {tool_name: tool, tool_input: {}, tool_use_id: id})];
+    const bashCall = (command, id) => pre('Bash', {command}, id);
+    const rowsAfter = list => agent(last([[ev('UserPromptSubmit')], ...list]).rec).compact.rows;
+    const MARK = {[PLAY]: '▶', [DONE]: '✓'};
+    const view = rows => rows.map(r => [MARK[r.icon] ?? r.icon, r.text]);
+
+    eq(rowsAfter([]), [], 'no steps: no rows');
+    eq(last([[ev('UserPromptSubmit')]]).rec.steps, [], 'a new record keeps an empty list');
+    eq(view(rowsAfter([bashCall('pnpm test', 't1')])), [['▶', 'Running pnpm test']], 'one step, running: ▶');
+    eq(rowsAfter([bashCall('pnpm test', 't1')]), [{icon: PLAY, text: 'Running pnpm test', dim: false}],
+        'a step row as a task row: icon, text, not dimmed (Gravity UI play-fill)');
+    eq(view(rowsAfter([bashCall('pnpm test', 't1'), post('Bash', 't1')])), [['✓', 'Running pnpm test']], 'its PostToolUse: ✓');
+    eq(view(rowsAfter([bashCall('pnpm test', 't1'), post('Bash', 't1', 'PostToolUseFailure')])), [['✓', 'Running pnpm test']],
+        'a failed call is over too: ✓');
+
+    const three = [
+        pre('Read', {file_path: `${CWD}/docs/SPEC.md`}, 'r1'), post('Read', 'r1'),
+        pre('Edit', {file_path: `${CWD}/src/buoy@murilegus/lib/kit/pill.js`}, 'e1'), post('Edit', 'e1'),
+        bashCall('pnpm test', 'b1'),
+    ];
+    eq(view(rowsAfter(three)), [['✓', 'Reading docs/SPEC.md'], ['✓', 'Editing src/…/pill.js'], ['▶', 'Running pnpm test']],
+        'three steps: all, newest last');
+    const five = [pre('Grep', {pattern: 'rows'}, 'g1'), post('Grep', 'g1'), pre('Glob', {pattern: '*.js'}, 'g2'), post('Glob', 'g2'), ...three];
+    const fiveRec = last([[ev('UserPromptSubmit')], ...five]).rec;
+    eq(view(agent(fiveRec).compact.rows), view(rowsAfter(three)), 'more than three: the last three');
+    eq(fiveRec.steps.length, 3, 'only three are kept in the record');
+    eq(stepRows([...fiveRec.steps, {text: 'x', done: true}, {text: 'y', done: false}]).map(r => r.text), ['Running pnpm test', 'x', 'y'],
+        'stepRows: never more than three');
+
+    // a repeated tool: the same words in a row are one step, the newest; other words are steps
+    eq(view(rowsAfter([bashCall('pnpm test', 'b1'), post('Bash', 'b1'), bashCall('pnpm test', 'b2')])), [['▶', 'Running pnpm test']],
+        'the same command again: one row, running');
+    eq(view(rowsAfter([pre('Read', {file_path: 'a.js'}, 'r1'), post('Read', 'r1'), pre('Read', {file_path: 'b.js'}, 'r2')])),
+        [['✓', 'Reading a.js'], ['▶', 'Reading b.js']], 'one tool, two files: two steps');
+    eq(view(rowsAfter([bashCall('pnpm test', 'b1'), post('Bash', 'b1'), pre('Read', {file_path: 'a.js'}, 'r1'), post('Read', 'r1'), bashCall('pnpm test', 'b2')])),
+        [['✓', 'Running pnpm test'], ['✓', 'Reading a.js'], ['▶', 'Running pnpm test']], 'the same command later: a step again');
+
+    // which call ended: by tool_use_id; without one, the newest running call of that tool
+    eq(view(rowsAfter([pre('Read', {file_path: 'a.js'}, 'r1'), pre('Read', {file_path: 'b.js'}, 'r2'), post('Read', 'r1')])),
+        [['✓', 'Reading a.js'], ['▶', 'Reading b.js']], 'two calls at once: the one whose id ended');
+    eq(view(rowsAfter([pre('Read', {file_path: 'a.js'}), pre('Bash', {command: 'ls'}), post('Read')])),
+        [['✓', 'Reading a.js'], ['▶', 'Running ls']], 'no ids: the running call of that tool');
+    eq(endStep([{id: 'x', tool: 'Read', text: 'r', done: true}], {tool_name: 'Read', tool_use_id: 'x'}),
+        [{id: 'x', tool: 'Read', text: 'r', done: true}], 'a call ended twice: unchanged');
+    eq(endStep([], {tool_name: 'Read'}), [], 'nothing running: unchanged');
+
+    // what is no step: the task tools, a subagent's calls, calls while stopping
+    eq(addStep([], ev('PreToolUse', {tool_name: 'TaskCreate', tool_input: {subject: 'x'}})), [], 'a task tool is no step');
+    eq([addStep([], ev('PreToolUse', {tool_name: 'mcp__ccd_turn__update_plan', tool_input: {advance: true}})),
+        addStep([], ev('PreToolUse', {tool_name: 'mcp__ccd_turn__wrap_up', tool_input: {recap: 'x'}}))], [[], []],
+    'Desktop\'s plan tools are no step either');
+    const withSub = last([[ev('UserPromptSubmit')], [ev('SubagentStart', {agent_id: 'a1'})],
+        [ev('PreToolUse', {tool_name: 'Read', tool_input: {file_path: 'a.js'}, agent_id: 'a1'})]]).rec;
+    eq(withSub.steps, [], 'a subagent\'s calls are not the session\'s steps');
+    eq(step(stopping(last([[ev('UserPromptSubmit')], bashCall('ls', 'b1')]).rec), ev('PreToolUse', {tool_name: 'Read', tool_input: {file_path: 'a.js'}}), T0 + 5)
+        .rec.steps.map(s => s.text), ['Running ls'], 'stopping: no new step');
+
+    // the turn over: nothing runs any more; the steps stay as the session's history
+    const ended = last([[ev('UserPromptSubmit')], ...three, [ev('Stop'), 5000]]).rec;
+    eq(view(agent(ended).compact.rows).map(r => r[0]), ['✓', '✓', '✓'], 'Stop: every step done, still shown');
+    eq(view(agent(interrupted(fiveRec, T0 + 9)).compact.rows).at(-1)[0], '✓', '■ answered: done');
+    eq(agent(step(ended, ev('UserPromptSubmit'), T0 + 9000).rec).compact.rows, [], 'a new prompt: the last turn\'s steps go, as its ticks do');
+    eq(step(fiveRec, ev('StopFailure'), T0 + 9).rec.steps.every(s => s.done), true, 'StopFailure: done');
+
+    // shared screen: no rows, as the task list (a step names files and commands, §7)
+    eq(agent({...fiveRec, shared: true}).compact.rows, [], 'sharing the screen: no step rows');
+    eq(agent({...fiveRec, steps: undefined}).compact.rows, [], 'an old record without steps: no rows');
 }
 
 // --- ■: the turn stops at Claude's next tool call, as Desktop's Stop -----------------------
