@@ -5,6 +5,7 @@ import St from 'gi://St';
 
 import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
 import {EmptyState, iconProps, makeElement} from '../../kit/ui/present/elements.js';
+import {markShared} from '../../kit/ui/present/flight.js';
 import {eqGlyph, marquee, marqueeTurns} from '../../kit/ui/present/motion.js';
 import {tick} from '../../kit/ui/present/parts.js';
 import {element, livePosition, mediaTimes} from '../../kit/model/presentation.js';
@@ -281,7 +282,8 @@ export class MediaTab {
         const at = a.attributes ?? {};
         const turns = marqueeTurns();
         const head = new St.BoxLayout({style_class: 'buoy-media-head', x_expand: true, height: 32});
-        const title = marquee(at.title || a.text || '', 'buoy-media-title', turns);
+        // the cover and the title are the pill's: they fly here from it (design/motion)
+        const title = markShared(marquee(at.title || a.text || '', 'buoy-media-title', turns), 'title', a);
         title.x_expand = true;
         title.y_align = Clutter.ActorAlign.CENTER;
         head.add_child(title);
@@ -298,7 +300,7 @@ export class MediaTab {
     // the cover, the card less 16, r 8; without one, a fill-2 tile with the note
     _art(a, side) {
         const uri = a.attributes?.art;
-        const bin = new St.Bin({width: side, height: side, y_align: Clutter.ActorAlign.START});
+        const bin = markShared(new St.Bin({width: side, height: side, y_align: Clutter.ActorAlign.START}), 'leading', a);
         if (uri) {
             bin.set_child(makeElement(element({art: uri, icon: NOTE}), 'expanded', a, {art: side, artRadius: ART_RADIUS, icon: 32}));
             return bin;

@@ -7,6 +7,7 @@ import {compactMetrics} from '../../model/shapes.js';
 import {addAll, label, liveBar, meter, tick, blinkingCaret} from './parts.js';
 import {dimStale, marquee} from './motion.js';
 import {actionButton, iconProps, makeElement} from './elements.js';
+import {markShared} from './flight.js';
 
 // The compact tier, the hover: the compact, the card, the amber light's. Split out of
 // present.js (2026-11-12); laid out as design/compact (2026-11-12, M4 "Compact layout").
@@ -54,13 +55,14 @@ function buttons(list, activity, m) {
     return box;
 }
 
-function lines(title, subtitle, titleClass = 'buoy-compact-title') {
+// `activity`: its title is a shared part (flight.js)
+function lines(title, subtitle, titleClass = 'buoy-compact-title', activity = null) {
     const box = new St.BoxLayout({
         style_class: 'buoy-compact-lines', orientation: Clutter.Orientation.VERTICAL,
         x_expand: true, y_align: Clutter.ActorAlign.CENTER,
     });
     addAll(box, [
-        title ? marquee(title, `buoy-text ${titleClass}`) : null,
+        title ? markShared(marquee(title, `buoy-text ${titleClass}`), 'title', activity) : null,
         subtitle ? label(subtitle, 'buoy-compact-subtitle') : null,
     ]);
     return box.get_n_children() ? box : null;
@@ -100,8 +102,8 @@ function compactBox(p, activity, maxWidth, m) {
         box.add_child(mediaRow(p, activity, btns, m));
     } else {
         box.add_child(head([
-            cell(p.leading, activity, m.lead),
-            lines(p.text, p.subtitle),
+            markShared(cell(p.leading, activity, m.lead), 'leading', activity),
+            lines(p.text, p.subtitle, undefined, activity),
             makeElement(p.trailing, 'compact'),
             btns,
         ], m));
@@ -136,13 +138,13 @@ function underHead(p, m) {
 function mediaRow(p, activity, btns, m) {
     const row = new St.BoxLayout({style_class: 'buoy-compact-media', x_expand: true});
     row.set_style(`spacing: ${px(m.gap)}; padding: ${px(m.artInset)} ${px(m.side)} ${px(m.artInset)} ${px(m.artInset)};`);
-    const art = makeElement(p.leading, 'compact', activity, {art: m.art, artRadius: m.artRadius});
+    const art = markShared(makeElement(p.leading, 'compact', activity, {art: m.art, artRadius: m.artRadius}), 'leading', activity);
     const column = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
     // the head's lines and buttons on the head's middle (y 28), the bar at 60, its times
     // under it: 40 + 12 + 4 + 16 = 72, the art's height
     const top = new St.BoxLayout({x_expand: true, height: m.lead});
     top.set_style(`spacing: ${px(m.gap)};`);
-    addAll(top, [lines(p.text, p.subtitle), btns]);
+    addAll(top, [lines(p.text, p.subtitle, undefined, activity), btns]);
     const live = liveBar(p.live);
     live.x_expand = true;
     live.set_style(`margin-top: ${px(m.gap)};`);
@@ -236,13 +238,13 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
     addAll(text, [
         // an ask's question runs as a long song title does (2026-11-13, Ethan): it is the
         // whole message; a notification's sender stays still, cut with …
-        c.title ? titleOf(c.title, activity?.kind === 'ask') : null,
+        c.title ? markShared(titleOf(c.title, activity?.kind === 'ask'), 'title', activity) : null,
         sub.get_n_children() ? sub : null,
     ]);
     // a notification's alert shows its buttons only under the pointer (104 → 136 / 152)
     const hasActions = p.actions.length > 0 && (!c.actionsOnHover || hovered);
     box.add_child(head([
-        avatar(c, activity, m),
+        markShared(avatar(c, activity, m), 'leading', activity),
         text.get_n_children() ? text : null,
         hasActions && actionsTop ? actionRow(p.actions, activity, m, {top: true}) : null,
         c.close ? closeButton(c.close, activity, m) : null,

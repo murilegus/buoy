@@ -35,6 +35,11 @@ và cách từng chuyển diễn ra; số dùng chung ở [Bảng số](../token
   nhỏ; mép nền vẫn cắt mọi thứ nên lỗi đó không quay lại. Chỉ dời bằng `translation` và phóng bằng
   `scale` (không xếp lại); leading vẽ sẵn ở cỡ đích rồi thu nhỏ, nên không mờ ở cỡ cuối. **Đề xuất**
   (Ethan, 2026-11-12: "cần thiết thì đổi lại")
+  Cũng vậy khi bấm một ô hay thẻ chính ở Home mở tab của nó: leading và tên của ô bay tới chỗ
+  của chúng trong tab (ô nhạc → ảnh và tên ở tab Media), bằng `move`; về Home thì ngược lại. Áp
+  dụng chung: builder của kit tự gắn nhãn, module tự vẽ (thẻ nhạc ở Home, tab Media) thêm một
+  dòng `markShared`. Làm trong M4 (2026-11-13). **Đề xuất** (Ethan, 2026-11-13: "các widget chuyển
+  sang đúng tab của nó với animation")
 
 ## Lò xo và độ mờ
 

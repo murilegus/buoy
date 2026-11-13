@@ -4,6 +4,7 @@ import St from 'gi://St';
 
 import {progressBar, tick} from '../../kit/ui/present/parts.js';
 import {iconProps, makeElement} from '../../kit/ui/present/elements.js';
+import {markShared} from '../../kit/ui/present/flight.js';
 import {livePosition, mediaTimes, element} from '../../kit/model/presentation.js';
 
 /** The cover: the card's height less 8 above and below, at most 160 (design/home). */
@@ -57,7 +58,8 @@ export class MediaCard {
         const art = makeElement(
             element({art: at.art || null, icon: 'audio-x-generic-symbolic'}) ?? element('audio-x-generic-symbolic'),
             'expanded', a, {art: size, artRadius: ART_RADIUS, icon: Math.round(size / 3)});
-        const cover = new St.Bin({style_class: 'buoy-home-media-cover', width: size, height: size, child: art});
+        // the cover and the title are the pill's: they fly here from it (design/motion)
+        const cover = markShared(new St.Bin({style_class: 'buoy-home-media-cover', width: size, height: size, child: art}), 'leading', a);
         this._box.add_child(cover);
 
         const col = new St.BoxLayout({
@@ -66,7 +68,7 @@ export class MediaCard {
         });
         const head = new St.BoxLayout({x_expand: true});
         const lines = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
-        lines.add_child(ellipsized(at.title || a.text || '', tall ? 'buoy-home-media-title-tall' : 'buoy-home-title'));
+        lines.add_child(markShared(ellipsized(at.title || a.text || '', tall ? 'buoy-home-media-title-tall' : 'buoy-home-title'), 'title', a));
         const sub = [at.artist, at.app].filter(Boolean).join(' · ');
         if (sub)
             lines.add_child(ellipsized(sub, 'buoy-home-subtitle'));
