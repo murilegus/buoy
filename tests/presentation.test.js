@@ -1,7 +1,7 @@
 // Run: gjs -m tests/presentation.test.js   (pure: presentation data → render plan)
 import {
     element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, planMissed, clockTime,
-    MAX_ACTIONS, MAX_ROWS, nextTurn, livePosition, mediaTimes, sinceText, untilText, agoText,
+    MAX_ACTIONS, MAX_ROWS, nextTurn, livePosition, mediaTimes, sinceText, untilText, agoText, agoWords,
 } from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
@@ -343,6 +343,8 @@ eq(untilText(1000, 5000), '0:00', 'never negative');
 eq(element({since: 5000}), {type: 'since', at: 5000}, 'a live elapsed time element (CODING-AGENTS.md §2)');
 eq([agoText(0, 0), agoText(0, 59_999), agoText(0, 60_000), agoText(0, 3_900_000), agoText(9000, 1000)],
     ['now', 'now', '1 min', '1 h 5 min', 'now'], 'agoText: now for the first minute, then as since');
+eq([agoWords(0, 30_000), agoWords(0, 12 * 60_000), agoWords(0, 3_900_000), agoWords(9000, 1000)],
+    ['now', '12 min ago', '1 h 5 min ago', 'now'], 'agoWords: "now", else "… ago"; a time ahead reads now');
 eq([sinceText(0, 59_999), sinceText(0, 60_000), sinceText(0, 4 * 60_000 + 59_000), sinceText(0, 3_900_000),
     sinceText(0, 7_200_000), sinceText(9000, 1000)],
 ['<1 min', '1 min', '4 min', '1 h 5 min', '2 h', '<1 min'], 'since: whole minutes, hours past 60, never negative');

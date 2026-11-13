@@ -9,7 +9,7 @@ import {EmptyState, iconProps, makeElement} from './present/elements.js';
 import {buildCompact} from './present/compact.js';
 import {buildExpanded} from './present/expanded.js';
 import {FILL, label as textLabel, tick} from './present/parts.js';
-import {clockTime, element, livePosition, mediaTimes, planMinimal} from '../model/presentation.js';
+import {agoWords, clockTime, element, livePosition, mediaTimes, planMinimal} from '../model/presentation.js';
 import {planHome, tileOf, tileWidths, greetingLine, TILE_H, CARD_GAP, DETAIL_FROM} from '../model/home.js';
 import {daypartAt} from '../model/daypart.js';
 import {compactMetrics} from '../model/shapes.js';
@@ -876,7 +876,18 @@ export class Home {
             : iconOf(t.icon, t.iconSize ?? 16);
         if (lead)
             cell.set_child(lead);
-        col.add_child(cell);
+        // `since`: how old the tile's data is, in the top right corner, beside the icon
+        // (the weather's update time, design/home 2026-11-13); it moves on once a minute
+        // while shown
+        if (Number.isFinite(t.since)) {
+            const top = new St.BoxLayout({x_expand: true});
+            top.add_child(cell);
+            top.add_child(new St.Widget({x_expand: true}));
+            top.add_child(sinceLabel(t.since));
+            col.add_child(top);
+        } else {
+            col.add_child(cell);
+        }
         col.add_child(new St.Widget({y_expand: true}));
         /** @type {?St.Widget} */
         let value = t.value ? textLabel(t.value, '') : null;
@@ -1042,4 +1053,21 @@ export class Home {
     destroy() {
         this.actor.destroy();
     }
+}
+
+/**
+ * "12 min ago" for a tile's corner (design/home, 2026-11-13): small and subtle, moved on once a
+ * minute while shown (parts.js tick; nothing while Home is closed). Also for a module's own
+ * wide tile (the weather's).
+ *
+ * @param {number} at  ms since the epoch
+ * @returns {St.Label}
+ */
+export function sinceLabel(at) {
+    const l = textLabel('', 'buoy-home-tile-since');
+    l.y_align = Clutter.ActorAlign.START;
+    tick(l, () => {
+        l.text = agoWords(at, Date.now());
+    }, () => true, 60);
+    return l;
 }

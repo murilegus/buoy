@@ -130,6 +130,7 @@ export class WeatherFeed {
         const last = this._client?.info?.is_valid?.() ? this._client._lastUpdate?.to_unix?.() : 0;
         this._fetched = last > 0 ? last * 1000 : 0;
         this.state = null;
+        this.at = null;                   // the shown reading's own time (ms), for Home's tile
         this._client?.connectObject('changed', () => this._read(), this);
         // the user's units (GNOME Weather's keys): read again when they change
         this._units = settingsOf('org.gnome.GWeather4');
@@ -203,7 +204,7 @@ export class WeatherFeed {
     _read(notify = true) {
         this._pick();
         const src = this._src();
-        let state = null;
+        let state = null, at = null;
         if (src?.hasLocation) {
             const info = src.info;
             if (!src.loading && info.is_valid()) {
@@ -224,9 +225,11 @@ export class WeatherFeed {
             });
             lastGood = kept.kept;
             state = kept.state;
+            at = state ? kept.kept?.at ?? null : null;
         }
-        const same = JSON.stringify(state) === JSON.stringify(this.state);
+        const same = JSON.stringify(state) === JSON.stringify(this.state) && at === this.at;
         this.state = state;
+        this.at = at;
         if (notify && !same)
             this._onChanged();
     }
@@ -487,6 +490,7 @@ export class WeatherFeed {
         this._client = null;
         this._onChanged = () => {};
         this.state = null;
+        this.at = null;
     }
 }
 

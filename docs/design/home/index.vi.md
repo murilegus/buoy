@@ -18,6 +18,12 @@ lại mỗi lần Home mở và mỗi khi stack đổi, nên Home không bao gi�
   hẹn giờ…). Bấm thẻ hoặc ô: mở tab của nó. **Chốt** (Ethan, 2026-11-11)
 - Thời tiết và sắp tới có **ô rộng** (2 phần): thời tiết dùng icon màu của Buoy ở 48, sắp tới hiện 2
   sự kiện với màu của lịch. **Chốt** (Ethan, 2026-11-11)
+- Ô thời tiết ghi bản thời tiết cũ bao lâu ("now", "12 min ago"), chữ nhỏ `fg-subtle` ở **góc trên
+  phải** đang trống, cả ô rộng (cạnh nhiệt độ) lẫn ô hẹp (cạnh icon); các dòng dưới giữ nguyên bề
+  ngang. Đổi mỗi phút khi Home đang mở. **Chốt** (Ethan, 2026-11-13: góc dưới phải như "1
+  notification" làm ô trống mà chữ dồn sát; khuôn chung cho mọi ô thì càng trống)
+
+![Giờ cập nhật trên ô thời tiết, phương án A (chốt) và B](images/weather-updated.vi.png)
 - Hẹn giờ có một ô nhìn nhanh để bắt đầu, cả khi không chạy; thêm khi làm mục Timer. **Chốt**
   (Ethan, 2026-11-11)
 - Activity chưa có thẻ chính riêng dùng compact của nó (phần đầu 56 và thân) đặt trong thẻ, nên chỉ

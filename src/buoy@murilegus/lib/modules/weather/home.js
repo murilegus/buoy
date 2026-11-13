@@ -5,6 +5,7 @@ import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import {fallbackIcon} from '../../kit/ui/present/elements.js';
+import {sinceLabel} from '../../kit/ui/home.js';
 
 import {WeatherFeed} from './feed.js';
 import {card, keys} from './idle.js';
@@ -40,6 +41,7 @@ export class WeatherGlance {
         this._changed = changed;
         this._app = Shell.AppSystem.get_default().lookup_app(WEATHER_APP);
         this._card = null;
+        this._at = null;          // the reading's own time: the tile's corner, "12 min ago"
         this._feed = new WeatherFeed(() => this._read());
         const opts = {};
         for (const key of keys)
@@ -61,6 +63,7 @@ export class WeatherGlance {
         return {
             icon: this._icon(), iconSize: TILE_ICON, value: c.temp, caption: c.condition ?? c.place ?? '',
             detail: [c.place, c.detail].filter(Boolean).join(' · ') || null,
+            since: this._at ?? undefined,
         };
     }
 
@@ -89,7 +92,16 @@ export class WeatherGlance {
             gicon: this._icon(), fallback_gicon: fallbackIcon(OVERCAST),
         }));
         const text = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_align: Clutter.ActorAlign.CENTER});
-        text.add_child(ellipsized(c.temp, 'buoy-home-tile-value'));
+        // the temperature, and how old the reading is at its right (design/home, 2026-11-13,
+        // Ethan: in the top right corner, left empty by the tile; the lines below keep the
+        // whole width)
+        const first = new St.BoxLayout({x_expand: true});
+        const temp = ellipsized(c.temp, 'buoy-home-tile-value');
+        temp.x_expand = true;
+        first.add_child(temp);
+        if (Number.isFinite(this._at))
+            first.add_child(sinceLabel(this._at));
+        text.add_child(first);
         if (c.condition)
             text.add_child(ellipsized(c.condition, 'buoy-home-title'));
         const sub = [c.place, c.detail].filter(Boolean).join(' · ');
@@ -107,9 +119,10 @@ export class WeatherGlance {
     }
 
     _read(notify = true) {
-        const before = JSON.stringify(this._card);
+        const before = JSON.stringify([this._card, this._at]);
         this._card = card(this._feed?.state ?? null);
-        if (notify && before !== JSON.stringify(this._card))
+        this._at = this._card ? this._feed?.at ?? null : null;
+        if (notify && before !== JSON.stringify([this._card, this._at]))
             this._changed?.();
     }
 
