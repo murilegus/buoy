@@ -54,6 +54,7 @@ src/buoy@murilegus/
     │   │   ├── settings.js     prefs: which page each schema key goes to, samples (2026-11-03)
     │   │   ├── cluster.js      what the left cluster shows (app / workspace / hover) (2026-11-04)
     │   │   ├── contrast.js     wallpaper placement + luminance → dark or light text per side (2026-11-04)
+    │   │   ├── cover.js        a cover's main colour, lifted to read on black: the equaliser's (2026-11-13)
     │   │   ├── rounded.js      which windows get round top corners, where the arcs fall, the shader (2026-11-04)
     │   │   ├── daypart.js      hour → dawn…night from `daypart-starts` (2026-11-03)
     │   │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()` (2026-11-08)
@@ -64,7 +65,7 @@ src/buoy@murilegus/
     │   │   ├── registry.js     app-id normalisation table; adapter resolution; app profiles
     │   │   ├── source.js       the base class of a module's source.js
     │   │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
-    │   │   ├── files.js        small files read without blocking the Shell: readText, listInfos/listNames, ppidOf (EGO review, 2026-11-09)
+    │   │   ├── files.js        small files read without blocking the Shell: readText, listInfos/listNames, ppidOf (EGO review, 2026-11-09); readPixels, a picture decoded small (2026-11-13)
     │   │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
     │   │   ├── sharing.js      the screen shared or recorded, from Shell's indicators (agent, notification; 2026-11-07)
     │   │   ├── presence.js     you at the screen: input in the last second, away (session idle, locked), DND (alerts; 2026-11-12)

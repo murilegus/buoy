@@ -183,6 +183,17 @@ export function element(e, {leading = false} = {}) {
         const icons = e.stack.map(icon).filter(x => x?.type === 'icon').slice(0, 3);
         return icons.length ? {type: 'stack', icons} : null;
     }
+    // a named glyph in a colour of the activity's own: the equaliser in its cover's main
+    // colour (design/pill "Equaliser", 2026-11-13). '#rrggbb' only, anything else is dropped
+    // and the glyph is `fg`. A cover in a light's amber or red keeps it: a light is a dot at
+    // the left end, the equaliser six bars on the right (Ethan, 2026-11-13)
+    if ('glyph' in e) {
+        const g = icon(e.glyph);
+        if (g?.type !== 'glyph')
+            return null;
+        const c = typeof e.color === 'string' && /^#[0-9a-f]{6}$/i.test(e.color) ? e.color.toLowerCase() : null;
+        return c ? {...g, color: c} : g;
+    }
     if ('mascot' in e) {
         const pose = leading ? poseName(e.mascot) : null;
         if (pose) {

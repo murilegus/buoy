@@ -55,8 +55,10 @@ lại mỗi lần Home mở và mỗi khi stack đổi, nên Home không bao gi�
   **Chốt** (Ethan, 2026-11-11)
 - Thẻ và ô: nền `fill-1`, bo **16** (= 28 − 12, đồng tâm). **Chốt** (Ethan, 2026-11-11)
 - Thẻ chính hai dạng: **thấp** dưới 160 (nút góc phải trên, thanh tiến trình ở chân), **cao** từ 160
-  (tên 1.27em 700, nút giữa dưới thanh). Ảnh bìa: cạnh = cao thẻ − 16, tối đa **160**, cách mép 8,
-  bo 8. **Chốt** (Ethan, 2026-11-11)
+  (giống dạng thấp, chỉ ảnh bìa và tên 1.27em 700 lớn hơn). Ảnh bìa: cạnh = cao thẻ − 16, tối đa
+  **184** (cả chiều cao thẻ 200 ở 3440; chỉ thẻ không có hàng ô mới cao hơn: ảnh ở giữa, cột chữ theo
+  mép trên và dưới của ảnh), cách mép 8, bo 8. **Chốt** (Ethan, 2026-11-11; 184 và dạng cao giống
+  dạng thấp: 2026-11-13)
 - Ô: ô leading **20** ở 12 (icon 16 ở giữa; Bu 20 lấp đầy; icon màu 24 lố 2 mỗi bên), số 1.5em 600,
   chú thích 0.85em `fg-muted`. Ô rộng từ **200** thêm cột chi tiết bên phải (0.85em `fg-subtle`).
   **Chốt** (Ethan, 2026-11-11)
@@ -103,6 +105,24 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
   **Chốt** (Ethan, 2026-11-12)
 - Danh sách +K ("Đang diễn ra"): mọi activity theo thứ tự stack; bấm hàng mở tab của nó. Dài hơn 5
   hàng thì cuộn, chỉ ở danh sách này. **Chốt** (Ethan, 2026-11-12)
+
+## Thẻ nhạc và ô nhạc
+
+![Thẻ nhạc lúc nghỉ, rê chuột, đang dừng; nhạc là một ô với equaliser ở góc](images/music.vi.png)
+
+- **Thẻ nhạc (thẻ chính): bỏ ⏮ ⏭, chỉ còn ⏸ / ▶ làm như ô ⏸ của compact**: lúc nghỉ là equaliser
+  (chạy, hay thấp khi dừng), rê chuột hay focus bàn phím thì nút kem ⏸ / ▶; ⏮ ⏭ ở tab Media. Bấm thẻ
+  mở tab Media: equaliser đi tới ô ↗ của tab, ảnh bìa và tên tới chỗ của chúng (Chuyển động, "Phần
+  chung"). **Chốt** (Ethan, 2026-11-13)
+
+- **Dạng cao (từ 160, màn 2560 và 3440) giống dạng thấp, chỉ lớn hơn**: cùng một ô ở góc trên phải,
+  thanh ở dưới; ảnh bìa và tên lớn hơn. Không đổi chỗ gì giữa hai dạng. **Chốt** (Ethan,
+  2026-11-13: "giống 1920 nhưng to lên")
+
+- **Equaliser ở góc trên phải ô nhạc**, chỗ ô thời tiết ghi tuổi số đo và ô Bị nhỡ đặt icon app: sáu
+  thanh 2 × 14 theo màu bìa ([Pill](../pill/index.vi.md), "Equaliser"), canh giữa theo ô leading
+  20. Đang phát thì chạy (chỉ khi Home đang mở, luật 8), đang dừng thì thấp. Nhiều player: nhìn
+  góc là biết ô nào đang phát. **Chốt** (Ethan, 2026-11-13)
 
 ## Quay màn hình trong Home
 

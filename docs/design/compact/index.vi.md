@@ -25,7 +25,24 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
   20 (28 − 8, đồng tâm với góc). Nhạc không có thời lượng (radio, luồng trực tiếp): chỉ phần đầu,
   ảnh 40, cao 56. **Chốt**
 
-![Phần đầu 56 (nhạc không có thanh tiến trình) và nhạc 88 với ảnh bìa 72](images/anatomy-media.vi.png)
+- **Equaliser thay nút ⏸** ở phần đầu: sáu thanh 2 × 14 theo màu bìa ([Pill](../pill/index.vi.md),
+  "Equaliser"), nằm giữa ô 32 của nút tròn (tâm ở y = 28, cách mép phải 14). Đang dừng: các thanh
+  dừng thấp, như trên pill. Compact không còn nút ⏮ ⏯ ⏭; chúng ở tab Media. **Chốt** (Ethan,
+  2026-11-13)
+- Equaliser là **phần chung** của pill và compact: nó đi từ trailing của pill tới chỗ này cùng nền,
+  không fade ([Chuyển động](../motion/index.vi.md), "Phần chung đi tới chỗ mới"). Đã làm, sau mục
+  "Motion: shared parts" (2026-11-13). **Chốt** (Ethan, 2026-11-13)
+- **Ô 32 đó vẫn là nút dừng / phát, hiện khi hover:** lúc nghỉ chỉ thấy equaliser (đang phát thì
+  chạy, đang dừng thì thấp). Rê chuột vào ô: equaliser đổi thành nút tròn như các nút chính
+  khác (nền `fill-inverse`, dưới con trỏ thì `fill-inverse-hover`; icon ⏸ khi đang phát, ▶ khi
+  đang dừng), nên lúc rê chuột thấy nền trắng, lúc focus bằng bàn phím thấy nền kem; rời ô:
+  equaliser hiện lại (Ethan, 2026-11-13: "giống các nút khác"). Bấm thì dừng
+  hoặc phát. Đổi qua lại bằng fade, không dời chỗ. Bàn phím tới được nút (focus cũng hiện nút); tên
+  cho trình đọc màn hình: "Pause" hoặc "Play". **Chốt** (Ethan, 2026-11-13)
+
+![Ô ⏸ của compact nhạc: lúc nghỉ, khi rê chuột, khi dừng, khi focus bàn phím, lúc đổi qua lại](images/media-slot.vi.png)
+
+![Phần đầu 56 (nhạc không có thanh tiến trình) và nhạc 88 với ảnh bìa 72, equaliser ở chỗ nút](images/anatomy-media.vi.png)
 
 ## Danh sách hàng (Claude Code, danh sách missed)
 

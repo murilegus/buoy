@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, drawBu, icon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, EQ, drawBu, drawEq, icon, SAMPLE} from '../../render/lib.js';
 const out = ARGV[0];
 
 const W = 16 + 2 * (560 + 16), H = 350;
@@ -28,7 +28,7 @@ const fill = (a, x, y, w, h, r) => { cr.newPath(); rr(x, y, w, h, r); cr.setSour
 const ratio = a => { const v = a * 255 / 255, c = v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; return ((c + 0.05) / 0.05).toFixed(1); };
 
 // Home at 1920 (560 × 280): borders on the panel, fg-muted on the tabs and captions, fg-subtle on the
-// times and details, fg-disabled on ⏭ when the player has no next track
+// times and details; fg-disabled is ⏭ when the player has no next track (the Media tab's, not drawn)
 function round(cx, cy, name, {main = false, a = 1} = {}) {
     cr.newPath(); if (main) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2);
     cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill(); icon(cr, name, cx - 8, cy - 8, 16, main ? C.BLACK : C.WHITE, a);
@@ -47,8 +47,8 @@ function home(X, title, {border, subtle, disabled}) {
     const cx = X + 12, cy = Y + 56, cw = PW - 24;
     fill(C.FILL1, cx, cy, cw, 104, 16); fill(C.FILL2, cx + 8, cy + 8, 88, 88, 8);
     text(SAMPLE.track, cx + 108, cy + 12, {sz: 11, wt: 600}); text(SAMPLE.sub, cx + 108, cy + 32, {sz: 9.35, a: C.FG_MUTED});
-    round(cx + cw - 28, cy + 28, 'forward-step-fill', {a: disabled}); round(cx + cw - 68, cy + 28, 'pause-fill', {main: true}); round(cx + cw - 108, cy + 28, 'backward-step-fill');
-    fill(C.FILL3, cx + 108, cy + 70, cw - 122, 4, 2); fill(1, cx + 108, cy + 70, (cw - 122) * .45, 4, 2);
+    drawEq(cr, cx + cw - 28 - EQ.width / 2, cy + 28);   // play / pause at rest (design/home "Thẻ nhạc")
+    fill(C.FILL3, cx + 108, cy + 66, cw - 122, 4, 2); fill(1, cx + 108, cy + 66, (cw - 122) * .45, 4, 2);
     text('1:24', cx + 108, cy + 78, {sz: 9.35, a: subtle}); text('-1:41', cx + cw - 14, cy + 78, {sz: 9.35, a: subtle, right: true});
     // the row: two tiles and a wide one with a detail column in fg-subtle
     const ty = cy + 112, u = (cw - 2 * 8) / 4;
@@ -60,7 +60,7 @@ function home(X, title, {border, subtle, disabled}) {
         if (n === 2) { text('25 phút nữa', tx + w - 14, ty + 44, {sz: 9.35, a: subtle, right: true}); text('phòng 3', tx + w - 14, ty + 62, {sz: 9.35, a: subtle, right: true}); }
         return tx + w + 8;
     }, cx);
-    text(`viền ${Math.round(border * 100)} % · chữ phụ ${Math.round(subtle * 100)} % (${ratio(subtle)}:1) · chữ tắt ${Math.round(disabled * 100)} % (nút ⏭ khi không có bài sau)`,
+    text(`viền ${Math.round(border * 100)} % · chữ phụ ${Math.round(subtle * 100)} % (${ratio(subtle)}:1) · chữ tắt ${Math.round(disabled * 100)} % (⏭ ở tab Media khi không có bài sau)`,
         X, Y + PH + 10, {sz: 7.5, a: .7});
 }
 home(16, 'Thường', {border: .12, subtle: .5, disabled: .28});

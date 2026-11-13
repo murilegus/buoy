@@ -23,6 +23,17 @@ eq(element('audio-x-generic-symbolic'), {type: 'icon', icon: 'audio-x-generic-sy
 eq(element('eq'), {type: 'glyph', name: 'eq'}, '"eq" is the equaliser glyph');
 eq(element({icon: 'eq'}), {type: 'glyph', name: 'eq'}, '{icon: "eq"} too');
 eq(element('eq-paused'), {type: 'glyph', name: 'eq-paused'}, '"eq-paused": the equaliser stopped low');
+// a glyph in a colour of the activity's own: the equaliser in its cover's (design/pill, 2026-11-13)
+eq(element({glyph: 'eq', color: '#DB286A'}), {type: 'glyph', name: 'eq', color: '#db286a'}, 'a glyph with its colour, lower case');
+eq(element({glyph: 'eq-paused', color: '#5175c2'}), {type: 'glyph', name: 'eq-paused', color: '#5175c2'}, 'paused keeps the colour');
+eq(element({glyph: 'eq'}), {type: 'glyph', name: 'eq'}, 'no colour: the plain glyph');
+eq([element({glyph: 'eq', color: 'red'}), element({glyph: 'eq', color: '#fff'}), element({glyph: 'eq', color: '#db286a80'}),
+    element({glyph: 'eq', color: 'rgb(1,2,3); width: 99px'}), element({glyph: 'eq', color: 7}), element({glyph: 'eq', color: null})]
+    .map(g => g.color ?? null), [null, null, null, null, null, null], 'only #rrggbb is a colour: anything else is dropped, the glyph stays');
+eq([element({glyph: 'eq', color: '#ff9f0a'}), element({glyph: 'eq', color: '#FF453A'})].map(g => g.color), ['#ff9f0a', '#ff453a'],
+    'a cover in a light\'s amber or red keeps its colour: the shape and the place tell them apart (Ethan, 2026-11-13)');
+eq([element({glyph: 'nope'}), element({glyph: 'audio-x-generic-symbolic', color: '#db286a'}), element({glyph: null})], [null, null, null],
+    'not a named glyph: nothing');
 eq(element({art: 'file:///a.png', icon: 'audio-x-generic-symbolic'}),
     {type: 'art', src: 'file:///a.png', fallback: 'audio-x-generic-symbolic'}, 'art with icon fallback');
 eq(element({art: '/tmp/a.png'}), {type: 'art', src: '/tmp/a.png', fallback: null}, 'art without fallback');

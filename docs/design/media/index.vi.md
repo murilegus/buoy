@@ -73,7 +73,7 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
 
 - Mỗi player một chip, theo thứ tự của stack: đang phát trước, rồi đang dừng. **Chốt** (Ethan, 2026-11-13)
 - Chip: logo app 16, tên app, equaliser của pill khi đang phát (chỉ chạy khi đang phát và đang hiện, luật
-  8 của ARCHITECTURE). Chip đang chọn `fill-3` chữ trắng; chip khác `fill-2` chữ `fg-muted`.
+  8 của ARCHITECTURE), theo màu bìa của player đó ([Pill](../pill/index.vi.md), "Equaliser", 2026-11-13). Chip đang chọn `fill-3` chữ trắng; chip khác `fill-2` chữ `fg-muted`.
   **Chốt** (Ethan, 2026-11-13)
 - Không đủ chỗ trên một hàng: chip không chọn chỉ còn logo (và equaliser nếu đang phát); chip đang
   chọn luôn đủ tên. **Chốt** (Ethan, 2026-11-13)
@@ -85,6 +85,18 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
   2026-11-13)
 
 ![Đổi player khi có 5 player: lúc bấm, giữa chừng, xong](images/switch.vi.png)
+
+- **Một player: equaliser ở đâu.** Không có hàng chip nên tab không cho biết player đang phát.
+  Năm chỗ: **A** sau tên bài, trước ↗; **B** góc ảnh bìa, trên nền đen mờ; **C** trong nút phát,
+  nghỉ thì equaliser, rê chuột thì ⏸ (ở tab, nơi để điều khiển, nút chính bị giấu); **D** cạnh giờ đã
+  chạy; **E** ô của ↗, như ô ⏸ của compact: lúc nghỉ chỉ equaliser, rê chuột hay focus bàn phím thì
+  ↗ hiện lại (`fill-3`). E (Ethan, 2026-11-13: "cùng nút mở external như nút pause ở compact") giữ
+  một luật cho compact và tab, ô cùng góc nên equaliser của compact chỉ dời một đoạn ngắn khi mở
+  tab, và ⏸ của tab vẫn luôn hiện. Chỗ được chọn là nơi equaliser của pill bay tới. **Chốt E**
+  (Ethan, 2026-11-13), cả khi có nhiều player (ô ↗ là của player đang chọn; chip vẫn giữ equaliser
+  của mình)
+
+![Một player: hiện nay và bốn chỗ cho equaliser](images/eq-tab.vi.png)
 
 ## Tương tác
 

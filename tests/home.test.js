@@ -73,13 +73,13 @@ eq(tileWidths([], 536), [], 'no tile');
 
 // --- an activity as a tile ----------------------------------------------------------------------
 eq(tileOf(validate({id: 'c', kind: 'agent', leading: 'x', text: 'Claude Code', trailing: {text: '2 / 3'}})),
-    {leading: {type: 'icon', icon: 'x'}, value: {type: 'text', text: '2 / 3'}, caption: 'Claude Code'},
+    {leading: {type: 'icon', icon: 'x'}, value: {type: 'text', text: '2 / 3'}, caption: 'Claude Code', corner: null},
     'a text trailing is the value, the text the caption');
 eq(tileOf(validate({id: 'd', kind: 'progress', leading: 'x', text: 'report.pdf', trailing: {progress: 0.42}})).value,
     {type: 'text', text: '42%'}, 'a ring: its percentage');
 eq(tileOf(validate({id: 't', kind: 'timer', text: 'Pasta', trailing: {until: 5000}})).value,
     {type: 'until', at: 5000}, 'a live time stays live');
-eq(tileOf(validate({id: 'n', kind: 'timer', text: 'Copied'})), {leading: null, value: {type: 'text', text: 'Copied'}, caption: null},
+eq(tileOf(validate({id: 'n', kind: 'timer', text: 'Copied'})), {leading: null, value: {type: 'text', text: 'Copied'}, caption: null, corner: null},
     'no trailing: the text is the value');
 eq(tileOf(validate({id: 'm', kind: 'media', text: 'Song', trailing: 'eq', tile: {value: '1:24', caption: 'Song'}})).value,
     {type: 'text', text: '1:24'}, 'an adapter\'s own tile wins');
@@ -87,7 +87,15 @@ eq(tileOf(validate({id: 'e', kind: 'timer', tile: {value: ''}})).value, null, 'a
 {
     const live = {position: 84000, length: 215000, at: 1, playing: true};
     eq(tileOf(validate({id: 'p', kind: 'media', text: 'Song · Artist', trailing: 'eq', tile: {live, caption: 'Song'}})),
-        {leading: null, value: {type: 'live', live}, caption: 'Song'}, 'a player: its live position, the title under it');
+        {leading: null, value: {type: 'live', live}, caption: 'Song', corner: {type: 'glyph', name: 'eq'}},
+        'a player: its live position, the title under it, its equaliser in the corner');
+    // the equaliser in the top right corner (design/home "Ô nhạc", 2026-11-13, Ethan)
+    eq(tileOf(validate({id: 'p', kind: 'media', text: 'Song', trailing: 'eq-paused', tile: {live, caption: 'Song'}})).corner,
+        {type: 'glyph', name: 'eq-paused'}, 'paused: the bars low');
+    eq(tileOf(validate({id: 'p', kind: 'media', text: 'Song', trailing: {glyph: 'eq', color: '#db286a'}, tile: {live, caption: 'Song'}})).corner,
+        {type: 'glyph', name: 'eq', color: '#db286a'}, 'in the cover\'s colour');
+    eq(tileOf(validate({id: 'p', kind: 'media', text: 'Song', trailing: 'eq', tile: {value: '1:24'}})).corner,
+        {type: 'glyph', name: 'eq'}, 'an own value: the corner too');
     eq(tileOf(validate({id: 'p', kind: 'media', text: 'Song', tile: {live: {position: 1, length: 0}}})).value,
         {type: 'text', text: 'Song'}, 'no length: not live');
 }

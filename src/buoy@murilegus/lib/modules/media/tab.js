@@ -4,9 +4,9 @@ import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
-import {EmptyState, iconProps, makeElement} from '../../kit/ui/present/elements.js';
+import {EmptyState, iconProps, makeElement, restSlot} from '../../kit/ui/present/elements.js';
 import {markShared} from '../../kit/ui/present/flight.js';
-import {eqGlyph, marquee, marqueeTurns} from '../../kit/ui/present/motion.js';
+import {eqGlyph, eqLeaving, marquee, marqueeTurns} from '../../kit/ui/present/motion.js';
 import {tick} from '../../kit/ui/present/parts.js';
 import {element, livePosition, mediaTimes} from '../../kit/model/presentation.js';
 import {FADES, TAB_SHIFT} from '../../kit/model/motion.js';
@@ -61,7 +61,15 @@ export class MediaTab {
         this._chipsLater = null;
         this._lineSet = null;     // the card's lines under the title: {box, at, turns, joined}
         this.actor.connect('notify::height', () => this._fitLaterOnce());
-        this.actor.connect('notify::mapped', () => this._fitLaterOnce());
+        this.actor.connect('notify::mapped', () => {
+            // chips built while the tab was kept off the stage were never measured: now
+            if (this.actor.mapped && this._chipsUnmeasured) {
+                this._chipsKey = '';
+                this._render();
+            }
+            this._fitLaterOnce();
+        });
+        this._chipsUnmeasured = false;
     }
 
     /** @param {object[]} activities  this tab's media activities, stack order */
@@ -101,7 +109,10 @@ export class MediaTab {
             this.actor.add_child(this._card);
         }
         this._card.set_height(cardHeight(this._bodyH, this._list.length));
+        // the same player paused: its bars come down from where they are (motion.js eqGlyph)
+        eqLeaving(!dir && this._content ? this._content : null);
         const next = this._buildContent(a);
+        eqLeaving(null);
         const old = this._content;
         this._content = next;
         this._card.add_child(next);
@@ -203,7 +214,7 @@ export class MediaTab {
             box.add_child(name);
             labels.push(name);
             if (a.state?.status === 'Playing')
-                box.add_child(eqGlyph());
+                box.add_child(eqGlyph({color: a.attributes?.tint}));
             const chip = new St.Button({
                 style_class: `buoy-media-chip${chosen ? ' buoy-media-chip-on' : ''}`,
                 child: box, can_focus: true, accessible_name: app || 'Player',
@@ -221,6 +232,13 @@ export class MediaTab {
             this._chipsLater = null;
             if (!this._chips || this._chips.row !== row)
                 return;
+            // a kept tab updated off the stage (another player paused while Home shows): no
+            // theme node there (St's CRITICAL for each ancestor); measured when it is shown
+            if (!row.get_stage()) {
+                this._chipsUnmeasured = true;
+                return;
+            }
+            this._chipsUnmeasured = false;
             const gap = row.get_theme_node().get_length('spacing') || 6;
             const widths = row.get_children().map((chip, i) => {
                 const [, named] = chip.get_preferred_width(-1);
@@ -340,7 +358,11 @@ export class MediaTab {
             a.onAction?.('raise');
             this._close?.();
         });
-        return b;
+        // its slot shows the equaliser at rest, ↗ under the pointer or the keyboard's focus,
+        // as the compact's ⏸ (design/media "Một player", 2026-11-13, Ethan); the pill's flies
+        // here (shared parts)
+        const eq = eqGlyph({paused: a.state?.status !== 'Playing', color: a.isStale ? null : a.attributes?.tint});
+        return restSlot(b, markShared(eq, 'eq', a), `${a.id}:tab`);
     }
 
     // The seek bar, always: it moves the track when the player can seek a track with a length;

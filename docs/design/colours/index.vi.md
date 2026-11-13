@@ -19,6 +19,10 @@ cho một chỗ.
 - **Một màu một nghĩa:** màu trạng thái chỉ dành cho đèn và chấm ([INDICATORS](../../INDICATORS.md)),
   không làm keyline, không làm trang trí. **Chốt**
   Ngoại lệ: đỏ ở bên trái và bên phải mang hai nghĩa ([Chấm riêng tư](#chấm-riêng-tư)).
+- **Màu mượn từ nội dung:** chỉ equaliser của nhạc được lấy màu ngoài bảng, là màu chủ đạo của ảnh
+  bìa, nâng sáng tới 4.5:1 ([Pill](../pill/index.vi.md), "Equaliser"). Màu này đặt từ code khi
+  chạy, không nằm trong stylesheet. Bìa trùng màu đèn vẫn giữ màu: equaliser là sáu thanh, đèn là
+  một chấm. **Chốt** (Ethan, 2026-11-13)
 
 ## Vai trò
 

@@ -2,6 +2,7 @@ import Clutter from 'gi://Clutter';
 import Cogl from 'gi://Cogl';
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
@@ -246,7 +247,8 @@ export function makeElement(e, mode, activity = null, sizes = {}) {
         return r ? roundArt(icon, size.art, r) : icon;
     }
     case 'glyph':
-        return eqGlyph({paused: e.name === 'eq-paused'});
+        // a stale activity's glyph is the stylesheet's dimmed `fg`, not its own colour
+        return eqGlyph({paused: e.name === 'eq-paused', color: activity?.isStale ? null : e.color});
     case 'ring':
         return meter('ring', e.value, size.ring);
     case 'bar':
@@ -277,6 +279,84 @@ export function actionButton(a, activity) {
     });
     button.connect('clicked', () => activity.onAction?.(a.id));
     return button;
+}
+
+/** A rest slot's fade between its two faces (`state`, as a button's own colours). */
+const SLOT_FADE_MS = 120;
+/**
+ * The slots showing their button, by what they are for: a click on ⏸ pauses, and the compact is
+ * built again for ▶ under the same pointer before the old one goes. St only sets the new
+ * button's hover with the next crossing event, so it started at rest and faded to the button —
+ * a blink between ⏸ and ▶ (2026-11-13, Ethan). One built while its key shows starts shown.
+ *
+ * @type {Map<string, St.Button>}
+ */
+const shownSlots = new Map();
+/** One that went while shown, for a slot built just after (Home's card empties before it builds). */
+let heldShown = null;
+const HELD_MS = 250;
+
+/**
+ * A button that shows `rest` while left alone, and itself under the pointer or the keyboard's
+ * focus, one fading into the other where they stand: the media compact's ⏸ and the Media tab's
+ * ↗ with the equaliser at rest (design/compact "Nhạc", design/media "Một player", 2026-11-13,
+ * Ethan). The button keeps its own action and name; the stylesheet draws it by
+ * `buoy-round-rest` (no fill at rest) and `buoy-round-shown`.
+ *
+ * @param {St.Button} b
+ * @param {Clutter.Actor} rest
+ * @param {?string} [key]  what the slot is for (the activity's id and its place): one built
+ *   again in the place of a slot that showed its button shows it at once
+ * @returns {St.Button} b
+ */
+export function restSlot(b, rest, key = null) {
+    b.add_style_class_name('buoy-round-rest');
+    const face = b.get_child();
+    b.set_child(null);
+    const layer = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true, y_expand: true});
+    rest.x_align = rest.y_align = Clutter.ActorAlign.CENTER;
+    face.x_align = face.y_align = Clutter.ActorAlign.CENTER;
+    const held = key !== null && heldShown?.key === key && GLib.get_monotonic_time() / 1000 - heldShown.at < HELD_MS;
+    if (held)
+        heldShown = null;
+    let shown = key !== null && (shownSlots.has(key) || held);
+    if (shown) {
+        shownSlots.set(key, b);
+        b.add_style_class_name('buoy-round-shown');     // before its first style: no transition
+    }
+    face.opacity = shown ? 255 : 0;
+    rest.opacity = shown ? 0 : 255;
+    layer.add_child(rest);
+    layer.add_child(face);
+    b.set_child(layer);
+    const sync = () => {
+        const now2 = b.hover || b.has_key_focus();
+        // carried over from the slot it replaces: kept until the pointer really leaves
+        if (now2 === shown)
+            return;
+        shown = now2;
+        if (key !== null && shown)
+            shownSlots.set(key, b);
+        else if (key !== null && shownSlots.get(key) === b)
+            shownSlots.delete(key);
+        if (shown)
+            b.add_style_class_name('buoy-round-shown');
+        else
+            b.remove_style_class_name('buoy-round-shown');
+        const ms = St.Settings.get().enable_animations ? SLOT_FADE_MS : 0;
+        rest.ease({opacity: shown ? 0 : 255, duration: ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+        face.ease({opacity: shown ? 255 : 0, duration: ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+    };
+    b.connect('notify::hover', sync);
+    b.connect('key-focus-in', sync);
+    b.connect('key-focus-out', sync);
+    b.connect('destroy', () => {
+        if (key !== null && shownSlots.get(key) === b) {
+            shownSlots.delete(key);
+            heldShown = {key, at: GLib.get_monotonic_time() / 1000};
+        }
+    });
+    return b;
 }
 
 // An ask's button: its key after the label, shown only while the island holds the

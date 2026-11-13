@@ -6,7 +6,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, COVER, SAMPLE, icon, drawBu} from '../../render/lib.js';
+import {SCALE as SC, C, COVER, SAMPLE, EQ, drawEq, icon, drawBu} from '../../render/lib.js';
 
 const [out, MODE] = ARGV;
 const W1 = C.WHITE, PAD = 8, CELL = 24, GAP = 6, H = 32, SIDE = 132;
@@ -48,9 +48,8 @@ const LEADS = {
     bu: (x, y) => drawBu(cr, 'busy', x + 2, y + 2, 2),
     icon: name => (x, y) => icon(cr, name, x + 4, y + 4, 16),
 };
-const eqW = 3 * 4 + 2 * 3;
 const TRAILS = {
-    eq: {w: eqW, draw: (x, y) => [8, 12, 6, 10].forEach((h, i) => { cr.newPath(); rr(x + i * 5, y + 16 - h / 2, 3, h, 1.5); cr.setSourceRGB(1, 1, 1); cr.fill(); })},
+    eq: {w: EQ.width, draw: (x, y) => drawEq(cr, x, y + 16)},
     text: t => ({get w() { return tw(t); }, draw: (x, y) => text(t, x, y + (H - 18) / 2)}),   // measured once drawn
 };
 const badgeW = n => Math.ceil(tw(`+${n}`, 8.25, 600)) + 12;

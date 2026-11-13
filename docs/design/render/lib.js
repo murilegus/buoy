@@ -8,6 +8,7 @@ import cairo from 'cairo';
 import GLib from 'gi://GLib';
 import Rsvg from 'gi://Rsvg?version=2.0';
 import {frameAt, cells, lampColour} from '../../../src/buoy@murilegus/lib/kit/model/mascot.js';
+import {SAMPLE as COVER_SIDE, mainColour, lifted} from '../../../src/buoy@murilegus/lib/kit/model/cover.js';
 
 export const SCALE = 3;
 
@@ -26,6 +27,32 @@ export const GREY = Object.freeze({MUTED: [.70, .70, .70], SUBTLE: [.50, .50, .5
 // The one sample cover (design/index "Một bộ nội dung mẫu"): the cover of SAMPLE.track, a
 // diagonal gradient from the top left
 export const COVER = Object.freeze([[.95, .55, .35], [.35, .25, .75]]);
+// The equaliser (design/pill "Equaliser", 2026-11-13): six bars of 2 × 14, gap 2, in the sample
+// cover's main colour — the code's own answer (kit/model/cover.js) for COVER's gradient.
+export const EQ = Object.freeze((() => {
+    const n = COVER_SIDE, bytes = new Uint8Array(n * n * 3);
+    for (let y = 0; y < n; y++) {
+        for (let x = 0; x < n; x++) {
+            const t = (x + y) / (2 * (n - 1));
+            COVER[0].forEach((c, k) => (bytes[(y * n + x) * 3 + k] = Math.round(255 * (c + (COVER[1][k] - c) * t))));
+        }
+    }
+    const main = mainColour({bytes, channels: 3, rowstride: n * 3, width: n, height: n});
+    return {w: 2, gap: 2, width: 22, heights: Object.freeze([6, 11, 14, 8, 12, 6]),
+        rgb: Object.freeze((main ? lifted(main) : [255, 255, 255]).map(v => v / 255))};
+})());
+/** The equaliser at x, centred on cy, in the sample cover's colour. */
+export function drawEq(cr, x, cy, a = 1) {
+    EQ.heights.forEach((h, i) => {
+        const bx = x + i * (EQ.w + EQ.gap), by = cy - h / 2;
+        cr.newPath();
+        cr.arc(bx + 1, by + 1, 1, Math.PI, 2 * Math.PI);
+        cr.arc(bx + 1, by + h - 1, 1, 0, Math.PI);
+        cr.closePath();
+        cr.setSourceRGBA(...EQ.rgb, a);
+        cr.fill();
+    });
+}
 // The one sample content (design/index "Một bộ nội dung mẫu"): every drawing takes its words from
 // here, so a new sample is one edit and every image is redrawn the same
 export const SAMPLE = Object.freeze((() => {

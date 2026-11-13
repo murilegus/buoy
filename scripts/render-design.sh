@@ -31,6 +31,7 @@ r $p/fonts.js $i/fonts.vi.png > /dev/null   # it also prints its measures
 r $p/dots.js $i/dots.vi.png
 r $p/dots.js $i/dots-guides.vi.png guides
 r $p/minimal-media.js $i/minimal-media.vi.png
+r $p/eq-colour.js $i/eq-colour.vi.png
 r $p/side.js $i/side.vi.png side
 r $p/side.js $i/claude.vi.png claude
 r $p/bar.js $i/bar-1920.vi.png 1920
@@ -39,6 +40,7 @@ r $p/bar.js $i/bar-1366.vi.png 1366
 # compact (anatomy-compact.js draws the alerts-and-asks images too)
 c=compact/render
 r $c/anatomy-compact.js compact/images/anatomy-media.vi.png media
+r $c/media-slot.js compact/images/media-slot.vi.png
 r $c/anatomy-compact.js compact/images/anatomy-rows.vi.png rows
 r $c/anatomy-compact.js compact/images/anatomy-card.vi.png card
 r $c/anatomy-compact.js alerts-and-asks/images/ask.vi.png ask
@@ -50,6 +52,10 @@ r $c/reply.js compact/images/reply.vi.png
 r alerts-and-asks/render/notification.js alerts-and-asks/images/notification.vi.png
 r alerts-and-asks/render/shared.js alerts-and-asks/images/shared.vi.png
 
+# media (design/media; chips-1920 is a Shell capture)
+for m in options anatomy states players text switch; do r media/render/media.js media/images/$m.vi.png $m; done
+r media/render/media.js media/images/eq-tab.vi.png eq
+
 # icons
 r icons/render/symbolic.js icons/images/symbolic.vi.png
 r icons/render/own.js icons/images/own.vi.png
@@ -59,7 +65,7 @@ r icons/render/roles.js icons/images/roles.vi.png
 r expanded/render/expanded.js expanded/images/expanded.vi.png
 
 # home
-for m in states anatomy fill lists screen; do r home/render/home.js home/images/$m.vi.png $m; done
+for m in states music anatomy fill lists screen; do r home/render/home.js home/images/$m.vi.png $m; done
 
 # motion
 for m in curves compact expanded tabs; do r motion/render/motion.js motion/images/$m.vi.png $m; done

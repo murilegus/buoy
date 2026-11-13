@@ -159,25 +159,29 @@ export function tileWidths(tiles, width) {
  * caption; else the text alone is the value.
  *
  * @param {object} a  a validated activity
- * @returns {{leading: ?object, value: ?object, caption: ?string}}  value: an element
- *   (presentation.js element: text, until, since…)
+ * @returns {{leading: ?object, value: ?object, caption: ?string, corner: ?object}}  value: an
+ *   element (presentation.js element: text, until, since…); corner: the pill's glyph (the
+ *   equaliser) for the top right corner, or null
  */
 export function tileOf(a) {
     const p = planMinimal(a, {});
     const own = a.tile !== null && typeof a.tile === 'object' ? a.tile : null;
+    // the pill's glyph — the equaliser, moving or low, in its cover's colour — in the tile's top
+    // right corner (design/home "Ô nhạc", 2026-11-13, Ethan): which tile plays, at a glance
+    const corner = p.trailing?.type === 'glyph' ? p.trailing : null;
     // a player's: its live position, the elapsed time running (presentation.js livePosition)
     const live = own?.live;
     if (live && Number.isFinite(live.position) && Number.isFinite(live.length) && live.length > 0)
-        return {leading: p.leading, value: {type: 'live', live}, caption: str(own.caption) ?? p.text};
+        return {leading: p.leading, value: {type: 'live', live}, caption: str(own.caption) ?? p.text, corner};
     const text = typeof own?.value === 'string' && own.value ? own.value : null;
     if (text)
-        return {leading: p.leading, value: {type: 'text', text}, caption: str(own.caption) ?? p.text};
+        return {leading: p.leading, value: {type: 'text', text}, caption: str(own.caption) ?? p.text, corner};
     const t = p.trailing;
     if (t?.type === 'ring')
-        return {leading: p.leading, value: {type: 'text', text: `${Math.round(t.value * 100)}%`}, caption: p.text};
+        return {leading: p.leading, value: {type: 'text', text: `${Math.round(t.value * 100)}%`}, caption: p.text, corner};
     if (t && ['text', 'until', 'since'].includes(t.type))
-        return {leading: p.leading, value: t, caption: p.text};
-    return {leading: p.leading, value: p.text ? {type: 'text', text: p.text} : null, caption: null};
+        return {leading: p.leading, value: t, caption: p.text, corner};
+    return {leading: p.leading, value: p.text ? {type: 'text', text: p.text} : null, caption: null, corner};
 }
 
 /**

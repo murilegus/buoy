@@ -246,7 +246,7 @@ The code uses these names since 2026-11-05 (before: compact for minimal, peek fo
 |---|---|---|---|
 | **Idle** | no activity | 132×32 r16 at 1× (as wide as the clock at its longest, measured: §4); content per `idle-content` (§2a) | hover → +0.75em width, +2 height, and with the amber light the missed list as a compact; press → a pulse; **click → open Home** |
 | **Minimal** | one or more activities | pill 1 (highest priority) at screen centre, content-fit; up to two side pills to its right, each the idle's size, as many as fit before the system cluster (§2c) | hover a pill 300 ms → its compact; **click → that activity's tab**, Home on the `+N` badge or while the missed list shows (2026-11-04) |
-| **Compact** | the pointer rests on a pill; an alert (5 s); an ask, until answered | the pill grows in place: top edge kept, width fixed at min(28em, 0.72 × expanded) — content-fit is the pill's alone (2026-11-12, Ethan); height 56 + 16n up to 152 (§4, design/compact); an ask's card of choices up to expanded's height (2026-11-12, design/alerts-and-asks "Hỏi nhiều lựa chọn") | the activity's compact content (media: art 72, transport and its bar), or the amber missed list instead (INDICATORS.md); its buttons run their action, a click elsewhere on it = the pill's click; hovered, it collapses 200 ms after the pointer leaves; an alert's stays 5 s (longer while hovered), an ask's until it is answered (its keys work after Super+B) (2026-11-12, design/alerts-and-asks) |
+| **Compact** | the pointer rests on a pill; an alert (5 s); an ask, until answered | the pill grows in place: top edge kept, width fixed at min(28em, 0.72 × expanded) — content-fit is the pill's alone (2026-11-12, Ethan); height 56 + 16n up to 152 (§4, design/compact); an ask's card of choices up to expanded's height (2026-11-12, design/alerts-and-asks "Hỏi nhiều lựa chọn") | the activity's compact content (media: art 72, its bar, and in the ⏸ slot the equaliser, flown there from the pill — the ⏸ / ▶ button under the pointer or the keyboard's focus, 2026-11-13, design/compact "Nhạc"), or the amber missed list instead (INDICATORS.md); its buttons run their action, a click elsewhere on it = the pill's click; hovered, it collapses 200 ms after the pointer leaves; an alert's stays 5 s (longer while hovered), an ask's until it is answered (its keys work after Super+B) (2026-11-12, design/alerts-and-asks) |
 | **Expanded** | opened from idle, minimal or compact by a click; by the stack for a transient | `EXPANDED` (see §4) | only a click outside collapses (or Esc after a click-open), at once; clicks inside do nothing, buttons run their action (decided 2026-11-01) |
 
 Rules:
@@ -673,9 +673,9 @@ and never scrolls (`kit/model/home.js` planHome, `kit/ui/home.js`).
   104 / 168 / 200 at 1920 / 2560 / 3440; with no tile, all of it.
 - **The main card** is the stack's first activity with its buttons; with none, the
   **greeting** (Bu waving, "Good afternoon, Ethan", the date). A player has a card of its
-  own (`modules/media/home.js`: the cover as tall as the card less 16, at most 160; under
-  160 the transport at the top right and the bar at the foot, from 160 the title larger and
-  the transport centred under the bar); an ask is its card with its buttons at the bottom
+  own (`modules/media/home.js`: the cover as tall as the card less 16, at most 184; play /
+  pause in one slot at the top right, the equaliser at rest, and the bar at the foot; from 160
+  the same, the title larger (2026-11-13)); an ask is its card with its buttons at the bottom
   right; any other activity shows its compact in the card (or, without one, its leading,
   text and value). A click on it opens its tab.
 - **The tiles** (fill-1, radius 16): N = floor((row + 8) / 128) a row — 4 at 1920, 5 at
@@ -829,7 +829,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
 ## 6. Modules for v0.1
 
 1. **media** — MPRIS (2026-11-05, Ethan): one pill per player from the moment it plays.
-   Minimal: art + title · artist + equaliser while playing (its four bars grow from their
+   Minimal: art + title · artist + equaliser while playing, in the cover's main colour (six
+   bars of 2 × 14, white for a cover without colour; design/pill "Equaliser", 2026-11-13,
+   Ethan; its bars grow from their
    middle, up and down at once, while the pill is on screen, wherever it shows — side pill, Home's Now; still with
    animations off; 2026-11-05, Ethan), paused its bars stopped low, a near flat line
    through the middle (4 · 6 · 4 · 2 px, 2026-11-07, Ethan; was ⏸), no button; a

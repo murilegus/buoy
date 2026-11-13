@@ -9,7 +9,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {taskState, icon, C, GREY, drawBu, SAMPLE} from '../../render/lib.js';
+import {taskState, icon, C, GREY, drawBu, drawEq, EQ, SAMPLE} from '../../render/lib.js';
 
 const SC = 3, W = 760, R = 28, PAD = 14, CW = 404, X = 40;   // the compact at 1920: min(28em, 0.72 × expanded)
 const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED, CY = [.4, .85, 1], RD = [1, .5, .5];   // CY, RD: guide marks
@@ -102,12 +102,13 @@ for (const it of ROWS) {
         grad(lx, y + 8, 40, 10, ...ART); guide(lx, y + 8, 40, 40);
         const tx = lx + 40 + 12;
         text(SAMPLE.track, tx, y + 9, 11, 600, W1); text(SAMPLE.sub, tx, y + 29, 9.5, 400, G);
-        round(xr - 16, y + R, '⏸'); guide(xr - 32, y + 12, 32, 32, 16);
+        // the equaliser in the round button's place (design/compact "Nhạc", 2026-11-13)
+        drawEq(cr, xr - 16 - EQ.width / 2, y + R); guide(xr - 32, y + 12, 32, 32, 16);
         dim(x, lx, y - 4, '14'); dim(lx, lx + 40, y - 4, '40'); dim(lx + 40, tx, y - 4, '12');
         dim(xr - 32, xr, y - 4, '32'); dim(xr, x + pw, y - 4, '14');
         vdim(x + pw + 6, y, y + 8, '8'); vdim(x + pw + 6, y + 8, y + 48, '40'); vdim(x + pw + 6, y + 48, y + 56, '8');
         text('tiêu đề 1em', tx + 110, y + 11, 5.5, 600, CY); text('phụ đề 0.85em', tx + 140, y + 31, 5.5, 600, CY);
-        text('nút tròn 32, tâm ở y = 28', xr - 118, y + h + 3, 5.5, 600, CY);
+        text('equaliser 22 × 14 giữa ô 32, tâm ở y = 28', xr - 150, y + h + 3, 5.5, 600, CY);
         text('bo 28', x + 4, y + h + 3, 5.5, 600, CY);
     }
 
@@ -115,11 +116,11 @@ for (const it of ROWS) {
         const ax = x + 8, tx = ax + 72 + 12;
         grad(ax, y + 8, 72, 20, ...ART); guide(ax, y + 8, 72, 72, 20);
         text(SAMPLE.track, tx, y + 10, 11, 600, W1); text(SAMPLE.sub, tx, y + 30, 9.5, 400, G);
-        round(xr - 16, y + R, '⏸');
+        drawEq(cr, xr - 16 - EQ.width / 2, y + R);
         const by = y + 60;
         cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(tx, by, xr - tx, 4, 2); cr.fill();
         cr.setSourceRGB(1, 1, 1); rr(tx, by, (xr - tx) * .38, 4, 2); cr.fill();
-        text('1:24', tx, by + 7, 8.5, 400, W1, .5); right('-2:11', xr, by + 7, 8.5, .5);
+        text('1:24', tx, by + 11, 8.5, 400, W1, .5); right('-2:11', xr, by + 11, 8.5, .5);
         dim(x, ax, y - 4, '8'); dim(ax, ax + 72, y - 4, '72'); dim(ax + 72, tx, y - 4, '12'); dim(xr, x + pw, y - 4, '14');
         vdim(x + pw + 6, y, y + 8, '8'); vdim(x + pw + 6, y + 8, y + 80, '72'); vdim(x + pw + 6, y + 80, y + 88, '8');
         text('bo 20 = 28 − 8, đồng tâm với góc', ax, y + h + 3, 5.5, 600, CY);

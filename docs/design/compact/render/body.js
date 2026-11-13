@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, taskState, icon, C, GREY, drawBu, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, taskState, icon, C, GREY, drawBu, drawEq, EQ, SAMPLE} from '../../render/lib.js';
 const R = 28, PAD = 14, LEAD = 40, IND = 12, PW = 340, TX = PAD + LEAD + IND;   // text column at 66
 const W = 1120, colX = [20, 520];
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, 760 * SC);
@@ -24,16 +24,17 @@ const snap = h => 56 + Math.ceil(Math.max(0, h - 56) / 32) * 32;
 function panel(x, y, h) { rr(x + .5, y + .5, PW - 1, h - 1, R - .5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve(); cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke(); }
 function waste(x, y, h) { cr.setSourceRGBA(1, .35, .35, .18); cr.rectangle(x + PAD, y + 56, LEAD, h - 56 - 10); cr.fill(); }
 function art(x, y, s, r = 10, c = [[.95, .55, .35], [.35, .25, .75]]) { const g = new cairo.LinearGradient(x, y, x + s, y + s); g.addColorStopRGB(0, ...c[0]); g.addColorStopRGB(1, ...c[1]); cr.setSource(g); rr(x, y, s, s, r); cr.fill(); }
-function head(x, y, t1, t2, c, btn = '⏸') { if (c === 'bu') drawBu(cr, 'busy', x + PAD, y + 8, 4); else art(x + PAD, y + 8, LEAD, 10, c); text(t1, x + TX, y + 9, 11, 600, W1); text(t2, x + TX, y + 29, 9.5, 400, G);
+function head(x, y, t1, t2, c, btn = 'eq') { if (c === 'bu') drawBu(cr, 'busy', x + PAD, y + 8, 4); else art(x + PAD, y + 8, LEAD, 10, c); text(t1, x + TX, y + 9, 11, 600, W1); text(t2, x + TX, y + 29, 9.5, 400, G);
   roundBtn(x + PW - PAD - 16, y + R, btn); }
 // the head's button (design/icons): its main action (⏸ pause-fill, ■ stop-fill) is fill-inverse,
+// music's at rest is its equaliser (design/compact "Nhạc");
 // cream with a black icon; × (xmark) is fill-2 with a white one; the icon 16 in the middle
 const GLYPH = {'⏸': 'pause-fill', '■': 'stop-fill', '×': 'xmark'};
-function roundBtn(cx, cy, btn) { const main = btn !== '×';
+function roundBtn(cx, cy, btn) { if (btn === 'eq') { drawEq(cr, cx - EQ.width / 2, cy); return; } const main = btn !== '×';
   cr.newPath(); if (main) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
   icon(cr, GLYPH[btn], cx - 8, cy - 8, 16, main ? C.BLACK : W1); }
 function bar(x, y, x0, x1) { cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(x0, y, x1 - x0, 4, 2); cr.fill(); cr.setSourceRGB(1, 1, 1); rr(x0, y, (x1 - x0) * .38, 4, 2); cr.fill();
-  text('1:24', x0, y + 7, 8.5, 400, W1, .5); right('-2:11', x1, y + 7, 8.5, .5); }
+  text('1:24', x0, y + 11, 8.5, 400, W1, .5); right('-2:11', x1, y + 11, 8.5, .5); }
 const label = (t, x, y) => text(t, x, y, 9, 600, W1, .85);
 const NOTI = 'Pushed the pill shapes to the branch — can you review the compact and the card before the 3 PM sync?';
 const CARD = [[.3, .55, .95], [.3, .55, .95]];
@@ -48,7 +49,7 @@ label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 
 { const h = 88, x = colX[1]; label('…hoặc ảnh bìa 72 chiếm cả hai hàng', x, y - 16); panel(x, y, h);
   art(x + 8, y + 8, 72, 20); const tx = x + 8 + 72 + 12;   // inset 8 → r 28 − 8 = 20, concentric
   text(SAMPLE.track, tx, y + 10, 11, 600, W1); text(SAMPLE.sub, tx, y + 30, 9.5, 400, G);
-  roundBtn(x + PW - PAD - 16, y + R, '⏸');
+  roundBtn(x + PW - PAD - 16, y + R, 'eq');
   bar(x, y + 60, tx, x + PW - PAD - 6); y += h + 30; }
 // 2) rows: Claude's task list (2026-11-11), on the 16 rhythm: 56 + 8 + 3 × 16 + 8 = 120
 { const h = 120, rows = [['done', 'Edit shapes.js', '12s'], ['doing', 'Run pnpm test', '4s'], ['todo', 'Update the docs', '']];

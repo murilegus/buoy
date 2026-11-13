@@ -453,20 +453,58 @@ export function mascot(e, size, activity) {
 }
 
 // Each bar: its height at rest and the range and half-period it swings through while
-// playing. Unequal periods keep the four out of step, so the motion never visibly repeats.
-// Paused: the bars stopped low, 4 · 6 · 4 · 2 px of their 12 (Ethan, 2026-11-07: a
-// near flat line, each a little different, 2 px apart)
-const EQ_PAUSED = [4, 6, 4, 2].map(px => px / 12);
+// playing. Unequal periods keep the six out of step, so the motion never visibly repeats.
+// Paused: the bars stopped low, 4 · 6 · 7 · 5 · 6 · 3 px of their 14 (Ethan, 2026-11-07: a
+// near flat line, each a little different, 2 px apart; six bars since 2026-11-13)
+const EQ_PAUSED = [4, 6, 7, 5, 6, 3].map(px => px / 14);
 
 const EQ_BARS = [
-    {rest: 0.5, from: 0.25, to: 1, ms: 430},
-    {rest: 0.85, from: 0.45, to: 1, ms: 610},
-    {rest: 0.65, from: 0.2, to: 0.85, ms: 520},
-    {rest: 0.4, from: 0.3, to: 0.95, ms: 690},
+    {rest: 0.45, from: 0.25, to: 0.9, ms: 430},
+    {rest: 0.8, from: 0.4, to: 1, ms: 610},
+    {rest: 1, from: 0.5, to: 1, ms: 520},
+    {rest: 0.6, from: 0.2, to: 0.85, ms: 690},
+    {rest: 0.85, from: 0.35, to: 1, ms: 470},
+    {rest: 0.4, from: 0.25, to: 0.8, ms: 570},
 ];
 
+/** Paused, the bars come down to their low line in this long (2026-11-13, Ethan). */
+export const EQ_DROP_MS = 200;
+
+// The heights an equaliser is leaving, for the paused one built in its place: a pill
+// rebuilds its content on every update (more than once for one pause), so the new glyph
+// cannot see the old one. A paused glyph hands its heights on too: one rebuilt while it
+// comes down goes on from there, one rebuilt later is low already.
+let eqFrom = null;
+/** @type {WeakMap<Clutter.Actor, St.Widget[]>} an equaliser's bars, by its box */
+const eqBars = new WeakMap();
+
+function playingBars(actor) {
+    if (!actor)
+        return null;
+    if (eqBars.has(actor))
+        return eqBars.get(actor);
+    for (const child of actor.get_children?.() ?? []) {
+        const bars = playingBars(child);
+        if (bars)
+            return bars;
+    }
+    return null;
+}
+
 /**
- * The equaliser (SPEC §6 media): four 12 px bars that grow from their middle, up and
+ * Called by a pill around the rebuild of its content: with the content about to go, then
+ * with null once the new one is built. The first paused equaliser built in between starts
+ * at the heights the old one's bars have right now.
+ *
+ * @param {?Clutter.Actor} content  the content being replaced, or null to forget
+ */
+export function eqLeaving(content) {
+    eqFrom = playingBars(content)?.map(bar => bar.scale_y) ?? null;
+}
+
+/**
+ * The equaliser (SPEC §6 media): six bars, 2 px wide and 14 tall (design/pill "Equaliser",
+ * 2026-11-13, Ethan; four of 3 × 12 before), that grow from their middle, up and
  * down at once (2026-11-05, Ethan). While mapped they stretch and shrink, one endless
  * auto-reversing transition per bar on `scale-y`
  * (a transform: no relayout, no repaint of anything else); unmapped, or with animations
@@ -474,31 +512,77 @@ const EQ_BARS = [
  * activity shows it only while playing (ARCHITECTURE rule 8: this is an activity, not
  * idle). Unlike Bu it does not rest after `mascot-rest-after`: music plays without input.
  * Paused (`eq-paused`): the same bars stopped low, a near flat line through the middle,
- * with no transition and nothing connected (2026-11-07, Ethan).
+ * with nothing connected (2026-11-07, Ethan). Built in place of a playing one (eqLeaving),
+ * its bars come down from where those were in EQ_DROP_MS, once, when it is on screen; built
+ * any other time, or with animations off, they are low at once (2026-11-13, Ethan).
+ *
+ * `color`: the bars in a colour of the activity's own, its cover's main colour
+ * (kit/model/cover.js), set on each bar over the stylesheet's `fg`. Not in GNOME's high
+ * contrast: there the bars stay `fg` (read when the glyph is built).
  *
  * @param {object} [opts]
  * @param {boolean} [opts.paused]
+ * @param {?string} [opts.color]  '#rrggbb'
  * @returns {St.BoxLayout}
  */
-export function eqGlyph({paused = false} = {}) {
+export function eqGlyph({paused = false, color = null} = {}) {
     const box = new St.BoxLayout({style_class: 'buoy-eq', y_align: Clutter.ActorAlign.CENTER});
+    const style = color && /^#[0-9a-f]{6}$/i.test(color) && !St.Settings.get().high_contrast
+        ? `background-color: ${color};` : null;
     if (paused) {
-        for (const scale of EQ_PAUSED) {
-            box.add_child(new St.Widget({
-                style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.CENTER,
-                pivot_point: new Graphene.Point({x: 0.5, y: 0.5}), scale_y: scale,
-            }));
+        const from = St.Settings.get().enable_animations ? eqFrom : null;
+        eqFrom = null;
+        const low = EQ_PAUSED.map((scale, i) => {
+            const bar = new St.Widget({
+                style_class: 'buoy-eq-bar', style, y_align: Clutter.ActorAlign.CENTER,
+                pivot_point: new Graphene.Point({x: 0.5, y: 0.5}), scale_y: from?.[i] ?? scale,
+            });
+            box.add_child(bar);
+            return bar;
+        });
+        eqBars.set(box, low);
+        if (from) {
+            // an explicit transition, as the playing bars': an implicit one is skipped on an
+            // actor not mapped yet (mutter clutter-actor.c _clutter_actor_create_transition),
+            // and the next rebuild reads these heights on their way down
+            const drop = () => low.forEach((bar, i) => {
+                const t = new Clutter.PropertyTransition({
+                    property_name: 'scale-y',
+                    interval: new Clutter.Interval({value_type: GObject.TYPE_DOUBLE}),
+                    duration: EQ_DROP_MS * St.Settings.get().slow_down_factor,
+                    progress_mode: Clutter.AnimationMode.EASE_OUT_QUAD, remove_on_complete: true,
+                });
+                t.set_from(from[i]);
+                t.set_to(EQ_PAUSED[i]);
+                // cut short (the actor moved to another parent: Home puts its card in the new
+                // body after building it), Clutter leaves the bar where it was — low at once
+                t.connect('stopped', () => {
+                    bar.scale_y = EQ_PAUSED[i];
+                });
+                bar.add_transition('buoy-eq', t);
+            });
+            if (box.mapped) {
+                drop();
+            } else {
+                const id = box.connect('notify::mapped', () => {
+                    if (!box.mapped)
+                        return;
+                    box.disconnect(id);
+                    drop();
+                });
+            }
         }
         return box;
     }
     const bars = EQ_BARS.map(b => {
         const bar = new St.Widget({
-            style_class: 'buoy-eq-bar', y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'buoy-eq-bar', style, y_align: Clutter.ActorAlign.CENTER,
             pivot_point: new Graphene.Point({x: 0.5, y: 0.5}), scale_y: b.rest,
         });
         box.add_child(bar);
         return bar;
     });
+    eqBars.set(box, bars);          // eqLeaving reads where they are
     const settings = St.Settings.get();
     let animId = 0;
     const still = () => {

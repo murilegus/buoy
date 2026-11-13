@@ -28,8 +28,8 @@ và cách từng chuyển diễn ra; số dùng chung ở [Bảng số](../token
 - **Phần chung đi tới chỗ mới**, như HIG (Live Activities): "animating existing elements to their new
   positions rather than removing and animating them back in". Phần có ở cả hai dạng (leading, tên)
   đi cùng nền bằng cùng lò xo: leading 24 của pill lớn lên và tới chỗ leading của compact (40 ở phần
-  đầu 56, ảnh bìa 72 ở nhạc 88), tên tới chỗ tên. Phần chỉ có ở một dạng (đèn, equaliser, phụ đề,
-  thanh, giờ, nút) vẫn như nay: phần đi thì
+  đầu 56, ảnh bìa 72 ở nhạc 88), tên tới chỗ tên. Phần chỉ có ở một dạng (đèn, phụ đề,
+  thanh, giờ) vẫn như nay: phần đi thì
   `fade-out`, phần đến thì lộ theo mép nền. Thay luật "nội dung không dời, không đổi cỡ trong lúc
   morph" của SPEC §5 (2026-11-02), luật đó đặt ra vì chữ của expanded từng hiện đủ rộng khi nền còn
   nhỏ; mép nền vẫn cắt mọi thứ nên lỗi đó không quay lại. Chỉ dời bằng `translation` và phóng bằng
@@ -40,6 +40,9 @@ và cách từng chuyển diễn ra; số dùng chung ở [Bảng số](../token
   dụng chung: builder của kit tự gắn nhãn, module tự vẽ (thẻ nhạc ở Home, tab Media) thêm một
   dòng `markShared`. Làm trong M4 (2026-11-13). **Đề xuất** (Ethan, 2026-11-13: "các widget chuyển
   sang đúng tab của nó với animation")
+- Nhạc: **equaliser cũng là phần chung**. Compact của nhạc có equaliser ở chỗ nút tròn
+  ([Compact](../compact/index.vi.md), "Nhạc"), nên nó đi từ trailing của pill tới đó bằng
+  `translation`, cùng cỡ (22 × 14), không còn `fade-out`. **Chốt** (Ethan, 2026-11-13)
 
 ## Lò xo và độ mờ
 
@@ -70,11 +73,11 @@ nguyên.
 **Pill ↔ compact** (hình vẽ compact nhạc 88). Rê chuột 300 ms: nền nở bằng `move` từ chính pill
 (đỉnh đứng yên, nở xuống và sang hai bên quanh tâm; cao 32 → 88, bo theo chiều cao 16 → 28). Leading
 24 lớn lên thành ảnh bìa 72 (× 3, bo 6 → 20) và đi từ (28, 4) tới (8, 8); tên đi tới chỗ tên, 12 sau
-ảnh bìa; cả hai cùng nền. Đèn, " · Hải Đăng" và equaliser đi bằng `fade-out` ngay; phụ đề, nút,
-thanh và giờ đứng sẵn ở chỗ cuối, lộ theo mép nền, độ mờ đi từ 0 ở nửa đường tới đủ ở cuối. Ảnh bìa
+ảnh bìa; equaliser đi tới chỗ nút tròn; cả ba cùng nền. Đèn và " · Hải Đăng" đi bằng `fade-out` ngay;
+phụ đề, thanh và giờ đứng sẵn ở chỗ cuối, lộ theo mép nền, độ mờ đi từ 0 ở nửa đường tới đủ ở cuối. Ảnh bìa
 luôn cách mép trên và dưới của nền ít nhất 4 nên không bị cắt. Pill bên cạnh mờ tại chỗ
-(`fade-out`). Rời chuột: đợi 200 ms, rồi `close`; ảnh bìa và tên đi về chỗ cũ, phụ đề, nút, thanh
-và giờ `fade-out`, đèn và equaliser `fade-in` từ nửa đường. **Đề xuất**
+(`fade-out`). Rời chuột: đợi 200 ms, rồi `close`; ảnh bìa, tên và equaliser đi về chỗ cũ, phụ đề, thanh
+và giờ `fade-out`, đèn `fade-in` từ nửa đường. **Đề xuất**
 
 ![Pill thành expanded, hai pill phụ gộp vào; rồi thu về](images/expanded.vi.png)
 

@@ -24,6 +24,14 @@ eq(p.text, 'Monument Valley · Lumen Coast', 'title · artist');
 eq(p.leading, {art: 'https://i.scdn.co/image/ab', icon: ICON}, 'art with the generic icon behind it');
 eq(p.trailing, 'eq', 'playing: the equaliser');
 eq(adapter.media({...track, status: 'Paused'}, null).trailing, PAUSED_EQ, 'paused: the equaliser stopped low (was ⏸)');
+// the equaliser in the cover's main colour (design/pill "Equaliser", 2026-11-13)
+const tinted = adapter.media({...track, tint: '#db286a'}, null);
+eq(tinted.trailing, {glyph: 'eq', color: '#db286a'}, 'a cover colour: the equaliser takes it');
+eq(adapter.media({...track, tint: '#db286a', status: 'Paused'}, null).trailing, {glyph: PAUSED_EQ, color: '#db286a'}, 'paused: stopped low, the same colour');
+eq([adapter.media({...track, tint: ''}, null).trailing, adapter.media({...track, tint: null}, null).trailing, adapter.media({...track, tint: 7}, null).trailing],
+    ['eq', 'eq', 'eq'], 'no colour (a cover without one, or not read yet): the plain equaliser');
+eq([tinted.attributes.tint, p.attributes.tint], ['#db286a', null], 'the colour as an attribute too: the Media tab\'s chips');
+eq(planMinimal(tinted).trailing, {type: 'glyph', name: 'eq', color: '#db286a'}, 'the pill\'s trailing carries it');
 eq(planMinimal(p).action, null, 'no button in minimal');
 eq(planMinimal(p, {side: true}).text, null, 'side pill: art + glyph only');
 eq([p.onPress, p.onAction], [raise, onAction], 'click raises the player; buttons go to the source');
@@ -46,6 +54,10 @@ const c = planCompact(p);
 eq([c.text, c.subtitle], ['Monument Valley', 'Lumen Coast · Spotify'], 'title over artist · app');
 eq(c.actions.map(a => a.id), ['prev', 'playpause', 'next'], 'transport in the compact');
 eq(c.live, {position: 92000, length: 221000, at: 1000, playing: true}, 'a live position');
+// the equaliser in the ⏸ slot, as on the pill (design/compact "Nhạc", 2026-11-13)
+eq(c.trailing, {type: 'glyph', name: 'eq'}, 'playing: the equaliser in the compact');
+eq(planCompact(adapter.media({...track, status: 'Paused'}, null)).trailing, {type: 'glyph', name: PAUSED_EQ}, 'paused: stopped low');
+eq(adapter.media({...track, tint: '#db286a'}, null).compact.trailing, {glyph: 'eq', color: '#db286a'}, 'the compact\'s in the cover\'s colour too');
 eq(planCompact(adapter.media({...track, length: 0}, null)).live, null, 'no length (a stream): no bar');
 eq(planCompact(adapter.media({...track, position: undefined}, null)).live, null, 'no position: no bar');
 eq(adapter.media({...track, compactOnHover: false}, null).compact, null, '`media-compact-on-hover` off: no compact');

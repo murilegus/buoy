@@ -1,24 +1,25 @@
 // Home (design/home, decided 2026-11-11, Ethan: H5): one main card over a row of tiles, laid out
 // again at every open and stack change so the tab is never empty and never scrolls.
 //   states  — four moments at 1920: music, Claude asks, nothing running, missed and a full row
+//   music   — the music card's one button (rest, hovered, paused) and the music tile's corner
 //   anatomy — 1920 with every measure, then 2560 and 3440
 //   fill    — how the row fills: activities, then the glance, then wide tiles
 //   lists   — the Missed tile and +K open a list in place of the card and the row
 //   screen  — screen recording in Home: the main card, or a tile
-// gjs -m home.js out.png <states|anatomy|fill|lists|screen>
+// gjs -m home.js out.png <states|music|anatomy|fill|lists|screen>
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
 import GLib from 'gi://GLib';
 import cairo from 'cairo';
-import {SCALE as SC, C, drawBu, icon as gicon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, drawBu, drawEq, EQ, icon as gicon, SAMPLE} from '../../render/lib.js';
 const [out, MODE] = ARGV;
 // Buoy's colour icons (weather, daypart), the ones the extension ships
 const COLOUR = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]),
     '..', '..', '..', '..', 'src', 'buoy@murilegus', 'icons', 'color']);
 
 // ---- the rules ------------------------------------------------------------------------------------
-const PAD = 12, HEAD = 56, GAP = 8, TILE_H = 100, TILE_MIN = 120, WIDE = 200, TALL = 160, ART_MAX = 160;
+const PAD = 12, HEAD = 56, GAP = 8, TILE_H = 100, TILE_MIN = 120, WIDE = 200, TALL = 160, ART_MAX = 184;
 // tiles a row holds, each at least TILE_MIN with gaps of 8: 4 at 1920, 5 at 2560 and 3440
 const fitN = cw => Math.floor((cw + GAP) / (TILE_MIN + GAP));
 // the row: activities first (Missed leading), one unit each, N − 1 and "+K" when they overflow;
@@ -109,24 +110,37 @@ function panel(x, y, EW, EH, title, {bellDot = false} = {}) {
 }
 
 // ---- the main card: fill-1, r 16; low under 160, tall from 160 ----------------------------------------
+// The music card's one button (design/home "Thẻ nhạc và ô nhạc", 2026-11-13): play / pause as the
+// compact's ⏸ slot — the equaliser at rest, the cream ⏸ (white under the pointer) when hovered;
+// paused, the bars low and ▶. SLOT: {hover, paused} for the drawings of that section.
+let SLOT = {hover: false, paused: false};
+const LOW = [4, 6, 7, 5, 6, 3];
+function slot(cx, cy) {
+    if (SLOT.hover) {
+        cr.newPath(); cr.setSourceRGB(1, 1, 1); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
+        icon(SLOT.paused ? 'play-fill' : 'pause-fill', cx - 8, cy - 8, 16, C.BLACK);
+        return;
+    }
+    if (!SLOT.paused) {
+        drawEq(cr, cx - EQ.width / 2, cy);
+        return;
+    }
+    LOW.forEach((h, i) => fill([...EQ.rgb, 1], cx - EQ.width / 2 + i * (EQ.w + EQ.gap), cy - h / 2, 2, h, 1));
+}
 function heroMusic(x, y, w, h) {
     fill([1, 1, 1, C.FILL1], x, y, w, h, 16);
     const s = Math.min(h - 16, ART_MAX), ay = y + (h - s) / 2;
     art(x + 8, ay, s, 8);
     const tx = x + 8 + s + 12, x1 = x + w - 14;
-    if (h < TALL) {   // low: the buttons top right, the bar at the foot of the text column
-        text(SAMPLE.track, tx, y + 12, {wt: 600}); text(SAMPLE.sub, tx, y + 32, {sz: SUB, a: C.FG_MUTED});
-        [['forward-step-fill', 0], ['pause-fill', 1], ['backward-step-fill', 0]].forEach(([n, m], i) => round(x + w - 28 - i * 40, y + 28, n, m));
-        bar(tx, y + h - 34, x1 - tx);
-        text('1:24', tx, y + h - 26, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, y + h - 26, {sz: SUB, a: C.FG_SUBTLE, right: true});
-    } else {          // tall: the title larger, the bar, the buttons centred under it
-        text(SAMPLE.track, tx, ay + 6, {sz: 14, wt: 700}); text(SAMPLE.sub, tx, ay + 32, {sz: SUB, a: C.FG_MUTED});
-        const by = ay + s - 40;
-        bar(tx, by - 30, x1 - tx);
-        text('1:24', tx, by - 22, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, by - 22, {sz: SUB, a: C.FG_SUBTLE, right: true});
-        const mid = (tx + x1) / 2;
-        [['backward-step-fill', 0], ['pause-fill', 1], ['forward-step-fill', 0]].forEach(([n, m], i) => round(mid + (i - 1) * 44, by + 20, n, m));
-    }
+    // low and tall alike (2026-11-13, Ethan: "giống 1920 nhưng to lên"): the slot top right, the
+    // bar at the foot of the text column; tall, the cover and the title larger
+    // the text column keeps to the cover's top and bottom (a card over 176 centres its cover)
+    const tall = h >= TALL, by = ay + s;
+    text(SAMPLE.track, tx, ay + 4, tall ? {sz: 14, wt: 700} : {wt: 600});
+    text(SAMPLE.sub, tx, ay + (tall ? 30 : 24), {sz: SUB, a: C.FG_MUTED});
+    slot(x + w - 28, ay + 20);
+    bar(tx, by - 30, x1 - tx);   // the times 4 under it (2026-11-13)
+    text('1:24', tx, by - 18, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, by - 18, {sz: SUB, a: C.FG_SUBTLE, right: true});
 }
 function heroAsk(x, y, w, h) {
     fill([1, 1, 1, C.FILL1], x, y, w, h, 16);
@@ -188,6 +202,9 @@ function small(x, y, w, key, more = 0) {
     const it = ITEMS[key], am = it.amber;
     fill(am ? [...C.AMBER, .16] : [1, 1, 1, C.FILL1], x, y, w, TILE_H, 16);
     lead(x, y, it.ic, am);
+    // the music tile: its equaliser in the top right corner, centred on the leading cell
+    if (key === 'music')
+        drawEq(cr, x + w - 12 - EQ.width, y + 22);
     text(it.val, x + 12, y + 40, {sz: BIG, wt: 600, rgb: am ? C.AMBER : W1});
     text(it.cap, x + 12, y + 68, {sz: SUB, a: C.FG_MUTED, maxW: w - 24});
     if (w >= WIDE) it.det.forEach((d, i) => d && text(d, x + w - 14, y + 44 + i * 18, {sz: SUB, a: C.FG_SUBTLE, right: true}));
@@ -294,6 +311,30 @@ if (MODE === 'lists') {
     surf.writeToPNG(out);
 }
 
+// ---- the music card and the music tile -------------------------------------------------------------------
+if (MODE === 'music') {
+    // design/home "Thẻ nhạc và ô nhạc" (2026-11-13): the card's one button and the tile's corner
+    const EW = 560, EH = 280, GX = 40, GY = 84, W = 24 + 2 * EW + GX + 24, H = 50 + 2 * (EH + GY) - 20;
+    const surf = canvas(W, H), G = ['wx', 'up', 'bat'];
+    const cells = [
+        [24, 50, {hover: false, paused: false}, 'music', ['claude'], 'A · Thẻ nhạc lúc nghỉ: equaliser ở chỗ ⏸, không còn ⏮ ⏭',
+            ['Equaliser theo màu bìa, chạy khi Home đang mở; ⏮ ⏭ ở tab Media.', 'Bấm thẻ: tab Media, equaliser đi tới ô ↗ của tab.']],
+        [24 + EW + GX, 50, {hover: true, paused: false}, 'music', ['claude'], 'B · Rê chuột vào ô (hay focus bàn phím): nút ⏸',
+            ['Như các nút chính: kem, trắng dưới con trỏ. Đổi qua lại bằng mờ chéo tại chỗ.', 'Bấm: dừng; nút thành ▶ ngay, không nháy.']],
+        [24, 50 + EH + GY, {hover: false, paused: true}, 'music', ['claude'], 'C · Đang dừng: equaliser thấp; rê chuột thì ▶',
+            ['Các thanh hạ xuống trong 200 ms rồi đứng yên.', '']],
+        [24 + EW + GX, 50 + EH + GY, {hover: false, paused: false}, 'ask', ['music'], 'D · Nhạc là một ô: equaliser ở góc trên phải',
+            ['Khi thẻ chính là việc khác (ở đây: Claude hỏi), nhạc lùi xuống một ô.', 'Equaliser ở góc trên phải, cách mép 12; bấm ô: tab Media, equaliser đi tới ô ↗.']],
+    ];
+    for (const [x, y, st, hero, acts, title, lines] of cells) {
+        SLOT = st;
+        home(x, y, EW, EH, hero, acts, G, title);
+        note(x, y + EH + 8, lines.filter(Boolean));
+    }
+    SLOT = {hover: false, paused: false};
+    surf.writeToPNG(out);
+}
+
 // ---- screen recording in Home -----------------------------------------------------------------------------
 if (MODE === 'screen') {
     const EW = 560, EH = 280, GX = 40, W = 24 + 2 * EW + GX + 24, H = 50 + EH + 70;
@@ -323,7 +364,7 @@ if (MODE === 'anatomy') {
     [[tX + 12, tY + 12, 20, 20], [tX + 12, tY + 40, 54, 22], [tX + 12, tY + 68, 80, 14]].forEach(r => cr.rectangle(...r)); cr.stroke();
     note(ax, ay + 314, ['Ô: leading 20 ở 12 (icon 16 ở giữa; Bu 20 lấp đầy; icon màu 24 lố 2 mỗi bên) · số 1.5em 600 ở 40 ·',
         'chú thích 0.85em fg-muted ở 68. Ô rộng từ 200: thêm cột chi tiết bên phải. Thẻ và ô: fill-1, bo 16 = 28 − 12.',
-        'Ảnh bìa của thẻ nhạc: cạnh = cao thẻ − 16, tối đa 160, cách mép 8, bo 8.'], .85);
+        'Ảnh bìa của thẻ nhạc: cạnh = cao thẻ − 16, tối đa 184, cách mép 8 (thẻ cao hơn: ở giữa), bo 8; cột chữ theo mép trên và dưới của ảnh.'], .85);
     const rx = ax, ry = ay + 380;
     ['Tính lại mỗi lần Home mở và mỗi khi stack đổi:',
      '1. N = floor((rộng nội dung + 8) / 128): số ô một hàng, mỗi ô ≥ 120.',
@@ -334,7 +375,7 @@ if (MODE === 'anatomy') {
         text(l, rx, ry + i * 17, {sz: 8.5, a: i ? .85 : 1, wt: i ? 400 : 700}));
     const bx = ax + 560 + 150;
     home(bx, ay, 716, 344, 'music', ACTS, G, '2560 · 716 × 344: N = 5, thẻ chính 168 (dạng cao)');
-    home(bx, ay + 344 + 70, 760, 376, 'music', ACTS, G, '3440 · 760 × 376: N = 5, thẻ chính 200, ảnh bìa 160');
+    home(bx, ay + 344 + 70, 760, 376, 'music', ACTS, G, '3440 · 760 × 376: N = 5, thẻ chính 200, ảnh bìa 184');
     surf.writeToPNG(out);
 }
 

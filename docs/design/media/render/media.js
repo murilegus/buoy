@@ -9,13 +9,15 @@
 //   players — several players at once: two (one paused), three (two playing, the second
 //             chosen), five (the chips past the row's width keep only their logo)
 //   text    — the text column before and after (2026-11-13, Ethan: larger, the title as tall as ↗)
+//   eq      — one player: where the equaliser could go on the tab (no chips with one player),
+//             options A–D beside today's (2026-11-13, Ethan)
 //   switch  — five players, Spotify → Firefox in three frames, as the tab strip moves (Ethan,
 //             2026-11-13): the chosen fill slides and widens, the chips move to their places
-// gjs -m media.js out.png <options|anatomy|states|players|switch|text>
+// gjs -m media.js out.png <options|anatomy|states|players|switch|text|eq>
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon, drawBu, SAMPLE, COVER} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, drawBu, drawEq, EQ, SAMPLE, COVER} from '../../render/lib.js';
 const [out, MODE = 'options'] = ARGV;
 
 // ---- sizes (design/expanded, design/home) -----------------------------------------------------------
@@ -404,5 +406,54 @@ if (MODE === 'text') {
     });
     text('Dòng dài nào cũng chạy (marquee), không cắt "…": tên bài, "nghệ sĩ · app", album; hai dòng dưới lấy hết bề ngang cột.',
         40, 40 + 2 * (30 + EH + 30) + 16, {sz: 9, a: .8});
+    surf.writeToPNG(out);
+}
+
+if (MODE === 'eq') {
+    // One player: no chips (they show from two), so nothing on the tab says it plays. Where the
+    // equaliser (design/pill "Equaliser": six bars 2 × 14, the cover's colour) could go.
+    const {w: EW, h: EH} = EXP[1920], TT = 34, GY = 64;
+    const OPTS = [
+        ['Hiện nay: không có (chip chỉ có từ hai player)', null],
+        ['A — sau tên bài, trước ↗', 'title'],
+        ['B — góc ảnh bìa, trên nền đen mờ', 'cover'],
+        ['C — trong nút phát (như ô ⏸ của compact): nghỉ thì equaliser, rê chuột thì ⏸', 'play'],
+        ['D — cạnh giờ đã chạy, dưới thanh', 'time'],
+        ['E — ô của ↗ (như ô ⏸ của compact): lúc nghỉ thì equaliser', 'open'],
+        ['E — rê chuột vào ô (hay focus bàn phím): nút ↗ hiện lại', 'openHover'],
+    ];
+    const rows = Math.ceil(OPTS.length / 2);
+    const surf = canvas(40 + 2 * EW + 60 + 40, 30 + rows * (TT + EH + GY) + 40);
+    OPTS.forEach(([title, where], i) => {
+        const x = 40 + (i % 2) * (EW + 60), y = 30 + Math.floor(i / 2) * (TT + EH + GY) + TT;
+        text(title, x, y - 26, {sz: 11, wt: 700});
+        const m = m1(x, y, EW, EH, [SAMPLE.app]);
+        const cardRGB = [C.FILL1, C.FILL1, C.FILL1];      // fill-1 on black
+        if (where === 'title') {
+            drawEq(cr, m.x1 - 32 - 10 - EQ.width, m.card.y + 12 + 16);
+        } else if (where === 'cover') {
+            const ax = m.card.x + 8, ay = m.card.y + 8, s = m.art;
+            fill([0, 0, 0, .55], ax + s - 8 - 38, ay + s - 8 - 24, 38, 24, 12);
+            drawEq(cr, ax + s - 8 - 38 + (38 - EQ.width) / 2, ay + s - 8 - 12);
+        } else if (where === 'play') {
+            cr.newPath(); cr.setSourceRGB(...cardRGB); cr.arc(m.mid, m.ty + 16, 17, 0, 2 * Math.PI); cr.fill();
+            drawEq(cr, m.mid - EQ.width / 2, m.ty + 16);
+        } else if (where === 'open' || where === 'openHover') {
+            // the slot of ↗: at rest the equaliser alone (no fill), under the pointer ↗ as now
+            const cx = m.x1 - 16, cy = m.card.y + 12 + 16;
+            cr.newPath(); cr.setSourceRGB(...cardRGB); cr.arc(cx, cy, 17, 0, 2 * Math.PI); cr.fill();
+            if (where === 'open') {
+                drawEq(cr, cx - EQ.width / 2, cy);
+            } else {
+                cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL3); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
+                icon('arrow-up-right-from-square', cx - 8, cy - 8, 16);
+            }
+        } else if (where === 'time') {
+            const e = text('1:24', 0, 0, {sz: SUB, measure: true});
+            drawEq(cr, m.tx + e.width + 8, m.by + 8 + e.height / 2 + 1);
+        }
+    });
+    text('Ở 1920, một player. E: ↗ dưới con trỏ là fill-3, như nút phụ khi rê chuột. Chỗ được chọn là nơi equaliser của pill bay tới khi mở tab.',
+    40, 30 + rows * (TT + EH + GY) + 4, {sz: 9, a: .8, maxW: 2 * EW + 60});
     surf.writeToPNG(out);
 }
