@@ -106,6 +106,8 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 
 ## Thẻ nhạc và ô nhạc
 
+![Thẻ nhạc lúc nghỉ, rê chuột, đang dừng; nhạc là một ô với equaliser ở góc](images/music.vi.png)
+
 - **Thẻ nhạc (thẻ chính): bỏ ⏮ ⏭, chỉ còn ⏸ / ▶ làm như ô ⏸ của compact**: lúc nghỉ là equaliser
   (chạy, hay thấp khi dừng), rê chuột hay focus bàn phím thì nút kem ⏸ / ▶; ⏮ ⏭ ở tab Media. Bấm thẻ
   mở tab Media: equaliser đi tới ô ↗ của tab, ảnh bìa và tên tới chỗ của chúng (Chuyển động, "Phần

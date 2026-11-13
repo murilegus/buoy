@@ -1,17 +1,18 @@
 // Home (design/home, decided 2026-11-11, Ethan: H5): one main card over a row of tiles, laid out
 // again at every open and stack change so the tab is never empty and never scrolls.
 //   states  — four moments at 1920: music, Claude asks, nothing running, missed and a full row
+//   music   — the music card's one button (rest, hovered, paused) and the music tile's corner
 //   anatomy — 1920 with every measure, then 2560 and 3440
 //   fill    — how the row fills: activities, then the glance, then wide tiles
 //   lists   — the Missed tile and +K open a list in place of the card and the row
 //   screen  — screen recording in Home: the main card, or a tile
-// gjs -m home.js out.png <states|anatomy|fill|lists|screen>
+// gjs -m home.js out.png <states|music|anatomy|fill|lists|screen>
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
 import GLib from 'gi://GLib';
 import cairo from 'cairo';
-import {SCALE as SC, C, drawBu, icon as gicon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, drawBu, drawEq, EQ, icon as gicon, SAMPLE} from '../../render/lib.js';
 const [out, MODE] = ARGV;
 // Buoy's colour icons (weather, daypart), the ones the extension ships
 const COLOUR = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]),
@@ -109,6 +110,23 @@ function panel(x, y, EW, EH, title, {bellDot = false} = {}) {
 }
 
 // ---- the main card: fill-1, r 16; low under 160, tall from 160 ----------------------------------------
+// The music card's one button (design/home "Thẻ nhạc và ô nhạc", 2026-11-13): play / pause as the
+// compact's ⏸ slot — the equaliser at rest, the cream ⏸ (white under the pointer) when hovered;
+// paused, the bars low and ▶. SLOT: {hover, paused} for the drawings of that section.
+let SLOT = {hover: false, paused: false};
+const LOW = [4, 6, 7, 5, 6, 3];
+function slot(cx, cy) {
+    if (SLOT.hover) {
+        cr.newPath(); cr.setSourceRGB(1, 1, 1); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
+        icon(SLOT.paused ? 'play-fill' : 'pause-fill', cx - 8, cy - 8, 16, C.BLACK);
+        return;
+    }
+    if (!SLOT.paused) {
+        drawEq(cr, cx - EQ.width / 2, cy);
+        return;
+    }
+    LOW.forEach((h, i) => fill([...EQ.rgb, 1], cx - EQ.width / 2 + i * (EQ.w + EQ.gap), cy - h / 2, 2, h, 1));
+}
 function heroMusic(x, y, w, h) {
     fill([1, 1, 1, C.FILL1], x, y, w, h, 16);
     const s = Math.min(h - 16, ART_MAX), ay = y + (h - s) / 2;
@@ -116,7 +134,7 @@ function heroMusic(x, y, w, h) {
     const tx = x + 8 + s + 12, x1 = x + w - 14;
     if (h < TALL) {   // low: the buttons top right, the bar at the foot of the text column
         text(SAMPLE.track, tx, y + 12, {wt: 600}); text(SAMPLE.sub, tx, y + 32, {sz: SUB, a: C.FG_MUTED});
-        [['forward-step-fill', 0], ['pause-fill', 1], ['backward-step-fill', 0]].forEach(([n, m], i) => round(x + w - 28 - i * 40, y + 28, n, m));
+        slot(x + w - 28, y + 28);
         bar(tx, y + h - 34, x1 - tx);
         text('1:24', tx, y + h - 26, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, y + h - 26, {sz: SUB, a: C.FG_SUBTLE, right: true});
     } else {          // tall: the title larger, the bar, the buttons centred under it
@@ -125,7 +143,7 @@ function heroMusic(x, y, w, h) {
         bar(tx, by - 30, x1 - tx);
         text('1:24', tx, by - 22, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, by - 22, {sz: SUB, a: C.FG_SUBTLE, right: true});
         const mid = (tx + x1) / 2;
-        [['backward-step-fill', 0], ['pause-fill', 1], ['forward-step-fill', 0]].forEach(([n, m], i) => round(mid + (i - 1) * 44, by + 20, n, m));
+        slot(mid, by + 20);
     }
 }
 function heroAsk(x, y, w, h) {
@@ -188,6 +206,9 @@ function small(x, y, w, key, more = 0) {
     const it = ITEMS[key], am = it.amber;
     fill(am ? [...C.AMBER, .16] : [1, 1, 1, C.FILL1], x, y, w, TILE_H, 16);
     lead(x, y, it.ic, am);
+    // the music tile: its equaliser in the top right corner, centred on the leading cell
+    if (key === 'music')
+        drawEq(cr, x + w - 12 - EQ.width, y + 22);
     text(it.val, x + 12, y + 40, {sz: BIG, wt: 600, rgb: am ? C.AMBER : W1});
     text(it.cap, x + 12, y + 68, {sz: SUB, a: C.FG_MUTED, maxW: w - 24});
     if (w >= WIDE) it.det.forEach((d, i) => d && text(d, x + w - 14, y + 44 + i * 18, {sz: SUB, a: C.FG_SUBTLE, right: true}));
@@ -291,6 +312,30 @@ if (MODE === 'lists') {
     note(x1, 50 + EH + 8, ['Hàng 32 một dòng; bấm hàng mở chỗ của nó (thông báo → tab Thông báo, mục Nhỡ khi vắng)', 'và hàng rời danh sách; × xoá hết; ‹ hoặc Esc về Home.']);
     note(x2, 50 + EH + 8, ['Cùng khuôn danh sách; bấm hàng mở tab của activity đó.', 'Dài hơn 5 hàng thì danh sách cuộn, chỉ ở đây.']);
     note(x0, 50 + EH + 8, ['Bị nhỡ đếm cả thông báo chưa xem và việc kết thúc lúc không thấy.']);
+    surf.writeToPNG(out);
+}
+
+// ---- the music card and the music tile -------------------------------------------------------------------
+if (MODE === 'music') {
+    // design/home "Thẻ nhạc và ô nhạc" (2026-11-13): the card's one button and the tile's corner
+    const EW = 560, EH = 280, GX = 40, GY = 84, W = 24 + 2 * EW + GX + 24, H = 50 + 2 * (EH + GY) - 20;
+    const surf = canvas(W, H), G = ['wx', 'up', 'bat'];
+    const cells = [
+        [24, 50, {hover: false, paused: false}, 'music', ['claude'], 'A · Thẻ nhạc lúc nghỉ: equaliser ở chỗ ⏸, không còn ⏮ ⏭',
+            ['Equaliser theo màu bìa, chạy khi Home đang mở; ⏮ ⏭ ở tab Media.', 'Bấm thẻ: tab Media, equaliser đi tới ô ↗ của tab.']],
+        [24 + EW + GX, 50, {hover: true, paused: false}, 'music', ['claude'], 'B · Rê chuột vào ô (hay focus bàn phím): nút ⏸',
+            ['Như các nút chính: kem, trắng dưới con trỏ. Đổi qua lại bằng mờ chéo tại chỗ.', 'Bấm: dừng; nút thành ▶ ngay, không nháy.']],
+        [24, 50 + EH + GY, {hover: false, paused: true}, 'music', ['claude'], 'C · Đang dừng: equaliser thấp; rê chuột thì ▶',
+            ['Các thanh hạ xuống trong 200 ms rồi đứng yên.', '']],
+        [24 + EW + GX, 50 + EH + GY, {hover: false, paused: false}, 'ask', ['music'], 'D · Nhạc là một ô: equaliser ở góc trên phải',
+            ['Khi thẻ chính là việc khác (ở đây: Claude hỏi), nhạc lùi xuống một ô.', 'Equaliser ở góc trên phải, cách mép 12; bấm ô: tab Media, equaliser đi tới ô ↗.']],
+    ];
+    for (const [x, y, st, hero, acts, title, lines] of cells) {
+        SLOT = st;
+        home(x, y, EW, EH, hero, acts, G, title);
+        note(x, y + EH + 8, lines.filter(Boolean));
+    }
+    SLOT = {hover: false, paused: false};
     surf.writeToPNG(out);
 }
 

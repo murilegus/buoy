@@ -65,7 +65,7 @@ r icons/render/roles.js icons/images/roles.vi.png
 r expanded/render/expanded.js expanded/images/expanded.vi.png
 
 # home
-for m in states anatomy fill lists screen; do r home/render/home.js home/images/$m.vi.png $m; done
+for m in states music anatomy fill lists screen; do r home/render/home.js home/images/$m.vi.png $m; done
 
 # motion
 for m in curves compact expanded tabs; do r motion/render/motion.js motion/images/$m.vi.png $m; done

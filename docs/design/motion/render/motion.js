@@ -155,28 +155,30 @@ let TITLE_W = 0;
 // The compact is media 88 (design/compact): the art 72 at 8 with bo 20, the text 12 after it, the
 // round button 14 from the right edge, the bar and the times under the text; as wide as the
 // compact's anatomy drawing (340).
-const PILL = {w: 0, h: 32, lead: {x: 28, y: 4, s: 24, r: 6}, title: {x: 58, y: 8, sz: 11}};
-const COMPACT = {w: 340, h: 88, lead: {x: 8, y: 8, s: 72, r: 20}, title: {x: 92, y: 10, sz: 11}};
-const EXP = {w: 560, h: 280, lead: {x: 20, y: 64, s: 88, r: 22}, title: {x: 120, y: 74, sz: 13}};
+// The equaliser is shared too (design/motion, 2026-11-13): its centre in each form — the pill's
+// trailing, the compact's round slot, the Home music card's slot at its top right.
+const PILL = {w: 0, h: 32, lead: {x: 28, y: 4, s: 24, r: 6}, title: {x: 58, y: 8, sz: 11}, get eq() { return {x: this.w - 8 - EQ.width / 2, y: 16}; }};
+const COMPACT = {w: 340, h: 88, lead: {x: 8, y: 8, s: 72, r: 20}, title: {x: 92, y: 10, sz: 11}, eq: {x: 340 - 14 - 16, y: 28}};
+const EXP = {w: 560, h: 280, lead: {x: 20, y: 64, s: 88, r: 22}, title: {x: 120, y: 74, sz: 13}, eq: {x: 560 - 12 - 28, y: 56 + 28}};
 function shared(cx, y, from, to, x, a = 1) {
     const at = (f, k) => ({x: cx - f.w / 2 + f[k].x, y: y + f[k].y});
     const l0 = at(from, 'lead'), l1 = at(to, 'lead'), t0 = at(from, 'title'), t1 = at(to, 'title');
     art(lerp(l0.x, l1.x, x), lerp(l0.y, l1.y, x), lerp(from.lead.s, to.lead.s, x), a, lerp(from.lead.r, to.lead.r, x));
     text(SAMPLE.track, lerp(t0.x, t1.x, x), lerp(t0.y, t1.y, x), {sz: lerp(from.title.sz, to.title.sz, x), wt: 600, a});
+    const e0 = at(from, 'eq'), e1 = at(to, 'eq');     // same size everywhere: it only moves
+    drawEq(cr, lerp(e0.x, e1.x, x) - EQ.width / 2, lerp(e0.y, e1.y, x), a);
 }
-function pillRest(cx, y, a) { // the light, " · artist" and the equaliser: only the pill has them
+function pillRest(cx, y, a) { // the light and " · artist": only the pill has them
     if (a <= 0) return;
     const x = cx - PILL.w / 2;
     fill([...C.AMBER, a], x + 12, y + 12, 8, 8, 4);
     text(BY, x + PILL.title.x + TITLE_W, y + PILL.title.y, {sz: 11, wt: 600, a});
-    drawEq(cr, x + PILL.w - 8 - EQ.width, y + 16, a);
 }
-function compactRest(cx, y, a) { // the subtitle, the button, the bar, the times: only the compact has them
+function compactRest(cx, y, a) { // the subtitle, the bar, the times: only the compact has them (its ⏸
+    // shows only under the pointer, in the equaliser's place: design/compact "Nhạc")
     if (a <= 0) return;
     const x = cx - COMPACT.w / 2, tx = x + COMPACT.title.x, xr = x + COMPACT.w - 14, by = y + 60;
     text(SAMPLE.sub, tx, y + 30, {sz: 9.5, a: a * C.FG_MUTED});
-    cr.newPath(); cr.arc(xr - 16, y + 28, 16, 0, 2 * Math.PI); cr.setSourceRGBA(...C.CREAM, a); cr.fill();
-    icon(cr, 'pause-fill', xr - 24, y + 20, 16, C.BLACK, a);
     fill([1, 1, 1, C.FILL3 * a], tx, by, xr - tx, 4, 2);
     fill([1, 1, 1, a], tx, by, (xr - tx) * .38, 4, 2);
     text('1:24', tx, by + 7, {sz: 8.5, a: .5 * a});
@@ -202,9 +204,9 @@ function morph(fx, fy, cw, from, to, x, ms, rest, travel = true) {
 function compact() {
     const CW = 420, W = 24 + 3 * CW + 2 * 12 + 24, H = 2 * (34 + 2 * 140) + 40, surf = canvas(W, H);
     const rows = [
-        {t: 'Rê chuột 300 ms → compact: nền nở bằng move (400 ms, bounce 0.2); leading và tên đi tới chỗ mới cùng nền; đèn và equaliser đi bằng fade-out; phụ đề và thanh lộ theo mép nền',
+        {t: 'Rê chuột 300 ms → compact: nền nở bằng move (400 ms, bounce 0.2); leading, tên và equaliser đi tới chỗ mới cùng nền; đèn đi bằng fade-out; phụ đề và thanh lộ theo mép nền',
             spring: SPRING.move, from: PILL, to: COMPACT, ms: [0, 60, 120, 200, 300, 450], rest: {from: pillRest, to: compactRest}},
-        {t: 'Rời chuột (sau 200 ms ân hạn) → pill: close (360 ms, không nảy); leading và tên về chỗ cũ; phụ đề và thanh đi bằng fade-out; đèn và equaliser hiện lại từ nửa đường',
+        {t: 'Rời chuột (sau 200 ms ân hạn) → pill: close (360 ms, không nảy); leading, tên và equaliser về chỗ cũ; phụ đề và thanh đi bằng fade-out; đèn hiện lại từ nửa đường',
             spring: SPRING.close, from: COMPACT, to: PILL, ms: [0, 50, 100, 160, 240, 400], rest: {from: compactRest, to: pillRest}},
     ];
     rows.forEach((r, ri) => {
@@ -240,9 +242,9 @@ function expanded() {
     const CW = 760, W = 24 + 3 * CW + 2 * 12 + 24, H = 2 * (40 + 2 * 330) + 40, surf = canvas(W, H);
     const SIDE = 131, GAP = 8;
     const rows = [
-        {t: 'Bấm → expanded: nền nở bằng open (500 ms, bounce 0.25); ảnh và tên của pill đi tới thẻ chính của Home; thanh tab và phần còn lại lộ theo mép nền; hai pill phụ trượt vào giữa bằng move và mờ ở nửa sau',
+        {t: 'Bấm → expanded: nền nở bằng open (500 ms, bounce 0.25); ảnh, tên và equaliser của pill đi tới thẻ chính của Home; thanh tab và phần còn lại lộ theo mép nền; hai pill phụ trượt vào giữa bằng move và mờ ở nửa sau',
             spring: SPRING.open, from: PILL, to: EXP, ms: [0, 80, 160, 260, 400, 640], open: true, rest: {from: pillRest, to: REST.expanded}},
-        {t: 'Thu về: nền thu bằng close (360 ms, không nảy); ảnh và tên về pill; phần còn lại đi bằng fade-out; đèn và equaliser hiện lại; pill phụ trượt ra và hiện lại',
+        {t: 'Thu về: nền thu bằng close (360 ms, không nảy); ảnh, tên và equaliser về pill; phần còn lại đi bằng fade-out; đèn hiện lại; pill phụ trượt ra và hiện lại',
             spring: SPRING.close, from: EXP, to: PILL, ms: [0, 60, 120, 200, 300, 480], open: false, rest: {from: REST.expanded, to: pillRest}},
     ];
     rows.forEach((r, ri) => {
