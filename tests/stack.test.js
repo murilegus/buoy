@@ -677,6 +677,87 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     const lights = island.log.filter(l => l.startsWith('light'));
     eq(lights, ['light missed', 'light waiting', 'light missed', 'light off'], 'setLight only on change');
 }
+// --- away / Do Not Disturb: endings missed, alerts still the island's (design/alerts-and-asks) ---
+{
+    const {island, stack} = setup();
+    eq(stack.away, false, 'present by default');
+    stack.setAway(true);
+    eq(stack.away, true, 'away getter');
+    stack.surface({id: 'dl', kind: 'progress', app: 'firefox', text: 'report.pdf'});
+    stack.surface({id: 'vol', kind: 'osd'});
+    stack.surface({id: 'clip', kind: 'copied'});
+    stack.surface({id: 'in', kind: 'input'});
+    stack.end('vol');
+    stack.end('clip');
+    stack.end('in');
+    eq(stack.missed, [], 'away: osd/copied/input endings are not missed (your own action)');
+    stack.end('dl');
+    eq(stack.missed.map(m => m.id), ['dl'], 'away: an ending is missed');
+    eq([stack.light, island.light], ['missed', 'missed'], 'away: amber light');
+
+    // away is not hidden: an alert and an ask still reach the island, which decides
+    // (an ordinary alert gets no card while away, a critical one and an ask wait for you)
+    island.log = [];
+    stack.surface({id: 'note', kind: 'notification', alert: true});
+    eq(island.log.at(-1), 'show note alert', 'away: the alert still goes to the island');
+    const p = stack.ask('q', 'Run it?', ['Allow', 'Deny']);
+    eq(island.log.at(-1), 'show q alert expand', 'away: an ask still opens, as when present (its card waits)');
+    eq(stack.light, 'missed', 'an ask on screen is not waiting: no red');
+    stack.answer('q', 'Allow');
+    eq(await p, 'Allow', 'away: the ask is answered as usual');
+    stack.end('note');
+
+    stack.setAway(false);
+    stack.surface({id: 'b', kind: 'progress'});
+    stack.end('b');
+    eq(stack.missed.map(m => m.id), ['note', 'dl'], 'back: endings are not missed again');
+    eq(stack.light, 'missed', 'back: amber stays until Home is shown');
+
+    // hidden apps and an activity's own hidden are never missed, away too
+    stack.setHiddenApps(['spotify']);
+    stack.setAway(true);
+    stack.surface({id: 'h1', kind: 'media', app: 'spotify'});
+    stack.surface({id: 'h2', kind: 'agent', hidden: true});
+    stack.end('h1');
+    stack.end('h2');
+    eq(stack.missed.map(m => m.id), ['note', 'dl'], 'away: hidden apps and hidden activities are not missed');
+
+    // away and fullscreen together: unseen rules (no alert), and back from one keeps the other
+    stack.setUnseen(true);
+    stack.setAway(false);
+    stack.surface({id: 'f', kind: 'progress'});
+    stack.end('f');
+    eq(stack.missed[0].id, 'f', 'still fullscreen after away ends: missed');
+    stack.setUnseen(false);
+    stack.setAway(true);
+    stack.setAway(true);
+    eq(stack.away, true, 'setAway twice is harmless');
+}
+// --- waiting: the red light's ask, for its card on hover (INDICATORS, 2026-11-13) ---
+{
+    const {stack} = setup();
+    eq(stack.waiting, null, 'no ask: nothing waiting');
+    const p1 = stack.ask('q1', 'Run it?', ['Allow', 'Deny']);
+    eq(stack.waiting, null, 'an ask on screen is not waiting');
+    stack.dismiss('q1');
+    eq([stack.light, stack.waiting?.id, stack.waiting?.kind], ['waiting', 'q1', 'ask'], 'dismissed: red, waiting is its activity');
+    const p2 = stack.ask('q2', 'Edit shapes.js?', ['Allow', 'Deny']);
+    stack.dismiss('q2');
+    eq(stack.waiting?.id, 'q2', 'two waiting: the newest');
+    stack.waiting.onAction('Allow');
+    eq(await p2, 'Allow', "the waiting card's button answers its ask");
+    eq([stack.light, stack.waiting?.id], ['waiting', 'q1'], 'answered: the older one is waiting');
+    stack.waiting.onAction('Deny');
+    eq(await p1, 'Deny', 'the older one answered too');
+    eq([stack.light, stack.waiting], ['off', null], 'none left: off, nothing waiting');
+
+    stack.setUnseen(true);
+    const p3 = stack.ask('q3', 'Fullscreen?', ['OK']);
+    eq(stack.waiting?.id, 'q3', 'unseen (fullscreen): the ask waits');
+    stack.end('q3');
+    eq([await p3, stack.waiting], [null, null], 'ended by its caller: nothing waiting');
+    stack.setUnseen(false);
+}
 // --- whenSeen: wait for the island (the greeting, GREETING.md §11) ---------------
 {
     const {stack} = setup();

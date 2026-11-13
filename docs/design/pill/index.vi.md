@@ -107,6 +107,12 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 - Mỗi đầu nở thêm **bán kính đầu bo + nửa chấm** = 16 + 4 = **20**; nội dung từ 8 → 28, nên từ mép
   chấm đến nội dung đúng bằng lề 8. Idle 131 → 171. **Chốt** (2026-11-10)
 - Chỉ có một đèn thì vẫn nở cả hai đầu, để nội dung luôn ở giữa. **Chốt** (Ethan, 2026-11-10)
+- Rê chuột vào pill 1 khi **đèn đỏ** (một câu hỏi chưa trả lời, đã bị ẩn): compact là **chính card
+  hỏi** đó, có nút, thay cho compact của activity; trả lời ngay ở đó. Nhiều câu chờ: câu mới nhất.
+  Chuột rời thì card thu lại, đèn vẫn đỏ. Đèn amber thì vẫn là danh sách Bị nhỡ. **Chốt** (Ethan,
+  2026-11-13)
+
+  ![Đèn đỏ; rê chuột hiện lại card hỏi (chụp trong Shell)](images/waiting.vi.png)
 - Độ rộng tối đa là của **cả pill, tính cả đèn**, không ngoại lệ cho đèn: khi đã chạm tối đa, chữ
   dài cắt bằng "…" như mọi chữ dài khác. Pill 1 ở 1920 vẫn tối đa 336, có đèn hay không. **Chốt**
   (Ethan, 2026-11-10)

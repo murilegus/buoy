@@ -619,8 +619,12 @@ export class Pill {
         });
     }
 
-    // What the compact shows besides the missed list: the activity, or the idle plan
+    // What the compact shows besides the missed list: the red light's ask (its card, to
+    // answer from the hover: INDICATORS "Buoy light", 2026-11-13), the activity, or the idle plan
     _compactOf() {
+        const waiting = this.role === 'centre' && this.light === 'waiting' ? this._island.waiting() : null;
+        if (waiting)
+            return waiting;
         if (this.activity)
             return this.activity;
         const plan = this.role === 'centre' ? this._island.idle : null;

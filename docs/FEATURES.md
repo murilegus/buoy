@@ -65,7 +65,7 @@ to their places there (2026-11-12, Ethan).
 | [ ] | Phone via GSConnect | Grab/Be ride, OTP (30 s), Zalo/Messenger with avatar, call Mute/Reply SMS; adapters in `modules/phone/apps/`; its own Phone tab for calls, messages and rides (2026-11-13), the phone's battery in the Device tab |
 | [ ] | Attention on another workspace | click switches workspace and focuses (Mutter `demands-attention`) |
 | [ ] | Headphones / display plugged | choose on the pill; replaces GNOME's jack dialog when on |
-| [ ] | Buoy light, the rest | red's hover line; away (GNOME's session idle, after `idle-delay`), the lock screen and DND call `stack.setUnseen()`, with the presence watch of "Notifications as alerts" (INDICATORS, design/alerts-and-asks) |
+| [x] | Buoy light, the rest | red's hover: the waiting ask's own card, answered there (design/pill); away (GNOME's session idle, after `idle-delay`) and DND count endings as missed (`stack.setAway()`; the lock screen disables Buoy), with the presence watch of "Notifications as alerts" (INDICATORS, design/alerts-and-asks) |
 | [ ] | Power | charging, full, low; "18 W — slow"; "full in 42 min" (UPower) |
 | [ ] | Bluetooth device | connected, with its battery |
 | [ ] | USB / phone / webcam plugged | mount with one-tap eject |

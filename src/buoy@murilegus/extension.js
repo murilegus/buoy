@@ -109,6 +109,10 @@ export default class BuoyExtension extends Extension {
         const seen = () => this._stack.setUnseen(!this._island.actor.visible);
         this._island.actor.connectObject('notify::visible', seen, this);
         seen();
+        // Away (the session idle) or Do Not Disturb: endings are missed too, alerts stay the
+        // island's (design/alerts-and-asks, FEATURES M4 "Buoy light, the rest")
+        this._island.onAway = away => this._stack.setAway(away);
+        this._stack.setAway(this._island.away);
         this._dbus = new BuoyDBus(this._stack, {registry: this._registry});
         this._dbus.export();
 
@@ -132,6 +136,7 @@ export default class BuoyExtension extends Extension {
             open: (id, at) => this._stack?.openMissed(id, at),
             clear: () => this._stack?.clearMissed(),
         };
+        this._island.waiting = () => this._stack?.waiting ?? null;
         this.stack = this._stack; // Looking Glass
 
         // modules-<id> applies at once (prefs, gsettings): start or stop that module only,

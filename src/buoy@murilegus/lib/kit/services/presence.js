@@ -24,8 +24,10 @@ export class Presence {
     /**
      * @param {object} [opts]
      * @param {function(boolean):void} [opts.onAway]  called when away starts (true) or ends
+     * @param {function(boolean):void} [opts.onDoNotDisturb]  called when Do Not Disturb turns
+     *   on (true) or off
      */
-    constructor({onAway = null} = {}) {
+    constructor({onAway = null, onDoNotDisturb = null} = {}) {
         this._idle = global.backend.get_core_idle_monitor();
         this._onAway = onAway;
         this._watches = new Set();
@@ -50,6 +52,9 @@ export class Presence {
                 this._onAway?.(this.away);
         }, this);
         this._notifications = new Gio.Settings({schema_id: 'org.gnome.desktop.notifications'});
+        this._onDoNotDisturb = onDoNotDisturb;
+        this._notifications.connectObject('changed::show-banners',
+            () => this._onDoNotDisturb?.(this.doNotDisturb), this);
     }
 
     /** @returns {boolean} input in the last second, not away */
@@ -97,7 +102,9 @@ export class Presence {
             this._proxy.disconnectSignal(this._statusId);
         this._proxy = null;
         Main.sessionMode.disconnectObject(this);
+        this._notifications.disconnectObject(this);
         this._onAway = null;
+        this._onDoNotDisturb = null;
     }
 }
 

@@ -27,7 +27,7 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 | Colour | Token | Meaning | Set by | Cleared by | Shown in |
 |---|---|---|---|---|---|
 | white 20 % | `light-off` | nothing | — | — | idle `none` only |
-| amber `#FF9F0A` | `light-missed` | ≥1 activity ended while the island was hidden (fullscreen; away and DND are M4); missed history has entries. Not counted (2026-11-01): `osd`, `copied`, `input` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, minimal, compact |
+| amber `#FF9F0A` | `light-missed` | ≥1 activity ended while the island was hidden (fullscreen), you were away (GNOME's session idle) or in Do Not Disturb (2026-11-13); missed history has entries. Not counted (2026-11-01): `osd`, `copied`, `input` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) or away (`setAway`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, minimal, compact |
 | red `#FF453A` | `light-waiting` | an `ask` activity exists that could not surface (fullscreen, dismissed) and still has no answer | `stack` when an `ask` is queued but not shown | the ask is answered, times out (→ deny), or is ended by the caller | idle, minimal, compact |
 
 Precedence: red › amber › off. Only one light is drawn.
@@ -77,7 +77,10 @@ Home, whose Missed section lists them with their times and turns the light off (
 2026-11-03). With an activity running, the list takes the place of the activity's own compact
 (media's transport comes back once Home has been shown), and a click while the list shows
 opens Home, not the activity's tab; a click before it shows (the first 300 ms) opens the
-tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Red (waiting) has no compact yet: M4 Buoy light.
+tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Hover on the centre pill while the light is
+red shows the waiting ask's own card — the newest unanswered one not on screen, with its buttons —
+in place of the activity's compact: answer it there; the pointer leaving closes it, still red
+(2026-11-13, Ethan; `stack.waiting`).
 
 ## Privacy dot (right edge)
 

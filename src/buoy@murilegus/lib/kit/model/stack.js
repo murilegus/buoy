@@ -7,7 +7,8 @@ import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
  *
  *   surface(activity) → id · update(id, patch, {alert}) · end(id, {dismissal})
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
- *   answer(id, choice) · wake(id) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool)
+ *   answer(id, choice) · wake(id) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool) ·
+ *   setAway(bool)
  *   seeMissed() · openMissed(id, at) · clearMissed()
  *   has(id) · get(id) · hold(id, held)
  *
@@ -34,6 +35,10 @@ import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
  *     it, CODING-AGENTS.md §4, 2026-11-07): live, timed, never drawn, never missed
  *   - while unseen (fullscreen) an ending activity goes to the missed history
  *     (last 5), except osd/copied (feedback for your own action) and ask (red light)
+ *   - while away (GNOME's session idle, or Do Not Disturb: setAway) an ending goes to the
+ *     missed history too, but the island still gets alerts and asks: it decides (an
+ *     ordinary alert gets no card while you are away, a critical one and an ask wait for
+ *     you, design/alerts-and-asks "Khi nào đã xem, khi nào bị nhỡ")
  *   - while unseen the island gets no alert and no expand: an ask must not open in a
  *     hidden pill, where any click in the fullscreen app would collapse it; only the red
  *     light. Seen again, an ask or transient on top opens as if it had just arrived
@@ -125,6 +130,7 @@ export class ActivityStack {
         this._asks = new Map();       // id → {resolve, options, dismissed}
         this._hidden = new Set(hiddenApps);
         this._unseen = false;
+        this._away = false;
         this._seenWaiters = new Set();   // whenSeen
         this._missed = [];
         this._missedNew = false;     // something was missed since the history was last seen
@@ -208,7 +214,7 @@ export class ActivityStack {
             this._asks.delete(id);
             ask.resolve(null);
         }
-        if (this._unseen && !this._hidden.has(a.app) && a.hidden !== true && !NOT_MISSABLE.has(a.kind))
+        if ((this._unseen || this._away) && !this._hidden.has(a.app) && a.hidden !== true && !NOT_MISSABLE.has(a.kind))
             this._recordMissed(a);
         this._render();
         return true;
@@ -368,6 +374,39 @@ export class ActivityStack {
         if (top && !top.quiet && (top.kind === 'ask' || top.style === 'transient'))
             this._island.render(this._visibleList(), {alert: null, expand: top.id});
         this._updateLight();
+    }
+
+    /**
+     * The red light's ask: the newest one not on screen (dismissed, or the island hidden),
+     * still unanswered — its activity, whose card the centre pill shows on hover
+     * (INDICATORS "Buoy light", 2026-11-13); null when none.
+     *
+     * @returns {?object}
+     */
+    get waiting() {
+        let last = null;
+        for (const [id, ask] of this._asks) {
+            if (this._unseen || ask.dismissed || !this._shownIds.includes(id))
+                last = this._items.get(id) ?? last;
+        }
+        return last;
+    }
+
+    /** @returns {boolean} you are away or in Do Not Disturb (setAway) */
+    get away() {
+        return this._away;
+    }
+
+    /**
+     * Away from the screen — GNOME's session idle, after `idle-delay` — or in Do Not
+     * Disturb: what ends now counts as missed (the amber light, Home's Missed). Unlike
+     * setUnseen, alerts and asks still go to the island, which knows whether you are there.
+     * The lock screen needs no call: Buoy is disabled while locked (no `session-modes`).
+     *
+     * @param {boolean} away
+     */
+    setAway(away) {
+        this._away = !!away;
     }
 
     /**
