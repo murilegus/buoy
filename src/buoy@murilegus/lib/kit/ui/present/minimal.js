@@ -26,6 +26,11 @@ function leadingCell(e, activity, cell) {
 }
 
 // One line in the pill: minimal.
+// The equaliser is a part the compact draws alike: it flies there (design/compact "Nhạc")
+function eqShared(actor, e, activity) {
+    return e?.type === 'glyph' && e.name.startsWith('eq') ? markShared(actor, 'eq', activity) : actor;
+}
+
 function pillBox(p, activity, maxWidth, buttons, {cell, gap, buttonGap} = METRICS, side = false) {
     if (!p.leading && !p.text && !p.trailing && !buttons.length && !p.badge)
         return null;
@@ -43,7 +48,7 @@ function pillBox(p, activity, maxWidth, buttons, {cell, gap, buttonGap} = METRIC
         markShared(leadingCell(p.leading, activity, cell), 'leading', activity),
         side ? new St.Widget({x_expand: true}) : null,
         p.text ? markShared(label(p.text, 'buoy-text', true), 'title', activity) : null,
-        makeElement(p.trailing?.type === 'bar' && !p.text ? {...p.trailing, long: true} : p.trailing, 'minimal'),
+        eqShared(makeElement(p.trailing?.type === 'bar' && !p.text ? {...p.trailing, long: true} : p.trailing, 'minimal', activity), p.trailing, activity),
         ...actions,
         p.badge ? badge(p.badge) : null, // +N on the last pill (SPEC §2c)
     ]);

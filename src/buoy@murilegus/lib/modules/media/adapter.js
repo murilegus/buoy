@@ -78,6 +78,8 @@ export default {
             linger: !playing,
             staleAfter: playing ? 0 : SETTLE_MS,
             compact: ev.compactOnHover === false ? null : {
+                // the equaliser in the ⏸ slot, ⏸ under the pointer (design/compact "Nhạc")
+                trailing: str(ev.tint) ? {glyph, color: str(ev.tint)} : glyph,
                 leading: art, text: title,
                 subtitle: [artist, app].filter(Boolean).join(' · ') || null,
                 transport: true, progress: liveOf(ev),

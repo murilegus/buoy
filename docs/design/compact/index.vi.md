@@ -30,8 +30,8 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
   dừng thấp, như trên pill. Compact không còn nút ⏮ ⏯ ⏭; chúng ở tab Media. **Chốt** (Ethan,
   2026-11-13)
 - Equaliser là **phần chung** của pill và compact: nó đi từ trailing của pill tới chỗ này cùng nền,
-  không fade ([Chuyển động](../motion/index.vi.md), "Phần chung đi tới chỗ mới"). Vì vậy phần này
-  làm cùng mục "Motion: shared parts", chưa có trong code. **Chốt** (Ethan, 2026-11-13)
+  không fade ([Chuyển động](../motion/index.vi.md), "Phần chung đi tới chỗ mới"). Đã làm, sau mục
+  "Motion: shared parts" (2026-11-13). **Chốt** (Ethan, 2026-11-13)
 - **Ô 32 đó vẫn là nút dừng / phát, hiện khi hover:** lúc nghỉ chỉ thấy equaliser (đang phát thì
   chạy, đang dừng thì thấp). Rê chuột vào ô: equaliser đổi thành nút tròn như cũ (nền
   `fill-inverse`, icon ⏸ khi đang phát, ▶ khi đang dừng); rời ô: equaliser hiện lại. Bấm thì dừng

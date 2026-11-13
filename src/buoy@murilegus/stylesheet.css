@@ -260,6 +260,11 @@
 .buoy-round:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-round.buoy-round-main { color: #000; /* fg-on-inverse */ background-color: #f1efe8; /* fill-inverse */ }
 .buoy-round.buoy-round-main:hover { background-color: #fff; /* fill-inverse-hover */ }
+/* the media compact's ⏸ slot: the equaliser at rest, the button under the pointer or the keyboard's
+   focus (design/compact "Nhạc"; present/compact.js restButton) */
+.buoy-round.buoy-round-main.buoy-round-rest { background-color: transparent; }
+.buoy-round.buoy-round-main.buoy-round-rest.buoy-round-shown { background-color: #f1efe8; /* fill-inverse */ }
+.buoy-round.buoy-round-main.buoy-round-rest.buoy-round-shown:hover { background-color: #fff; /* fill-inverse-hover */ }
 /* A live position (media): the bar, then elapsed and remaining in even figures. */
 .buoy-live { spacing: 0; }
 .buoy-live-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; font-feature-settings: "tnum"; }

@@ -54,6 +54,10 @@ const c = planCompact(p);
 eq([c.text, c.subtitle], ['Monument Valley', 'Lumen Coast · Spotify'], 'title over artist · app');
 eq(c.actions.map(a => a.id), ['prev', 'playpause', 'next'], 'transport in the compact');
 eq(c.live, {position: 92000, length: 221000, at: 1000, playing: true}, 'a live position');
+// the equaliser in the ⏸ slot, as on the pill (design/compact "Nhạc", 2026-11-13)
+eq(c.trailing, {type: 'glyph', name: 'eq'}, 'playing: the equaliser in the compact');
+eq(planCompact(adapter.media({...track, status: 'Paused'}, null)).trailing, {type: 'glyph', name: PAUSED_EQ}, 'paused: stopped low');
+eq(adapter.media({...track, tint: '#db286a'}, null).compact.trailing, {glyph: 'eq', color: '#db286a'}, 'the compact\'s in the cover\'s colour too');
 eq(planCompact(adapter.media({...track, length: 0}, null)).live, null, 'no length (a stream): no bar');
 eq(planCompact(adapter.media({...track, position: undefined}, null)).live, null, 'no position: no bar');
 eq(adapter.media({...track, compactOnHover: false}, null).compact, null, '`media-compact-on-hover` off: no compact');

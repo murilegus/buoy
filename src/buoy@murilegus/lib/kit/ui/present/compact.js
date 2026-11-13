@@ -45,14 +45,62 @@ function roundButton(a, activity, m) {
 }
 
 // The head's buttons: its main action alone when it has one (media: ⏸, design/compact),
-// the rest live in the activity's tab
-function buttons(list, activity, m) {
+// the rest live in the activity's tab. `rest`: what that main button shows at rest (the
+// equaliser, restButton)
+function buttons(list, activity, m, rest = null) {
     if (!list?.length)
         return null;
     const main = list.filter(a => MAIN.has(a.id));
     const box = new St.BoxLayout({style_class: 'buoy-round-row', y_align: Clutter.ActorAlign.CENTER});
+    if (rest && main.length === 1 && main[0].id === 'playpause') {
+        box.add_child(restButton(main[0], rest, activity, m));
+        return box;
+    }
     addAll(box, (main.length ? main : list).map(a => roundButton(a, activity, m)));
     return box;
+}
+
+// The equaliser of the pill's trailing, in the compact (design/compact "Nhạc", 2026-11-13,
+// Ethan): drawn alike in both, so it flies from the pill to the ⏸ slot (flight.js)
+function restOf(p, activity) {
+    const t = p.trailing;
+    if (t?.type !== 'glyph' || !t.name.startsWith('eq') || !p.actions.some(a => a.id === 'playpause'))
+        return null;
+    return markShared(makeElement(t, 'compact', activity), 'eq', activity);
+}
+
+// Play / pause in the media compact's 32 slot (design/compact "Nhạc", 2026-11-13, Ethan): at
+// rest the equaliser alone, moving or low; under the pointer or the keyboard's focus the
+// round button as before (fill-inverse, ⏸ playing, ▶ paused). One fades into the other where
+// they stand (`state`, as the button's own colours); a click plays or pauses.
+const SLOT_FADE_MS = 120;
+function restButton(a, rest, activity, m) {
+    const b = roundButton(a, activity, m);
+    b.add_style_class_name('buoy-round-rest');
+    b.accessible_name = a.icon === 'media-playback-start-symbolic' ? 'Play' : 'Pause';
+    const face = b.get_child();
+    b.set_child(null);
+    const layer = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true, y_expand: true});
+    rest.x_align = rest.y_align = Clutter.ActorAlign.CENTER;
+    face.x_align = face.y_align = Clutter.ActorAlign.CENTER;
+    face.opacity = 0;
+    layer.add_child(rest);
+    layer.add_child(face);
+    b.set_child(layer);
+    const sync = () => {
+        const shown = b.hover || b.has_key_focus();
+        if (shown)
+            b.add_style_class_name('buoy-round-shown');
+        else
+            b.remove_style_class_name('buoy-round-shown');
+        const ms = St.Settings.get().enable_animations ? SLOT_FADE_MS : 0;
+        rest.ease({opacity: shown ? 0 : 255, duration: ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+        face.ease({opacity: shown ? 255 : 0, duration: ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+    };
+    b.connect('notify::hover', sync);
+    b.connect('key-focus-in', sync);
+    b.connect('key-focus-out', sync);
+    return b;
 }
 
 // `activity`: its title is a shared part (flight.js)
@@ -95,7 +143,8 @@ function compactBox(p, activity, maxWidth, m) {
     // one width for every compact (shapes.js compact): its buttons at the right edge
     if (maxWidth > 0)
         box.set_style(`width: ${px(maxWidth)};`);
-    const btns = buttons(p.actions, activity, m);
+    const rest = restOf(p, activity);
+    const btns = buttons(p.actions, activity, m, rest);
     // media with its position: the art 72 takes the head and the bar's row, 8 from the
     // edges, radius 20 (design/compact "Nhạc"): 8 + 72 + 8 = 88
     if (p.live && p.leading?.type === 'art') {
@@ -104,7 +153,7 @@ function compactBox(p, activity, maxWidth, m) {
         box.add_child(head([
             markShared(cell(p.leading, activity, m.lead), 'leading', activity),
             lines(p.text, p.subtitle, undefined, activity),
-            makeElement(p.trailing, 'compact'),
+            rest ? null : makeElement(p.trailing, 'compact'),
             btns,
         ], m));
         const under = underHead(p, m);
