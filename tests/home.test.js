@@ -1,6 +1,6 @@
 // Run: gjs -m tests/home.test.js   (pure: Home's plan, design/home)
 import {
-    planHome, tilesPerRow, tileWidths, tileOf, greetingLine, TILE_H, CARD_GAP, TALL_FROM, cornerIcons, CORNER_ICONS, cornerMax,
+    planHome, tilesPerRow, tileWidths, tileOf, greetingLine, TILE_H, CARD_GAP, TALL_FROM, cornerIcons, CORNER_ICONS, cornerMax, wantsWhole,
 } from '../src/buoy@murilegus/lib/kit/model/home.js';
 import {validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 import {batteryTile, STATE} from '../src/buoy@murilegus/lib/modules/home/adapter.js';
@@ -159,5 +159,27 @@ eq([cornerIcons([]), cornerIcons(null), cornerIcons(['', 3, null])], [{icons: []
 eq(cornerIcons(['a', 'b', 'c'], 2), {icons: ['a', 'b'], more: 1}, 'a smaller max');
 eq([cornerMax(128), cornerMax(173), cornerMax(264), cornerMax(536)], [2, 3, 3, 3], 'a 128 tile: two and +N; wider: three');
 eq([cornerMax(0), cornerMax(NaN), cornerMax(80)], [1, 1, 1], 'too narrow: still one');
+
+// --- a main card that answers (design/home, 2026-11-13: buttons were cut off at 104) ----------
+{
+    const choices = {multi: false, items: [{id: 'p0', label: 'A'}, {id: 'p1', label: 'B'}]};
+    const ask = {id: 'q', kind: 'ask', text: 'q', actions: [{id: 'Skip'}], compact: {card: {title: 'q', choices}}};
+    const note = {id: 'n', kind: 'notification', text: 'n', actions: [{id: 'files', label: 'Show in Files'}], compact: {card: {title: 'n'}}};
+    eq(wantsWhole(ask), true, 'an ask with choices takes the whole height');
+    eq(wantsWhole(note), false, "a notification's buttons go top right: the tiles stay");
+    eq([wantsWhole({...ask, actions: []}), wantsWhole({compact: {card: {choices: null}}})], [true, false],
+        'the choices decide, not the buttons');
+    eq([wantsWhole(null), wantsWhole({}), wantsWhole({compact: {card: 'x'}}), wantsWhole({compact: {text: 'x'}})],
+        [false, false, false, false], 'no card: never');
+    const p = planHome({list: [ask, act('b')], missed: 3, glances: GLANCES, width: 536, height: 212});
+    eq([p.main.id, p.tiles, p.units, p.mainH, p.form], ['q', [], 0, 212, 'tall'],
+        '1920: the ask on the card, 212 tall; no tile, not even Missed');
+    eq(planHome({list: [ask], width: 536, height: 140}).form, 'low', 'a short body: still low');
+    const q = planHome({list: [note, act('b')], glances: GLANCES, width: 536, height: 212});
+    eq([shape(q), q.mainH, q.form], [['b', 'weather', 'calendar', 'battery'], 104, 'low'],
+        'a notification with buttons: the card 104, the row stays');
+    eq(shape(planHome({list: [act('m'), ask], glances: GLANCES, width: 536, height: 212})).length, 4,
+        'an ask behind the first: a tile as any other');
+}
 
 print('home: ok');
