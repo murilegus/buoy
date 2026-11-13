@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
     BACK, ENTER, NEXT, OTHER, OTHER_HINT, OTHER_TEXT, PICK, SKIP, SUBMIT, answersOf, newAnswers, pickAnswer, questionLook, questionReply, questionsOf,
-    STOP, STOP_REPLY, agent, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, planStep, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    STOP, STOP_REPLY, DISMISS, canDismiss, agent, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, planStep, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, STOP_EVENT, STOP_HOOK_TIMEOUT, commandFor, hooksNote, install, installed, isOurs, uninstall,
@@ -707,5 +707,13 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(taskStep([], WRAP, 9000), null, 'no tasks: nothing');
     eq(taskStep(open, {...WRAP, tool_name: 'mcp__other__wrap_up'}, 1), null, 'another server\'s wrap_up: not the turn\'s end');
 }
+
+// --- the tab's × for a stale session (2026-11-13) --------------------------------------------
+eq(DISMISS, 'dismiss', 'the action the tab sends');
+eq(canDismiss({kind: 'agent', isStale: true}, false), true, 'stale, nothing asked: its ×');
+eq(canDismiss({kind: 'agent', isStale: false}, false), false, 'working: no ×');
+eq(canDismiss({kind: 'agent', isStale: true}, true), false, 'a prompt waits on it: no ×');
+eq(canDismiss({kind: 'ask', isStale: true}, false), false, 'a prompt is never dismissed this way');
+eq(canDismiss(null, false), false, 'nothing: no ×');
 
 print('agent: ok');
