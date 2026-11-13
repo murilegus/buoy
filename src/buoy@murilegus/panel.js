@@ -331,10 +331,18 @@ class SystemCluster {
             this._dot.box.insert_child_at_index(this._dot.pad, 0);
             this._dot.box.add_child(this._dot.dot);
         }
+        // Put back only from where each container actually is. On lock, Panel's
+        // 'updated' handler (connected before ExtensionManager's) has already moved quick
+        // settings to _rightBox for the lock mode (_updatePanel → _addToPanelBox). When we
+        // are the first extension ExtensionManager._sessionUpdated disables, that happens
+        // inside the same emission, before our own 'updated' handler takes it back; later
+        // ones are disabled after an await, once _place() has run. Where Shell put it is
+        // where it belongs, so leave it there.
         [this._qs, this._clock].forEach((b, i) => {
             const {parent, prev} = this._home[i];
-            this.actor.remove_child(b.container);
-            if (!parent)
+            if (b.container.get_parent() === this.actor)
+                this.actor.remove_child(b.container);
+            if (!parent || b.container.get_parent())
                 return;
             if (prev?.get_parent() === parent)
                 parent.insert_child_above(b.container, prev);
