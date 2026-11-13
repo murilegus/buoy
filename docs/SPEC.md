@@ -533,7 +533,10 @@ sizes, Bu's poses, special days, weather, settings and tests.
   Any rotation works (night may start at 1, dawn at 23) as long as the six hours are
   distinct and in cyclic order; anything else falls back to the defaults, never an
   error. A part changes on the hour; a consumer that must follow it arms one timer at
-  `nextBoundary()` (2026-11-04).
+  `nextBoundary()` (2026-11-04). Set on the Island page, When Idle → Parts of the day: each
+  part's colour icon and a drop-down of the hours it may start at (from the hour after the
+  part before it to the hour before the part after it, round midnight), in GNOME's 12/24 h;
+  Reset while not the defaults. The clock's icon and Home's greeting follow (2026-11-13).
   Greetings: dawn and morning → "Good morning", noon → "Good day" (vi "Chào buổi trưa"),
   afternoon → "Good afternoon", evening → "Good evening", night → "Still up" (vi
   "Khuya rồi").

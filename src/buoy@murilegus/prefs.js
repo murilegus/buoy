@@ -15,6 +15,7 @@ import {
     searchPlaces, withPlace, WEATHER_UNITS, PLAN_LINES, withPlan, movePlan, planRows,
 } from './lib/kit/model/settings.js';
 import {slugOf, profileDir} from './lib/kit/services/registry.js';
+import {DAYPARTS, DEFAULT_STARTS, normaliseStarts, startRange, withStart, hourLabel} from './lib/kit/model/daypart.js';
 import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/model/mascot.js';
 import {PATH} from './lib/kit/services/dbus.js';
 // the one module file prefs imports: pure, no Shell (CODING-AGENTS.md §8)
@@ -402,6 +403,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
         const type = k.get_value_type().dup_string();
         if (name.startsWith('keybind-'))
             return this._shortcutRow(k);
+        if (name === 'daypart-starts')
+            return this._daypartRow(k);
         if (type === 'b') {
             const row = textRow(Adw.SwitchRow, {title, subtitle});
             this._settings.bind(name, row, 'active', Gio.SettingsBindFlags.DEFAULT);
@@ -433,6 +436,70 @@ export default class BuoyPreferences extends ExtensionPreferences {
         if (type === 'as' && name.endsWith('-folders'))
             return this._folderList(k);
         throw new Error(`prefs.js has no row for ${name} (${type})`);
+    }
+
+    // `daypart-starts` (FEATURES M3, kit/model/daypart.js): an expander with the six parts,
+    // each its colour icon (the clock's, icons/color) and a drop-down of the hours it may
+    // start at: from the hour after the part before it to the hour before the part after it,
+    // round midnight (startRange), so no part is ever empty or out of order. The hours as
+    // GNOME's clock writes them (`clock-format`). Reset in the header while they are not the
+    // defaults.
+    _daypartRow(k) {
+        const name = k.get_name();
+        const row = textRow(Adw.ExpanderRow, {title: k.get_summary(), subtitle: k.get_description()});
+        const reset = new Gtk.Button({
+            icon_name: 'edit-undo-symbolic', valign: Gtk.Align.CENTER, css_classes: ['flat'],
+            tooltip_text: 'Reset to the defaults',
+        });
+        reset.update_property([Gtk.AccessibleProperty.LABEL], ['Reset the parts of the day']);
+        reset.connect('clicked', () => this._settings.reset(name));
+        row.add_suffix(reset);
+        const iface = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
+        const read = () => this._settings.get_value(name).deepUnpack();
+        let syncing = false;
+        const parts = DAYPARTS.map((part, i) => {
+            const combo = textRow(Adw.ComboRow, {title: part[0].toUpperCase() + part.slice(1)});
+            const file = Gio.File.new_for_path(GLib.build_filenamev([this.path, 'icons', 'color', `daypart-${part}.svg`]));
+            combo.add_prefix(new Gtk.Image({gicon: new Gio.FileIcon({file}), pixel_size: 24, accessible_role: Gtk.AccessibleRole.PRESENTATION}));
+            const entry = {combo, lo: 0, hi: -1, format: ''};
+            combo.connect('notify::selected', () => {
+                if (syncing || combo.selected === Gtk.INVALID_LIST_POSITION)
+                    return;
+                const next = withStart(read(), i, entry.lo + combo.selected);
+                if (next)
+                    this._settings.set_value(name, new GLib.Variant('ai', next));
+            });
+            row.add_row(combo);
+            return entry;
+        });
+        const sync = () => {
+            const starts = read();
+            const format = iface.get_string('clock-format');
+            syncing = true;
+            parts.forEach((entry, i) => {
+                const r = startRange(starts, i);
+                // a new list only where the hours it offers changed: never the one just
+                // chosen from (its own range does not move with it), whose popover is still
+                // closing — replacing that model takes the prefs process down
+                if (r.lo !== entry.lo || r.hi !== entry.hi || format !== entry.format) {
+                    const hours = [];
+                    for (let h = r.lo; h <= r.hi; h++)
+                        hours.push(hourLabel(h, format));
+                    Object.assign(entry, {lo: r.lo, hi: r.hi, format});
+                    entry.combo.model = Gtk.StringList.new(hours);
+                }
+                if (entry.combo.selected !== r.value - r.lo)
+                    entry.combo.selected = r.value - r.lo;
+            });
+            syncing = false;
+            const now = normaliseStarts(starts).starts;
+            reset.visible = now.some((h, i) => h !== DEFAULT_STARTS[i]);
+        };
+        this._ids.push(this._settings.connect(`changed::${name}`, sync));
+        const fmt = iface.connect('changed::clock-format', sync);
+        this._drops.push(() => iface.disconnect(fmt));
+        sync();
+        return row;
     }
 
     // A string key with <choices>: one drop-down entry per choice, in schema order. With

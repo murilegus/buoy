@@ -118,6 +118,8 @@ export default class BuoyExtension extends Extension {
             settings: () => ({
                 slot: this._settings.get_string('tabs-slot'),
                 pinned: this._settings.get_strv('tabs-pinned'),
+                // the greeting's part of the day (kit/model/daypart.js)
+                daypart: this._settings.get_value('daypart-starts').deepUnpack(),
             }),
             onSlot: id => this._settings.set_string('tabs-slot', id),
             onPrefs: () => this.openPreferences(),

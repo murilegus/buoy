@@ -135,7 +135,7 @@ eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
     'clock-defaults-applied stays hidden: placed by name, not taken by the clock module\'s prefix');
 
 // --- Island page (ARCHITECTURE rule 9, 2026-11-04) ------------------------------------------
-eq(plan.idle, ['idle-content', 'idle-auto-interval'], 'When idle: Show, then Switch every (auto)');
+eq(plan.idle, ['idle-content', 'idle-auto-interval', 'daypart-starts'], 'When idle: Show, Switch every (auto), then the parts of the day (FEATURES M3)');
 {
     const plans = [{id: 'clock', enableKey: 'modules-clock'}, {id: 'free', enableKey: null}];
     const on = v => k => ({'modules-clock': v})[k];

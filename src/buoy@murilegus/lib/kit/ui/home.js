@@ -127,7 +127,7 @@ export class Home {
      * @param {number} [opts.width]  the expanded width (Home's row is it less 2 × 12)
      * @param {object} [opts.metrics]  kit/model/shapes.js compactMetrics at the em
      * @param {object[]} [opts.missedFlags]  stack.missedFlags: a source's own unseen rows
-     * @param {{slot?: string, pinned?: string[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`
+     * @param {{slot?: string, pinned?: string[], daypart?: number[]}} [opts.settings]  `tabs-slot`, `tabs-pinned`, `daypart-starts`
      * @param {function(string):void} [opts.onSlot]  a standalone tab was chosen from ⋯
      * @param {function():void} [opts.onPrefs]  the ⚙ button was clicked
      * @param {function():void} [opts.onClose]  close the island (a tab's action is done)
@@ -766,7 +766,7 @@ export class Home {
             row.add_child(bu);
         const text = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, y_align: Clutter.ActorAlign.CENTER, x_expand: true});
         const hour = now.get_hour() + now.get_minute() / 60;
-        text.add_child(textLabel(greetingLine(daypartAt(hour), GLib.get_real_name()), 'buoy-home-greeting-title'));
+        text.add_child(textLabel(greetingLine(daypartAt(hour, this._settings.daypart), GLib.get_real_name()), 'buoy-home-greeting-title'));
         text.add_child(textLabel(now.format('%A, %B %-d') ?? '', 'buoy-home-subtitle'));
         row.add_child(text);
         return row;
