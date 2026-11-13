@@ -554,6 +554,11 @@ export function eqGlyph({paused = false, color = null} = {}) {
                 });
                 t.set_from(from[i]);
                 t.set_to(EQ_PAUSED[i]);
+                // cut short (the actor moved to another parent: Home puts its card in the new
+                // body after building it), Clutter leaves the bar where it was — low at once
+                t.connect('stopped', () => {
+                    bar.scale_y = EQ_PAUSED[i];
+                });
                 bar.add_transition('buoy-eq', t);
             });
             if (box.mapped) {

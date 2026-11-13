@@ -3,7 +3,8 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {progressBar, tick} from '../../kit/ui/present/parts.js';
-import {iconProps, makeElement} from '../../kit/ui/present/elements.js';
+import {iconProps, makeElement, restSlot} from '../../kit/ui/present/elements.js';
+import {eqGlyph, eqLeaving} from '../../kit/ui/present/motion.js';
 import {markShared} from '../../kit/ui/present/flight.js';
 import {livePosition, mediaTimes, element} from '../../kit/model/presentation.js';
 
@@ -15,10 +16,11 @@ const ART_RADIUS = 8;
 /**
  * Home's main card for a player (design/home, 2026-11-11): the cover as tall as the card
  * allows, the title over "artist · player", the position as a bar with its times, and the
- * player's own transport (its activity's actions). Two forms by the card's height:
+ * play / pause with the equaliser at rest (2026-11-13: ⏮ ⏭ are the Media tab's). Two forms
+ * by the card's height:
  *
- * - `low` (under 160): the transport at the top right, the bar at the bottom;
- * - `tall`: the title larger, the transport centred under the bar.
+ * - `low` (under 160): play / pause at the top right, the bar at the bottom;
+ * - `tall`: the title larger, play / pause centred under the bar.
  *
  * A click anywhere but the buttons opens the Media tab (the other players, seeking, shuffle
  * and repeat). It acts through the activity's `onAction`, as the Media tab does; the bar and
@@ -49,6 +51,8 @@ export class MediaCard {
      * @param {{height: number, form: 'low'|'tall'}} opts  the card's
      */
     show(a, {height, form}) {
+        // the same player paused: its bars come down from where they are (motion.js eqGlyph)
+        eqLeaving(a.id && a.id === this._id ? this._box : null);
         this._box.destroy_all_children();
         this._id = a.id ?? null;
         const at = a.attributes ?? {};
@@ -86,6 +90,7 @@ export class MediaCard {
             col.add_child(t);
         }
         this._box.add_child(col);
+        eqLeaving(null);
     }
 
     // The bar, the elapsed time under its start and the remaining under its end
@@ -110,19 +115,24 @@ export class MediaCard {
         return box;
     }
 
-    // The player's own buttons (back, play/pause, next): round 32, play/pause cream
+    // Play / pause alone, as the compact's ⏸ slot (design/home "Thẻ nhạc", 2026-11-13, Ethan:
+    // ⏮ ⏭ live in the Media tab): the equaliser at rest, moving or low; the cream ⏸ / ▶ under
+    // the pointer or the keyboard's focus. The equaliser is the pill's, so it flies from the
+    // pill, and on to the Media tab's ↗ slot (shared parts)
     _transport(a) {
         const row = new St.BoxLayout({style_class: 'buoy-home-media-transport', y_align: Clutter.ActorAlign.START});
-        for (const act of a.actions ?? []) {
-            const main = act.id === 'playpause';
-            const b = new St.Button({
-                style_class: `buoy-round${main ? ' buoy-round-main' : ''}`,
-                child: new St.Icon({...iconProps(act.icon), icon_size: 16}),
-                can_focus: true, accessible_name: act.label ?? act.id, width: 32, height: 32,
-            });
-            b.connect('clicked', () => a.onAction?.(act.id));
-            row.add_child(b);
-        }
+        const act = (a.actions ?? []).find(x => x.id === 'playpause');
+        if (!act)
+            return row;
+        const playing = a.state?.status === 'Playing';
+        const b = new St.Button({
+            style_class: 'buoy-round buoy-round-main',
+            child: new St.Icon({...iconProps(act.icon), icon_size: 16}),
+            can_focus: true, accessible_name: playing ? 'Pause' : 'Play', width: 32, height: 32,
+        });
+        b.connect('clicked', () => a.onAction?.(act.id));
+        const eq = eqGlyph({paused: !playing, color: a.isStale ? null : a.attributes?.tint});
+        row.add_child(restSlot(b, markShared(eq, 'eq', a), `${a.id}:home`));
         return row;
     }
 

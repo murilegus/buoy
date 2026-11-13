@@ -104,7 +104,12 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 - Danh sách +K ("Đang diễn ra"): mọi activity theo thứ tự stack; bấm hàng mở tab của nó. Dài hơn 5
   hàng thì cuộn, chỉ ở danh sách này. **Chốt** (Ethan, 2026-11-12)
 
-## Ô nhạc
+## Thẻ nhạc và ô nhạc
+
+- **Thẻ nhạc (thẻ chính): bỏ ⏮ ⏭, chỉ còn ⏸ / ▶ làm như ô ⏸ của compact**: lúc nghỉ là equaliser
+  (chạy, hay thấp khi dừng), rê chuột hay focus bàn phím thì nút kem ⏸ / ▶; ⏮ ⏭ ở tab Media. Bấm thẻ
+  mở tab Media: equaliser đi tới ô ↗ của tab, ảnh bìa và tên tới chỗ của chúng (Chuyển động, "Phần
+  chung"). **Chốt** (Ethan, 2026-11-13)
 
 - **Equaliser ở góc trên phải ô nhạc**, chỗ ô thời tiết ghi tuổi số đo và ô Bị nhỡ đặt icon app: sáu
   thanh 2 × 14 theo màu bìa ([Pill](../pill/index.vi.md), "Equaliser"), canh giữa theo ô leading

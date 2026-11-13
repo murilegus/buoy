@@ -2,6 +2,7 @@ import Clutter from 'gi://Clutter';
 import Cogl from 'gi://Cogl';
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
@@ -291,6 +292,9 @@ const SLOT_FADE_MS = 120;
  * @type {Map<string, St.Button>}
  */
 const shownSlots = new Map();
+/** One that went while shown, for a slot built just after (Home's card empties before it builds). */
+let heldShown = null;
+const HELD_MS = 250;
 
 /**
  * A button that shows `rest` while left alone, and itself under the pointer or the keyboard's
@@ -312,7 +316,10 @@ export function restSlot(b, rest, key = null) {
     const layer = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true, y_expand: true});
     rest.x_align = rest.y_align = Clutter.ActorAlign.CENTER;
     face.x_align = face.y_align = Clutter.ActorAlign.CENTER;
-    let shown = key !== null && shownSlots.has(key);
+    const held = key !== null && heldShown?.key === key && GLib.get_monotonic_time() / 1000 - heldShown.at < HELD_MS;
+    if (held)
+        heldShown = null;
+    let shown = key !== null && (shownSlots.has(key) || held);
     if (shown) {
         shownSlots.set(key, b);
         b.add_style_class_name('buoy-round-shown');     // before its first style: no transition
@@ -344,8 +351,10 @@ export function restSlot(b, rest, key = null) {
     b.connect('key-focus-in', sync);
     b.connect('key-focus-out', sync);
     b.connect('destroy', () => {
-        if (key !== null && shownSlots.get(key) === b)
+        if (key !== null && shownSlots.get(key) === b) {
             shownSlots.delete(key);
+            heldShown = {key, at: GLib.get_monotonic_time() / 1000};
+        }
     });
     return b;
 }
