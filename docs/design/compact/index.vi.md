@@ -38,6 +38,8 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
   hoặc phát. Đổi qua lại bằng fade, không dời chỗ. Bàn phím tới được nút (focus cũng hiện nút); tên
   cho trình đọc màn hình: "Pause" hoặc "Play". **Chốt** (Ethan, 2026-11-13)
 
+![Ô ⏸ của compact nhạc: lúc nghỉ, khi rê chuột, khi dừng, khi focus bàn phím, lúc đổi qua lại](images/media-slot.vi.png)
+
 ![Phần đầu 56 (nhạc không có thanh tiến trình) và nhạc 88 với ảnh bìa 72, equaliser ở chỗ nút](images/anatomy-media.vi.png)
 
 ## Danh sách hàng (Claude Code, danh sách missed)

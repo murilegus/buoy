@@ -40,6 +40,7 @@ r $p/bar.js $i/bar-1366.vi.png 1366
 # compact (anatomy-compact.js draws the alerts-and-asks images too)
 c=compact/render
 r $c/anatomy-compact.js compact/images/anatomy-media.vi.png media
+r $c/media-slot.js compact/images/media-slot.vi.png
 r $c/anatomy-compact.js compact/images/anatomy-rows.vi.png rows
 r $c/anatomy-compact.js compact/images/anatomy-card.vi.png card
 r $c/anatomy-compact.js alerts-and-asks/images/ask.vi.png ask
