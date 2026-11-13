@@ -37,22 +37,22 @@ export class AgentsTab {
             this.actor.add_child(new EmptyState('No Claude Code sessions', {pose: 'idle'}));
             return;
         }
-        // Two parts when some are stale (2026-11-13, Ethan): Active — what works or asks, and
-        // other callers' prompts — then Idle (done, or quiet past their staleAfter), with its
-        // count and Clear (each row its ×)
+        // Two parts (2026-11-13, Ethan): Active — what works or asks, and other callers'
+        // prompts — then Idle (done, or quiet past their staleAfter), with its count and Clear
+        // (each row its ×). A part's head shows while it has rows, whatever the other has:
+        // clearing Idle takes its head, Active's stays
         const stale = sessions.filter(s => canDismiss(s, askOf(s) !== null));
         const active = sessions.filter(s => !stale.includes(s));
         const loose = asks.filter(x => !own.has(x));
-        if (stale.length && (active.length || loose.length))
+        if (active.length || loose.length)
             this.actor.add_child(this._section('Active', active.length + loose.length));
         // a prompt whose session is hidden behind it (source.js) or another caller's
         for (const q of loose)
             this.actor.add_child(this._row(q, q, {name: q.compact?.text ?? q.text, doing: q.compact?.subtitle ?? null}));
         for (const s of active)
             this.actor.add_child(this._sessionRow(s, askOf(s)));
-        if (!stale.length)
-            return;
-        this.actor.add_child(this._section('Idle', stale.length, () => stale.forEach(s => s.onAction?.(DISMISS))));
+        if (stale.length)
+            this.actor.add_child(this._section('Idle', stale.length, () => stale.forEach(s => s.onAction?.(DISMISS))));
         for (const s of stale)
             this.actor.add_child(this._sessionRow(s, null));
     }
