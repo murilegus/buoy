@@ -77,7 +77,10 @@ Home, whose Missed section lists them with their times and turns the light off (
 2026-11-03). With an activity running, the list takes the place of the activity's own compact
 (media's transport comes back once Home has been shown), and a click while the list shows
 opens Home, not the activity's tab; a click before it shows (the first 300 ms) opens the
-tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Red (waiting) has no compact yet: M4 Buoy light.
+tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Hover on the centre pill while the light is
+red shows the waiting ask's own card — the newest unanswered one not on screen, with its buttons —
+in place of the activity's compact: answer it there; the pointer leaving closes it, still red
+(2026-11-13, Ethan; `stack.waiting`).
 
 ## Privacy dot (right edge)
 

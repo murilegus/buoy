@@ -106,6 +106,9 @@ export class Island {
         this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
         // set by the extension: the stack's missed history, and telling it it was seen
         this.missed = {list: () => [], flags: () => [], seen: null, open: null, clear: null};
+        // set by the extension: the red light's ask (stack.waiting), whose card pill 1 shows
+        // on hover
+        this.waiting = () => null;
         // the idle plan's presentation data (kit/services/idle.js), null = `none`; and told when
         // the idle pill starts or stops being on screen, so its clock runs only then
         this.idle = null;

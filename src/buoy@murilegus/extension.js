@@ -136,6 +136,7 @@ export default class BuoyExtension extends Extension {
             open: (id, at) => this._stack?.openMissed(id, at),
             clear: () => this._stack?.clearMissed(),
         };
+        this._island.waiting = () => this._stack?.waiting ?? null;
         this.stack = this._stack; // Looking Glass
 
         // modules-<id> applies at once (prefs, gsettings): start or stop that module only,

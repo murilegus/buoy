@@ -733,6 +733,31 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
     stack.setAway(true);
     eq(stack.away, true, 'setAway twice is harmless');
 }
+// --- waiting: the red light's ask, for its card on hover (INDICATORS, 2026-11-13) ---
+{
+    const {stack} = setup();
+    eq(stack.waiting, null, 'no ask: nothing waiting');
+    const p1 = stack.ask('q1', 'Run it?', ['Allow', 'Deny']);
+    eq(stack.waiting, null, 'an ask on screen is not waiting');
+    stack.dismiss('q1');
+    eq([stack.light, stack.waiting?.id, stack.waiting?.kind], ['waiting', 'q1', 'ask'], 'dismissed: red, waiting is its activity');
+    const p2 = stack.ask('q2', 'Edit shapes.js?', ['Allow', 'Deny']);
+    stack.dismiss('q2');
+    eq(stack.waiting?.id, 'q2', 'two waiting: the newest');
+    stack.waiting.onAction('Allow');
+    eq(await p2, 'Allow', "the waiting card's button answers its ask");
+    eq([stack.light, stack.waiting?.id], ['waiting', 'q1'], 'answered: the older one is waiting');
+    stack.waiting.onAction('Deny');
+    eq(await p1, 'Deny', 'the older one answered too');
+    eq([stack.light, stack.waiting], ['off', null], 'none left: off, nothing waiting');
+
+    stack.setUnseen(true);
+    const p3 = stack.ask('q3', 'Fullscreen?', ['OK']);
+    eq(stack.waiting?.id, 'q3', 'unseen (fullscreen): the ask waits');
+    stack.end('q3');
+    eq([await p3, stack.waiting], [null, null], 'ended by its caller: nothing waiting');
+    stack.setUnseen(false);
+}
 // --- whenSeen: wait for the island (the greeting, GREETING.md §11) ---------------
 {
     const {stack} = setup();

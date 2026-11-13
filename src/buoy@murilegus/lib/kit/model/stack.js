@@ -376,6 +376,22 @@ export class ActivityStack {
         this._updateLight();
     }
 
+    /**
+     * The red light's ask: the newest one not on screen (dismissed, or the island hidden),
+     * still unanswered — its activity, whose card the centre pill shows on hover
+     * (INDICATORS "Buoy light", 2026-11-13); null when none.
+     *
+     * @returns {?object}
+     */
+    get waiting() {
+        let last = null;
+        for (const [id, ask] of this._asks) {
+            if (this._unseen || ask.dismissed || !this._shownIds.includes(id))
+                last = this._items.get(id) ?? last;
+        }
+        return last;
+    }
+
     /** @returns {boolean} you are away or in Do Not Disturb (setAway) */
     get away() {
         return this._away;
