@@ -624,7 +624,7 @@ export class Pill {
         const s = this._s, pad = 2 * s.pad + (this._lit() ? 2 * s.ends : 0);
         const metrics = {cell: s.cell, gap: s.gap, buttonGap: s.buttonGap};
         if (!this.activity)
-            return buildIdle({width: s.idle.w - 2 * s.pad, maxWidth: s.minimal(Infinity).w - pad, plan: this._island.idle, metrics});
+            return buildIdle({width: s.idle.w - 2 * s.pad, maxWidth: s.minimal(Infinity).w - pad, plan: this._island.idle, metrics, light: this.role === 'centre' ? this.light : 'off'});
         if (this.role === 'side')
             return buildMinimal(this.activity, {maxWidth: s.side.w - pad, more: this.more, side: true, metrics});
         const capW = s.minimal(Infinity, this.activity.sizeHint).w;

@@ -23,6 +23,20 @@ const ALERT_HOVER = 1000;  // an alert still hovered at its end stays open this 
 const TURN_GRACE = 200;    // the pointer off a held card: Shell's banner HIDE_TIMEOUT (ui/messageTray.js)
 const SCROLL_GAP_MS = 400; // one plan per scroll gesture on the idle pill (auto)
 
+// Equal plain data (objects, arrays, strings, numbers, booleans, null); anything else —
+// a Gio.Icon from a plan — counts as different
+function samePlain(a, b) {
+    if (a === b)
+        return true;
+    if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object')
+        return false;
+    const plain = v => Array.isArray(v) || [Object.prototype, null].includes(Object.getPrototypeOf(v));
+    if (!plain(a) || !plain(b) || Array.isArray(a) !== Array.isArray(b))
+        return false;
+    const ka = Object.keys(a), kb = Object.keys(b);
+    return ka.length === kb.length && ka.every(k => Object.hasOwn(b, k) && samePlain(a[k], b[k]));
+}
+
 /**
  * The island (SPEC §2): one to three pills side by side in the top bar centre. The
  * ActivityStack hands it render(list, {alert, expand}) — every visible activity,
@@ -419,6 +433,10 @@ export class Island {
      * @param {boolean} [opts.fade]  cross-fade: `auto` switched plans (SPEC §2a-iii)
      */
     setIdle(data, {fade = false} = {}) {
+        // the same plain data again (the wall clock's minute while the part of the day
+        // stays) rebuilds nothing: Bu's eyes keep their stroll, the clock its actors
+        if (!fade && samePlain(data, this.idle))
+            return;
         const pill = this._pills[0];
         const was = pill?.id === null ? pill.bg.width : null;
         this.idle = data;

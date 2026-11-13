@@ -15,6 +15,9 @@
  *                     (a screen recording's clock, design/compact "Chia sẻ và quay màn hình")
  *   {icon, backdrop: true}: the icon on a round fill-2 plate where it has a cell of its
  *                     own (a compact's leading 40: a recording, design/compact)
+ *   leading only:     {eyes: 'idle'|'sleep'|'missed'|'waiting', stroll?} — Bu's eyes, the
+ *                     idle plan `mascot` (MASCOT.md § Eyes); planIdle puts the light's
+ *                     mode over the plan's
  *   leading only:     {mascot: '<pose>', icon?} — Bu (MASCOT.md); an unknown pose falls
  *                     back to `icon`, else `idle`; elsewhere only its `icon` counts. A
  *                     stale activity's Bu takes the pose `stale` (MASCOT.md § Poses)
@@ -52,7 +55,7 @@
  */
 
 import {mnemonics} from './keys.js';
-import {poseName} from './mascot.js';
+import {EYE_MODES, poseName} from './mascot.js';
 import {STATE_COLOURS} from './palette.js';
 
 export const MAX_ACTIONS = {minimal: 1, compact: 3, expanded: 3};
@@ -198,6 +201,14 @@ export function element(e, {leading = false} = {}) {
         const c = typeof e.color === 'string' && /^#[0-9a-f]{6}$/i.test(e.color) ? e.color.toLowerCase() : null;
         return c ? {...g, color: c} : g;
     }
+    // Bu's eyes, the idle plan `mascot` (MASCOT.md § Eyes): leading only; `stroll` false
+    // keeps open eyes still (`idle-mascot-stroll`)
+    if ('eyes' in e) {
+        if (!leading)
+            return null;
+        const mode = EYE_MODES.includes(e.eyes) ? e.eyes : 'idle';
+        return {type: 'eyes', mode, stroll: e.stroll !== false};
+    }
     if ('mascot' in e) {
         const pose = leading ? poseName(e.mascot) : null;
         if (pose) {
@@ -298,7 +309,11 @@ export function planIdle({light, plan = null} = {}) {
     if (!isPlain(plan))
         return {light: lightSlot(light, {idle: true}), leading: null, text: null, trailing: null};
     const lead = leadingAndLight(plan.leading, light);
-    return {leading: lead.leading, text: str(plan.text), trailing: element(plan.trailing), light: lead.light};
+    let leading = lead.leading;
+    // a light always shows through Bu's eyes (MASCOT.md § Eyes: waiting › missed › the plan's)
+    if (leading?.type === 'eyes' && (light === 'waiting' || light === 'missed'))
+        leading = {...leading, mode: light};
+    return {leading, text: str(plan.text), trailing: element(plan.trailing), light: lead.light};
 }
 
 /**

@@ -4,8 +4,10 @@ import GLib from 'gi://GLib';
 import {
     FRAMES, POSES, PALETTE, FOREGROUND, LIGHT_LAMPS, FRAME_MS, ONCE_FRAMES, SIZE,
     poseName, moves, lampColour, frameAt, cells, HELLO_MS, helloAt,
+    EYE_MODES, eyesMode, STROLL, STEP_MS, BLINK_MS, nextBeat, beatFrames, eyesShapes, EYES_BOX,
 } from '../src/buoy@murilegus/lib/kit/model/mascot.js';
-import {element, planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
+import plan from '../src/buoy@murilegus/lib/modules/mascot/idle.js';
+import {element, planIdle, planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -206,5 +208,84 @@ let swaps = 0;
 for (let t = 0, f = helloAt(0); f.nextIn !== null; t += f.nextIn, f = helloAt(t))
     swaps++;
 eq(swaps, 10, 'ten frames of 500 ms, then it stops: a bounded animation');
+
+// --- Bu's eyes: the idle plan `mascot` (MASCOT.md § Eyes) ----------------------------
+eq(EYE_MODES, ['waiting', 'missed', 'sleep', 'idle'], 'four modes, in precedence order');
+eq(eyesMode(), 'idle', 'eyesMode: nothing set → idle');
+eq(eyesMode({light: 'off', daypart: 'afternoon'}), 'idle', 'eyesMode: an afternoon at the desk → idle');
+eq([eyesMode({daypart: 'night'}), eyesMode({idleInput: true}), eyesMode({powerSaver: true}), eyesMode({animations: false})],
+    ['sleep', 'sleep', 'sleep', 'sleep'], 'eyesMode: night, 60 s without input, power-saver, animations off → sleep');
+eq(eyesMode({light: 'missed'}), 'missed', 'eyesMode: amber → missed');
+eq(eyesMode({light: 'waiting'}), 'waiting', 'eyesMode: red → waiting');
+eq(eyesMode({light: 'missed', idleInput: true, daypart: 'night', powerSaver: true, animations: false}), 'missed',
+    'eyesMode: amber beats every sleep reason (coming back finds the eyes on what was missed)');
+eq(eyesMode({light: 'waiting', idleInput: true}), 'waiting', 'eyesMode: red beats 60 s idle');
+eq(eyesMode({light: 'unknown'}), 'idle', 'eyesMode: an unknown light is off');
+eq(eyesMode({animations: undefined}), 'idle', 'eyesMode: animations unknown counts as on');
+
+// the stroll: order, wrap-around, holds, steps
+eq(STROLL.map(b => b.name), ['rest', 'look left', 'stroll right', 'back', 'blink', 'smile', 'long rest'], 'stroll: the seven beats in order');
+eq(STROLL.map(b => b.hold), [4500, 1250, 1500, 2500, 3000, 1250, 7000], 'stroll: the holds (2× faster than the first demo)');
+eq(STROLL.map(b => b.steps), [0, 3, 6, 3, 0, 0, 0], 'stroll: steps of 3 px — 3 left, 6 right, 3 back');
+eq(STROLL.every(b => ['open', 'blink', 'smile'].includes(b.eyes)), true, 'stroll: never missed, waiting or sleep eyes');
+eq([nextBeat(0, 0.5).next, nextBeat(6, 0.5).next, nextBeat(7, 0.5).beat.name, nextBeat(-1, 0.5).beat.name],
+    [1, 0, 'rest', 'long rest'], 'nextBeat: wraps both ways');
+eq([nextBeat(0, 0).holdMs, nextBeat(0, 1).holdMs, nextBeat(0, 0.5).holdMs], [3375, 5625, 4500], 'nextBeat: hold ±25 % with rand 0 and 1');
+eq([nextBeat(6, -3).holdMs, nextBeat(6, 9).holdMs, nextBeat(6, NaN).holdMs], [5250, 8750, 7000],
+    'nextBeat: rand clamped to 0..1, NaN the middle');
+{
+    const left = beatFrames(STROLL[1], 0);
+    eq(left.map(f => [f.at, f.dx]), [[0, -3], [STEP_MS, -6], [2 * STEP_MS, -9]], 'look left: 3 frames of 3 px, 90 ms apart');
+    const right = beatFrames(STROLL[2], -9);
+    eq(right.map(f => f.dx), [-6, -3, 0, 3, 6, 9], 'stroll right: 6 frames from −9 to +9');
+    eq(beatFrames(STROLL[3], 9).map(f => f.dx), [6, 3, 0], 'back: 3 frames to 0');
+    eq(beatFrames(STROLL[4], 0), [{at: 0, eyes: 'blink', dx: 0}, {at: BLINK_MS, eyes: 'open', dx: 0}], 'blink: closed for 110 ms, then open');
+    eq(beatFrames(STROLL[5], 0), [{at: 0, eyes: 'smile', dx: 0}], 'smile: one frame');
+    eq(beatFrames(STROLL[0], 0), [], 'rest: no frame ("—"), the eyes are already centred');
+    eq(beatFrames(STROLL[6], 0), [{at: 0, eyes: 'open', dx: 0}], 'long rest: one frame (open after the smile)');
+    const frames = STROLL.reduce((n, b, k) => n + beatFrames(b, k ? STROLL[k - 1].dx : 0).length, 0);
+    eq(frames, 16, 'a whole cycle is 16 frames (MASCOT.md "Cost")');
+}
+// the shapes (MASCOT.md's 120 × 32 numbers about the centre, at 1em)
+{
+    const idle = eyesShapes('idle');
+    eq(idle.bars.map(b => [b.x, b.y, b.w, b.h]), [[-11, 11, 4.5, 10], [6, 11, 4.5, 10]], 'idle: two bars 4.5 × 10');
+    eq(eyesShapes('idle', {dx: -9}).bars.map(b => b.x), [-20, -3], 'idle: dx moves both');
+    eq(eyesShapes('missed').bars.map(b => b.x), [-17, 0], 'missed: 6 px toward the light (left end)');
+    eq(eyesShapes('waiting').bars.map(b => [b.w, b.h]), [[6, 15], [6, 15]], 'waiting: bars 6 × 15');
+    eq(eyesShapes('sleep').bars.map(b => [b.w, b.h, b.y]), [[9, 2.4, 16], [9, 2.4, 16]], 'sleep: lines 9 × 2.4 at y 16');
+    eq(eyesShapes('sleep', {eyes: 'smile', dx: 9}), eyesShapes('sleep'), 'only idle eyes stroll or smile');
+    const blink = eyesShapes('idle', {eyes: 'blink'}).bars[0];
+    ok(Math.abs(blink.h - 1.2) < 1e-9 && Math.abs(blink.y + blink.h / 2 - 16) < 1e-9, 'blink: 12 % high, on the eyes\' middle');
+    eq(eyesShapes('idle', {eyes: 'smile'}).arcs, [{x1: -13.5, x2: -4, y: 18, cy: 11.5}, {x1: 3.5, x2: 13, y: 18, cy: 11.5}], 'smile: two arcs');
+    const all = [...EYE_MODES.map(m => eyesShapes(m)), eyesShapes('idle', {dx: -9}), eyesShapes('idle', {dx: 9})];
+    const xs = all.flatMap(s => [...s.bars.flatMap(b => [b.x, b.x + b.w]), ...s.arcs.flatMap(a => [a.x1, a.x2])]);
+    ok(Math.min(...xs) >= -EYES_BOX.w / 2 && Math.max(...xs) <= EYES_BOX.w / 2, 'every frame fits the eyes box');
+}
+
+// --- the idle plan `mascot` (modules/mascot/idle.js) ---------------------------------
+{
+    const day = new Date(2026, 10, 14, 14, 0), night = new Date(2026, 10, 14, 23, 30);
+    eq(plan.present({now: day}), {leading: {eyes: 'idle', stroll: true}, text: null, accessibleName: 'Bu'},
+        'plan: an afternoon, nothing known yet → open eyes, strolling');
+    eq(plan.present({now: night}).leading.eyes, 'sleep', 'plan: night → asleep');
+    eq(plan.present({now: night}).accessibleName, 'Bu, asleep', 'plan: named for a screen reader');
+    eq([plan.present({now: day, data: {idleInput: true}}).leading.eyes, plan.present({now: day, data: {powerSaver: true}}).leading.eyes,
+        plan.present({now: day, data: {animations: false}}).leading.eyes], ['sleep', 'sleep', 'sleep'],
+    'plan: away, power-saver, animations off → asleep');
+    eq(plan.present({now: day, data: {idleInput: false, powerSaver: false, animations: true}}).leading.eyes, 'idle', 'plan: the feed says all clear');
+    eq(plan.present({now: day, data: null}).leading.eyes, 'idle', 'plan: no feed state yet');
+    eq(plan.present({now: day}, {'idle-mascot-stroll': false}).leading.stroll, false, 'plan: idle-mascot-stroll off → still eyes');
+    const late = new Date(2026, 10, 14, 22, 30);
+    eq([plan.present({now: late}).leading.eyes, plan.present({now: late, starts: [5, 7, 11, 13, 18, 23]}).leading.eyes],
+        ['sleep', 'idle'], 'plan: daypart-starts are read (night from 22 by default, from 23 here)');
+    eq(plan.relevance(), {score: 10}, 'plan: scores 10 in auto, like the clock');
+    eq(plan.keys, ['idle-mascot-stroll'], 'plan: its one key');
+    // the light shows through, in the kit (planIdle)
+    const asleep = plan.present({now: night});
+    eq([planIdle({light: 'missed', plan: asleep}).leading.mode, planIdle({light: 'waiting', plan: asleep}).leading.mode,
+        planIdle({light: 'off', plan: asleep}).leading.mode], ['missed', 'waiting', 'sleep'],
+    'plan in the pill: a light shows through even at night');
+}
 
 print('mascot: ok');

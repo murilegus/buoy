@@ -6,7 +6,7 @@ import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {SIZE as GRID, cells, frameAt, helloAt, lampColour, moves} from '../../model/mascot.js';
+import {EYES_BOX, FOREGROUND, SIZE as GRID, beatFrames, cells, eyesShapes, frameAt, helloAt, lampColour, moves, nextBeat} from '../../model/mascot.js';
 import {TYPE_MS, nextTurn, typedLine, typedSplit} from '../../model/presentation.js';
 import {label} from './parts.js';
 
@@ -446,6 +446,103 @@ export function mascot(e, size, activity) {
             cr.setSourceRGB(...rgb(c.colour));
             cr.rectangle(c.x * cell, c.y * cell, c.w * cell, cell);
             cr.fill();
+        }
+        cr.$dispose();
+    });
+    return area;
+}
+
+/**
+ * Bu's eyes, the idle plan `mascot` (MASCOT.md § Eyes): one St.DrawingArea as high as the
+ * pill, in the body's colour. In mode `idle` with `stroll` the eyes follow the script
+ * (kit/model/mascot.js STROLL): stepped frames, never eased, each one repaint of this small
+ * area, then a hold. One timer for steps and beats alike, only while mapped and with
+ * animations on; gone on unmap and destroy, and with the content on a mode change (the
+ * idle pill is rebuilt), so a new mode starts again at beat 1.
+ *
+ * @param {object} e  {type: 'eyes', mode, stroll}
+ * @param {number} k  the em's scale: 1 at 16 px (the cell 24)
+ * @returns {St.DrawingArea}
+ */
+export function eyes(e, k = 1) {
+    const area = new St.DrawingArea({style_class: 'buoy-eyes', y_align: Clutter.ActorAlign.CENTER});
+    area.set_size(Math.round(EYES_BOX.w * k), Math.round(EYES_BOX.h * k));
+    let frame = {eyes: 'open', dx: 0};
+    let beat = 0, timer = 0;
+    const strolls = e.mode === 'idle' && e.stroll !== false;
+    const show = f => {
+        if (f.eyes === frame.eyes && f.dx === frame.dx)
+            return;
+        frame = {eyes: f.eyes, dx: f.dx};
+        area.queue_repaint();
+    };
+    const clear = () => {
+        if (timer)
+            GLib.source_remove(timer);
+        timer = 0;
+    };
+    const after = (ms, fn) => {
+        timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, Math.max(1, Math.round(ms)), () => {
+            timer = 0;
+            fn();
+            return GLib.SOURCE_REMOVE;
+        });
+    };
+    const play = () => {
+        const {beat: b, next, holdMs} = nextBeat(beat, Math.random());
+        beat = next;
+        const frames = beatFrames(b, frame.dx);
+        let i = 0;
+        const run = () => {
+            const f = frames[i++];
+            show(f);
+            if (i < frames.length)
+                after(frames[i].at - f.at, run);
+            else
+                after(holdMs, play);
+        };
+        if (frames.length)
+            run();
+        else
+            after(holdMs, play);
+    };
+    const sync = () => {
+        clear();
+        beat = 0;
+        show({eyes: 'open', dx: 0});
+        if (strolls && area.mapped && St.Settings.get().enable_animations)
+            play();
+    };
+    if (strolls) {
+        area.connect('notify::mapped', sync);
+        area.connect('destroy', clear);
+    }
+    const [r, g, b] = rgb(FOREGROUND);
+    area.connect('repaint', () => {
+        const cr = area.get_context();
+        const [w, h] = area.get_surface_size();
+        const s = h / EYES_BOX.h, cx = w / 2;
+        const shapes = eyesShapes(e.mode, frame);
+        cr.setSourceRGB(r, g, b);
+        for (const bar of shapes.bars) {
+            const x = cx + bar.x * s, y = bar.y * s, bw = bar.w * s, bh = bar.h * s;
+            const rad = Math.min(bar.r * s, bw / 2, bh / 2);
+            cr.newSubPath();
+            cr.arc(x + bw - rad, y + rad, rad, -Math.PI / 2, 0);
+            cr.arc(x + bw - rad, y + bh - rad, rad, 0, Math.PI / 2);
+            cr.arc(x + rad, y + bh - rad, rad, Math.PI / 2, Math.PI);
+            cr.arc(x + rad, y + rad, rad, Math.PI, 1.5 * Math.PI);
+            cr.closePath();
+            cr.fill();
+        }
+        // the smile: quadratic arcs as cubic curves (2/3 of the way to the control point)
+        cr.setLineWidth(2.4 * s);
+        cr.setLineCap(Cairo.LineCap.ROUND);
+        for (const a of shapes.arcs) {
+            const x1 = cx + a.x1 * s, x2 = cx + a.x2 * s, y = a.y * s, qx = (x1 + x2) / 2, qy = a.cy * s;
+            cr.moveTo(x1, y);
+            cr.curveTo(x1 + 2 / 3 * (qx - x1), y + 2 / 3 * (qy - y), x2 + 2 / 3 * (qx - x2), y + 2 / 3 * (qy - y), x2, y);
+            cr.stroke();
         }
         cr.$dispose();
     });

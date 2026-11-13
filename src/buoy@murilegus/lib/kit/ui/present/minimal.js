@@ -3,7 +3,7 @@ import St from 'gi://St';
 
 import {planIdle, planMinimal} from '../../model/presentation.js';
 import {addAll, label} from './parts.js';
-import {dimStale} from './motion.js';
+import {dimStale, eyes} from './motion.js';
 import {actionButton, badge, makeElement} from './elements.js';
 import {markShared} from './flight.js';
 
@@ -80,12 +80,14 @@ export function buildMinimal(activity, {maxWidth = 0, more, side = false, metric
  * @param {object} opts
  * @param {number} opts.width  inner width of the idle pill: the least it takes
  * @param {number} [opts.maxWidth]  the most a plan's content may take (the minimal cap)
+ * @param {string} [opts.light]  the buoy light: Bu's eyes show it through (planIdle)
  * @param {?object} [opts.plan]  the idle plan's presentation data
  * @param {{cell: number, gap: number}} [opts.metrics]  the pill's at the em
  * @returns {Clutter.Actor}
  */
-export function buildIdle({width, maxWidth = 0, plan = null, metrics = METRICS}) {
-    const p = planIdle({plan});
+export function buildIdle({width, maxWidth = 0, plan = null, metrics = METRICS, light = 'off'}) {
+    // the light: Bu's eyes show it through (planIdle); the dot itself is the pill's
+    const p = planIdle({plan, light});
     // at least the idle size; a plan with more to say (the next event's title) grows the
     // pill up to the minimal cap, where its text ellipsizes and its trailing stays
     // (2026-11-08)
@@ -100,7 +102,8 @@ export function buildIdle({width, maxWidth = 0, plan = null, metrics = METRICS})
     });
     zones.set_style(`spacing: ${metrics.gap}px;`);
     addAll(zones, [
-        leadingCell(p.leading, null, metrics.cell),
+        // Bu's eyes take the pill's height, not the leading's cell (MASCOT.md § Eyes)
+        p.leading?.type === 'eyes' ? eyes(p.leading, metrics.cell / 24) : leadingCell(p.leading, null, metrics.cell),
         p.text ? label(p.text, 'buoy-text buoy-idle-text') : null,
         makeElement(p.trailing, 'minimal'),
     ]);

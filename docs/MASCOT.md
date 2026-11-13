@@ -31,7 +31,7 @@ and in GNOME's icon language, so a pill that switches between plans never change
 | Brand | extension icon, README, EGO screenshots, prefs About page (drawn from `kit/model/mascot.js`, no image shipped; waves 5 s the first time the page shows, then `idle`; still with GTK animations off; 2026-11-04); empty states — every empty tab, Bu over its line (kit `EmptyState` `pose`, 2026-11-07, Ethan): Home "Nothing going on", Media "Nothing playing", Claude Code, the not-yet-built Timer and Clipboard ("Coming soon", Timer since 2026-11-08) and Calendar's "No calendars" `idle`; Notifications "All caught up" and a picked day with no events in the Calendar tab ("No events", "Nothing else today", 2026-11-08) `sleep`; Transfers "No transfers" `done` | M3 release |
 | Agents | the **leading** of every agent activity (Claude Code, Codex, any D-Bus caller that sends `{mascot}`); the pose follows the agent's lifecycle (§ Agents). The agent's name is always the first word of the text, since Bu does not say which agent it is | M3 "Claude Code: ask + agent activity" (merged 2026-11-07) |
 | Greeting | leading of every greeting (GREETING.md §6): `wave` for 5 s at start, wake, welcome back and leaving; `party` on a birthday or celebration; `done` for a good weekend; `sleep` for good night; `busy` while updating | M3 greeting: first run and What's new (`wave`); the rest M4 greeting |
-| Idle plan `mascot` | Bu's eyes in the idle pill (§ Eyes), module off by default | M4 |
+| Idle plan `mascot` | Bu's eyes in the idle pill (§ Eyes), module off by default; built 2026-11-14 | M4 |
 
 Not: the pills of other modules (app icons and art stay), and not as a
 replacement for the light in every state.
@@ -464,14 +464,24 @@ change, then stillness until the next — not a loop (ARCHITECTURE rule 8).
   `idle-mascot-stroll` is true (default). Anything else — a mode change, an activity
   surfacing, the plan replaced, destroy, disable — removes the beat timer and the
   pending steps at once; back in `idle`, the script restarts at beat 1.
-- Code: `kit/model/mascot.js` exports `STROLL` (the beats above as data: `{eyes, dx, steps,
-  hold}`), a pure `nextBeat(i, rand) → {beat, next, holdMs}` and a pure
-  `eyesMode({light, daypart, idleInput, powerSaver, animations})`. `kit/ui/present/motion.js` owns the
-  single `GLib.timeout_add` (steps and beats share it; removed on every stop above) and
-  the two idle-monitor watches, and moves the two eye actors without easing.
+- Code (built 2026-11-14): `kit/model/mascot.js` exports `STROLL` (the beats above as
+  data: `{name, eyes, dx, steps, hold}`; `rest` is `still`, no frame), pure
+  `nextBeat(i, rand) → {beat, next, holdMs}`, `beatFrames(beat, fromDx)`, `eyesMode({light,
+  daypart, idleInput, powerSaver, animations})` and `eyesShapes(mode, frame)` (the numbers
+  above about the pill's centre, in px at 1em; drawn ×em, so the eyes grow with the pill).
+  The plan (`modules/mascot/idle.js`) gives `leading: {eyes: mode, stroll}`; the kit puts
+  the light's mode over it (`presentation.js` planIdle). `kit/ui/present/motion.js` `eyes()`
+  draws them on one St.DrawingArea and owns the single `GLib.timeout_add` (steps and beats
+  share it; removed on every stop above). The two idle-monitor watches, the power profile
+  and `enable-animations` are the plan's feed (`modules/mascot/feed.js`): the watches only
+  while the idle pill shows. The idle pill keeps its actors while the plan's data is the
+  same (`island.setIdle`), so the wall clock's minute does not restart the stroll.
   `tests/mascot.test.js`: script order and wrap-around, hold bounds with `rand` 0 and 1,
-  no `missed`/`waiting`/`sleep` beat, step counts, and every `eyesMode` row including
-  precedence (amber beats 60 s idle, red beats amber).
+  no `missed`/`waiting`/`sleep` beat, step counts (16 frames a cycle), the shapes, every
+  `eyesMode` row including precedence (amber beats 60 s idle, red beats amber), the plan.
+- **Off by default** (`modules-mascot` false) and not in `idle-auto-plans`: picking it in
+  Show or switching its row on in Automatic's plans turns the module on (prefs, as for any
+  module that is only a plan, 2026-11-14).
 
 ## Name
 
