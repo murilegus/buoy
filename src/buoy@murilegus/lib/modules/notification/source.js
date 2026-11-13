@@ -7,7 +7,7 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 
 import {Source} from '../../kit/services/source.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
-import {DISMISS, Turns, actionIndex, missedRow, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
+import {DISMISS, Turns, actionIndex, agentShows, missedRow, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
 const REPLACE_KEY = 'notification-replace-banners';
@@ -201,6 +201,12 @@ export class NotificationSource extends Source {
         const progressOn = this._settings?.get_boolean('modules-progress') === true;
         if (shownElsewhere(app, n.id, progressOn))
             return;
+        // Claude's own notification for a session the agent's pill shows: read, no pill
+        const title = n.title ?? '';
+        if (this._stack?.find(a => a.kind === 'agent' && agentShows(app, title, a))) {
+            n.acknowledged = true;
+            return;
+        }
         let pill = this._pills.get(app);
         if (pill && !this._keeps(app, pill)) {     // its pill ended (the ttl): start afresh
             this._drop(app, pill);

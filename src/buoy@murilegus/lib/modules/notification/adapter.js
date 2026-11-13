@@ -120,6 +120,28 @@ export function shownElsewhere(appId, notificationId, progressOn) {
 }
 
 /**
+ * A coding agent's own notification while its session is on the island (2026-11-13, Ethan:
+ * two alerts for one finished turn — Claude Desktop's notification and the agent's done):
+ * Claude's app posts a notification titled by the session ("Buoy — Implementation") when a
+ * turn ends or waits while you are elsewhere, and the agent module already shows that
+ * session (CODING-AGENTS.md). Matched on the app (its id says Claude) and the session's
+ * name; anything else from Claude — no session by that name on the island, the agent
+ * module off — is a notification as any other.
+ *
+ * @param {*} appId  the source's app id (source.js appIdOf)
+ * @param {*} title  the notification's title
+ * @param {?object} activity  an agent activity on the island, or null
+ * @returns {boolean} the agent's pill says it: no pill of its own
+ */
+export function agentShows(appId, title, activity) {
+    if (typeof appId !== 'string' || !/claude/i.test(appId))
+        return false;
+    const t = typeof title === 'string' ? title.trim() : '';
+    const name = typeof activity?.attributes?.name === 'string' ? activity.attributes.name.trim() : '';
+    return t !== '' && name !== '' && t === name;
+}
+
+/**
  * @param {number} count
  * @returns {string} the compact's line on a shared screen
  */

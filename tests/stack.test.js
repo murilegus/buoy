@@ -1059,4 +1059,15 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
         'pillWindow: feedback not first covers nothing');
 }
 
+// --- find: what another module already shows (2026-11-13) ------------------------------
+{
+    const {stack} = setup();
+    stack.surface(media());
+    stack.surface({id: 'agent:s1', kind: 'agent', app: 'claude', text: 'buoy · Thinking', attributes: {name: 'Buoy — Implementation'}});
+    eq(stack.find(a => a.kind === 'agent')?.id, 'agent:s1', 'the first live activity the test accepts');
+    eq(stack.find(a => a.kind === 'timer'), null, 'none: null');
+    stack.end('agent:s1');
+    eq(stack.find(a => a.kind === 'agent'), null, 'an ended one is not found');
+}
+
 console.log('stack: ok');
