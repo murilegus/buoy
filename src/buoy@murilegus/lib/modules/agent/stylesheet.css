@@ -12,6 +12,15 @@
 .buoy-agents-detail { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; }
 /* on the kit's .buoy-label (a `since`): named with its row so it wins over stylesheet.css */
 .buoy-agents-line .buoy-agents-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; font-feature-settings: "tnum"; }
+/* a stale session's × and, with two or more, Clear (the Notifications tab's, 2026-11-13) */
+.buoy-agents-close { width: 22px; height: 22px; border-radius: 11px; background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
+.buoy-agents-close:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ color: #fff; /* fg */ }
+.buoy-agents-close:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-agents-bar { padding: 2px 8px 6px; spacing: 8px; }
+.buoy-agents-count { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; }
+.buoy-agents-clear { padding: 4px 10px; border-radius: 999px; font-size: 12px; color: rgba(255, 255, 255, 0.7); /* fg-muted */ background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
+.buoy-agents-clear:hover { color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+.buoy-agents-clear:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-agents-buttons { spacing: 6px; padding: 0 8px 6px; }
 .buoy-agents-buttons .buoy-action { padding: 4px 12px; }
 
@@ -22,3 +31,4 @@
    tests/palette.test.js checks every use of those four roles has its line here. */
 .buoy-hc .buoy-agents-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-agents-line .buoy-agents-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-agents-count { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

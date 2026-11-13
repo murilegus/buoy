@@ -130,7 +130,10 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   from there, never shipped with Buoy; the strip's generic icon without it): one row per session the island
   shows — Bu in its pose, the session's name, what it is doing, the elapsed time; dimmed
   when stale — and a permission prompt's Deny · Allow · Always under its session's row.
-  A row's click brings that session's terminal up and closes the island. In the strip
+  A row's click brings that session's terminal up and closes the island. A stale session
+  with no prompt has a × (as a notification's) that takes it off the island until its next
+  event; with two or more, "N done" · Clear on top takes them all (2026-11-13, Ethan;
+  adapter.js canDismiss, `onAction('dismiss')` → source.js `_forget`). In the strip
   only while a session or a prompt is there (kit `tabWhileLive`, Ethan 2026-11-07). Kind
   `ask` is the module's too, so a click on a prompt's pill opens this tab, and other
   callers' `Ask()` get a row of their own there.

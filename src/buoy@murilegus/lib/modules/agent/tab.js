@@ -2,8 +2,10 @@ import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {buildElement, EmptyState} from '../../kit/ui/present/elements.js';
+import {buildElement, EmptyState, iconProps} from '../../kit/ui/present/elements.js';
 import {dimStale} from '../../kit/ui/present/motion.js';
+
+import {DISMISS, canDismiss} from './adapter.js';
 
 /**
  * The Claude Code tab (CODING-AGENTS.md §2, Ethan 2026-11-07): every session the island
@@ -35,6 +37,10 @@ export class AgentsTab {
             this.actor.add_child(new EmptyState('No Claude Code sessions', {pose: 'idle'}));
             return;
         }
+        // Clear: every stale session at once, when there are two or more (one has its ×)
+        const stale = sessions.filter(s => canDismiss(s, askOf(s) !== null));
+        if (stale.length > 1)
+            this.actor.add_child(this._clearBar(stale));
         // a prompt whose session is hidden behind it (source.js) or another caller's
         for (const q of asks.filter(x => !own.has(x)))
             this.actor.add_child(this._row(q, q, {name: q.compact?.text ?? q.text, doing: q.compact?.subtitle ?? null}));
@@ -81,6 +87,8 @@ export class AgentsTab {
             time.add_style_class_name('buoy-agents-time');
             line.add_child(time);
         }
+        if (canDismiss(a, ask !== null))
+            line.add_child(dismissButton(`Dismiss ${name}`, () => a.onAction?.(DISMISS)));
         button.set_child(line);
         box.add_child(button);
         // stale as on its pill: grey text, Bu `stale` at 40 % (kit dimStale); a prompt
@@ -90,6 +98,20 @@ export class AgentsTab {
         if (ask)
             box.add_child(this._buttons(ask));
         return box;
+    }
+
+    // "N done" · Clear (the Notifications tab's bar): every stale session leaves
+    _clearBar(stale) {
+        const bar = new St.BoxLayout({style_class: 'buoy-agents-bar', x_expand: true});
+        bar.add_child(new St.Label({text: `${stale.length} done`, style_class: 'buoy-agents-count', y_align: Clutter.ActorAlign.CENTER}));
+        bar.add_child(new St.Widget({x_expand: true}));
+        const clear = new St.Button({
+            style_class: 'buoy-agents-clear', can_focus: true, label: 'Clear', accessible_name: 'Clear the finished sessions',
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        clear.connect('clicked', () => stale.forEach(s => s.onAction?.(DISMISS)));
+        bar.add_child(clear);
+        return bar;
     }
 
     // The prompt's answers, as in its expanded view; answering keeps the island open on
@@ -106,6 +128,17 @@ export class AgentsTab {
         }
         return line;
     }
+}
+
+// the row's ×, as a notification's (its own button: the row's click stays the row's)
+function dismissButton(name, onClick) {
+    const x = new St.Button({
+        style_class: 'buoy-agents-close', can_focus: true, accessible_name: name,
+        child: new St.Icon({...iconProps('window-close-symbolic'), icon_size: 12}),
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    x.connect('clicked', () => onClick());
+    return x;
 }
 
 function label(text, styleClass) {

@@ -9,7 +9,7 @@ import {installed} from './hooks.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
 import {lingerMs} from '../../kit/model/settings.js';
 import {
-    AGENTS, DESKTOP_APP, ENTER, NEXT, OTHER_TEXT, SKIP, STOP, STOP_REPLY, SUBMIT, TIMEOUT, answered, answersOf, interrupted, stopping, askOf,
+    AGENTS, DESKTOP_APP, DISMISS, ENTER, NEXT, OTHER_TEXT, SKIP, STOP, STOP_REPLY, SUBMIT, TIMEOUT, answered, answersOf, interrupted, stopping, askOf,
     desktopRoute, desktopShown, isQuestion, newAnswers, parseEvent, pickAnswer, questionLook, questionReply, questionsOf, reply, settles, step,
     tasksFromFiles, projectOf,
 } from './adapter.js';
@@ -191,6 +191,8 @@ export class AgentSource extends Source {
         a.onAction = id => {
             if (id === STOP)
                 this._stop(key);
+            else if (id === DISMISS)
+                this._forget(key);      // its × in the tab: gone until its next event
         };
         // its prompt's pill stands for it meanwhile: one pill per session (§4, Ethan)
         a.hidden = this._asks?.has(key) ?? false;

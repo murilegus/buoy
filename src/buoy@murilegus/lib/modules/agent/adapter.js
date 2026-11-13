@@ -32,6 +32,21 @@ export const PARTY_AFTER = 10 * 60 * 1000;
 export const DENY = 'Deny', ALLOW = 'Allow', ALWAYS = 'Always';
 /** The compact's ■: stops the turn, as Desktop's Stop (source.js _stop). */
 export const STOP = 'stop';
+/** The Claude Code tab's × (and Clear): a stale session leaves the island until it has news. */
+export const DISMISS = 'dismiss';
+
+/**
+ * Whether a session's row has its × (2026-11-13, Ethan: "nút x/clear chỉ cho … các agent
+ * đang stale", as a notification's): stale (done, or quiet past its staleAfter) and no prompt
+ * waiting on it. One that works or asks has none.
+ *
+ * @param {?object} activity  the session's activity
+ * @param {boolean} asking  a prompt of its waits
+ * @returns {boolean}
+ */
+export function canDismiss(activity, asking) {
+    return activity?.kind === 'agent' && activity.isStale === true && !asking;
+}
 /**
  * The synchronous PostToolUse hook's answer once ■ was pressed (hooks.js STOP_EVENT):
  * Claude stops, the session stays (hooks.md, the common `continue` / `stopReason`).
