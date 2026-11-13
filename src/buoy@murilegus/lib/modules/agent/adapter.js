@@ -658,10 +658,16 @@ export function step(rec, ev, now, source = 'claude') {
     switch (ev.hook_event_name) {
     case 'SessionStart':
         return out(r, {show: false});
-    case 'UserPromptSubmit':
-        // the prompt itself is never kept (§7); a new turn: a ■ pending on the last is gone
+    case 'UserPromptSubmit': {
+        // the prompt itself is never kept (§7); a new turn: a ■ pending on the last is gone,
+        // and so is a task list all done — the hover shows what this turn does, not the last
+        // turn's ticks (2026-11-13, Ethan: "task done … chưa clear danh sách trong compact
+        // hover"). A list with steps left stays: the new prompt may carry it on.
+        const tasks = r.tasks ?? [];
         r = working(set('think', 'Thinking'), now);
-        return out({...r, subagents: 0, stopRequested: false});
+        const cleared = tasks.length && tasks.every(t => t.status === 'completed') ? [] : tasks;
+        return out({...r, subagents: 0, stopRequested: false, tasks: cleared});
+    }
     case 'PreToolUse': {
         const d = toolDoing(ev.tool_name, ev.tool_input, r.cwd);
         r = working(r, now);
