@@ -219,3 +219,28 @@ function finer(fix, than) {
     const b = finite(than.accuracy) && than.accuracy >= 0 ? than.accuracy : Infinity;
     return a <= b;
 }
+
+/** Within this many km, the place Shell's client follows is Buoy's place (one city). */
+export const SAME_PLACE_KM = 15;
+
+/**
+ * Whose weather the plan reads (2026-11-13, Ethan: Home said Hanoi while Buoy kept Ho Chi
+ * Minh City). Shell's client (misc/weather.js) follows `locations` — the place Buoy writes —
+ * unless it locates on its own (`_useAutoLocation`: `automatic-location` on, Location
+ * Services on, and GNOME Weather installed, or allowed); then it takes whatever Geoclue gave
+ * it at that moment (an IP guess as often as Wi-Fi) and ignores `locations`. Then, when its
+ * place is not Buoy's, Buoy fetches the weather for its own place with a GWeather.Info of its
+ * own, as GNOME Weather does for its own.
+ *
+ * @param {object} o
+ * @param {boolean} o.clientAuto  Shell's client locates on its own
+ * @param {boolean} o.hasPlace  Buoy has a place (first in `locations`)
+ * @param {?number} o.apartKm  how far the client's place is from Buoy's; null: unknown
+ *   (the client has none yet)
+ * @returns {boolean} read Buoy's own GWeather.Info
+ */
+export function useOwnInfo({clientAuto, hasPlace, apartKm}) {
+    if (!clientAuto || !hasPlace)
+        return false;
+    return !(Number.isFinite(apartKm) && apartKm <= SAME_PLACE_KM);
+}
