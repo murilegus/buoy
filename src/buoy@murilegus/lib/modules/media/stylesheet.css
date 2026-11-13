@@ -26,9 +26,9 @@
 .buoy-media-column { padding: 4px 4px 4px 0; spacing: 8px; }
 .buoy-media-head { spacing: 8px; }
 .buoy-media-text { spacing: 2px; }
-.buoy-media-title { font-size: 1.27em; font-weight: 700; }
-.buoy-media-sub { font-size: 0.85em; color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
-.buoy-media-album { font-size: 0.85em; color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-media-title { font-size: 1.64em; font-weight: 700; } /* as tall as ↗ (32), design/media */
+.buoy-media-sub { color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
+.buoy-media-album { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 .buoy-media-position { spacing: 4px; }
 /* Shell's Slider (ui/barLevel.js reads these): a bar 4 tall, fill-3 with white played; its
    handle only under the pointer */

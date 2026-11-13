@@ -8,9 +8,10 @@
 //             only play/pause, nothing playing
 //   players — several players at once: two (one paused), three (two playing, the second
 //             chosen), five (the chips past the row's width keep only their logo)
+//   text    — the text column before and after (2026-11-13, Ethan: larger, the title as tall as ↗)
 //   switch  — five players, Spotify → Firefox in three frames, as the tab strip moves (Ethan,
 //             2026-11-13): the chosen fill slides and widens, the chips move to their places
-// gjs -m media.js out.png <options|anatomy|states|players|switch>
+// gjs -m media.js out.png <options|anatomy|states|players|switch|text>
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
@@ -41,6 +42,22 @@ function text(t, x, y, {sz = 11, wt = 400, rgb = W1, a = 1, measure = false, rig
     if (!measure) { cr.setSourceRGBA(...rgb, a); cr.moveTo(right ? x - e.width : x, y); PangoCairo.show_layout(cr, L); }
     L.set_width(-1);
     return e;
+}
+// a long line runs (marquee): drawn clipped to its column, faded at the edge, never "…"
+function runText(t, x, y, w, opts) {
+    const e = text(t, 0, 0, {...opts, measure: true});
+    if (e.width <= w) {
+        text(t, x, y, opts);
+        return;
+    }
+    cr.save(); cr.newPath(); cr.rectangle(x, y - 4, w, e.height + 8); cr.clip();
+    cr.pushGroup();
+    text(t, x - Math.min(40, e.width - w) , y, opts);       // part way through its run
+    const g = new cairo.LinearGradient(x + w - 24, 0, x + w, 0);
+    g.addColorStopRGBA(0, 0, 0, 0, 1); g.addColorStopRGBA(1, 0, 0, 0, 0);
+    cr.popGroupToSource();
+    cr.mask(g);
+    cr.restore();
 }
 function rr(x, y, w, h, r) {
     cr.newSubPath(); cr.arc(x + w - r, y + r, r, -Math.PI / 2, 0); cr.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
@@ -134,12 +151,21 @@ function chips(x, y, players, maxW = 536) {
 // o: {paused, live: false (no length: the bar can't seek), shuffle, repeat: 'off'|'all'|'one',
 //     only: play/pause alone}. Every button and the bar always show; what the player can't do is
 //     disabled (fg-disabled, no hover) — Ethan, 2026-11-13
+// the text sizes (pt; 11 = 1em): the title as tall as ↗ (a 32 line, 1.64em), the lines 1em
+// (2026-11-13, Ethan: the column looked empty) — `small` draws the first sizes (1.27em, 0.85em)
+const TEXT = {title: 18, line: 11};
+const SMALL = {title: 14, line: SUB};
 function column(tx, x1, y0, y1, o = {}) {
+    const t = o.small ? SMALL : TEXT;
     round(x1 - 16, y0 + 16, 'arrow-up-right-from-square');
-    text(o.title ?? SAMPLE.track, tx, y0 + 2, {sz: 14, wt: 700, maxW: x1 - 40 - tx});
-    text(o.sub ?? SAMPLE.sub, tx, y0 + 26, {sz: SUB, a: C.FG_MUTED, maxW: x1 - 40 - tx});
+    const head = text(o.title ?? SAMPLE.track, 0, 0, {sz: t.title, wt: 700, measure: true});
+    const ty0 = o.small ? y0 + 2 : y0 + 16 - head.height / 2 - head.y;   // on ↗'s middle
+    const run = o.small ? (tt, xx, yy, w, op) => text(tt, xx, yy, {...op, maxW: w}) : runText;
+    run(o.title ?? SAMPLE.track, tx, ty0, x1 - 40 - tx, {sz: t.title, wt: 700});
+    const sy = o.small ? y0 + 26 : y0 + 38;
+    run(o.sub ?? SAMPLE.sub, tx, sy, x1 - tx, {sz: t.line, a: C.FG_MUTED});
     if (o.album !== null)
-        text(o.album ?? ALBUM, tx, y0 + 42, {sz: SUB, a: C.FG_SUBTLE, maxW: x1 - 40 - tx});
+        run(o.album ?? ALBUM, tx, sy + (o.small ? 16 : 20), x1 - tx, {sz: t.line, a: C.FG_SUBTLE});
     const ty = y1 - 32;                                  // the transport row, 32
     const by = ty - 30;                                  // the bar, its times under it
     if (o.live !== false) {
@@ -359,5 +385,24 @@ if (MODE === 'switch') {
     text('Nền chọn (fill-3) trượt và đổi rộng bằng snap; chip cũ thu về logo, tên mờ đi; chip mới nở ra, tên hiện dần; ' +
         'các chip giữa dời chỗ bằng snap. Thẻ: nội dung cũ mờ đi và lùi 12 px, nội dung mới tới từ 12 px theo hướng đi.',
     30, 50 + 3 * ROW + 6, {sz: 8.5, a: .8, maxW: W - 60, wrap: true});
+    surf.writeToPNG(out);
+}
+
+if (MODE === 'text') {
+    const {w: EW, h: EH} = EXP[1920];
+    const surf = canvas(40 + EW + 60 + EW + 40, 40 + 2 * (30 + EH + 30) + 60);
+    const LONG = {title: 'Vì sao tình đầu sao đau đến thế chẳng thể nào quên', sub: 'MIN, Hoàng Dũng, Đen Vâu · Spotify',
+        album: 'Gói Con Tim Làm Quà (Bò Sữa Bay Original Soundtrack)'};
+    const rows = [
+        ['Trước: tên 1.27em, dòng 0.85em', {...LONG, small: true}], ['Đề xuất: tên 1.64em (cao 32 như ↗), dòng 1em', LONG],
+        ['Trước, chữ ngắn', {small: true}], ['Đề xuất, chữ ngắn', {}],
+    ];
+    rows.forEach(([cap, o], i) => {
+        const x = 40 + (i % 2) * (EW + 60), y = 40 + Math.floor(i / 2) * (30 + EH + 30) + 30;
+        text(cap, x, y - 22, {sz: 9.5, wt: 700});
+        m1(x, y, EW, EH, [SAMPLE.app], o);
+    });
+    text('Dòng dài nào cũng chạy (marquee), không cắt "…": tên bài, "nghệ sĩ · app", album; hai dòng dưới lấy hết bề ngang cột.',
+        40, 40 + 2 * (30 + EH + 30) + 16, {sz: 9, a: .8});
     surf.writeToPNG(out);
 }

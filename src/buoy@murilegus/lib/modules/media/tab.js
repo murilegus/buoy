@@ -1,12 +1,11 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
-import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
 import {EmptyState, iconProps, makeElement} from '../../kit/ui/present/elements.js';
-import {eqGlyph, marquee} from '../../kit/ui/present/motion.js';
+import {eqGlyph, marquee, marqueeTurns} from '../../kit/ui/present/motion.js';
 import {tick} from '../../kit/ui/present/parts.js';
 import {element, livePosition, mediaTimes} from '../../kit/model/presentation.js';
 import {FADES, TAB_SHIFT} from '../../kit/model/motion.js';
@@ -59,7 +58,9 @@ export class MediaTab {
         this._bodyH = knownBodyH;
         this._fitLater = 0;
         this._chipsLater = null;
+        this._lineSet = null;     // the card's lines under the title: {box, at, turns, joined}
         this.actor.connect('notify::height', () => this._fitLaterOnce());
+        this.actor.connect('notify::mapped', () => this._fitLaterOnce());
     }
 
     /** @param {object[]} activities  this tab's media activities, stack order */
@@ -116,7 +117,7 @@ export class MediaTab {
         this._chipsLater?.();
         this._chipsLater = null;
         this.actor.destroy_all_children();
-        this._chips = this._card = this._content = null;
+        this._chips = this._card = this._content = this._lineSet = null;
         this._chipsKey = '';
     }
 
@@ -140,11 +141,29 @@ export class MediaTab {
             view = view.get_parent();
         const node = this.actor.get_theme_node();
         const h = Math.floor((view ?? this.actor).get_allocation_box().get_height() - node.get_vertical_padding());
-        if (!(h > 0) || h === this._bodyH)
+        if (h > 0 && h !== this._bodyH) {
+            this._bodyH = knownBodyH = h;
+            if (this._content)
+                this._render();      // the card and the art at their size, no motion (fits again)
             return;
-        this._bodyH = knownBodyH = h;
-        if (this._content)
-            this._render();          // the card and the art at their size, no motion
+        }
+        this._fitLines();
+    }
+
+    // The album joins the line above when the card has no room for its own (design/media,
+    // 2026-11-13: two players' chips at 1920 leave the column 156 of the 170 it asks).
+    // Measured, not a fixed height, so a larger text size gets it too; before the frame is
+    // painted (BEFORE_REDRAW), so the three lines never show squeezed.
+    _fitLines() {
+        const l = this._lineSet;
+        if (!l || l.joined || !this._content || !l.at.album)
+            return;
+        const [, nat] = this._content.get_preferred_height(-1);
+        if (nat <= cardHeight(this._bodyH, this._list.length) + 0.5)
+            return;
+        l.joined = true;
+        l.box.destroy_all_children();
+        this._addLine(l.box, subLine(l.at, {album: true}), 'buoy-media-sub', l.turns);
     }
 
     // --- the players' chips ---------------------------------------------------------------
@@ -240,10 +259,18 @@ export class MediaTab {
             style_class: 'buoy-media-column', orientation: Clutter.Orientation.VERTICAL,
             x_expand: true, y_expand: true,
         });
-        const head = new St.BoxLayout({style_class: 'buoy-media-head', x_expand: true});
-        head.add_child(this._text(a));
+        // the head, 32 tall: the title as tall as ↗, on its middle; under it the lines take
+        // the column's whole width; long ones run one at a time (design/media, 2026-11-13)
+        const at = a.attributes ?? {};
+        const turns = marqueeTurns();
+        const head = new St.BoxLayout({style_class: 'buoy-media-head', x_expand: true, height: 32});
+        const title = marquee(at.title || a.text || '', 'buoy-media-title', turns);
+        title.x_expand = true;
+        title.y_align = Clutter.ActorAlign.CENTER;
+        head.add_child(title);
         head.add_child(this._openButton(a));
         column.add_child(head);
+        column.add_child(this._lines(at, turns));
         column.add_child(new St.Widget({y_expand: true}));
         column.add_child(this._position(a));
         column.add_child(this._transport(a));
@@ -264,20 +291,22 @@ export class MediaTab {
         return bin;
     }
 
-    _text(a) {
-        const at = a.attributes ?? {};
-        const text = new St.BoxLayout({style_class: 'buoy-media-text', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
-        const line = (t, cls) => {
-            if (!t)
-                return;
-            const l = new St.Label({text: t, style_class: cls});
-            l.clutter_text.ellipsize = Pango.EllipsizeMode.END;
-            text.add_child(l);
-        };
-        text.add_child(marquee(at.title || a.text || '', 'buoy-media-title'));   // runs when long
-        line(subLine(at), 'buoy-media-sub');
-        line(at.album, 'buoy-media-album');
-        return text;
+    // "artist · player" and the album, each running when long, in turn with the title
+    // (never "…", 2026-11-13, Ethan); the album may join the first later (_fitLines)
+    _lines(at, turns) {
+        const box = new St.BoxLayout({style_class: 'buoy-media-text', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        this._addLine(box, subLine(at), 'buoy-media-sub', turns);
+        this._addLine(box, at.album, 'buoy-media-album', turns);
+        this._lineSet = {box, at, turns, joined: false};
+        return box;
+    }
+
+    _addLine(box, text, cls, turns) {
+        if (!text)
+            return;
+        const line = marquee(text, cls, turns);
+        line.x_expand = true;
+        box.add_child(line);
     }
 
     // ↗: the player's window, then the island closes; disabled without an app to raise
@@ -287,7 +316,7 @@ export class MediaTab {
             icon: 'external-link-symbolic', kind: 'skip', enabled: Boolean(app), on: false,
             label: app ? `Open ${app}` : 'Open the player',
         });
-        b.y_align = Clutter.ActorAlign.START;
+        b.y_align = Clutter.ActorAlign.CENTER;
         b.connect('clicked', () => {
             a.onAction?.('raise');
             this._close?.();

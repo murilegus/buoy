@@ -1,7 +1,7 @@
 // Run: gjs -m tests/presentation.test.js   (pure: presentation data → render plan)
 import {
     element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, planMissed, clockTime,
-    MAX_ACTIONS, MAX_ROWS, livePosition, mediaTimes, sinceText, untilText, agoText,
+    MAX_ACTIONS, MAX_ROWS, nextTurn, livePosition, mediaTimes, sinceText, untilText, agoText,
 } from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
@@ -370,3 +370,17 @@ eq(planMinimal({actions: [{id: 'a', label: 'A'}]}).action?.id, 'a', 'an activity
 eq(planMinimal({actions: [{id: 'a', label: 'A'}], minimalAction: false}).action, null, 'minimalAction: false drops it');
 
 console.log('presentation: ok');
+
+// --- nextTurn: long lines take turns (design/media, 2026-11-13) ---------------
+eq(nextTurn([], -1), -1, 'nextTurn: no lines → none');
+eq(nextTurn([false, false, false], -1), -1, 'nextTurn: none long → none');
+eq(nextTurn([false, false, false], 1), -1, 'nextTurn: none long after one ran → none');
+eq(nextTurn([true, true, true], -1), 0, 'nextTurn: from nothing → the title first');
+eq(nextTurn([true, true, true], 0), 1, 'nextTurn: after the title → the second line');
+eq(nextTurn([true, true, true], 2), 0, 'nextTurn: after the last → round to the first');
+eq(nextTurn([true, false, true], 0), 2, 'nextTurn: a short line is skipped');
+eq(nextTurn([false, true, false], 1), 1, 'nextTurn: the only long line runs again');
+eq(nextTurn([false, false, true], -1), 2, 'nextTurn: from nothing, the first long one');
+eq(nextTurn([true, true], 5), 0, 'nextTurn: a last out of range counts as none');
+eq(nextTurn([true, true], NaN), 0, 'nextTurn: a last not a number counts as none');
+eq(nextTurn([true, false, false], 0), 0, 'nextTurn: the title alone loops');
