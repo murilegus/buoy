@@ -92,7 +92,7 @@ eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_
     'radius 16 (a pill, like the island) and opacity 17 % by default, a panel button\'s hover (2026-11-04)');
 eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'timer', 'greeting', 'calendar', 'device', 'input', 'agent', 'copied', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet, nor a module that is only an idle plan');
-eq(plan.modules.find(m => m.id === 'greeting')?.keys, [], 'greeting: its switch alone, its bookkeeping hidden');
+eq(plan.modules.find(m => m.id === 'greeting')?.keys, ['greeting-updates'], 'greeting: its switch and "a newer Buoy", its bookkeeping hidden');
 eq(MODULE_GROUPS.find(g => g.modules.includes('greeting'))?.title, 'Bu', 'greeting in the Bu group (2026-11-08)');
 eq(plan.plans.find(p => p.id === 'clock').planOnly, true,
     'clock: its switch on its plan row on the Island page, not on Modules (2026-11-06, Ethan)');

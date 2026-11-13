@@ -145,6 +145,10 @@ install_buoy() {
   say "Installing $(basename "$zip")"
   gnome-extensions install --force "$zip" || die "gnome-extensions could not install $zip"
   [ -f "$EXT_DIR/metadata.json" ] || die "the zip did not install into $EXT_DIR"
+  # Buoy's mark that this script installed it: only then does it ask GitHub once a day for
+  # a newer release (GREETING.md §11). An update from extensions.gnome.org replaces the
+  # folder, so the mark goes and GNOME Shell's own check takes over.
+  : > "$EXT_DIR/.check-updates" || warn "could not mark $EXT_DIR: Buoy will not say when a newer release is out"
   set_enabled 1
   if [ "$(gsettings get org.gnome.shell disable-user-extensions)" = true ]; then
     warn "Extensions are switched off (Extensions app → Use Extensions): Buoy waits until they are on"

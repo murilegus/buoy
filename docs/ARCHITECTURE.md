@@ -192,7 +192,9 @@ idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone t
 *2026-11-08.*
 
 `install.sh` (repo root) installs, updates and removes Buoy for one user without EGO, from
-a GitHub release, a zip or a clone; it uses the installed extension's own `hooks.js` and
+a GitHub release, a zip or a clone, and leaves its mark in the folder (`.check-updates`: only
+then does the greeting ask GitHub for a newer release, GREETING.md §11, 2026-11-13); it
+uses the installed extension's own `hooks.js` and
 `lib/kit/settings.js` (pure) on removal. Both paths stay: the install.sh of 0.1 and later
 imports them from whatever version is installed (since 2026-11-12 `lib/kit/settings.js`
 re-exports `kit/model/settings.js`). A tag `v<version-name>` publishes a release
