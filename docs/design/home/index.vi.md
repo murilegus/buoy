@@ -109,7 +109,7 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 - **Equaliser ở góc trên phải ô nhạc**, chỗ ô thời tiết ghi tuổi số đo và ô Bị nhỡ đặt icon app: sáu
   thanh 2 × 14 theo màu bìa ([Pill](../pill/index.vi.md), "Equaliser"), canh giữa theo ô leading
   20. Đang phát thì chạy (chỉ khi Home đang mở, luật 8), đang dừng thì thấp. Nhiều player: nhìn
-  góc là biết ô nào đang phát. **Đề xuất**
+  góc là biết ô nào đang phát. **Chốt** (Ethan, 2026-11-13)
 
 ## Quay màn hình trong Home
 

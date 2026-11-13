@@ -61,7 +61,15 @@ export class MediaTab {
         this._chipsLater = null;
         this._lineSet = null;     // the card's lines under the title: {box, at, turns, joined}
         this.actor.connect('notify::height', () => this._fitLaterOnce());
-        this.actor.connect('notify::mapped', () => this._fitLaterOnce());
+        this.actor.connect('notify::mapped', () => {
+            // chips built while the tab was kept off the stage were never measured: now
+            if (this.actor.mapped && this._chipsUnmeasured) {
+                this._chipsKey = '';
+                this._render();
+            }
+            this._fitLaterOnce();
+        });
+        this._chipsUnmeasured = false;
     }
 
     /** @param {object[]} activities  this tab's media activities, stack order */
@@ -221,6 +229,13 @@ export class MediaTab {
             this._chipsLater = null;
             if (!this._chips || this._chips.row !== row)
                 return;
+            // a kept tab updated off the stage (another player paused while Home shows): no
+            // theme node there (St's CRITICAL for each ancestor); measured when it is shown
+            if (!row.get_stage()) {
+                this._chipsUnmeasured = true;
+                return;
+            }
+            this._chipsUnmeasured = false;
             const gap = row.get_theme_node().get_length('spacing') || 6;
             const widths = row.get_children().map((chip, i) => {
                 const [, named] = chip.get_preferred_width(-1);

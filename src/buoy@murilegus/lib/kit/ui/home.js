@@ -883,8 +883,8 @@ export class Home {
             return tile;
         }
         const a = t.activity;
-        const {leading, value, caption} = tileOf(a);
-        const tile = this._tileButton({leading, valueEl: value, caption, width, activity: a}, a.text ?? a.kind);
+        const {leading, value, caption, corner} = tileOf(a);
+        const tile = this._tileButton({leading, valueEl: value, caption, corner, width, activity: a}, a.text ?? a.kind);
         // an activity without a tab of its own goes up to the main card, with its buttons
         tile.connect('clicked', () => {
             if (this._tabOf(a)) {
@@ -929,11 +929,15 @@ export class Home {
         // (the weather's update time, design/home 2026-11-13); it moves on once a minute
         // while shown
         // `apps`: {icons, more}, the Missed tile's apps (design/home, 2026-11-13)
+        // `corner`: an element, the activity's equaliser (design/home "Ô nhạc", 2026-11-13);
+        // it moves only while Home shows it (eqGlyph runs while mapped, rule 8)
         let corner = null;
         if (Number.isFinite(t.since))
             corner = sinceLabel(t.since);
         else if (t.apps?.icons?.length)
             corner = appIcons(t.apps);
+        else if (t.corner)
+            corner = makeElement(t.corner, 'minimal', t.activity ?? null);
         if (corner) {
             const top = new St.BoxLayout({x_expand: true});
             top.add_child(cell);

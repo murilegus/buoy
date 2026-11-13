@@ -69,7 +69,8 @@ function stageBox(actor, force = false) {
         actor.get_allocation_box();
     const r = actor.get_transformed_extents();
     const box = {x: r.get_x(), y: r.get_y(), w: r.get_width(), h: r.get_height()};
-    if (actor[MARK]?.startsWith('title:'))
+    // a theme node off the stage is St's CRITICAL, once per ancestor
+    if (actor[MARK]?.startsWith('title:') && actor.get_stage())
         box.font = fontOf(actor);
     return box;
 }
@@ -217,12 +218,18 @@ export class Flights {
      * @param {number} p  the bg's progress, 0 … 1 (past 1 on an overshoot)
      */
     step(p) {
+        // a part taken off the stage meanwhile (a kept tab left with its body) is lost as one
+        // destroyed: let go, looked for again by its mark
+        for (const f of this._list) {
+            if (f.source && !f.source.get_stage())
+                this._release(f);
+        }
         const lost = this._list.filter(f => !f.source);
         if (this._waiting.size || lost.length) {
             const parts = sharedParts(this._scope?.() ?? null);
             for (const f of lost) {
                 const again = parts.get(f.key);
-                if (again && again.width > 0)
+                if (again && again.width > 0 && again.get_stage())
                     this._follow(f, again);
             }
             if (this._waiting.size)
