@@ -7,6 +7,8 @@
 .buoy-home-media-title-tall { color: #fff; /* fg */ font-size: 1.27em; font-weight: 700; }
 .buoy-home-media-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; font-feature-settings: "tnum"; }
 .buoy-home-media-transport { spacing: 8px; }
+/* the tall card's play / pause, under the times */
+.buoy-home-media-play { padding-top: 8px; }
 .buoy-home-media-bar { color: #fff; /* fg */ }
 
 /* The Media tab (modules/media/tab.js, design/media M1, 2026-11-13): the players' chips

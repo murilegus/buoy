@@ -16,11 +16,13 @@ const ART_RADIUS = 8;
 /**
  * Home's main card for a player (design/home, 2026-11-11): the cover as tall as the card
  * allows, the title over "artist · player", the position as a bar with its times, and the
- * play / pause with the equaliser at rest (2026-11-13: ⏮ ⏭ are the Media tab's). Two forms
- * by the card's height:
+ * play / pause and the equaliser (2026-11-13: ⏮ ⏭ are the Media tab's). Two forms by the
+ * card's height:
  *
- * - `low` (under 160): play / pause at the top right, the bar at the bottom;
- * - `tall`: the title larger, play / pause centred under the bar.
+ * - `low` (under 160): one slot at the top right, the equaliser at rest and play / pause
+ *   under the pointer; the bar at the bottom;
+ * - `tall`: the title larger, the equaliser alone at the top right, play / pause always
+ *   shown, centred under the bar.
  *
  * A click anywhere but the buttons opens the Media tab (the other players, seeking, shuffle
  * and repeat). It acts through the activity's `onAction`, as the Media tab does; the bar and
@@ -77,17 +79,18 @@ export class MediaCard {
         if (sub)
             lines.add_child(ellipsized(sub, 'buoy-home-subtitle'));
         head.add_child(lines);
-        if (!tall)
-            head.add_child(this._transport(a));
+        head.add_child(tall ? this._eqCorner(a) : this._transport(a));
         col.add_child(head);
         col.add_child(new St.Widget({y_expand: true}));
         const live = a.state?.live;
         if (live?.length > 0)
             col.add_child(this._position(live));
         if (tall) {
-            const t = this._transport(a);
-            t.x_align = Clutter.ActorAlign.CENTER;
-            col.add_child(t);
+            const row = new St.BoxLayout({style_class: 'buoy-home-media-play', x_align: Clutter.ActorAlign.CENTER});
+            const b = this._playPause(a);
+            if (b)
+                row.add_child(b);
+            col.add_child(row);
         }
         this._box.add_child(col);
         eqLeaving(null);
@@ -115,15 +118,37 @@ export class MediaCard {
         return box;
     }
 
-    // Play / pause alone, as the compact's ⏸ slot (design/home "Thẻ nhạc", 2026-11-13, Ethan:
+    // The low card's one slot, as the compact's ⏸ (design/home "Thẻ nhạc", 2026-11-13, Ethan:
     // ⏮ ⏭ live in the Media tab): the equaliser at rest, moving or low; the cream ⏸ / ▶ under
-    // the pointer or the keyboard's focus. The equaliser is the pill's, so it flies from the
-    // pill, and on to the Media tab's ↗ slot (shared parts)
+    // the pointer or the keyboard's focus
     _transport(a) {
         const row = new St.BoxLayout({style_class: 'buoy-home-media-transport', y_align: Clutter.ActorAlign.START});
+        const b = this._playPause(a);
+        if (b)
+            row.add_child(restSlot(b, this._eq(a), `${a.id}:home`));
+        return row;
+    }
+
+    // The tall card's top right: the equaliser alone, in a slot as wide as the low form's, so
+    // it sits where it sits there and in the tile (design/home "Thẻ nhạc", 2026-11-13, Ethan:
+    // the tall card has room for play / pause shown under the bar)
+    _eqCorner(a) {
+        const eq = this._eq(a);
+        eq.x_align = Clutter.ActorAlign.CENTER;
+        return new St.Bin({width: 32, height: 32, y_align: Clutter.ActorAlign.START, child: eq});
+    }
+
+    // The equaliser: the pill's, so it flies from the pill and on to the Media tab's ↗ slot
+    _eq(a) {
+        const playing = a.state?.status === 'Playing';
+        return markShared(eqGlyph({paused: !playing, color: a.isStale ? null : a.attributes?.tint}), 'eq', a);
+    }
+
+    // The cream play / pause, as the main buttons; null when the player has none
+    _playPause(a) {
         const act = (a.actions ?? []).find(x => x.id === 'playpause');
         if (!act)
-            return row;
+            return null;
         const playing = a.state?.status === 'Playing';
         const b = new St.Button({
             style_class: 'buoy-round buoy-round-main',
@@ -131,9 +156,7 @@ export class MediaCard {
             can_focus: true, accessible_name: playing ? 'Pause' : 'Play', width: 32, height: 32,
         });
         b.connect('clicked', () => a.onAction?.(act.id));
-        const eq = eqGlyph({paused: !playing, color: a.isStale ? null : a.attributes?.tint});
-        row.add_child(restSlot(b, markShared(eq, 'eq', a), `${a.id}:home`));
-        return row;
+        return b;
     }
 
     destroy() {

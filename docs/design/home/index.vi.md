@@ -108,10 +108,16 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 
 ![Thẻ nhạc lúc nghỉ, rê chuột, đang dừng; nhạc là một ô với equaliser ở góc](images/music.vi.png)
 
-- **Thẻ nhạc (thẻ chính): bỏ ⏮ ⏭, chỉ còn ⏸ / ▶ làm như ô ⏸ của compact**: lúc nghỉ là equaliser
+- **Thẻ nhạc (thẻ chính): bỏ ⏮ ⏭, chỉ còn ⏸ / ▶**; ở dạng thấp **làm như ô ⏸ của compact**: lúc nghỉ là equaliser
   (chạy, hay thấp khi dừng), rê chuột hay focus bàn phím thì nút kem ⏸ / ▶; ⏮ ⏭ ở tab Media. Bấm thẻ
   mở tab Media: equaliser đi tới ô ↗ của tab, ảnh bìa và tên tới chỗ của chúng (Chuyển động, "Phần
   chung"). **Chốt** (Ethan, 2026-11-13)
+
+- **Dạng cao (từ 160, màn 2560 và 3440) tách hai thứ ra**: equaliser lên góc trên phải, ngang tên,
+  như dạng thấp và ô nhạc; nút kem ⏸ / ▶ luôn hiện, giữa dưới thanh. Thẻ cao còn chỗ, nên nút
+  không cần ẩn; dạng thấp giữ một ô. **Chốt** (Ethan, 2026-11-13)
+
+  ![Thẻ nhạc dạng cao: một ô (trước) và tách equaliser với nút (chốt)](images/tall.vi.png)
 
 - **Equaliser ở góc trên phải ô nhạc**, chỗ ô thời tiết ghi tuổi số đo và ô Bị nhỡ đặt icon app: sáu
   thanh 2 × 14 theo màu bìa ([Pill](../pill/index.vi.md), "Equaliser"), canh giữa theo ô leading
