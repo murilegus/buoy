@@ -75,6 +75,11 @@ class Player {
     // Once the player leaves, Shell's MprisPlayer drops its proxy and its `status` throws
     // (ui/mpris.js _close); our proxy still says g-properties-changed as GDBusProxy clears
     // its cache on the owner's loss, with g-name-owner already null. Gone reads Stopped.
+    /** @returns {?object} the player's Shell.App, as read from its bus name (the chips' logo) */
+    get app() {
+        return this._app;
+    }
+
     get status() {
         return this.extra && !this.extra.g_name_owner ? 'Stopped' : this.mpris.status;
     }
@@ -259,6 +264,7 @@ export class MprisSource extends Source {
             id: p.busName,
             title, artist: (m.trackArtists ?? []).join(', '), album: meta.album,
             art: m.trackCoverUrl, appName: m.app?.get_name() ?? m.source?.title ?? '',
+            appIcon: (m.app ?? p.app)?.get_icon() ?? null,
             status: p.status, canPrev: m.canGoPrevious, canNext: m.canGoNext,
             canSeek: p.extra?.CanSeek === true,
             position: p.position, at: p.at,

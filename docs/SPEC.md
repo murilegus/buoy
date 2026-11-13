@@ -825,13 +825,11 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    title / artist · app (a title too long for the compact scrolls right to left: 2 s at
    the start, 30 px/s, two copies 40 px apart so each loop ends where it began; still and
    ellipsized with animations off; 2026-11-05, Ethan), ⏮ ⏯ ⏭, the position running with elapsed and remaining —
-   display only; no compact when `media-compact-on-hover` ("Controls on hover") is off. Tab Media: players as chips, art, title (scrolling
-   like the compact's when long) / artist / album, "Open app",
-   a slider to seek, shuffle · ⏮ ⏯ ⏭ · repeat. Laid out (2026-11-08, Ethan) as the art, a
-   square as tall as the tab (at most 40 % of its width, 96–280 px), and a column beside it — title / artist / album · app with ↗
-   (Open app) beside them, the slider and transport at the bottom — under a row of the
-   players' chips (one per app) when there is more than one; each tab gets its own redesign
-   after v0.1. "Open app" brings the player's window up
+   display only; no compact when `media-compact-on-hover` ("Controls on hover") is off. Tab Media (design/media, 2026-11-13): one card as Home's main
+   card — the art 8 in, title (scrolling when long) / "artist · player" / album, ↗ (Open app), a
+   slider to seek with its times and shuffle · ⏮ ⏯ ⏭ · repeat, always all of them, those the
+   player can't disabled — under a row of the players' chips (logo, name, the equaliser while
+   it plays; only the chosen one named when they do not fit), switched as the tab strip is. "Open app" brings the player's window up
    (Shell activates the app found from the player's bus pid), then asks the player itself
    to come forward (MPRIS `Raise()`). **Firefox** then switches to the tab that plays.
    **Chrome (and Chromium) cannot**: its MPRIS player says `CanRaise` false and sends no

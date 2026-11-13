@@ -2,7 +2,7 @@
 import adapter, {transport, liveOf, ICON, PAUSED_ICON, PAUSED_EQ} from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
 import {planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
-import {artSize, metaLine, ART_MIN, ART_MAX} from '../src/buoy@murilegus/lib/modules/media/layout.js';
+import {artSide, cardHeight, subLine, controls, seekOf, chipNames} from '../src/buoy@murilegus/lib/modules/media/layout.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -91,23 +91,46 @@ function noMeasures(v, path) {
 noMeasures(p, 'media');
 noMeasures(q, 'spotify ad');
 
-// --- the tab's layout A (layout.js, 2026-11-08): the art as tall as the room ---------------
-eq(artSize(205, 524), 204, '1920 / 1366, one player: the room 205 tall decides, even → 204');
-eq(artSize(173, 524), 172, '1920, two players: the room under the chips (173) → 172');
-eq(artSize(283, 680), 272, '2560: the width caps it (40% of 680 = 272)');
-eq(artSize(305, 720), ART_MAX, 'a room and width past the cap → ART_MAX');
-eq(artSize(150, 900), 150, 'a short room on a wide tab: the room decides');
-eq(artSize(151, 900), 150, 'rounded down to even');
-eq(artSize(40, 524), ART_MIN, 'never under ART_MIN');
-eq(artSize(205, 100), ART_MIN, 'a narrow tab still gets ART_MIN');
-eq(artSize(NaN, 524), ART_MIN, 'no room measured yet → ART_MIN');
-eq(artSize(205, undefined), ART_MIN, 'no width measured yet → ART_MIN');
-eq(metaLine({album: 'Single', app: 'Rhythmbox'}), 'Single · Rhythmbox', 'album · app');
-eq(metaLine({app: 'Firefox'}), 'Firefox', 'no album: the app alone');
-eq(metaLine({album: 'Tides', app: ' '}), 'Tides', 'a blank app is dropped');
-eq(metaLine({}), '', 'neither');
-eq(metaLine(), '', 'no attributes');
-const longAlbum = 'An album title long enough to need the label to ellipsize it on screen';
-eq(metaLine({album: longAlbum, app: 'Spotify'}), `${longAlbum} · Spotify`, 'long text is not cut here (the label ellipsizes)');
+{
+    // what the player can do: the tab's controls (design/media, 2026-11-13)
+    const st = adapter.media({...track, canPrev: false, canNext: true, appIcon: 'gicon'}, null);
+    eq([st.state.canPrev, st.state.canNext, st.attributes.appIcon], [false, true, 'gicon'], 'canPrev, canNext and the app icon pass through');
+    eq(adapter.media({...track, appIcon: undefined}, null).attributes.appIcon, null, 'no app icon: null');
+}
+
+// --- the Media tab (layout.js, design/media M1, 2026-11-13) ---------------------------------
+eq([cardHeight(212, 1), cardHeight(276, 1), cardHeight(308, 1)], [212, 276, 308], 'one player: the card is the body (1920 / 2560 / 3440)');
+eq(cardHeight(212, 2), 172, 'more players: less the chips 32 and 8');
+eq([cardHeight(NaN, 1), cardHeight(20, 3)], [0, 0], 'nothing measured, or too short: 0, never negative');
+eq([artSide(212), artSide(276), artSide(308), artSide(172)], [196, 260, 292, 156], 'the art: the card less 8 above and below');
+eq([artSide(10), artSide(undefined)], [0, 0], 'never negative');
+eq(subLine({artist: 'Hải Đăng', app: 'Spotify', album: 'X'}), 'Hải Đăng · Spotify', 'artist · player; the album has its own line');
+eq([subLine({app: 'Firefox'}), subLine({artist: 'A', app: ' '}), subLine()], ['Firefox', 'A', ''], 'what is there');
+
+const ids = list => list.map(k => `${k.id}:${k.enabled ? '+' : '-'}${k.on ? '*' : ''}`);
+eq(ids(controls({status: 'Playing', canPrev: true, canNext: true, shuffle: false, loop: 'None'})),
+    ['shuffle:+', 'prev:+', 'playpause:+', 'next:+', 'loop:+'], 'a full player: all five, none on');
+eq(ids(controls({status: 'Playing', canPrev: false, canNext: false, shuffle: null, loop: null})),
+    ['shuffle:-', 'prev:-', 'playpause:+', 'next:-', 'loop:-'], 'play/pause only (a web page): all five, the rest disabled');
+eq(ids(controls({status: 'Paused', canPrev: true, canNext: true, shuffle: true, loop: 'Track'})),
+    ['shuffle:+*', 'prev:+', 'playpause:+', 'next:+', 'loop:+*'], 'shuffle and repeat on');
+eq(controls({status: 'Paused'})[2].icon, 'media-playback-start-symbolic', 'paused: ▶');
+eq(controls({status: 'Playing'})[2].icon, 'media-playback-pause-symbolic', 'playing: ⏸');
+eq([controls({loop: 'Track'})[4].icon, controls({loop: 'Playlist'})[4].icon], ['media-playlist-repeat-song-symbolic', 'media-playlist-repeat-symbolic'],
+    'repeat one track: its own icon');
+eq(controls({loop: 'None'})[4].on, false, 'repeat off');
+eq(controls().map(k => k.kind), ['toggle', 'skip', 'main', 'skip', 'toggle'], 'their looks: toggles, skips, the main one');
+
+const live = {position: 1000, length: 60000, at: 0, playing: true};
+eq(seekOf({canSeek: true, live}), {live, enabled: true}, 'a track the player can seek');
+eq(seekOf({canSeek: false, live}).enabled, false, 'can not seek: disabled, still there');
+eq(seekOf({canSeek: true, live: null}), {live: null, enabled: false}, 'a stream (no length): empty and disabled');
+eq(seekOf({canSeek: true, live: {...live, length: 0}}).live, null, 'a zero length is none');
+
+const w = [{named: 100, logo: 40}, {named: 90, logo: 56}, {named: 120, logo: 40}];
+eq(chipNames(w, 0, 400, 6), [true, true, true], 'they fit: every chip named');
+eq(chipNames(w, 1, 300, 6), [false, true, false], 'they do not: only the chosen one named');
+eq(chipNames(w, 0, 322, 6), [true, true, true], 'exactly the room: named');
+eq(chipNames([], 0, 300, 6), [], 'no chips');
 
 console.log('media adapter: ok');

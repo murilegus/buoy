@@ -28,40 +28,40 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
 ![Anatomy ở 1920 với số đo; cùng tab ở 2560 và 3440](images/anatomy.vi.png)
 
 - Thẻ lấy hết thân: rộng 536 / 692 / 736, cao 212 / 276 / 308 ở 1920 / 2560 / 3440 (expanded cao
-  nhất trừ phần đầu 56 và lề dưới 12). **Đề xuất**
+  nhất trừ phần đầu 56 và lề dưới 12). **Chốt** (Ethan, 2026-11-13)
 - Ảnh bìa vuông, cạnh = cao thẻ − 16: **196 / 260 / 292**; cách mép 8, bo 8 (16 − 8, đồng tâm).
-  **Đề xuất**
+  **Chốt** (Ethan, 2026-11-13)
 - Cột chữ cách ảnh 16, cách mép phải 12, trên và dưới 12. Từ trên: tên 1.27em 700 (dài thì chạy
   như compact), "nghệ sĩ · app" 0.85em `fg-muted`, album 0.85em `fg-subtle`; ↗ tròn 32 `fill-2` ở
-  góc phải trên, mở cửa sổ player. **Đề xuất**
+  góc phải trên, mở cửa sổ player. **Chốt** (Ethan, 2026-11-13)
 - Dưới cùng: thanh cao 4 (`fill-3`, phần đã phát trắng), giờ đã phát và còn lại 0.85em `fg-subtle`
   ngay dưới thanh; rồi hàng nút 32 ở giữa cột, tâm cách nhau 44: ⇄ không nền, ⏮ `fill-2`, ⏯ kem
-  (`fill-inverse`, icon đen), ⏭ `fill-2`, ↻ không nền. **Đề xuất**
+  (`fill-inverse`, icon đen), ⏭ `fill-2`, ↻ không nền. **Chốt** (Ethan, 2026-11-13)
 
 ## Các trạng thái
 
 ![Tạm dừng, không có thời lượng, không có ảnh, trộn và lặp bật, player chỉ phát/dừng, không có gì phát](images/states.vi.png)
 
-- **Tạm dừng**: ⏯ thành ▶. **Đề xuất**
+- **Tạm dừng**: ⏯ thành ▶. **Chốt** (Ethan, 2026-11-13)
 - **Không có thời lượng** (radio, phát trực tiếp): thanh rỗng `fill-2`, giờ "--:--" `fg-disabled`,
-  không kéo được. **Đề xuất**
-- **Không có ảnh bìa**: ô `fill-2` cùng cỡ và chỗ, nốt nhạc 32 `fg-subtle` ở giữa. **Đề xuất**
+  không kéo được. **Chốt** (Ethan, 2026-11-13)
+- **Không có ảnh bìa**: ô `fill-2` cùng cỡ và chỗ, nốt nhạc 32 `fg-subtle` ở giữa. **Chốt** (Ethan, 2026-11-13)
 - **Trộn bài / lặp bật**: nút có nền `fill-3`, icon trắng; lặp một bài dùng `repeat-1`. Bấm lặp đi
-  vòng tắt → tất cả → một bài. **Đề xuất**
-- **Player chỉ có phát/dừng** (một trang web): ⏯ bấm được, các nút khác và thanh mờ. **Đề xuất**
+  vòng tắt → tất cả → một bài. **Chốt** (Ethan, 2026-11-13)
+- **Player chỉ có phát/dừng** (một trang web): ⏯ bấm được, các nút khác và thanh mờ. **Chốt** (Ethan, 2026-11-13)
 - **Không có gì phát**: Bu nghỉ và "Nothing playing" giữa thân, không có thẻ (EmptyState).
-  **Đề xuất**
+  **Chốt** (Ethan, 2026-11-13)
 
 ## Nhiều player
 
 ![Hai player (một đang dừng), ba player (chọn Firefox), năm player (chip chỉ còn logo)](images/players.vi.png)
 
-- Mỗi player một chip, theo thứ tự của stack: đang phát trước, rồi đang dừng. **Đề xuất**
-- Chip: logo app 16, tên app, ba vạch nhỏ khi đang phát (chỉ chạy khi đang phát và đang hiện, luật
+- Mỗi player một chip, theo thứ tự của stack: đang phát trước, rồi đang dừng. **Chốt** (Ethan, 2026-11-13)
+- Chip: logo app 16, tên app, equaliser của pill khi đang phát (chỉ chạy khi đang phát và đang hiện, luật
   8 của ARCHITECTURE). Chip đang chọn `fill-3` chữ trắng; chip khác `fill-2` chữ `fg-muted`.
-  **Đề xuất**
-- Không đủ chỗ trên một hàng: chip không chọn chỉ còn logo (và ba vạch nếu đang phát); chip đang
-  chọn luôn đủ tên. **Đề xuất**
+  **Chốt** (Ethan, 2026-11-13)
+- Không đủ chỗ trên một hàng: chip không chọn chỉ còn logo (và equaliser nếu đang phát); chip đang
+  chọn luôn đủ tên. **Chốt** (Ethan, 2026-11-13)
 - Một player: không có hàng chip, thẻ cao hết thân. **Chốt** (Ethan, 2026-11-13)
 - **Đổi player chuyển động như thanh tab** ([Chuyển động](../motion/index.vi.md) "Đổi tab"): nền chọn
   `fill-3` là một lớp riêng sau hàng chip, trượt và đổi rộng sang chip mới bằng `snap`; chip cũ thu
@@ -75,11 +75,14 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
 
 - Bấm chip: đổi player, chuyển động như thanh tab (ở "Nhiều player"). **Chốt** (Ethan, 2026-11-13)
 - Kéo thanh: seek khi thả; trong lúc kéo, giờ đã phát đi theo tay. Bấm một chỗ trên thanh: tới đó.
-  **Đề xuất**
-- Nút, chip, ↗: đổi màu theo `state` (120 ms) khi hover và nhấn; nút mờ không đổi. **Đề xuất**
-- Bấm ↗: mở cửa sổ player và đóng island. **Đề xuất**
+  **Chốt** (Ethan, 2026-11-13)
+- Nút, chip, ↗: đổi màu theo `state` (120 ms) khi hover và nhấn; nút mờ không đổi. **Chốt** (Ethan, 2026-11-13)
+- Bấm ↗: mở cửa sổ player và đóng island. **Chốt** (Ethan, 2026-11-13)
 
 ## Chỗ trong code
+
+**Đã làm** (2026-11-13, FEATURES M4 "Media tab").
+
 
 - `lib/modules/media/tab.js` — vẽ lại theo M1: thẻ, chip, cột chữ, thanh và hàng nút luôn đủ, phần
   không làm được thì `reactive = false` và class mờ.
