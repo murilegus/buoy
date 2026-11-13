@@ -7,6 +7,7 @@ import weather, {
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
 import {
     readInfo, nextHour, unitNames, IP_ONLY_METRES, goodFix, nextFix, locateOutcome, shouldRetry, RETRY_MS,
+    useOwnInfo, SAME_PLACE_KM,
 } from '../src/buoy@murilegus/lib/modules/weather/read.js';
 import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
@@ -285,5 +286,22 @@ eq([unitNames('invalid', 'x'), unitNames(null, undefined)], [{temperature: 'DEFA
 eq(RETRY_MS, 120000, 'the second ask: 2 min later');
 eq(['ip', 'kept', 'none', 'wifi'].map(o => shouldRetry(o, false)), [true, true, true, false], 'no Wi-Fi fix: ask once more');
 eq(['ip', 'kept', 'none'].map(o => shouldRetry(o, true)), [false, false, false], 'only once');
+
+// --- whose weather: Shell's client or Buoy's own Info (2026-11-13, Home said Hanoi) --------
+{
+    const own = o => useOwnInfo({clientAuto: true, hasPlace: true, apartKm: null, ...o});
+    if (useOwnInfo({clientAuto: false, hasPlace: true, apartKm: 1150}) !== false)
+        throw new Error('the client follows locations: read it, however far');
+    if (own({apartKm: 1150}) !== true)
+        throw new Error('the client located on its own, Hanoi for Ho Chi Minh City: Buoy\'s own');
+    if (own({apartKm: 3}) !== false)
+        throw new Error('the client is at Buoy\'s place: read it, no second fetch');
+    if (own({apartKm: SAME_PLACE_KM}) !== false || own({apartKm: SAME_PLACE_KM + 1}) !== true)
+        throw new Error(`within ${SAME_PLACE_KM} km is the same place`);
+    if (own({apartKm: null}) !== true)
+        throw new Error('the client has no place yet: Buoy\'s own');
+    if (own({hasPlace: false}) !== false)
+        throw new Error('Buoy has no place: only the client');
+}
 
 print('weather: ok');

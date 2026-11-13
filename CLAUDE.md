@@ -24,14 +24,16 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
   runtime (EGO).
 - Prefer GNOME Shell's own objects over new proxies (`ui/mpris.js`, `ui/calendar.js`,
   `ui/weather.js`, `Main.osdWindowManager`, `Main.messageTray`).
-- When unsure about a Shell 50 API, read the source instead of guessing. Both live next to
-  this repo on the `gnome-50` branch (clone them if missing):
-  `git clone --depth 1 -b gnome-50 https://gitlab.gnome.org/GNOME/gnome-shell.git ../gnome-shell`
-  (js/ui/*.js, St in src/st/, theme in data/theme/gnome-shell-sass/) and
-  `git clone --depth 1 -b gnome-50 https://gitlab.gnome.org/GNOME/mutter.git ../mutter`
-  (Meta/Clutter/Cogl: src/core/, src/backends/, clutter/). Cite file and function for every
-  claim about Shell or Mutter behaviour, in chat and in the handover; if the source does
-  not settle it, say so instead of assuming. Ubuntu's session uses Yaru: its CSS is in
+- When unsure how GNOME behaves, read the source instead of guessing. Every GNOME source
+  tree lives in `../gnome-sources/` (next to this repo): `gnome-shell` and `mutter` on the
+  `gnome-50` branch (js/ui/*.js, St in src/st/, theme in data/theme/gnome-shell-sass/;
+  Meta/Clutter/Cogl in src/core/, src/backends/, clutter/), `gnome-weather`, `geoclue`,
+  `gnome-settings-daemon`. One that is missing: clone it there, at the release Ubuntu ships
+  (`dpkg -l <package>`), e.g.
+  `git clone --depth 1 -b gnome-50 https://gitlab.gnome.org/GNOME/gnome-shell.git ../gnome-sources/gnome-shell`.
+  Cite file and function for every claim about GNOME behaviour, in chat and in the
+  handover; if the source does not settle it, say so instead of assuming. Ubuntu's session
+  uses Yaru: its CSS is in
   `/usr/share/gnome-shell/theme/Yaru/gnome-shell-theme.gresource` (`gresource extract`).
 - Keep diffs reviewable: one item per branch, small commits inside it are fine but the
   handover describes the whole. Do not refactor neighbouring code unless the item needs it.
