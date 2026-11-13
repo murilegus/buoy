@@ -654,11 +654,14 @@ export class Home {
     }
 
     // A glance opens a tab: the strip's or the slot's at once; one listed only under ⋯ goes
-    // into the slot first, as choosing it there does
-    _openTab(id) {
+    // into the slot first, as choosing it there does. `from`: the activity it was opened on
+    // (a module's Home card), told to the tab as a tile's is (_showActivity)
+    _openTab(id, from = null) {
         const tab = findTab(this._strip, id);
         if (!tab || this._gone)
             return;
+        if (from)
+            this._showActivity(id, from);
         if (tab.type === 'standalone' && !stripOrder(this._strip).includes(id)) {
             this._onSlot?.(id);
             this._settings = {...this._settings, slot: id};
@@ -740,7 +743,7 @@ export class Home {
         if (card)
             return card;
         try {
-            card = new mod.home.Card({open: id => this._openTab(id), close: () => this._onClose?.()});
+            card = new mod.home.Card({open: (id, from) => this._openTab(id, from), close: () => this._onClose?.()});
             this._cards.set(mod.id, card);
             return card;
         } catch (e) {
@@ -770,11 +773,19 @@ export class Home {
     // closes the island
     _activateActivity(a, tab = this._tabOf(a)) {
         if (tab) {
+            this._showActivity(tab, a.id);
             this.select(tab);
         } else if (a.onPress) {
             a.onPress();
             this._onClose?.();
         }
+    }
+
+    // A tab that shows one of several (the Media tab's chips) is told which was pressed:
+    // `choose` on one already built, `from` for one built after (ARCHITECTURE "tab.js")
+    _showActivity(tab, id) {
+        this._from = id;
+        this._tabs.get(tab)?.choose?.(id);
     }
 
     // --- the row of tiles ---------------------------------------------------------------

@@ -27,7 +27,8 @@ const ART_RADIUS = 8;
 export class MediaCard {
     /**
      * @param {object} [kit]
-     * @param {function(string):void} [kit.open]  select a tab of the panel
+     * @param {function(string, ?string):void} [kit.open]  select a tab of the panel, on that
+     *   activity (the Media tab's chip of this player)
      */
     constructor({open = null} = {}) {
         this._box = new St.BoxLayout({style_class: 'buoy-home-media', x_expand: true, y_expand: true});
@@ -38,7 +39,8 @@ export class MediaCard {
             can_focus: true, accessible_name: 'Now playing',
             x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL,
         });
-        this.actor.connect('clicked', () => open?.('media'));
+        this._id = null;    // the activity shown
+        this.actor.connect('clicked', () => open?.('media', this._id));
     }
 
     /**
@@ -47,6 +49,7 @@ export class MediaCard {
      */
     show(a, {height, form}) {
         this._box.destroy_all_children();
+        this._id = a.id ?? null;
         const at = a.attributes ?? {};
         const tall = form === 'tall';
         this.actor.accessible_name = [at.title || a.text, at.artist].filter(Boolean).join(', ') || 'Now playing';

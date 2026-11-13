@@ -238,6 +238,23 @@ export class MediaTab {
         });
     }
 
+    /**
+     * Home's card or tile of a player was pressed (kit/ui/home.js _activateActivity): its chip.
+     * Not on screen yet, it is just the one shown; on screen, it slides as a chip's press.
+     *
+     * @param {string} id  the activity's
+     */
+    choose(id) {
+        if (this.actor.mapped) {
+            this._choose(id);
+            return;
+        }
+        if (id === this._chosen)
+            return;
+        this._chosen = id;
+        this._render();
+    }
+
     _choose(id) {
         if (id === this._current?.id)
             return;
