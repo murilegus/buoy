@@ -217,7 +217,10 @@ export class NotificationSource extends Source {
             n.connectObject('destroy', () => this._gone(app, n), this);
         }
         pill.list = [...pill.list.filter(x => x !== n), n];
-        if (held) {
+        // one that waited is missed, no card — but not a critical one: the app asked for it
+        // to stay (GNOME keeps its banner up until dismissed, ui/messageTray.js _updateState),
+        // so its card comes and stays, with its buttons, as when it arrives (2026-11-13, Ethan)
+        if (held && n.urgency !== MessageTray.Urgency.CRITICAL) {
             this._show(app, {anew: fresh});
         } else if (this._sharing.shared && (this._burst || this._turns.current || this._turns.waiting.length)) {
             this._joinBurst(app, n);

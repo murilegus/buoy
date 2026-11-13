@@ -66,6 +66,9 @@ Coming back, Buoy stamps what is already queued as waited, and takes a banner GN
 showing off the screen (the notification kept: `_notificationRemoved`), marks it unread so
 it asks for its banner again, and takes it through the override, quiet (its sound played):
 held, unseen, the amber light, no card. The same holds for the first enable after login.
+A critical one (the app's urgency, `notify-send -u critical`, a GTK `urgent` priority) is
+not just missed: GNOME keeps its banner up until dismissed, so its card comes and stays,
+with its buttons, as when one arrives (2026-11-13, Ethan).
 
 Why not `Main.messageTray.bannerBlocked`: Shell sets it itself, to false, each time the
 date menu closes (`ui/panel.js`), and while blocked the queue only fills. The override is
