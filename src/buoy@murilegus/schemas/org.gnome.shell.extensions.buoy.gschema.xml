@@ -162,7 +162,7 @@
       <description>The condition and temperature where you are.</description>
     </key>
     <key name="modules-mascot" type="b">
-      <default>false</default>
+      <default>true</default>
       <summary>Bu's eyes</summary>
       <description>Bu's eyes in the idle pill: they look at what you missed, and sleep at night or when you are away.</description>
     </key>
@@ -185,7 +185,7 @@
       <description>Shown when nothing with a time is left today.</description>
     </key>
     <key name="idle-auto-plans" type="as">
-      <default>['calendar', 'weather', 'clock']</default>
+      <default>['calendar', 'weather', 'clock', 'mascot']</default>
       <summary>Plans in the stack</summary>
       <description>The idle plans Automatic may show, in the order they take turns.</description>
     </key>

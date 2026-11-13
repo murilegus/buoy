@@ -654,7 +654,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
     // idleOffNote, 2026-11-06).
     _followPlanSwitches(row, description, plans) {
         // picking a plan whose module is only that plan turns it on, as its row's switch
-        // does (Bu's eyes are off by default and have no switch of their own, 2026-11-14)
+        // does (a module that is only a plan has no switch of its own, 2026-11-14)
         this._ids.push(this._settings.connect('changed::idle-content', () => {
             const p = plans.find(x => x.id === this._settings.get_string('idle-content'));
             if (p?.planOnly && p.enableKey && !this._settings.get_boolean(p.enableKey))

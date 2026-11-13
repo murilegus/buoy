@@ -150,7 +150,7 @@ eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['auto
 eq(IDLE_PLANS.filter(id => id !== 'none').every(id => schema.get_key('idle-content').range_check(new GLib.Variant('s', id))),
     true, 'every plan can be chosen in Show');
 eq(schema.get_key('idle-content').get_default_value().unpack(), 'auto', 'Automatic by default, now that it has landed');
-eq(schema.get_key('idle-auto-plans').get_default_value().deepUnpack(), ['calendar', 'weather', 'clock'],
+eq(schema.get_key('idle-auto-plans').get_default_value().deepUnpack(), ['calendar', 'weather', 'clock', 'mascot'],
     'the stack: every plan, the next event first in a tie');
 eq([schema.get_key('idle-auto-switch').get_range().recursiveUnpack(), schema.get_key('idle-auto-switch').get_default_value().unpack()],
     [['enum', ['5m', '10m', '20m', '30m']], '5m'], 'Switch every: 5, 10, 20 or 30 minutes, 5 by default (SPEC §2a-iii)');
@@ -164,7 +164,7 @@ eq(plan.plans, [
     {id: 'mascot', enableKey: 'modules-mascot', keys: ['idle-mascot-stroll'], planOnly: true},
 ], 'Plans: the clock, the weather, the next event (its switch on Modules: it has a tab), then Bu\'s eyes (only a plan)');
 eq([schema.get_key('modules-mascot').get_default_value().unpack(), schema.get_key('idle-auto-plans').get_default_value().deepUnpack().includes('mascot')],
-    [false, false], 'Bu\'s eyes: off by default and not in Automatic\'s stack (FEATURES M4)');
+    [true, true], 'Bu\'s eyes: on by default, last in Automatic\'s stack (Ethan, 2026-11-14)');
 eq(choiceLabel('idle-content', 'mascot'), 'Bu\'s Eyes', 'Show: Bu\'s Eyes');
 eq(plan.modules.some(m => m.id === 'calendar' && m.standalone), true, 'calendar: a row on Modules, a standalone tab');
 eq(choiceLabel('idle-content', 'calendar'), 'Next Event', 'Show: Next Event');
