@@ -14,10 +14,10 @@ const W1 = C.WHITE, G = GREY.MUTED, CY = [.4, .85, 1];
 const LOW = [4, 6, 7, 5, 6, 3];
 const ITEMS = [
     {title: 'Đang phát, lúc nghỉ: equaliser chạy, nền trong suốt', eq: 'play'},
-    {title: 'Rê chuột vào ô: nút ⏸ (fill-inverse-hover, như nút cũ)', button: 'pause-fill', fill: [1, 1, 1], pointer: true},
+    {title: 'Rê chuột vào ô: nút ⏸ như các nút chính (dưới con trỏ: fill-inverse-hover)', button: 'pause-fill', fill: [1, 1, 1], pointer: true},
     {title: 'Đang dừng, lúc nghỉ: equaliser thấp', eq: 'low'},
     {title: 'Đang dừng, rê chuột vào ô: nút ▶', button: 'play-fill', fill: [1, 1, 1], pointer: true},
-    {title: 'Focus bàn phím: nút kem (fill-inverse) và vòng focus', button: 'pause-fill', fill: C.CREAM, ring: true},
+    {title: 'Focus bàn phím: nút như các nút chính (kem, fill-inverse) và vòng focus', button: 'pause-fill', fill: C.CREAM, ring: true},
     {title: 'Đổi qua lại: mờ chéo tại chỗ, 120 ms, không dời', eq: 'play', button: 'pause-fill', fill: C.CREAM, half: true},
 ];
 const COLS = 2, ROWS = Math.ceil(ITEMS.length / COLS);

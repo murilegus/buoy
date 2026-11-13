@@ -33,8 +33,10 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
   không fade ([Chuyển động](../motion/index.vi.md), "Phần chung đi tới chỗ mới"). Đã làm, sau mục
   "Motion: shared parts" (2026-11-13). **Chốt** (Ethan, 2026-11-13)
 - **Ô 32 đó vẫn là nút dừng / phát, hiện khi hover:** lúc nghỉ chỉ thấy equaliser (đang phát thì
-  chạy, đang dừng thì thấp). Rê chuột vào ô: equaliser đổi thành nút tròn như cũ (nền
-  `fill-inverse`, icon ⏸ khi đang phát, ▶ khi đang dừng); rời ô: equaliser hiện lại. Bấm thì dừng
+  chạy, đang dừng thì thấp). Rê chuột vào ô: equaliser đổi thành nút tròn như các nút chính
+  khác (nền `fill-inverse`, dưới con trỏ thì `fill-inverse-hover`; icon ⏸ khi đang phát, ▶ khi
+  đang dừng), nên lúc rê chuột thấy nền trắng, lúc focus bằng bàn phím thấy nền kem; rời ô:
+  equaliser hiện lại (Ethan, 2026-11-13: "giống các nút khác"). Bấm thì dừng
   hoặc phát. Đổi qua lại bằng fade, không dời chỗ. Bàn phím tới được nút (focus cũng hiện nút); tên
   cho trình đọc màn hình: "Pause" hoặc "Play". **Chốt** (Ethan, 2026-11-13)
 
