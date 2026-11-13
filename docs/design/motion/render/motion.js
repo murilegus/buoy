@@ -181,8 +181,8 @@ function compactRest(cx, y, a) { // the subtitle, the bar, the times: only the c
     text(SAMPLE.sub, tx, y + 30, {sz: 9.5, a: a * C.FG_MUTED});
     fill([1, 1, 1, C.FILL3 * a], tx, by, xr - tx, 4, 2);
     fill([1, 1, 1, a], tx, by, (xr - tx) * .38, 4, 2);
-    text('1:24', tx, by + 7, {sz: 8.5, a: .5 * a});
-    text('-2:11', xr, by + 7, {sz: 8.5, a: .5 * a, right: true});
+    text('1:24', tx, by + 11, {sz: 8.5, a: .5 * a});
+    text('-2:11', xr, by + 11, {sz: 8.5, a: .5 * a, right: true});
 }
 const REST = {pill: pillRest, compact: compactRest, expanded: (cx, y, a) => panel(cx, y, a)};
 // travel false: today's rule (SPEC §5), the shared parts leave and arrive like the rest

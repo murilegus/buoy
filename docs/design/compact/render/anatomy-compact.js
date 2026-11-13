@@ -120,7 +120,7 @@ for (const it of ROWS) {
         const by = y + 60;
         cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(tx, by, xr - tx, 4, 2); cr.fill();
         cr.setSourceRGB(1, 1, 1); rr(tx, by, (xr - tx) * .38, 4, 2); cr.fill();
-        text('1:24', tx, by + 7, 8.5, 400, W1, .5); right('-2:11', xr, by + 7, 8.5, .5);
+        text('1:24', tx, by + 11, 8.5, 400, W1, .5); right('-2:11', xr, by + 11, 8.5, .5);
         dim(x, ax, y - 4, '8'); dim(ax, ax + 72, y - 4, '72'); dim(ax + 72, tx, y - 4, '12'); dim(xr, x + pw, y - 4, '14');
         vdim(x + pw + 6, y, y + 8, '8'); vdim(x + pw + 6, y + 8, y + 80, '72'); vdim(x + pw + 6, y + 80, y + 88, '8');
         text('bo 20 = 28 − 8, đồng tâm với góc', ax, y + h + 3, 5.5, 600, CY);

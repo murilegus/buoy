@@ -139,7 +139,7 @@ function heroMusic(x, y, w, h) {
     text(SAMPLE.track, tx, ay + 4, tall ? {sz: 14, wt: 700} : {wt: 600});
     text(SAMPLE.sub, tx, ay + (tall ? 30 : 24), {sz: SUB, a: C.FG_MUTED});
     slot(x + w - 28, ay + 20);
-    bar(tx, by - 26, x1 - tx);
+    bar(tx, by - 30, x1 - tx);   // the times 4 under it (2026-11-13)
     text('1:24', tx, by - 18, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, by - 18, {sz: SUB, a: C.FG_SUBTLE, right: true});
 }
 function heroAsk(x, y, w, h) {

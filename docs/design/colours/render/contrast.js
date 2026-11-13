@@ -48,7 +48,7 @@ function home(X, title, {border, subtle, disabled}) {
     fill(C.FILL1, cx, cy, cw, 104, 16); fill(C.FILL2, cx + 8, cy + 8, 88, 88, 8);
     text(SAMPLE.track, cx + 108, cy + 12, {sz: 11, wt: 600}); text(SAMPLE.sub, cx + 108, cy + 32, {sz: 9.35, a: C.FG_MUTED});
     drawEq(cr, cx + cw - 28 - EQ.width / 2, cy + 28);   // play / pause at rest (design/home "Thẻ nhạc")
-    fill(C.FILL3, cx + 108, cy + 70, cw - 122, 4, 2); fill(1, cx + 108, cy + 70, (cw - 122) * .45, 4, 2);
+    fill(C.FILL3, cx + 108, cy + 66, cw - 122, 4, 2); fill(1, cx + 108, cy + 66, (cw - 122) * .45, 4, 2);
     text('1:24', cx + 108, cy + 78, {sz: 9.35, a: subtle}); text('-1:41', cx + cw - 14, cy + 78, {sz: 9.35, a: subtle, right: true});
     // the row: two tiles and a wide one with a detail column in fg-subtle
     const ty = cy + 112, u = (cw - 2 * 8) / 4;

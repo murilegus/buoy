@@ -8,6 +8,7 @@
 .buoy-home-media-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; font-feature-settings: "tnum"; }
 .buoy-home-media-transport { spacing: 8px; }
 .buoy-home-media-bar { color: #fff; /* fg */ }
+.buoy-home-media-position { spacing: 4px; }   /* the times 4 under the bar, as the Media tab's */
 
 /* The Media tab (modules/media/tab.js, design/media M1, 2026-11-13): the players' chips
    above one card as Home's main card — the art 8 in, the text column, the seek bar and five

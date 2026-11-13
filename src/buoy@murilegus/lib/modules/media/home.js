@@ -93,7 +93,7 @@ export class MediaCard {
 
     // The bar, the elapsed time under its start and the remaining under its end
     _position(live) {
-        const box = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        const box = new St.BoxLayout({style_class: 'buoy-home-media-position', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
         const bar = progressBar(livePosition(live, Date.now()) / live.length);
         bar.add_style_class_name('buoy-home-media-bar');
         bar.x_expand = true;

@@ -34,7 +34,7 @@ function roundBtn(cx, cy, btn) { if (btn === 'eq') { drawEq(cr, cx - EQ.width / 
   cr.newPath(); if (main) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
   icon(cr, GLYPH[btn], cx - 8, cy - 8, 16, main ? C.BLACK : W1); }
 function bar(x, y, x0, x1) { cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(x0, y, x1 - x0, 4, 2); cr.fill(); cr.setSourceRGB(1, 1, 1); rr(x0, y, (x1 - x0) * .38, 4, 2); cr.fill();
-  text('1:24', x0, y + 7, 8.5, 400, W1, .5); right('-2:11', x1, y + 7, 8.5, .5); }
+  text('1:24', x0, y + 11, 8.5, 400, W1, .5); right('-2:11', x1, y + 11, 8.5, .5); }
 const label = (t, x, y) => text(t, x, y, 9, 600, W1, .85);
 const NOTI = 'Pushed the pill shapes to the branch — can you review the compact and the card before the 3 PM sync?';
 const CARD = [[.3, .55, .95], [.3, .55, .95]];

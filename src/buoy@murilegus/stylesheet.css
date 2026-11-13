@@ -266,7 +266,7 @@
 .buoy-round.buoy-round-main.buoy-round-rest.buoy-round-shown { background-color: #f1efe8; /* fill-inverse */ }
 .buoy-round.buoy-round-main.buoy-round-rest.buoy-round-shown:hover { background-color: #fff; /* fill-inverse-hover */ }
 /* A live position (media): the bar, then elapsed and remaining in even figures. */
-.buoy-live { spacing: 0; }
+.buoy-live { spacing: 4px; }   /* the times 4 under the bar, as the Media tab's (2026-11-13) */
 .buoy-live-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; font-feature-settings: "tnum"; }
 /* An ask's key (kit/model/keys.js), shown only while the island holds the keyboard. */
 .buoy-action-face { spacing: 6px; }

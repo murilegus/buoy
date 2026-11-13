@@ -82,8 +82,8 @@ ITEMS.forEach((it, i) => {
     const by = y + 60;
     cr.setSourceRGBA(1, 1, 1, C.FILL3); rr(tx, by, xr - tx, 4, 2); cr.fill();
     cr.setSourceRGB(1, 1, 1); rr(tx, by, (xr - tx) * .38, 4, 2); cr.fill();
-    text('1:24', tx, by + 7, 8.5, 400, W1, .5);
-    const e = text('-2:11', 0, 0, 8.5, 400, W1, .5, true); text('-2:11', xr - e.width, by + 7, 8.5, 400, W1, .5);
+    text('1:24', tx, by + 11, 8.5, 400, W1, .5);
+    const e = text('-2:11', 0, 0, 8.5, 400, W1, .5, true); text('-2:11', xr - e.width, by + 11, 8.5, 400, W1, .5);
     const a = it.half ? .5 : 1;
     if (it.eq === 'play')
         drawEq(cr, cx - EQ.width / 2, cy, a);
