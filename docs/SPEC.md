@@ -339,13 +339,20 @@ agent's colour.
 
 ### 2a-ii. Privacy dot (pill 1's right end, idle and minimal)
 
-Mirrors iOS and the buoy light: a small **orange** (mic) / **green** (camera, screen
-share) dot at the centre of pill 1's right end, outside the content zones, present whether the
-pill is idle or showing an activity; the ends grow as for the buoy light (§2a), so one dot
-or both give the same width. The pill draws it; adapters never know. (The ends are built;
-the dot itself waits for FEATURES "Privacy dot".) Click → expanded Home with "in use by Zoom".
-GNOME's own indicator in the system cluster is hidden while the `privacy` module is on;
-setting `privacy-dot = pill | system | both`, default `pill`.
+Mirrors iOS and the buoy light: one dot at the centre of pill 1's right end, outside the
+content zones, present whether the pill is idle or showing an activity: **purple** microphone,
+**green** camera, **red** screen shared or recorded; one at a time, red › green › purple
+(design/colours "Chấm riêng tư", 2026-11-11). The ends grow as for the buoy light (§2a), so
+one dot or both give the same width. The pill draws it; adapters never know: the `privacy`
+module tells the stack what is in use (`stack.setPrivacy`). A muted microphone has no dot,
+as GNOME drops its privacy colour then (ui/status/volume.js `_updatePrivacyIndicator`).
+Click → Home, as any pill without a tab of its own. A screen recording or share is also an
+activity, with its clock and Stop (§6b, design/compact "Chia sẻ và quay màn hình"; built
+2026-11-14). GNOME's own indicators for the same things (the camera, microphone and
+remote-access icons in the system cluster, the recording and sharing buttons in the bar)
+are hidden while the module is on; `privacy-dot = pill | system | both`, default `pill`
+(`system`: GNOME's alone and no dot; `both`: both). Not yet: the "in use by …" row in Home
+and the "in call" activity with auto-DND (FEATURES M4).
 
 ### 2a-iii. `auto`: a smart stack of idle plans
 

@@ -192,6 +192,14 @@ eq(stripOrder({tabs: [{id: HOME}], slot: null, more: []}), [HOME], 'no slot: Hom
     eq(ids(planStrip([media, greeting], [act('g', 'greeting', {expanded: {center: {title: 'Hi'}}})])), [HOME, 'media'],
         'not even while its activity is up with an expanded view');
 }
+// the privacy module's recordings (design/compact): no tab; a click opens Home
+{
+    const privacy = {id: 'privacy', kinds: ['screen'], noTab: true};
+    const rec = act('r', 'screen');
+    const strip = planStrip([media, privacy], [rec]);
+    eq(ids(strip), [HOME, 'media'], 'privacy: no tab, even with a recording up');
+    eq(tabFor(rec, strip), HOME, 'privacy: a recording opens Home');
+}
 
 
 print('tabs: ok');

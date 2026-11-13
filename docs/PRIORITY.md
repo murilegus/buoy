@@ -61,14 +61,14 @@ The kind's default (`kit/model/activity.js` `PRIORITY`), unchanged:
 
 | Kind | Priority | | Kind | Priority |
 |---|---|---|---|---|
-| `media` | 10 | | `copied` | 45 |
-| `timer` | 20 | | `attention` | 50 |
-| `calendar` | 25 | | `osd`, `input` | 60 |
-| `progress` | 30 | | `notification` | 70 |
-| `device`, `agent` | 35 | | `phone` | 75 |
-| `power` | 40 | | `greeting` | 85 |
-| | | | `ask` | 90 |
-| | | | `call` | 95 |
+| `media` | 10 | | `screen` | 55 |
+| `timer` | 20 | | `osd`, `input` | 60 |
+| `calendar` | 25 | | `notification` | 70 |
+| `progress` | 30 | | `phone` | 75 |
+| `device`, `agent` | 35 | | `greeting` | 85 |
+| `power` | 40 | | `ask` | 90 |
+| `copied` | 45 | | `call` | 95 |
+| `attention` | 50 | | | |
 
 - A **profile** (`~/.config/buoy/apps/<app>.json`, PROFILES.md) may set `priority`
   0–100: it moves the app inside its tier, never across.

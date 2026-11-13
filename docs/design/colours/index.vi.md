@@ -84,7 +84,8 @@ Chọn **C**: amber `#FF9F0A`, đỏ `#FF453A`. **Chốt** (Ethan, 2026-11-10)
 
 ### Chấm riêng tư
 
-*Hàng D của hình trên. Module `privacy` chưa có (M4 "Privacy dot"), nên màu chấm chưa có trong code.*
+*Hàng D của hình trên. Đã có trong code từ 2026-11-14: module `privacy`, lớp `.buoy-dot-mic`,
+`-cam`, `-screen` (`stylesheet.css`), pill 1 vẽ ở đầu phải (`kit/ui/pill.js`).*
 
 | | Camera | Mic | Chia sẻ màn hình | Quay màn hình | Vị trí |
 |---|---|---|---|---|---|

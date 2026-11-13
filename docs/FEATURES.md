@@ -69,7 +69,7 @@ to their places there (2026-11-12, Ethan).
 | [ ] | Power | charging, full, low; "18 W — slow"; "full in 42 min" (UPower) |
 | [ ] | Bluetooth device | connected, with its battery |
 | [ ] | USB / phone / webcam plugged | mount with one-tap eject |
-| [ ] | Privacy dot | as design/colours (mic purple, camera green, screen red) and design/compact (screen sharing and recording in the pill, with Stop); hides GNOME's indicators; "in call" with auto-DND |
+| [~] | Privacy dot | as design/colours (mic purple, camera green, screen red) and design/compact (screen sharing and recording in the pill, with Stop); hides GNOME's indicators (`privacy-dot`); "in call" with auto-DND. Left: "in call" with auto-DND and Home's "in use by …" row, to be designed first |
 | [ ] | Meeting in 5 min · Join | SPEC §6b item 5 |
 | [ ] | Timer | pomodoro ring, keep-awake, its tab; a start tile in Home's glance (design/home) |
 | [ ] | Idle plan `mascot` | MASCOT.md § Eyes; module off by default; checked with `powertop` on real hardware |

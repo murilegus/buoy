@@ -8,7 +8,7 @@ import St from 'gi://St';
 
 import {ART_CODE, ART_DECLARATIONS, artRadius, effectBox} from '../../model/rounded.js';
 import {element} from '../../model/presentation.js';
-import {LONG_BAR, bodyFill, file, label, levelBar, meter, sinceLabel, untilLabel} from './parts.js';
+import {LONG_BAR, bodyFill, elapsedLabel, file, label, levelBar, meter, sinceLabel, untilLabel} from './parts.js';
 import {eqGlyph, mascot} from './motion.js';
 
 // Buoy's own symbolic icons (design/icons "Icon symbolic"): Gravity UI's, and the ones Buoy
@@ -259,6 +259,8 @@ export function makeElement(e, mode, activity = null, sizes = {}) {
         return untilLabel(e.at);
     case 'since':
         return sinceLabel(e.at);
+    case 'elapsed':
+        return elapsedLabel(e.at);
     }
     return null;
 }

@@ -1,6 +1,7 @@
 import GLib from 'gi://GLib';
 
 import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
+import {privacyDot} from './presentation.js';
 
 /**
  * ActivityStack: which activity is on the island right now (CONTRACT.md §1, SPEC §2).
@@ -9,7 +10,7 @@ import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
  *   schedule(activity, startAt) → id · ask(id, question, options, opts) → Promise<choice>
  *   answer(id, choice) · wake(id) · dismiss(id) · setHiddenApps(slugs) · setUnseen(bool) ·
  *   setAway(bool)
- *   seeMissed() · openMissed(id, at) · clearMissed()
+ *   seeMissed() · openMissed(id, at) · clearMissed() · setPrivacy({mic, cam, screen})
  *   has(id) · get(id) · hold(id, held)
  *
  * Rules:
@@ -46,10 +47,12 @@ import {DEFAULT_LINGER, FEEDBACK, tierOf, validate} from './activity.js';
  *     lasts until the history is seen (Home shows it) or cleared, not as long as it exists,
  *     or while a source flags something of its own unseen (flagMissed: GNOME's
  *     notifications nobody has seen, docs/NOTIFICATIONS.md §2, 2026-11-08)
+ *   - dot: the privacy dot, from what the privacy module says is in use (setPrivacy):
+ *     'screen' › 'cam' › 'mic' › null (presentation.js privacyDot, INDICATORS)
  *
  * The island (renderer) receives render(list, {alert, expand}) — every visible activity,
  * centre pill first; it shows the first `island.capacity` (side-by-side, SPEC §2c) — and
- * optionally setLight(light). alert/expand carry an activity id or null. No Shell import: timers come from `clock`, so the
+ * optionally setLight(light) and setDot(dot). alert/expand carry an activity id or null. No Shell import: timers come from `clock`, so the
  * whole thing runs under plain gjs in tests.
  */
 
@@ -141,6 +144,7 @@ export class ActivityStack {
         this._more = 0;               // visible activities beyond them (+N)
         this._promoted = null;        // covered activity brought up by an alert
         this._light = 'off';
+        this._dot = null;
         this._lingerMs = DEFAULT_LINGER;
     }
 
@@ -535,6 +539,25 @@ export class ActivityStack {
 
     get light() {
         return this._light;
+    }
+
+    /** @returns {?string} the privacy dot: 'screen' | 'cam' | 'mic' | null */
+    get dot() {
+        return this._dot;
+    }
+
+    /**
+     * What the machine's microphone, camera and screen are doing (the privacy module's
+     * source); the island draws one dot for it at pill 1's right end.
+     *
+     * @param {object} [use]  {mic, cam, screen}: true while in use
+     */
+    setPrivacy(use = {}) {
+        const dot = privacyDot(use);
+        if (dot === this._dot)
+            return;
+        this._dot = dot;
+        this._island.setDot?.(dot);
     }
 
     /** Re-render, e.g. when the island's capacity changed. */

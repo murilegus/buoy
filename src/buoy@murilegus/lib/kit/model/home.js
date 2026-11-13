@@ -160,7 +160,7 @@ export function tileWidths(tiles, width) {
  *
  * @param {object} a  a validated activity
  * @returns {{leading: ?object, value: ?object, caption: ?string, corner: ?object}}  value: an
- *   element (presentation.js element: text, until, since…); corner: the pill's glyph (the
+ *   element (presentation.js element: text, until, since, elapsed…); corner: the pill's glyph (the
  *   equaliser) for the top right corner, or null
  */
 export function tileOf(a) {
@@ -179,8 +179,9 @@ export function tileOf(a) {
     const t = p.trailing;
     if (t?.type === 'ring')
         return {leading: p.leading, value: {type: 'text', text: `${Math.round(t.value * 100)}%`}, caption: p.text, corner};
-    if (t && ['text', 'until', 'since'].includes(t.type))
-        return {leading: p.leading, value: t, caption: p.text, corner};
+    // a running clock (a recording, `elapsed`) with the adapter's caption when its pill has no text
+    if (t && ['text', 'until', 'since', 'elapsed'].includes(t.type))
+        return {leading: p.leading, value: t, caption: str(own?.caption) ?? p.text, corner};
     return {leading: p.leading, value: p.text ? {type: 'text', text: p.text} : null, caption: null, corner};
 }
 

@@ -2,6 +2,7 @@
 import {
     element, planMinimal, planExpanded, planIdle, planCompact, lightSlot, keyline, planMissed, clockTime,
     MAX_ACTIONS, MAX_ROWS, nextTurn, livePosition, mediaTimes, sinceText, untilText, agoText, agoWords,
+    elapsedText, privacyDot,
 } from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import media from '../src/buoy@murilegus/lib/modules/media/adapter.js';
 import spotify from '../src/buoy@murilegus/lib/modules/media/apps/spotify.js';
@@ -352,6 +353,39 @@ eq(element({until: 31000}), {type: 'until', at: 31000}, 'a live countdown elemen
 eq(untilText(31000, 1500), '0:30', 'what is left, rounded');
 eq(untilText(1000, 5000), '0:00', 'never negative');
 eq(element({since: 5000}), {type: 'since', at: 5000}, 'a live elapsed time element (CODING-AGENTS.md §2)');
+// a recording's clock, counting up once a second (design/compact "Chia sẻ và quay màn hình")
+eq(element({elapsed: 5000}), {type: 'elapsed', at: 5000}, 'a running clock element');
+eq(element({icon: 'media-record-symbolic', backdrop: true}), {type: 'icon', icon: 'media-record-symbolic', backdrop: true},
+    'an icon on its plate');
+eq(element({icon: 'media-record-symbolic', backdrop: 'yes'}), {type: 'icon', icon: 'media-record-symbolic'},
+    'backdrop only when true');
+eq(element({elapsed: NaN}), null, 'elapsed: not a number is no element');
+eq([elapsedText(1000, 43_400), elapsedText(0, 3_725_000), elapsedText(9000, 1000)],
+    ['0:42', '1:02:05', '0:00'], 'elapsedText: m:ss, hours when there are, never negative');
+{
+    const base = {id: 'screen:recording', kind: 'screen'};
+    const c = planCompact({
+        ...base, compact: {
+            leading: 'video-symbolic', text: 'Recording the screen',
+            subtitle: {elapsed: 1000, text: 'from 14:03'},
+        },
+    });
+    eq(c.subtitle, {type: 'elapsed', at: 1000, text: 'from 14:03'}, 'a running subtitle: the clock and the text after it');
+    const bare = planCompact({...base, compact: {text: 'Recording', subtitle: {elapsed: 1000}}});
+    eq(bare.subtitle, {type: 'elapsed', at: 1000, text: null}, 'a running subtitle without text');
+    const bad = planCompact({...base, compact: {text: 'Recording', subtitle: {elapsed: 'soon'}}});
+    eq(bad.subtitle, null, 'a subtitle object without a number is dropped');
+    eq(planCompact({...base, compact: {text: 'R', subtitle: 'plain'}}).subtitle, 'plain', 'a string subtitle unchanged');
+}
+// --- the privacy dot (INDICATORS, design/colours "Chấm riêng tư") ---
+eq([privacyDot(), privacyDot({}), privacyDot(null), privacyDot({mic: false, cam: false, screen: false})],
+    [null, null, null, null], 'privacyDot: nothing in use, no dot');
+eq([privacyDot({mic: true}), privacyDot({cam: true}), privacyDot({screen: true})], ['mic', 'cam', 'screen'],
+    'privacyDot: each alone');
+eq([privacyDot({mic: true, cam: true}), privacyDot({mic: true, screen: true}), privacyDot({cam: true, screen: true}),
+    privacyDot({mic: true, cam: true, screen: true})], ['cam', 'screen', 'screen', 'screen'],
+'privacyDot: screen › camera › microphone');
+eq(privacyDot({mic: 1, cam: 'yes'}), null, 'privacyDot: only true counts');
 eq([agoText(0, 0), agoText(0, 59_999), agoText(0, 60_000), agoText(0, 3_900_000), agoText(9000, 1000)],
     ['now', 'now', '1 min', '1 h 5 min', 'now'], 'agoText: now for the first minute, then as since');
 eq([agoWords(0, 30_000), agoWords(0, 12 * 60_000), agoWords(0, 3_900_000), agoWords(9000, 1000)],

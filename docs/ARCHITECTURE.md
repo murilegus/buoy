@@ -369,6 +369,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `activity-linger` | s | `5m` \| `10m` \| `20m` \| `30m`, default `5m`: how long an activity that only waits (`linger`: a paused player, an agent done or waiting for you) stays without news, and how long a permission prompt waits before Deny (SPEC §2, 2026-11-07, Ethan; replaces `media-hide-paused-after` and `agent-ask-timeout`); Island page, Pill group |
 | `notification-replace-banners` | — | declared by the notification module (NOTIFICATIONS.md §9): GNOME's banners become pills, default `true`; off, GNOME shows its own (2026-11-07) |
 | `agent-quiet-focused` | — | declared by the agent module (CODING-AGENTS.md §9): no jump open while the session's terminal is focused, default `true`. Whether Claude Code's hooks are installed lives in `~/.claude/settings.json`, not in a key |
+| `privacy-dot` | — | declared by the privacy module (INDICATORS "Privacy dot", 2026-11-14): `pill` (default) the dot and GNOME's camera, microphone, remote-access icons and recording/sharing buttons hidden; `system` GNOME's alone, no dot; `both` |
 | per-module keys | — | declared by the module |
 
 ## Open for later

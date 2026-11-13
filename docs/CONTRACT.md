@@ -50,7 +50,8 @@ D-Bus API ──────────────────────┘ 
                                        // elapsed and remaining while shown; rows
                                        // [{icon, text, detail, dim, rank}] ≤ 16: the compact
                                        // draws the 3 of lowest rank (ties: first), in order;
-                                       // Home's main card as many as fit (2026-11-13)
+                                       // Home's main card as many as fit (2026-11-13); subtitle may run:
+                                       // {elapsed, text} → "0:42 · from 14:03" (2026-11-14)
 }
 ```
 
@@ -104,7 +105,9 @@ Leading/trailing values an adapter may return (normalised by `kit/model/presenta
 an icon fallback) · `{progress}` (ring) · `{bar, label?, off?}` (a bar; `label` its number
 beside it, `off` dims both — a muted level, 2026-11-05) · `{countdown}` / `{text}` (text) ·
 `{until: ms since the epoch}` (a countdown the renderer runs once a second while shown,
-2026-11-05: a Spotify ad) ·
+2026-11-05: a Spotify ad) · `{elapsed: ms since the epoch}` (its twin counting up, `0:42`,
+2026-11-14: a screen recording) · `{icon, backdrop: true}` (the icon on a round fill-2 plate in
+a compact's leading 40, 2026-11-14) ·
 **`{mascot: '<pose>', icon?}`** (Bu, added 2026-11-03): one of the 13 poses in
 `MASCOT.md`; an unknown pose falls back to `icon`, else `idle`. Bu's lamp always shows
 its pose's colour; the buoy light stays at pill 1's left end (INDICATORS). The pose
