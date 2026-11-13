@@ -22,7 +22,7 @@ prefs.
 Transparent 40 px panel · left cluster · bare tray and system cluster · cluster background and
 contrast · Dock settings · rounded corners on maximized windows.
 
-## M3 — v0.1, first release on EGO `[ ]`
+## M3 — v0.1, first release on EGO `[~]`
 
 Done: three tiers, compact, media, hud, Home, progress, downloads, copied, input, Claude Code,
 daypart, clock, notifications, weather, calendar, pill order, idle `auto`, Island and Modules
@@ -36,7 +36,7 @@ pages, Bu, About, greeting first run and What's new, `install.sh`, README, last 
 | [-] | Home: Now playing on large screens | dropped (2026-11-12): the Home redesign (M4, design/home) gives the main card 168 / 200 and the tall form at 2560 and 3440 |
 | [ ] | Field checks | seen with real apps: a Firefox or Thunderbird notification; Spotify and Firefox (https) art; a Google or Microsoft calendar; IBus Bamboo; the red light in fullscreen; a °C locale's Automatic; an EGO update's What's new; Home at 1366 and 2560 |
 
-## M4 — Redesign and "Wow" pack (v0.2) `[ ]`
+## M4 — Redesign and "Wow" pack (v0.2) `[~]`
 
 The design docs first, then the eight redesign items in order (the restructure only moves files),
 one branch each, shipped together as 0.2. Sizes are in [docs/design](design/index.md). Motion
@@ -56,7 +56,7 @@ to their places there (2026-11-12, Ethan).
 | [x] | Motion | as design/motion: springs (`kit/model/motion.js`, unit-tested: ζ, overshoot, settling, retarget) for every move, size and shape, run on the frame clock; velocity kept when cut short; fades and CSS states; the radius follows the height; tab switch and in-place lists; animations off and slow-down-factor honoured; `shrinkStop` gone; SPEC §5 updated |
 | [x] | Media tab | as design/media: M1 — the body one card (fill-1, r 16) as Home's main card, the art 8 in (196 / 260 / 292), the players' chips above it; every button and the seek bar always there, disabled (no hover) where the player can't (MPRIS CanSeek, CanGoPrevious/Next, Shuffle, LoopStatus); paused, no length, no cover, nothing playing |
 | [x] | Motion: shared parts | as design/motion "Phần chung đi tới chỗ mới": the parts both forms have (the leading, the title) travel to their places in the compact and in expanded (Home's main card, the Media tab) on the bg's spring, by `translation` and `scale` (drawn at their end size); the parts only one form has fade or are uncovered as now; SPEC §5 updated
-| [~] | Equaliser in the cover's colour | as design/pill "Equaliser": six bars of 2 × 14 in the cover's main colour (one colour, read once per cover, lifted to 4.5:1 on black; white for a cover without colour, a stale activity and high contrast), in the pill and on the Media tab's chips; a cover near the lights' amber or red keeps its colour; paused, the bars come down to their low line in 200 ms; SPEC §6 and CONTRACT updated; the media compact shows it in the ⏸ slot (⏸ / ▶ under the pointer or the keyboard's focus), flying there from the pill (design/compact "Nhạc"); in the top right corner of Home's media tile, and in the ⏸ slot of Home's music card, which drops ⏮ ⏭ (design/home "Thẻ nhạc và ô nhạc"); in the Media tab's ↗ slot, ↗ under the pointer or the keyboard's focus (design/media "Một player", E). Left: seen with a real player and a cover from the web |
+| [x] | Equaliser in the cover's colour | as design/pill "Equaliser": six bars of 2 × 14 in the cover's main colour (one colour, read once per cover, lifted to 4.5:1 on black; white for a cover without colour, a stale activity and high contrast), in the pill and on the Media tab's chips; a cover near the lights' amber or red keeps its colour; paused, the bars come down to their low line in 200 ms; SPEC §6 and CONTRACT updated; the media compact shows it in the ⏸ slot (⏸ / ▶ under the pointer or the keyboard's focus), flying there from the pill (design/compact "Nhạc"); in the top right corner of Home's media tile, and in the ⏸ slot of Home's music card, which drops ⏮ ⏭ (design/home "Thẻ nhạc và ô nhạc"); in the Media tab's ↗ slot, ↗ under the pointer or the keyboard's focus (design/media "Một player", E). |
 | [x] | Symbolic icons from Gravity UI | as design/icons "Icon symbolic" and "Icon tự vẽ": every symbolic icon Buoy draws (tabs, buttons, rows, HUD/OSD, media, calendar, downloads, copied) is a Gravity UI drawing or Buoy's own in its style, shipped as `icons/symbolic/<theme name>-symbolic.svg` so a missing file falls back to the theme's icon of that name; the HUD says airplane mode and Bluetooth on/off; GNOME's own stay in prefs, the system cluster and app logos |
 | [x] | Claude Code's questions in Buoy | as design/alerts-and-asks "Hỏi nhiều lựa chọn": AskUserQuestion answered in a card (one row per choice, Other typed in place, Next / Back / Submit), sent once as `answers`; tried first through PermissionRequest in an interactive session; CODING-AGENTS updated |
 | [x] | Claude Code Desktop's plan | the Desktop app's own task list (its `update_plan` tool: a whole plan, advance, done/start) read as Claude's task list — the pill's step and progress, the compact's rows; CODING-AGENTS updated |
