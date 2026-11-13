@@ -419,6 +419,8 @@ if (MODE === 'eq') {
         ['B — góc ảnh bìa, trên nền đen mờ', 'cover'],
         ['C — trong nút phát (như ô ⏸ của compact): nghỉ thì equaliser, rê chuột thì ⏸', 'play'],
         ['D — cạnh giờ đã chạy, dưới thanh', 'time'],
+        ['E — ô của ↗ (như ô ⏸ của compact): lúc nghỉ thì equaliser', 'open'],
+        ['E — rê chuột vào ô (hay focus bàn phím): nút ↗ hiện lại', 'openHover'],
     ];
     const rows = Math.ceil(OPTS.length / 2);
     const surf = canvas(40 + 2 * EW + 60 + 40, 30 + rows * (TT + EH + GY) + 40);
@@ -436,13 +438,22 @@ if (MODE === 'eq') {
         } else if (where === 'play') {
             cr.newPath(); cr.setSourceRGB(...cardRGB); cr.arc(m.mid, m.ty + 16, 17, 0, 2 * Math.PI); cr.fill();
             drawEq(cr, m.mid - EQ.width / 2, m.ty + 16);
+        } else if (where === 'open' || where === 'openHover') {
+            // the slot of ↗: at rest the equaliser alone (no fill), under the pointer ↗ as now
+            const cx = m.x1 - 16, cy = m.card.y + 12 + 16;
+            cr.newPath(); cr.setSourceRGB(...cardRGB); cr.arc(cx, cy, 17, 0, 2 * Math.PI); cr.fill();
+            if (where === 'open') {
+                drawEq(cr, cx - EQ.width / 2, cy);
+            } else {
+                cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL3); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
+                icon('arrow-up-right-from-square', cx - 8, cy - 8, 16);
+            }
         } else if (where === 'time') {
             const e = text('1:24', 0, 0, {sz: SUB, measure: true});
             drawEq(cr, m.tx + e.width + 8, m.by + 8 + e.height / 2 + 1);
         }
     });
-    text('Ở 1920, một player (Sóng Ngoài Khơi · Hải Đăng · Spotify). Khi có từ hai player, chip của player đang phát đã có equaliser; ' +
-        'phương án nào được chọn cũng là chỗ equaliser của pill bay tới khi mở tab (Chuyển động, "Phần chung").',
+    text('Ở 1920, một player. E: ↗ dưới con trỏ là fill-3, như nút phụ khi rê chuột. Chỗ được chọn là nơi equaliser của pill bay tới khi mở tab.',
     40, 30 + rows * (TT + EH + GY) + 4, {sz: 9, a: .8, maxW: 2 * EW + 60});
     surf.writeToPNG(out);
 }

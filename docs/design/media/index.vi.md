@@ -87,10 +87,13 @@ sổ player. Số dùng chung ở [Bảng số](../tokens.vi.md).
 ![Đổi player khi có 5 player: lúc bấm, giữa chừng, xong](images/switch.vi.png)
 
 - **Một player: equaliser ở đâu.** Không có hàng chip nên tab không cho biết player đang phát.
-  Bốn chỗ: **A** sau tên bài, trước ↗ (cùng hàng đầu, như ô ⏸ của compact nằm cạnh tên); **B** góc
-  ảnh bìa, trên nền đen mờ; **C** trong nút phát, nghỉ thì equaliser, rê chuột thì ⏸ (như compact;
-  nhưng ở tab, nơi để điều khiển, nút chính bị giấu); **D** cạnh giờ đã chạy. Chỗ được chọn cũng là
-  nơi equaliser của pill bay tới khi mở tab. Em nghiêng về A. **Đề xuất** (2026-11-13)
+  Năm chỗ: **A** sau tên bài, trước ↗; **B** góc ảnh bìa, trên nền đen mờ; **C** trong nút phát,
+  nghỉ thì equaliser, rê chuột thì ⏸ (ở tab, nơi để điều khiển, nút chính bị giấu); **D** cạnh giờ đã
+  chạy; **E** ô của ↗, như ô ⏸ của compact: lúc nghỉ chỉ equaliser, rê chuột hay focus bàn phím thì
+  ↗ hiện lại (`fill-3`). E (Ethan, 2026-11-13: "cùng nút mở external như nút pause ở compact") giữ
+  một luật cho compact và tab, ô cùng góc nên equaliser của compact chỉ dời một đoạn ngắn khi mở
+  tab, và ⏸ của tab vẫn luôn hiện. Chỗ được chọn là nơi equaliser của pill bay tới. **Đề xuất**
+  (2026-11-13)
 
 ![Một player: hiện nay và bốn chỗ cho equaliser](images/eq-tab.vi.png)
 
