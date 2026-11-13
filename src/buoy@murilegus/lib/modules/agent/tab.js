@@ -38,7 +38,8 @@ export class AgentsTab {
             return;
         }
         // Two parts when some are stale (2026-11-13, Ethan): Active — what works or asks, and
-        // other callers' prompts — then Stale, with its count and Clear (each row its ×)
+        // other callers' prompts — then Idle (done, or quiet past their staleAfter), with its
+        // count and Clear (each row its ×)
         const stale = sessions.filter(s => canDismiss(s, askOf(s) !== null));
         const active = sessions.filter(s => !stale.includes(s));
         const loose = asks.filter(x => !own.has(x));
@@ -51,7 +52,7 @@ export class AgentsTab {
             this.actor.add_child(this._sessionRow(s, askOf(s)));
         if (!stale.length)
             return;
-        this.actor.add_child(this._section('Stale', stale.length, () => stale.forEach(s => s.onAction?.(DISMISS))));
+        this.actor.add_child(this._section('Idle', stale.length, () => stale.forEach(s => s.onAction?.(DISMISS))));
         for (const s of stale)
             this.actor.add_child(this._sessionRow(s, null));
     }
@@ -60,14 +61,14 @@ export class AgentsTab {
         return this._row(s, ask, {name: s.compact?.text ?? s.text, doing: s.compact?.subtitle ?? null});
     }
 
-    // A part's head: its name and count; Stale's has Clear (every stale session leaves)
+    // A part's head: its name and count; Idle's has Clear (every idle session leaves)
     _section(title, count, onClear = null) {
         const bar = new St.BoxLayout({style_class: 'buoy-agents-bar', x_expand: true});
         bar.add_child(new St.Label({text: `${title} · ${count}`, style_class: 'buoy-agents-count', y_align: Clutter.ActorAlign.CENTER}));
         bar.add_child(new St.Widget({x_expand: true}));
         if (onClear) {
             const clear = new St.Button({
-                style_class: 'buoy-agents-clear', can_focus: true, label: 'Clear', accessible_name: 'Clear the stale sessions',
+                style_class: 'buoy-agents-clear', can_focus: true, label: 'Clear', accessible_name: 'Clear the idle sessions',
                 y_align: Clutter.ActorAlign.CENTER,
             });
             clear.connect('clicked', () => onClear());

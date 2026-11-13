@@ -132,8 +132,9 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
   when stale — and a permission prompt's Deny · Allow · Always under its session's row.
   A row's click brings that session's terminal up and closes the island. A stale session
   with no prompt has a × (as a notification's) that takes it off the island until its next
-  event. With any stale, the tab is in two parts, Active (working, asking) and Stale, whose
-  head has its count and Clear, which takes them all (2026-11-13, Ethan;
+  event. With any stale, the tab is in two parts, Active (working, asking) and Idle (done, or
+  quiet past their staleAfter), whose head has its count and Clear, which takes them all
+  (2026-11-13, Ethan;
   adapter.js canDismiss, `onAction('dismiss')` → source.js `_forget`). In the strip
   only while a session or a prompt is there (kit `tabWhileLive`, Ethan 2026-11-07). Kind
   `ask` is the module's too, so a click on a prompt's pill opens this tab, and other
