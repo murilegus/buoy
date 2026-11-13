@@ -7,7 +7,7 @@ import weather, {
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
 import {
     readInfo, nextHour, unitNames, IP_ONLY_METRES, goodFix, nextFix, locateOutcome, shouldRetry, RETRY_MS,
-    useOwnInfo, SAME_PLACE_KM,
+    useOwnInfo, SAME_PLACE_KM, keptReading,
 } from '../src/buoy@murilegus/lib/modules/weather/read.js';
 import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
@@ -302,6 +302,39 @@ eq(['ip', 'kept', 'none'].map(o => shouldRetry(o, true)), [false, false, false],
         throw new Error('the client has no place yet: Buoy\'s own');
     if (own({hasPlace: false}) !== false)
         throw new Error('Buoy has no place: only the client');
+}
+
+// --- a failed fetch keeps the last good reading (2026-11-13, Ethan) --------------------------
+{
+    const S = {temp: '27°'}, T = {temp: '29°'}, H = 60 * 60 * 1000;
+    const base = {fresh: null, loading: false, kept: null, key: 'hcm|c', at: 0, now: 10 * H, maxAgeMs: H};
+    const k = (o = {}) => keptReading({...base, ...o});
+    const got = k({fresh: S, at: 9.5 * H});
+    if (got.state !== S || got.kept.state !== S || got.kept.at !== 9.5 * H || got.kept.key !== 'hcm|c')
+        throw new Error('fresh: shown and kept, at the weather\'s own time');
+    if (k({fresh: S, at: 0}).kept.at !== 10 * H)
+        throw new Error('fresh with no time of its own: kept at now');
+    const kept = got.kept;
+    if (k({fresh: T, kept}).state !== T)
+        throw new Error('a newer reading replaces the kept one');
+    if (k({loading: true, kept}).state !== S)
+        throw new Error('a fetch running: the last good one stays');
+    if (k({loading: true, kept, key: 'hn|c'}).state !== S)
+        throw new Error('a fetch running for a new place: the old place stays until its own comes');
+    if (k({kept}).state !== S)
+        throw new Error('failed, same place, 30 min old: the last good one stays');
+    if (k({kept, now: 9.5 * H + H}).state !== S)
+        throw new Error('failed, exactly the max age: still shown');
+    if (k({kept, now: 9.5 * H + H + 1}).state !== null)
+        throw new Error('failed, older than the max age: nothing');
+    if (k({kept, key: 'hn|c'}).state !== null)
+        throw new Error('failed for another place: not the old place\'s weather');
+    if (k({kept, key: 'hcm|f'}).state !== null)
+        throw new Error('failed after the units changed: not the old units');
+    if (k({kept}).kept !== kept)
+        throw new Error('failed: the kept one is not forgotten (a later read may still use it)');
+    if (k({}).state !== null || k({}).kept !== null || k({loading: true}).state !== null)
+        throw new Error('nothing kept, nothing read: nothing');
 }
 
 print('weather: ok');

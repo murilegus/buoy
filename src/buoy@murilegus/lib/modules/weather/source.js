@@ -1,7 +1,7 @@
 import GLib from 'gi://GLib';
 
 import {Source} from '../../kit/services/source.js';
-import {WeatherFeed, dropOwnInfo} from './feed.js';
+import {WeatherFeed, dropWeather} from './feed.js';
 import {keys} from './idle.js';
 
 const ASK = 'idle-weather-locate-now';
@@ -70,7 +70,7 @@ export class WeatherSource extends Source {
         this._settings?.disconnectObject(this);
         this._waitingRetry = true;      // no waiting for a second ask: the feed goes now
         this._end();
-        dropOwnInfo();                  // Buoy's own Info and its last weather go with Buoy
+        dropWeather();                  // Buoy's own Info and the last good reading go with Buoy
         super.disable();
     }
 }

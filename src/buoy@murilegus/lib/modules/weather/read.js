@@ -244,3 +244,33 @@ export function useOwnInfo({clientAuto, hasPlace, apartKm}) {
         return false;
     return !(Number.isFinite(apartKm) && apartKm <= SAME_PLACE_KM);
 }
+
+/**
+ * What the plan shows after a read (2026-11-13, Ethan: keep the weather when a fetch fails).
+ * GWeather clears its reading the moment a fetch starts (gweather-info.c gweather_info_update
+ * → gweather_info_reset) and a failed one leaves it empty, so each read is `fresh` or null.
+ * A fresh reading is shown and kept as the last good one. With none: while a fetch runs, the
+ * last good one stays, whatever its place (a new place shows the old until its own comes);
+ * once it ended with nothing (failed), the last good one stays only for the same place and
+ * units and while it is at most `maxAgeMs` old (2 × `idle-weather-refresh`), then nothing.
+ *
+ * @param {object} o
+ * @param {?object} o.fresh  the state read now (readInfo), null for none
+ * @param {boolean} o.loading  a fetch is running
+ * @param {?{state: object, at: number, key: string}} o.kept  the last good reading
+ * @param {string} o.key  this read's place and units
+ * @param {number} o.at  the weather's own time for a fresh reading (ms)
+ * @param {number} o.now  ms
+ * @param {number} o.maxAgeMs
+ * @returns {{state: ?object, kept: ?{state: object, at: number, key: string}}}
+ */
+export function keptReading({fresh, loading, kept, key, at, now, maxAgeMs}) {
+    if (fresh)
+        return {state: fresh, kept: {state: fresh, at: at > 0 ? at : now, key}};
+    if (!kept)
+        return {state: null, kept: null};
+    if (loading)
+        return {state: kept.state, kept};
+    const usable = kept.key === key && now - kept.at <= maxAgeMs;
+    return {state: usable ? kept.state : null, kept};
+}

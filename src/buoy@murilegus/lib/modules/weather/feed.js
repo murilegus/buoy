@@ -7,7 +7,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {withPlace} from '../../kit/model/settings.js';
 import {refreshMs} from './idle.js';
-import {RETRY_MS, goodFix, locateOutcome, nextFix, readInfo, shouldRetry, unitNames, useOwnInfo} from './read.js';
+import {RETRY_MS, goodFix, keptReading, locateOutcome, nextFix, readInfo, shouldRetry, unitNames, useOwnInfo} from './read.js';
 
 // As long as Geoclue may take for a first fix before this ask gives up (Wi-Fi scan, IP)
 const LOCATE_TIMEOUT = 15;
@@ -26,6 +26,10 @@ let shared = null;
 // place, replaced when Buoy's place changes, dropped on disable (source.js) and when its
 // place is not wanted any more. {info, id, last, loading, users: Set<function()>}
 let ownInfo = null;
+
+// The last good reading, whichever feed read it (read.js keptReading): a failed fetch leaves
+// GWeather empty, and this is shown instead while it is recent. {state, at, key}
+let lastGood = null;
 
 function ownFor(place) {
     if (ownInfo?.info.location?.equal?.(place))
@@ -47,8 +51,14 @@ function ownFor(place) {
     return o;
 }
 
-/** Buoy's own Info goes (the weather module's source on disable; a new place). */
-export function dropOwnInfo() {
+/** On disable (the weather module's source): Buoy's own Info and the last good reading go. */
+export function dropWeather() {
+    dropOwnInfo();
+    lastGood = null;
+}
+
+// Buoy's own Info goes (disable; a new place)
+function dropOwnInfo() {
     const o = ownInfo;
     ownInfo = null;
     if (!o)
@@ -203,11 +213,17 @@ export class WeatherFeed {
                     this._fetched = src.lastMs;
                 this._recordUpdate(src);
             }
-            state = readInfo(info, {now: Date.now(), units: units(this._units), place: placeOf(info.location)});
-            // while loading the info keeps the last values; GWeather drops them on a
-            // location change (info.set_location), which reads as no data — right then
-            if (!state && src.loading && this.state)
-                return;
+            const u = units(this._units);
+            const fresh = readInfo(info, {now: Date.now(), units: u, place: placeOf(info.location)});
+            // GWeather empties the reading as a fetch starts and leaves it empty when one
+            // fails: the last good one stays while it is recent (read.js keptReading)
+            const kept = keptReading({
+                fresh: fresh && !src.loading ? fresh : null, loading: src.loading, kept: lastGood,
+                key: readingKey(info.location, u), at: src.lastMs, now: Date.now(),
+                maxAgeMs: 2 * (this._every || refreshMs({})),
+            });
+            lastGood = kept.kept;
+            state = kept.state;
         }
         const same = JSON.stringify(state) === JSON.stringify(this.state);
         this.state = state;
@@ -571,6 +587,15 @@ function stopAsk(ask) {
 function fixOf(simple) {
     const loc = simple?.get_location();
     return loc ? {latitude: loc.latitude, longitude: loc.longitude, accuracy: loc.accuracy} : null;
+}
+
+// A reading's place and units: a kept one is shown again only for both the same
+function readingKey(loc, u) {
+    let place = '';
+    try {
+        place = loc?.serialize?.()?.print(true) ?? '';
+    } catch {}
+    return `${place}|${u.display}|${u.speed}`;
 }
 
 function settingsOf(id) {
