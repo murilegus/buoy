@@ -62,6 +62,7 @@ export class NotificationSource extends Source {
         this._turns = new Turns();
         this._burst = null;         // a shared screen's burst: {apps: Map app → {name, icon, count}, at}
         this._queuedAt = new WeakMap();
+        this._quiet = new WeakSet();    // taken back from GNOME's banner: its sound played (_adoptBanner)
         this._sharing = new SharingWatch(() => this._redrawAll());
         this._injections = new InjectionManager();
         // the tray is a singleton, called through `tray` (as hud's `osd`)
@@ -83,9 +84,40 @@ export class NotificationSource extends Source {
                 src.disconnectObject(this);
                 this._countLater();
             }, this);
+        // what is in the queue already came while Buoy was off (the lock screen, before
+        // login's enable): it waited, so it is missed, not a card (waitedInQueue)
+        for (const n of /** @type {any} */ (tray)._notificationQueue)
+            this._queuedAt.set(n, 0);
         this._stamp(tray);
         tray.getSources().forEach(src => this._watchCount(src));
         this._countLater();
+        this._adoptBanner(tray);
+    }
+
+    // Buoy is off on the lock screen (no `session-modes`: ui/extensionSystem.js gives
+    // ['user']). At unlock Shell updates the tray at once (ui/messageTray.js _sessionUpdated →
+    // _updateState) while extensions come back later (ExtensionManager._sessionUpdated is
+    // async), so what arrived while locked showed as GNOME's banner (2026-11-13, Ethan: a
+    // Software Updater banner "1 hour ago"). Coming back, Buoy takes that banner off — the
+    // notification kept, as a removed one is not destroyed (_hideNotificationCompleted) — and
+    // marks it unread again: the banner had read it (_updateShowingNotification), and an
+    // unread one asks for its banner again (Source's notify::acknowledged), so it comes back
+    // through the queue to the override, stamped as waited (missed, amber, no card) and
+    // quiet (its sound already played). The rest of the queue follows the same way.
+    _adoptBanner(tray) {
+        if (!this._replacing())
+            return;
+        const n = tray._notification;
+        const showing = tray._notificationState === MessageTray.State.SHOWING ||
+            tray._notificationState === MessageTray.State.SHOWN;
+        if (n && showing) {
+            tray._notificationRemoved = true;
+            tray._hideNotification(false);
+            this._queuedAt.set(n, 0);
+            this._quiet.add(n);
+            n.acknowledged = false;
+        }
+        tray._updateState();
     }
 
     disable() {
@@ -160,7 +192,8 @@ export class NotificationSource extends Source {
         // had 5 s while you were there, or you hovered or clicked it (the kit's onSeen,
         // design/alerts-and-asks, 2026-11-12) — not when it shows, as v0.1 had it. One that
         // waited while nobody could see it (full screen, locked) gets no card: missed (§1)
-        n.playSound();
+        if (!this._quiet.delete(n))
+            n.playSound();
         if (!n.source)
             return;
         // one pill per app, not per Shell source: notify-send makes a source per process

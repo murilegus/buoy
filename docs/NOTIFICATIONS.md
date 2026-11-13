@@ -58,6 +58,15 @@ nobody could look, and its pill is a 6 s glance shared with the app's others, no
 GNOME's banner that waits for the user to be active. The tab counts it as missed (§6).
 GNOME's own banner would have marked it seen; with replacement off, GNOME decides.
 
+**After the lock screen** (2026-11-13): Buoy is off while the screen is locked (no
+`session-modes`), and at unlock Shell updates the tray before extensions come back
+(`ui/messageTray.js` `_sessionUpdated` is immediate, `ui/extensionSystem.js`
+`_sessionUpdated` is async), so what arrived while locked could show as GNOME's banner.
+Coming back, Buoy stamps what is already queued as waited, and takes a banner GNOME is
+showing off the screen (the notification kept: `_notificationRemoved`), marks it unread so
+it asks for its banner again, and takes it through the override, quiet (its sound played):
+held, unseen, the amber light, no card. The same holds for the first enable after login.
+
 Why not `Main.messageTray.bannerBlocked`: Shell sets it itself, to false, each time the
 date menu closes (`ui/panel.js`), and while blocked the queue only fills. The override is
 the one place that sees exactly the banners.
