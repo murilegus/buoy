@@ -14,6 +14,9 @@ eq(takeoff('leading', compactArt, pillArt), {x: 8, y: 8, scale: 3}, 'and back: t
 eq(takeoff('leading', {x: 0, y: 0, w: 24, h: 24}, {x: 50, y: 50, w: 40, h: 20}), {x: 0, y: 6, scale: 0.6},
     'not square: fits the old box, centred');
 
+// another part drawn alike in both forms (the equaliser, 22 × 14): only moves
+eq(takeoff('eq', {x: 200, y: 9, w: 22, h: 14}, {x: 500, y: 21, w: 22, h: 14}), {x: 200, y: 9, scale: 1}, 'same size: a translation');
+
 // a title keeps its left edge and middle, by the line's height
 eq(takeoff('title', {x: 60, y: 6, w: 120, h: 20}, {x: 92, y: 14, w: 160, h: 25}), {x: 60, y: 6, scale: 0.8},
     'title: from the old start, scaled by height');

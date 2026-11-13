@@ -24,7 +24,8 @@ const MARK = '_buoyShared';
 /**
  * @template {Clutter.Actor} T
  * @param {T} actor  (or null: nothing to mark)
- * @param {'leading'|'title'} part
+ * @param {string} part  'leading', 'title', or another part both forms draw alike (the
+ *   equaliser): any but 'title' keeps its centre and fits the old box
  * @param {?object} activity  presentation data with its `id`; none, no mark
  * @returns {T} the actor
  */

@@ -19,7 +19,7 @@ const ok = b => b && [b.x, b.y, b.w, b.h].every(Number.isFinite) && b.w > 0 && b
  * not the same height for the same text (the text grows from the old title's start, as the
  * design draws it).
  *
- * @param {string} part  'leading' or 'title'
+ * @param {string} part  'title', or any other ('leading', the equaliser…): kept centred
  * @param {object} from  the box it leaves; a title's with its `font` size when known
  * @param {object} to  its box in the new form (its own size: scale 1), the same
  * @returns {?{x: number, y: number, scale: number}} null when a box is empty
