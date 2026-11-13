@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import {
     AGENTS, ALLOW, ALWAYS, DENY, DESKTOP_APP, DONE_STALE, PARTY_AFTER, STALE_MS, TIMEOUT,
     BACK, ENTER, NEXT, OTHER, OTHER_HINT, OTHER_TEXT, PICK, SKIP, SUBMIT, answersOf, newAnswers, pickAnswer, questionLook, questionReply, questionsOf,
-    STOP, STOP_REPLY, DISMISS, canDismiss, agent, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, planStep, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
+    STOP, STOP_REPLY, DISMISS, canDismiss, agent, newRecord, answered, askOf, interrupted, stopping, isQuestion, QUESTION_TITLE, taskProgress, taskRows, taskStep, tasksFromFiles, planStep, desktopRoute, desktopShown, durationText, isScratch, nameOf, parseEvent, projectOf, worktreeOf, reply, settles, shortPath, step, suggestionOf, toolDoing,
 } from '../src/buoy@murilegus/lib/modules/agent/adapter.js';
 import {
     ASK_EVENT, ASK_HOOK_TIMEOUT, HOOK_PATH, REPORTS, STOP_EVENT, STOP_HOOK_TIMEOUT, commandFor, hooksNote, install, installed, isOurs, uninstall,
@@ -706,6 +706,19 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
     eq(taskStep(wrapped, WRAP, 9000), null, 'all done already: no change');
     eq(taskStep([], WRAP, 9000), null, 'no tasks: nothing');
     eq(taskStep(open, {...WRAP, tool_name: 'mcp__other__wrap_up'}, 1), null, 'another server\'s wrap_up: not the turn\'s end');
+
+    // the next turn: a list all done goes, the hover shows the work (2026-11-13, Ethan)
+    const after = step({...newRecord('claude', ev('SessionStart')), shown: true, tasks: wrapped}, ev('UserPromptSubmit'), 10000).rec;
+    eq(after.tasks, [], 'next prompt: a list all done is cleared');
+    const shownAfter = agent(after);
+    eq([shownAfter.compact?.rows ?? [], shownAfter.compact?.subtitle], [[], 'Thinking'], 'next prompt: the hover shows the work, no rows of the last turn');
+    eq(shownAfter.trailing?.text ?? null, null, 'next prompt: no "4 / 4" on the pill');
+    const left = step({...newRecord('claude', ev('SessionStart')), shown: true, tasks: open}, ev('UserPromptSubmit'), 10000).rec;
+    eq(brief(left.tasks), brief(open), 'next prompt: a list with steps left stays');
+    const none = step({...newRecord('claude', ev('SessionStart')), shown: true}, ev('UserPromptSubmit'), 10000).rec;
+    eq(none.tasks, [], 'next prompt, no list: still none');
+    const planned = step(after, plan({items}), 11000).rec;
+    eq(brief(planned.tasks).length, items.length, 'the new turn\'s plan fills it again');
 }
 
 // --- the tab's × for a stale session (2026-11-13) --------------------------------------------
