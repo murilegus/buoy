@@ -22,7 +22,7 @@ prefs.
 Transparent 40 px panel · left cluster · bare tray and system cluster · cluster background and
 contrast · Dock settings · rounded corners on maximized windows.
 
-## M3 — v0.1, first release on EGO `[ ]`
+## M3 — v0.1, first release on EGO `[~]`
 
 Done: three tiers, compact, media, hud, Home, progress, downloads, copied, input, Claude Code,
 daypart, clock, notifications, weather, calendar, pill order, idle `auto`, Island and Modules
@@ -36,7 +36,7 @@ pages, Bu, About, greeting first run and What's new, `install.sh`, README, last 
 | [-] | Home: Now playing on large screens | dropped (2026-11-12): the Home redesign (M4, design/home) gives the main card 168 / 200 and the tall form at 2560 and 3440 |
 | [ ] | Field checks | seen with real apps: a Firefox or Thunderbird notification; Spotify and Firefox (https) art; a Google or Microsoft calendar; IBus Bamboo; the red light in fullscreen; a °C locale's Automatic; an EGO update's What's new; Home at 1366 and 2560 |
 
-## M4 — Redesign and "Wow" pack (v0.2) `[ ]`
+## M4 — Redesign and "Wow" pack (v0.2) `[~]`
 
 The design docs first, then the eight redesign items in order (the restructure only moves files),
 one branch each, shipped together as 0.2. Sizes are in [docs/design](design/index.md). Motion
