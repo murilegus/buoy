@@ -632,6 +632,7 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
         },
     }, 'Submit: allow with updatedInput.answers (hooks.md)');
     eq([questionReply(asked, {}), questionReply(asked, null)], ['', ''], 'nothing answered: no decision');
+}
 
 // --- no task list: the last steps as the compact's rows (design/compact "Danh sách hàng") ------
 {
@@ -685,6 +686,9 @@ eq(nameOf({project: 'buoy', sessionTitle: 'Weather', cwd: `${CWD}/.claude/worktr
 
     // what is no step: the task tools, a subagent's calls, calls while stopping
     eq(addStep([], ev('PreToolUse', {tool_name: 'TaskCreate', tool_input: {subject: 'x'}})), [], 'a task tool is no step');
+    eq([addStep([], ev('PreToolUse', {tool_name: 'mcp__ccd_turn__update_plan', tool_input: {advance: true}})),
+        addStep([], ev('PreToolUse', {tool_name: 'mcp__ccd_turn__wrap_up', tool_input: {recap: 'x'}}))], [[], []],
+    'Desktop\'s plan tools are no step either');
     const withSub = last([[ev('UserPromptSubmit')], [ev('SubagentStart', {agent_id: 'a1'})],
         [ev('PreToolUse', {tool_name: 'Read', tool_input: {file_path: 'a.js'}, agent_id: 'a1'})]]).rec;
     eq(withSub.steps, [], 'a subagent\'s calls are not the session\'s steps');

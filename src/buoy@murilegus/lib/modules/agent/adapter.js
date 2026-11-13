@@ -271,7 +271,9 @@ const TASK_TOOLS = new Set(['TaskCreate', 'TaskUpdate', 'TaskGet', 'TaskList']);
  * @returns {object[]}
  */
 export function addStep(steps, ev, cwd = null) {
-    if (TASK_TOOLS.has(ev?.tool_name))
+    const name = typeof ev?.tool_name === 'string' ? ev.tool_name : '';
+    // nor is Desktop's plan (update_plan, wrap_up below): it is the task list too
+    if (TASK_TOOLS.has(name) || PLAN_TOOL.test(name) || WRAP_TOOL.test(name))
         return steps;
     const d = toolDoing(ev?.tool_name, ev?.tool_input, cwd);
     const s = {id: str(ev?.tool_use_id), tool: str(ev?.tool_name), text: d.title, safeText: d.safeTitle, done: false};
