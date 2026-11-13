@@ -71,6 +71,21 @@
       <summary>Version seen</summary>
       <description>Bookkeeping: the last version What's new spoke for.</description>
     </key>
+    <key name="greeting-updates" type="b">
+      <default>true</default>
+      <summary>Say when a newer Buoy is out</summary>
+      <description>Bu says once when a newer version is ready. Installed from extensions.gnome.org, GNOME Shell finds it; installed with install.sh, Buoy asks GitHub for the latest release at most once a day.</description>
+    </key>
+    <key name="greeting-update-checked" type="x">
+      <default>0</default>
+      <summary>Update looked for</summary>
+      <description>Bookkeeping: when GitHub was last asked for the latest release (seconds since the epoch).</description>
+    </key>
+    <key name="greeting-update-told" type="s">
+      <default>''</default>
+      <summary>Update said</summary>
+      <description>Bookkeeping: the newer version Bu last spoke of.</description>
+    </key>
     <key name="prefs-page" type="s">
       <default>''</default>
       <summary>Prefs page to open</summary>

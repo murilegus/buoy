@@ -110,8 +110,9 @@ curl -fsSL https://murilegus.dev/buoy/install.sh | bash -s -- --update
 ```
 
 It installs the latest release only if it is newer than yours, then asks you to log out and
-back in. Once Buoy is on extensions.gnome.org, the Extensions app keeps it up to date — the
-same extension, so nothing to reinstall.
+back in. Bu tells you when a newer release is out, with this command ready to copy. Once
+Buoy is on extensions.gnome.org, the Extensions app keeps it up to date — the same
+extension, so nothing to reinstall.
 
 ## First run
 
@@ -146,7 +147,11 @@ If Buoy is off or removed, the hooks do nothing and Claude Code carries on as wi
 
 ## Privacy
 
-- **Nothing is sent anywhere by Buoy itself.** No account, no telemetry, no server.
+- **Nothing about you is sent anywhere by Buoy.** No account, no telemetry, no server.
+- **A newer version**: installed with `install.sh`, Buoy asks GitHub once a day at most
+  whether a newer release is out, so Bu can tell you. The request carries nothing about you
+  or your version. Turn it off in Settings → Modules → Greeting. Installed from
+  extensions.gnome.org, Buoy asks nothing: GNOME Shell checks for extension updates itself.
 - **The weather** comes from GNOME's own weather service (GWeather, the same one as the
   date menu and GNOME Weather).
 - **"Use my location"** (on by default, Settings → Island → Weather) asks GNOME's location

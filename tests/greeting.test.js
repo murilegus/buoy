@@ -1,5 +1,5 @@
 // Run: gjs -m tests/greeting.test.js   (pure: the first run, What's new, their lines)
-import adapter, {SHOW_MS, MAX_NOTES, MORE, INTRO, caseOf, noteFor, linesOf, buSize, releaseLabel, shortcutText} from '../src/buoy@murilegus/lib/modules/greeting/adapter.js';
+import adapter, {SHOW_MS, MAX_NOTES, MORE, INTRO, caseOf, noteFor, linesOf, buSize, releaseLabel, shortcutText, LATEST_URL, RELEASES, UPDATE_COMMAND, CHECK_EVERY, MARKER, COPY, NOTES, versionName, newer, latestOf, due, updateOf} from '../src/buoy@murilegus/lib/modules/greeting/adapter.js';
 import notes from '../src/buoy@murilegus/lib/modules/greeting/notes.js';
 import {planExpanded, typedLine, typedSplit, typingMs, TYPE_MS, MAX_LINES} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import {validate, tierOf, PRIORITY} from '../src/buoy@murilegus/lib/kit/model/activity.js';
@@ -105,5 +105,70 @@ eq(typedLine('', 0), {visible: true, markup: ''}, 'an empty line is nothing to h
 eq(typedLine('a < b & "c"', 2), {visible: true, markup: 'a <span alpha="1">&lt; b &amp; &quot;c&quot;</span>'},
     'escaped for markup');
 eq(typingMs(['ab', 'c'], 10), 30, 'three characters at 10 ms');
+
+// --- a newer Buoy (GREETING.md §11 "A newer Buoy") ------------------------------------------
+eq([versionName('v0.2'), versionName('0.1.1'), versionName('v12.0.3.4')], ['0.2', '0.1.1', '12.0.3.4'], 'a tag\'s version-name');
+eq([versionName('v0.2-beta'), versionName('0.2\n'), versionName('v'), versionName('1.2.3.4.5'), versionName('12345'),
+    versionName('<b>0.2</b>'), versionName(''), versionName(null), versionName(2), versionName('0..2')],
+[null, null, null, null, null, null, null, null, null, null], 'anything that is not one to four short numbers: none');
+eq([newer('0.2', '0.1.1'), newer('0.1.1', '0.1'), newer('0.10', '0.9'), newer('v1.0', '0.9.9')], [true, true, true, true], 'a later release');
+eq([newer('0.1.1', '0.1.1'), newer('0.1', '0.1.0'), newer('0.1', '0.1.1'), newer('0.9', '0.10')], [false, false, false, false],
+    'the same or an older one: not newer');
+eq([newer('nope', '0.1'), newer('0.2', 'dev'), newer(null, undefined)], [false, false, false], 'not a version on either side: not newer');
+
+eq(latestOf('{"tag_name":"v0.2","draft":false,"prerelease":false,"html_url":"https://x"}'), '0.2', 'GitHub\'s latest release');
+eq(latestOf('{"tag_name":"0.2"}'), '0.2', 'a tag without v');
+eq([latestOf('{"tag_name":"v0.2","draft":true}'), latestOf('{"tag_name":"v0.2","prerelease":true}')], [null, null],
+    'a draft or a pre-release: none');
+eq([latestOf(''), latestOf('<html>rate limit</html>'), latestOf('null'), latestOf('[]'), latestOf('{"message":"Not Found"}'),
+    latestOf('{"tag_name":"latest"}'), latestOf('{"tag_name":7}'), latestOf(undefined)],
+[null, null, null, null, null, null, null, null], 'anything else GitHub may answer: none, no throw');
+
+eq(CHECK_EVERY, 86400, 'GitHub is asked once a day at most');
+eq([due(1000, 0), due(100000, 100000 - 86400), due(100000, 100000 - 86401)], [true, true, true], 'never asked, or a day ago: due');
+eq([due(100000, 100000 - 86399), due(100000, 99999)], [false, false], 'asked within the day: not due');
+eq(due(100000, 200000), true, 'the clock went back: due again, never stuck');
+eq([due(NaN, 0), due(1000, undefined)], [false, false], 'no clock or no key: not due');
+
+const st = {shell: false, latest: null, running: '0.1.1', version: 2, told: ''};
+eq(updateOf({...st, latest: '0.2'}), {from: 'github', name: '0.2', key: '0.2'}, 'GitHub has a later release');
+eq(updateOf({...st, latest: 'v0.2'}), {from: 'github', name: '0.2', key: '0.2'}, 'a tag as it is: its version-name');
+eq(updateOf({...st, latest: '0.2', told: '0.2'}), null, 'said once per release');
+eq(updateOf({...st, latest: '0.3', told: '0.2'}).key, '0.3', 'a later one again: said again');
+eq([updateOf({...st, latest: '0.1.1'}), updateOf({...st, latest: '0.1'}), updateOf(st), updateOf({...st, latest: 'x'})],
+    [null, null, null, null], 'the same, an older one, not asked, not a version: nothing');
+eq(updateOf({...st, latest: '0.2', running: 'dev'}), null, 'a build without a version-name: nothing');
+eq(updateOf({...st, shell: true}), {from: 'shell', key: 'shell:2'}, 'Shell downloaded an update');
+eq(updateOf({...st, shell: true, latest: '0.2'}).from, 'shell', 'Shell\'s update first: it is already here');
+eq(updateOf({...st, shell: true, told: 'shell:2'}), null, 'said once per running version');
+eq(updateOf({...st, shell: true, version: 3, told: 'shell:2'}).key, 'shell:3', 'the next version\'s update: said again');
+eq(updateOf({...st, shell: 'yes', latest: null}), null, 'only true counts as an update from Shell');
+
+const calls = [];
+const gh = adapter.greeting({
+    id: 'greeting-update', case: 'update', update: {from: 'github', name: '0.2', key: '0.2'}, running: '0.1.1',
+    animations: false, onCopy: () => calls.push('copy'), onNotes: () => calls.push('notes'), onMore: () => calls.push('more'),
+});
+eq([gh.text, gh.expanded.center.title, gh.expanded.center.lines],
+    ['Buoy 0.2 is out.', 'Buoy 0.2 is out.', ['You have 0.1.1.', 'Paste the command in a terminal to update.']], 'GitHub: what is out, what you have, what to do');
+eq(gh.actions, [{id: COPY, label: 'Copy command'}, {id: NOTES, label: 'Release notes'}], 'GitHub: copy the command, read the notes');
+gh.onAction(COPY);
+gh.onAction(NOTES);
+gh.onAction(MORE);
+gh.onAction('nope');
+eq(calls, ['copy', 'notes', 'more'], 'each button its own callback; an unknown id does nothing');
+eq([gh.style, gh.ttl, gh.expanded.leading.size, gh.attributes.case], ['transient', SHOW_MS, 80, 'update'], 'transient, 12 s without typing, Bu 80 beside two lines');
+eq(validate({...gh, kind: 'greeting', app: 'buoy', id: 'greeting-update'}).id, 'greeting-update', 'a valid activity');
+const sh = adapter.greeting({id: 'greeting-update', case: 'update', update: {from: 'shell', key: 'shell:2'}, running: '0.1.1'});
+eq([sh.text, sh.expanded.center.lines, sh.actions, sh.expanded.leading.size],
+    ['A newer Buoy is ready.', ['Log out and back in to use it.'], [], 60], 'Shell: it is downloaded, log out; no button; Bu 60 beside one line');
+eq(sh.ttl, SHOW_MS + typingMs(['A newer Buoy is ready.', 'Log out and back in to use it.'], TYPE_MS), 'typed in: the typing counts in the ttl');
+sh.onAction(COPY);
+eq(adapter.greeting({case: 'update', update: {from: 'github', name: '0.2'}, running: 'dev'}).expanded.center.lines,
+    ['Paste the command in a terminal to update.'], 'no version-name running: that line goes');
+eq(adapter.greeting({case: 'update', update: null}).text, 'A newer Buoy is ready.', 'no update given: the plain line, no throw');
+eq([LATEST_URL, RELEASES, MARKER], ['https://api.github.com/repos/murilegus/buoy/releases/latest', 'https://github.com/murilegus/buoy/releases', '.check-updates'],
+    'where Buoy asks, where the notes are, install.sh\'s mark');
+eq(UPDATE_COMMAND, 'curl -fsSL https://murilegus.dev/buoy/install.sh | bash -s -- --update', 'install.sh\'s own update line');
 
 print('greeting: ok');

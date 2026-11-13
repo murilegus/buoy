@@ -28,6 +28,8 @@ export const PLACES = {
     'prefs-page': null,         // bookkeeping: the page prefs opens on (GREETING.md §11)
     'greeting-intro-shown': null,   // bookkeeping; About's "Show Bu's introduction again" resets it
     'greeting-version-seen': null,  // bookkeeping (GREETING.md §11)
+    'greeting-update-checked': null, // bookkeeping: when GitHub was last asked (GREETING.md §11)
+    'greeting-update-told': null,   // bookkeeping: the newer version Bu last spoke of
     // the weather's refresh (prefs' button asks, Buoy answers; 2026-11-12): bookkeeping
     'idle-weather-locate-now': null,
     'idle-weather-located': null,

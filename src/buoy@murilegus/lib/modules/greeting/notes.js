@@ -1,7 +1,8 @@
 /**
  * What's new, one entry per release (GREETING.md §11): written with each release, read by
  * Bu after an update and listed on prefs' About → What's new. Pure data: prefs imports it.
- * Bundled, never fetched (no network, EGO).
+ * Bundled, never fetched (EGO); the one thing asked of the network is whether a newer
+ * release is out (source.js, GREETING.md §11 "A newer Buoy").
  *
  * Entry: {version, name, date, intro?, added: string[], fixed: string[]}
  *   version  `metadata.json` `version` (EGO's counter) of that release

@@ -333,3 +333,39 @@ integer):
   cap and "…and more"; the typing's steps and its end (pure: the text shown after n ms);
   animations off → whole.
 
+### A newer Buoy
+
+*2026-11-13, Ethan.* Bu also says when a newer version is ready, once per release, in the
+same form as What's new (expanded, typed in, ~12 s). `greeting-updates` (on by default, a
+row under Greeting in prefs) turns it off. Two ways to know, by how Buoy was installed:
+
+| Installed from | How Buoy knows | What Bu says |
+|---|---|---|
+| extensions.gnome.org | GNOME Shell looks itself at the session's start and each day, and downloads the update (`ui/extensionSystem.js` `init`, `ui/extensionDownloader.js` `checkForUpdates`, `downloadExtensionUpdate`); it then sets Buoy's `hasUpdate` and emits `extension-state-changed` (`notifyExtensionUpdate`). Buoy reads that: **no request of its own** | "A newer Buoy is ready." / "Log out and back in to use it." (Shell installs it at the next login, `_installExtensionUpdates`) |
+| `install.sh` | one GET of GitHub's latest release (`api.github.com/repos/murilegus/buoy/releases/latest`), **the one network call Buoy makes** (FEATURES M3) | "Buoy 0.2 is out." / "You have 0.1.1." / "Paste the command in a terminal to update." with **Copy command** (install.sh's `--update` line, to the clipboard) and **Release notes** (the release's page, in the browser) |
+| a development checkout (a link) | nothing | nothing |
+
+- **Which install.** `install.sh` leaves an empty file, `.check-updates`, in the extension's
+  folder; GitHub is asked only when it is there. An update from extensions.gnome.org
+  replaces the whole folder (`_installExtensionUpdates`: delete, then move), so the mark
+  goes and Shell's own check takes over without a setting to change.
+- **When.** On an `enable` with no first run or What's new to show, after Shell's startup:
+  Shell's `hasUpdate` first; else, with the mark, GitHub — at most once a day
+  (`greeting-update-checked`, seconds since the epoch; an answer of any kind counts, no
+  answer asks again at the next enable). Nothing is polled and there is no timer (rule 8):
+  a session left open for days asks again only at the next unlock.
+- **What is sent.** The request itself: no version, no id, the user agent "Buoy". Buoy
+  cannot update itself (no code is downloaded or run, rule 7): it says, the user runs
+  `install.sh --update`.
+- **What is read.** Only the release's tag, and only as a version-name (one to four
+  numbers, `adapter.js` `versionName`); anything else — not JSON, a draft, a pre-release,
+  an error page — is dropped. Nothing from the network is shown or opened as it came: the
+  notes' address is built from that version-name.
+- **Once.** `greeting-update-told` keeps what Bu said last: the release's version-name
+  (GitHub), or `shell:<running version>` (Shell: the update applies at the next login, so
+  once per running version). Not over a fullscreen window: it waits until the island is
+  seen, as the greeting does.
+- **Tests.** Tags and what is not one; newer, the same, older ("0.10" after "0.9"); every
+  answer GitHub may give; due after a day and when the clock goes back; once per release
+  from either source; Bu's lines and buttons for each.
+
