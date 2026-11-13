@@ -522,23 +522,19 @@ export class Home {
         // back before it finished leaving (a quick switch there and back): it is the body again
         if (actor.get_parent() === this._leaving)
             this._unleave(actor);
-        // a module Card's actor is kept for the rest of this open: out of the old layout
-        // first, which goes
-        for (const card of this._cards.values()) {
-            if (!actor.contains(card.actor))
-                card.actor.get_parent()?.remove_child(card.actor);
-        }
         // a tab.js actor is kept for the rest of this open; anything else is rebuilt
         const kept = new Set([...this._tabs.values()].map(t => t.actor));
         for (const old of this._view.get_children()) {
             if (old === actor)
                 continue;
-            if (leave)
+            if (leave) {
                 this._leave(old, leave, kept.has(old));
-            else if (kept.has(old))
+            } else if (kept.has(old)) {
                 this._view.remove_child(old);
-            else
+            } else {
+                this._keepCards(old);
                 old.destroy();
+            }
         }
         if (actor.get_parent() !== this._view)
             this._view.add_child(actor);
@@ -566,12 +562,25 @@ export class Home {
             onStopped: finished => {
                 if (!finished || old.get_parent() !== this._leaving)
                     return;     // taken back meanwhile (_unleave)
-                if (kept)
+                if (kept) {
                     this._unleave(old);
-                else
+                } else {
+                    this._keepCards(old);
                     old.destroy();
+                }
             },
         });
+    }
+
+    // A module Card's actor is kept for the rest of this open: taken out of a body only as
+    // that body goes, so a leaving Home fades out with its card in it (it was taken out
+    // first, and the card stood empty while Home faded; 2026-11-13, Ethan). Home built again
+    // meanwhile has already taken it (_mainCard).
+    _keepCards(body) {
+        for (const card of this._cards.values()) {
+            if (body.contains(card.actor))
+                card.actor.get_parent()?.remove_child(card.actor);
+        }
     }
 
     // Off the leaving layer, as it was before it left
