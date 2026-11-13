@@ -2,12 +2,11 @@
 // again at every open and stack change so the tab is never empty and never scrolls.
 //   states  — four moments at 1920: music, Claude asks, nothing running, missed and a full row
 //   music   — the music card's one button (rest, hovered, paused) and the music tile's corner
-//   tall    — the tall music card: the one slot it had beside the split, at 2560 and 3440
 //   anatomy — 1920 with every measure, then 2560 and 3440
 //   fill    — how the row fills: activities, then the glance, then wide tiles
 //   lists   — the Missed tile and +K open a list in place of the card and the row
 //   screen  — screen recording in Home: the main card, or a tile
-// gjs -m home.js out.png <states|music|tall|anatomy|fill|lists|screen>
+// gjs -m home.js out.png <states|music|anatomy|fill|lists|screen>
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
@@ -115,17 +114,11 @@ function panel(x, y, EW, EH, title, {bellDot = false} = {}) {
 // compact's ⏸ slot — the equaliser at rest, the cream ⏸ (white under the pointer) when hovered;
 // paused, the bars low and ▶. SLOT: {hover, paused} for the drawings of that section.
 let SLOT = {hover: false, paused: false};
-// The tall card splits them (2026-11-13, Ethan): the equaliser top right as in the low form and the
-// tile, the cream ⏸ / ▶ always shown under the bar. SPLIT false: the one slot it had before.
-let SPLIT = true;
 const LOW = [4, 6, 7, 5, 6, 3];
-function playButton(cx, cy, rgb) {
-    cr.newPath(); cr.setSourceRGB(...rgb); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
-    icon(SLOT.paused ? 'play-fill' : 'pause-fill', cx - 8, cy - 8, 16, C.BLACK);
-}
-function slot(cx, cy, {hover = SLOT.hover} = {}) {
-    if (hover) {
-        playButton(cx, cy, [1, 1, 1]);
+function slot(cx, cy) {
+    if (SLOT.hover) {
+        cr.newPath(); cr.setSourceRGB(1, 1, 1); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.fill();
+        icon(SLOT.paused ? 'play-fill' : 'pause-fill', cx - 8, cy - 8, 16, C.BLACK);
         return;
     }
     if (!SLOT.paused) {
@@ -139,24 +132,14 @@ function heroMusic(x, y, w, h) {
     const s = Math.min(h - 16, ART_MAX), ay = y + (h - s) / 2;
     art(x + 8, ay, s, 8);
     const tx = x + 8 + s + 12, x1 = x + w - 14;
-    if (h < TALL) {   // low: the buttons top right, the bar at the foot of the text column
-        text(SAMPLE.track, tx, y + 12, {wt: 600}); text(SAMPLE.sub, tx, y + 32, {sz: SUB, a: C.FG_MUTED});
-        slot(x + w - 28, y + 28);
-        bar(tx, y + h - 34, x1 - tx);
-        text('1:24', tx, y + h - 26, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, y + h - 26, {sz: SUB, a: C.FG_SUBTLE, right: true});
-    } else {          // tall: the title larger, the bar, the buttons centred under it
-        text(SAMPLE.track, tx, ay + 6, {sz: 14, wt: 700}); text(SAMPLE.sub, tx, ay + 32, {sz: SUB, a: C.FG_MUTED});
-        const by = ay + s - 40;
-        bar(tx, by - 30, x1 - tx);
-        text('1:24', tx, by - 22, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, by - 22, {sz: SUB, a: C.FG_SUBTLE, right: true});
-        const mid = (tx + x1) / 2;
-        if (SPLIT) {
-            slot(x + w - 28, ay + 16, {hover: false});
-            playButton(mid, by + 20, SLOT.hover ? [1, 1, 1] : C.CREAM);
-        } else {
-            slot(mid, by + 20);
-        }
-    }
+    // low and tall alike (2026-11-13, Ethan: "giống 1920 nhưng to lên"): the slot top right, the
+    // bar at the foot of the text column; tall, the cover and the title larger
+    const tall = h >= TALL;
+    text(SAMPLE.track, tx, y + 12, tall ? {sz: 14, wt: 700} : {wt: 600});
+    text(SAMPLE.sub, tx, y + (tall ? 38 : 32), {sz: SUB, a: C.FG_MUTED});
+    slot(x + w - 28, y + 28);
+    bar(tx, y + h - 34, x1 - tx);
+    text('1:24', tx, y + h - 26, {sz: SUB, a: C.FG_SUBTLE}); text('-2:11', x1, y + h - 26, {sz: SUB, a: C.FG_SUBTLE, right: true});
 }
 function heroAsk(x, y, w, h) {
     fill([1, 1, 1, C.FILL1], x, y, w, h, 16);
@@ -363,22 +346,6 @@ if (MODE === 'screen') {
 }
 
 // ---- anatomy --------------------------------------------------------------------------------------------
-// ---- the tall music card: one slot (today) or split (proposed) ---------------------------------------
-if (MODE === 'tall') {
-    const CW = 760, GX = 40, W = 24 + 2 * CW + GX + 24, H = 50 + 344 + 84 + 376 + 70, G = ['wx', 'up', 'bat'];
-    const surf = canvas(W, H);
-    const rows = [[50, 716, 344, '2560 · 716 × 344, thẻ chính 168'], [50 + 344 + 84, 760, 376, '3440 · 760 × 376, thẻ chính 200']];
-    for (const [y, w, h, size] of rows) {
-        SPLIT = false;
-        home(24, y, w, h, 'music', ['claude'], G, `Trước · ${size}: một ô, equaliser dưới thanh, ⏸ chỉ khi rê chuột`);
-        SPLIT = true;
-        home(24 + CW + GX, y, w, h, 'music', ['claude'], G, `Chốt · ${size}: equaliser góc trên phải, ⏸ luôn hiện`);
-    }
-    note(24 + CW + GX, 50 + 344 + 84 + 376 + 8, ['Dạng thấp (dưới 160) giữ một ô. Equaliser ở góc trên phải ở mọi dạng và ở ô nhạc.',
-        'Đang dừng: equaliser thấp, nút thành ▶. Nút kem, trắng dưới con trỏ, như các nút chính.']);
-    surf.writeToPNG(out);
-}
-
 if (MODE === 'anatomy') {
     const W = 40 + 560 + 150 + 760 + 40, H = 40 + 376 + 70 + 344 + 120;
     const surf = canvas(W, H), ax = 40, ay = 70, ACTS = ['claude'], G = ['wx', 'up', 'bat'];
