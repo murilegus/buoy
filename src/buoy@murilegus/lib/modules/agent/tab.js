@@ -100,13 +100,14 @@ export class AgentsTab {
         return box;
     }
 
-    // "N done" · Clear (the Notifications tab's bar): every stale session leaves
+    // "N stale" · Clear stale (the Notifications tab's bar): every stale session leaves — the
+    // words say which go (2026-11-13, Ethan), not "done": a quiet one is stale too
     _clearBar(stale) {
         const bar = new St.BoxLayout({style_class: 'buoy-agents-bar', x_expand: true});
-        bar.add_child(new St.Label({text: `${stale.length} done`, style_class: 'buoy-agents-count', y_align: Clutter.ActorAlign.CENTER}));
+        bar.add_child(new St.Label({text: `${stale.length} stale`, style_class: 'buoy-agents-count', y_align: Clutter.ActorAlign.CENTER}));
         bar.add_child(new St.Widget({x_expand: true}));
         const clear = new St.Button({
-            style_class: 'buoy-agents-clear', can_focus: true, label: 'Clear', accessible_name: 'Clear the finished sessions',
+            style_class: 'buoy-agents-clear', can_focus: true, label: 'Clear stale', accessible_name: 'Clear the stale sessions',
             y_align: Clutter.ActorAlign.CENTER,
         });
         clear.connect('clicked', () => stale.forEach(s => s.onAction?.(DISMISS)));
