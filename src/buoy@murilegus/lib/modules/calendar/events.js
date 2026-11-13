@@ -21,7 +21,9 @@ import {HORIZON_DAYS, dayStart} from './agenda.js';
  *   again whenever it opens (dateMenu.js `open-state-changed`).
  * - Event-driven: the source's `changed` and `notify::has-calendars` re-read; nothing
  *   polls. A session mode change replaces the date menu's source (`_sessionUpdated`: the
- *   lock screen has none), so `Main.sessionMode` `updated` binds the current one again.
+ *   lock screen has none), so `Main.sessionMode` `updated` binds the current one again, and
+ *   every read follows the date menu's source first (`_follow`: it drops the old one before
+ *   this reader hears the change).
  * - The state is plain (agenda.js's events): today and the six days after, as far as the
  *   loaded range reaches; the times written as GNOME writes them (12/24 h).
  */
@@ -46,18 +48,30 @@ export class EventReader {
     }
 
     _bind(notify = true) {
-        const source = this._menu?._eventSource ?? null;
-        if (source !== this._source) {
-            this._source?.disconnectObject(this);
-            this._source = source;
-            source?.connectObject(
-                'changed', () => this._read(),
-                'notify::has-calendars', () => this._read(), this);
-        }
+        this._follow();
         this._read(notify);
     }
 
+    // Holds the date menu's source as it is now. At a session mode change the date menu
+    // destroys the old one, its proxy disposed (ui/dateMenu.js `_sessionUpdated` →
+    // `_setEventSource`; ui/calendar.js DBusEventSource `destroy`), before this reader hears
+    // `updated`: Shell connected first (ui/main.js builds the panel before the extension
+    // manager). When the change disables Buoy (the lock screen) it never hears it, and a read
+    // during disable() — the idle pill shown as the last pills end — touched the dead proxy
+    // (Gjs-CRITICAL "already disposed", 2026-11-13). So every read follows first.
+    _follow() {
+        const source = this._menu?._eventSource ?? null;
+        if (source === this._source)
+            return;
+        this._source?.disconnectObject(this);
+        this._source = source;
+        source?.connectObject(
+            'changed', () => this._read(),
+            'notify::has-calendars', () => this._read(), this);
+    }
+
     _read(notify = true) {
+        this._follow();
         const source = this._source;
         const hasCalendars = Boolean(source?.hasCalendars);
         let events = [];
@@ -78,6 +92,7 @@ export class EventReader {
      * @returns {object[]} the loaded events overlapping [from, to), plain (agenda.js)
      */
     eventsIn(from, to) {
+        this._follow();
         if (!this._source?.hasCalendars)
             return [];
         return this._source.getEvents(new Date(from), new Date(to)).map(e => ({
@@ -95,6 +110,7 @@ export class EventReader {
      * @returns {boolean} a loaded event touches that day (the grid's dot)
      */
     hasEvents(day) {
+        this._follow();
         return Boolean(this._source?.hasCalendars && this._source.hasEvents(new Date(day)));
     }
 
