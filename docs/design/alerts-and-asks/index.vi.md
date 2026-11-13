@@ -215,7 +215,8 @@ Thiếu một câu trong `answers` vẫn chưa thử.
   quy tắc trên, không phải lúc hiện. NOTIFICATIONS §1–§3 viết lại theo đây.
 - `lib/kit/` (mới: theo dõi có mặt) — idle monitor của Mutter (`get_core_idle_monitor`,
   `add_user_active_watch`, như `ui/messageTray.js`) và trạng thái presence của GNOME session; khoá
-  màn hình; DnD. Vắng, khoá, toàn màn hình, DnD → `stack.setUnseen()` (INDICATORS, FEATURES "Buoy
-  light, the rest").
+  màn hình; DnD. Toàn màn hình → `stack.setUnseen()`; vắng, DnD → `stack.setAway()`: việc kết thúc
+  lúc đó vào Bị nhỡ, còn alert và ask vẫn tới island, island tự quyết (2026-11-13). Khoá màn hình
+  không cần gọi: Shell tắt Buoy khi khoá (không có `session-modes`, `js/ui/extensionSystem.js`).
 - `lib/kit/ui/present/compact.js` (card) — hàng nút ẩn khi card mở bằng alert, hiện khi rê chuột; chiều cao đổi
   104 → 136 / 152 theo nhịp 16.

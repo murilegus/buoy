@@ -27,7 +27,7 @@ position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
 | Colour | Token | Meaning | Set by | Cleared by | Shown in |
 |---|---|---|---|---|---|
 | white 20 % | `light-off` | nothing | — | — | idle `none` only |
-| amber `#FF9F0A` | `light-missed` | ≥1 activity ended while the island was hidden (fullscreen; away and DND are M4); missed history has entries. Not counted (2026-11-01): `osd`, `copied`, `input` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, minimal, compact |
+| amber `#FF9F0A` | `light-missed` | ≥1 activity ended while the island was hidden (fullscreen), you were away (GNOME's session idle) or in Do Not Disturb (2026-11-13); missed history has entries. Not counted (2026-11-01): `osd`, `copied`, `input` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) or away (`setAway`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, minimal, compact |
 | red `#FF453A` | `light-waiting` | an `ask` activity exists that could not surface (fullscreen, dismissed) and still has no answer | `stack` when an `ask` is queued but not shown | the ask is answered, times out (→ deny), or is ended by the caller | idle, minimal, compact |
 
 Precedence: red › amber › off. Only one light is drawn.

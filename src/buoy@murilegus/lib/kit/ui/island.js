@@ -78,7 +78,13 @@ export class Island {
         this._activeWatch = 0;      // an alert waiting for you to be back (Presence.whenActive)
         this._turnId = 0;           // the alert's ALERT_TURN_MS
         this._graceId = 0;          // TURN_GRACE after the pointer left a held card
-        this._presence = new Presence({onAway: away => this._awayChanged(away)});
+        this._presence = new Presence({
+            onAway: away => {
+                this._awayChanged(away);
+                this.onAway?.(this.away);
+            },
+            onDoNotDisturb: () => this.onAway?.(this.away),
+        });
         this._open = null;          // the expanded pill
         this._openedBy = null;      // 'user' | 'auto' | 'alert'
         this._home = null;          // Home's panel while a click has the island open
@@ -95,6 +101,7 @@ export class Island {
         this._destroyed = false;
         this.onCapacityChanged = null; // set by the extension → stack.refresh()
         this.onHold = null;            // set by the extension → stack.hold(id, held)
+        this.onAway = null;            // set by the extension → stack.setAway(away)
         // set by the extension: enabled modules (tab strip), `tabs-*` settings, ⋯ choice, ⚙
         this.tabs = {modules: [], settings: () => ({}), onSlot: null, onPrefs: null};
         // set by the extension: the stack's missed history, and telling it it was seen
@@ -363,6 +370,16 @@ export class Island {
             });
         }
         this._syncTurn();
+    }
+
+    /**
+     * Away from the screen (GNOME's session idle) or in Do Not Disturb: what ends now is
+     * missed (stack.setAway, design/alerts-and-asks). Told through `onAway` when it changes.
+     *
+     * @returns {boolean}
+     */
+    get away() {
+        return !!this._presence && (this._presence.away || this._presence.doNotDisturb);
     }
 
     // Away (the session idle, the screen locked): a card waiting for you closes, unseen —
@@ -1109,6 +1126,7 @@ export class Island {
         this._a11y.disconnect(this._hcId);
         this._held = null;
         this._disarmAlert();
+        this.onAway = null;
         this._presence.destroy();
         this._presence = null;
         for (const p of this._pills)
