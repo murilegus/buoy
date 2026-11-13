@@ -79,3 +79,56 @@ export function nextBoundary(time, starts = DEFAULT_STARTS) {
     }
     return new Date(y, m, d + 1, s[0], 0, 0, 0);
 }
+
+/**
+ * The hours a part may start at, for prefs' row (FEATURES M3 "daypart-starts in prefs"):
+ * after the part before it and before the part after it, going round midnight. Unwrapped:
+ * `lo`…`hi` are consecutive integers that may pass 23 (show them mod 24), `value` is the
+ * part's start in that range.
+ *
+ * @param {*} starts  `daypart-starts`; bad or missing → the defaults
+ * @param {number} i  the part, 0 (dawn) … 5 (night)
+ * @returns {{lo: number, hi: number, value: number}}
+ */
+export function startRange(starts, i) {
+    const s = normaliseStarts(starts).starts;
+    const n = s.length, k = ((Math.floor(i) % n) + n) % n;
+    const prev = s[(k + n - 1) % n], next = s[(k + 1) % n];
+    const lo = prev + 1;
+    const hi = (next > prev ? next : next + 24) - 1;
+    const value = s[k] >= lo ? s[k] : s[k] + 24;
+    return {lo, hi, value};
+}
+
+/**
+ * `daypart-starts` with one part moved.
+ *
+ * @param {*} starts  `daypart-starts`; bad or missing → the defaults
+ * @param {number} i  the part, 0 (dawn) … 5 (night)
+ * @param {number} hour  any integer, taken mod 24 (startRange's unwrapped values)
+ * @returns {?number[]} the six hours, or null when that hour leaves a part empty or out of
+ *   order
+ */
+export function withStart(starts, i, hour) {
+    const s = [...normaliseStarts(starts).starts];
+    if (!Number.isInteger(i) || i < 0 || i >= s.length || !Number.isFinite(hour))
+        return null;
+    s[i] = ((Math.round(hour) % 24) + 24) % 24;
+    const out = normaliseStarts(s);
+    return out.valid ? out.starts : null;
+}
+
+/**
+ * An hour as GNOME's clock writes it (`clock-format`): "05:00" in 24-hour time, "5 AM" in
+ * 12-hour time.
+ *
+ * @param {number} hour  any integer, taken mod 24
+ * @param {string} [format]  '24h' or '12h'
+ * @returns {string}
+ */
+export function hourLabel(hour, format = '24h') {
+    const h = ((Math.round(Number(hour) || 0) % 24) + 24) % 24;
+    if (format === '12h')
+        return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`;
+    return `${String(h).padStart(2, '0')}:00`;
+}

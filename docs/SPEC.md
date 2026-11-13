@@ -367,13 +367,14 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
 - **Choice** (2026-11-08, Ethan: "an idle pill just rotates"; it was the highest score,
   only ties taking turns, so the weather's 35 kept the clock off for good). Every plan
   with something to show takes its turn, in `idle-auto-plans` order, round, one per
-  `idle-auto-interval`; the first shown is the highest scored. A plan with nothing to show
+  `idle-auto-switch`; the first shown is the highest scored. A plan with nothing to show
   yet (`null`: the weather before its first fetch) is skipped, so the pill never waits for
   it — only Show set to that one plan does. A plan scoring ≥ 80
   **holds** the pill until its score drops, and shows at once (never rotate away from a
   meeting in 10 minutes).
 - **When it re-ranks.** On a plan's `changed` signal (event added, weather update, a
-  daypart boundary) and on one kit timer, `idle-auto-interval` (default 5 min, 2–30),
+  daypart boundary) and on one kit timer, `idle-auto-switch`: 5 (default), 10, 20 or 30 min
+  (2026-11-13, Ethan: only these, as Waiting pills go after; was 2–30),
   that exists only while the pill is idle with `auto` — removed the moment an activity
   surfaces, on expand, and on disable. A re-rank that picks the same plan changes nothing.
 - **Interests** (Windows' word): `idle-auto-plans` (as) — which plans the stack may use,
@@ -533,7 +534,10 @@ sizes, Bu's poses, special days, weather, settings and tests.
   Any rotation works (night may start at 1, dawn at 23) as long as the six hours are
   distinct and in cyclic order; anything else falls back to the defaults, never an
   error. A part changes on the hour; a consumer that must follow it arms one timer at
-  `nextBoundary()` (2026-11-04).
+  `nextBoundary()` (2026-11-04). Set on the Island page, When Idle → Parts of the day: each
+  part's colour icon and a drop-down of the hours it may start at (from the hour after the
+  part before it to the hour before the part after it, round midnight), in GNOME's 12/24 h;
+  Reset while not the defaults. The clock's icon and Home's greeting follow (2026-11-13).
   Greetings: dawn and morning → "Good morning", noon → "Good day" (vi "Chào buổi trưa"),
   afternoon → "Good afternoon", evening → "Good evening", night → "Still up" (vi
   "Khuya rồi").

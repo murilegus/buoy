@@ -135,7 +135,7 @@ eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
     'clock-defaults-applied stays hidden: placed by name, not taken by the clock module\'s prefix');
 
 // --- Island page (ARCHITECTURE rule 9, 2026-11-04) ------------------------------------------
-eq(plan.idle, ['idle-content', 'idle-auto-interval'], 'When idle: Show, then Switch every (auto)');
+eq(plan.idle, ['idle-content', 'idle-auto-switch', 'daypart-starts'], 'When idle: Show, Switch every (auto), then the parts of the day (FEATURES M3)');
 {
     const plans = [{id: 'clock', enableKey: 'modules-clock'}, {id: 'free', enableKey: null}];
     const on = v => k => ({'modules-clock': v})[k];
@@ -151,8 +151,9 @@ eq(IDLE_PLANS.filter(id => id !== 'none').every(id => schema.get_key('idle-conte
 eq(schema.get_key('idle-content').get_default_value().unpack(), 'auto', 'Automatic by default, now that it has landed');
 eq(schema.get_key('idle-auto-plans').get_default_value().deepUnpack(), ['calendar', 'weather', 'clock'],
     'the stack: every plan, the next event first in a tie');
-eq([schema.get_key('idle-auto-interval').get_range().recursiveUnpack(), schema.get_key('idle-auto-interval').get_default_value().unpack()],
-    [['range', [2, 30]], 5], 'Switch every: 2–30 minutes, 5 by default (SPEC §2a-iii)');
+eq([schema.get_key('idle-auto-switch').get_range().recursiveUnpack(), schema.get_key('idle-auto-switch').get_default_value().unpack()],
+    [['enum', ['5m', '10m', '20m', '30m']], '5m'], 'Switch every: 5, 10, 20 or 30 minutes, 5 by default (SPEC §2a-iii)');
+eq(choiceLabel('idle-auto-switch', '20m'), '20 minutes', 'Switch every: its label');
 eq(choiceLabel('idle-content', 'auto'), 'Automatic', 'Show: Automatic');
 eq(idleOffNote('auto', plan.plans, () => false), null, 'Automatic names no module: nothing to say');
 eq(plan.plans, [

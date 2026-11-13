@@ -1,7 +1,7 @@
 // Run: gjs -m tests/daypart.test.js   (pure: hour → dawn…night, boundaries, bad settings)
 import GLib from 'gi://GLib';
 
-import {DAYPARTS, DEFAULT_STARTS, normaliseStarts, daypartAt, nextBoundary} from
+import {DAYPARTS, DEFAULT_STARTS, normaliseStarts, daypartAt, nextBoundary, startRange, withStart, hourLabel} from
     '../src/buoy@murilegus/lib/kit/model/daypart.js';
 
 function eq(actual, expected, msg) {
@@ -104,5 +104,34 @@ const from = at(9, 15);
 nextBoundary(from);
 eq(iso(from), '2026-11-4 9:15', 'the input Date is not changed');
 eq(nextBoundary(at(13, 0)).getSeconds(), 0, 'a boundary is on the hour, 0 s');
+
+// --- prefs' row (FEATURES M3 "daypart-starts in prefs") -------------------------------------
+eq(startRange(DEFAULT_STARTS, 1), {lo: 6, hi: 10, value: 7}, 'morning: after dawn (5), before noon (11)');
+eq(startRange(DEFAULT_STARTS, 5), {lo: 19, hi: 28, value: 22}, 'night: 19 … 4 next day, unwrapped to 28');
+eq(startRange(DEFAULT_STARTS, 0), {lo: 23, hi: 30, value: 29}, 'dawn: 23 … 6 round midnight; 5 is 29 unwrapped');
+eq(startRange([23, 7, 11, 13, 18, 21], 0), {lo: 22, hi: 30, value: 23}, 'dawn past 22: no wrap needed for its own value');
+eq(startRange([5, 6, 11, 13, 18, 22], 0), {lo: 23, hi: 29, value: 29}, 'a part with its next an hour on: hi is its own value');
+eq(startRange('x', 2), startRange(DEFAULT_STARTS, 2), 'bad starts: the defaults');
+eq(startRange(DEFAULT_STARTS, 7), startRange(DEFAULT_STARTS, 1), 'the part taken mod 6');
+for (let i = 0; i < 6; i++) {
+    const r = startRange(DEFAULT_STARTS, i);
+    for (let h = r.lo; h <= r.hi; h++) {
+        if (!withStart(DEFAULT_STARTS, i, h))
+            throw new Error(`part ${i} at ${h}: in its range, so valid`);
+    }
+    if (withStart(DEFAULT_STARTS, i, r.lo - 1) || withStart(DEFAULT_STARTS, i, r.hi + 1))
+        throw new Error(`part ${i}: one hour outside its range is not valid`);
+}
+eq(withStart(DEFAULT_STARTS, 5, 25), [5, 7, 11, 13, 18, 1], 'night at 1 (25 unwrapped)');
+eq(withStart(DEFAULT_STARTS, 1, 6), [5, 6, 11, 13, 18, 22], 'morning at 6');
+eq(withStart(DEFAULT_STARTS, 1, 5), null, 'morning on dawn: an empty part');
+eq(withStart(DEFAULT_STARTS, 1, 12), null, 'morning past noon: out of order');
+eq([withStart(DEFAULT_STARTS, 6, 3), withStart(DEFAULT_STARTS, -1, 3), withStart(DEFAULT_STARTS, 1.5, 6), withStart(DEFAULT_STARTS, 1, NaN)],
+    [null, null, null, null], 'a bad part or hour: null');
+eq(withStart('x', 1, 8), [5, 8, 11, 13, 18, 22], 'bad starts: moved from the defaults');
+eq(DEFAULT_STARTS, [5, 7, 11, 13, 18, 22], 'the defaults are not changed');
+eq([hourLabel(5), hourLabel(22), hourLabel(0), hourLabel(29)], ['05:00', '22:00', '00:00', '05:00'], '24-hour labels, mod 24');
+eq([hourLabel(0, '12h'), hourLabel(5, '12h'), hourLabel(12, '12h'), hourLabel(22, '12h')], ['12 AM', '5 AM', '12 PM', '10 PM'], '12-hour labels');
+eq(hourLabel('x'), '00:00', 'not a number: midnight');
 
 print('daypart: ok');

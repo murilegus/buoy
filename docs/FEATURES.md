@@ -32,7 +32,7 @@ pages, Bu, About, greeting first run and What's new, `install.sh`, README, last 
 |---|---|---|
 | [~] | Release | 0.1.1 accepted on extensions.gnome.org (in review since 2026-11-09); README badge and wording updated, the overview on the EGO page |
 | [~] | Bu says when a newer Buoy is out | once per release, like the greeting (GREETING §11 "A newer Buoy"): from extensions.gnome.org, read from Shell's own check (`hasUpdate`) with no request of Buoy's; installed with `install.sh` (its mark in the folder), one request to GitHub's latest release at most once a day — the one network call Buoy makes; `greeting-updates` turns it off; README Privacy says so. Left: seen with a real release newer than the one installed |
-| [ ] | `daypart-starts` in prefs | a row on the Island page (the clock already reads the key) |
+| [x] | `daypart-starts` in prefs | a row on the Island page (the clock already reads the key) |
 | [-] | Home: Now playing on large screens | dropped (2026-11-12): the Home redesign (M4, design/home) gives the main card 168 / 200 and the tall form at 2560 and 3440 |
 | [ ] | Field checks | seen with real apps: a Firefox or Thunderbird notification; Spotify and Firefox (https) art; a Google or Microsoft calendar; IBus Bamboo; the red light in fullscreen; a °C locale's Automatic; an EGO update's What's new; Home at 1366 and 2560 |
 

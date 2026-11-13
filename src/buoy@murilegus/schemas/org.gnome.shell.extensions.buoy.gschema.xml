@@ -168,9 +168,14 @@
       <summary>Plans in the stack</summary>
       <description>The idle plans Automatic may show, in the order they take turns.</description>
     </key>
-    <key name="idle-auto-interval" type="i">
-      <range min="2" max="30"/>
-      <default>5</default>
+    <key name="idle-auto-switch" type="s">
+      <choices>
+        <choice value="5m"/>
+        <choice value="10m"/>
+        <choice value="20m"/>
+        <choice value="30m"/>
+      </choices>
+      <default>'5m'</default>
       <summary>Switch every</summary>
       <description>Minutes before the next plan takes its turn.</description>
     </key>
@@ -266,7 +271,7 @@
     <key name="daypart-starts" type="ai">
       <default>[5, 7, 11, 13, 18, 22]</default>
       <summary>Parts of the day</summary>
-      <description>Start hours of dawn, morning, noon, afternoon, evening and night, 0–23, in that order; one part wraps past midnight. Anything else uses the defaults.</description>
+      <description>When each starts. The clock's icon and Bu's greeting follow.</description>
     </key>
     <key name="activity-linger" type="s">
       <choices>
