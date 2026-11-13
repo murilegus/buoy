@@ -104,6 +104,13 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 - Danh sách +K ("Đang diễn ra"): mọi activity theo thứ tự stack; bấm hàng mở tab của nó. Dài hơn 5
   hàng thì cuộn, chỉ ở danh sách này. **Chốt** (Ethan, 2026-11-12)
 
+## Ô nhạc
+
+- **Equaliser ở góc trên phải ô nhạc**, chỗ ô thời tiết ghi tuổi số đo và ô Bị nhỡ đặt icon app: sáu
+  thanh 2 × 14 theo màu bìa ([Pill](../pill/index.vi.md), "Equaliser"), canh giữa theo ô leading
+  20. Đang phát thì chạy (chỉ khi Home đang mở, luật 8), đang dừng thì thấp. Nhiều player: nhìn
+  góc là biết ô nào đang phát. **Đề xuất**
+
 ## Quay màn hình trong Home
 
 ![Đang quay: bản ghi là thẻ chính; Claude Code hỏi lúc đang quay: bản ghi là một ô](images/screen.vi.png)

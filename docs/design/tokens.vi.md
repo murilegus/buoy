@@ -19,7 +19,7 @@ về đây thay vì chép số. Số px tính cho 1em = 11pt ≈ 14.67 px và l�
 | Viền | 1 px, trắng 12 %, nằm trong hình | | Chốt |
 | Idle | rộng theo plan rộng nhất, đo khi chạy: 131 ở 1×, 136 ở 1.25–2× | 8 + 24 + 6 + chữ + 8; code làm tròn lên số chẵn (132) để pill canh giữa đúng pixel | Chốt |
 | Chấm đèn | 8, ở tâm hình tròn đầu (cách mép 16) | chỉ trên pill 1 | Chốt |
-| Equaliser | 6 thanh 2 × 14, khe 2, bo 1 | rộng 22; trước là 4 thanh 3 × 12 (rộng 18); dừng: hạ xuống trong 200 ms | Chốt (Ethan, 2026-11-13) |
+| Equaliser | 6 thanh 2 × 14, khe 2, bo 1 | rộng 22; trước là 4 thanh 3 × 12 (rộng 18); dừng: hạ xuống trong 200 ms; trong compact nhạc: giữa ô 32 của nút tròn | Chốt (Ethan, 2026-11-13) |
 | Mỗi đầu nở khi có đèn | 20 = bán kính 16 + nửa chấm 4 | idle 131 → 171 | Chốt |
 | Pill phụ | 131, bằng idle; tối đa 2, bên phải | | Chốt (Ethan, 2026-11-11) |
 | Hover | rộng cộng 0.75em (12), cao cộng 2 như nay (32 → 34) | thay cho × 1.10 | Chốt (Ethan, 2026-11-11) |

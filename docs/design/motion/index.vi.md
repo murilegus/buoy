@@ -40,6 +40,9 @@ và cách từng chuyển diễn ra; số dùng chung ở [Bảng số](../token
   dụng chung: builder của kit tự gắn nhãn, module tự vẽ (thẻ nhạc ở Home, tab Media) thêm một
   dòng `markShared`. Làm trong M4 (2026-11-13). **Đề xuất** (Ethan, 2026-11-13: "các widget chuyển
   sang đúng tab của nó với animation")
+- Nhạc: **equaliser cũng là phần chung**. Compact của nhạc có equaliser ở chỗ nút tròn
+  ([Compact](../compact/index.vi.md), "Nhạc"), nên nó đi từ trailing của pill tới đó bằng
+  `translation`, cùng cỡ (22 × 14), không còn `fade-out`. **Chốt** (Ethan, 2026-11-13)
 
 ## Lò xo và độ mờ
 
