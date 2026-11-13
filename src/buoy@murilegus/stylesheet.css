@@ -365,6 +365,8 @@
 .buoy-home-tile-value { color: #fff; /* fg */ font-size: 1.5em; font-weight: 600; font-feature-settings: "tnum"; }
 .buoy-home-tile-caption { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
 .buoy-home-tile-detail { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; padding-left: 12px; }
+/* the Missed tile's apps, top right: icons at 16, 4 apart */
+.buoy-home-tile-apps { spacing: 4px; padding-left: 8px; }
 /* how old a tile's data is, top right (the weather's update time) */
 .buoy-home-tile-since { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; padding-left: 8px; }
 .buoy-home-tile-missed { background-color: rgba(255, 159, 10, 0.16); /* missed-tint */ }

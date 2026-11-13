@@ -432,14 +432,26 @@ export function sharedBurst({apps, at, close = null, alertDone = null}) {
  * Home's Missed row for GNOME's notifications nobody has seen (design/home "Bị nhỡ và +K"):
  * one row, "Notifications · 3", the apps they came from; it opens the Notifications tab.
  *
+ * Home's Missed tile shows the apps' icons in its corner (design/home, 2026-11-13, Ethan): each
+ * app's icon as a string (Gio.Icon.to_string, or a theme name), once per app.
+ *
  * @param {number} count  unseen notifications
- * @param {*[]} apps  their apps' names, newest first (repeats allowed)
- * @returns {{count: number, title: string, detail: ?string, tab: string}}
+ * @param {*[]} apps  their apps, newest first (repeats allowed): a name, or {name, icon}
+ * @returns {{count: number, title: string, detail: ?string, tab: string, icons: string[]}}
  */
 export function missedRow(count, apps) {
-    const names = [...new Set((Array.isArray(apps) ? apps : []).map(a => plainText(a)).filter(Boolean))];
+    const list = (Array.isArray(apps) ? apps : []).map(a => a && typeof a === 'object' ? a : {name: a});
+    const names = [], icons = [];
+    for (const a of list) {
+        const name = plainText(a.name);
+        if (!name || names.includes(name))
+            continue;
+        names.push(name);
+        if (typeof a.icon === 'string' && a.icon.trim() && !icons.includes(a.icon))
+            icons.push(a.icon);
+    }
     const detail = names.length > 3 ? `${names.slice(0, 3).join(', ')} +${names.length - 3}` : names.join(', ');
-    return {count: Math.max(0, Math.floor(count) || 0), title: 'Notifications', detail: detail || null, tab: 'notification'};
+    return {count: Math.max(0, Math.floor(count) || 0), title: 'Notifications', detail: detail || null, tab: 'notification', icons};
 }
 
 export default {

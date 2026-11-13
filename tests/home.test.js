@@ -1,6 +1,6 @@
 // Run: gjs -m tests/home.test.js   (pure: Home's plan, design/home)
 import {
-    planHome, tilesPerRow, tileWidths, tileOf, greetingLine, TILE_H, CARD_GAP, TALL_FROM,
+    planHome, tilesPerRow, tileWidths, tileOf, greetingLine, TILE_H, CARD_GAP, TALL_FROM, cornerIcons, CORNER_ICONS, cornerMax,
 } from '../src/buoy@murilegus/lib/kit/model/home.js';
 import {validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 import {batteryTile, STATE} from '../src/buoy@murilegus/lib/modules/home/adapter.js';
@@ -148,5 +148,16 @@ eq(batteryTile({present: true, percentage: 140, state: 2}).value, '100%', 'clamp
     if (rowsThatFit(null, 400, m) !== 0)
         throw new Error('no plan: zero');
 }
+
+
+// --- the Missed tile's corner: its apps' icons, then +N (design/home, 2026-11-13) ----------
+eq(CORNER_ICONS, 3, 'three icons fit a 128 tile beside the bell');
+eq(cornerIcons(['slack']), {icons: ['slack'], more: 0}, 'one app: its icon');
+eq(cornerIcons(['a', 'b', 'a', 'c']), {icons: ['a', 'b', 'c'], more: 0}, 'each app once, first place kept');
+eq(cornerIcons(['a', 'b', 'c', 'd', 'e']), {icons: ['a', 'b', 'c'], more: 2}, 'five apps: three icons, +2');
+eq([cornerIcons([]), cornerIcons(null), cornerIcons(['', 3, null])], [{icons: [], more: 0}, {icons: [], more: 0}, {icons: [], more: 0}], 'nothing: no corner');
+eq(cornerIcons(['a', 'b', 'c'], 2), {icons: ['a', 'b'], more: 1}, 'a smaller max');
+eq([cornerMax(128), cornerMax(173), cornerMax(264), cornerMax(536)], [2, 3, 3, 3], 'a 128 tile: two and +N; wider: three');
+eq([cornerMax(0), cornerMax(NaN), cornerMax(80)], [1, 1, 1], 'too narrow: still one');
 
 print('home: ok');

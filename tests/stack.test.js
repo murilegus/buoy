@@ -705,12 +705,12 @@ const media = (id = 'media:spotify', extra = {}) => ({id, kind: 'media', app: 's
 {
     const {stack} = setup();
     // Home's Missed list (design/home): each flag a row, with its count
-    stack.flagMissed('notification', true, {count: 3, title: 'Notifications', detail: 'Slack, Zalo', tab: 'notification'});
+    stack.flagMissed('notification', true, {count: 3, title: 'Notifications', detail: 'Slack, Zalo', tab: 'notification', icons: ['slack', '', 4, 'zalo']});
     stack.flagMissed('x', true);
     eq(stack.missedFlags, [
-        {key: 'notification', count: 3, title: 'Notifications', detail: 'Slack, Zalo', tab: 'notification'},
-        {key: 'x', count: 1, title: 'x', detail: null, tab: null},
-    ], 'flags as rows: their count, title, detail and tab; none given: 1 and the key');
+        {key: 'notification', count: 3, title: 'Notifications', detail: 'Slack, Zalo', tab: 'notification', icons: ['slack', 'zalo']},
+        {key: 'x', count: 1, title: 'x', detail: null, tab: null, icons: []},
+    ], 'flags as rows: their count, title, detail, tab and icons (strings only); none given: 1 and the key');
     stack.flagMissed('notification', true, {count: 5, title: 'Notifications'});
     eq(stack.missedFlags[0].count, 5, 'a flag set again takes its new row');
     stack.flagMissed('notification', true, {count: 0});

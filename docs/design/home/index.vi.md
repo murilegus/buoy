@@ -75,9 +75,15 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 - **Bị nhỡ gom mọi thứ chưa thấy**, không chỉ thông báo: việc kết thúc lúc không thấy được (tải xong,
   hẹn giờ hết, Claude Code xong, cuộc gọi nhỡ) và thông báo chưa xem. Chỉ dùng thông báo thì mất
   những việc kia, vì Buoy không đăng thông báo của riêng nó (SPEC §3). **Chốt** (Ethan, 2026-11-12)
-- Ô Bị nhỡ đếm tất cả; ô rộng ghi "3 thông báo · 4 việc". Thông báo gộp thành **một hàng**
+- Ô Bị nhỡ đếm tất cả (thông báo cộng việc). Thông báo gộp thành **một hàng**
   ("Thông báo · 3", tên các app), mở tab Thông báo ở mục "Nhỡ khi vắng"; chi tiết thông báo nằm ở
   tab đó. **Chốt** (Ethan, 2026-11-12)
+- Góc trên phải ô Bị nhỡ: **icon các app có thông báo chưa xem thật** (mỗi app một lần, mới nhất
+  trước), 16, cách 4, rồi "+N" cho số app còn lại; chỉ app có thông báo, việc không có icon ở đây.
+  Ô hẹp (128) chứa 2 icon và "+N", ô rộng hơn 3. Thay cho "3 thông báo · 4 việc" ở góc dưới phải.
+  **Chốt** (Ethan, 2026-11-13: chọn icon thay cho tên app; tên dài bị cắt)
+
+![Ô Bị nhỡ: app bằng tên hoặc icon, ô hẹp và rộng](images/missed-apps.vi.png)
 - Bấm ô Bị nhỡ hoặc +K: Home **thay thẻ chính và hàng ô bằng một danh sách**, không mở thêm cửa
   sổ. Hàng đầu: ‹ (về Home, cũng Esc), tên và số, nút hành động. Rồi các hàng 32 một dòng: leading
   20, tên 1em 600, chi tiết 0.85em `fg-muted`, giờ hoặc giá trị ở cuối. **Chốt** (Ethan, 2026-11-12)
