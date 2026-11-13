@@ -256,7 +256,9 @@ export class Pill {
     // Under another pill's compact (SPEC §5): fade where it stands, 100 ms out, 200 ms in;
     // reactivity is left alone.
     dim(dimmed) {
-        for (const a of [this.bg, this.content]) {
+        // the parts in flight too: going back from a compact while another opens, they stood
+        // bright beside it until they landed (2026-11-13, Ethan)
+        for (const a of [this.bg, this.content, this._flightLayer]) {
             a.remove_transition('opacity');
             a.ease({opacity: dimmed ? 0 : 255, duration: dimmed ? FADES.out.ms : FADES.in.ms, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         }

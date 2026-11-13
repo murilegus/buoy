@@ -75,7 +75,7 @@ function restOf(p, activity) {
 function restButton(a, rest, activity, m) {
     const b = roundButton(a, activity, m);
     b.accessible_name = a.icon === 'media-playback-start-symbolic' ? 'Play' : 'Pause';
-    return restSlot(b, rest);
+    return restSlot(b, rest, `${activity?.id}:compact`);
 }
 
 // `activity`: its title is a shared part (flight.js)

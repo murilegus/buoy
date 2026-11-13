@@ -362,7 +362,7 @@ export class MediaTab {
         // as the compact's ⏸ (design/media "Một player", 2026-11-13, Ethan); the pill's flies
         // here (shared parts)
         const eq = eqGlyph({paused: a.state?.status !== 'Playing', color: a.isStale ? null : a.attributes?.tint});
-        return restSlot(b, markShared(eq, 'eq', a));
+        return restSlot(b, markShared(eq, 'eq', a), `${a.id}:tab`);
     }
 
     // The seek bar, always: it moves the track when the player can seek a track with a length;

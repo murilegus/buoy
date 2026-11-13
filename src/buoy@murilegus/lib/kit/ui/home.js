@@ -937,7 +937,8 @@ export class Home {
         else if (t.apps?.icons?.length)
             corner = appIcons(t.apps);
         else if (t.corner)
-            corner = makeElement(t.corner, 'minimal', t.activity ?? null);
+            // a part the Media tab draws too (its ↗ slot): it flies there (design/media "Một player")
+            corner = markShared(makeElement(t.corner, 'minimal', t.activity ?? null), 'eq', t.activity ?? null);
         if (corner) {
             const top = new St.BoxLayout({x_expand: true});
             top.add_child(cell);

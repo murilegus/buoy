@@ -282,6 +282,15 @@ export function actionButton(a, activity) {
 
 /** A rest slot's fade between its two faces (`state`, as a button's own colours). */
 const SLOT_FADE_MS = 120;
+/**
+ * The slots showing their button, by what they are for: a click on ⏸ pauses, and the compact is
+ * built again for ▶ under the same pointer before the old one goes. St only sets the new
+ * button's hover with the next crossing event, so it started at rest and faded to the button —
+ * a blink between ⏸ and ▶ (2026-11-13, Ethan). One built while its key shows starts shown.
+ *
+ * @type {Map<string, St.Button>}
+ */
+const shownSlots = new Map();
 
 /**
  * A button that shows `rest` while left alone, and itself under the pointer or the keyboard's
@@ -292,21 +301,37 @@ const SLOT_FADE_MS = 120;
  *
  * @param {St.Button} b
  * @param {Clutter.Actor} rest
+ * @param {?string} [key]  what the slot is for (the activity's id and its place): one built
+ *   again in the place of a slot that showed its button shows it at once
  * @returns {St.Button} b
  */
-export function restSlot(b, rest) {
+export function restSlot(b, rest, key = null) {
     b.add_style_class_name('buoy-round-rest');
     const face = b.get_child();
     b.set_child(null);
     const layer = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true, y_expand: true});
     rest.x_align = rest.y_align = Clutter.ActorAlign.CENTER;
     face.x_align = face.y_align = Clutter.ActorAlign.CENTER;
-    face.opacity = 0;
+    let shown = key !== null && shownSlots.has(key);
+    if (shown) {
+        shownSlots.set(key, b);
+        b.add_style_class_name('buoy-round-shown');     // before its first style: no transition
+    }
+    face.opacity = shown ? 255 : 0;
+    rest.opacity = shown ? 0 : 255;
     layer.add_child(rest);
     layer.add_child(face);
     b.set_child(layer);
     const sync = () => {
-        const shown = b.hover || b.has_key_focus();
+        const now2 = b.hover || b.has_key_focus();
+        // carried over from the slot it replaces: kept until the pointer really leaves
+        if (now2 === shown)
+            return;
+        shown = now2;
+        if (key !== null && shown)
+            shownSlots.set(key, b);
+        else if (key !== null && shownSlots.get(key) === b)
+            shownSlots.delete(key);
         if (shown)
             b.add_style_class_name('buoy-round-shown');
         else
@@ -318,6 +343,10 @@ export function restSlot(b, rest) {
     b.connect('notify::hover', sync);
     b.connect('key-focus-in', sync);
     b.connect('key-focus-out', sync);
+    b.connect('destroy', () => {
+        if (key !== null && shownSlots.get(key) === b)
+            shownSlots.delete(key);
+    });
     return b;
 }
 
