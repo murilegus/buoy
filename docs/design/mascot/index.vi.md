@@ -54,3 +54,6 @@ cũng là một đường gấp khúc. Không có ảnh, không có frame clock.
   đi dạo ngay.
 - Chi phí: mỗi phản ứng một hai khung hình; giữ chuột thêm một timer, chỉ sống trong lúc giữ và 1 s
   sau khi thả.
+- Thả chuột ngoài pill thì không phải click, như St.Button. **Chốt** (2026-11-14, lúc làm code)
+- Code: `kit/model/mascot.js` (hình, phản ứng, giữ chuột), `kit/ui/present/motion.js` `eyes()`,
+  `kit/ui/island.js` `_onPillPress`; xem [MASCOT.md](../../MASCOT.md) § Expressions.

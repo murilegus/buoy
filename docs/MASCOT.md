@@ -486,7 +486,7 @@ change, then stillness until the next — not a loop (ARCHITECTURE rule 8).
 
 ### Expressions
 
-*Decided 2026-11-14 (Ethan); not built yet, FEATURES M4 "Bu's eyes: expressions".* Seven more,
+*Decided and built 2026-11-14 (Ethan), FEATURES M4 "Bu's eyes: expressions".* Seven more,
 drawn as in design/mascot "Biểu cảm của mắt" (`docs/design/mascot/render/eyes.js`): rounded bars,
 arcs and polylines only (the spiral is a polyline).
 
@@ -510,7 +510,17 @@ arcs and polylines only (the spiral is a polyline).
   Home opens on the release instead: released within 0.5 s it is a click and opens Home;
   held longer it is poking Bu and the release opens nothing. Only in mode `idle`; in any other
   mode the release opens Home. A trial on the eyes first; then every idle pill (Ethan,
-  2026-11-14). The hold's one timer lives only while held and 1 s after.
+  2026-11-14). The hold's one timer lives only while held and 1 s after. Released off the
+  pill it is no click, as a St.Button; another grab taking over ends it without one.
+- Code: `kit/model/mascot.js` `EXPRESSIONS`, `eyesShapes` (the expressions whatever the mode;
+  shapes as `bars` (with `lid`), `arcs`, `lines`, `rings`), `eyesRest` (why asleep: still ›
+  saver › away › night, given by the plan as `rest`), `eyesEnter(was, now)`, `ENTER_MS`,
+  `HOLD`, `HOLD_FRAMES`, `holdPlays`, `releaseEyes`; the wink is the smile beat's `alt`, every
+  other cycle (`nextBeat` wraps over two). `kit/ui/present/motion.js` `eyes()` keeps what the
+  last eyes showed (a mode change rebuilds the idle pill) to react, carries a reaction across
+  a rebuild, and runs the hold on its one timer; `eyesHold(actor)` finds it. `kit/ui/island.js`
+  `_onPillPress` holds under `global.stage.grab` (as ui/slider.js) and clicks on the release.
+  Tests in `tests/mascot.test.js` (shapes, reactions, hold, the wink's turn, `rest`).
 
 ## Name
 

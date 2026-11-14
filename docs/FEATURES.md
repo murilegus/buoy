@@ -73,7 +73,7 @@ to their places there (2026-11-12, Ethan).
 | [ ] | Meeting in 5 min · Join | SPEC §6b item 5 |
 | [ ] | Timer | pomodoro ring, keep-awake, its tab; a start tile in Home's glance (design/home) |
 | [x] | Idle plan `mascot` | MASCOT.md § Eyes; on by default, last in Automatic's stack (2026-11-14, Ethan; was off); checked with `powertop` on real hardware |
-| [ ] | Bu's eyes: expressions | MASCOT.md § Expressions and design/mascot "Biểu cảm của mắt": wink, content, drowsy, startled, and the press-and-hold `> <` → `@ @` → `x x`; while the eyes show, Home opens on the release (2026-11-14, Ethan) |
+| [x] | Bu's eyes: expressions | MASCOT.md § Expressions and design/mascot "Biểu cảm của mắt": wink, content, drowsy, startled, and the press-and-hold `> <` → `@ @` → `x x`; while the eyes show, Home opens on the release (2026-11-14, Ethan) |
 | [ ] | Print job progress | CUPS notifier |
 | [ ] | Terminal command finished in an unfocused tab | "exit 0 · 48 s", jump |
 | [ ] | VPN / Wi-Fi / captive portal; power profile | as feedback |

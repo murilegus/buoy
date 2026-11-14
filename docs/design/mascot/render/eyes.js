@@ -1,14 +1,14 @@
 // Bu's eyes in the idle pill (131 × 32): the expressions, and the sleep and hold sequences
-// (design/mascot "Biểu cảm của mắt", 2026-11-14). Coordinates as kit/model/mascot.js eyesShapes:
-// x about the pill's centre, y from its top, px at 1em.
+// (design/mascot "Biểu cảm của mắt", 2026-11-14), from the extension's own eyesShapes.
 // gjs -m eyes.js out.png expressions|sequences
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
 import {SCALE as SC, C} from '../../render/lib.js';
+import {eyesShapes} from '../../../../src/buoy@murilegus/lib/kit/model/mascot.js';
 
 const [out, mode = 'expressions'] = ARGV;
-const PW = 131, PH = 32, STROKE = 2.4, EL = -8.5, ER = 8.5;   // eye centres
+const PW = 131, PH = 32;
 
 let cr;
 function rr(x, y, w, h, r) {
@@ -18,56 +18,42 @@ function rr(x, y, w, h, r) {
     cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI); cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI);
     cr.closePath();
 }
-const bar = (x, y, w, h, r) => { rr(x, y, w, h, r); cr.fill(); };
-function stroke(pts, w = STROKE) {
-    cr.setLineWidth(w); cr.setLineCap(cairo.LineCap.ROUND); cr.setLineJoin(cairo.LineJoin.ROUND);
-    cr.moveTo(...pts[0]);
-    for (const p of pts.slice(1))
-        cr.lineTo(...p);
-    cr.stroke();
-}
-// a quadratic through (mid, cy), as motion.js eyes() draws `arcs`
-function arc(x1, x2, y, cy) {
-    const mx = (x1 + x2) / 2, k = 2 / 3;
-    cr.setLineWidth(STROKE); cr.setLineCap(cairo.LineCap.ROUND);
-    cr.moveTo(x1, y);
-    cr.curveTo(x1 + k * (mx - x1), y + k * (cy - y), x2 + k * (mx - x2), y + k * (cy - y), x2, y);
-    cr.stroke();
-}
-// a half-closed eye: flat top (the lid), round bottom
-function lid(x, y, w, h) {
-    const r = w / 2;
-    cr.moveTo(x, y); cr.lineTo(x + w, y); cr.lineTo(x + w, y + h - r);
-    cr.arc(x + r, y + h - r, r, 0, Math.PI); cr.closePath(); cr.fill();
-}
-function spiral(cx, cy, r, turns, sign) {
-    const pts = [];
-    for (let i = 0; i <= 80; i++) {
-        const t = i / 80, a = sign * t * turns * 2 * Math.PI - Math.PI / 2, rr2 = r * (1 - t * 0.85);
-        pts.push([cx + rr2 * Math.cos(a), cy + rr2 * Math.sin(a)]);
-    }
-    stroke(pts, 1.8);
-}
-const ring = (cx, cy, r) => { cr.setLineWidth(2.2); cr.newSubPath(); cr.arc(cx, cy, r, 0, 2 * Math.PI); cr.stroke(); };
-
-const EYES = {
-    idle: () => { bar(-11, 11, 4.5, 10, 2.2); bar(6, 11, 4.5, 10, 2.2); },
-    smile: () => { arc(-13.5, -4, 18, 11.5); arc(3.5, 13, 18, 11.5); },
-    wink: () => { bar(-11, 11, 4.5, 10, 2.2); arc(ER - 4.5, ER + 4.5, 18, 11.5); },
-    content: () => { arc(EL - 4.5, EL + 4.5, 14, 21); arc(ER - 4.5, ER + 4.5, 14, 21); },
-    startled: () => { ring(EL, 16, 3.8); ring(ER, 16, 3.8); },
-    drowsy: () => { lid(-11.5, 15, 5.5, 6); lid(5.5, 15, 5.5, 6); },
-    sleep: () => { bar(-14, 16, 9, 2.4, 1.2); bar(5, 16, 9, 2.4, 1.2); },
-    squeeze: () => {
-        stroke([[EL - 3.5, 11.5], [EL + 2.5, 16], [EL - 3.5, 20.5]]);
-        stroke([[ER + 3.5, 11.5], [ER - 2.5, 16], [ER + 3.5, 20.5]]);
-    },
-    dizzy: () => { spiral(EL, 16, 5.2, 1.75, 1); spiral(ER, 16, 5.2, 1.75, -1); },
-    knocked: () => {
-        for (const c of [EL, ER]) {
-            stroke([[c - 3, 13], [c + 3, 19]]); stroke([[c + 3, 13], [c - 3, 19]]);
+// the extension's own shapes (kit/model/mascot.js eyesShapes), drawn as motion.js eyes() does
+function draw(mode, eyes) {
+    const s = eyesShapes(mode, {eyes});
+    for (const b of s.bars) {
+        if (b.lid) {
+            const r = b.w / 2;
+            cr.moveTo(b.x, b.y); cr.lineTo(b.x + b.w, b.y); cr.lineTo(b.x + b.w, b.y + b.h - r);
+            cr.arc(b.x + r, b.y + b.h - r, r, 0, Math.PI); cr.closePath();
+        } else {
+            rr(b.x, b.y, b.w, b.h, b.r);
         }
-    },
+        cr.fill();
+    }
+    cr.setLineCap(cairo.LineCap.ROUND); cr.setLineJoin(cairo.LineJoin.ROUND);
+    cr.setLineWidth(2.4);
+    for (const a of s.arcs) {
+        const mx = (a.x1 + a.x2) / 2, k = 2 / 3;
+        cr.moveTo(a.x1, a.y);
+        cr.curveTo(a.x1 + k * (mx - a.x1), a.y + k * (a.cy - a.y), a.x2 + k * (mx - a.x2), a.y + k * (a.cy - a.y), a.x2, a.y);
+        cr.stroke();
+    }
+    for (const l of s.lines) {
+        cr.setLineWidth(l.w); cr.moveTo(...l.pts[0]);
+        for (const p of l.pts.slice(1))
+            cr.lineTo(...p);
+        cr.stroke();
+    }
+    for (const g of s.rings) {
+        cr.setLineWidth(g.w); cr.newSubPath(); cr.arc(g.cx, g.cy, g.r, 0, 2 * Math.PI); cr.stroke();
+    }
+}
+const EYES = {
+    idle: () => draw('idle', 'open'), smile: () => draw('idle', 'smile'), sleep: () => draw('sleep', 'open'),
+    wink: () => draw('idle', 'wink'), content: () => draw('idle', 'content'), startled: () => draw('idle', 'startled'),
+    drowsy: () => draw('sleep', 'drowsy'), squeeze: () => draw('idle', 'squeeze'), dizzy: () => draw('idle', 'dizzy'),
+    knocked: () => draw('idle', 'knocked'),
 };
 
 // [eyes, symbol, name, when]
@@ -93,7 +79,7 @@ const SEQ = [
 ];
 
 const GAP = 18, M = 16;
-const COLS = mode === 'sequences' ? 5 : 5;
+const COLS = 5;
 const W = M * 2 + COLS * PW + (COLS - 1) * GAP;
 const H = mode === 'sequences' ? M + SEQ.length * 96 : M + Math.ceil(SHEET.length / COLS) * 84;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);

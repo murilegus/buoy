@@ -5,6 +5,7 @@ import {
     FRAMES, POSES, PALETTE, FOREGROUND, LIGHT_LAMPS, FRAME_MS, ONCE_FRAMES, SIZE,
     poseName, moves, lampColour, frameAt, cells, HELLO_MS, helloAt,
     EYE_MODES, eyesMode, STROLL, STEP_MS, BLINK_MS, nextBeat, beatFrames, eyesShapes, EYES_BOX,
+    EYE_RESTS, eyesRest, EXPRESSIONS, ENTER_MS, eyesEnter, HOLD, HOLD_FRAMES, holdPlays, releaseEyes,
 } from '../src/buoy@murilegus/lib/kit/model/mascot.js';
 import plan from '../src/buoy@murilegus/lib/modules/mascot/idle.js';
 import {element, planIdle, planMinimal, planCompact, planExpanded} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
@@ -228,8 +229,13 @@ eq(STROLL.map(b => b.name), ['rest', 'look left', 'stroll right', 'back', 'blink
 eq(STROLL.map(b => b.hold), [4500, 1250, 1500, 2500, 3000, 1250, 7000], 'stroll: the holds (2× faster than the first demo)');
 eq(STROLL.map(b => b.steps), [0, 3, 6, 3, 0, 0, 0], 'stroll: steps of 3 px — 3 left, 6 right, 3 back');
 eq(STROLL.every(b => ['open', 'blink', 'smile'].includes(b.eyes)), true, 'stroll: never missed, waiting or sleep eyes');
-eq([nextBeat(0, 0.5).next, nextBeat(6, 0.5).next, nextBeat(7, 0.5).beat.name, nextBeat(-1, 0.5).beat.name],
-    [1, 0, 'rest', 'long rest'], 'nextBeat: wraps both ways');
+eq([nextBeat(0, 0.5).next, nextBeat(6, 0.5).next, nextBeat(13, 0.5).next, nextBeat(7, 0.5).beat.name, nextBeat(-1, 0.5).beat.name,
+    nextBeat(14, 0.5).beat.name], [1, 7, 0, 'rest', 'long rest', 'rest'], 'nextBeat: wraps both ways, over two cycles');
+eq([nextBeat(5, 0.5).beat.eyes, nextBeat(12, 0.5).beat.eyes, nextBeat(19, 0.5).beat.eyes, nextBeat(-2, 0.5).beat.eyes],
+    ['smile', 'wink', 'smile', 'wink'], 'nextBeat: the smile and the wink take turns, a cycle each');
+eq([nextBeat(12, 0.5).beat.name, nextBeat(12, 0.5).holdMs, nextBeat(8, 0.5).beat.eyes], ['smile', 1250, 'open'],
+    'nextBeat: the wink keeps the smile\'s beat and hold; beats without alt are the same both cycles');
+eq(STROLL[5].eyes, 'smile', 'nextBeat: STROLL itself is not changed by the wink');
 eq([nextBeat(0, 0).holdMs, nextBeat(0, 1).holdMs, nextBeat(0, 0.5).holdMs], [3375, 5625, 4500], 'nextBeat: hold ±25 % with rand 0 and 1');
 eq([nextBeat(6, -3).holdMs, nextBeat(6, 9).holdMs, nextBeat(6, NaN).holdMs], [5250, 8750, 7000],
     'nextBeat: rand clamped to 0..1, NaN the middle');
@@ -258,9 +264,73 @@ eq([nextBeat(6, -3).holdMs, nextBeat(6, 9).holdMs, nextBeat(6, NaN).holdMs], [52
     const blink = eyesShapes('idle', {eyes: 'blink'}).bars[0];
     ok(Math.abs(blink.h - 1.2) < 1e-9 && Math.abs(blink.y + blink.h / 2 - 16) < 1e-9, 'blink: 12 % high, on the eyes\' middle');
     eq(eyesShapes('idle', {eyes: 'smile'}).arcs, [{x1: -13.5, x2: -4, y: 18, cy: 11.5}, {x1: 3.5, x2: 13, y: 18, cy: 11.5}], 'smile: two arcs');
-    const all = [...EYE_MODES.map(m => eyesShapes(m)), eyesShapes('idle', {dx: -9}), eyesShapes('idle', {dx: 9})];
-    const xs = all.flatMap(s => [...s.bars.flatMap(b => [b.x, b.x + b.w]), ...s.arcs.flatMap(a => [a.x1, a.x2])]);
-    ok(Math.min(...xs) >= -EYES_BOX.w / 2 && Math.max(...xs) <= EYES_BOX.w / 2, 'every frame fits the eyes box');
+    const all = [...EYE_MODES.map(m => eyesShapes(m)), eyesShapes('idle', {dx: -9}), eyesShapes('idle', {dx: 9}),
+        ...EXPRESSIONS.map(x => eyesShapes('idle', {eyes: x}))];
+    const xs = all.flatMap(s => [...s.bars.flatMap(b => [b.x, b.x + b.w]), ...s.arcs.flatMap(a => [a.x1, a.x2]),
+        ...s.lines.flatMap(l => l.pts.map(p => p[0])), ...s.rings.flatMap(r => [r.cx - r.r, r.cx + r.r])]);
+    const ys = all.flatMap(s => [...s.bars.flatMap(b => [b.y, b.y + b.h]), ...s.arcs.flatMap(a => [a.y, a.cy]),
+        ...s.lines.flatMap(l => l.pts.map(p => p[1])), ...s.rings.flatMap(r => [r.cy - r.r, r.cy + r.r])]);
+    ok(Math.min(...xs) >= -EYES_BOX.w / 2 && Math.max(...xs) <= EYES_BOX.w / 2, 'every frame fits the eyes box (x)');
+    ok(Math.min(...ys) >= 0 && Math.max(...ys) <= EYES_BOX.h, 'every frame fits the eyes box (y)');
+    eq(Object.keys(eyesShapes('idle')), ['bars', 'arcs', 'lines', 'rings'], 'shapes: always the four lists');
+}
+// the expressions (MASCOT.md § Expressions)
+{
+    eq(EXPRESSIONS, ['wink', 'content', 'drowsy', 'startled', 'squeeze', 'dizzy', 'knocked'], 'expressions: the seven');
+    for (const x of EXPRESSIONS) {
+        const s = eyesShapes('idle', {eyes: x});
+        ok(s.bars.length + s.arcs.length + s.lines.length + s.rings.length > 0, `expression ${x}: draws something`);
+        eq(eyesShapes('sleep', {eyes: x}), eyesShapes('idle', {eyes: x}), `expression ${x}: drawn whatever the mode`);
+    }
+    const wink = eyesShapes('idle', {eyes: 'wink'});
+    eq([wink.bars.length, wink.arcs.length], [1, 1], 'wink: one open bar, one closed arc');
+    eq(wink.arcs[0], eyesShapes('idle', {eyes: 'smile'}).arcs[1], 'wink: the closed eye is the smile\'s right arc');
+    eq(eyesShapes('idle', {eyes: 'wink', dx: 3}).bars[0].x, -8, 'wink: follows the stroll\'s dx');
+    eq(eyesShapes('sleep', {eyes: 'wink', dx: 3}).bars[0].x, -11, 'wink: dx only in mode idle');
+    ok(eyesShapes('idle', {eyes: 'content'}).arcs.every(a => a.cy > a.y), 'content: arcs bend down (u u), unlike the smile');
+    ok(eyesShapes('idle', {eyes: 'drowsy'}).bars.every(b => b.lid && b.h < 10), 'drowsy: half-height bars with a flat lid');
+    eq(eyesShapes('idle', {eyes: 'startled'}).rings.map(r => r.cx), [-8.5, 8.5], 'startled: a ring on each eye');
+    eq(eyesShapes('idle', {eyes: 'squeeze'}).lines.map(l => l.pts.length), [3, 3], 'squeeze: two chevrons');
+    ok(eyesShapes('idle', {eyes: 'squeeze'}).lines[0].pts[1][0] > eyesShapes('idle', {eyes: 'squeeze'}).lines[0].pts[0][0],
+        'squeeze: the left eye points right (>)');
+    const dizzy = eyesShapes('idle', {eyes: 'dizzy'}).lines;
+    eq(dizzy.map(l => l.pts.length), [49, 49], 'dizzy: two spirals of 48 segments');
+    ok(dizzy[0].pts[10][0] > -8.5 && dizzy[1].pts[10][0] < 8.5, 'dizzy: the spirals turn opposite ways');
+    eq(eyesShapes('idle', {eyes: 'knocked'}).lines.length, 4, 'knocked: two crosses');
+}
+// why asleep, and the reactions to a mode change
+{
+    eq(EYE_RESTS, ['still', 'saver', 'away', 'night'], 'rest: the four reasons');
+    eq([eyesRest({animations: false, powerSaver: true, idleInput: true, daypart: 'night'}), eyesRest({powerSaver: true, idleInput: true}),
+        eyesRest({idleInput: true, daypart: 'night'}), eyesRest({daypart: 'night'}), eyesRest({daypart: 'noon'}), eyesRest()],
+    ['still', 'saver', 'away', 'night', null, null], 'rest: still › saver › away › night; null awake');
+    const idle = {mode: 'idle', rest: null, stroll: true};
+    const st = (mode, rest = null, stroll = true) => ({mode, rest, stroll});
+    eq(eyesEnter(st('missed'), idle), {eyes: 'content', ms: 1250}, 'enter: the amber light goes out → content');
+    eq(eyesEnter(idle, st('sleep', 'away')), {eyes: 'drowsy', ms: 1000}, 'enter: 60 s without input → drowsy first');
+    eq(eyesEnter(idle, st('sleep', 'night')), {eyes: 'drowsy', ms: 1000}, 'enter: night → drowsy first');
+    eq([eyesEnter(idle, st('sleep', 'saver')), eyesEnter(idle, st('sleep', 'still'))], [null, null],
+        'enter: power-saver or animations off → straight to sleep');
+    eq(eyesEnter(st('sleep', 'away'), idle), {eyes: 'startled', ms: 600}, 'enter: input after the 60 s sleep → startled');
+    eq([eyesEnter(st('sleep', 'night'), idle), eyesEnter(st('sleep', 'saver'), idle)], [null, null],
+        'enter: only the away sleep wakes startled');
+    eq([eyesEnter(st('missed'), st('idle', null, false)), eyesEnter(st('idle', null, false), st('sleep', 'away', false)),
+        eyesEnter(st('sleep', 'away'), st('idle', null, false))], [null, null, null], 'enter: never with the stroll off');
+    eq([eyesEnter(st('waiting'), idle), eyesEnter(idle, st('missed')), eyesEnter(st('missed'), st('sleep', 'night')), eyesEnter(idle, idle)],
+        [null, null, null, null], 'enter: red going out, a light coming, amber into sleep, no change → none');
+    eq([eyesEnter(null, idle), eyesEnter(idle, null)], [null, null], 'enter: nothing before or after → none');
+    eq(ENTER_MS, {content: 1250, drowsy: 1000, startled: 600}, 'enter: the three lengths');
+}
+// press and hold
+{
+    eq(HOLD, {clickMs: 500, dizzyMs: 1500, knockedMs: 3000, afterMs: 1000}, 'hold: the times');
+    eq(HOLD_FRAMES.map(f => [f.at, f.eyes]), [[0, 'squeeze'], [1500, 'dizzy'], [3000, 'knocked']], 'hold: > < → @ @ → x x');
+    eq([holdPlays({mode: 'idle', stroll: true}), holdPlays({mode: 'idle'}), holdPlays({mode: 'idle', stroll: false}),
+        holdPlays({mode: 'sleep', stroll: true}), holdPlays({mode: 'missed'}), holdPlays(null)],
+    [true, true, false, false, false, false], 'hold: plays only with open eyes that may move');
+    eq([releaseEyes(200), releaseEyes(2999), releaseEyes(3000), releaseEyes(9000), releaseEyes(NaN)],
+        [null, null, {eyes: 'knocked', ms: 1000}, {eyes: 'knocked', ms: 1000}, null],
+        'release: x x stays 1 s once it got there, else straight back');
 }
 
 // --- the idle plan `mascot` (modules/mascot/idle.js) ---------------------------------
@@ -274,6 +344,10 @@ eq([nextBeat(6, -3).holdMs, nextBeat(6, 9).holdMs, nextBeat(6, NaN).holdMs], [52
         plan.present({now: day, data: {animations: false}}).leading.eyes], ['sleep', 'sleep', 'sleep'],
     'plan: away, power-saver, animations off → asleep');
     eq(plan.present({now: day, data: {idleInput: false, powerSaver: false, animations: true}}).leading.eyes, 'idle', 'plan: the feed says all clear');
+    eq([plan.present({now: day, data: {idleInput: true}}).leading.rest, plan.present({now: night}).leading.rest,
+        plan.present({now: day, data: {powerSaver: true, idleInput: true}}).leading.rest, plan.present({now: day, data: {animations: false}}).leading.rest],
+    ['away', 'night', 'saver', 'still'], 'plan: asleep says why (rest)');
+    ok(!('rest' in plan.present({now: day}).leading), 'plan: awake has no rest');
     eq(plan.present({now: day, data: null}).leading.eyes, 'idle', 'plan: no feed state yet');
     eq(plan.present({now: day}, {'idle-mascot-stroll': false}).leading.stroll, false, 'plan: idle-mascot-stroll off → still eyes');
     const late = new Date(2026, 10, 14, 22, 30);
@@ -286,6 +360,10 @@ eq([nextBeat(6, -3).holdMs, nextBeat(6, 9).holdMs, nextBeat(6, NaN).holdMs], [52
     eq([planIdle({light: 'missed', plan: asleep}).leading.mode, planIdle({light: 'waiting', plan: asleep}).leading.mode,
         planIdle({light: 'off', plan: asleep}).leading.mode], ['missed', 'waiting', 'sleep'],
     'plan in the pill: a light shows through even at night');
+    eq([planIdle({light: 'off', plan: asleep}).leading.rest, planIdle({light: 'missed', plan: asleep}).leading.rest], ['night', null],
+        'plan in the pill: rest kept asleep, dropped under a light');
+    eq(element({eyes: 'sleep', rest: 'bogus'}, {leading: true}).rest, null, 'element: an unknown rest is null');
+    eq(element({eyes: 'idle', rest: 'away'}, {leading: true}).rest, null, 'element: rest only when asleep');
 }
 
 print('mascot: ok');

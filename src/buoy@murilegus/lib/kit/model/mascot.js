@@ -396,6 +396,95 @@ export function eyesMode({light = 'off', daypart = null, idleInput = false, powe
     return 'idle';
 }
 
+/** Why the eyes sleep (eyesRest). */
+export const EYE_RESTS = Object.freeze(['still', 'saver', 'away', 'night']);
+
+/**
+ * Why the eyes sleep, for the reactions (MASCOT.md § Expressions): 'still' (animations off) ›
+ * 'saver' (power-saver) › 'away' (60 s without input) › 'night'; null when not asleep. Only
+ * `away` and `night` doze off first, and only `away` wakes startled.
+ *
+ * @param {object} [s]  as eyesMode, without the light
+ * @param {?string} [s.daypart]
+ * @param {boolean} [s.idleInput]
+ * @param {boolean} [s.powerSaver]
+ * @param {boolean} [s.animations]
+ * @returns {?string}
+ */
+export function eyesRest({daypart = null, idleInput = false, powerSaver = false, animations = true} = {}) {
+    if (animations === false)
+        return 'still';
+    if (powerSaver === true)
+        return 'saver';
+    if (idleInput === true)
+        return 'away';
+    return daypart === 'night' ? 'night' : null;
+}
+
+// --- the expressions (MASCOT.md § Expressions, 2026-11-14) ---------------------------------
+
+/** The seven expressions: frames drawn over the mode's eyes for a while. */
+export const EXPRESSIONS = Object.freeze(['wink', 'content', 'drowsy', 'startled', 'squeeze', 'dizzy', 'knocked']);
+
+/** A mode change's reaction, how long it shows before the new mode's eyes. */
+export const ENTER_MS = Object.freeze({content: 1250, drowsy: 1000, startled: 600});
+
+/**
+ * The reaction to the eyes changing from `was` to `now` (each {mode, rest, stroll}), or null:
+ * the amber light going out → `content`; dozing off (away or night) → `drowsy`; input
+ * again after the 60 s sleep → `startled`. Never with the stroll off (the still eyes).
+ *
+ * @param {?object} was
+ * @param {object} now
+ * @returns {?{eyes: string, ms: number}}
+ */
+export function eyesEnter(was, now) {
+    if (!was || !now || now.stroll === false)
+        return null;
+    let eyes = null;
+    if (was.mode === 'missed' && now.mode === 'idle')
+        eyes = 'content';
+    else if (was.mode === 'idle' && now.mode === 'sleep' && (now.rest === 'away' || now.rest === 'night'))
+        eyes = 'drowsy';
+    else if (was.mode === 'sleep' && was.rest === 'away' && now.mode === 'idle')
+        eyes = 'startled';
+    return eyes ? {eyes, ms: ENTER_MS[eyes]} : null;
+}
+
+/**
+ * Press and hold on the pill (MASCOT.md § Expressions): released within `clickMs` it is a
+ * click (Home); squeeze (> <) from the press, dizzy (spirals) at `dizzyMs`, knocked out (x x) at
+ * `knockedMs`, which stays
+ * `afterMs` after the release.
+ */
+export const HOLD = Object.freeze({clickMs: 500, dizzyMs: 1500, knockedMs: 3000, afterMs: 1000});
+export const HOLD_FRAMES = Object.freeze([
+    Object.freeze({at: 0, eyes: 'squeeze', dx: 0}),
+    Object.freeze({at: HOLD.dizzyMs, eyes: 'dizzy', dx: 0}),
+    Object.freeze({at: HOLD.knockedMs, eyes: 'knocked', dx: 0}),
+]);
+
+/**
+ * Only open eyes that may move play: mode `idle`, the stroll on. In any other mode a press
+ * is only a click, on the release.
+ *
+ * @param {object} e  the eyes element {mode, stroll}
+ * @returns {boolean}
+ */
+export function holdPlays(e) {
+    return e?.mode === 'idle' && e.stroll !== false;
+}
+
+/**
+ * After a hold of `ms`: knocked out for `afterMs` when it got there, else back to the stroll at once.
+ *
+ * @param {number} ms
+ * @returns {?{eyes: string, ms: number}}
+ */
+export function releaseEyes(ms) {
+    return Number.isFinite(ms) && ms >= HOLD.knockedMs ? {eyes: 'knocked', ms: HOLD.afterMs} : null;
+}
+
 /**
  * The stroll (MASCOT.md "The stroll"): in mode `idle` only, one beat at a time, each a few
  * single frames then a hold (`still`: no frame, the eyes are already so). `eyes`: 'open' | 'blink' (12 % high for BLINK_MS, then open) |
@@ -407,7 +496,8 @@ export const STROLL = Object.freeze([
     {name: 'stroll right', eyes: 'open', dx: 9, steps: 6, hold: 1500},
     {name: 'back', eyes: 'open', dx: 0, steps: 3, hold: 2500},
     {name: 'blink', eyes: 'blink', dx: 0, steps: 0, hold: 3000},
-    {name: 'smile', eyes: 'smile', dx: 0, steps: 0, hold: 1250},
+    // every other cycle a wink in its place (MASCOT.md § Expressions)
+    {name: 'smile', eyes: 'smile', alt: 'wink', dx: 0, steps: 0, hold: 1250},
     {name: 'long rest', eyes: 'open', dx: 0, steps: 0, hold: 7000},
 ].map(b => Object.freeze(b)));
 
@@ -417,16 +507,18 @@ export const BLINK_MS = 110;
 export const JITTER = 0.25;
 
 /**
- * @param {number} i  the beat to play (any integer: wraps)
+ * @param {number} i  the beat to play (any integer: wraps over two cycles, the second with
+ *   each beat's `alt` eyes: the smile's wink)
  * @param {number} rand  0..1 (Math.random in the Shell, fixed in tests)
  * @returns {{beat: object, next: number, holdMs: number}}
  */
 export function nextBeat(i, rand) {
     const n = STROLL.length;
-    const at = ((Math.trunc(i) % n) + n) % n;
-    const beat = STROLL[at];
+    const at = ((Math.trunc(i) % (2 * n)) + 2 * n) % (2 * n);
+    const base = STROLL[at % n];
+    const beat = at >= n && base.alt ? {...base, eyes: base.alt} : base;
     const r = Math.max(0, Math.min(1, Number.isFinite(rand) ? rand : 0.5));
-    return {beat, next: (at + 1) % n, holdMs: Math.round(beat.hold * (1 - JITTER + 2 * JITTER * r))};
+    return {beat, next: (at + 1) % (2 * n), holdMs: Math.round(beat.hold * (1 - JITTER + 2 * JITTER * r))};
 }
 
 /**
@@ -455,16 +547,56 @@ export const EYES_BOX = Object.freeze({w: 48, h: 32});
 
 /**
  * What to draw (MASCOT.md § Eyes, the 120 × 32 pill's numbers about its centre), in px at
- * 1em: x from the box's centre, y from its top. Bars are rounded rects; the smile two
- * quadratic arcs, stroke 2.4, round caps.
+ * 1em: x from the box's centre, y from its top. Bars are rounded rects (`lid`: a flat top);
+ * arcs quadratic, stroke 2.4, round caps; lines polylines of `w`, round caps and joins;
+ * rings circles of stroke `w`. An expression (EXPRESSIONS) is drawn whatever the mode.
  *
  * @param {string} mode  one of EYE_MODES
  * @param {object} [frame]
- * @param {string} [frame.eyes]  'open' | 'blink' | 'smile' (mode `idle` only)
+ * @param {string} [frame.eyes]  'open' | 'blink' | 'smile' (mode `idle` only), or an expression
  * @param {number} [frame.dx]  the stroll's offset (mode `idle` only)
- * @returns {{bars: object[], arcs: object[]}}
+ * @returns {{bars: object[], arcs: object[], lines: object[], rings: object[]}}
  */
-export function eyesShapes(mode, {eyes = 'open', dx = 0} = {}) {
+export function eyesShapes(mode, frame = {}) {
+    const s = shapesOf(mode, frame);
+    return {bars: s.bars ?? [], arcs: s.arcs ?? [], lines: s.lines ?? [], rings: s.rings ?? []};
+}
+
+// an eye's centre (the bars' middles, rounded to the pair's symmetry)
+const EL = -8.5, ER = 8.5;
+
+// a spiral from the top, `turns` round, inward to 15 % of r; sign 1 clockwise
+function spiral(cx, cy, r, turns, sign) {
+    const pts = [];
+    for (let i = 0; i <= 48; i++) {
+        const t = i / 48, a = sign * t * turns * 2 * Math.PI - Math.PI / 2, rr = r * (1 - t * 0.85);
+        pts.push([Math.round((cx + rr * Math.cos(a)) * 100) / 100, Math.round((cy + rr * Math.sin(a)) * 100) / 100]);
+    }
+    return {pts, w: 1.8};
+}
+
+const EXPRESSION_SHAPES = {
+    wink: dx => ({bars: [{x: -11 + dx, y: 11, w: 4.5, h: 10, r: 2.2}], arcs: [{x1: 3.5 + dx, x2: 13 + dx, y: 18, cy: 11.5}]}),
+    content: () => ({arcs: [{x1: EL - 4.5, x2: EL + 4.5, y: 14, cy: 21}, {x1: ER - 4.5, x2: ER + 4.5, y: 14, cy: 21}]}),
+    drowsy: () => ({bars: [{x: -11.5, y: 15, w: 5.5, h: 6, r: 2.75, lid: true}, {x: 5.5, y: 15, w: 5.5, h: 6, r: 2.75, lid: true}]}),
+    startled: () => ({rings: [{cx: EL, cy: 16, r: 3.8, w: 2.2}, {cx: ER, cy: 16, r: 3.8, w: 2.2}]}),
+    squeeze: () => ({
+        lines: [
+            {pts: [[EL - 3.5, 11.5], [EL + 2.5, 16], [EL - 3.5, 20.5]], w: 2.4},
+            {pts: [[ER + 3.5, 11.5], [ER - 2.5, 16], [ER + 3.5, 20.5]], w: 2.4},
+        ],
+    }),
+    dizzy: () => ({lines: [spiral(EL, 16, 5.2, 1.75, 1), spiral(ER, 16, 5.2, 1.75, -1)]}),
+    knocked: () => ({
+        lines: [EL, ER].flatMap(c => [
+            {pts: [[c - 3, 13], [c + 3, 19]], w: 2.4}, {pts: [[c + 3, 13], [c - 3, 19]], w: 2.4},
+        ]),
+    }),
+};
+
+function shapesOf(mode, {eyes = 'open', dx = 0} = {}) {
+    if (EXPRESSION_SHAPES[eyes])
+        return EXPRESSION_SHAPES[eyes](mode === 'idle' ? dx : 0);
     const bar = (x, y, w, h, r) => ({x, y, w, h, r});
     switch (mode) {
     case 'waiting':

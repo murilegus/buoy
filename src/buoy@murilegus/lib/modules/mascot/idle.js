@@ -7,7 +7,7 @@
  */
 
 import {daypartAt} from '../../kit/model/daypart.js';
-import {eyesMode} from '../../kit/model/mascot.js';
+import {eyesMode, eyesRest} from '../../kit/model/mascot.js';
 
 /** This plan's own keys (ARCHITECTURE rule 9: shown under it on the Island page). */
 export const keys = Object.freeze(['idle-mascot-stroll']);
@@ -20,18 +20,21 @@ const NAMES = {idle: 'Bu', sleep: 'Bu, asleep'};
  * @param {*} [ctx.starts]  `daypart-starts`
  * @param {?object} [ctx.data]  the feed's state {idleInput, powerSaver, animations}
  * @param {object} [opts]  this plan's keys' values
- * @returns {object} presentation data for the idle pill: {leading: {eyes, stroll}}
+ * @returns {object} presentation data for the idle pill: {leading: {eyes, rest?, stroll}}
  */
 export function present({now, starts, data = null}, opts = {}) {
     const d = data ?? {};
-    const mode = eyesMode({
+    const s = {
         daypart: daypartAt(now, starts),
         idleInput: d.idleInput === true,
         powerSaver: d.powerSaver === true,
         animations: d.animations !== false,
-    });
+    };
+    const mode = eyesMode(s);
+    const stroll = opts['idle-mascot-stroll'] !== false;
     return {
-        leading: {eyes: mode, stroll: opts['idle-mascot-stroll'] !== false},
+        // `rest`: why asleep, for the reactions (MASCOT.md § Expressions)
+        leading: mode === 'sleep' ? {eyes: mode, rest: eyesRest(s), stroll} : {eyes: mode, stroll},
         text: null,
         accessibleName: NAMES[mode],
     };

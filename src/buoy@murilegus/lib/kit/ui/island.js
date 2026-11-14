@@ -10,9 +10,11 @@ import {shapesFor, idleSample, PILL_GAP} from '../model/shapes.js';
 import {Pill} from './pill.js';
 import {Home} from './home.js';
 import {showKeys} from './present/elements.js';
+import {eyesHold} from './present/motion.js';
 import {TYPE_ENTRY} from './present/compact.js';
 import {planCompact, planExpanded, planMissed} from '../model/presentation.js';
 import {ALERT_MS, ALERT_TURN_MS, pillWindow} from '../model/stack.js';
+import {HOLD} from '../model/mascot.js';
 import {planStrip, pressTarget} from '../model/tabs.js';
 import {Presence} from '../services/presence.js';
 import {actionForKey, step} from '../model/keys.js';
@@ -107,6 +109,7 @@ export class Island {
         this._capturedId = 0;
         this._capturedOn = null;
         this._grab = null;
+        this._poke = null;          // a press held on Bu's eyes (_onPillPress)
         this._typing = null;        // the pill whose card's Other is typed in (_typeIn)
         this._typingSoon = false;
         this._lettingGo = false;
@@ -685,14 +688,55 @@ export class Island {
         return actor?.has_style_class_name?.('buoy-badge') ?? false;
     }
 
-    // SPEC §2b, INDICATORS.md: tabs.js pressTarget decides
+    // SPEC §2b, INDICATORS.md: tabs.js pressTarget decides. While Bu's eyes show in the idle
+    // pill, the click is on the release, so a press can be held (MASCOT.md § Expressions; a
+    // trial before every idle pill, Ethan 2026-11-14)
     _onPillPress(pill, ev) {
         if (this._fromButton(ev))
             return Clutter.EVENT_PROPAGATE;
         if (this._open)
             return Clutter.EVENT_STOP;         // inside an open pill: only buttons act
+        const hold = pill.id === null ? eyesHold(pill.content) : null;
+        if (hold) {
+            this._pressPoke(pill, hold);
+            return Clutter.EVENT_STOP;
+        }
         this._activate(pill, this._onBadge(ev));
         return Clutter.EVENT_STOP;
+    }
+
+    // The press on the eyes: held under a grab (as ui/slider.js holds a drag) so the release
+    // comes back here wherever the pointer goes. The eyes play only in mode `idle`; then a
+    // hold of HOLD.clickMs or more is poking Bu and opens nothing.
+    _pressPoke(pill, hold) {
+        this._endPoke();
+        const grab = global.stage.grab(pill.content);
+        this._poke = {pill, hold, grab, t0: GLib.get_monotonic_time(), plays: hold.press()};
+        // another grab took over (a modal): the release will not come
+        grab.connect('notify::revoked', () => {
+            if (this._poke?.grab === grab)
+                this._releasePoke(false, true);
+        });
+    }
+
+    // click: released on the pill; revoked: the grab was taken, the eyes just go back
+    _releasePoke(click, revoked = false) {
+        const h = this._poke;
+        if (!h)
+            return;
+        this._endPoke();
+        const ms = (GLib.get_monotonic_time() - h.t0) / 1000;
+        if (h.plays)
+            h.hold.release(revoked ? 0 : ms);
+        // still the idle pill, released soon enough (or eyes that do not play): a click
+        if (click && !this._destroyed && !this._open && h.pill.id === null && (!h.plays || ms < HOLD.clickMs))
+            this._activate(h.pill);
+    }
+
+    _endPoke() {
+        const h = this._poke;
+        this._poke = null;
+        h?.grab.dismiss();
     }
 
     // A click on the pill, or Enter on the ringed one.
@@ -748,6 +792,14 @@ export class Island {
     }
 
     _onPillRelease(_pill, ev) {
+        if (this._poke) {
+            // released off the pill is no click, as a St.Button (the grab sends it here)
+            const [x, y] = ev.get_coords();
+            const at = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
+            const {pill} = this._poke;
+            this._releasePoke(!!at && (pill.content.contains(at) || pill.bg.contains(at)));
+            return Clutter.EVENT_STOP;
+        }
         return this._fromButton(ev) ? Clutter.EVENT_PROPAGATE : Clutter.EVENT_STOP;
     }
 
@@ -1144,6 +1196,7 @@ export class Island {
 
     destroy() {
         this._destroyed = true;
+        this._endPoke();
         this._syncIdleShown();      // tells the idle plan to stop its clock
         this.onIdleShown = null;
         this.onIdleScroll = null;
