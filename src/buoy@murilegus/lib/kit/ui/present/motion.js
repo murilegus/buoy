@@ -6,7 +6,10 @@ import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-import {EYES_BOX, FOREGROUND, SIZE as GRID, beatFrames, cells, eyesShapes, frameAt, helloAt, lampColour, moves, nextBeat} from '../../model/mascot.js';
+import {
+    EYES_BOX, FOREGROUND, HOLD_FRAMES, SIZE as GRID, beatFrames, cells, eyesEnter, eyesShapes, frameAt, helloAt, holdPlays,
+    lampColour, moves, nextBeat, releaseEyes,
+} from '../../model/mascot.js';
 import {TYPE_MS, nextTurn, typedLine, typedSplit} from '../../model/presentation.js';
 import {label} from './parts.js';
 
@@ -452,15 +455,45 @@ export function mascot(e, size, activity) {
     return area;
 }
 
+// The eyes last built (MASCOT.md § Expressions): a mode change rebuilds the idle pill, so the
+// new eyes read here what the old ones showed to react to the change (eyesEnter), and a
+// rebuild with the same mode (hover, a light coming back) carries a reaction on. Forgotten
+// when the eyes were gone longer than a rebuild takes.
+const EYES_REBUILT_MS = 500;
+let eyesWas = null;     // {mode, rest, stroll, enter: ?{eyes, until}, gone: ms | 0, owner}
+/** @type {WeakMap<Clutter.Actor, object>} the press-and-hold of each eyes area */
+const eyesHolds = new WeakMap();
+
 /**
- * Bu's eyes, the idle plan `mascot` (MASCOT.md § Eyes): one St.DrawingArea as high as the
- * pill, in the body's colour. In mode `idle` with `stroll` the eyes follow the script
- * (kit/model/mascot.js STROLL): stepped frames, never eased, each one repaint of this small
- * area, then a hold. One timer for steps and beats alike, only while mapped and with
- * animations on; gone on unmap and destroy, and with the content on a mode change (the
- * idle pill is rebuilt), so a new mode starts again at beat 1.
+ * The press-and-hold of the eyes in this actor's tree, or null when it has none (island.js
+ * opens Home on the release while the eyes show: MASCOT.md § Expressions).
  *
- * @param {object} e  {type: 'eyes', mode, stroll}
+ * @param {?Clutter.Actor} actor
+ * @returns {?{plays: function(): boolean, press: function(): boolean, release: function(number): void}}
+ */
+export function eyesHold(actor) {
+    if (!actor)
+        return null;
+    if (eyesHolds.has(actor))
+        return eyesHolds.get(actor);
+    for (const child of actor.get_children?.() ?? []) {
+        const hold = eyesHold(child);
+        if (hold)
+            return hold;
+    }
+    return null;
+}
+
+/**
+ * Bu's eyes, the idle plan `mascot` (MASCOT.md § Eyes, § Expressions): one St.DrawingArea as
+ * high as the pill, in the body's colour. In mode `idle` with `stroll` the eyes follow the
+ * script (kit/model/mascot.js STROLL): stepped frames, never eased, each one repaint of
+ * this small area, then a hold. A reaction to the mode change (eyesEnter) or a press and
+ * hold cuts the script; after it the script starts again at beat 1. One timer for all of
+ * it, only while mapped and with animations on; gone on unmap and destroy, and with the
+ * content on a mode change (the idle pill is rebuilt).
+ *
+ * @param {object} e  {type: 'eyes', mode, rest, stroll}
  * @param {number} k  the em's scale: 1 at 16 px (the cell 24)
  * @returns {St.DrawingArea}
  */
@@ -468,8 +501,23 @@ export function eyes(e, k = 1) {
     const area = new St.DrawingArea({style_class: 'buoy-eyes', y_align: Clutter.ActorAlign.CENTER});
     area.set_size(Math.round(EYES_BOX.w * k), Math.round(EYES_BOX.h * k));
     let frame = {eyes: 'open', dx: 0};
-    let beat = 0, timer = 0;
+    let beat = 0, timer = 0, held = false, destroyed = false;
     const strolls = e.mode === 'idle' && e.stroll !== false;
+
+    // what the eyes before showed: a change is reacted to, the same carries its reaction on
+    const t0 = Date.now();
+    const cur = {mode: e.mode, rest: e.rest ?? null, stroll: e.stroll !== false};
+    const was = eyesWas && (!eyesWas.gone || t0 - eyesWas.gone < EYES_REBUILT_MS) ? eyesWas : null;
+    let enter = null;
+    if (was && was.mode === cur.mode && was.rest === cur.rest && was.stroll === cur.stroll) {
+        enter = was.enter && was.enter.until > t0 ? was.enter : null;
+    } else {
+        const r = eyesEnter(was, cur);
+        enter = r ? {eyes: r.eyes, until: t0 + r.ms} : null;
+    }
+    const me = {...cur, enter, gone: 0};
+    eyesWas = me;
+
     const show = f => {
         if (f.eyes === frame.eyes && f.dx === frame.dx)
             return;
@@ -488,35 +536,85 @@ export function eyes(e, k = 1) {
             return GLib.SOURCE_REMOVE;
         });
     };
-    const play = () => {
-        const {beat: b, next, holdMs} = nextBeat(beat, Math.random());
-        beat = next;
-        const frames = beatFrames(b, frame.dx);
+    // frames [{at, eyes, dx}] one after another, then `then` after `tail` ms (none: stay)
+    const runFrames = (frames, tail = null, then = null) => {
         let i = 0;
         const run = () => {
             const f = frames[i++];
             show(f);
             if (i < frames.length)
                 after(frames[i].at - f.at, run);
-            else
-                after(holdMs, play);
+            else if (then)
+                after(tail, then);
         };
         if (frames.length)
             run();
-        else
-            after(holdMs, play);
+        else if (then)
+            after(tail, then);
     };
+    const play = () => {
+        const {beat: b, next, holdMs} = nextBeat(beat, Math.random());
+        beat = next;
+        runFrames(beatFrames(b, frame.dx), holdMs, play);
+    };
+    const live = () => area.mapped && St.Settings.get().enable_animations;
     const sync = () => {
         clear();
+        held = false;
         beat = 0;
+        if (enter && enter.until > Date.now()) {
+            // shown from the first paint; timed only while it can move (not yet mapped: kept
+            // for the map, a reaction still left when the new eyes show)
+            show({eyes: enter.eyes, dx: 0});
+            if (live()) {
+                after(enter.until - Date.now(), () => {
+                    enter = me.enter = null;
+                    sync();
+                });
+            }
+            return;
+        }
+        enter = me.enter = null;
         show({eyes: 'open', dx: 0});
-        if (strolls && area.mapped && St.Settings.get().enable_animations)
+        if (strolls && live())
             play();
     };
-    if (strolls) {
-        area.connect('notify::mapped', sync);
-        area.connect('destroy', clear);
-    }
+    area.connect('notify::mapped', sync);
+    area.connect('destroy', () => {
+        destroyed = true;
+        clear();
+        if (eyesWas === me)
+            me.gone = Date.now();
+    });
+    if (enter)
+        frame = {eyes: enter.eyes, dx: 0};
+
+    // press and hold (island.js): > < → @ @ → x x, cutting the stroll
+    const plays = () => !destroyed && holdPlays(e) && live();
+    eyesHolds.set(area, {
+        plays,
+        press() {
+            if (!plays())
+                return false;
+            clear();
+            enter = me.enter = null;
+            held = true;
+            runFrames(HOLD_FRAMES);
+            return true;
+        },
+        release(ms) {
+            if (destroyed || !held)
+                return;
+            clear();
+            held = false;
+            const r = releaseEyes(ms);
+            if (r && live())
+                runFrames([{at: 0, eyes: r.eyes, dx: 0}], r.ms, sync);
+            else
+                sync();
+        },
+    });
+
     const [r, g, b] = rgb(FOREGROUND);
     area.connect('repaint', () => {
         const cr = area.get_context();
@@ -528,20 +626,40 @@ export function eyes(e, k = 1) {
             const x = cx + bar.x * s, y = bar.y * s, bw = bar.w * s, bh = bar.h * s;
             const rad = Math.min(bar.r * s, bw / 2, bh / 2);
             cr.newSubPath();
-            cr.arc(x + bw - rad, y + rad, rad, -Math.PI / 2, 0);
+            if (bar.lid) {          // a flat top: the half-closed lid
+                cr.moveTo(x, y);
+                cr.lineTo(x + bw, y);
+            } else {
+                cr.arc(x + bw - rad, y + rad, rad, -Math.PI / 2, 0);
+            }
             cr.arc(x + bw - rad, y + bh - rad, rad, 0, Math.PI / 2);
             cr.arc(x + rad, y + bh - rad, rad, Math.PI / 2, Math.PI);
-            cr.arc(x + rad, y + rad, rad, Math.PI, 1.5 * Math.PI);
+            if (!bar.lid)
+                cr.arc(x + rad, y + rad, rad, Math.PI, 1.5 * Math.PI);
             cr.closePath();
             cr.fill();
         }
+        cr.setLineCap(Cairo.LineCap.ROUND);
+        cr.setLineJoin(Cairo.LineJoin.ROUND);
         // the smile: quadratic arcs as cubic curves (2/3 of the way to the control point)
         cr.setLineWidth(2.4 * s);
-        cr.setLineCap(Cairo.LineCap.ROUND);
         for (const a of shapes.arcs) {
             const x1 = cx + a.x1 * s, x2 = cx + a.x2 * s, y = a.y * s, qx = (x1 + x2) / 2, qy = a.cy * s;
             cr.moveTo(x1, y);
             cr.curveTo(x1 + 2 / 3 * (qx - x1), y + 2 / 3 * (qy - y), x2 + 2 / 3 * (qx - x2), y + 2 / 3 * (qy - y), x2, y);
+            cr.stroke();
+        }
+        for (const l of shapes.lines) {
+            cr.setLineWidth(l.w * s);
+            cr.moveTo(cx + l.pts[0][0] * s, l.pts[0][1] * s);
+            for (const [px, py] of l.pts.slice(1))
+                cr.lineTo(cx + px * s, py * s);
+            cr.stroke();
+        }
+        for (const ring of shapes.rings) {
+            cr.setLineWidth(ring.w * s);
+            cr.newSubPath();
+            cr.arc(cx + ring.cx * s, ring.cy * s, ring.r * s, 0, 2 * Math.PI);
             cr.stroke();
         }
         cr.$dispose();

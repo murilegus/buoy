@@ -15,7 +15,7 @@
  *                     (a screen recording's clock, design/compact "Chia sẻ và quay màn hình")
  *   {icon, backdrop: true}: the icon on a round fill-2 plate where it has a cell of its
  *                     own (a compact's leading 40: a recording, design/compact)
- *   leading only:     {eyes: 'idle'|'sleep'|'missed'|'waiting', stroll?} — Bu's eyes, the
+ *   leading only:     {eyes: 'idle'|'sleep'|'missed'|'waiting', rest?, stroll?} — Bu's eyes, the
  *                     idle plan `mascot` (MASCOT.md § Eyes); planIdle puts the light's
  *                     mode over the plan's
  *   leading only:     {mascot: '<pose>', icon?} — Bu (MASCOT.md); an unknown pose falls
@@ -55,7 +55,7 @@
  */
 
 import {mnemonics} from './keys.js';
-import {EYE_MODES, poseName} from './mascot.js';
+import {EYE_MODES, EYE_RESTS, poseName} from './mascot.js';
 import {STATE_COLOURS} from './palette.js';
 
 export const MAX_ACTIONS = {minimal: 1, compact: 3, expanded: 3};
@@ -207,7 +207,9 @@ export function element(e, {leading = false} = {}) {
         if (!leading)
             return null;
         const mode = EYE_MODES.includes(e.eyes) ? e.eyes : 'idle';
-        return {type: 'eyes', mode, stroll: e.stroll !== false};
+        // `rest`: why asleep (mascot.js eyesRest), read by the reactions
+        const rest = mode === 'sleep' && EYE_RESTS.includes(e.rest) ? e.rest : null;
+        return {type: 'eyes', mode, rest, stroll: e.stroll !== false};
     }
     if ('mascot' in e) {
         const pose = leading ? poseName(e.mascot) : null;
@@ -312,7 +314,7 @@ export function planIdle({light, plan = null} = {}) {
     let leading = lead.leading;
     // a light always shows through Bu's eyes (MASCOT.md § Eyes: waiting › missed › the plan's)
     if (leading?.type === 'eyes' && (light === 'waiting' || light === 'missed'))
-        leading = {...leading, mode: light};
+        leading = {...leading, mode: light, rest: null};
     return {leading, text: str(plan.text), trailing: element(plan.trailing), light: lead.light};
 }
 

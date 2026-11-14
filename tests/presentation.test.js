@@ -225,13 +225,13 @@ eq(lightSlot(undefined, {idle: false}), null, 'no light in minimal');
 eq(planIdle({light: 'missed'}), {light: 'missed', leading: null, text: null, trailing: null}, 'idle none carries the light');
 eq(planIdle({}), {light: 'off', leading: null, text: null, trailing: null}, 'idle none: grey light');
 // Bu's eyes, the idle plan `mascot` (MASCOT.md § Eyes)
-eq(element({eyes: 'sleep'}, {leading: true}), {type: 'eyes', mode: 'sleep', stroll: true}, 'eyes: a leading element');
+eq(element({eyes: 'sleep'}, {leading: true}), {type: 'eyes', mode: 'sleep', rest: null, stroll: true}, 'eyes: a leading element');
 eq(element({eyes: 'sleep', stroll: false}, {leading: true}).stroll, false, 'eyes: stroll off');
 eq(element({eyes: 'wink'}, {leading: true}).mode, 'idle', 'eyes: an unknown mode is idle');
 eq(element({eyes: 'idle'}), null, 'eyes: leading only');
 {
     const plan = {leading: {eyes: 'sleep'}};
-    eq(planIdle({light: 'off', plan}).leading, {type: 'eyes', mode: 'sleep', stroll: true}, 'eyes: no light, the plan\'s mode');
+    eq(planIdle({light: 'off', plan}).leading, {type: 'eyes', mode: 'sleep', rest: null, stroll: true}, 'eyes: no light, the plan\'s mode');
     eq([planIdle({light: 'missed', plan}).leading.mode, planIdle({light: 'missed', plan}).light], ['missed', 'missed'],
         'eyes: amber shows through, and the light stays in its slot');
     eq(planIdle({light: 'waiting', plan}).leading.mode, 'waiting', 'eyes: red shows through');

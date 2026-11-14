@@ -484,6 +484,44 @@ change, then stillness until the next — not a loop (ARCHITECTURE rule 8).
   score 10). Turned off from gsettings, picking it in Show or switching its row on turns the
   module on again (prefs, as for any module that is only a plan).
 
+### Expressions
+
+*Decided and built 2026-11-14 (Ethan), FEATURES M4 "Bu's eyes: expressions".* Seven more,
+drawn as in design/mascot "Biểu cảm của mắt" (`docs/design/mascot/render/eyes.js`): rounded bars,
+arcs and polylines only (the spiral is a polyline).
+
+| Expression | When | For |
+|---|---|---|
+| `\| ^` wink | beat 6 of the stroll, in turn with `^ ^` | 1.25 s |
+| `u u` content | the amber light goes out (the missed list was read) | 1.25 s |
+| `_ _` drowsy (a half lid) | just before `sleep` (60 s without input, or night) | 1 s, then `- -` |
+| `o o` startled | input again after the 60 s sleep | 0.6 s |
+| `> <` squeeze | pressing the pill | while held |
+| `@ @` dizzy | held 1.5 s | until 3 s |
+| `x x` knocked out | held 3 s | until released, then 1 s |
+
+- `- -` is asleep, `_ _` is drowsy.
+- A reaction cuts the stroll at once, whatever beat it is in; after it the stroll restarts at
+  beat 1.
+- A light (`missed`, `waiting`) still wins. Asleep for night, power saving or animations off,
+  or with `idle-mascot-stroll` off: no reaction at all.
+- **Press and hold.** The idle pill opens Home on the press (`kit/ui/pill.js`
+  `button-press-event` → `island._onPillPress`), so there is no hold today. While the eyes show,
+  Home opens on the release instead: released within 0.5 s it is a click and opens Home;
+  held longer it is poking Bu and the release opens nothing. Only in mode `idle`; in any other
+  mode the release opens Home. A trial on the eyes first; then every idle pill (Ethan,
+  2026-11-14). The hold's one timer lives only while held and 1 s after. Released off the
+  pill it is no click, as a St.Button; another grab taking over ends it without one.
+- Code: `kit/model/mascot.js` `EXPRESSIONS`, `eyesShapes` (the expressions whatever the mode;
+  shapes as `bars` (with `lid`), `arcs`, `lines`, `rings`), `eyesRest` (why asleep: still ›
+  saver › away › night, given by the plan as `rest`), `eyesEnter(was, now)`, `ENTER_MS`,
+  `HOLD`, `HOLD_FRAMES`, `holdPlays`, `releaseEyes`; the wink is the smile beat's `alt`, every
+  other cycle (`nextBeat` wraps over two). `kit/ui/present/motion.js` `eyes()` keeps what the
+  last eyes showed (a mode change rebuilds the idle pill) to react, carries a reaction across
+  a rebuild, and runs the hold on its one timer; `eyesHold(actor)` finds it. `kit/ui/island.js`
+  `_onPillPress` holds under `global.stage.grab` (as ui/slider.js) and clicks on the release.
+  Tests in `tests/mascot.test.js` (shapes, reactions, hold, the wink's turn, `rest`).
+
 ## Name
 
 **Bu**. A quick web search on 2026-11-03 found no app or GNOME extension mascot called
