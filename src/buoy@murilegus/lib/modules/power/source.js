@@ -1,9 +1,10 @@
+import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Source} from '../../kit/services/source.js';
 import {batteryToggle, profilesOf, profilesToggle, setProfile, stopWaiting, takeSilent, whenQuickSettings} from '../../kit/services/power.js';
-import {STATE, powerEvents, readBattery} from './adapter.js';
+import {STATE, powerEvents, readBattery, slow, slowLate} from './adapter.js';
 
 const FLASH = 'flash';
 const LOW = 'low';
@@ -35,6 +36,8 @@ export class PowerSource extends Source {
         this._lowLevel = null;      // the low warning shown: 'low' | 'critical' | 'action'
         this._flash = null;         // the last flash: 'charging' | 'battery' | 'full'
         this._profile = undefined;  // the power mode last read (undefined: not read yet)
+        this._plugAt = null;        // when the plug in flashed (µs, monotonic): the slow charger's window
+        this._slowShown = false;    // this plug in's slow charger flashed
         whenQuickSettings(this, () => this._watch());
     }
 
@@ -47,7 +50,8 @@ export class PowerSource extends Source {
         this._toggle = this._proxy = this._modes = null;
         for (const key of [FLASH, LOW, MODE])
             this._stack?.end(this._id(key));
-        this._last = this._lowLevel = this._flash = null;
+        this._last = this._lowLevel = this._flash = this._plugAt = null;
+        this._slowShown = false;
         this._profile = undefined;
         super.disable();
     }
@@ -122,10 +126,21 @@ export class PowerSource extends Source {
         if (flash) {
             this._show(FLASH, {what: flash, ...cur}, {fresh: true});
             this._flash = flash;
+            this._plugAt = flash === 'charging' ? GLib.get_monotonic_time() : null;
+            this._slowShown = flash === 'charging' && slow(cur);    // the rate was there at once
+        } else if (slowLate(cur, this._sincePlug(), this._slowShown)) {
+            // the rate came 10–15 s after the plug in (adapter.js SLOW_WINDOW): the slow
+            // charger flashes once more, or the plug in's flash takes it if still up
+            this._show(FLASH, {what: 'charging', ...cur}, {fresh: !this._stack.has(this._id(FLASH))});
+            this._slowShown = true;
         } else if (this._flash && this._stack.has(this._id(FLASH)) && plugAgain(this._flash, cur)) {
             // the estimate and the rate come a few seconds after the plug: the flash takes them
             this._show(FLASH, {what: this._flash, ...cur});
         }
+    }
+
+    _sincePlug() {
+        return this._plugAt === null ? null : (GLib.get_monotonic_time() - this._plugAt) / 1000;
     }
 
     _id(key) {

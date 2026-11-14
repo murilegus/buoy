@@ -1,6 +1,6 @@
 // Run: gjs -m tests/power.test.js   (pure: the power adapter, FEATURES M4 "Power")
 import adapter, {
-    TTL, SLOW_W, SLOW_BELOW, STATE, WARNING, readBattery, plugged, lowLevel, powerEvents, slow, duration,
+    TTL, SLOW_W, SLOW_BELOW, SLOW_WINDOW, STATE, WARNING, readBattery, plugged, lowLevel, powerEvents, slow, slowLate, duration,
 } from '../src/buoy@murilegus/lib/modules/power/adapter.js';
 import {PRIORITY, validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 import {planCompact, planMinimal} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
@@ -148,3 +148,16 @@ const plain = planCompact(validate({id: 'n', kind: 'notification', app: 'x', tex
 eq(['selected' in plain.actions[0], 'tight' in plain.card], [false, false], 'kit: other buttons get no `selected`, other cards are not tight');
 eq(planMinimal(validate({id: 'p', kind: 'power', app: 'system', ...adapter.power({what: 'battery', percentage: 64, timeToEmpty: 12000})})).trailing,
     {type: 'text', text: '64%'}, 'kit: the percentage is drawn as text (a bare string would be an icon\'s name)');
+
+// --- the slow charger's late flash (UPower's rate comes 10–15 s after the plug in) -------
+const SLOWB = B({state: STATE.CHARGING, percentage: 40, rate: 15});
+eq(SLOW_WINDOW, 30000, 'late slow: a window of 30 s after the plug in');
+eq([slowLate(SLOWB, 12000, false), slowLate(SLOWB, SLOW_WINDOW, false), slowLate(SLOWB, 0, false)], [true, true, true],
+    'late slow: the rate came within the window: flash');
+eq([slowLate(SLOWB, SLOW_WINDOW + 1, false), slowLate(SLOWB, null, false), slowLate(SLOWB, -5, false)], [false, false, false],
+    'late slow: past the window, no plug in flash, a clock gone back: no flash');
+eq(slowLate(SLOWB, 12000, true), false, 'late slow: once per plug in');
+eq([slowLate(B({state: STATE.CHARGING, percentage: 40, rate: 45}), 12000, false), slowLate(B({state: STATE.CHARGING, percentage: 40}), 12000, false),
+    slowLate(B({state: STATE.CHARGING, percentage: 85, rate: 15}), 12000, false), slowLate(B({state: STATE.FULL, percentage: 40, rate: 15}), 12000, false)],
+[false, false, false, false], 'late slow: a fast charger, no rate yet, above 80 %, not charging: no flash');
+eq(pill({what: 'charging', state: STATE.CHARGING, percentage: 72}).text, 'Charging', 'plug in: "Charging" while UPower has no estimate yet');
