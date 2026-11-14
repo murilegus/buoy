@@ -9,8 +9,10 @@ import {SpringRunner, afterLayout} from './spring.js';
  * to the next choice (design/motion "Đổi tab"): the tab strip (kit/ui/home.js) and the
  * Media tab's players (modules/media/tab.js, design/media "Nhiều player").
  *
- *   group   an St.Widget with the default fixed layout: the marker, then the row, at 0, 0 of
- *           its padding box (its own style draws any background)
+ *   group   an St.Widget with a bin layout, so the row sits inside its padding (a fixed layout
+ *           puts children at 0, 0 and leaves the padding all on the right and bottom: mutter
+ *           clutter-fixed-layout.c allocate); the marker, placed by hand, is offset by the
+ *           same padding. Its own style draws any background.
  *   row     an St.BoxLayout of the choices, rebuilt by its owner
  *
  * The owner rebuilds the row and calls `slide(before, key)` with what `places()` read before:
@@ -26,21 +28,37 @@ export class SlidingRow {
      * @param {string} opts.markerClass  the marker's (its fill and radius)
      */
     constructor({groupClass = '', rowClass = '', markerClass}) {
-        this.group = new St.Widget({style_class: groupClass, x_align: Clutter.ActorAlign.START, y_align: Clutter.ActorAlign.CENTER});
+        this.group = new St.Widget({
+            style_class: groupClass, layout_manager: new Clutter.BinLayout(),
+            x_align: Clutter.ActorAlign.START, y_align: Clutter.ActorAlign.CENTER,
+        });
         this.marker = new St.Widget({style_class: markerClass, visible: false});
         this.row = new St.BoxLayout({style_class: rowClass});
         this.group.add_child(this.marker);
         this.group.add_child(this.row);
         this._keys = new WeakMap();
-        this._markerRun = new SpringRunner(this.marker, ({x, w}) => {
-            this.marker.set_position(Math.round(x), 0);
-            this.marker.set_size(Math.max(0, Math.round(w)), this.row.height);
+        // the group's padding (left, top): a fixed-position child of a bin layout is placed
+        // from the group's own origin (clutter-bin-layout.c allocate), the row from inside it
+        this._pad = [0, 0];
+        this.group.connect('style-changed', () => {
+            const node = this.group.get_theme_node();
+            this._pad = [node.get_padding(St.Side.LEFT), node.get_padding(St.Side.TOP)];
+            const x = this._markerRun.value('x');
+            if (x !== null)
+                this._placeMarker(x, this._markerRun.value('w') ?? 0);
         });
+        this._markerRun = new SpringRunner(this.marker, ({x, w}) => this._placeMarker(x, w));
         this._later = null;
         this.group.connect('destroy', () => {
             this._later?.();
             this._later = null;
         });
+    }
+
+    // x and w in the row's coordinates (places())
+    _placeMarker(x, w) {
+        this.marker.set_position(Math.round(x) + this._pad[0], this._pad[1]);
+        this.marker.set_size(Math.max(0, Math.round(w)), this.row.height);
     }
 
     /**
