@@ -1,6 +1,6 @@
 // Run: gjs -m tests/notification.test.js   (no Shell needed; adapters are pure)
 import adapter, {
-    TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, agentShows, sharedLine, cardText, stackGroups, countText, rowText,
+    TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, agentShows, powerShows, sharedLine, cardText, stackGroups, countText, rowText,
     HELD_MS, waitedInQueue, Turns, MAX_WAITING, burstHeader, sharedBurst, missedRow,
 } from '../src/buoy@murilegus/lib/modules/notification/adapter.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
@@ -341,6 +341,22 @@ eq(missedRow(2, [{name: '', icon: 'x'}, {name: 'A', icon: '  '}]).icons, [], 'no
     eq(agentShows('com.anthropic.Claude', 'Buoy — Implementation', null), false, 'no agent on the island (the module off): a notification');
     eq(agentShows('org.gnome.Nautilus', 'Buoy — Implementation', session), false, 'another app with that title: a notification');
     eq(agentShows('Claude', '', {attributes: {name: ''}}), false, 'no title, no name: never a match');
+}
+
+// --- GNOME's low battery while the power pill shows it (FEATURES M4 "Power") -------------------
+{
+    const low = {kind: 'power', attributes: {low: 'low', percentage: 18}};
+    eq(powerShows('gnome-power-panel', '18% battery remaining', low), true, 'gsd\'s Low Battery at the laptop\'s percentage: no pill of its own');
+    eq(powerShows('gnome-power-panel', '17% battery remaining', low), true, 'within 1: gsd rounds with %.0f');
+    eq(powerShows('gnome-power-panel', 'Connect power now', {...low, attributes: {low: 'critical', percentage: 4}}), true,
+        'Battery Almost Empty has no percentage: taken');
+    eq(powerShows('gnome-power-panel', 'Wireless mouse is low on power (42%)', low), false, 'a mouse at another percentage: a notification');
+    eq(powerShows('gnome-power-panel', '18% battery remaining', {kind: 'power', attributes: {}}), false, 'a power flash, not the warning: a notification');
+    eq(powerShows('gnome-power-panel', '18% battery remaining', null), false, 'no power pill (the module off): a notification');
+    eq(powerShows('org.gnome.Nautilus', '18% battery remaining', low), false, 'another app: a notification');
+    eq(powerShows('gnome-power-panel', null, low), true, 'no body: taken');
+    eq(powerShows('gnome-power-panel', '18% battery remaining', {kind: 'power', attributes: {low: 'low', percentage: null}}), false,
+        'no percentage known: one that says a percentage stays a notification');
 }
 
 print('notification: ok');

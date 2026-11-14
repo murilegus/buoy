@@ -7,7 +7,7 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 
 import {Source} from '../../kit/services/source.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
-import {DISMISS, Turns, actionIndex, agentShows, missedRow, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
+import {DISMISS, Turns, actionIndex, agentShows, missedRow, powerShows, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
 const REPLACE_KEY = 'notification-replace-banners';
@@ -206,6 +206,11 @@ export class NotificationSource extends Source {
         // Claude's own notification for a session the agent's pill shows: read, no pill
         const title = n.title ?? '';
         if (this._stack?.find(a => a.kind === 'agent' && agentShows(app, title, a))) {
+            n.acknowledged = true;
+            return;
+        }
+        // GNOME's low battery while the power pill shows it: read, no pill (adapter.js powerShows)
+        if (this._stack?.find(a => a.kind === 'power' && powerShows(app, n.body, a))) {
             n.acknowledged = true;
             return;
         }

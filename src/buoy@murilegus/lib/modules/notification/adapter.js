@@ -142,6 +142,29 @@ export function agentShows(appId, title, activity) {
 }
 
 /**
+ * GNOME's own low battery notification while the power module shows the warning (FEATURES
+ * M4 "Power", Ethan 2026-11-14: Buoy takes its place). gsd sends it as app "Power"
+ * (desktop-entry gnome-power-panel, gsd-power-manager.c create_notification) when UPower's
+ * warning level rises: "Low Battery · 18% battery remaining", "Battery Almost Empty ·
+ * Connect power now". The same app sends a mouse's or a keyboard's low battery, with that
+ * device's percentage: one with a percentage is taken only when it is the laptop's (within
+ * 1: gsd rounds with printf's %.0f, Buoy with Math.round).
+ *
+ * @param {*} appId  the source's app id (source.js appIdOf)
+ * @param {*} body  the notification's body
+ * @param {?object} activity  the power module's low warning on the island, or null
+ * @returns {boolean} the power pill says it: no pill of its own
+ */
+export function powerShows(appId, body, activity) {
+    if (appId !== 'gnome-power-panel' || !activity?.attributes?.low)
+        return false;
+    const b = typeof body === 'string' ? body : '';
+    const pct = activity.attributes.percentage;
+    const said = [...b.matchAll(/(\d+)\s*%/g)].map(m => Number(m[1]));
+    return said.length === 0 ? !b.includes('%') : Number.isInteger(pct) && said.some(n => Math.abs(n - pct) <= 1);
+}
+
+/**
  * @param {number} count
  * @returns {string} the compact's line on a shared screen
  */

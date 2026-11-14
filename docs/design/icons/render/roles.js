@@ -31,7 +31,8 @@ const ROWS = [
     ['#', 'Lịch, giờ, thiết bị'],
     ['Lịch', 'x-office-calendar'], ['Tháng sau', 'go-next'], ['Giờ', 'preferences-system-time'], ['Hẹn giờ', 'alarm'],
     ['Điện thoại', 'phone'], ['Tab Thiết bị', 'computer'], ['Pin', 'battery-good'], ['Pin đầy', 'battery-full'], ['Pin yếu', 'battery-low'],
-    ['Pin đang sạc', 'battery-good-charging'],
+    ['Pin đang sạc', 'battery-good-charging'], ['Tiết kiệm pin', 'power-profile-power-saver'],
+    ['Cân bằng', 'power-profile-balanced'], ['Hiệu năng', 'power-profile-performance'],
     ['#', 'Tải về, chép, nhập'],
     ['Tải về', 'folder-download'], ['Mở thư mục', 'folder-open'], ['Mở tệp', 'document-open'], ['Tệp chữ', 'text-x-generic'],
     ['Đã chép', 'edit-copy'], ['Mật khẩu', 'dialog-password'], ['Ảnh', 'image-x-generic'], ['Clipboard', 'edit-paste'],
@@ -51,7 +52,10 @@ const ROWS = [
 ];
 const DRAWN = [...new Set(Object.values(SYMBOLIC).filter(s => s.startsWith('own:')))];
 
-const W = 760, RH = 19, TOP = 40, HALF = Math.ceil(ROWS.length / 2);
+// two columns, a group title never last in the left one
+const MID = Math.ceil(ROWS.length / 2), SPLIT = ROWS[MID - 1][0] === '#' ? MID - 1 : MID;
+const COLS = [ROWS.slice(0, SPLIT), ROWS.slice(SPLIT)];
+const W = 760, RH = 19, TOP = 40, HALF = Math.max(...COLS.map(c => c.length));
 const ownRows = Math.ceil(DRAWN.length / 9);
 const H = TOP + HALF * RH + 40 + ownRows * 84 + 64;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
@@ -93,7 +97,7 @@ for (const col of [0, 1]) {
     const x0 = 30 + col * 362;
     text('Vai trò', x0, TOP, {sz: 6, a: .5}); text('Icon', x0 + 110, TOP, {sz: 6, a: .5});
     text('File  <tên>-symbolic.svg', x0 + 136, TOP, {sz: 6, a: .5}); text('Hình từ', x0 + 262, TOP, {sz: 6, a: .5});
-    ROWS.slice(col * HALF, col * HALF + HALF).forEach(([role, file], i) => {
+    COLS[col].forEach(([role, file], i) => {
         const y = TOP + 14 + i * RH;
         if (role === '#') {
             text(file, x0, y + 3, {sz: 7, wt: 700, a: .9, rgb: C.ACCENT.map(v => Math.min(1, v + .3))});

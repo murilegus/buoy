@@ -59,6 +59,7 @@ src/buoy@murilegus/
     │   │   ├── daypart.js      hour → dawn…night from `daypart-starts` (2026-11-03)
     │   │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()` (2026-11-08)
     │   │   ├── palette.js      the colours by role, high contrast, the state colours (design/colours, 2026-11-12)
+    │   │   ├── power.js        UPower's states, the power modes, "42 min": the power module and Home's battery tile (2026-11-14)
     │   │   └── mascot.js       Bu: 13 pose grids, lamp rule, frame timing; MASCOT.md is the source (2026-11-03)
     │   ├── services/       the Shell side without actors: buses, files, Shell's objects, the
     │   │   │               one wall clock. Imports model/ and services/, never ui/, St or Clutter
@@ -68,6 +69,7 @@ src/buoy@murilegus/
     │   │   ├── files.js        small files read without blocking the Shell: readText, listInfos/listNames, ppidOf (EGO review, 2026-11-09); readPixels, a picture decoded small (2026-11-13)
     │   │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
     │   │   ├── sharing.js      the screen shared or recorded, from Shell's indicators (agent, notification; 2026-11-07)
+    │   │   ├── power.js        GNOME's battery and power-mode toggles in Quick Settings; switching the mode, silently from Home (2026-11-14)
     │   │   ├── presence.js     you at the screen: input in the last second, away (session idle, locked), DND (alerts; 2026-11-12)
     │   │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
     │   │   └── devtools.js     `dev-mode`'s module hot swap

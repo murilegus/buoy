@@ -71,6 +71,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Trộn bài, lặp, lặp một bài, mở app | `media-playlist-shuffle`, `media-playlist-repeat`, `-repeat-song`, `external-link` | `shuffle`, tự vẽ, tự vẽ, `arrow-up-right-from-square` |
   | Lịch, tháng sau, giờ, hẹn giờ, điện thoại, tab Thiết bị | `x-office-calendar`, `go-next`, `preferences-system-time`, `alarm`, `phone`, `computer` | `calendar`, `chevron-right`, `clock`, `alarm`, `smartphone`, `display` |
   | Pin, đầy, yếu, đang sạc | `battery-good`, `battery-full`, `battery-low`, `battery-good-charging` | tự vẽ |
+  | Chế độ năng lượng: tiết kiệm, cân bằng, hiệu năng | `power-profile-power-saver`, `-balanced`, `-performance` | tự vẽ, `scales-balanced`, tự vẽ (`speedometer`, kim hết cỡ) |
   | Tải về, mở thư mục, mở tệp, tệp chữ | `folder-download`, `folder-open`, `document-open`, `text-x-generic` | `arrow-down-to-line`, `folder-open`, `file`, `file-text` |
   | Đã chép, mật khẩu, ảnh, clipboard | `edit-copy`, `dialog-password`, `image-x-generic`, `edit-paste` | `copy`, `key`, `picture`, tự vẽ |
   | Bàn phím, thư (mẫu), thời tiết (dự phòng) | `input-keyboard`, `mail-unread`, `weather-overcast` | `keyboard`, `envelope`, `cloud` |
@@ -126,6 +127,15 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   (tam giác bo như `triangle-up` trên một thanh), Num Lock (khung `square-hashtag` với số 1 của
   `circle-number-1`), Fn Lock (khung đó với chữ fn), lặp và lặp một bài, clipboard, Bluetooth tắt,
   máy bay tắt (`plane` gạch chéo). Script: `render/draw-own.js`. **Chốt** (Ethan, 2026-11-12)
+
+- **Chế độ năng lượng** (Tiết kiệm pin / Cân bằng / Hiệu năng): hình như GNOME (Adwaita
+  `power-profile-*`) — lá, cân, đồng hồ đo. Cân là `scales-balanced` của Gravity. Đồng hồ là
+  `speedometer` của Gravity với kim quay về hết cỡ (kim gốc chỉ khoảng 40 %, không ra "hiệu năng").
+  Gravity không có lá nên Buoy tự vẽ theo cách của Gravity (nét 1.5, đầu tròn, lá bo hai góc r 7).
+  Cả hai ở `render/draw-own.js`. Tên file theo GNOME:
+  `power-profile-{power-saver,balanced,performance}-symbolic`. **Chốt** (Ethan, 2026-11-14)
+
+![Icon chế độ năng lượng: lá, cân, đồng hồ, ở 3× và 1×, trong pill](images/power-modes.vi.png)
 
 ![Icon tự vẽ cạnh icon của Gravity, ở 16 và ở 1× phóng 4](images/own.vi.png)
 

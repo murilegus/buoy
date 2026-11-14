@@ -142,6 +142,37 @@ icon truy cập từ xa của GNOME giữ sẵn các handle của chúng (`_hand
 (pill phụ cũng thấy). Trên pill, đồng hồ là trailing nên dùng màu của trailing, không phải chữ
 trắng như bản vẽ cũ.
 
+## Pin và chế độ năng lượng
+
+*Ethan, 2026-11-14 (mục M4 "Power").* Pin đọc từ proxy UPower mà Quick Settings đang giữ
+(`ui/status/system.js` PowerToggle), chế độ năng lượng từ nút chế độ của Quick Settings
+(`ui/status/powerProfiles.js`): Buoy không tạo proxy riêng.
+
+![Flash pin và flash đổi chế độ, ở đúng độ rộng](images/power-flash.vi.png)
+
+- **Flash 3 s** ở pill, rộng theo nội dung (8 + 24 + 6 + chữ + 6 + trailing + 8, tối thiểu 131):
+  cắm sạc "Đầy sau 42 phút · 72%" (chưa có ước tính: "Đang sạc"); rút "Còn 3 giờ 20 phút · 64%"
+  (chưa có: "Dùng pin"); đầy khi đang cắm "Đã sạc đầy · 100%" (đầy ở ngưỡng sạc: số thật).
+  **Chốt**
+- **Sạc chậm**: đang sạc dưới 20 W khi pin dưới 80 % (trên 80 % máy tự giảm tốc): chữ thành
+  "18 W · sạc chậm", thời gian xuống compact. Không đọc được tốc độ (EnergyRate) thì thôi. **Chốt**
+- **Pin yếu** (UPower: 20 % low, 5 % critical): "Pin yếu · 18%" (critical: "Pin sắp hết") **ở lại tới
+  khi cắm sạc**, mở compact của nó một lần (và lần nữa khi xuống critical); compact ghi "còn 25 phút"
+  hoặc "Cắm sạc ngay". Nó **thay thông báo "Low Battery" của GNOME** (gsd, app "Power"): thông báo
+  đó không thành pill. **Chốt**
+- **Mức ưu tiên**: flash 40 (mức của loại `power`); pin yếu 70, bằng thông báo nó thay, nên nhạc hay
+  agent không che. **Chốt**
+- **Đổi chế độ**: flash 3 s "Cân bằng" (icon của chế độ, không trailing), cả khi máy tự đổi (pin yếu
+  chuyển sang Tiết kiệm pin). Không flash lúc mới bật Buoy. **Chốt**
+- Bấm flash pin hoặc pill pin yếu: mở Cài đặt → Nguồn. **Chốt**
+
+![Compact chế độ năng lượng: rê chuột lên flash đổi chế độ](images/power-compact.vi.png)
+
+- **Rê chuột lên flash đổi chế độ → compact có 3 nút**: phần đầu 56 (đĩa tròn 40 `fill-2` như compact quay màn
+  hình, với icon chế độ, "Chế độ năng lượng", dòng dưới theo pin: "Cân bằng · pin 82%, đang sạc", "· đã sạc đầy", "· đang cắm, 80%" (giữ ở ngưỡng sạc), "· pin 64%"), hàng nút 32 cách mép 12 như card:
+  104. Nút đang chọn `fill-3`, chữ 600; các nút khác `fill-2`, `fg-muted`. Mỗi nút rộng theo chữ của nó, phần dư chia đều (chia ba bằng nhau thì "Performance" đậm bị cắt). Bấm: đổi ngay, flash mới cho
+  chế độ vừa chọn. **Chốt** (Ethan, 2026-11-14: phương án C, cùng với danh sách trong Home)
+
 ## Phương án đã cân nhắc
 
 Phần thân thụt theo cột chữ (như hiện tại) so với tận dụng cột dưới leading; với nhạc, phương án

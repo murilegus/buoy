@@ -42,6 +42,9 @@ export const SYMBOLIC = {
     'battery-full': 'own:battery-full',
     'battery-low': 'own:battery-low',
     'battery-good-charging': 'own:battery-charging',
+    'power-profile-power-saver': 'own:power-saver',
+    'power-profile-balanced': 'scales-balanced',
+    'power-profile-performance': 'own:power-performance',
     // downloads, copied, input
     'folder-download': 'arrow-down-to-line',
     'folder-open': 'folder-open',

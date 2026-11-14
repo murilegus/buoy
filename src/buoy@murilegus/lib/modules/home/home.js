@@ -1,18 +1,21 @@
 import Shell from 'gi://Shell';
 
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-
-import {batteryTile} from './adapter.js';
+import {batteryToggle, profilesOf, profilesToggle, setProfile} from '../../kit/services/power.js';
+import {batteryPage, batteryTile} from './adapter.js';
 
 const POWER_PANEL = 'gnome-power-panel.desktop';
 
 /**
- * Home's battery glance (design/home; Ethan, 2026-11-12: "Lấy pin của GNOME"): the battery
- * GNOME's Quick Settings already reads — the power toggle's UPower DisplayDevice proxy
- * (ui/status/system.js PowerToggle `_proxy`, reached through the panel's system indicator)
- * — no proxy of Buoy's own. Its `g-properties-changed` is watched only while Home is open
+ * Home's battery glance (design/home; Ethan, 2026-11-12: "Lấy pin của GNOME"; the power
+ * modes 2026-11-14): the battery GNOME's Quick Settings already reads — the power toggle's
+ * UPower DisplayDevice proxy (ui/status/system.js PowerToggle `_proxy`) — and its power-mode
+ * toggle (ui/status/powerProfiles.js PowerProfilesToggle `_proxy`), through
+ * kit/services/power.js: no proxy of Buoy's own. Both are watched only while Home is open
  * (the glance lives as long as the open). No battery (a desktop), or Shell's toggle not
- * found → not ready, and Home has no tile for it. A click opens Settings → Power.
+ * found → not ready, and Home has no tile for it.
+ * A click shows the power modes in place of Home's card and row (design/home "Ô pin và chế
+ * độ năng lượng"); choosing one switches at once, without the mode's flash (Home is in view),
+ * and keeps the page open. Without power modes, a click opens Settings → Power.
  */
 export class BatteryGlance {
     /**
@@ -23,20 +26,30 @@ export class BatteryGlance {
     constructor({close = null, changed = null} = {}) {
         this._close = close;
         this._changed = changed;
-        // Shell internals: QuickSettings._system (panel.js), Indicator._systemItem (status/system.js)
-        this._proxy = Main.panel.statusArea.quickSettings?._system?._systemItem?.powerToggle?._proxy ?? null;
-        this._tile = this._read();
-        this._proxy?.connectObject('g-properties-changed', () => {
-            const before = JSON.stringify(this._tile);
-            this._tile = this._read();
-            if (before !== JSON.stringify(this._tile))
+        this._proxy = batteryToggle()?._proxy ?? null;
+        this._modesToggle = profilesToggle();
+        this._key = '';
+        this._read();
+        const sync = () => {
+            const before = this._key;
+            this._read();
+            if (before !== this._key)
                 this._changed?.();
-        }, this);
+        };
+        this._proxy?.connectObject('g-properties-changed', sync, this);
+        this._modesToggle?.connectObject('notify::visible', sync, this);
+        this._modesToggle?._proxy?.connectObject('g-properties-changed', sync, this);
     }
 
     _read() {
         const p = this._proxy;
-        return p ? batteryTile({present: p.IsPresent, percentage: p.Percentage, state: p.State}) : null;
+        this._battery = p ? {
+            present: p.IsPresent, percentage: p.Percentage, state: p.State,
+            timeToFull: p.TimeToFull, timeToEmpty: p.TimeToEmpty,
+        } : null;
+        this._modes = profilesOf(this._modesToggle);
+        this._tile = this._battery ? batteryTile(this._battery, this._modes) : null;
+        this._key = JSON.stringify([this._tile, this._modes]);
     }
 
     /** @returns {boolean} a battery to show */
@@ -49,6 +62,12 @@ export class BatteryGlance {
         return this._tile;
     }
 
+    /** @returns {?object} the power modes' page (kit/ui/home.js), null without them */
+    page() {
+        const page = this._battery ? batteryPage(this._battery, this._modes) : null;
+        return page ? {...page, choose: id => setProfile(id, {silent: true})} : null;
+    }
+
     activate() {
         const app = Shell.AppSystem.get_default().lookup_app(POWER_PANEL);
         if (!app)
@@ -59,7 +78,9 @@ export class BatteryGlance {
 
     destroy() {
         this._proxy?.disconnectObject(this);
-        this._proxy = null;
+        this._modesToggle?.disconnectObject(this);
+        this._modesToggle?._proxy?.disconnectObject(this);
+        this._proxy = this._modesToggle = null;
         this._changed = null;
     }
 }

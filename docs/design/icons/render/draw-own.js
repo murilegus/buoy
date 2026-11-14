@@ -96,6 +96,19 @@ const ARM = [[1.75, 9.25, 1.75, 6.5], [4, 4.25, 13.5, 4.25], [13.5, 4.25, 11.5, 
 const REPEAT = [...ARM.map(a => seg(...a)), arc(4, 6.5, 2.25, 180, 270),
     ...ARM.map(([a, b, c, d]) => seg(...turn([a, b]), ...turn([c, d]))), arc(12, 9.5, 2.25, 0, 90)];
 
+// a leaf: the upper-left and lower-right corners round (r 7), the others nearly square
+function leaf(x0, y0, x1, y1, R, r) {
+    return `M${P(x0 + R, y0)}H${f(x1 - r)}A${r} ${r} 0 0 1 ${P(x1, y0 + r)}V${f(y1 - R)}` +
+        `A${R} ${R} 0 0 1 ${P(x1 - R, y1)}H${f(x0 + r)}A${r} ${r} 0 0 1 ${P(x0, y1 - r)}V${f(y0 + R)}` +
+        `A${R} ${R} 0 0 1 ${P(x0 + R, y0)}Z`;
+}
+function leafCcw(x0, y0, x1, y1, R) {
+    return `M${P(x0 + R, y0)}A${R} ${R} 0 0 0 ${P(x0, y0 + R)}V${f(y1)}H${f(x1 - R)}` +
+        `A${R} ${R} 0 0 0 ${P(x1, y1 - R)}V${f(y0)}Z`;
+}
+const LEAF = leaf(0.5, 0.5, 15.5, 15.5, 7, 1.5);
+const LEAF_IN = leafCcw(2, 2, 14, 14, 5.5);
+
 const ICONS = {
     'num-lock': path(KEYCAP + ONE, true),
     // f: a stem with a hook to the right and a short bar; n: a stem and an arch
@@ -117,7 +130,18 @@ const ICONS = {
     'repeat-1': strokes(...REPEAT) + strokes(seg(8.5, 6.5, 8.5, 9.5), seg(8.5, 6.5, 7.25, 7.5)),
     // a clipboard: a board with its clip on top
     'clipboard': path(frame(2.5, 2.5, 11, 13), true) + path(rr(5, 1, 6, 3.5, 1.5)),
+    // power saver (design/icons "Chế độ năng lượng"; Ethan, 2026-11-14): Gravity has no leaf —
+    // GNOME's (Adwaita power-profile-power-saver) in Gravity's way: two corners round, the stem
+    // out of the lower-left corner with two veins
+    'power-saver': path(LEAF + LEAF_IN, true) +
+        strokes(seg(1.25, 14.75, 10.5, 5.5), seg(5.6, 10.4, 9.5, 10.4), seg(7.6, 8.45, 7.6, 5.75)),
 };
+// performance: Gravity's speedometer, its needle turned from about 40 % to the end of the scale
+// (Ethan, 2026-11-14) — about its hub (8, 9.43), the centre of the needle's round end
+{
+    const [face, needle] = [...read(`${GRAVITY}/speedometer.svg`).matchAll(/ d="([^"]+)"/g)].map(m => m[1]);
+    ICONS['power-performance'] = path(face) + `<g transform="rotate(153 8.004 9.428)">${path(needle)}</g>`;
+}
 ICONS['touchpad-slash'] = slashed(ICONS.touchpad, 1.5, 14.5);
 ICONS['bluetooth-slash'] = slashed(inner(read(`${OWN}/bluetooth.svg`)));
 ICONS['plane-slash'] = slashed(inner(read(`${GRAVITY}/plane.svg`)));

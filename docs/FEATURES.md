@@ -66,7 +66,7 @@ to their places there (2026-11-12, Ethan).
 | [ ] | Attention on another workspace | click switches workspace and focuses (Mutter `demands-attention`) |
 | [ ] | Headphones / display plugged | choose on the pill; replaces GNOME's jack dialog when on |
 | [x] | Buoy light, the rest | red's hover: the waiting ask's own card, answered there (design/pill); away (GNOME's session idle, after `idle-delay`) and DND count endings as missed (`stack.setAway()`; the lock screen disables Buoy), with the presence watch of "Notifications as alerts" (INDICATORS, design/alerts-and-asks) |
-| [ ] | Power | charging, full, low; "18 W — slow"; "full in 42 min" (UPower) |
+| [x] | Power | as design/compact "Pin và chế độ năng lượng" and design/home "Ô pin và chế độ năng lượng" (2026-11-14, Ethan): 3 s flashes at plug in ("full in 42 min", "18 W · slow charger"), unplug and full; a low battery stays until plugged in, priority 70, in place of GNOME's notification; a power-mode flash with a three-button compact; the battery tile's mode and its mode list in Home; Buoy's own mode icons (design/icons) |
 | [ ] | Bluetooth device | connected, with its battery |
 | [ ] | USB / phone / webcam plugged | mount with one-tap eject |
 | [~] | Privacy dot | as design/colours (mic purple, camera green, screen red) and design/compact (screen sharing and recording in the pill, with Stop); hides GNOME's indicators (`privacy-dot`); "in call" with auto-DND. Left: "in call" with auto-DND and Home's "in use by …" row, to be designed first |
@@ -76,7 +76,7 @@ to their places there (2026-11-12, Ethan).
 | [x] | Bu's eyes: expressions | MASCOT.md § Expressions and design/mascot "Biểu cảm của mắt": wink, content, drowsy, startled, and the press-and-hold `> <` → `@ @` → `x x`; while the eyes show, Home opens on the release (2026-11-14, Ethan) |
 | [ ] | Print job progress | CUPS notifier |
 | [ ] | Terminal command finished in an unfocused tab | "exit 0 · 48 s", jump |
-| [ ] | VPN / Wi-Fi / captive portal; power profile | as feedback |
+| [ ] | VPN / Wi-Fi / captive portal | as feedback (the power profile moved to "Power", 2026-11-14) |
 | [ ] | Greeting | GREETING.md is true (Start, Wake, Welcome back, Leaving; special days) |
 
 ## M5 — Standalone tabs and developer modules `[ ]`

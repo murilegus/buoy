@@ -273,7 +273,11 @@ export function makeElement(e, mode, activity = null, sizes = {}) {
  * @returns {St.Button}
  */
 export function actionButton(a, activity) {
-    const face = a.label ? {label: a.label} : {child: new St.Icon({...iconProps(a.icon), icon_size: 16})};
+    /** @type {{label?: string, child?: Clutter.Actor}} */
+    let face = a.label ? {label: a.label} : {child: new St.Icon({...iconProps(a.icon), icon_size: 16})};
+    // one of a set of choices (`selected` given): its icon and its label
+    if ('selected' in a && a.label && a.icon)
+        face = {child: iconLabel(a.icon, a.label)};
     const button = new St.Button({
         style_class: 'buoy-action', can_focus: true,
         accessible_name: a.label ?? a.id,
@@ -363,6 +367,13 @@ export function restSlot(b, rest, key = null) {
 
 // An ask's button: its key after the label, shown only while the island holds the
 // keyboard (showKeys); hidden, it takes no room.
+function iconLabel(icon, text) {
+    const box = new St.BoxLayout({style_class: 'buoy-action-face', x_align: Clutter.ActorAlign.CENTER});
+    box.add_child(new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
+    box.add_child(new St.Label({text, y_align: Clutter.ActorAlign.CENTER}));
+    return box;
+}
+
 function keyedFace(face, key) {
     const box = new St.BoxLayout({style_class: 'buoy-action-face'});
     box.add_child(face.child ?? new St.Label({text: face.label, y_align: Clutter.ActorAlign.CENTER}));
