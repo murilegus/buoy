@@ -72,7 +72,7 @@ to their places there (2026-11-12, Ethan).
 | [~] | Privacy dot | as design/colours (mic purple, camera green, screen red) and design/compact (screen sharing and recording in the pill, with Stop); hides GNOME's indicators (`privacy-dot`); "in call" with auto-DND. Left: "in call" with auto-DND and Home's "in use by …" row, to be designed first |
 | [ ] | Meeting in 5 min · Join | SPEC §6b item 5 |
 | [ ] | Timer | pomodoro ring, keep-awake, its tab; a start tile in Home's glance (design/home) |
-| [ ] | Idle plan `mascot` | MASCOT.md § Eyes; module off by default; checked with `powertop` on real hardware |
+| [x] | Idle plan `mascot` | MASCOT.md § Eyes; on by default, last in Automatic's stack (2026-11-14, Ethan; was off); checked with `powertop` on real hardware |
 | [ ] | Print job progress | CUPS notifier |
 | [ ] | Terminal command finished in an unfocused tab | "exit 0 · 48 s", jump |
 | [ ] | VPN / Wi-Fi / captive portal; power profile | as feedback |

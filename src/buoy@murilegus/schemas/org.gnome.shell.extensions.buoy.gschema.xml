@@ -161,6 +161,11 @@
       <summary>Weather</summary>
       <description>The condition and temperature where you are.</description>
     </key>
+    <key name="modules-mascot" type="b">
+      <default>true</default>
+      <summary>Bu's eyes</summary>
+      <description>Bu's eyes in the idle pill: they look at what you missed, and sleep at night or when you are away.</description>
+    </key>
     <key name="idle-content" type="s">
       <choices>
         <choice value="auto"/>
@@ -168,6 +173,7 @@
         <choice value="clock"/>
         <choice value="weather"/>
         <choice value="calendar"/>
+        <choice value="mascot"/>
       </choices>
       <default>'auto'</default>
       <summary>Show</summary>
@@ -179,7 +185,7 @@
       <description>Shown when nothing with a time is left today.</description>
     </key>
     <key name="idle-auto-plans" type="as">
-      <default>['calendar', 'weather', 'clock']</default>
+      <default>['calendar', 'weather', 'clock', 'mascot']</default>
       <summary>Plans in the stack</summary>
       <description>The idle plans Automatic may show, in the order they take turns.</description>
     </key>
@@ -193,6 +199,11 @@
       <default>'5m'</default>
       <summary>Switch every</summary>
       <description>Minutes before the next plan takes its turn.</description>
+    </key>
+    <key name="idle-mascot-stroll" type="b">
+      <default>true</default>
+      <summary>Look around</summary>
+      <description>While you are at the desk, Bu's eyes look around, blink and smile now and then. Off, they stay still.</description>
     </key>
     <key name="idle-clock-style" type="s">
       <choices>

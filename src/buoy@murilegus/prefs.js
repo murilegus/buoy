@@ -649,10 +649,17 @@ export default class BuoyPreferences extends ExtensionPreferences {
         return page;
     }
 
-    // Show names a plan whose module is off: the pill falls back to nothing, and the row
-    // says why under it ("Clock is off, so the pill shows nothing") until the plan is back (kit/model/settings.js
+    // Show names a plan whose module is off (turned off from gsettings, or calendar's on
+    // Modules): the pill falls back to nothing, and the row says why under it ("Clock is off, so the pill shows nothing") until the plan is back (kit/model/settings.js
     // idleOffNote, 2026-11-06).
     _followPlanSwitches(row, description, plans) {
+        // picking a plan whose module is only that plan turns it on, as its row's switch
+        // does (a module that is only a plan has no switch of its own, 2026-11-14)
+        this._ids.push(this._settings.connect('changed::idle-content', () => {
+            const p = plans.find(x => x.id === this._settings.get_string('idle-content'));
+            if (p?.planOnly && p.enableKey && !this._settings.get_boolean(p.enableKey))
+                this._settings.set_boolean(p.enableKey, true);
+        }));
         const sync = () => {
             row.subtitle = idleOffNote(this._settings.get_string('idle-content'), plans,
                 k => this._settings.get_boolean(k)) ?? description;

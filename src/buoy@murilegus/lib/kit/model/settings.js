@@ -214,7 +214,7 @@ export function switchValue(entry, active) {
 // choice shows as its value with a capital.
 export const CHOICE_LABELS = {
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
-    'idle-content': {'auto': 'Automatic', 'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event'},
+    'idle-content': {'auto': 'Automatic', 'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event', 'mascot': 'Bu\'s Eyes'},
     'idle-clock-style': {
         'icon-text': 'Icon & text', 'icon-time': 'Icon & time', 'icon': 'Icon', 'text': 'Text', 'time': 'Time',
     },
@@ -437,7 +437,7 @@ export const HIDDEN_MODULES = new Set(['home']);
 // Idle plans, in the Island page's order (ARCHITECTURE rule 9): each one's
 // `idle-<id>-…` keys sit under it there, never on Modules. Prefs cannot import a module,
 // so the list is here.
-export const IDLE_PLANS = ['clock', 'weather', 'calendar'];
+export const IDLE_PLANS = ['clock', 'weather', 'calendar', 'mascot'];
 
 /**
  * @param {*} list  `idle-auto-plans`

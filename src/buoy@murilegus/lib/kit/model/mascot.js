@@ -368,3 +368,121 @@ export function cells(frame, lamp) {
     });
     return out;
 }
+
+// --- Bu's eyes: the idle plan `mascot` (MASCOT.md § Eyes, 2026-11-03) ------------------
+
+/** The four modes; the first that holds wins (eyesMode). */
+export const EYE_MODES = Object.freeze(['waiting', 'missed', 'sleep', 'idle']);
+
+/**
+ * The eyes' mode (MASCOT.md § Eyes): a light always shows through, then sleep wherever Bu
+ * must hold still, else idle.
+ *
+ * @param {object} [s]
+ * @param {string} [s.light]  the buoy light: 'off' | 'missed' | 'waiting'
+ * @param {string} [s.daypart]  kit/model/daypart.js
+ * @param {boolean} [s.idleInput]  60 s without input (the core idle monitor)
+ * @param {boolean} [s.powerSaver]  the power profile is `power-saver`
+ * @param {boolean} [s.animations]  `enable-animations`; false sleeps
+ * @returns {string} one of EYE_MODES
+ */
+export function eyesMode({light = 'off', daypart = null, idleInput = false, powerSaver = false, animations = true} = {}) {
+    if (light === 'waiting')
+        return 'waiting';
+    if (light === 'missed')
+        return 'missed';
+    if (daypart === 'night' || idleInput === true || powerSaver === true || animations === false)
+        return 'sleep';
+    return 'idle';
+}
+
+/**
+ * The stroll (MASCOT.md "The stroll"): in mode `idle` only, one beat at a time, each a few
+ * single frames then a hold (`still`: no frame, the eyes are already so). `eyes`: 'open' | 'blink' (12 % high for BLINK_MS, then open) |
+ * 'smile'; `dx` where the eyes end, reached in `steps` moves of 3 px, STEP_MS apart.
+ */
+export const STROLL = Object.freeze([
+    {name: 'rest', eyes: 'open', dx: 0, steps: 0, hold: 4500, still: true},   // "—": already so
+    {name: 'look left', eyes: 'open', dx: -9, steps: 3, hold: 1250},
+    {name: 'stroll right', eyes: 'open', dx: 9, steps: 6, hold: 1500},
+    {name: 'back', eyes: 'open', dx: 0, steps: 3, hold: 2500},
+    {name: 'blink', eyes: 'blink', dx: 0, steps: 0, hold: 3000},
+    {name: 'smile', eyes: 'smile', dx: 0, steps: 0, hold: 1250},
+    {name: 'long rest', eyes: 'open', dx: 0, steps: 0, hold: 7000},
+].map(b => Object.freeze(b)));
+
+export const STEP_MS = 90;
+export const BLINK_MS = 110;
+/** Each hold is jittered by ±25 %. */
+export const JITTER = 0.25;
+
+/**
+ * @param {number} i  the beat to play (any integer: wraps)
+ * @param {number} rand  0..1 (Math.random in the Shell, fixed in tests)
+ * @returns {{beat: object, next: number, holdMs: number}}
+ */
+export function nextBeat(i, rand) {
+    const n = STROLL.length;
+    const at = ((Math.trunc(i) % n) + n) % n;
+    const beat = STROLL[at];
+    const r = Math.max(0, Math.min(1, Number.isFinite(rand) ? rand : 0.5));
+    return {beat, next: (at + 1) % n, holdMs: Math.round(beat.hold * (1 - JITTER + 2 * JITTER * r))};
+}
+
+/**
+ * A beat's frames from where the eyes are: each {at: ms from the beat's start, eyes, dx}.
+ * A move is `steps` frames of an equal share of the way; a blink is two frames.
+ *
+ * @param {object} beat  a STROLL entry
+ * @param {number} fromDx  where the eyes are
+ * @returns {{at: number, eyes: string, dx: number}[]}
+ */
+export function beatFrames(beat, fromDx = 0) {
+    if (beat.still)
+        return [];
+    if (beat.eyes === 'blink')
+        return [{at: 0, eyes: 'blink', dx: fromDx}, {at: BLINK_MS, eyes: 'open', dx: fromDx}];
+    if (!beat.steps)
+        return [{at: 0, eyes: beat.eyes, dx: beat.dx}];
+    const out = [];
+    for (let k = 1; k <= beat.steps; k++)
+        out.push({at: (k - 1) * STEP_MS, eyes: beat.eyes, dx: fromDx + (beat.dx - fromDx) * k / beat.steps});
+    return out;
+}
+
+/** The eyes' box at 1em: as wide as the stroll reaches, as high as the pill. */
+export const EYES_BOX = Object.freeze({w: 48, h: 32});
+
+/**
+ * What to draw (MASCOT.md § Eyes, the 120 × 32 pill's numbers about its centre), in px at
+ * 1em: x from the box's centre, y from its top. Bars are rounded rects; the smile two
+ * quadratic arcs, stroke 2.4, round caps.
+ *
+ * @param {string} mode  one of EYE_MODES
+ * @param {object} [frame]
+ * @param {string} [frame.eyes]  'open' | 'blink' | 'smile' (mode `idle` only)
+ * @param {number} [frame.dx]  the stroll's offset (mode `idle` only)
+ * @returns {{bars: object[], arcs: object[]}}
+ */
+export function eyesShapes(mode, {eyes = 'open', dx = 0} = {}) {
+    const bar = (x, y, w, h, r) => ({x, y, w, h, r});
+    switch (mode) {
+    case 'waiting':
+        return {bars: [bar(-12, 8, 6, 15, 3), bar(6, 8, 6, 15, 3)], arcs: []};
+    case 'missed':      // 6 px toward the light, at the left end
+        return {bars: [bar(-17, 11, 4.5, 10, 2.2), bar(0, 11, 4.5, 10, 2.2)], arcs: []};
+    case 'sleep':
+        return {bars: [bar(-14, 16, 9, 2.4, 1.2), bar(5, 16, 9, 2.4, 1.2)], arcs: []};
+    }
+    if (eyes === 'smile') {
+        return {
+            bars: [],
+            arcs: [{x1: -13.5 + dx, x2: -4 + dx, y: 18, cy: 11.5}, {x1: 3.5 + dx, x2: 13 + dx, y: 18, cy: 11.5}],
+        };
+    }
+    if (eyes === 'blink') {
+        const h = 10 * 0.12;
+        return {bars: [bar(-11 + dx, 16 - h / 2, 4.5, h, h / 2), bar(6 + dx, 16 - h / 2, 4.5, h, h / 2)], arcs: []};
+    }
+    return {bars: [bar(-11 + dx, 11, 4.5, 10, 2.2), bar(6 + dx, 11, 4.5, 10, 2.2)], arcs: []};
+}

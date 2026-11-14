@@ -344,7 +344,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `apps-hidden` | as | apps whose activities never surface; any app id, slugged (2026-11-02) |
 | `apps-plain` | as | apps that use the default adapter instead of their override; any app id, slugged |
 | `idle-content` | s | `auto` (default) \| `none` \| any module's idle plan id |
-| `idle-auto-plans` | as | plans `auto` may show, in the order they take turns; default `calendar`, `weather`, `clock` |
+| `idle-auto-plans` | as | plans `auto` may show, in the order they take turns; default `calendar`, `weather`, `clock`, `mascot` (Bu's eyes on by default, 2026-11-14) |
 | `idle-auto-switch` | s | minutes per turn of `auto` while idle: `5m` (default), `10m`, `20m`, `30m` (2026-11-13, Ethan; was `idle-auto-interval`, 2–30) |
 | `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`; bad values → defaults. In the schema since M3 daypart; on the Island page, When Idle → Parts of the day: each part's colour icon and a drop-down of the hours it may start at, so none is empty or out of order (2026-11-13) |
 | `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only; `['calendar', 'device']` by default) |
@@ -360,7 +360,7 @@ Planned keys are listed here too; the schema holds only the ones whose item has 
 | `weather-defaults-applied` | b | bookkeeping: the first enable gave GNOME Weather's units (`org.gnome.GWeather4` `temperature-unit`, `speed-unit`) °C and km/h where the user had not chosen them; the Weather plan's unit rows in prefs are those keys (2026-11-06) |
 | `window-corners` | b | round the top corners of windows whose top edge meets the bar (maximized, tiled, moved up); default `true` (2026-11-02; top edge 2026-11-04) |
 | `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
-| `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules (`idle-weather-refresh`: `30m` \| `1h`, default `30m`; `idle-weather-automatic` b, default `true`: the place from Geoclue, else the city picked in prefs, 2026-11-06) |
+| `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules (`idle-weather-refresh`: `30m` \| `1h`, default `30m`; `idle-weather-automatic` b, default `true`: the place from Geoclue, else the city picked in prefs, 2026-11-06; `idle-mascot-stroll` b, default `true`: Bu's eyes look around, 2026-11-14) |
 | `greeting-style`, `greeting-farewell`, `greeting-name`, `greeting-birthday`, `greeting-holidays`; bookkeeping `greeting-intro-shown`, `greeting-boot`, `greeting-session`, `greeting-asleep` | — | declared by `greeting` (GREETING.md §9; `greeting-last-day` dropped 2026-11-06) |
 | `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
 | `progress-folders` | as | folders watched for downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03; M3 and renamed from `transfers-folders` 2026-11-06, rule 9) |
