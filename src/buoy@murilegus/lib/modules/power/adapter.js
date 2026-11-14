@@ -6,8 +6,9 @@ export {STATE, duration, plugged};
 /**
  * power adapter (FEATURES M4 "Power", SPEC §6b item 4; decided 2026-11-14, Ethan): the
  * laptop's battery as GNOME's Quick Settings reads it (UPower's DisplayDevice).
- *   charging  plugged in: 3 s — "Full in 42 min", or "18 W · slow charger"
- *   battery   unplugged: 3 s — "3 h 20 min left"
+ *   charging  plugged in: 3 s — "Charging"; "18 W · slow charger" once more when the rate comes
+ *             (slowLate)
+ *   battery   unplugged: 3 s — "On battery"
  *   full      fully charged while plugged in: 3 s
  *   low       UPower's warning level low / critical / action on battery: stays until plugged
  *             in; it takes the place of GNOME's own "Low Battery" notification
@@ -28,6 +29,16 @@ export const TTL = 3000;
 /** Slow: charging below SLOW_W watts while under SLOW_BELOW % (above it every laptop tapers). */
 export const SLOW_W = 20;
 export const SLOW_BELOW = 80;
+
+/**
+ * UPower has no rate, so no estimate, for 10–15 s after a plug in or unplug
+ * (up-device-battery.c up_device_battery_update_values: a line-power change is a
+ * discontinuity, the rate held at 0 for UP_DAEMON_DISTRUST_RATE_TIMEOUT 10 s, then polled every
+ * UP_DAEMON_ESTIMATE_TIMEOUT 5 s; batteries without a power reading need 15 s of data,
+ * up_device_battery_estimate_power). The 3 s flash is gone by then: a slow charger flashes once
+ * more when its rate comes, within SLOW_WINDOW of the plug in (Ethan, 2026-11-14).
+ */
+export const SLOW_WINDOW = 30000;
 
 // UPower's warning levels (up-types.h UpDeviceLevel); its states are kit/model/power.js STATE
 export const WARNING = Object.freeze({NONE: 1, DISCHARGING: 2, LOW: 3, CRITICAL: 4, ACTION: 5});
@@ -92,6 +103,18 @@ export function powerEvents(prev, cur) {
             flash = 'full';
     }
     return {flash, low};
+}
+
+/**
+ * The slow charger's own flash, when the rate comes after the plug in's (SLOW_WINDOW).
+ *
+ * @param {object} b  readBattery(), now
+ * @param {?number} sincePlug  ms since the plug in's flash; null when not plugged in by a flash
+ * @param {boolean} shown  this plug in's slow flash already shown
+ * @returns {boolean} flash "18 W · slow charger" now
+ */
+export function slowLate(b, sincePlug, shown) {
+    return !shown && sincePlug !== null && sincePlug >= 0 && sincePlug <= SLOW_WINDOW && slow(b);
 }
 
 /**

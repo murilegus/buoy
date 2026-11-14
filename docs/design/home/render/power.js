@@ -14,7 +14,7 @@ import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
 
 const [out, MODE = 'tile'] = ARGV;
 const W1 = C.WHITE, SUB = 9.35, BIG = 16.5, TILE_H = 100;
-const SIZE = {tile: [1040, 140], list: [420, 300], flash: [1000, 120], compact: [700, 180], icons: [960, 104]}[MODE];
+const SIZE = {tile: [1040, 140], list: [420, 300], flash: [1000, 136], compact: [700, 180], icons: [960, 104]}[MODE];
 const [W, H] = SIZE;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC), cr = new cairo.Context(surf);
 cr.scale(SC, SC); cr.setSourceRGB(...C.WALL); cr.paint();
@@ -96,13 +96,13 @@ if (MODE === 'tile') {
     icon('arrow-up-right-from-square', AX + AW - 40, ay + 194, 16, W1, C.FG_SUBTLE);
     note('hàng 36 bo 18, cách 4; chọn xong vẫn ở danh sách, ‹ về Home', AX, ay + AH + 8);
 } else if (MODE === 'flash') {
-    const F = [['battery-charging', 'Đầy sau 42 phút', '72%'], ['battery-charging', '18 W · sạc chậm', '40%'],
-        ['battery', 'Còn 3 giờ 20 phút', '64%'], ['battery-full', 'Đã sạc đầy', '100%'], ['battery-low', 'Pin yếu', '18%']];
+    const F = [['battery-charging', 'Đang sạc', '72%'], ['battery-charging', '18 W · sạc chậm', '40%'],
+        ['battery', 'Dùng pin', '64%'], ['battery-full', 'Đã sạc đầy', '100%'], ['battery-low', 'Pin yếu', '18%']];
     let x = 16;
     F.forEach(([ic, t, p]) => { const w = pill(x, 16, ic, t, p); text(`${Math.round(w)}`, x + w / 2, 52, {sz: 8, a: .55, centre: true}); x += w + 16; });
     x = 16;
     ['saver', 'balanced', 'perf'].forEach(m => { const w = pill(x, 72, MODES[m], NAMES[m]); x += w + 16; });
-    note('pin: 3 s khi cắm, rút, đầy; pin yếu ở lại tới khi cắm sạc · chế độ: 3 s khi đổi, cả khi máy tự đổi', x + 8, 82);
+    note('pin: 3 s khi cắm, rút, đầy; sạc chậm thêm một lần khi tốc độ đến; pin yếu ở lại tới khi cắm sạc · chế độ: 3 s khi đổi, cả khi máy tự đổi', 16, 116);
 } else if (MODE === 'compact') {
     const CX = 16, cy = 16, kw = 404;
     fill([0, 0, 0, 1], CX, cy, kw, 104, 28);

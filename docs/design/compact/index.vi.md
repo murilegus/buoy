@@ -151,11 +151,14 @@ trắng như bản vẽ cũ.
 ![Flash pin và flash đổi chế độ, ở đúng độ rộng](images/power-flash.vi.png)
 
 - **Flash 3 s** ở pill, rộng theo nội dung (8 + 24 + 6 + chữ + 6 + trailing + 8, tối thiểu 131):
-  cắm sạc "Đầy sau 42 phút · 72%" (chưa có ước tính: "Đang sạc"); rút "Còn 3 giờ 20 phút · 64%"
-  (chưa có: "Dùng pin"); đầy khi đang cắm "Đã sạc đầy · 100%" (đầy ở ngưỡng sạc: số thật).
-  **Chốt**
-- **Sạc chậm**: đang sạc dưới 20 W khi pin dưới 80 % (trên 80 % máy tự giảm tốc): chữ thành
-  "18 W · sạc chậm", thời gian xuống compact. Không đọc được tốc độ (EnergyRate) thì thôi. **Chốt**
+  cắm sạc "Đang sạc · 72%"; rút "Dùng pin · 64%"; đầy khi đang cắm "Đã sạc đầy · 100%" (đầy ở
+  ngưỡng sạc: số thật). Không có thời gian: UPower chỉ có tốc độ, nên có ước tính, 10–15 s sau khi
+  cắm hay rút (`up-device-battery.c` up_device_battery_update_values: cắm/rút là một chỗ đứt, tốc độ
+  bị giữ ở 0 trong 10 s rồi đọc lại mỗi 5 s; pin không tự báo công suất cần 15 s số liệu), lúc đó
+  flash đã đi. Thời gian ở ô pin trong Home. **Chốt** (Ethan, 2026-11-14)
+- **Sạc chậm**: đang sạc dưới 20 W khi pin dưới 80 % (trên 80 % máy tự giảm tốc): khi tốc độ đến,
+  trong 30 s sau lúc cắm, **flash thêm một lần** "18 W · sạc chậm", thời gian xuống compact; mỗi lần
+  cắm một lần. Quá 30 s, hay không đọc được tốc độ (EnergyRate), thì thôi. **Chốt** (Ethan, 2026-11-14)
 - **Pin yếu** (UPower: 20 % low, 5 % critical): "Pin yếu · 18%" (critical: "Pin sắp hết") **ở lại tới
   khi cắm sạc**, mở compact của nó một lần (và lần nữa khi xuống critical); compact ghi "còn 25 phút"
   hoặc "Cắm sạc ngay". Nó **thay thông báo "Low Battery" của GNOME** (gsd, app "Power"): thông báo
