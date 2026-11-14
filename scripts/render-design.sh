@@ -61,6 +61,9 @@ r icons/render/symbolic.js icons/images/symbolic.vi.png
 r icons/render/own.js icons/images/own.vi.png
 r icons/render/roles.js icons/images/roles.vi.png
 
+# mascot (Bu's eyes)
+for m in expressions sequences; do r mascot/render/eyes.js mascot/images/$m.vi.png $m; done
+
 # expanded
 r expanded/render/expanded.js expanded/images/expanded.vi.png
 

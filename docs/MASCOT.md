@@ -484,6 +484,34 @@ change, then stillness until the next — not a loop (ARCHITECTURE rule 8).
   score 10). Turned off from gsettings, picking it in Show or switching its row on turns the
   module on again (prefs, as for any module that is only a plan).
 
+### Expressions
+
+*Decided 2026-11-14 (Ethan); not built yet, FEATURES M4 "Bu's eyes: expressions".* Seven more,
+drawn as in design/mascot "Biểu cảm của mắt" (`docs/design/mascot/render/eyes.js`): rounded bars,
+arcs and polylines only (the spiral is a polyline).
+
+| Expression | When | For |
+|---|---|---|
+| `\| ^` wink | beat 6 of the stroll, in turn with `^ ^` | 1.25 s |
+| `u u` content | the amber light goes out (the missed list was read) | 1.25 s |
+| `_ _` drowsy (a half lid) | just before `sleep` (60 s without input, or night) | 1 s, then `- -` |
+| `o o` startled | input again after the 60 s sleep | 0.6 s |
+| `> <` squeeze | pressing the pill | while held |
+| `@ @` dizzy | held 1.5 s | until 3 s |
+| `x x` knocked out | held 3 s | until released, then 1 s |
+
+- `- -` is asleep, `_ _` is drowsy.
+- A reaction cuts the stroll at once, whatever beat it is in; after it the stroll restarts at
+  beat 1.
+- A light (`missed`, `waiting`) still wins. Asleep for night, power saving or animations off,
+  or with `idle-mascot-stroll` off: no reaction at all.
+- **Press and hold.** The idle pill opens Home on the press (`kit/ui/pill.js`
+  `button-press-event` → `island._onPillPress`), so there is no hold today. While the eyes show,
+  Home opens on the release instead: released within 0.5 s it is a click and opens Home;
+  held longer it is poking Bu and the release opens nothing. Only in mode `idle`; in any other
+  mode the release opens Home. A trial on the eyes first; then every idle pill (Ethan,
+  2026-11-14). The hold's one timer lives only while held and 1 s after.
+
 ## Name
 
 **Bu**. A quick web search on 2026-11-03 found no app or GNOME extension mascot called
