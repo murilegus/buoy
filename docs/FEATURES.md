@@ -74,7 +74,7 @@ to their places there (2026-11-12, Ethan).
 | [ ] | Timer | pomodoro ring, keep-awake, its tab; a start tile in Home's glance (design/home) |
 | [x] | Idle plan `mascot` | MASCOT.md § Eyes; on by default, last in Automatic's stack (2026-11-14, Ethan; was off); checked with `powertop` on real hardware |
 | [x] | Bu's eyes: expressions | MASCOT.md § Expressions and design/mascot "Biểu cảm của mắt": wink, content, drowsy, startled, and the press-and-hold `> <` → `@ @` → `x x`; while the eyes show, Home opens on the release (2026-11-14, Ethan) |
-| [ ] | Print job progress | CUPS notifier |
+| [ ] | Print job progress | the print job in the pill from CUPS's own D-Bus signals, `org.cups.cupsd.Notifier` on the system bus, which gsd's print-notifications already has CUPS send (job-created, job-state-changed, job-completed, printer-state-changed): signals only, no subscription of Buoy's; printing, done, stopped / cancelled / aborted, and the printer's errors (paper, toner, offline); in place of gsd's "Printing…" notifications (app "Printers"), as Power's low battery replaces "Low Battery". First: whether the signal carries the pages done (CUPS notifier/dbus.c), and the design (design/compact) (2026-11-14) |
 | [ ] | Terminal command finished in an unfocused tab | "exit 0 · 48 s", jump |
 | [ ] | VPN / Wi-Fi / captive portal | as feedback (the power profile moved to "Power", 2026-11-14) |
 | [ ] | Greeting | GREETING.md is true (Start, Wake, Welcome back, Leaving; special days) |
