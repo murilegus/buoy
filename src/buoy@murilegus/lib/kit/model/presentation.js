@@ -33,7 +33,7 @@
  *         progress a bar under them — 0..1, or live `{position, length, at, playing}` (ms;
  *         `at` when position was read) which runs with the elapsed and remaining times —
  *         rows up to 3 `{icon?, text, detail?}`
- *   compact.card: {icon, app, at, picture, title, body, close} — a card instead (a
+ *   compact.card: {icon, app, at, picture, title, body, close, tight} — a card instead (a
  *         notification, NOTIFICATIONS.md §3, 2026-11-07): a header (icon, app name, the time
  *         since `at`, × running action `close`), a picture, a title, a body of up to 2
  *         lines, then the activity's actions (≤ 3) in a row; full width, up to 160 tall.
@@ -274,7 +274,12 @@ function actions(list, max) {
     return list
         .filter(a => isPlain(a) && str(a.id) && (str(a.label) || icon(a.icon)))
         .slice(0, max)
-        .map(a => ({id: str(a.id), label: str(a.label), icon: str(a.icon)}));
+        // `selected` (true or false): one of a set of choices, drawn with its icon and label,
+        // the chosen one marked (the power modes, design/compact "Pin và chế độ năng lượng")
+        .map(a => ({
+            id: str(a.id), label: str(a.label), icon: str(a.icon),
+            ...typeof a.selected === 'boolean' ? {selected: a.selected} : {},
+        }));
 }
 
 /**
@@ -450,6 +455,9 @@ function planCard(c, p, light) {
             // banner: design/alerts-and-asks "Thông báo")
             actionsOnHover: c.actionsOnHover === true,
             choices: planChoices(c.choices),
+            // the buttons 12 under the picture, not 20: no message between (the power modes'
+            // 104 = 56 + 4 + 32 + 12, design/compact "Pin và chế độ năng lượng")
+            ...c.tight === true ? {tight: true} : {},
         },
         leading: null, text: null, subtitle: null, trailing: null,
         actions: acts,

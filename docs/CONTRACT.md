@@ -27,7 +27,9 @@ D-Bus API ──────────────────────┘ 
   style:     'standard' | 'transient', // transient = opens expanded, ends on click-outside
   alert:     false,                    // true on surface/update → its card opens on its pill (an alert)
   keyline:   null,                     // optional border tint
-  onPress, onExpand, actions: [{id, label, icon}],  // ≤ 1 in minimal, ≤ 3 compact/expanded (HIG)
+  onPress, onExpand, actions: [{id, label, icon, selected?}],  // ≤ 1 in minimal, ≤ 3 compact/expanded (HIG);
+                                       // `selected` (true/false): one of a set of choices, icon and label,
+                                       // the chosen one marked (the power modes, 2026-11-14)
   minimalAction: true,                 // false: no button in minimal, the compact has them (media)
   onAction(id, value?)                 // a button was pressed (ask: answers it); a tab may pass a value (seek)
   onExpire()                           // its ttl ended it (not end()): a transient notification goes (2026-11-08)
@@ -41,9 +43,10 @@ D-Bus API ──────────────────────┘ 
   tile: {value, caption} | {live, caption}  // Home's tile (design/home): its own value in large figures;
                                        // `live` a player's position, the elapsed time; default: a text
                                        // or ring trailing, the text as caption (kit/model/home.js tileOf)
-  compact.card: {icon, app, at, picture, title, body, close, actionsOnHover}
+  compact.card: {icon, app, at, picture, title, body, close, actionsOnHover, tight}
                                        // a message's card; actionsOnHover: its buttons only under the
                                        // pointer; picture may be {stack: [icon, …]} (≤ 3 logos)
+                                       // tight: no message, the buttons 12 under the picture (104)
   compact: {leading, text, subtitle, trailing, transport, progress, rows}  // the hover tier (Buoy's
                                        // own; was `peek`); transport = ≤3 actions; progress 0..1 or
                                        // live {position, length, at, playing} (ms), which runs with

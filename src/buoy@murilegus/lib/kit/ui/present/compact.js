@@ -303,7 +303,10 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
     if (below) {
         const row = actionRow(p.actions, activity, m, {fill: !actionsEnd});
         // under the head with no message: 8 + 12 (design/alerts-and-asks "Ask 120")
-        const above = c.body || c.choices ? m.actionsGap : m.bodyGap + m.actionsGap;
+        // `tight`: 12 under the picture (56 + 4), the power modes' 104
+        let above = c.body || c.choices ? m.actionsGap : m.bodyGap + m.actionsGap;
+        if (c.tight && !c.body && !c.choices)
+            above = m.edge - m.vpad;
         row.set_style(`margin: ${px(above)} ${px(m.edge)} ${px(m.actionsGap)}; height: ${px(m.button)};`);
         box.add_child(row);
     }
@@ -320,7 +323,9 @@ function actionRow(actions, activity, m, {fill = false, top = false} = {}) {
         x_align: fill ? Clutter.ActorAlign.FILL : Clutter.ActorAlign.END,
         y_align: Clutter.ActorAlign.CENTER,
     });
-    row.layout_manager.homogeneous = fill;
+    // a set of choices (the power modes): each as wide as its label, the rest shared, so a
+    // long name ("Performance" in 600) is not cut while a short one has room to spare
+    row.layout_manager.homogeneous = fill && !actions.some(a => 'selected' in a);
     if (top)
         row.set_style(`height: ${px(m.button)};`);
     for (const a of actions) {
@@ -330,6 +335,8 @@ function actionRow(actions, activity, m, {fill = false, top = false} = {}) {
             b.add_style_class_name('buoy-action-wide');
         if (a.main)
             b.add_style_class_name('buoy-action-main');   // an ask's answer: cream
+        if ('selected' in a)
+            b.add_style_class_name(a.selected ? 'buoy-action-choice buoy-action-selected' : 'buoy-action-choice');
         row.add_child(b);
     }
     return row;

@@ -741,7 +741,9 @@ notifications of its own.
   is left today.
 - Battery glance (2026-11-12, Ethan: GNOME's own battery) — the battery Quick Settings
   reads (`ui/status/system.js` PowerToggle's UPower DisplayDevice proxy), no proxy of Buoy's:
-  the percentage, "Battery" or "Charging", Buoy's battery icons; none on a desktop. A click
+  the percentage, "Battery" or "Charging", Buoy's battery icons; none on a desktop. The power
+  mode's icon in its top right corner; a click lists the three modes in place of the card and the
+  row, with Settings → Power last (2026-11-14, Ethan; design/home). Without power modes a click
   opens Settings → Power.
 - Timer glance — a tile to start one, even when none runs (design/home); comes with the
   timer module's M4 item. The phone's comes with "Phone via GSConnect".
@@ -896,7 +898,14 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    (think · busy · ask · turn · error · compact · done · party, `MASCOT.md` § Agents);
    the agent's name leads the text (2026-11-03).
 3. **timer** — pomodoro + stopwatch, keep-awake, ring in the compact pill.
-4. **power / bluetooth** — charging, low battery, device connected with its battery.
+4. **power** (2026-11-14, Ethan; design/compact "Pin và chế độ năng lượng", design/home "Ô pin và
+   chế độ năng lượng") — read from Quick Settings' own UPower proxy and power-mode toggle, no proxy
+   of Buoy's. A 3 s flash at plug in ("Full in 42 min"; below 20 W under 80 %: "18 W · slow charger"),
+   unplug ("3 h 20 min left") and full; a power-mode change flashes too (also when the system
+   switches it). A low battery (UPower's warning, 20 % / 5 %) stays until plugged in, priority 70,
+   in place of gsd's "Low Battery" notification. The power mode is switched from Home (a click on
+   the battery tile lists the three modes) and from the compact of the mode's flash (three
+   buttons). **bluetooth** — device connected with its battery (M4 "Bluetooth device").
 5. **calendar** — Up next in Home; alert 5 min before with Join when the event has
    a meeting link. Shell's calendar server sends only id, summary, start and end, so the
    link is read over EDS's own D-Bus (`CalendarFactory` → `Calendar.GetObjectList`, raw

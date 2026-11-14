@@ -3,7 +3,7 @@ import {
     planHome, tilesPerRow, tileWidths, tileOf, greetingLine, TILE_H, CARD_GAP, TALL_FROM, cornerIcons, CORNER_ICONS, cornerMax, wantsWhole,
 } from '../src/buoy@murilegus/lib/kit/model/home.js';
 import {validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
-import {batteryTile, STATE} from '../src/buoy@murilegus/lib/modules/home/adapter.js';
+import {batteryPage, batteryTile, STATE} from '../src/buoy@murilegus/lib/modules/home/adapter.js';
 
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -108,16 +108,46 @@ eq([greetingLine('afternoon', ''), greetingLine('afternoon', 'Unknown'), greetin
     ['Good afternoon', 'Good afternoon', 'Good day'], 'no name (GLib says Unknown), no daypart');
 
 // --- the battery glance (modules/home) ----------------------------------------------------------
-eq(batteryTile({present: true, percentage: 82.4, state: STATE.DISCHARGING}), {icon: 'battery-full-symbolic', value: '82%', caption: 'Battery'},
-    'battery: the percentage, full from 80');
-eq(batteryTile({present: true, percentage: 45, state: STATE.CHARGING}), {icon: 'battery-good-charging-symbolic', value: '45%', caption: 'Charging'},
+eq(batteryTile({present: true, percentage: 82.4, state: STATE.DISCHARGING}), {icon: 'battery-full-symbolic', value: '82%', caption: 'Battery', detail: []},
+    'battery: the percentage, full from 80; no time, no mode: no detail');
+eq(batteryTile({present: true, percentage: 45, state: STATE.CHARGING}), {icon: 'battery-good-charging-symbolic', value: '45%', caption: 'Charging', detail: []},
     'charging: its icon and word');
 eq([batteryTile({present: true, percentage: 19, state: STATE.DISCHARGING}).icon, batteryTile({present: true, percentage: 50, state: STATE.DISCHARGING}).icon,
-    batteryTile({present: true, percentage: 60, state: STATE.FULLY_CHARGED}).icon], ['battery-low-symbolic', 'battery-good-symbolic', 'battery-full-symbolic'],
+    batteryTile({present: true, percentage: 60, state: STATE.FULL}).icon], ['battery-low-symbolic', 'battery-good-symbolic', 'battery-full-symbolic'],
 'low under 20, good, fully charged as full');
+eq([batteryTile({present: true, percentage: 19, state: STATE.DISCHARGING}).caption, batteryTile({present: true, percentage: 100, state: STATE.FULL}).caption,
+    batteryTile({present: true, percentage: 15, state: STATE.CHARGING}).caption], ['Low battery', 'Fully charged', 'Charging'],
+'captions: low on battery, full, charging even when low (design/home "Ô pin")');
 eq([batteryTile({present: false, percentage: 80, state: 2}), batteryTile({present: true, percentage: NaN, state: 2})], [null, null],
     'no battery (a desktop), no percentage: no tile');
 eq(batteryTile({present: true, percentage: 140, state: 2}).value, '100%', 'clamped to 100');
+
+// the power mode in the corner and the detail column (design/home "Ô pin và chế độ năng lượng")
+const MODES = {active: 'balanced', list: ['power-saver', 'balanced', 'performance']};
+eq(batteryTile({present: true, percentage: 82, state: STATE.CHARGING, timeToFull: 2520}, MODES),
+    {icon: 'battery-good-charging-symbolic', value: '82%', caption: 'Charging', cornerIcon: 'power-profile-balanced-symbolic', detail: ['Full in 42 min', 'Balanced']},
+    'tile: the mode in the corner; time to full and the mode in the detail');
+eq(batteryTile({present: true, percentage: 64, state: STATE.DISCHARGING, timeToEmpty: 12000, timeToFull: 99}, MODES).detail,
+    ['3 h 20 min left', 'Balanced'], 'tile: on battery, the time left (not to full)');
+eq(batteryTile({present: true, percentage: 100, state: STATE.FULL, timeToEmpty: 9000}, {active: 'performance', list: ['balanced', 'performance']}).detail,
+    ['Performance'], 'tile: full, no time; the mode alone');
+eq(batteryTile({present: true, percentage: 64, state: STATE.DISCHARGING}, {active: null, list: ['balanced']}).cornerIcon, undefined,
+    'tile: a mode Buoy does not know: no corner icon');
+eq('cornerIcon' in batteryTile({present: true, percentage: 64, state: 2}, null), false, 'tile: no power modes: no corner icon');
+
+// the page its click opens (option A)
+const page = batteryPage({present: true, percentage: 82.2, state: STATE.CHARGING, timeToFull: 2520}, MODES);
+eq([page.title, page.end, page.settings.name], ['Battery · 82% · charging', 'full in 42 min', 'Power Settings'], 'page: the head, Power Settings last');
+eq(page.rows, [
+    {id: 'power-saver', icon: 'power-profile-power-saver-symbolic', name: 'Power Saver', selected: false},
+    {id: 'balanced', icon: 'power-profile-balanced-symbolic', name: 'Balanced', selected: true},
+    {id: 'performance', icon: 'power-profile-performance-symbolic', name: 'Performance', selected: false},
+], 'page: the modes low to high, the one in use chosen');
+eq(batteryPage({present: true, percentage: 40, state: STATE.DISCHARGING, timeToEmpty: 30}, MODES).end, null, 'page: under a minute: no time');
+eq(batteryPage({present: true, percentage: 40, state: STATE.DISCHARGING}, MODES).title, 'Battery · 40%', 'page: on battery, no "charging"');
+eq([batteryPage({present: true, percentage: 40, state: 2}, null), batteryPage({present: true, percentage: 40, state: 2}, {active: null, list: []}),
+    batteryPage({present: false, percentage: 40, state: 2}, MODES)], [null, null, null],
+'page: no power modes (no daemon) or no battery: none, the click opens Settings');
 
 
 // --- the main card fits its rows (#216, 2026-11-13) ------------------------------------

@@ -114,9 +114,13 @@ class BodyView extends St.BoxLayout {
  * weather, Up next, the battery). Both are made the first time Home shows and kept for the
  * rest of the open, destroyed when expanded closes. `new Card({open, close})` → {actor,
  * show(activity, {height, form, width}), destroy()}. `new Glance({open, close, changed,
- * settings})` → {ready, tile: {icon, iconSize?, value, caption, detail?}, wide?(width) →
- * actor, activate(), refresh?(), destroy()}; `changed()`: `ready` or `tile` changed, lay
- * Home out again; `wide`: it may take two units (design/home "Cách lấp hàng ô").
+ * settings})` → {ready, tile: {icon, iconSize?, value, caption, detail?, cornerIcon?}, wide?(width) →
+ * actor, activate(), page?(), refresh?(), destroy()}; `changed()`: `ready`, `tile` or its page
+ * changed, lay Home out again; `wide`: it may take two units (design/home "Cách lấp hàng ô").
+ * `page()`: a list to show in place of the card and the row when its tile is pressed, or null
+ * for activate() (the battery's power modes, design/home "Ô pin và chế độ năng lượng"):
+ * {title, end?, rows: [{id, icon, name, selected}], choose(id), settings?: {name}} — settings
+ * runs activate().
  */
 export class Home {
     /**
@@ -148,7 +152,7 @@ export class Home {
         this._width = width;
         this._metrics = metrics;
         this._flags = missedFlags;
-        this._page = null;           // Home's list in place of its card and row: 'missed' | 'more'
+        this._page = null;           // Home's list in place of its card and row: 'missed' | 'more' | 'glance:<id>'
         this._front = null;          // an activity without a tab put on the main card by its tile
         this._cards = new Map();     // module id → its home Card, made when first shown
         this._glances = new Map();   // module id → {glance, order, wide}, made when Home first shows
@@ -641,6 +645,12 @@ export class Home {
             return this._missedList();
         if (this._page === 'more')
             return this._ongoingList();
+        if (this._page?.startsWith('glance:')) {
+            const list = this._glanceList(this._page.slice(7));
+            if (list)
+                return list;
+            this._page = null;      // its page went (the daemon left): Home itself
+        }
         const m = this._metrics;
         const rowW = this._width - 2 * EDGE;
         const height = this._maxHeight - m.head - EDGE;
@@ -698,7 +708,9 @@ export class Home {
 
     // A glance's data came or went: Home is laid out again
     _glanceChanged() {
-        if (this._gone || this._building || this._menu || this._current !== HOME || this._page)
+        if (this._gone || this._building || this._menu || this._current !== HOME)
+            return;
+        if (this._page && !this._page.startsWith('glance:'))
             return;
         this._setBody(this._homeBody());
     }
@@ -879,7 +891,13 @@ export class Home {
             const {glance} = this._glances.get(t.id);
             const wide = t.wide ? glance.wide?.(width) : null;
             const tile = wide ? this._tileButton(null, glance.tile.caption ?? t.id, wide) : this._tileButton({...glance.tile, width}, glance.tile.caption ?? t.id);
-            tile.connect('clicked', () => glance.activate?.());
+            // a glance with a page of its own shows it; the others do their thing
+            tile.connect('clicked', () => {
+                if (glance.page?.())
+                    this._showPage(`glance:${t.id}`);
+                else
+                    glance.activate?.();
+            });
             return tile;
         }
         const a = t.activity;
@@ -916,7 +934,10 @@ export class Home {
             button.set_child(own);
             return button;
         }
-        const row = new St.BoxLayout({x_expand: true});
+        // the top row across the whole tile (the leading, its corner at the right edge), under it
+        // the value and caption, the detail column beside them
+        const tile = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_expand: true});
+        const row = new St.BoxLayout({x_expand: true, y_expand: true});
         const col = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_expand: true});
         const cell = new St.Bin({style_class: 'buoy-home-tile-leading', width: 20, height: 20, x_align: Clutter.ActorAlign.START});
         const lead = t.leading
@@ -939,14 +960,17 @@ export class Home {
         else if (t.corner)
             // a part the Media tab draws too (its ↗ slot): it flies there (design/media "Một player")
             corner = markShared(makeElement(t.corner, 'minimal', t.activity ?? null), 'eq', t.activity ?? null);
+        else if (t.cornerIcon)
+            // the battery's power mode (design/home "Ô pin và chế độ năng lượng"): 16, fg-subtle
+            corner = new St.Icon({...iconProps(t.cornerIcon), icon_size: 16, style_class: 'buoy-home-tile-corner', y_align: Clutter.ActorAlign.START});
         if (corner) {
             const top = new St.BoxLayout({x_expand: true});
             top.add_child(cell);
             top.add_child(new St.Widget({x_expand: true}));
             top.add_child(corner);
-            col.add_child(top);
+            tile.add_child(top);
         } else {
-            col.add_child(cell);
+            tile.add_child(cell);
         }
         col.add_child(new St.Widget({y_expand: true}));
         /** @type {?St.Widget} */
@@ -960,12 +984,19 @@ export class Home {
         if (t.caption)
             col.add_child(markShared(textLabel(t.caption, 'buoy-home-tile-caption'), 'title', t.activity ?? null));
         row.add_child(col);
-        if (t.detail && t.width >= DETAIL_FROM) {
-            const detail = textLabel(t.detail, 'buoy-home-tile-detail');
-            detail.y_align = Clutter.ActorAlign.END;
+        // the detail: a line, or lines one under the other (the battery's time and mode)
+        const lines = (Array.isArray(t.detail) ? t.detail : [t.detail]).filter(Boolean);
+        if (lines.length && t.width >= DETAIL_FROM) {
+            const detail = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, y_align: Clutter.ActorAlign.END});
+            for (const l of lines) {
+                const label = textLabel(l, 'buoy-home-tile-detail');
+                label.x_align = Clutter.ActorAlign.END;
+                detail.add_child(label);
+            }
             row.add_child(detail);
         }
-        button.set_child(row);
+        tile.add_child(row);
+        button.set_child(tile);
         return button;
     }
 
@@ -1062,6 +1093,45 @@ export class Home {
         }
         if (!this._flags.length && !this._missed.length)
             box.add_child(new EmptyState('Nothing missed', {pose: 'idle'}));
+        return box;
+    }
+
+    // A glance's page (design/home "Ô pin và chế độ năng lượng"): ‹, its title and what goes at
+    // the end, its choices in rows of 36 rounded 18, 4 apart, the chosen one on fill-3 with ✓;
+    // a last row to its settings. A choice keeps the page open: the glance's changed() draws
+    // it again with the new one chosen.
+    _glanceList(id) {
+        const glance = this._glances.get(id)?.glance;
+        const page = glance?.page?.();
+        if (!page)
+            return null;
+        const end = page.end ? textLabel(page.end, 'buoy-home-list-detail') : null;
+        const box = this._listBox(this._listHead(page.title, end));
+        const rows = new St.BoxLayout({style_class: 'buoy-home-choices', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        const row = (icon, name, {on = false, settings = false} = {}, click) => {
+            const content = new St.BoxLayout({style_class: 'buoy-home-list-row-box', x_expand: true});
+            content.add_child(new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
+            content.add_child(textLabel(name, 'buoy-home-choice-name', true));
+            let endIcon = null;
+            if (on)
+                endIcon = 'object-select-symbolic';
+            else if (settings)
+                endIcon = 'external-link-symbolic';
+            if (endIcon)
+                content.add_child(new St.Icon({...iconProps(endIcon), icon_size: 16, style_class: 'buoy-home-choice-end', y_align: Clutter.ActorAlign.CENTER}));
+            const b = new St.Button({
+                style_class: `buoy-home-choice${on ? ' buoy-home-choice-on' : ''}${settings ? ' buoy-home-choice-settings' : ''}`,
+                child: content, x_expand: true, can_focus: true, accessible_name: name,
+                x_align: Clutter.ActorAlign.FILL,
+            });
+            b.connect('clicked', click);
+            return b;
+        };
+        for (const r of page.rows)
+            rows.add_child(row(r.icon, r.name, {on: r.selected}, () => page.choose(r.id)));
+        if (page.settings)
+            rows.add_child(row('emblem-system-symbolic', page.settings.name, {settings: true}, () => glance.activate?.()));
+        box.add_child(rows);
         return box;
     }
 

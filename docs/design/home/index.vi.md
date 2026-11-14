@@ -135,6 +135,28 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
   nó. **Chốt** (Ethan, 2026-11-12)
 - Chấm đỏ chỉ ở pill, không lặp lại trong Home ([Compact](../compact/index.vi.md)). **Chốt**
 
+## Ô pin và chế độ năng lượng
+
+*Ethan, 2026-11-14 (mục M4 "Power").*
+
+![Ô pin: hẹp 128 và rộng, chế độ năng lượng ở góc trên phải](images/power-tile.vi.png)
+
+- Ô pin giữ khuôn ô chung: số % lớn, dưới là "Đang sạc", "Pin", "Pin yếu" hoặc "Đã sạc đầy". **Chốt**
+- **Chế độ năng lượng ở góc trên phải**, icon 16 màu `fg-subtle`, đúng chỗ ô thời tiết ghi tuổi số đo
+  và ô nhạc đặt equaliser. Ô rộng (từ 200) thêm cột chi tiết: thời gian (đầy sau / còn lại) và tên chế
+  độ. **Chốt**
+- Máy không có chế độ năng lượng (không có power-profiles-daemon): không có icon góc, không có danh
+  sách bên dưới; bấm ô mở Cài đặt → Nguồn như trước.
+
+![Bấm ô pin: ba chế độ thay thẻ chính và hàng ô](images/power-list.vi.png)
+
+- **Bấm ô pin → danh sách thay thẻ chính và hàng ô**, như khi bấm Bị nhỡ: đầu là ‹, "Pin · 82% · đang
+  sạc" và thời gian ở cuối; ba hàng Tiết kiệm pin / Cân bằng / Hiệu năng, hàng đang chọn nền `fill-3`,
+  chữ 600 và dấu ✓; hàng cuối "Cài đặt nguồn ↗" mở Cài đặt → Nguồn. Hàng 36, bo 18, cách 4. **Chốt**
+  (Ethan, 2026-11-14: phương án A)
+- Chọn một chế độ: đổi ngay, danh sách vẫn mở, flash đổi chế độ không hiện (đang nhìn Home rồi);
+  ‹ hoặc Esc về Home. **Chốt**
+
 ## Chỗ trong code
 
 - `lib/kit/ui/home.js` — viết lại theo bố cục này: thẻ chính, hàng ô, quy tắc lấp, ô rộng; bỏ mục

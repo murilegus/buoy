@@ -33,11 +33,12 @@ import clock from './lib/modules/clock/index.js';
 import weather from './lib/modules/weather/index.js';
 import greeting from './lib/modules/greeting/index.js';
 import privacy from './lib/modules/privacy/index.js';
+import power from './lib/modules/power/index.js';
 import mascot from './lib/modules/mascot/index.js';
 
 // Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
 // Order is also the tab strip's order (SPEC §2b).
-const MODULES = [media, notification, progress, timer, hud, home, input, agent, calendar, device, copied, clipboard, clock, weather, greeting, privacy, mascot];
+const MODULES = [media, notification, progress, timer, hud, home, input, agent, calendar, device, copied, clipboard, clock, weather, greeting, privacy, power, mascot];
 
 export default class BuoyExtension extends Extension {
     enable() {
