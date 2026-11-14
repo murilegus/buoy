@@ -133,13 +133,23 @@ function words(ev) {
     return null;
 }
 
-// "Balanced · battery 82%, charging": the mode's compact under its name
+// the mode's compact under its name, the battery as it is (Ethan, 2026-11-14: plugged in and
+// full it said "battery 100%"): "Balanced · battery 82%, charging", "Balanced · fully
+// charged", "Balanced · plugged in, 80%" (held at a charge limit), "Balanced · battery 64%"
 function modeLine(ev) {
     const b = readBattery({...ev, present: true});
+    const name = PROFILES[ev.profile].name;
     if (b.percentage === null)
-        return PROFILES[ev.profile].name;
-    const how = b.state === STATE.CHARGING ? ', charging' : '';
-    return `${PROFILES[ev.profile].name} · battery ${b.percentage}%${how}`;
+        return name;
+    switch (b.state) {
+    case STATE.CHARGING:
+        return `${name} · battery ${b.percentage}%, charging`;
+    case STATE.FULL:
+        return `${name} · fully charged`;
+    case STATE.PENDING_CHARGE:
+        return `${name} · plugged in, ${b.percentage}%`;
+    }
+    return `${name} · battery ${b.percentage}%`;
 }
 
 // the power mode changed: 3 s with its icon and name; hovered, the modes as buttons

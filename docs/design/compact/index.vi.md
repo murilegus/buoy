@@ -169,7 +169,7 @@ trắng như bản vẽ cũ.
 ![Compact chế độ năng lượng: rê chuột lên flash đổi chế độ](images/power-compact.vi.png)
 
 - **Rê chuột lên flash đổi chế độ → compact có 3 nút**: phần đầu 56 (đĩa tròn 40 `fill-2` như compact quay màn
-  hình, với icon chế độ, "Chế độ năng lượng", dòng dưới "Cân bằng · pin 82%, đang sạc"), hàng nút 32 cách mép 12 như card:
+  hình, với icon chế độ, "Chế độ năng lượng", dòng dưới theo pin: "Cân bằng · pin 82%, đang sạc", "· đã sạc đầy", "· đang cắm, 80%" (giữ ở ngưỡng sạc), "· pin 64%"), hàng nút 32 cách mép 12 như card:
   104. Nút đang chọn `fill-3`, chữ 600; các nút khác `fill-2`, `fg-muted`. Mỗi nút rộng theo chữ của nó, phần dư chia đều (chia ba bằng nhau thì "Performance" đậm bị cắt). Bấm: đổi ngay, flash mới cho
   chế độ vừa chọn. **Chốt** (Ethan, 2026-11-14: phương án C, cùng với danh sách trong Home)
 

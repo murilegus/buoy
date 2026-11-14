@@ -132,6 +132,8 @@ m.onAction('performance');
 m.onAction('nope');
 eq(set, ['performance'], 'mode: a button switches to its mode; an unknown id does nothing');
 eq(M({state: STATE.DISCHARGING, percentage: 40}).compact.card.app, 'Balanced · battery 40%', 'mode compact: on battery, no "charging"');
+eq([M({state: STATE.FULL, percentage: 100}).compact.card.app, M({state: STATE.PENDING_CHARGE, percentage: 80}).compact.card.app],
+    ['Balanced · fully charged', 'Balanced · plugged in, 80%'], 'mode compact: plugged in and full, or held at a limit: not "battery"');
 eq(M({percentage: null}).compact.card.app, 'Balanced', 'mode compact: no battery (a desktop): the mode alone');
 eq(M({setProfile: null}).actions, [], 'mode: nothing to switch with: no buttons');
 eq(M({profile: 'custom'}), null, 'mode: one Buoy does not know: no pill');
