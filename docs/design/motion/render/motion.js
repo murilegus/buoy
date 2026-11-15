@@ -13,7 +13,7 @@ import cairo from 'cairo';
 import GLib from 'gi://GLib';
 import {SCALE as SC, C, COVER, EQ, drawEq, icon, SAMPLE} from '../../render/lib.js';
 const [out, MODE] = ARGV;
-// stills at 3× (lib.js SCALE); the clips at 2×, frames for scripts/apng.py
+// stills at 3× (lib.js SCALE); the clips at 2×, frames for scripts/apng.js
 const S = MODE.startsWith('clip-') ? 2 : SC;
 
 // ---- the springs (design/motion "Lò xo và độ mờ") --------------------------------------------------
@@ -361,7 +361,7 @@ function todayShrink(t, T, dist) {
     if (t < turn) return stop * easeOut(t / turn);
     return stop + (1 - stop) * easeInOutQuad(Math.min(1, (t - turn) / (T - turn)));
 }
-const FPS = 30;   // scripts/apng.py makes an animated PNG of these frames
+const FPS = 30;   // scripts/apng.js makes an animated PNG of these frames
 function frames(seconds, draw) {
     const n = Math.round(seconds * FPS);
     for (let i = 0; i < n; i++) {

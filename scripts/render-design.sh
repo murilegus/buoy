@@ -8,11 +8,11 @@ cd "$(dirname "$0")/../docs/design"
 
 r() { script=$1; out=$2; shift 2; gjs -m "$script" "$out" "$@"; }
 # clip <mode> <out.png>: a render script's frames (30 fps) as an animated PNG, which GitHub and the
-# site both play inline (scripts/apng.py, Pillow)
+# site both play inline (scripts/apng.js)
 clip() {
   frames="$(mktemp -d)"
   gjs -m motion/render/motion.js "$frames" "$1"
-  python3 -I ../../scripts/apng.py "$frames" "$2" 30
+  gjs -m ../../scripts/apng.js "$frames" "$2" 30
   rm -rf "${frames:?}"
 }
 
