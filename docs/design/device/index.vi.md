@@ -26,7 +26,7 @@ plugged, Bluetooth device, USB / phone / webcam plugged, Phone via GSConnect). S
 - **Đang cắm**: màn hình ngoài, âm thanh có dây (tai nghe USB, jack), ổ USB, webcam, điện thoại cắm
   USB. Thứ gắn sẵn trong máy (camera tích hợp, adapter Bluetooth) không tính. **Chốt**
 - **Wi-Fi, Ethernet, VPN** không ở tab này: là kết nối, không phải thiết bị; thuộc mục "VPN / Wi-Fi /
-  captive portal", mục đó có thể thêm nhóm **Mạng** sau. **Đề xuất**, chờ chốt.
+  captive portal", để riêng. **Chốt** (Ethan, 2026-11-16)
 
 ## Kích thước
 
