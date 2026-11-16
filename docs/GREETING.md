@@ -190,26 +190,44 @@ the region's) · `global` (global only) · `off`. A region is added by a PR with
 | global | 8 March | observe | "Today is International Women's Day." |
 | global | Easter Sunday (computed, Gregorian computus) | celebrate | "Happy Easter, {name}!" |
 | global | 1 May | observe | "Today is Labour Day." |
+| global | Mother's Day, the 2nd Sunday of May | observe | "Today is Mother's Day." |
+| global | Father's Day, the 3rd Sunday of June | observe | "Today is Father's Day." |
 | global | 31 October | celebrate | "Happy Halloween, {name}!" |
 | global | 24 December | celebrate | "Merry Christmas Eve, {name}!" |
 | global | 25 December | celebrate | "Merry Christmas, {name}!" |
 | global | 31 December | celebrate | "Last day of the year, {name}." |
 | Vietnam | Tết, 1–3 of the first lunar month | celebrate | "Happy Lunar New Year, {name}!" |
+| Vietnam | First full moon, 15th of the 1st lunar month | observe | "Today is the First Full Moon Festival." |
+| Vietnam | 27 February | observe | "Today is Vietnamese Doctors' Day." |
 | Vietnam | Hùng Kings' day, 10th of the 3rd lunar month | observe | "Today is Hùng Kings' Day." |
 | Vietnam | 30 April | observe | "Today is Reunification Day." |
+| Vietnam | Buddha's birthday, 15th of the 4th lunar month | observe | "Today is Vesak." |
+| Vietnam | 1 June | observe | "Today is Children's Day." |
+| Vietnam | 28 June | observe | "Today is Vietnamese Family Day." |
+| Vietnam | Vu Lan, 15th of the 7th lunar month | observe | "Today is Vu Lan." |
 | Vietnam | 2 September | observe | "Today is National Day." |
 | Vietnam | Mid-Autumn, 15th of the 8th lunar month | celebrate | "Happy Mid-Autumn, {name}!" |
 | Vietnam | 20 October | observe | "Today is Vietnamese Women's Day." |
 | Vietnam | 20 November | observe | "Today is Teachers' Day." |
+| Vietnam | Kitchen Gods' day, 23rd of the 12th lunar month | observe | "Today is Kitchen Gods' Day." |
 
-- **Lunar dates** are a generated table of Gregorian dates for 2026–2099 — per year the
-  first day of Tết, Hùng Kings' day and Mid-Autumn (Tết's 2nd and 3rd days follow), some
-  2.5 KB (Ethan, 2026-11-07: through 2099) — from `scripts/lunar.js` (the Vietnamese
-  lunar calendar at UTC+7, Hồ Ngọc Đức's algorithm, run by hand like `scripts/icons.js`;
-  its output is data in `holidays.js`, nothing is computed at runtime). Past 2099 the
-  lunar days are silently skipped. Test anchors: Tết 2026 = 17 February.
+Added 2026-11-16 (Ethan): Mother's and Father's Day, the first full moon, Vietnamese Doctors', Children's and Family Day, Buddha's birthday, Vu Lan, Kitchen Gods' day — all observances.
+
+- **Lunar dates** are a generated table of Gregorian dates for 2026–2099 — per lunar year the
+  first day of Tết, the first full moon, Hùng Kings' day, Buddha's birthday, Vu Lan,
+  Mid-Autumn and Kitchen Gods' day (Tết's 2nd and 3rd days follow; Kitchen Gods' day falls in
+  January or February of the next Gregorian year), some 6 KB (Ethan, 2026-11-07: through
+  2099) — from `scripts/lunar.js` (the Vietnamese lunar calendar at UTC+7, Hồ Ngọc Đức's
+  algorithm, run by hand like `scripts/icons.js`; its output is data in `holidays.js`,
+  nothing is computed at runtime). Past 2099 the
+  lunar days are silently skipped. Test anchors: Tết 2026 = 17 February; the others checked
+  against a published Vietnamese lunar calendar when the table is made.
+- **Mother's and Father's Day** are a rule, not a table: the nth Sunday of a month, computed
+  (pure, like Easter). The date is the one Vietnam and most countries keep (the UK's Mothering
+  Sunday is not).
 - **Two on one day**: the birthday wins over a celebration; a celebration over an
-  observance (the observance still goes on line 2).
+  observance (the observance still goes on line 2). Two observances (Buddha's birthday on
+  Mother's Day): the region's over the global one, line 2 says one (2026-11-16).
 - Shown at Start, Wake and Welcome back, and on the Leaving title for celebrations; never
   more than the moments of §1.
 
@@ -265,7 +283,8 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
 - Tests (`tests/greeting.test.js`): every row of §3–§5 and its priority; each daypart;
   weekdays and weekends; 01:00 vs dawn; sizes (24 characters, long names stay whole —
   the renderer ellipsizes); no weather, rain, snow, storm; Beaufort words; holidays —
-  fixed dates, Easter 2026–2030, Tết and Mid-Autumn anchors, birthday over a
+  fixed dates, Easter 2026–2030, the nth Sunday (Mother's Day 2026 = 10 May, Father's Day
+  2026 = 21 June), the lunar anchors, Kitchen Gods' day in the next Gregorian year, birthday over a
   celebration, observance on line 2, `global` vs `auto` vs `off`, time zone → region; no
   measurements in the output.
 - In the Shell (headless): Start (a new `boot_id` faked in settings), Wake (a faked sleep
