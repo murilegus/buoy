@@ -141,6 +141,11 @@
       <summary>Power</summary>
       <description>Plugging in, unplugging and a full battery in a short flash; a low battery stays in the pill until you plug in, in place of GNOME's notification.</description>
     </key>
+    <key name="modules-plugged" type="b">
+      <default>true</default>
+      <summary>Plugged devices</summary>
+      <description>A display or headphones plugged in, in a short flash; a new display offers Join, Mirror or External Only.</description>
+    </key>
     <key name="modules-copied" type="b">
       <default>true</default>
       <summary>Copied</summary>

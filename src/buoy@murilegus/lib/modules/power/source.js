@@ -76,7 +76,9 @@ export class PowerSource extends Source {
             return;
         const modes = profilesOf(this._modes);
         const profile = modes?.active ?? null;
-        const first = this._profile === undefined;
+        // no mode known before (Buoy turned on, the proxy loading its properties, the daemon
+        // coming up) is a first reading, not a change: it flashed (and opened) at login
+        const first = !this._profile;
         const changed = profile !== this._profile;
         this._profile = profile;
         if (!profile) {
@@ -88,12 +90,14 @@ export class PowerSource extends Source {
         this._showMode(modes);
     }
 
+    // its three buttons open on their own (an alert, design/compact, Ethan 2026-11-15); a
+    // button pressed in that card only updates it
     _showMode(modes) {
         this._show(MODE, {
             what: 'mode', profile: modes.active, profiles: modes.list,
             percentage: this._last?.percentage ?? null, state: this._last?.state ?? 0,
             setProfile: p => setProfile(p),
-        });
+        }, {alert: !this._stack.has(this._id(MODE))});
     }
 
     _cached(name) {

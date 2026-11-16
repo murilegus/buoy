@@ -33,6 +33,8 @@ const ROWS = [
     ['Điện thoại', 'phone'], ['Tab Thiết bị', 'computer'], ['Pin', 'battery-good'], ['Pin đầy', 'battery-full'], ['Pin yếu', 'battery-low'],
     ['Pin đang sạc', 'battery-good-charging'], ['Tiết kiệm pin', 'power-profile-power-saver'],
     ['Cân bằng', 'power-profile-balanced'], ['Hiệu năng', 'power-profile-performance'],
+    ['Màn hình cắm vào', 'video-display'], ['Nối màn', 'shell-display-extend-all'], ['Nhân bản màn', 'shell-display-mirror'],
+    ['Chỉ màn ngoài', 'shell-display-external-only'], ['Tai nghe', 'audio-headphones'], ['Loa', 'audio-speakers'],
     ['#', 'Tải về, chép, nhập'],
     ['Tải về', 'folder-download'], ['Mở thư mục', 'folder-open'], ['Mở tệp', 'document-open'], ['Tệp chữ', 'text-x-generic'],
     ['Đã chép', 'edit-copy'], ['Mật khẩu', 'dialog-password'], ['Ảnh', 'image-x-generic'], ['Clipboard', 'edit-paste'],

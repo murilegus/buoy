@@ -7,6 +7,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {outputMoving} from '../../kit/services/audio.js';
 import {listNames, readText} from '../../kit/services/files.js';
 import {Source} from '../../kit/services/source.js';
 import {isFnLockLed, ledOn} from './adapter.js';
@@ -165,6 +166,10 @@ export class OsdSource extends Source {
     }
 
     _osd(icon, label, levels) {
+        // the sound moved to or from headphones: GNOME's volume OSD for it (ui/status/volume.js
+        // _portChanged) gives way to the plugged module's flash (kit/services/audio.js)
+        if (nameOf(icon).startsWith('audio-volume-') && outputMoving())
+            return;
         const at = levels?.[Main.layoutManager.primaryIndex] ??
             Object.values(levels ?? {}).find(l => l) ?? null;
         const maxLevel = at?.maxLevel > 0 ? at.maxLevel : 1;

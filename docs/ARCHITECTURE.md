@@ -70,6 +70,7 @@ src/buoy@murilegus/
     │   │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
     │   │   ├── sharing.js      the screen shared or recorded, from Shell's indicators (agent, notification; 2026-11-07)
     │   │   ├── power.js        GNOME's battery and power-mode toggles in Quick Settings; switching the mode, silently from Home (2026-11-14)
+    │   │   ├── audio.js        where the sound goes, from Shell's Gvc mixer; the HUD asks it whether a volume OSD is the output moving to or from headphones (plugged, 2026-11-15)
     │   │   ├── presence.js     you at the screen: input in the last second, away (session idle, locked), DND (alerts; 2026-11-12)
     │   │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
     │   │   └── devtools.js     `dev-mode`'s module hot swap
