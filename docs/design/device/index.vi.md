@@ -59,8 +59,12 @@ Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công 
 
 ## Chỗ trong code
 
-- `lib/modules/device/tab.js` — các cột, ô, "+N", trang thay chỗ; nhóm trống ẩn; "Coming soon" bỏ.
-- Mỗi module mang ô của mình cho tab (pin và chế độ: power; màn hình, âm thanh: plugged), qua một
-  phần chung trong `kit/` để module không import nhau.
-- `lib/kit/model/power.js` — công suất từ `EnergyRate`; UPS từ UPower (`kind` ups).
-- `stylesheet.css` — ô 58, tiêu đề nhóm.
+- `lib/kit/model/devices.js` — các nhóm, ô (pin, UPS, chế độ, màn hình, âm thanh có dây), số ô một cột,
+  "+N", trang của màn hình và của "+N". Có test (`tests/devices.test.js`).
+- `lib/modules/device/tab.js` — đọc qua `kit/services` (pin và chế độ của Quick Settings, màn hình của
+  Mutter, bộ trộn âm của Shell) chỉ khi tab còn, vẽ lại mỗi lần đổi; trang thay chỗ, ‹ hay Esc về.
+- Phần dùng chung để module không import nhau: `kit/model/displays.js` và `kit/services/displays.js`
+  (màn hình, cùng module plugged), `kit/model/audio.js` (tai nghe), trang pin trong
+  `kit/model/power.js` (cùng Home), `kit/ui/present/lists.js` (trang thay chỗ, cùng Home).
+- Công suất: `EnergyRate` của DisplayDevice; UPS: DisplayDevice `Type` 3 (UPower gộp UPS vào đó).
+- `lib/modules/device/stylesheet.css` — cột, tiêu đề nhóm, ô (cao 58 đặt bằng JS, `CELL_H`).

@@ -20,6 +20,7 @@ import {FADES, LIST_SHIFT, TAB_SHIFT} from '../model/motion.js';
 import {SpringRunner, slideIn} from './spring.js';
 import {SlidingRow} from './strip.js';
 import {Flights, markShared} from './present/flight.js';
+import {choicePage, listBox, listHead} from './present/lists.js';
 
 // a body leaving on a tab switch: its spring, and whether a tab.js keeps it (_leave)
 const leaving = new WeakMap();
@@ -103,7 +104,9 @@ class BodyView extends St.BoxLayout {
  *   kind tab    the module's tab.js, or the expanded views of its activities
  *   standalone  a module's tab.js, built on first selection (slot / ⋯ / pinned)
  *
- * A tab.js export is a class: `new Tab({close})` → {actor, destroy(), update?(activities)};
+ * A tab.js export is a class: `new Tab({close, width, height})` → {actor, destroy(),
+ * update?(activities), back?()}; `width`, `height`: the body's room under the strip; `back()`
+ * (‹ or Esc) leaves a page of the tab's own and says true, false when it has none;
  * a kind tab's `update` gets its kind's visible activities, at once and on every change.
  * `close()` closes the island: a tab calls it after an action that brings a window up
  * (open a file, focus an app), as a notification goes once it is clicked (2026-11-06,
@@ -357,7 +360,12 @@ export class Home {
      * @returns {boolean} handled
      */
     back() {
-        if (this._current !== HOME || !this._page || this._gone)
+        if (this._gone)
+            return false;
+        // a tab.js with pages of its own (the Device tab) goes back in itself
+        if (this._current !== HOME)
+            return this._tabs.get(this._current)?.back?.() === true;
+        if (!this._page)
             return false;
         this._page = null;
         const body = this._homeBody();
@@ -622,6 +630,8 @@ export class Home {
             tab = new (this._module(id).tab)({
                 close: () => this._onClose?.(), from: this._from,
                 refreshStrip: () => this._refreshStrip(),
+                // the body's room under the strip, as Home's own (design/expanded)
+                width: this._width - 2 * EDGE, height: Math.max(0, this._maxHeight - this._metrics.head - EDGE),
             });
             this._tabs.set(id, tab);
             const t = findTab(this._strip, id);
@@ -1011,18 +1021,7 @@ export class Home {
 
     // ‹ (back to Home, also Esc), the title and its count, an action
     _listHead(title, action = null) {
-        const head = new St.BoxLayout({style_class: 'buoy-home-list-head', x_expand: true});
-        const back = new St.Button({
-            style_class: 'buoy-round', can_focus: true, accessible_name: 'Back',
-            child: new St.Icon({...iconProps('go-previous-symbolic'), icon_size: 16}),
-            width: this._metrics.button, height: this._metrics.button,
-        });
-        back.connect('clicked', () => this.back());
-        head.add_child(back);
-        head.add_child(textLabel(title, 'buoy-home-title', true));
-        if (action)
-            head.add_child(action);
-        return head;
+        return listHead(title, {back: () => this.back(), button: this._metrics.button, end: action});
     }
 
     /**
@@ -1056,9 +1055,7 @@ export class Home {
     }
 
     _listBox(head) {
-        const box = new St.BoxLayout({style_class: 'buoy-home-list', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
-        box.add_child(head);
-        return box;
+        return listBox(head);
     }
 
     // Missed: the sources' rows (notifications, one row) then what ended unseen, newest
@@ -1105,34 +1102,10 @@ export class Home {
         const page = glance?.page?.();
         if (!page)
             return null;
-        const end = page.end ? textLabel(page.end, 'buoy-home-list-detail') : null;
-        const box = this._listBox(this._listHead(page.title, end));
-        const rows = new St.BoxLayout({style_class: 'buoy-home-choices', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
-        const row = (icon, name, {on = false, settings = false} = {}, click) => {
-            const content = new St.BoxLayout({style_class: 'buoy-home-list-row-box', x_expand: true});
-            content.add_child(new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
-            content.add_child(textLabel(name, 'buoy-home-choice-name', true));
-            let endIcon = null;
-            if (on)
-                endIcon = 'object-select-symbolic';
-            else if (settings)
-                endIcon = 'external-link-symbolic';
-            if (endIcon)
-                content.add_child(new St.Icon({...iconProps(endIcon), icon_size: 16, style_class: 'buoy-home-choice-end', y_align: Clutter.ActorAlign.CENTER}));
-            const b = new St.Button({
-                style_class: `buoy-home-choice${on ? ' buoy-home-choice-on' : ''}${settings ? ' buoy-home-choice-settings' : ''}`,
-                child: content, x_expand: true, can_focus: true, accessible_name: name,
-                x_align: Clutter.ActorAlign.FILL,
-            });
-            b.connect('clicked', click);
-            return b;
-        };
-        for (const r of page.rows)
-            rows.add_child(row(r.icon, r.name, {on: r.selected}, () => page.choose(r.id)));
-        if (page.settings)
-            rows.add_child(row('emblem-system-symbolic', page.settings.name, {settings: true}, () => glance.activate?.()));
-        box.add_child(rows);
-        return box;
+        return choicePage(page, {
+            back: () => this.back(), button: this._metrics.button, choose: c => page.choose(c),
+            settings: () => glance.activate?.(),
+        });
     }
 
     // Ongoing (+K): every activity in the stack's order; a row opens its tab

@@ -1,11 +1,11 @@
 import GLib from 'gi://GLib';
-import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Source} from '../../kit/services/source.js';
 import {defaultSink, mixer, readSink, sinkPorts, watchOutput} from '../../kit/services/audio.js';
-import {MODES, diffMonitors, headphonesGone, modeOf, modesFor, monitorKey, outputChanged, outputOf} from './adapter.js';
+import {displayInfo, monitorManager, readMonitors, switchMode} from '../../kit/services/displays.js';
+import {diffMonitors, headphonesGone, outputChanged, outputOf} from './adapter.js';
 
 // the mixer lists every output as it comes up: offers wait until it has (no timer, a time stamp)
 const MIXER_SETTLE_US = 3 * GLib.USEC_PER_SEC;
@@ -38,7 +38,7 @@ const AUDIO = 'audio';
 export class PluggedSource extends Source {
     enable(stack, registry = null, settings = null) {
         super.enable(stack, registry, settings);
-        this._mm = global.backend.get_monitor_manager();
+        this._mm = monitorManager();
         this._idle = global.backend.get_core_idle_monitor();
         this._settleId = 0;         // the user-active watch while a display's flash waits for you
         this._displayEv = null;     // that flash's event, to show again once you are back
@@ -80,11 +80,7 @@ export class PluggedSource extends Source {
     // --- displays ---------------------------------------------------------------------------
 
     _readMonitors() {
-        return this._mm.get_monitors().filter(m => !m.is_virtual()).map(m => ({
-            key: monitorKey({connector: m.get_connector(), vendor: m.get_vendor(), product: m.get_product(), serial: m.get_serial()}),
-            name: m.get_display_name(),
-            monitor: m,
-        }));
+        return readMonitors(this._mm);
     }
 
     _syncDisplays() {
@@ -130,21 +126,7 @@ export class PluggedSource extends Source {
     }
 
     _plugged(m) {
-        const mm = this._mm;
-        const builtin = mm.has_builtin_panel === true;
-        const logical = mm.get_logical_monitors();
-        const active = this._monitors.filter(x => x.monitor.is_active()).length;
-        return {
-            what: 'display-in',
-            name: m.name,
-            size: sizeOf(m.monitor, logical),
-            mode: modeOf({
-                count: active, builtin, builtinOn: mm.get_is_builtin_display_on(),
-                mirrored: logical.some(l => l.get_monitors().length > 1),
-            }),
-            modes: modesFor({canSwitch: mm.can_switch_config(), builtin}),
-            setMode: id => this._mm?.switch_config(Meta.MonitorSwitchConfigType[/** @type {'ALL_LINEAR'|'ALL_MIRROR'|'EXTERNAL'} */ (MODES[id].config)]),
-        };
+        return {what: 'display-in', name: m.name, ...displayInfo(this._mm, m, this._monitors), setMode: id => this._mm && switchMode(this._mm, id)};
     }
 
     // --- sound --------------------------------------------------------------------------------
@@ -233,19 +215,6 @@ export class PluggedSource extends Source {
             return;
         this._stack.surface(a);
     }
-}
-
-// The display's size in pixels: its logical monitor's (Main.layoutManager.monitors, by the
-// logical monitor's number) times its scale; Mutter gives no mode or refresh rate to extensions
-function sizeOf(monitor, logical) {
-    const l = logical.find(x => x.get_monitors().includes(monitor));
-    const geo = l ? Main.layoutManager.monitors[l.get_number()] : null;
-    if (!geo)
-        return null;
-    // layout.js Monitor sets geometry_scale (@girs names it geometryScale)
-    const own = /** @type {any} */ (geo).geometry_scale;
-    const scale = own > 0 ? own : 1;
-    return `${Math.round(geo.width * scale)} × ${Math.round(geo.height * scale)}`;
 }
 
 // Settings → Displays or Sound, as Shell opens its panels (Shell.AppSystem lookup_app)

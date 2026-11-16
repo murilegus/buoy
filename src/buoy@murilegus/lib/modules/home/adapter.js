@@ -1,4 +1,6 @@
-import {PROFILES, STATE, duration, fullyCharged} from '../../kit/model/power.js';
+import {PROFILES, STATE, batteryIcon, fullyCharged, timeLine} from '../../kit/model/power.js';
+
+export {batteryPage} from '../../kit/model/power.js';
 
 /**
  * home module (design/home): Buoy's own glances on Home. Pure: the battery's tile from the
@@ -32,59 +34,20 @@ export function batteryTile({present, percentage, state, timeToFull = 0, timeToE
     const pct = pctOf(percentage);
     const charging = state === STATE.CHARGING;
     const full = state === STATE.FULL;
-    let icon = 'battery-good-symbolic', caption = 'Battery';
-    if (charging) {
-        icon = 'battery-good-charging-symbolic';
+    const icon = batteryIcon({percentage, state});
+    let caption = 'Battery';
+    if (charging)
         caption = 'Charging';
-    } else if (full) {
-        icon = 'battery-full-symbolic';
-        // UPower's FULL below 100 % is only plugged in (kit/model/power.js fullyCharged)
+    else if (full)  // UPower's FULL below 100 % is only plugged in (kit/model/power.js fullyCharged)
         caption = fullyCharged({state, percentage}) ? 'Fully charged' : 'Plugged in';
-    } else if (state === STATE.PENDING_CHARGE) {
-        icon = pct >= 80 ? 'battery-full-symbolic' : 'battery-good-symbolic';
+    else if (state === STATE.PENDING_CHARGE)
         caption = 'Plugged in';     // held at a charge limit
-    } else if (pct >= 80) {
-        icon = 'battery-full-symbolic';
-    } else if (pct < 20) {
-        icon = 'battery-low-symbolic';
+    else if (pct < 20)
         caption = 'Low battery';
-    }
     const mode = modes?.active ? PROFILES[modes.active] : null;
     return {
         icon, value: `${pct}%`, caption,
         ...mode ? {cornerIcon: mode.icon} : {},
         detail: [timeLine({state, timeToFull, timeToEmpty}, 'Full in'), mode?.name ?? null].filter(Boolean),
-    };
-}
-
-// "Full in 42 min" / "3 h 20 min left"; null when full or not known
-function timeLine({state, timeToFull = 0, timeToEmpty = 0}, fullIn) {
-    if (state === STATE.FULL)
-        return null;
-    if (state === STATE.CHARGING) {
-        const t = duration(timeToFull);
-        return t ? `${fullIn} ${t}` : null;
-    }
-    const t = duration(timeToEmpty);
-    return t ? `${t} left` : null;
-}
-
-/**
- * The page its click opens: the power modes, the one in use chosen, then Power Settings.
- * Without power modes, none (the click opens Settings → Power as before).
- *
- * @param {object} b  as batteryTile
- * @param {?{active: ?string, list: string[]}} modes
- * @returns {?{title: string, end: ?string, rows: object[], settings: {name: string}}}
- */
-export function batteryPage(b, modes) {
-    if (!modes?.list?.length || b?.present !== true || !Number.isFinite(b.percentage))
-        return null;
-    const charging = b.state === STATE.CHARGING;
-    return {
-        title: `Battery · ${pctOf(b.percentage)}%${charging ? ' · charging' : ''}`,
-        end: timeLine(b, 'full in'),
-        rows: modes.list.map(id => ({id, icon: PROFILES[id].icon, name: PROFILES[id].name, selected: id === modes.active})),
-        settings: {name: 'Power Settings'},
     };
 }

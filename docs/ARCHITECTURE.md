@@ -59,7 +59,10 @@ src/buoy@murilegus/
     │   │   ├── daypart.js      hour → dawn…night from `daypart-starts` (2026-11-03)
     │   │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()` (2026-11-08)
     │   │   ├── palette.js      the colours by role, high contrast, the state colours (design/colours, 2026-11-12)
-    │   │   ├── power.js        UPower's states, the power modes, "42 min": the power module and Home's battery tile (2026-11-14)
+    │   │   ├── power.js        UPower's states, the power modes, "42 min", the battery's icon and page: the power module, Home's battery tile, the Device tab (2026-11-14)
+    │   │   ├── displays.js     the ways to use two displays, how they are used now, which came and went (plugged, the Device tab; 2026-11-16)
+    │   │   ├── audio.js        headphones as GNOME tells them, the output the sound goes to (plugged, the Device tab; 2026-11-16)
+    │   │   ├── devices.js      the Device tab's plan: its groups and cells, a column's rows, "+N", its pages (design/device, 2026-11-16)
     │   │   └── mascot.js       Bu: 13 pose grids, lamp rule, frame timing; MASCOT.md is the source (2026-11-03)
     │   ├── services/       the Shell side without actors: buses, files, Shell's objects, the
     │   │   │               one wall clock. Imports model/ and services/, never ui/, St or Clutter
@@ -70,6 +73,7 @@ src/buoy@murilegus/
     │   │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
     │   │   ├── sharing.js      the screen shared or recorded, from Shell's indicators (agent, notification; 2026-11-07)
     │   │   ├── power.js        GNOME's battery and power-mode toggles in Quick Settings; switching the mode, silently from Home (2026-11-14)
+    │   │   ├── displays.js     Mutter's displays: read, their size and mode, switch_config (plugged, the Device tab; 2026-11-16)
     │   │   ├── audio.js        where the sound goes, from Shell's Gvc mixer; the HUD asks it whether a volume OSD is the output moving to or from headphones (plugged, 2026-11-15)
     │   │   ├── presence.js     you at the screen: input in the last second, away (session idle, locked), DND (alerts; 2026-11-12)
     │   │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
@@ -88,6 +92,7 @@ src/buoy@murilegus/
     │           │                   tick(), FillBox, progressBar()
     │           ├── motion.js       what moves, each by rule 8: the marquee, Bu and his stillness,
     │           │                   the equaliser, typed text; dimStale()
+    │           ├── lists.js        a page in place of a body: ‹ and its title, rows of 36 (Home's glance pages, the Device tab's; 2026-11-16)
     │           ├── flight.js       shared parts: markShared() on the leading and the title, Flights
     │           │                   flies their clones between forms (pill, Home) (2026-11-13)
     │           ├── elements.js     one element of presentation data as an actor (cover art: St.Icon,
