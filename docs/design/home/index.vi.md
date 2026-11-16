@@ -141,7 +141,7 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 
 ![Ô pin: hẹp 128 và rộng, chế độ năng lượng ở góc trên phải](images/power-tile.vi.png)
 
-- Ô pin giữ khuôn ô chung: số % lớn, dưới là "Đang sạc", "Pin", "Pin yếu" hoặc "Đã sạc đầy". **Chốt**
+- Ô pin giữ khuôn ô chung: số % lớn, dưới là "Đang sạc", "Pin", "Pin yếu", "Đã sạc đầy" (chỉ ở 100 %) hoặc "Đang cắm sạc" (cắm mà không sạc: đầy dưới 100 %, giữ ở ngưỡng sạc; 2026-11-16). **Chốt**
 - **Chế độ năng lượng ở góc trên phải**, icon 16 màu `fg-subtle`, đúng chỗ ô thời tiết ghi tuổi số đo
   và ô nhạc đặt equaliser. Ô rộng (từ 200) thêm cột chi tiết: thời gian (đầy sau / còn lại) và tên chế
   độ. **Chốt**
