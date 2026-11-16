@@ -159,10 +159,13 @@ trắng như bản vẽ cũ.
   cắm sạc "Đang sạc · 72%"; rút "Dùng pin · 64%"; đầy khi đang cắm "Đã sạc đầy · 100%", chỉ ở 100 %:
   UPower báo FULL dưới đó (pin tự coi là đầy ở 96 %) hay pin bị giữ ở ngưỡng sạc là "Đang cắm sạc · 96%"
   (Ethan, 2026-11-16: "Đã sạc đầy 96%" đọc sai), ở flash, ở dòng của compact chế độ năng lượng và ở ô
-  pin trong Home. Không có thời gian: UPower chỉ có tốc độ, nên có ước tính, 10–15 s sau khi
-  cắm hay rút (`up-device-battery.c` up_device_battery_update_values: cắm/rút là một chỗ đứt, tốc độ
-  bị giữ ở 0 trong 10 s rồi đọc lại mỗi 5 s; pin không tự báo công suất cần 15 s số liệu), lúc đó
-  flash đã đi. Thời gian ở ô pin trong Home. **Chốt** (Ethan, 2026-11-14)
+  pin trong Home. **Thời gian khi đã biết**: UPower có ước tính 10–15 s sau khi cắm hay rút
+  (`up-device-battery.c` up_device_battery_update_values: cắm/rút là một chỗ đứt, tốc độ bị giữ ở 0
+  trong 10 s rồi đọc lại mỗi 5 s; pin không tự báo công suất cần 15 s số liệu), nên thường flash ghi
+  "Đang sạc"; khi đã có (cắm lại ngay sau khi rút, hay ước tính đến lúc flash còn hiện) nó ghi
+  "Đầy sau 36 phút · 65%". Số mới đến chỉ đổi chữ, **không kéo dài 3 s** (trước đó mỗi lần UPower cập
+  nhật lại đếm lại 3 s, flash ở mãi khi đang sạc). Thời gian luôn có ở ô pin trong Home và tab Thiết
+  bị. **Chốt** (Ethan, 2026-11-14; giữ thời gian: 2026-11-16)
 - **Sạc chậm**: đang sạc dưới 20 W khi pin dưới 80 % (trên 80 % máy tự giảm tốc): khi tốc độ đến,
   trong 30 s sau lúc cắm, **flash thêm một lần** "18 W · sạc chậm", thời gian xuống compact; mỗi lần
   cắm một lần. Quá 30 s, hay không đọc được tốc độ (EnergyRate), thì thôi. **Chốt** (Ethan, 2026-11-14)
