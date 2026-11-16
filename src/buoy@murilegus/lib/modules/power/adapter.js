@@ -1,5 +1,5 @@
 import {PRIORITY} from '../../kit/model/activity.js';
-import {PROFILES, STATE, duration, plugged} from '../../kit/model/power.js';
+import {PROFILES, STATE, duration, fullyCharged, plugged} from '../../kit/model/power.js';
 
 export {STATE, duration, plugged};
 
@@ -9,7 +9,8 @@ export {STATE, duration, plugged};
  *   charging  plugged in: 3 s — "Charging"; "18 W · slow charger" once more when the rate comes
  *             (slowLate)
  *   battery   unplugged: 3 s — "On battery"
- *   full      fully charged while plugged in: 3 s
+ *   full      fully charged while plugged in (FULL at 100 %): 3 s
+ *   plugged   plugged in to a battery UPower calls FULL below 100 %: 3 s — "Plugged in"
  *   low       UPower's warning level low / critical / action on battery: stays until plugged
  *             in; it takes the place of GNOME's own "Low Battery" notification
  *             (notification/adapter.js powerShows)
@@ -80,6 +81,13 @@ export function lowLevel(b) {
     return LEVELS[b.warning] ?? null;
 }
 
+// the plug in's flash: charging, full at 100 %, or only plugged in (FULL below 100 %)
+function plugInFlash(cur) {
+    if (cur.state !== STATE.FULL)
+        return 'charging';
+    return fullyCharged(cur) ? 'full' : 'plugged';
+}
+
 /**
  * What changed between two readings: a flash (plug in, unplug, full) and the low warning.
  * The first reading (prev null) flashes nothing; a low battery shows at once.
@@ -96,10 +104,10 @@ export function powerEvents(prev, cur) {
     if (prev?.present) {
         const was = plugged(prev.state), is = plugged(cur.state);
         if (!was && is)
-            flash = cur.state === STATE.FULL ? 'full' : 'charging';
+            flash = plugInFlash(cur);
         else if (was && !is)
             flash = low ? null : 'battery';     // the low warning says it
-        else if (is && prev.state !== STATE.FULL && cur.state === STATE.FULL)
+        else if (is && prev.state !== STATE.FULL && fullyCharged(cur))
             flash = 'full';
     }
     return {flash, low};
@@ -130,6 +138,7 @@ const ICONS = {
     charging: 'battery-good-charging-symbolic',
     battery: 'battery-good-symbolic',
     full: 'battery-full-symbolic',
+    plugged: 'battery-full-symbolic',
     low: 'battery-low-symbolic',
 };
 
@@ -148,6 +157,8 @@ function words(ev) {
     }
     case 'full':
         return {text: 'Fully charged', sub: null};
+    case 'plugged':     // FULL below 100 %: plugged in, not charging
+        return {text: 'Plugged in', sub: null};
     case 'low': {
         const t = duration(b.timeToEmpty);
         return {text: ev.level === 'low' ? 'Low battery' : 'Battery almost empty', sub: t ? `${t} left` : 'Plug in now'};
@@ -168,7 +179,7 @@ function modeLine(ev) {
     case STATE.CHARGING:
         return `${name} · battery ${b.percentage}%, charging`;
     case STATE.FULL:
-        return `${name} · fully charged`;
+        return fullyCharged(b) ? `${name} · fully charged` : `${name} · plugged in, ${b.percentage}%`;
     case STATE.PENDING_CHARGE:
         return `${name} · plugged in, ${b.percentage}%`;
     }

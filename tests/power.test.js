@@ -41,11 +41,14 @@ eq(powerEvents(null, B()), {flash: null, low: null}, 'events: the first reading 
 eq(powerEvents(null, B({warning: WARNING.LOW})), {flash: null, low: 'low'}, 'events: low at once, even on the first reading');
 eq(powerEvents(B(), B({state: STATE.CHARGING})).flash, 'charging', 'events: plugged in → charging');
 eq(powerEvents(B(), B({state: STATE.PENDING_CHARGE})).flash, 'charging', 'events: plugged in held at a limit → charging');
-eq(powerEvents(B(), B({state: STATE.FULL})).flash, 'full', 'events: plugged in already full → full');
+eq(powerEvents(B(), B({state: STATE.FULL, percentage: 100})).flash, 'full', 'events: plugged in already full → full');
+eq(powerEvents(B(), B({state: STATE.FULL, percentage: 96})).flash, 'plugged', 'events: plugged in, FULL at 96 % → plugged, not full (Ethan, 2026-11-16)');
+eq(powerEvents(B(), B({state: STATE.FULL, percentage: 99.6})).flash, 'full', 'events: 99.6 % rounds to 100 → full');
 eq(powerEvents(B({state: STATE.CHARGING}), B()).flash, 'battery', 'events: unplugged → battery');
 eq(powerEvents(B({state: STATE.CHARGING}), B({warning: WARNING.LOW})), {flash: null, low: 'low'}, 'events: unplugged low → the warning, no flash');
 eq(powerEvents(B({state: STATE.CHARGING, percentage: 99}), B({state: STATE.FULL, percentage: 100})).flash, 'full', 'events: charged up → full');
-eq(powerEvents(B({state: STATE.PENDING_CHARGE}), B({state: STATE.FULL})).flash, 'full', 'events: from the limit to full → full');
+eq(powerEvents(B({state: STATE.PENDING_CHARGE}), B({state: STATE.FULL, percentage: 100})).flash, 'full', 'events: from the limit to full → full');
+eq(powerEvents(B({state: STATE.CHARGING, percentage: 95}), B({state: STATE.FULL, percentage: 96})).flash, null, 'events: charging stops at 96 % (FULL) → no "full" flash');
 eq(powerEvents(B({state: STATE.FULL}), B({state: STATE.FULL, percentage: 99})).flash, null, 'events: still full → nothing');
 eq(powerEvents(B({state: STATE.CHARGING}), B({state: STATE.CHARGING, percentage: 70})).flash, null, 'events: charging on → nothing');
 eq(powerEvents(B(), B({percentage: 60})).flash, null, 'events: discharging on → nothing');
@@ -79,6 +82,8 @@ const pill = ev => adapter.power({percentage: 72, state: STATE.CHARGING, timeToF
     const f = pill({what: 'full', state: STATE.FULL, percentage: 100});
     eq([f.leading, f.text, f.trailing, f.ttl], ['battery-full-symbolic', 'Fully charged', {text: '100%'}, TTL], 'full');
     eq(pill({what: 'full', state: STATE.FULL, percentage: 80}).trailing, {text: '80%'}, 'full at a charge limit: its real percentage');
+    const pl = pill({what: 'plugged', state: STATE.FULL, percentage: 96});
+    eq([pl.leading, pl.text, pl.trailing, pl.ttl], ['battery-full-symbolic', 'Plugged in', {text: '96%'}, TTL], 'plugged: FULL below 100 % says plugged in');
     const l = pill({what: 'low', level: 'low', state: STATE.DISCHARGING, percentage: 18, timeToEmpty: 1500});
     eq([l.leading, l.text, l.trailing, l.ttl, l.priority], ['battery-low-symbolic', 'Low battery', {text: '18%'}, 0, PRIORITY.notification],
         'low: stays (ttl 0), priority 70 like the notification it replaces');
@@ -134,6 +139,7 @@ eq(set, ['performance'], 'mode: a button switches to its mode; an unknown id doe
 eq(M({state: STATE.DISCHARGING, percentage: 40}).compact.card.app, 'Balanced · battery 40%', 'mode compact: on battery, no "charging"');
 eq([M({state: STATE.FULL, percentage: 100}).compact.card.app, M({state: STATE.PENDING_CHARGE, percentage: 80}).compact.card.app],
     ['Balanced · fully charged', 'Balanced · plugged in, 80%'], 'mode compact: plugged in and full, or held at a limit: not "battery"');
+eq(M({state: STATE.FULL, percentage: 96}).compact.card.app, 'Balanced · plugged in, 96%', 'mode compact: FULL below 100 % is plugged in');
 eq(M({percentage: null}).compact.card.app, 'Balanced', 'mode compact: no battery (a desktop): the mode alone');
 eq(M({setProfile: null}).actions, [], 'mode: nothing to switch with: no buttons');
 eq(M({profile: 'custom'}), null, 'mode: one Buoy does not know: no pill');

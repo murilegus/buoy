@@ -1,4 +1,4 @@
-import {PROFILES, STATE, duration} from '../../kit/model/power.js';
+import {PROFILES, STATE, duration, fullyCharged} from '../../kit/model/power.js';
 
 /**
  * home module (design/home): Buoy's own glances on Home. Pure: the battery's tile from the
@@ -38,7 +38,11 @@ export function batteryTile({present, percentage, state, timeToFull = 0, timeToE
         caption = 'Charging';
     } else if (full) {
         icon = 'battery-full-symbolic';
-        caption = 'Fully charged';
+        // UPower's FULL below 100 % is only plugged in (kit/model/power.js fullyCharged)
+        caption = fullyCharged({state, percentage}) ? 'Fully charged' : 'Plugged in';
+    } else if (state === STATE.PENDING_CHARGE) {
+        icon = pct >= 80 ? 'battery-full-symbolic' : 'battery-good-symbolic';
+        caption = 'Plugged in';     // held at a charge limit
     } else if (pct >= 80) {
         icon = 'battery-full-symbolic';
     } else if (pct < 20) {

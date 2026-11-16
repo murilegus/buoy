@@ -118,6 +118,10 @@ eq([batteryTile({present: true, percentage: 19, state: STATE.DISCHARGING}).icon,
 eq([batteryTile({present: true, percentage: 19, state: STATE.DISCHARGING}).caption, batteryTile({present: true, percentage: 100, state: STATE.FULL}).caption,
     batteryTile({present: true, percentage: 15, state: STATE.CHARGING}).caption], ['Low battery', 'Fully charged', 'Charging'],
 'captions: low on battery, full, charging even when low (design/home "Ô pin")');
+eq([batteryTile({present: true, percentage: 96, state: STATE.FULL}).caption, batteryTile({present: true, percentage: 80, state: STATE.PENDING_CHARGE}).caption,
+    batteryTile({present: true, percentage: 99.7, state: STATE.FULL}).caption],
+['Plugged in', 'Plugged in', 'Fully charged'], 'captions: FULL below 100 % and held at a limit are plugged in; 99.7 rounds to full (Ethan, 2026-11-16)');
+eq(batteryTile({present: true, percentage: 60, state: STATE.PENDING_CHARGE}).icon, 'battery-good-symbolic', 'held at a limit under 80: the good battery');
 eq([batteryTile({present: false, percentage: 80, state: 2}), batteryTile({present: true, percentage: NaN, state: 2})], [null, null],
     'no battery (a desktop), no percentage: no tile');
 eq(batteryTile({present: true, percentage: 140, state: 2}).value, '100%', 'clamped to 100');

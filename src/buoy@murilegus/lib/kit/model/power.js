@@ -17,6 +17,18 @@ export function plugged(state) {
 }
 
 /**
+ * Fully charged as the pill says it: UPower's FULL at 100 %. A battery its firmware calls full
+ * below that (the kernel's "Full" at 96 %, UPower's percentage being energy over energy-full) is
+ * only plugged in (Ethan, 2026-11-16: "Fully charged 96%" read wrong).
+ *
+ * @param {{state: number, percentage: ?number}} b
+ * @returns {boolean}
+ */
+export function fullyCharged({state, percentage}) {
+    return state === STATE.FULL && (typeof percentage !== 'number' || Math.round(percentage) >= 100);
+}
+
+/**
  * The power modes, in the order Buoy lists them (low to high). Names as GNOME's Quick
  * Settings (ui/status/powerProfiles.js PROFILE_PARAMS); icons are Buoy's (design/icons
  * "Chế độ năng lượng"), under GNOME's names.
