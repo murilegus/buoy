@@ -12,6 +12,8 @@ import {batteryPage} from '../../kit/model/power.js';
 import {batteryToggle, profilesOf, profilesToggle, setProfile} from '../../kit/services/power.js';
 import {displayInfo, monitorManager, readMonitors, switchMode} from '../../kit/services/displays.js';
 import {defaultSink, mixer, readSink} from '../../kit/services/audio.js';
+import {FADES, LIST_SHIFT} from '../../kit/model/motion.js';
+import {slideIn} from '../../kit/ui/spring.js';
 
 const BUTTON = 32;      // the round ‹ of a page (compact metrics' button at the em)
 
@@ -95,7 +97,9 @@ export class DeviceTab {
 
     // --- drawing ----------------------------------------------------------------------------------
 
-    _render() {
+    // `slide`: a page pushed in from the right (+) or the columns back from the left (−), as Home's
+    // pages (kit/ui/home.js _showPage, back); a redraw for new figures does not move
+    _render(slide = 0) {
         if (!this.actor)
             return;
         const facts = this._facts();
@@ -104,12 +108,16 @@ export class DeviceTab {
         if (!page)
             this._page = null;      // its thing went (unplugged, the daemon left): the columns again
         this.actor.destroy_all_children();
+        let body;
         if (page)
-            this.actor.add_child(page);
+            body = page;
         else if (columns.length)
-            this.actor.add_child(this._columns(columns));
+            body = this._columns(columns);
         else
-            this.actor.add_child(new EmptyState('No devices', {pose: 'idle'}));
+            body = new EmptyState('No devices', {pose: 'idle'});
+        this.actor.add_child(body);
+        if (slide)
+            slideIn(body, slide, 'move', FADES.in.ms);
     }
 
     _columns(columns) {
@@ -170,7 +178,7 @@ export class DeviceTab {
 
     _open(page) {
         this._page = page;
-        this._render();
+        this._render(LIST_SHIFT);
     }
 
     /** ‹ or Esc (kit/ui/home.js back): the columns again; false when they show already. */
@@ -178,7 +186,7 @@ export class DeviceTab {
         if (!this._page)
             return false;
         this._page = null;
-        this._render();
+        this._render(-LIST_SHIFT);
         return true;
     }
 
