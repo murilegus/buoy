@@ -205,7 +205,7 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   cho màn, `Meta.Monitor.get_display_name()`). **Rút ra**: flash "Đã rút ViewSonic 27″". Cả hai **chờ bạn**:
   màn tối rồi sáng lại trong lúc máy đặt bố cục, không tín hiệu nào báo lúc sáng (3 s, rồi 6 s, đều đã
   hết trước đó, Ethan). Pill ở lại tới lần chạm chuột hay phím đầu tiên sau khi cắm hay rút
-  (`add_user_active_watch` của Mutter, như `ui/messageTray.js`), rồi 4 s; không ai chạm, 30 s. Chỉ khi
+  (`add_user_active_watch` của Mutter, như `ui/messageTray.js`), rồi 3 s; không ai chạm, 30 s. Chỉ khi
   bộ màn đổi (đầu nối, hãng, model, số seri): đổi cách dùng hai màn không flash. Lúc bật Buoy không
   flash cho màn đang cắm sẵn. **Chốt**
 - **Tai nghe**: flash 3 s khi âm thanh ra tai nghe, cách GNOME nhận ra tai nghe
@@ -220,12 +220,15 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   WirePlumber giữ profile loa): Gvc báo cổng tai nghe vừa có (`output-added`, gvc-mixer-control.c),
   compact tự mở "Tai nghe · Âm thanh đang ở Loa" với nút **Dùng**, chuyển đầu ra sang đó như danh
   sách đầu ra của Quick Settings (`change_output`); xong là flash tai nghe ở trên. Pill "Tai nghe đã
-  cắm" 6 s. Rút ra trước khi dùng: nó đi. Không mời trong 3 s đầu khi bộ trộn âm mới lên (nó kể lại mọi
+  cắm" 3 s. Rút ra trước khi dùng: nó đi. Không mời trong 3 s đầu khi bộ trộn âm mới lên (nó kể lại mọi
   đầu ra). **Chốt** (Ethan, 2026-11-15)
 - **Thay OSD âm lượng của GNOME** bật lên lúc đó: khi cổng đổi sang hay khỏi tai nghe, GNOME gọi
   `showOSD()` (`_portChanged`), như lúc chỉnh âm lượng. Bật module này, OSD đó không thành pill
   âm lượng: flash tai nghe nói thay.
 - **Mức ưu tiên**: 35 (loại `device`): trên nhạc, dưới tải về và Claude Code.
+- **Mọi flash chỉ để báo là 3 s**: pin, chế độ, tai nghe, màn hình (sau lần chạm đầu), pill sau card mời
+  dùng tai nghe, app xong tiến trình, pill sau card thông báo; tải xong một file 4 s (bấm là mở file);
+  phản hồi thao tác (âm lượng, chép, bộ gõ) 1,5 s. **Chốt** (Ethan, 2026-11-16: trước là 2,5 / 3 / 4 / 6 s)
 - **Bấm vào pill**: màn hình mở Cài đặt → Màn hình; tai nghe mở Cài đặt → Âm thanh.
 - Hộp thoại chọn thiết bị khi cắm combo jack (gsd media-keys → `AudioDeviceSelection.Open`) vẫn
   là của GNOME: máy Ethan không có loại jack đó.

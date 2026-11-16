@@ -972,7 +972,7 @@ the % and the file rows show size only.
     a thin bar.
   - **Done** — a row stays a little after the app's progress ends (pill gone), with the
     time, then leaves (2026-11-05: 10 min, at most 5). The pill says "Name · Done" for
-    2.5 s first. Done means the progress was hidden at ≥ 99 %; hidden earlier (cancelled)
+    3 s first (every flash 3 s, 2026-11-16). Done means the progress was hidden at ≥ 99 %; hidden earlier (cancelled)
     or the app leaving the bus ends it without Done.
   - A click on a row or on the pill focuses that app's window
     (`Shell.AppSystem.lookup_app(id).activate()`), not its tab: there is nothing more to

@@ -18,15 +18,17 @@ export {isHeadphones, outputOf} from '../../kit/model/audio.js';
  *          use yet (a card whose profiles part speakers and headphones, kept on the speakers)
  */
 
+// every flash that only tells is 3 s (Ethan, 2026-11-16: 2.5, 3, 4 and 6 s made one)
 export const TTL = 3000;
 // A display's flash waits for you: the screens go dark and come back while the layout is set, for
 // seconds nothing tells (Ethan, 2026-11-15: 3 s, then 6 s, were over by then). It stays until the
 // first input after the plug (`settled`, the source's user-active watch), then DISPLAY_TTL;
 // with no input, DISPLAY_WAIT at most.
-export const DISPLAY_TTL = 4000;
+export const DISPLAY_TTL = 3000;
 export const DISPLAY_WAIT = 30000;
-// headphones plugged in but not used: as long, time to hover and press Use
-export const OFFER_TTL = 6000;
+// headphones plugged in but not used: Use is on its card (an alert, held while you are there), so
+// the pill after it is a flash like the others
+export const OFFER_TTL = 3000;
 
 const DISPLAY_PANEL = 'gnome-display-panel.desktop';
 const SOUND_PANEL = 'gnome-sound-panel.desktop';
