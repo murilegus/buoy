@@ -86,6 +86,7 @@ Developer modules opt-in, off by default; the Calendar and Clipboard tabs on (SP
 | | Item | Done when |
 |---|---|---|
 | [ ] | Clipboard tab | SPEC §6b item 9 |
+| [ ] | New event from the Calendar tab | to design first (Vietnamese). A double click on a day in the Calendar tab opens a short form on that day: the title typed in Buoy, all day or a start with a few durations (30 min, 1 h), the calendar (EDS's default one; a choice when more than one can be written), maybe a reminder and a place; repeats and guests left out. Written to Evolution Data Server over D-Bus (`org.gnome.evolution.dataserver.Calendar8`: CalendarFactory `OpenCalendar`, then the iCalendar VEVENT) — no libecal typelib on Ubuntu, and GNOME Calendar is not installed to hand over to; the event shows at once in the date menu and in Buoy. Where it lives is the chosen calendar's: "Personal" (On This Computer) is local, not synced; a Google or Nextcloud / CalDAV calendar from Online Accounts is synced by EDS (offline: sent later); Microsoft 365 needs evolution-ews; read-only calendars (Birthdays, web) are not offered. Buoy keeps no events of its own (2026-11-16, Ethan) |
 | [ ] | Launcher tab | |
 | [ ] | Sound tab | SPEC §6b item 10 |
 | [ ] | systemd unit failed → View log | user and system units |
