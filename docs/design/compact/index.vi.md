@@ -13,6 +13,12 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
 - Phần đầu 56 = pill idle × 1.75: leading 40, trên dưới 8, hai bên 14. Chữ không phóng theo;
   phần đầu chứa hai dòng (tiêu đề 1em, phụ đề 0.85em). Nút là hình tròn 32, tâm nằm trên đường
   giữa phần đầu (y = 28), cùng hàng với leading. **Chốt** (Ethan, 2026-11-11)
+- **Cột dưới leading không bao giờ để trống**: phần thân (thanh của nhạc, các hàng, chữ và nút của
+  card) dùng cả cột đó, không thụt theo cột chữ. Phương án thụt vào (bên trái hình dưới) đã cân
+  nhắc và bỏ; với nhạc, ảnh bìa 72 chiếm cả hai hàng thay cho thanh trải hết bề ngang. **Chốt**
+
+  ![Phần thân: thụt vào so với tận dụng cột dưới leading; ảnh bìa 72](images/body.vi.png)
+
 - **Rộng cố định** min(28em, 0.72 × expanded): 404 ở 1920, 410 ở 2560. Không co theo nội dung: co
   thì nút tròn đứng sát chữ và mỗi compact một cỡ, trông xấu; co theo nội dung chỉ ở pill. **Chốt**
   (Ethan, 2026-11-12; trước là 16em … min(…), co theo nội dung)
@@ -20,7 +26,6 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
 
 ## Nhạc
 
-- Cột dưới leading không bao giờ để trống. **Chốt**
 - Nhạc có thanh tiến trình: **ảnh bìa 72** chiếm cả phần đầu lẫn hàng thanh (8 + 72 + 8 = 88), bo
   20 (28 − 8, đồng tâm với góc). Nhạc không có thời lượng (radio, luồng trực tiếp): chỉ phần đầu,
   ảnh 40, cao 56. **Chốt**
@@ -165,23 +170,75 @@ trắng như bản vẽ cũ.
   đó không thành pill. **Chốt**
 - **Mức ưu tiên**: flash 40 (mức của loại `power`); pin yếu 70, bằng thông báo nó thay, nên nhạc hay
   agent không che. **Chốt**
-- **Đổi chế độ**: flash 3 s "Cân bằng" (icon của chế độ, không trailing), cả khi máy tự đổi (pin yếu
+- **Đổi chế độ**: pill 3 s "Cân bằng" (icon của chế độ, không trailing) với compact tự mở, cả khi máy tự đổi (pin yếu
   chuyển sang Tiết kiệm pin). Không flash lúc mới bật Buoy. **Chốt**
 - Bấm flash pin hoặc pill pin yếu: mở Cài đặt → Nguồn. **Chốt**
 
-![Compact chế độ năng lượng: rê chuột lên flash đổi chế độ](images/power-compact.vi.png)
+![Compact chế độ năng lượng: tự mở khi đổi chế độ](images/power-compact.vi.png)
 
-- **Rê chuột lên flash đổi chế độ → compact có 3 nút**: phần đầu 56 (đĩa tròn 40 `fill-2` như compact quay màn
+- **Đổi chế độ → compact có 3 nút tự mở** (alert, Ethan 2026-11-15; trước là khi rê chuột lên flash; mục "Cắm màn hình và tai nghe"): phần đầu 56 (đĩa tròn 40 `fill-2` như compact quay màn
   hình, với icon chế độ, "Chế độ năng lượng", dòng dưới theo pin: "Cân bằng · pin 82%, đang sạc", "· đã sạc đầy", "· đang cắm, 80%" (giữ ở ngưỡng sạc), "· pin 64%"), hàng nút 32 cách mép 12 như card:
   104. Nút đang chọn `fill-3`, chữ 600; các nút khác `fill-2`, `fg-muted`. Mỗi nút rộng theo chữ của nó, phần dư chia đều (chia ba bằng nhau thì "Performance" đậm bị cắt). Bấm: đổi ngay, flash mới cho
   chế độ vừa chọn. **Chốt** (Ethan, 2026-11-14: phương án C, cùng với danh sách trong Home)
 
-## Phương án đã cân nhắc
+## Cắm màn hình và tai nghe
 
-Phần thân thụt theo cột chữ (như hiện tại) so với tận dụng cột dưới leading; với nhạc, phương án
-còn lại là thanh trải hết bề ngang.
+*Ethan, 2026-11-15 (mục M4 "Headphones / display plugged").* Màn hình đọc từ Mutter
+(`global.backend.get_monitor_manager()`: `get_monitors()`, `monitors-changed`), tai nghe từ bộ trộn âm
+Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, không dò. **Chốt**
 
-![Phần thân: thụt vào so với tận dụng cột dưới leading; ảnh bìa 72](images/body.vi.png)
+- **Mục có lựa chọn thì compact tự mở** (alert), không chỉ flash trên pill: cắm màn (3 nút), tai nghe
+  cắm mà chưa dùng (nút Dùng), đổi chế độ năng lượng (3 nút, mục trên). Nút có sẵn, không phải rê
+  chuột. Card giữ 5 s **lúc bạn có mặt** (có input, như mọi alert: [Alert và
+  ask](../alerts-and-asks/index.vi.md)), nên màn tối lúc cắm không ăn mất nó. Mục chỉ để báo vẫn là
+  flash: rút màn, âm thanh đã sang tai nghe hay về loa, cắm sạc, rút sạc, đầy. **Chốt** (Ethan,
+  2026-11-15: "chỉ mục có nút")
+
+![Flash cắm và rút màn hình, tai nghe, về loa](images/plugged-flash.vi.png)
+
+- **Màn hình cắm vào**: compact tự mở (dưới), rồi pill "ViewSonic 27″" (icon `display`, tên Mutter đặt
+  cho màn, `Meta.Monitor.get_display_name()`). **Rút ra**: flash "Đã rút ViewSonic 27″". Cả hai **chờ bạn**:
+  màn tối rồi sáng lại trong lúc máy đặt bố cục, không tín hiệu nào báo lúc sáng (3 s, rồi 6 s, đều đã
+  hết trước đó, Ethan). Pill ở lại tới lần chạm chuột hay phím đầu tiên sau khi cắm hay rút
+  (`add_user_active_watch` của Mutter, như `ui/messageTray.js`), rồi 4 s; không ai chạm, 30 s. Chỉ khi
+  bộ màn đổi (đầu nối, hãng, model, số seri): đổi cách dùng hai màn không flash. Lúc bật Buoy không
+  flash cho màn đang cắm sẵn. **Chốt**
+- **Tai nghe**: flash 3 s khi âm thanh ra tai nghe, cách GNOME nhận ra tai nghe
+  (`OutputStreamSlider._findHeadphones`: thiết bị dạng headset/headphone, như Bluetooth; hay cổng có
+  chữ "headphone", như jack). Chữ: tên thiết bị với Bluetooth và USB ("WH-1000XM4"), "Tai nghe" với
+  jack. Trailing là âm lượng, "64%". **Rút ra cũng báo** (Ethan, 2026-11-16): icon tai nghe như flash rút màn,
+  "Đã rút tai nghe" với jack, "Đã ngắt WH-1000XM4" với Bluetooth và USB, trailing là âm lượng của loa
+  lúc đó. Chỉ khi tai nghe thật sự đi: sink Bluetooth không còn, hay cổng jack báo không còn gì cắm
+  (`GvcMixerStreamPort.available`); chuyển sang loa bằng tay trong Quick Settings khi tai nghe vẫn cắm:
+  flash "Loa · 64%". **Chốt**
+- **Tai nghe cắm mà âm thanh vẫn ra loa** (máy của Ethan: card SOF có hai profile, loa và tai nghe;
+  WirePlumber giữ profile loa): Gvc báo cổng tai nghe vừa có (`output-added`, gvc-mixer-control.c),
+  compact tự mở "Tai nghe · Âm thanh đang ở Loa" với nút **Dùng**, chuyển đầu ra sang đó như danh
+  sách đầu ra của Quick Settings (`change_output`); xong là flash tai nghe ở trên. Pill "Tai nghe đã
+  cắm" 6 s. Rút ra trước khi dùng: nó đi. Không mời trong 3 s đầu khi bộ trộn âm mới lên (nó kể lại mọi
+  đầu ra). **Chốt** (Ethan, 2026-11-15)
+- **Thay OSD âm lượng của GNOME** bật lên lúc đó: khi cổng đổi sang hay khỏi tai nghe, GNOME gọi
+  `showOSD()` (`_portChanged`), như lúc chỉnh âm lượng. Bật module này, OSD đó không thành pill
+  âm lượng: flash tai nghe nói thay.
+- **Mức ưu tiên**: 35 (loại `device`): trên nhạc, dưới tải về và Claude Code.
+- **Bấm vào pill**: màn hình mở Cài đặt → Màn hình; tai nghe mở Cài đặt → Âm thanh.
+- Hộp thoại chọn thiết bị khi cắm combo jack (gsd media-keys → `AudioDeviceSelection.Open`) vẫn
+  là của GNOME: máy Ethan không có loại jack đó.
+
+![Compact màn hình và compact mời dùng tai nghe, tự mở](images/plugged-compact.vi.png)
+
+- **Compact màn hình** (104), như compact chế độ năng lượng: đĩa tròn
+  `fill-2` với icon `display`, tên màn, dòng dưới "2560 × 1440 · đang nối" (độ phân giải của màn;
+  Mutter không đưa tần số quét ra ngoài). Nút **Nối / Nhân bản / Chỉ màn ngoài**, như Super+P của
+  GNOME (`switchMonitor.js`), bấm là đổi ngay (`switch_config`); không có "Chỉ màn laptop": cắm màn
+  rời để dùng nó (Ethan). Nút đang dùng `fill-3`, chữ 600, theo cách Mutter đang chạy: màn laptop
+  tắt là chỉ màn ngoài, một logical monitor có hai màn là nhân bản, còn lại là nối
+  (`get_switch_config()` không biết một bố cục tự chỉnh trong Cài đặt). Máy không có màn laptop
+  (`has_builtin_panel` sai): chỉ Nối và Nhân bản, như GNOME. Không đổi được (`can_switch_config()`
+  sai): không có nút, chỉ flash. **Chốt**
+- **Compact mời dùng tai nghe** (104): đĩa tròn với icon `headphones`, "Tai nghe", dòng dưới "Âm thanh
+  đang ở Loa"; một nút **Dùng** trải hết hàng (nút thường, không phải nút chọn). **Chốt**
+- Hai mục này có trong nhóm "Cắm vào" của tab Thiết bị khi làm mục đó.
 
 ## Chỗ trong code
 

@@ -45,6 +45,14 @@ export const SYMBOLIC = {
     'power-profile-power-saver': 'own:power-saver',
     'power-profile-balanced': 'scales-balanced',
     'power-profile-performance': 'own:power-performance',
+    // plugged (design/compact "Cắm màn hình và tai nghe"): the display, its modes as Shell's Super+P
+    // switcher names them (switchMonitor.js), headphones and back to the speakers
+    'video-display': 'display',
+    'shell-display-extend-all': 'layout-split-columns',
+    'shell-display-mirror': 'copy',
+    'shell-display-external-only': 'display',
+    'audio-headphones': 'headphones',
+    'audio-speakers': 'volume',
     // downloads, copied, input
     'folder-download': 'arrow-down-to-line',
     'folder-open': 'folder-open',

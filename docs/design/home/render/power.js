@@ -117,7 +117,7 @@ if (MODE === 'tile') {
     });
     note('104 = 56 + 4 + 32 + 12: phần đầu 56, hàng nút 32 cách mép 12 (như card)', CX, cy + 112);
     note('nút đang chọn fill-3, chữ 600; các nút khác fill-2, fg-muted', CX, cy + 126);
-    note('rê chuột lên flash đổi chế độ → compact này; bấm một nút: đổi ngay, flash mới', CX, cy + 140);
+    note('đổi chế độ → compact này tự mở (alert, giữ 5 s lúc bạn có mặt); bấm một nút: đổi ngay', CX, cy + 140);
     // the mode flash it comes from
     pill(CX + kw + 40, cy + 8, MODES.balanced, 'Cân bằng');
     note('flash 3 s', CX + kw + 40, cy + 46);
