@@ -89,6 +89,7 @@ plugins:
                 - Home: design/home/index.md
                 - Tab: design/tabs/index.md
                 - Media: design/media/index.md
+                - Thiết bị: design/device/index.md
                 - Icon: design/icons/index.md
                 - Bu: design/mascot/index.md
                 - Chuyển động: design/motion/index.md

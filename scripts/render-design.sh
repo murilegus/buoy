@@ -73,6 +73,8 @@ for m in states music anatomy fill lists screen; do r home/render/home.js home/i
 for m in tile list; do r home/render/power.js home/images/power-$m.vi.png $m; done
 for m in flash compact; do r home/render/power.js compact/images/power-$m.vi.png $m; done
 r home/render/power.js icons/images/power-modes.vi.png icons
+# the Device tab
+for m in columns pages; do r device/render/device.js device/images/$m.vi.png $m; done
 # headphones / display plugged
 for m in flash compact; do r compact/render/plugged.js compact/images/plugged-$m.vi.png $m; done
 

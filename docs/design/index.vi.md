@@ -23,6 +23,7 @@ Các thay đổi ở đây chưa có trong code: chúng là các mục redesign 
 | [Home](home/index.vi.md) | thẻ chính, hàng ô, cách lấp để không bao giờ trống |
 | [Tab](tabs/index.vi.md) | thanh tab và luật chung; mỗi tab một trang |
 | [Media](media/index.vi.md) | tab Media: thẻ như Home, chip cho nhiều player, nút và thanh luôn đủ |
+| [Thiết bị](device/index.vi.md) | tab Thiết bị: mỗi nhóm một cột, ô 58, "+N", trang khi bấm |
 | [Icon](icons/index.vi.md) | icon buổi trong ngày và thời tiết |
 | [Bu](mascot/index.vi.md) | cỡ của Bu trong mỗi dạng |
 | [Chuyển động](motion/index.vi.md) | lò xo kiểu Dynamic Island, từng chuyển, tương tác, khi bị cắt ngang |
