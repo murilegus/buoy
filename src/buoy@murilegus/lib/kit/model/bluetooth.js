@@ -73,6 +73,16 @@ export function upKind(kind) {
     return UP_KINDS.get(kind) ?? null;
 }
 
+const NAMES = Object.freeze({
+    headphones: 'Headphones', speakers: 'Speakers', keyboard: 'Keyboard', mouse: 'Mouse', gaming: 'Game Controller',
+    tablet: 'Tablet', touchpad: 'Touchpad', phone: 'Phone', other: 'Device',
+});
+
+/** @param {string} kind  @returns {string} its name, as Settings → Bluetooth says the type */
+export function kindName(kind) {
+    return NAMES[kind] ?? NAMES.other;
+}
+
 /** @param {string} kind  @returns {string} its symbolic icon */
 export function kindIcon(kind) {
     return ICONS[kind] ?? ICONS.other;

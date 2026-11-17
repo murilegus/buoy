@@ -81,8 +81,9 @@ plugged, Bluetooth device, USB / phone / webcam plugged, Phone via GSConnect). S
 
 - **Bấm thiết bị Bluetooth**: trang thay chỗ các cột. Đầu trang: tên, pin ở cuối. Hàng **Âm lượng**
   (thanh và số) chỉ khi âm thanh đang ra thiết bị đó; bấm mở Cài đặt → Âm thanh, kéo thì dùng phím hay
-  Quick Settings. **Ngắt kết nối** như danh sách Bluetooth của Quick Settings; ngắt xong về các cột.
-  Rồi **Cài đặt Bluetooth**. **Chốt** (Ethan, 2026-11-17)
+  Quick Settings. Một hàng **loại và địa chỉ** ("Điện thoại · F8:43:EF:98:5A:0D"), như Cài đặt →
+  Bluetooth, chỉ để xem. **Ngắt kết nối** như danh sách Bluetooth của Quick Settings; ngắt xong về các
+  cột. Rồi **Cài đặt Bluetooth**. **Chốt** (Ethan, 2026-11-17)
 
 ## Mục này làm gì
 

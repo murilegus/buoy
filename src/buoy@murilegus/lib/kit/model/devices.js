@@ -1,6 +1,6 @@
 import {MODES} from './displays.js';
 import {isBluetoothSink} from './audio.js';
-import {batteryOf, kindIcon, sortWireless} from './bluetooth.js';
+import {batteryOf, kindIcon, kindName, sortWireless} from './bluetooth.js';
 import {PROFILES, STATE, batteryIcon, duration} from './power.js';
 
 /**
@@ -227,11 +227,12 @@ export function displayPage(d) {
 
 /**
  * A Bluetooth device's page (design/device "Bấm vào", 2026-11-17, Ethan): its battery at the end of
- * the head; the volume, while the sound plays on it; Disconnect; Bluetooth Settings.
+ * the head; the volume, while the sound plays on it; what it is and its address, as Settings →
+ * Bluetooth shows them (one row, not a button); Disconnect; Bluetooth Settings.
  *
- * @param {{name: string, battery?: ?object}} d  model/bluetooth.js's device
+ * @param {{name: string, kind?: string, address?: ?string, battery?: ?object}} d  model/bluetooth.js's device
  * @param {?{level: ?number, muted?: boolean}} audio  the sound on it now; null: it plays elsewhere
- * @returns {?object} {title, battery: ?{value, label?}, rows: [{id, icon, name, meter?}], settings}
+ * @returns {?object} {title, battery: ?{value, label?}, rows: [{id, icon, name, meter?, value?}], settings}
  */
 export function bluetoothPage(d, audio = null) {
     if (!d)
@@ -243,6 +244,7 @@ export function bluetoothPage(d, audio = null) {
         battery: b ? {type: 'battery', value: b.value, ...b.label ? {label: b.label} : {}} : null,
         rows: [
             ...volume ? [{id: 'volume', icon: 'audio-speakers-symbolic', name: 'Volume', meter: volume}] : [],
+            {id: 'info', icon: kindIcon(d.kind), name: kindName(d.kind), value: d.address || null},
             {id: 'disconnect', icon: 'bluetooth-disabled-symbolic', name: 'Disconnect'},
         ],
         settings: {name: 'Bluetooth Settings'},

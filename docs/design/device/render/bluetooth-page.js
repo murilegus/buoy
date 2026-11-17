@@ -67,6 +67,8 @@ function page(x, y, name, batt, rows) {
             fill(.25, bx, ry + 16, bw, 4, 2); fill(1, bx, ry + 16, bw * v, 4, 2);
             text(label, AX + AW - 14, ry + 9, {wt: 600, right: true});
         }
+        if (r.value)
+            text(r.value, AX + AW - 14, ry + 9, {a: C.FG_MUTED, right: true});
         if (r.settings)
             icon('arrow-up-right-from-square', AX + AW - 30, ry + 10, 16, C.FG_SUBTLE);
     });
@@ -76,12 +78,14 @@ let x = GAP / 2;
 text('Tai nghe Bluetooth đang phát', x, 12, {sz: 12, wt: 600});
 page(x, 40, 'WH-1000XM4', [.8, '80%'], [
     {ic: 'volume', name: 'Âm lượng', level: [.64, '64%']},
+    {ic: 'headphones', name: 'Tai nghe', value: '88:92:CC:70:9C:22'},
     {ic: 'bluetooth-slash', name: 'Ngắt kết nối'},
     {ic: 'gear', name: 'Cài đặt Bluetooth', settings: true},
 ]);
 x += PW + GAP;
 text('Chuột Bluetooth', x, 12, {sz: 12, wt: 600});
 page(x, 40, 'MX Master 3S', [.15, '15%'], [
+    {ic: 'mouse', name: 'Chuột', value: 'D4:12:7A:3C:90:11'},
     {ic: 'bluetooth-slash', name: 'Ngắt kết nối'},
     {ic: 'gear', name: 'Cài đặt Bluetooth', settings: true},
 ]);
@@ -89,5 +93,5 @@ const ny = 40 + PH + 12;
 note('Đầu trang: tên, và pin ở cuối (hình pin theo mức, rồi số), như độ phân giải ở trang màn hình.', GAP / 2, ny);
 note('Âm lượng: chỉ khi âm thanh đang ra thiết bị này; thanh và số như HUD (tắt tiếng: mờ). Bấm hàng: Cài đặt → Âm thanh. Không kéo ở đây: phím và Quick Settings lo.', GAP / 2, ny + 14);
 note('Ngắt kết nối: như danh sách Bluetooth của Quick Settings (connect_service); ngắt xong trang đóng, về các cột. Cài đặt Bluetooth: mở Cài đặt, island đóng.', GAP / 2, ny + 28);
-note('Thiết bị không có âm thanh (chuột, bàn phím, điện thoại): không có hàng Âm lượng.', GAP / 2, ny + 42);
+note('Thiết bị không có âm thanh (chuột, bàn phím, điện thoại): không có hàng Âm lượng. Hàng loại và địa chỉ (như Cài đặt → Bluetooth): chỉ để xem, không bấm.', GAP / 2, ny + 42);
 surf.writeToPNG(out);

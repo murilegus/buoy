@@ -286,6 +286,8 @@ export class DeviceTab {
             if (r.id === 'volume') {
                 rows.add_child(choiceRow({icon: r.icon, name: r.name, plain: true, end: meterActor(r.meter, ROW_BAR)},
                     () => this._launch('gnome-sound-panel.desktop')));
+            } else if (r.id === 'info') {
+                rows.add_child(choiceRow({icon: r.icon, name: r.name, value: r.value, plain: true}, null));
             } else {
                 rows.add_child(choiceRow({icon: r.icon, name: r.name, plain: true}, () => disconnectDevice(this._bt, id)));
             }

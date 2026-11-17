@@ -105,11 +105,16 @@ const wg = deviceGroups({
 eq(wg[1].cells.map(c => c.name), ['MX Master 3S', 'WH-1000XM4', 'Pixel 8'], 'groups: Wireless, a low battery first (design/device)');
 eq(planDevices(wg, 3).map(c => c.title), ['Wireless'], 'groups: Wireless alone shown when it alone has devices');
 
-const bp = bluetoothPage({name: 'WH-1000XM4', battery: {percentage: 80}}, {level: 0.64, muted: false});
+const bp = bluetoothPage({name: 'WH-1000XM4', kind: 'headphones', address: '88:92:CC:70:9C:22', battery: {percentage: 80}}, {level: 0.64, muted: false});
 eq([bp.title, bp.battery, bp.rows.map(r => r.id), bp.rows[0].meter, bp.settings.name],
-    ['WH-1000XM4', {type: 'battery', value: 0.8, label: '80%'}, ['volume', 'disconnect'], {type: 'bar', value: 0.64, label: '64%'}, 'Bluetooth Settings'],
-    'bluetooth page: the battery at the head, the volume while it plays, Disconnect, Bluetooth Settings (Ethan, 2026-11-17)');
-eq(bluetoothPage({name: 'MX Master 3S', battery: {percentage: 15}}).rows.map(r => r.id), ['disconnect'], 'bluetooth page: not playing, no volume row');
+    ['WH-1000XM4', {type: 'battery', value: 0.8, label: '80%'}, ['volume', 'info', 'disconnect'], {type: 'bar', value: 0.64, label: '64%'}, 'Bluetooth Settings'],
+    'bluetooth page: the battery at the head, the volume while it plays, what it is, Disconnect, Bluetooth Settings (Ethan, 2026-11-17)');
+eq(bp.rows[1], {id: 'info', icon: 'audio-headphones-symbolic', name: 'Headphones', value: '88:92:CC:70:9C:22'},
+    'bluetooth page: its type and address, as Settings → Bluetooth (Ethan, 2026-11-17)');
+const rn = bluetoothPage({name: 'Redmi Note 14', kind: 'phone', address: 'F8:43:EF:98:5A:0D'});
+eq([rn.rows.map(r => r.id), rn.rows[0].name], [['info', 'disconnect'], 'Phone'], 'bluetooth page: not playing, no volume row');
+eq([bluetoothPage({name: 'X', kind: 'gaming'}).rows[0], bluetoothPage({name: 'X', kind: 'weird'}).rows[0].name],
+    [{id: 'info', icon: 'input-gaming-symbolic', name: 'Game Controller', value: null}, 'Device'], 'bluetooth page: no address; an unknown kind is a "Device"');
 eq([bluetoothPage({name: 'Pixel 8'}).battery, bluetoothPage({name: ''}).title, bluetoothPage(null)], [null, 'Bluetooth device', null],
     'bluetooth page: no battery, no name, nothing');
 
