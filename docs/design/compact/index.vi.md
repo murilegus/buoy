@@ -209,13 +209,16 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   bộ màn đổi (đầu nối, hãng, model, số seri): đổi cách dùng hai màn không flash. Lúc bật Buoy không
   flash cho màn đang cắm sẵn. **Chốt**
 - **Tai nghe**: flash 3 s khi âm thanh ra tai nghe, cách GNOME nhận ra tai nghe
-  (`OutputStreamSlider._findHeadphones`: thiết bị dạng headset/headphone, như Bluetooth; hay cổng có
-  chữ "headphone", như jack). Chữ: tên thiết bị với Bluetooth và USB ("WH-1000XM4"), "Tai nghe" với
-  jack. Trailing là âm lượng, "64%". **Rút ra cũng báo** (Ethan, 2026-11-16): icon tai nghe như flash rút màn,
-  "Đã rút tai nghe" với jack, "Đã ngắt WH-1000XM4" với Bluetooth và USB, trailing là âm lượng của loa
-  lúc đó. Chỉ khi tai nghe thật sự đi: sink Bluetooth không còn, hay cổng jack báo không còn gì cắm
+  (`OutputStreamSlider._findHeadphones`: thiết bị dạng headset/headphone, như USB; hay cổng có
+  chữ "headphone", như jack). Chữ: tên thiết bị với USB ("Logi USB Headset"), "Tai nghe" với
+  jack. Trailing là **âm lượng như HUD**: thanh 40 rồi số, "64%"; tắt tiếng thì cả hai mờ. Thanh để
+  không đọc nhầm thành pin: pin là hình pin vẽ theo mức ([Tab Thiết bị](../device/index.vi.md),
+  "Không dây"). **Chốt** (Ethan, 2026-11-17) **Rút ra cũng báo** (Ethan, 2026-11-16): icon tai nghe như
+  flash rút màn, "Đã rút tai nghe" với jack, "Đã ngắt Logi USB Headset" với USB, trailing là âm lượng
+  của loa lúc đó. Chỉ khi tai nghe thật sự đi: sink không còn, hay cổng jack báo không còn gì cắm
   (`GvcMixerStreamPort.available`); chuyển sang loa bằng tay trong Quick Settings khi tai nghe vẫn cắm:
-  flash "Loa · 64%". **Chốt**
+  flash "Loa" với âm lượng. **Tai nghe Bluetooth**: flash Bluetooth nói, kèm pin (module bluetooth);
+  module này im khi module đó bật. **Chốt**
 - **Tai nghe cắm mà âm thanh vẫn ra loa** (máy của Ethan: card SOF có hai profile, loa và tai nghe;
   WirePlumber giữ profile loa): Gvc báo cổng tai nghe vừa có (`output-added`, gvc-mixer-control.c),
   compact tự mở "Tai nghe · Âm thanh đang ở Loa" với nút **Dùng**, chuyển đầu ra sang đó như danh

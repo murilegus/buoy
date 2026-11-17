@@ -146,6 +146,11 @@
       <summary>Plugged devices</summary>
       <description>A display or headphones plugged in, in a short flash; a new display offers Join, Mirror or External Only.</description>
     </key>
+    <key name="modules-bluetooth" type="b">
+      <default>true</default>
+      <summary>Bluetooth devices</summary>
+      <description>A Bluetooth device connected or disconnected, in a short flash with its battery.</description>
+    </key>
     <key name="modules-copied" type="b">
       <default>true</default>
       <summary>Copied</summary>

@@ -11,7 +11,7 @@ import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
 
 const [out, MODE = 'flash'] = ARGV;
 const W1 = C.WHITE, SUB = 9.35;
-const [W, H] = {flash: [1080, 164], compact: [760, 330]}[MODE];
+const [W, H] = {flash: [1270, 164], compact: [760, 330]}[MODE];
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC), cr = new cairo.Context(surf);
 cr.scale(SC, SC); cr.setSourceRGB(...C.WALL); cr.paint();
 const L = PangoCairo.create_layout(cr); PangoCairo.context_set_resolution(L.get_context(), 96);
@@ -31,15 +31,20 @@ const fill = (rgba, x, y, w, h, r) => { cr.newPath(); rr(x, y, w, h, r); cr.setS
 const icon = (n, x, y, s = 16, rgb = W1, a = 1) => gicon(cr, n, x, y, s, rgb, a);
 const note = (t, x, y) => text(t, x, y, {sz: 8.5, a: .7});
 
-// a pill at its real width (design/tokens): 8 + leading 24 + 6 + text + 6 + trailing + 8, at least 131
+// a pill at its real width (design/tokens): 8 + leading 24 + 6 + text + 6 + trailing + 8, at least 131;
+// a volume trails as the HUD's level (2026-11-17): a bar 40, 8, its number (at least 34)
 function pill(x, y, lead, t, trail = null) {
     const te = text(t, 0, 0, {wt: 600, measure: true}), pe = trail ? text(trail, 0, 0, {wt: 600, measure: true}) : null;
-    const w = Math.max(131, 8 + 24 + 6 + te.width + (pe ? 6 + pe.width : 0) + 8);
+    const tw = pe ? 40 + 8 + Math.max(34, pe.width) : 0;
+    const w = Math.max(131, 8 + 24 + 6 + te.width + (pe ? 6 + tw : 0) + 8);
     fill([0, 0, 0, 1], x, y, w, 32, 16);
     icon(lead, x + 12, y + 8, 16);
     text(t, x + 38, y + 16 - te.height / 2 - 1, {wt: 600});
-    if (pe)
-        text(trail, x + w - 8 - pe.width, y + 16 - pe.height / 2 - 1, {wt: 600, a: C.FG_MUTED});
+    if (pe) {
+        const bx = x + w - 8 - tw, v = parseInt(trail) / 100;
+        fill([1, 1, 1, .25], bx, y + 14, 40, 4, 2); fill([1, 1, 1, 1], bx, y + 14, 40 * v, 4, 2);
+        text(trail, x + w - 8 - pe.width, y + 16 - pe.height / 2 - 1, {wt: 600});
+    }
     return w;
 }
 
@@ -58,9 +63,9 @@ if (MODE === 'flash') {
     };
     row([['display', 'ViewSonic 27″'], ['display', 'Đã rút ViewSonic 27″']], 16);
     note('màn hình: chờ lần chạm chuột/phím đầu tiên, rồi 3 s (tối đa 30 s); lúc bật Buoy không flash', x + 8, 24);
-    row([['headphones', 'WH-1000XM4', '64%'], ['headphones', 'Tai nghe', '64%'], ['headphones', 'Đã rút tai nghe', '62%'],
-        ['headphones', 'Đã ngắt WH-1000XM4', '62%'], ['volume', 'Loa', '62%']], 76);
-    note('tai nghe: 3 s khi cắm (Bluetooth: tên thiết bị; jack: "Tai nghe") và khi rút, trailing là âm lượng (rút: của loa); thay OSD âm lượng GNOME', 16, 128);
+    row([['headphones', 'Logi USB Headset', '64%'], ['headphones', 'Tai nghe', '64%'], ['headphones', 'Đã rút tai nghe', '62%'],
+        ['headphones', 'Đã ngắt Logi USB Headset', '62%'], ['volume', 'Loa', '62%']], 76);
+    note('tai nghe: 3 s khi cắm (USB: tên thiết bị; jack: "Tai nghe") và khi rút, trailing là âm lượng như HUD, thanh rồi số (rút: của loa); thay OSD âm lượng GNOME; tai nghe Bluetooth: flash Bluetooth (pin)', 16, 128);
     note('"Loa": âm thanh chuyển tay sang loa khi tai nghe vẫn cắm', 16, 142);
 } else if (MODE === 'compact') {
     const CX = 16, cy = 16, kw = 404;

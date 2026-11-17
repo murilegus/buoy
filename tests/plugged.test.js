@@ -14,10 +14,10 @@ function ok(cond, msg) {
     if (!cond)
         throw new Error(msg);
 }
-// the pill's line: its leading icon, text and trailing text
+// the pill's line: its leading icon, text and trailing text (a level's number)
 const line = a => {
     const p = planMinimal(a);
-    return [p.leading?.icon ?? null, p.text, p.trailing?.text ?? null];
+    return [p.leading?.icon ?? null, p.text, p.trailing?.text ?? p.trailing?.label ?? null];
 };
 const opener = () => id => {
     opened = id;
@@ -56,14 +56,16 @@ eq(diffMonitors([lap, vs], [vs, lap]), {added: [], removed: []}, 'diff: Join ↔
 eq([isHeadphones({formFactor: 'headset'}), isHeadphones({formFactor: 'headphone'}), isHeadphones({port: 'analog-output-headphones'}),
     isHeadphones({port: 'Analog-Output-HEADPHONES'}), isHeadphones({port: 'analog-output-speaker'}), isHeadphones({formFactor: 'internal'}), isHeadphones()],
 [true, true, true, true, false, false, false], 'headphones: Bluetooth / USB form factor, a jack port, case-blind; speakers and nothing not');
-eq(outputOf({id: 7, formFactor: 'headset', port: 'headset-output', description: ' WH-1000XM4 '}),
-    {key: '7|headset-output', output: 'headphones', name: 'WH-1000XM4', device: true, sinkId: 7, port: 'headset-output'}, 'output: Bluetooth headphones by their own name');
+eq(outputOf({id: 7, name: 'bluez_output.88_92_CC_70_9C_22.1', formFactor: 'headset', port: 'headset-output', description: ' WH-1000XM4 '}),
+    {key: '7|headset-output', output: 'headphones', name: 'WH-1000XM4', device: true, bluetooth: true, sinkId: 7, port: 'headset-output'},
+    'output: Bluetooth headphones by their own name, known as Bluetooth (the bluetooth module says those, 2026-11-17)');
+eq(outputOf({id: 8, name: 'alsa_output.usb-Logitech_Logi_USB_Headset-00.analog-stereo', formFactor: 'headset'}).bluetooth, false, 'output: USB headphones are not Bluetooth');
 eq(outputOf({id: 1, formFactor: 'internal', port: 'analog-output-headphones', description: 'Built-in Audio Analog Stereo'}).name,
     'Headphones', 'output: a jack says Headphones, not the card\'s name');
 eq(outputOf({id: 3, formFactor: 'headphone', description: ''}).name, 'Headphones', 'output: a device without a name');
-eq(outputOf({id: 1, port: 'analog-output-speaker', description: 'Built-in Audio'}), {key: '1|analog-output-speaker', output: 'speakers', name: 'Speakers', device: false, sinkId: 1, port: 'analog-output-speaker'},
+eq(outputOf({id: 1, port: 'analog-output-speaker', description: 'Built-in Audio'}), {key: '1|analog-output-speaker', output: 'speakers', name: 'Speakers', device: false, bluetooth: false, sinkId: 1, port: 'analog-output-speaker'},
     'output: speakers');
-eq(outputOf(), {key: '|', output: 'speakers', name: 'Speakers', device: false, sinkId: null, port: null}, 'output: no sink read');
+eq(outputOf(), {key: '|', output: 'speakers', name: 'Speakers', device: false, bluetooth: false, sinkId: null, port: null}, 'output: no sink read');
 eq(outputOf({id: 1, port: 'analog-output-headphones'}).device, false, 'output: a jack is not a device of its own');
 
 const spk = outputOf({id: 1, port: 'analog-output-speaker'}), jack = outputOf({id: 1, port: 'analog-output-headphones'});
@@ -125,7 +127,9 @@ eq(line(build({what: 'audio', output: 'speakers', level: 0.4})), ['audio-speaker
 eq(planMinimal(build({what: 'audio', output: 'headphones'})).text, 'Headphones', 'headphones: no name → "Headphones"');
 eq([build({what: 'audio', output: 'headphones', level: 0.5, muted: true}).trailing, build({what: 'audio', output: 'headphones', level: 1.5}).trailing,
     build({what: 'audio', output: 'headphones', level: NaN}).trailing, build({what: 'audio', output: 'headphones', level: -1}).trailing],
-[{text: 'Muted'}, {text: '150%'}, null, {text: '0%'}], 'headphones: muted said so, over 100 % kept, unknown none, below 0 is 0');
+[{bar: 0.5, label: '50%', off: true}, {bar: 1, label: '150%'}, null, {bar: 0, label: '0%'}],
+'headphones: the volume as the HUD\'s bar (Ethan, 2026-11-17: not read as a battery); muted dimmed at its level, over 100 % kept, unknown none, below 0 is 0');
+eq(planMinimal(build({what: 'audio', output: 'headphones', level: 0.64})).trailing.type, 'bar', 'headphones: a bar in the pill, not a text');
 
 // --- headphones unplugged, or only switched away from ---------------------------------------------------
 eq(headphonesGone(jack, null), true, 'gone: the jack\'s sink went (a SOF card back on its speaker profile)');
@@ -142,7 +146,7 @@ eq(line(build({what: 'audio-out', name: 'WH-1000XM4', device: true, level: 0.3})
     'gone: Bluetooth headphones by name');
 eq(line(build({what: 'audio-out', name: 'Jack name', device: false, muted: true}))[1], 'Unplugged Headphones', 'unplugged: a jack never by the card\'s name');
 eq(line(build({what: 'audio-out', device: true}))[1], 'Disconnected Headphones', 'gone: a device without a name');
-eq(line(build({what: 'audio-out', muted: true}))[2], 'Muted', 'unplugged: the speakers muted said so');
+eq(build({what: 'audio-out', level: 0.4, muted: true}).trailing, {bar: 0.4, label: '40%', off: true}, 'unplugged: the speakers muted, their bar dimmed');
 
 // --- headphones plugged in, the sound still on the speakers ---------------------------------------------
 let used = 0;

@@ -51,16 +51,60 @@ plugged, Bluetooth device, USB / phone / webcam plugged, Phone via GSConnect). S
 - **"+N"**: cả nhóm, mỗi thiết bị một hàng với chi tiết (độ phân giải, dung lượng trống…).
 - **Tai nghe, loa**: Cài đặt → Âm thanh. **Ổ USB**: mở trong Files. Các thiết bị khác: theo mục của chúng.
 
+## Không dây
+
+![Âm lượng là thanh, pin là hình pin; flash Bluetooth; cột Không dây](images/wireless.vi.png)
+
+*Ethan, 2026-11-17 (mục M4 "Bluetooth device").*
+
+- **Pin và âm lượng không đọc nhầm**: âm lượng luôn như HUD, **thanh** rồi số (tắt tiếng: mờ); pin là
+  **hình pin** 16 vẽ tới mức (icon pin của Buoy, ruột tô theo mức), cách 4, rồi số. Mức pin thô của
+  UPower (thấp, bình thường, cao, đầy): chỉ hình pin. Áp dụng ở pill và trong ô; ô Pin của máy giữ số vì
+  icon của nó đã là pin. **Chốt**
+- **Flash khi thiết bị Bluetooth nối**, 3 s: icon theo loại (tai nghe, loa, bàn phím, chuột, tay cầm,
+  bảng vẽ, điện thoại; còn lại: Bluetooth), tên, pin. Pin thường đến sau khi nối một lúc (BlueZ, rồi
+  UPower): flash đang hiện nhận số mới, không đếm lại. **Ngắt**: "Đã ngắt …", không trailing. Không flash
+  lúc bật Buoy hay khi tắt Bluetooth (HUD đã báo "Bluetooth tắt"); thiết bị tự nối lại sau khi bật thì có.
+  Bấm: Cài đặt → Bluetooth. **Chốt**
+- **Tai nghe Bluetooth**: chỉ flash này, kèm pin; module plugged không flash thêm (âm lượng vẫn do HUD
+  báo khi đổi). Lúc nối, pin là điều cần biết; âm lượng vẫn là mức cũ. **Chốt**
+- **Điện thoại** qua Bluetooth thường không gửi pin: chỉ tên. Pin và tìm máy đến với "Phone via
+  GSConnect"; khi đó một máy có cả hai gộp thành một ô.
+- **Pin yếu** để thông báo của gsd ("Mouse battery low"), qua module notification như mọi thông báo.
+- **Cột Không dây**: thiết bị Bluetooth đang nối (danh sách của Quick Settings), rồi chuột, bàn phím
+  2.4 GHz có báo pin (UPower; không phải thiết bị Bluetooth đã có). Pin yếu (≤ 20 %) lên trước.
+  Âm thanh đang ra thiết bị Bluetooth: dưới tên "· đang phát". **Chốt**
+- **Chuột, bàn phím 2.4 GHz**: chỉ ô, không flash (chúng ngủ, thức liên tục). Bấm: Cài đặt → Nguồn, nơi
+  GNOME liệt kê pin thiết bị. **Chốt**
+
+![Trang thiết bị Bluetooth: tai nghe đang phát, chuột](images/bluetooth-page.vi.png)
+
+- **Bấm thiết bị Bluetooth**: trang thay chỗ các cột. Đầu trang: tên, pin ở cuối. Hàng **Âm lượng**
+  (thanh và số) chỉ khi âm thanh đang ra thiết bị đó; bấm mở Cài đặt → Âm thanh, kéo thì dùng phím hay
+  Quick Settings. **Ngắt kết nối** như danh sách Bluetooth của Quick Settings; ngắt xong về các cột.
+  Rồi **Cài đặt Bluetooth**. **Chốt** (Ethan, 2026-11-17)
+
 ## Mục này làm gì
 
-Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công suất, chế độ năng lượng; UPS) và
-**Đang cắm** (màn hình ngoài từ module plugged; âm thanh có dây đang dùng). Không dây, ổ USB, webcam,
-điện thoại đến với mục của chúng và chỉ cần thêm ô vào nhóm.
+Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công suất, chế độ năng lượng; UPS),
+**Không dây** (thiết bị Bluetooth, chuột và bàn phím 2.4 GHz; mục "Bluetooth device") và **Đang cắm**
+(màn hình ngoài từ module plugged; âm thanh có dây đang dùng). Ổ USB, webcam, điện thoại đến với mục
+của chúng và chỉ cần thêm ô vào nhóm.
 
 ## Chỗ trong code
 
-- `lib/kit/model/devices.js` — các nhóm, ô (pin, UPS, chế độ, màn hình, âm thanh có dây), số ô một cột,
-  "+N", trang của màn hình và của "+N". Có test (`tests/devices.test.js`).
+- `lib/kit/model/devices.js` — các nhóm, ô (pin, UPS, chế độ, màn hình, âm thanh có dây, không dây), số
+  ô một cột, "+N", trang của màn hình, của thiết bị Bluetooth và của "+N"; `meter` của ô: hình pin hay
+  thanh âm lượng. Có test (`tests/devices.test.js`).
+- `lib/kit/model/bluetooth.js` — loại thiết bị và icon (GnomeBluetooth, UPower), pin, cái nào vừa nối hay
+  ngắt, thứ tự cột Không dây, bỏ thiết bị UPower trùng Bluetooth. Có test (`tests/bluetooth.test.js`).
+- `lib/kit/services/bluetooth.js` — BtClient của Quick Settings (`ui/status/bluetooth.js`): danh sách,
+  `devices-changed`, ngắt kết nối (`toggleDevice`). Không có client Bluetooth riêng.
+- `lib/kit/services/peripherals.js` — thiết bị UPower có pin, proxy D-Bus async chỉ khi tab còn
+  (libupower-glib làm đồng bộ, và `get_devices2()` trả cho GJS thiết bị đã bị huỷ).
+- `lib/modules/bluetooth/` — flash nối, ngắt; pin đến sau cập nhật flash đang hiện.
+- Hình pin: phần tử `{battery, label}` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/parts.js`
+  `batteryLevel`).
 - `lib/modules/device/tab.js` — đọc qua `kit/services` (pin và chế độ của Quick Settings, màn hình của
   Mutter, bộ trộn âm của Shell) chỉ khi tab còn, vẽ lại mỗi lần đổi; trang thay chỗ, ‹ hay Esc về.
 - Phần dùng chung để module không import nhau: `kit/model/displays.js` và `kit/services/displays.js`

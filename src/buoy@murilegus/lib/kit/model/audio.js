@@ -18,12 +18,20 @@ export function isHeadphones({formFactor = null, port = null} = {}) {
 }
 
 /**
+ * @param {?string} sinkName  Gvc's sink name (PipeWire's node name)
+ * @returns {boolean} a Bluetooth sink (bluez_output.…)
+ */
+export function isBluetoothSink(sinkName) {
+    return typeof sinkName === 'string' && sinkName.startsWith('bluez');
+}
+
+/**
  * The output the sound goes to, as the flash says it: a device's own name for Bluetooth and
  * USB headphones, "Headphones" for a jack, "Speakers" otherwise.
  *
- * @param {{id?: *, formFactor?: ?string, port?: ?string, description?: ?string}} sink
- * @returns {{key: string, output: string, name: string, device: boolean, sinkId: *, port: ?string}}
- *   `device`: headphones of their own (Bluetooth, USB), not a jack
+ * @param {{id?: *, name?: ?string, formFactor?: ?string, port?: ?string, description?: ?string}} sink
+ * @returns {{key: string, output: string, name: string, device: boolean, bluetooth: boolean, sinkId: *, port: ?string}}
+ *   `device`: headphones of their own (Bluetooth, USB), not a jack; `bluetooth`: a Bluetooth sink
  */
 export function outputOf(sink = {}) {
     const headphones = isHeadphones(sink);
@@ -34,6 +42,7 @@ export function outputOf(sink = {}) {
         output: headphones ? 'headphones' : 'speakers',
         name: headphones ? (device && own) || 'Headphones' : 'Speakers',
         device: headphones && device,
+        bluetooth: isBluetoothSink(sink.name),
         sinkId: sink.id ?? null,
         port: sink.port ?? null,
     };

@@ -905,7 +905,9 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    switches it). A low battery (UPower's warning, 20 % / 5 %) stays until plugged in, priority 70,
    in place of gsd's "Low Battery" notification. The power mode is switched from Home (a click on
    the battery tile lists the three modes) and from the compact of the mode's flash (three
-   buttons). **bluetooth** — device connected with its battery (M4 "Bluetooth device").
+   buttons). **bluetooth** (2026-11-17, Ethan; design/device "Không dây") — a 3 s flash when a
+   Bluetooth device connects, with its battery drawn as a battery (a volume is always a bar), or
+   goes; from Quick Settings' own client. Bluetooth headphones are said here, not by `plugged`.
 5. **calendar** — Up next in Home; alert 5 min before with Join when the event has
    a meeting link. Shell's calendar server sends only id, summary, start and end, so the
    link is read over EDS's own D-Bus (`CalendarFactory` → `Calendar.GetObjectList`, raw
