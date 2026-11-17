@@ -2,7 +2,7 @@ import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {buildElement, EmptyState, iconLabel, iconProps} from '../../kit/ui/present/elements.js';
+import {buildElement, EmptyState, iconProps} from '../../kit/ui/present/elements.js';
 import {dimStale} from '../../kit/ui/present/motion.js';
 
 import {DISMISS, canDismiss} from './adapter.js';
@@ -67,8 +67,12 @@ export class AgentsTab {
         bar.add_child(new St.Label({text: `${title} · ${count}`, style_class: 'buoy-agents-count', y_align: Clutter.ActorAlign.CENTER}));
         bar.add_child(new St.Widget({x_expand: true}));
         if (onClear) {
+            // as the notification tab's chips (Do Not Disturb): icon 14, 5 from its 12 px text
+            const line = new St.BoxLayout({style_class: 'buoy-agents-clear-line'});
+            line.add_child(new St.Icon({...iconProps('window-close-symbolic'), icon_size: 14, y_align: Clutter.ActorAlign.CENTER}));
+            line.add_child(new St.Label({text: 'Clear', y_align: Clutter.ActorAlign.CENTER}));
             const clear = new St.Button({
-                style_class: 'buoy-agents-clear', can_focus: true, child: iconLabel('window-close-symbolic', 'Clear'),
+                style_class: 'buoy-agents-clear', can_focus: true, child: line,
                 accessible_name: 'Clear the idle sessions',
                 y_align: Clutter.ActorAlign.CENTER,
             });

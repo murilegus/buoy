@@ -173,7 +173,7 @@ export class NotificationsTab {
         bar.add_child(new St.Widget({x_expand: true}));
         bar.add_child(this._dnd());
         if (total)
-            bar.add_child(chipButton('Clear', null, () => this._all().forEach(dismiss)));
+            bar.add_child(chipButton('Clear', 'window-close-symbolic', () => this._all().forEach(dismiss)));
         return bar;
     }
 
@@ -192,7 +192,7 @@ export class NotificationsTab {
         });
         bar.add_child(button);
         bar.add_child(new St.Widget({x_expand: true}));
-        bar.add_child(chipButton('Dismiss all', null, () => g.items.forEach(i => dismiss(i.n))));
+        bar.add_child(chipButton('Dismiss all', 'window-close-symbolic', () => g.items.forEach(i => dismiss(i.n))));
         return bar;
     }
 
