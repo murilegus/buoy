@@ -369,7 +369,14 @@ export function restSlot(b, rest, key = null) {
 
 // An ask's button: its key after the label, shown only while the island holds the
 // keyboard (showKeys); hidden, it takes no room.
-function iconLabel(icon, text) {
+/**
+ * A button's face: its icon 16 and its label, 6 apart (an action's; a tab's own buttons, 2026-11-17).
+ *
+ * @param {string} icon
+ * @param {string} text
+ * @returns {St.BoxLayout}
+ */
+export function iconLabel(icon, text) {
     const box = new St.BoxLayout({style_class: 'buoy-action-face', x_align: Clutter.ActorAlign.CENTER});
     box.add_child(new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
     box.add_child(new St.Label({text, y_align: Clutter.ActorAlign.CENTER}));

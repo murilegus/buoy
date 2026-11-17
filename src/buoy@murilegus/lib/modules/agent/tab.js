@@ -2,7 +2,7 @@ import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
-import {buildElement, EmptyState, iconProps} from '../../kit/ui/present/elements.js';
+import {buildElement, EmptyState, iconLabel, iconProps} from '../../kit/ui/present/elements.js';
 import {dimStale} from '../../kit/ui/present/motion.js';
 
 import {DISMISS, canDismiss} from './adapter.js';
@@ -68,7 +68,8 @@ export class AgentsTab {
         bar.add_child(new St.Widget({x_expand: true}));
         if (onClear) {
             const clear = new St.Button({
-                style_class: 'buoy-agents-clear', can_focus: true, label: 'Clear', accessible_name: 'Clear the idle sessions',
+                style_class: 'buoy-agents-clear', can_focus: true, child: iconLabel('window-close-symbolic', 'Clear'),
+                accessible_name: 'Clear the idle sessions',
                 y_align: Clutter.ActorAlign.CENTER,
             });
             clear.connect('clicked', () => onClear());

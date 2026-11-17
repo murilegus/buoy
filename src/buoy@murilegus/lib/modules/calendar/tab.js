@@ -6,7 +6,7 @@ import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
-import {buildElement, EmptyState, iconProps} from '../../kit/ui/present/elements.js';
+import {buildElement, EmptyState, iconLabel, iconProps} from '../../kit/ui/present/elements.js';
 import {FillBox} from '../../kit/ui/present/parts.js';
 import {agenda, dayRows, dayStart} from './agenda.js';
 import {EventReader} from './events.js';
@@ -319,7 +319,8 @@ export class CalendarTab {
     // launchSettingsPanel)
     _accountsButton() {
         const button = new St.Button({
-            style_class: 'buoy-calendar-accounts', can_focus: true, label: 'Add an Online Account',
+            style_class: 'buoy-calendar-accounts', can_focus: true, child: iconLabel('external-link-symbolic', 'Add an Online Account'),
+            accessible_name: 'Add an Online Account',
             x_align: Clutter.ActorAlign.CENTER,
         });
         button.connect('clicked', () => {
