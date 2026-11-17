@@ -63,6 +63,7 @@ src/buoy@murilegus/
     │   │   ├── displays.js     the ways to use two displays, how they are used now, which came and went (plugged, the Device tab; 2026-11-16)
     │   │   ├── audio.js        headphones as GNOME tells them, the output the sound goes to (plugged, the Device tab; 2026-11-16)
     │   │   ├── devices.js      the Device tab's plan: its groups and cells, a column's rows, "+N", its pages (design/device, 2026-11-16)
+    │   │   ├── bluetooth.js    wireless devices: kind and icon (GnomeBluetooth, UPower), battery, which came and went, the Wireless column's order (bluetooth, the Device tab; 2026-11-17)
     │   │   └── mascot.js       Bu: 13 pose grids, lamp rule, frame timing; MASCOT.md is the source (2026-11-03)
     │   ├── services/       the Shell side without actors: buses, files, Shell's objects, the
     │   │   │               one wall clock. Imports model/ and services/, never ui/, St or Clutter
@@ -75,6 +76,8 @@ src/buoy@murilegus/
     │   │   ├── power.js        GNOME's battery and power-mode toggles in Quick Settings; switching the mode, silently from Home (2026-11-14)
     │   │   ├── displays.js     Mutter's displays: read, their size and mode, switch_config (plugged, the Device tab; 2026-11-16)
     │   │   ├── audio.js        where the sound goes, from Shell's Gvc mixer; the HUD asks it whether a volume OSD is the output moving to or from headphones (plugged, 2026-11-15)
+    │   │   ├── bluetooth.js    Quick Settings' Bluetooth client: its devices, connected or not, disconnect (bluetooth, the Device tab; 2026-11-17)
+    │   │   ├── peripherals.js  UPower's peripherals with a battery, async D-Bus proxies while the Device tab lives (2026-11-17)
     │   │   ├── presence.js     you at the screen: input in the last second, away (session idle, locked), DND (alerts; 2026-11-12)
     │   │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
     │   │   └── devtools.js     `dev-mode`'s module hot swap
@@ -88,7 +91,7 @@ src/buoy@murilegus/
     │       ├── styles.js       a module's stylesheet.css, loaded while it runs (Stylesheets, below)
     │       └── present/        render plan → St actors. The ONLY place content actors are made,
     │           │               one file per tier (2026-11-12; was present.js)
-    │           ├── parts.js        labels, meters (ring, bar, level, live position), timed labels,
+    │           ├── parts.js        labels, meters (ring, bar, level, battery, live position), timed labels,
     │           │                   tick(), FillBox, progressBar()
     │           ├── motion.js       what moves, each by rule 8: the marquee, Bu and his stillness,
     │           │                   the equaliser, typed text; dimStale()

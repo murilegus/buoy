@@ -182,6 +182,10 @@
 .buoy-level { spacing: 8px; }
 .buoy-level-label { font-feature-settings: "tnum"; min-width: 34px; text-align: right; }
 .buoy-level-off .buoy-bar, .buoy-level-off .buoy-level-label { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+/* A battery (a Bluetooth device): the battery drawn at its level, 4, its number. */
+.buoy-battery { color: #fff; /* fg */ }
+.buoy-battery-level { spacing: 4px; }
+.buoy-battery-label { font-feature-settings: "tnum"; }
 /* .buoy-art: no border-radius, St.Icon does not clip to it; present/elements.js rounds minimal
    and compact art with a shader (kit/model/rounded.js artRadius), expanded and tabs stay square. */
 /* The equaliser: six bars that grow from their middle while playing (present/motion.js
@@ -240,7 +244,7 @@
 .buoy-stale StLabel,
 .buoy-stale .buoy-icon,
 .buoy-stale .buoy-ring,
-.buoy-stale .buoy-bar { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-stale .buoy-bar, .buoy-stale .buoy-battery { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 .buoy-stale .buoy-eq-bar { background-color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 
 /* ==== Compact, the hover tier ============================================================= */
@@ -446,7 +450,7 @@
 .buoy-hc .buoy-stale StLabel,
 .buoy-hc .buoy-stale .buoy-icon,
 .buoy-hc .buoy-stale .buoy-ring,
-.buoy-hc .buoy-stale .buoy-bar { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-stale .buoy-bar, .buoy-hc .buoy-stale .buoy-battery { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-stale .buoy-eq-bar { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-compact-row-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-compact-row-dim .buoy-compact-row-text, .buoy-hc .buoy-compact-row-dim .buoy-icon { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

@@ -63,6 +63,9 @@ export const SYMBOLIC = {
     'image-x-generic': 'picture',
     'edit-paste': 'own:clipboard',
     'input-keyboard': 'keyboard',
+    // wireless devices (FEATURES M4 "Bluetooth device"): Gravity has no mouse nor gamepad
+    'input-mouse': 'own:mouse',
+    'input-gaming': 'own:gamepad',
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',
     // Claude Code, the screen

@@ -57,16 +57,19 @@ export function listHead(title, {back, button, end = null}) {
  * @param {boolean} [r.on]  the chosen one
  * @param {boolean} [r.settings]  the settings row, last
  * @param {boolean} [r.plain]
+ * @param {?Clutter.Actor} [r.end]  drawn in place of the value: a level (the Device tab's volume)
  * @param {?function():void} onClick  none: not reactive
  * @returns {St.Button}
  */
-export function choiceRow({icon, name, detail = null, value = null, on = false, settings = false, plain = false}, onClick) {
+export function choiceRow({icon, name, detail = null, value = null, on = false, settings = false, plain = false, end = null}, onClick) {
     const content = new St.BoxLayout({style_class: 'buoy-home-list-row-box', x_expand: true});
     content.add_child(new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
     content.add_child(textLabel(name, 'buoy-home-choice-name', !detail));
     if (detail)
         content.add_child(textLabel(detail, 'buoy-home-list-detail', true));
-    if (value)
+    if (end)
+        content.add_child(end);
+    else if (value)
         content.add_child(textLabel(value, 'buoy-home-choice-value'));
     let endIcon = null;
     if (on)

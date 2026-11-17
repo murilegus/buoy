@@ -4,29 +4,37 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {EmptyState, iconProps} from '../../kit/ui/present/elements.js';
-import {label as textLabel} from '../../kit/ui/present/parts.js';
+import {batteryLevel, label as textLabel, levelBar} from '../../kit/ui/present/parts.js';
 import {choicePage, choiceRow, listBox, listHead} from '../../kit/ui/present/lists.js';
-import {CELL_GAP, CELL_H, TITLE_H, deviceGroups, displayPage, groupPage, isWired, planDevices, rowsFit} from '../../kit/model/devices.js';
+import {
+    CELL_GAP, CELL_H, TITLE_H, bluetoothPage, deviceGroups, displayPage, groupPage, isWired, planDevices, rowsFit, sinkAddress,
+} from '../../kit/model/devices.js';
+import {upowerOnly} from '../../kit/model/bluetooth.js';
 import {outputOf} from '../../kit/model/audio.js';
 import {batteryPage} from '../../kit/model/power.js';
 import {batteryToggle, profilesOf, profilesToggle, setProfile} from '../../kit/services/power.js';
 import {displayInfo, monitorManager, readMonitors, switchMode} from '../../kit/services/displays.js';
 import {defaultSink, mixer, readSink} from '../../kit/services/audio.js';
+import {disconnectDevice, readBluetooth, stopWaitingBluetooth, whenBluetooth} from '../../kit/services/bluetooth.js';
+import {Peripherals} from '../../kit/services/peripherals.js';
 import {FADES, LIST_SHIFT} from '../../kit/model/motion.js';
 import {slideIn} from '../../kit/ui/spring.js';
 
 const BUTTON = 32;      // the round ‹ of a page (compact metrics' button at the em)
+const CELL_BAR = 24;    // a volume's bar in a cell (design/device "Không dây")
+const ROW_BAR = 160;    // and in a page's row
 
 /**
  * The Device tab (design/device, 2026-11-16, Ethan; FEATURES M4 "Device tab"): a column per
  * group — This Computer, Wireless, Plugged In — of cells; past what a column holds, "+N". A click
  * opens a page in place of the columns (‹ or Esc back): the battery's and the power mode's is
  * Home's battery page (the power modes, kit/model/power.js batteryPage); a display's, its ways to
- * be used; "+N", the whole group. Wired headphones open Settings → Sound.
+ * be used; a Bluetooth device's, its battery, volume and Disconnect; "+N", the whole group. Wired
+ * headphones open Settings → Sound; a 2.4 GHz mouse or keyboard, Settings → Power.
  *
  * What it shows is read through kit/services — GNOME's battery and power-mode toggles, Mutter's
- * monitors, Shell's mixer — and only while the tab lives (Home's open): every change redraws it.
- * Wireless comes with its items (Bluetooth device, Phone via GSConnect).
+ * monitors, Shell's mixer, Quick Settings' Bluetooth client, UPower's peripherals — and only while
+ * the tab lives (Home's open): every change redraws it. The phone comes with "Phone via GSConnect".
  */
 export class DeviceTab {
     /**
@@ -60,6 +68,32 @@ export class DeviceTab {
         this._mixer.connectObject('state-changed', () => this._watchSink(), 'default-sink-changed', () => this._watchSink(), this);
         this._sink = null;
         this._watchSink(false);
+        this._bt = null;
+        this._btWatched = new Map();    // path → a connected device whose battery is watched
+        whenBluetooth(this, client => {
+            this._bt = client;
+            client.connectObject('devices-changed', redraw, 'notify::active', redraw, this);
+            redraw();
+        });
+        this._peripherals = new Peripherals(redraw);
+    }
+
+    // each connected Bluetooth device's battery redraws its cell
+    _watchBluetooth(list) {
+        const now = new Map(list.map(x => [x.id, x.device]));
+        for (const [path, dev] of this._btWatched) {
+            if (now.get(path) !== dev) {
+                dev.disconnectObject(this);
+                this._btWatched.delete(path);
+            }
+        }
+        for (const [path, dev] of now) {
+            if (this._btWatched.has(path))
+                continue;
+            this._btWatched.set(path, dev);
+            const again = () => this._render();
+            dev.connectObject('notify::battery-percentage', again, 'notify::battery-level', again, 'notify::battery-type', again, this);
+        }
     }
 
     _watchSink(redraw = true) {
@@ -92,7 +126,13 @@ export class DeviceTab {
         const displays = all.filter(m => !m.builtin).map(m => ({key: m.key, name: m.name, ...displayInfo(this._mm, m, all)}));
         const s = readSink(this._mixer, this._sink);
         const audio = s ? {...outputOf(s), wired: isWired(s.name), level: s.level, muted: s.muted} : null;
-        return {battery, modes: profilesOf(this._modes), displays, audio};
+        const btAll = readBluetooth(this._bt);
+        const bt = btAll.filter(d => d.connected);
+        this._watchBluetooth(bt);
+        const playingOn = sinkAddress(s?.name);
+        const bluetooth = bt.map(d => ({...d, playing: !!playingOn && d.address?.toUpperCase() === playingOn}));
+        const others = upowerOnly(this._peripherals?.list() ?? [], btAll.map(d => d.address).filter(Boolean));
+        return {battery, modes: profilesOf(this._modes), displays, audio, bluetooth, wireless: [...bluetooth, ...others]};
     }
 
     // --- drawing ----------------------------------------------------------------------------------
@@ -131,7 +171,7 @@ export class DeviceTab {
             const cells = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
             cells.set_style(`spacing: ${CELL_GAP}px;`);
             for (const c of col.cells)
-                cells.add_child(this._cell(c.icon, c.value, c.name, () => this._press(c)));
+                cells.add_child(this._cell(c.icon, c.value, c.name, () => this._press(c), c.meter));
             if (col.more)
                 cells.add_child(this._cell(null, `+${col.more.count}`, col.more.names, () => this._open({kind: 'group', id: col.id})));
             box.add_child(cells);
@@ -141,15 +181,18 @@ export class DeviceTab {
     }
 
     // a cell 58: icon 16 and the value on its top line, the name under it (design/device); "+N"
-    // has no icon: its count stands where the icon would
-    _cell(icon, value, name, onClick) {
+    // has no icon: its count stands where the icon would. A battery's value is drawn at its
+    // level, a volume's as a bar (`meter`)
+    _cell(icon, value, name, onClick, meter = null) {
         const top = new St.BoxLayout({style_class: 'buoy-device-cell-top', x_expand: true});
         if (icon)
             top.add_child(new St.Icon({...iconProps(icon), icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
         else if (value)
             top.add_child(textLabel(value, 'buoy-device-value'));
         top.add_child(new St.Widget({x_expand: true}));
-        if (icon && value)
+        if (icon && meter)
+            top.add_child(meterActor(meter, CELL_BAR));
+        else if (icon && value)
             top.add_child(textLabel(value, 'buoy-device-value'));
         const body = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
         body.add_child(top);
@@ -165,8 +208,12 @@ export class DeviceTab {
     // --- a click ---------------------------------------------------------------------------------
 
     _press(c) {
-        if (c.page === 'battery' || c.page === 'display') {
-            const page = c.page === 'battery' ? {kind: 'battery'} : {kind: 'display', key: c.id.slice('display:'.length)};
+        if (c.page === 'battery' || c.page === 'display' || c.page === 'bluetooth') {
+            let page = {kind: 'battery'};
+            if (c.page === 'display')
+                page = {kind: 'display', key: c.id.slice('display:'.length)};
+            else if (c.page === 'bluetooth')
+                page = {kind: 'bluetooth', id: c.id.slice('wireless:'.length)};
             if (this._pageActor(page, this._facts(), []))
                 this._open(page);
             else
@@ -211,6 +258,8 @@ export class DeviceTab {
                 settings: () => this._launch('gnome-display-panel.desktop'),
             });
         }
+        if (page.kind === 'bluetooth')
+            return this._bluetoothPage(page.id, facts);
         const col = columns.find(c => c.id === page.id);
         if (!col)
             return null;
@@ -219,6 +268,32 @@ export class DeviceTab {
         const rows = new St.BoxLayout({style_class: 'buoy-home-choices', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
         for (const c of g.rows)
             rows.add_child(choiceRow({icon: c.icon, name: c.name, detail: c.detail ?? null, value: c.value, plain: true}, () => this._press(c)));
+        box.add_child(rows);
+        return box;
+    }
+
+    // a Bluetooth device's page (design/device "Bấm vào"): its battery at the head's end, the
+    // volume while the sound plays on it (a click: Settings → Sound), Disconnect, Bluetooth
+    // Settings. Gone (disconnected here or elsewhere): null, the columns again
+    _bluetoothPage(id, facts) {
+        const d = facts.bluetooth.find(x => x.id === id);
+        const p = d ? bluetoothPage(d, d.playing ? facts.audio : null) : null;
+        if (!p)
+            return null;
+        const box = listBox(listHead(p.title, {back: () => this.back(), button: BUTTON, end: p.battery ? meterActor(p.battery) : null}));
+        const rows = new St.BoxLayout({style_class: 'buoy-home-choices', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        for (const r of p.rows) {
+            if (r.id === 'volume') {
+                rows.add_child(choiceRow({icon: r.icon, name: r.name, plain: true, end: meterActor(r.meter, ROW_BAR)},
+                    () => this._launch('gnome-sound-panel.desktop')));
+            } else if (r.id === 'info') {
+                rows.add_child(choiceRow({icon: r.icon, name: r.name, value: r.value, plain: true}, null));
+            } else {
+                rows.add_child(choiceRow({icon: r.icon, name: r.name, plain: true}, () => disconnectDevice(this._bt, id)));
+            }
+        }
+        rows.add_child(choiceRow({icon: 'emblem-system-symbolic', name: p.settings.name, settings: true},
+            () => this._launch('gnome-bluetooth-panel.desktop')));
         box.add_child(rows);
         return box;
     }
@@ -240,8 +315,21 @@ export class DeviceTab {
         this._mm?.disconnectObject(this);
         this._mixer?.disconnectObject(this);
         this._sink?.disconnectObject(this);
-        this._battery = this._modes = this._mm = this._mixer = this._sink = null;
+        stopWaitingBluetooth(this);
+        this._bt?.disconnectObject(this);
+        for (const d of this._btWatched.values())
+            d.disconnectObject(this);
+        this._btWatched.clear();
+        this._peripherals?.destroy();
+        this._battery = this._modes = this._mm = this._mixer = this._sink = this._bt = this._peripherals = null;
         this.actor?.destroy();
         this.actor = null;
     }
+}
+
+// a cell's or a row's value drawn: a battery at its level, or a volume's bar (kit/model/devices.js `meter`)
+function meterActor(m, barWidth = CELL_BAR) {
+    if (m.type === 'battery')
+        return batteryLevel(m);
+    return levelBar(m, barWidth);
 }

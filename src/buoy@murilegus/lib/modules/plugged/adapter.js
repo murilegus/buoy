@@ -64,13 +64,12 @@ export function outputChanged(shown, cur) {
     return cur.output === 'headphones' && shown.key !== cur.key;
 }
 
-// the volume as the HUD's pill shows it: 0–100+ %, muted said so
-function volumeText(level, muted) {
-    if (muted === true)
-        return 'Muted';
+// the volume as the HUD's pill shows it: its bar and number (0–100+ %), muted dimmed at its level
+// — a bar, so it is not read as a battery (Ethan, 2026-11-17)
+function volume(level, muted) {
     if (typeof level !== 'number' || !Number.isFinite(level))
         return null;
-    return `${Math.max(0, Math.round(level * 100))}%`;
+    return {bar: Math.min(Math.max(level, 0), 1), label: `${Math.max(0, Math.round(level * 100))}%`, ...muted === true ? {off: true} : {}};
 }
 
 function display(ev) {
@@ -111,11 +110,10 @@ function audio(ev) {
     const headphones = ev.output === 'headphones';
     const fallback = headphones ? 'Headphones' : 'Speakers';
     const name = typeof ev.name === 'string' && ev.name.trim() ? ev.name.trim() : fallback;
-    const vol = volumeText(ev.level, ev.muted);
     return {
         leading: headphones ? 'audio-headphones-symbolic' : 'audio-speakers-symbolic',
         text: name,
-        trailing: vol ? {text: vol} : null,     // a text, not an icon's name
+        trailing: volume(ev.level, ev.muted),
         sizeHint: 'wide',
         ttl: TTL,
         priority: PRIORITY.device,
@@ -159,11 +157,10 @@ function offer(ev) {
 // icon, as a display's unplug; the level is where the sound is now, the speakers
 function audioOut(ev) {
     const own = typeof ev.name === 'string' && ev.name.trim() ? ev.name.trim() : 'Headphones';
-    const vol = volumeText(ev.level, ev.muted);
     return {
         leading: 'audio-headphones-symbolic',
         text: ev.device === true ? `Disconnected ${own}` : 'Unplugged Headphones',
-        trailing: vol ? {text: vol} : null,
+        trailing: volume(ev.level, ev.muted),
         sizeHint: 'wide',
         ttl: TTL,
         priority: PRIORITY.device,

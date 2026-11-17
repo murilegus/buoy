@@ -1,4 +1,6 @@
 import {MODES} from './displays.js';
+import {isBluetoothSink} from './audio.js';
+import {batteryOf, kindIcon, kindName, sortWireless} from './bluetooth.js';
 import {PROFILES, STATE, batteryIcon, duration} from './power.js';
 
 /**
@@ -7,8 +9,11 @@ import {PROFILES, STATE, batteryIcon, duration} from './power.js';
  * holds ends in "+N", and a click opens a page in place. Pure: the tab (modules/device/tab.js)
  * reads the facts through kit/services and draws what this plans.
  *
- * A cell: {id, icon, value: ?string, name, page?: 'battery'|'display'|null, open?: ?string,
- *   detail?: ?string} — `page`: what a click shows; `open`: a .desktop it starts instead.
+ * A cell: {id, icon, value: ?string, name, page?: 'battery'|'display'|'bluetooth'|null,
+ *   open?: ?string, detail?: ?string, meter?: ?object} — `page`: what a click shows; `open`: a
+ *   .desktop it starts instead; `meter`: the value drawn — {type: 'battery', value, label?} a
+ *   battery at its level, {type: 'bar', value, label, off?} a volume as the HUD's (the two read
+ *   apart, Ethan 2026-11-17); `value` stays its words (the "+N" list, the accessible name).
  */
 
 export const CELL_H = 58;
@@ -25,6 +30,7 @@ export const GROUPS = Object.freeze([
 const POWER_PANEL = 'gnome-power-panel.desktop';
 const DISPLAY_PANEL = 'gnome-display-panel.desktop';
 const SOUND_PANEL = 'gnome-sound-panel.desktop';
+const BLUETOOTH_PANEL = 'gnome-bluetooth-panel.desktop';
 
 /**
  * @param {number} height  the tab's body under the strip
@@ -127,12 +133,50 @@ export function displayCell(d) {
 export function audioCell(out) {
     if (out?.output !== 'headphones' || out.wired !== true)
         return null;
-    let value = null;
-    if (out.muted === true)
-        value = 'Muted';
-    else if (typeof out.level === 'number' && Number.isFinite(out.level))
-        value = `${Math.max(0, Math.round(out.level * 100))}%`;
-    return {id: 'audio', icon: 'audio-headphones-symbolic', value, name: out.name || 'Headphones', page: null, open: SOUND_PANEL};
+    const meter = volumeMeter(out.level, out.muted);
+    const value = out.muted === true ? 'Muted' : meter?.label ?? null;
+    return {id: 'audio', icon: 'audio-headphones-symbolic', value, meter, name: out.name || 'Headphones', page: null, open: SOUND_PANEL};
+}
+
+/**
+ * @param {?number} level  the volume over the normal maximum
+ * @param {?boolean} muted
+ * @returns {?{type: 'bar', value: number, label: string, off?: true}} as the HUD's level
+ */
+export function volumeMeter(level, muted) {
+    if (typeof level !== 'number' || !Number.isFinite(level))
+        return null;
+    return {type: 'bar', value: Math.min(Math.max(level, 0), 1), label: `${Math.max(0, Math.round(level * 100))}%`, ...muted === true ? {off: true} : {}};
+}
+
+/**
+ * @param {?string} sinkName  Gvc's sink name: bluez_output.88_92_CC_70_9C_22.1
+ * @returns {?string} the Bluetooth address in it, "88:92:CC:70:9C:22"; null when not Bluetooth
+ */
+export function sinkAddress(sinkName) {
+    if (!isBluetoothSink(sinkName))
+        return null;
+    const m = sinkName.match(/([0-9a-f]{2}_){5}[0-9a-f]{2}/i);
+    return m ? m[0].replace(/_/g, ':').toUpperCase() : null;
+}
+
+/**
+ * A wireless device: its kind's icon, its battery drawn at its level with its number; a
+ * Bluetooth device the sound plays on says so under its name. A click: a Bluetooth device's page;
+ * UPower's (a 2.4 GHz mouse, keyboard) opens Settings → Power, where GNOME lists their batteries.
+ *
+ * @param {{id: string, name: string, kind: string, battery?: ?object, bluetooth?: boolean, playing?: boolean}} d
+ *   model/bluetooth.js's device; `playing`: the sound goes to it
+ * @returns {object} its cell
+ */
+export function wirelessCell(d) {
+    const b = batteryOf(d.battery);
+    return {
+        id: `wireless:${d.id}`, icon: kindIcon(d.kind), value: b?.label ?? null,
+        meter: b ? {type: 'battery', value: b.value, ...b.label ? {label: b.label} : {}} : null,
+        name: d.playing ? `${d.name} · Playing` : d.name,
+        page: d.bluetooth ? 'bluetooth' : null, open: d.bluetooth ? BLUETOOTH_PANEL : POWER_PANEL,
+    };
 }
 
 /**
@@ -140,24 +184,26 @@ export function audioCell(out) {
  * @returns {boolean} not a Bluetooth sink (bluez_output.…)
  */
 export function isWired(sinkName) {
-    return typeof sinkName === 'string' && sinkName !== '' && !sinkName.startsWith('bluez');
+    return typeof sinkName === 'string' && sinkName !== '' && !isBluetoothSink(sinkName);
 }
 
 /**
  * The groups from what is known now: This Computer (the battery or UPS, the power mode),
- * Plugged In (external displays, wired sound); Wireless comes with its own items.
+ * Wireless (Bluetooth devices connected, UPower's peripherals; low batteries first), Plugged In
+ * (external displays, wired sound).
  *
  * @param {object} facts
  * @param {?object} [facts.battery]  batteryCell's
  * @param {?object} [facts.modes]  modeCell's
  * @param {object[]} [facts.displays]  displayCell's, external displays only
  * @param {?object} [facts.audio]  audioCell's
+ * @param {object[]} [facts.wireless]  wirelessCell's
  * @returns {Array<{id: string, cells: object[]}>}
  */
-export function deviceGroups({battery = null, modes = null, displays = [], audio = null} = {}) {
+export function deviceGroups({battery = null, modes = null, displays = [], audio = null, wireless = []} = {}) {
     return [
         {id: 'computer', cells: [batteryCell(battery), modeCell(modes)].filter(Boolean)},
-        {id: 'wireless', cells: []},
+        {id: 'wireless', cells: sortWireless(wireless).map(wirelessCell)},
         {id: 'plugged', cells: [...(displays ?? []).map(displayCell), audioCell(audio)].filter(Boolean)},
     ];
 }
@@ -176,6 +222,32 @@ export function displayPage(d) {
         title: d.name || 'Display', end: d.size ?? null,
         rows: modes.map(id => ({id, icon: MODES[id].icon, name: MODES[id].label, selected: id === d.mode})),
         settings: {name: 'Display Settings'},
+    };
+}
+
+/**
+ * A Bluetooth device's page (design/device "Bấm vào", 2026-11-17, Ethan): its battery at the end of
+ * the head; the volume, while the sound plays on it; what it is and its address, as Settings →
+ * Bluetooth shows them (one row, not a button); Disconnect; Bluetooth Settings.
+ *
+ * @param {{name: string, kind?: string, address?: ?string, battery?: ?object}} d  model/bluetooth.js's device
+ * @param {?{level: ?number, muted?: boolean}} audio  the sound on it now; null: it plays elsewhere
+ * @returns {?object} {title, battery: ?{value, label?}, rows: [{id, icon, name, meter?, value?}], settings}
+ */
+export function bluetoothPage(d, audio = null) {
+    if (!d)
+        return null;
+    const b = batteryOf(d.battery);
+    const volume = audio ? volumeMeter(audio.level, audio.muted) : null;
+    return {
+        title: d.name || 'Bluetooth device',
+        battery: b ? {type: 'battery', value: b.value, ...b.label ? {label: b.label} : {}} : null,
+        rows: [
+            ...volume ? [{id: 'volume', icon: 'audio-speakers-symbolic', name: 'Volume', meter: volume}] : [],
+            {id: 'info', icon: kindIcon(d.kind), name: kindName(d.kind), value: d.address || null},
+            {id: 'disconnect', icon: 'bluetooth-disabled-symbolic', name: 'Disconnect'},
+        ],
+        settings: {name: 'Bluetooth Settings'},
     };
 }
 

@@ -6,7 +6,7 @@
  *   {leading, text, trailing, expanded, actions, keyline, isStale}
  *   leading/trailing: 'icon-name' | Gio.Icon | {art (path, URI or Gio.Icon), icon} | {icon} |
  *   {progress: 0..1}
- *                     | {bar: 0..1} | {countdown: s} | {until: ms since the epoch}
+ *                     | {bar: 0..1} | {battery: 0..1, label?} | {countdown: s} | {until: ms since the epoch}
  *                     | {since: ms since the epoch} | {elapsed: ms since the epoch} | {text}
  *                     `until` counts down live, once a second while shown (ui/present/parts.js);
  *                     `since` is its twin, the time since then in minutes ("4 min"), the
@@ -180,7 +180,7 @@ function clock(seconds) {
  * @param {*} e  one leading/trailing/region value from an adapter
  * @param {object} [opts]
  * @param {boolean} [opts.leading]  the leading zone: the only place Bu may be
- * @returns {?object} {type: 'icon'|'glyph'|'art'|'ring'|'bar'|'text'|'mascot'|'stack', …} or null
+ * @returns {?object} {type: 'icon'|'glyph'|'art'|'ring'|'bar'|'battery'|'text'|'mascot'|'stack', …} or null
  */
 export function element(e, {leading = false} = {}) {
     if (!isPlain(e))
@@ -244,6 +244,12 @@ export function element(e, {leading = false} = {}) {
             type: 'bar', value: clamp01(e.bar),
             ...label ? {label} : {}, ...e.off === true ? {off: true} : {},
         };
+    }
+    if (isNum(e.battery)) {
+        // a battery at its level, its number beside it when known (a Bluetooth device; a coarse
+        // level has none): a battery says itself apart from a volume's bar (Ethan, 2026-11-17)
+        const label = str(e.label);
+        return {type: 'battery', value: clamp01(e.battery), ...label ? {label} : {}};
     }
     if (isNum(e.countdown))
         return {type: 'text', text: clock(e.countdown)};

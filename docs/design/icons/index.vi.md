@@ -84,6 +84,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Khoá xoay, mở khoá xoay, đẩy đĩa, không có gì phát | `rotation-locked`, `rotation-allowed`, `media-eject`, `action-unavailable` | `arrows-rotate-right-slash`, `arrows-rotate-right`, tự vẽ, `ban` |
   | Bluetooth bật, tắt; máy bay bật, tắt | `bluetooth-active`, `bluetooth-disabled`; `airplane-mode`, `airplane-mode-disabled` | tự vẽ, tự vẽ; `plane`, tự vẽ |
   | Màn hình riêng tư bật, tắt; bảng vẽ | `screen-privacy`, `screen-privacy-disabled`; `input-tablet` | `eye-slash`, `eye`; `pencil` |
+  | Chuột, tay cầm chơi game | `input-mouse`, `input-gaming` | tự vẽ |
 
 - Việc chờ của Claude Code: `circle-dashed` của Gravity thay `circle`. **Chốt** (Ethan, 2026-11-12)
 - Âm lượng và mic ở mức 0 dùng icon tắt tiếng như Shell (`ui/status/volume.js` `getIcon`), dù gsd
@@ -127,6 +128,8 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   (tam giác bo như `triangle-up` trên một thanh), Num Lock (khung `square-hashtag` với số 1 của
   `circle-number-1`), Fn Lock (khung đó với chữ fn), lặp và lặp một bài, clipboard, Bluetooth tắt,
   máy bay tắt (`plane` gạch chéo). Script: `render/draw-own.js`. **Chốt** (Ethan, 2026-11-12)
+- Đợt ba (thiết bị không dây, mục "Bluetooth device"): chuột (viên nang với bánh xe), tay cầm chơi game
+  (thân bo tròn, dấu cộng bên trái, hai nút bên phải). Gravity không có hai hình này. (2026-11-17)
 
 - **Chế độ năng lượng** (Tiết kiệm pin / Cân bằng / Hiệu năng): hình như GNOME (Adwaita
   `power-profile-*`) — lá, cân, đồng hồ đo. Cân là `scales-balanced` của Gravity. Đồng hồ là

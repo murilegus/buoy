@@ -154,6 +154,12 @@ export class PluggedSource extends Source {
         if (!moved)
             return;
         this._offerId = null;   // the output moved: the flash says where, in place of an offer
+        // Bluetooth headphones coming or going: the bluetooth module's flash says it, with their
+        // battery (Ethan, 2026-11-17); this one stays quiet while that module runs
+        if (this._bluetoothSays() && ((cur.output === 'headphones' && cur.bluetooth) ||
+            (prev.output === 'headphones' && prev.bluetooth && cur.output !== 'headphones' &&
+             headphonesGone(prev, sinkPorts(this._control, prev.sinkId)))))
+            return;
         // the headphones left because they were unplugged or went (not switched away from by
         // hand): said so, with the speakers' level (Ethan, 2026-11-16)
         if (prev.output === 'headphones' && cur.output !== 'headphones' &&
@@ -174,9 +180,14 @@ export class PluggedSource extends Source {
         if (!dev || this._out.output === 'headphones')
             return;
         const stream = dev.get_stream_id() ? c.lookup_stream_id(dev.get_stream_id()) : null;
-        const out = outputOf({id, formFactor: stream?.get_form_factor() || null, port: dev.get_port() || null, description: dev.get_description() || null});
+        const out = outputOf({
+            id, name: stream?.get_name() || null, formFactor: stream?.get_form_factor() || null,
+            port: dev.get_port() || null, description: dev.get_description() || null,
+        });
         if (out.output !== 'headphones' || c.lookup_device_from_stream(this._sink)?.get_id() === id)
             return;
+        if (out.bluetooth && this._bluetoothSays())
+            return;     // connected, not plugged in: the bluetooth module's flash
         this._offerId = id;
         this._show(AUDIO, {what: 'offer', name: out.name, current: this._out.name, use: () => this._control?.change_output(dev)}, {fresh: true, alert: true});
     }
@@ -187,6 +198,15 @@ export class PluggedSource extends Source {
             return;
         this._offerId = null;
         this._stack?.end(this._id(AUDIO));
+    }
+
+    // the bluetooth module runs: it says Bluetooth headphones coming and going
+    _bluetoothSays() {
+        try {
+            return this._settings?.get_boolean('modules-bluetooth') === true;
+        } catch {
+            return false;
+        }
     }
 
     // the HUD asks, inside GNOME's OSD for this very change, before this source has heard of it

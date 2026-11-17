@@ -75,6 +75,8 @@ for m in flash compact; do r home/render/power.js compact/images/power-$m.vi.png
 r home/render/power.js icons/images/power-modes.vi.png icons
 # the Device tab
 for m in columns pages; do r device/render/device.js device/images/$m.vi.png $m; done
+r device/render/wireless.js device/images/wireless.vi.png
+r device/render/bluetooth-page.js device/images/bluetooth-page.vi.png
 # headphones / display plugged
 for m in flash compact; do r compact/render/plugged.js compact/images/plugged-$m.vi.png $m; done
 

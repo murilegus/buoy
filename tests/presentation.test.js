@@ -58,6 +58,10 @@ eq(element({bar: 2}), {type: 'bar', value: 1}, 'bar clamps');
 eq(element({bar: 0.62, label: '62'}), {type: 'bar', value: 0.62, label: '62'}, 'bar with its number (hud level)');
 eq(element({bar: 1, label: 120}), {type: 'bar', value: 1, label: '120'}, 'bar label: a number becomes text; the bar clamps, the label does not');
 eq(element({bar: 0.5, label: '  '}), {type: 'bar', value: 0.5}, 'bar: a blank label is dropped');
+eq(element({battery: 0.8, label: '80%'}), {type: 'battery', value: 0.8, label: '80%'}, 'battery: at its level with its number (Ethan, 2026-11-17)');
+eq([element({battery: 0.55}), element({battery: 1.4}), element({battery: -1, label: ' '})],
+    [{type: 'battery', value: 0.55}, {type: 'battery', value: 1}, {type: 'battery', value: 0}], 'battery: a coarse level has no number; clamped; a blank label dropped');
+eq(element({battery: NaN}), null, 'battery: no level, nothing');
 eq(element({bar: 0.5, off: true}), {type: 'bar', value: 0.5, off: true}, 'bar off (muted): dimmed, level kept');
 eq(element({bar: 0.5, off: 'yes'}), {type: 'bar', value: 0.5}, 'bar off must be true, nothing else');
 eq(element({countdown: 30}), {type: 'text', text: '0:30'}, 'countdown m:ss');

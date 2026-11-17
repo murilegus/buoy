@@ -217,6 +217,49 @@ export function levelBar(e, width) {
     return box;
 }
 
+// A battery at its level (a Bluetooth device, design/device "Không dây"): Buoy's battery icon
+// (icons/symbolic/battery-*-symbolic.svg, 16 in a 16 box) with its inside filled to the level,
+// then its number. A volume is a bar (levelBar): the two read apart (Ethan, 2026-11-17).
+function roundRect(cr, x, y, w, h, r) {
+    cr.newSubPath();
+    cr.arc(x + w - r, y + r, r, -Math.PI / 2, 0);
+    cr.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
+    cr.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
+    cr.arc(x + r, y + r, r, Math.PI, 1.5 * Math.PI);
+    cr.closePath();
+}
+
+/**
+ * @param {{value: number, label?: string}} e  a `battery` element
+ * @returns {St.Widget}
+ */
+export function batteryLevel(e) {
+    const glyph = new St.DrawingArea({style_class: 'buoy-battery', y_align: Clutter.ActorAlign.CENTER});
+    glyph.set_size(16, 16);
+    glyph.connect('repaint', () => {
+        const cr = glyph.get_context();
+        const [w] = glyph.get_surface_size();
+        const c = glyph.get_theme_node().get_foreground_color();
+        cr.scale(w / 16, w / 16);
+        cr.setSourceRGBA(c.red / 255, c.green / 255, c.blue / 255, c.alpha / 255);
+        cr.setFillRule(1);      // even-odd: the body's outline
+        roundRect(cr, 0.5, 3, 12.5, 10, 3);
+        roundRect(cr, 2, 4.5, 9.5, 7, 1.5);
+        cr.fill();
+        cr.setFillRule(0);
+        roundRect(cr, 14, 6.25, 1.5, 3.5, 0.75);
+        roundRect(cr, 3.5, 6, Math.max(1.5, 6.5 * e.value), 4, 0.75);
+        cr.fill();
+        cr.$dispose();
+    });
+    if (!e.label)
+        return glyph;
+    const box = new St.BoxLayout({style_class: 'buoy-battery-level', y_align: Clutter.ActorAlign.CENTER});
+    box.add_child(glyph);
+    box.add_child(label(e.label, 'buoy-battery-label'));
+    return box;
+}
+
 /**
  * A live position (media): the bar, then elapsed and remaining under it.
  *

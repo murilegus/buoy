@@ -121,6 +121,11 @@ const ICONS = {
             seg(8, 0.75, 8, 3), seg(3.4, 2.4, 4.6, 3.6), seg(12.6, 2.4, 11.4, 3.6)),
     // a pad with its two buttons
     'touchpad': path(frame(0.5, 1.5, 15, 13), true) + strokes(seg(2, 10.25, 14, 10.25), seg(8, 10.25, 8, 13)),
+    // a mouse (FEATURES M4 "Bluetooth device"): a capsule with its wheel
+    'mouse': path(rr(3.5, 0.5, 9, 15, 4.5) + rr(5, 2, 6, 12, 3, true), true) + path(seg(8, 4.5, 8, 6.5)),
+    // a gamepad: a rounded body, a cross on the left, two buttons on the right
+    'gamepad': path(rr(0.5, 3, 15, 10, 4) + rr(2, 4.5, 12, 7, 2.5, true), true) +
+        strokes(seg(4, 8, 7, 8), seg(5.5, 6.5, 5.5, 9.5), dot(10.25, 7.25), dot(11.75, 8.75)),
     // ⏏: a triangle with Gravity's corners (outer = inner + 1.5) over a bar
     'eject': path(roundPoly(TRI, 1.75) + roundPoly(inset(TRI, 1.5).reverse(), 0.25), true) + path(seg(2.25, 13.25, 13.75, 13.25)),
     // repeat: two arms of a rounded loop, each ending in Gravity's open arrowhead; the second
