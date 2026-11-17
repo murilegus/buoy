@@ -74,7 +74,7 @@ export function readBluetooth(client) {
         const kind = btKind(d.type);
         out.push({
             id: d.get_object_path(), name: d.alias || d.name || '', kind, address: d.address ?? null,
-            connected: d.connected === true, battery: bluetoothBattery(kind, d.battery_type, d.battery_percentage, d.battery_level),
+            connected: d.connected === true, battery: bluetoothBattery(d.battery_type, d.battery_percentage, d.battery_level),
             bluetooth: true, device: d,
         });
     }

@@ -37,11 +37,8 @@ eq([batteryOf({percentage: LOW}).low, batteryOf({percentage: LOW + 1}).low, batt
     [true, false, '100%', '80%'], 'battery: low at or under 20 %; clamped, rounded');
 eq([batteryOf({level: LEVEL.HIGH}), batteryOf({level: LEVEL.LOW}), batteryOf({level: LEVEL.CRITICAL}).low],
     [{value: 0.8, label: null, low: false}, {value: 0.2, label: null, low: true}, true], 'battery: a coarse level drawn, no number');
-eq([bluetoothBattery('phone', BATTERY_TYPE.PERCENTAGE, 80, 0), bluetoothBattery('headphones', BATTERY_TYPE.PERCENTAGE, 77, 0),
-    bluetoothBattery('mouse', BATTERY_TYPE.COARSE, 0, LEVEL.HIGH), bluetoothBattery('phone', BATTERY_TYPE.NONE, 0, 0)],
-[{percentage: 80, approx: true}, {percentage: 77}, {level: LEVEL.HIGH}, null],
-'bluetooth battery: a phone\'s in steps of 20 (HFP battchg 0–5, PipeWire backend-native.c), the rest as told');
-eq(batteryOf({percentage: 80, approx: true}), {value: 0.8, label: '~80%', low: false}, 'battery: a phone\'s said "~80%" (Ethan, 2026-11-17: 77 % on the phone)');
+eq([bluetoothBattery(BATTERY_TYPE.PERCENTAGE, 80, 0), bluetoothBattery(BATTERY_TYPE.COARSE, 0, LEVEL.HIGH), bluetoothBattery(BATTERY_TYPE.NONE, 0, 0)],
+    [{percentage: 80}, {level: LEVEL.HIGH}, null], 'bluetooth battery: a percentage, a coarse level, or none, as gnome-bluetooth tells it');
 eq([batteryOf(null), batteryOf({}), batteryOf({level: LEVEL.NONE}), batteryOf({percentage: NaN})], [null, null, null, null], 'battery: none told');
 
 // --- connected, came and went ---------------------------------------------------------------------
@@ -87,8 +84,8 @@ hp.onPress();
 eq(opened, 'gnome-bluetooth-panel.desktop', 'a click: Settings → Bluetooth');
 eq(planMinimal(build({what: 'connected', name: 'K380', kind: 'keyboard', battery: {level: LEVEL.NORMAL}})).trailing, {type: 'battery', value: 0.55},
     'connected: a coarse battery, no number');
-eq(planMinimal(build({what: 'connected', name: 'Redmi Note 14', kind: 'phone', battery: {percentage: 80, approx: true}})).trailing,
-    {type: 'battery', value: 0.8, label: '~80%'}, 'a phone telling its battery: "~80%"');
+eq(planMinimal(build({what: 'connected', name: 'Redmi Note 14', kind: 'phone', battery: {percentage: 80}})).trailing,
+    {type: 'battery', value: 0.8, label: '80%'}, 'a phone telling its battery (in steps of 20): said as it comes, no "~" (Ethan, 2026-11-17)');
 const phone = build({what: 'connected', name: 'Pixel 8', kind: 'phone'});
 eq([planMinimal(phone).leading?.icon, phone.trailing], ['phone-symbolic', null], 'a phone: its name only (no battery over Bluetooth; GSConnect brings it)');
 const gone = build({what: 'disconnected', name: 'WH-1000XM4', kind: 'headphones', battery: {percentage: 80}});

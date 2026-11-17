@@ -70,9 +70,9 @@ plugged, Bluetooth device, USB / phone / webcam plugged, Phone via GSConnect). S
   báo khi đổi). Lúc nối, pin là điều cần biết; âm lượng vẫn là mức cũ. **Chốt**
 - **Điện thoại** qua Bluetooth gửi pin theo **bậc 20 %**: chỉ số "battchg" 0–5 của HFP, PipeWire đổi
   thành `giá trị × 100 / 5` (`spa/plugins/bluez5/backend-native.c` `rfcomm_hfp_hf`, PipeWire 1.6.2),
-  BlueZ không ghi nguồn (`Battery1.Source` trống). Máy 77 % thành 80, nên số ghi **"~80%"**; không gửi
-  thì chỉ tên. **Chốt** (Ethan, 2026-11-17) Pin đúng và tìm máy đến với "Phone via GSConnect"; khi đó
-  một máy có cả hai gộp thành một ô.
+  BlueZ không ghi nguồn (`Battery1.Source` trống). Máy 77 % thành 80. Số ghi như nhận được, "80%", như
+  Cài đặt của GNOME ("~80%" nhìn lạ); không gửi thì chỉ tên. **Chốt** (Ethan, 2026-11-17) Pin đúng
+  và tìm máy đến với "Phone via GSConnect"; khi đó một máy có cả hai gộp thành một ô.
 - **Pin yếu** để thông báo của gsd ("Mouse battery low"), qua module notification như mọi thông báo.
 - **Cột Không dây**: thiết bị Bluetooth đang nối (danh sách của Quick Settings), rồi chuột, bàn phím
   2.4 GHz có báo pin (UPower; không phải thiết bị Bluetooth đã có). Pin yếu (≤ 20 %) lên trước.

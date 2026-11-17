@@ -20,7 +20,7 @@ export default {
             return null;
         const name = typeof ev.name === 'string' && ev.name.trim() ? ev.name.trim() : 'Bluetooth device';
         const on = ev.what === 'connected';
-        // a phone tells its battery in steps ("~80%", model/bluetooth.js bluetoothBattery) or not at
+        // a phone tells its battery in steps of 20 % (model/bluetooth.js bluetoothBattery) or not at
         // all: its name only then (GSConnect brings it)
         const b = on ? batteryOf(ev.battery) : null;
         return {

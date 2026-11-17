@@ -94,9 +94,9 @@ note('flash cắm, rút tai nghe (module plugged): âm lượng như phím âm l
 
 text('Pin: hình pin theo mức, rồi số', 16, 100, {sz: 12, wt: 600});
 row([['headphones', 'WH-1000XM4', bt(.8, '80%')], ['mouse', 'MX Master 3S', bt(.15, '15%')], ['keyboard', 'K380', bt(.5)],
-    ['smartphone', 'Redmi Note 14', bt(.8, '~80%')], ['headphones', 'Đã ngắt WH-1000XM4']], 124);
+    ['smartphone', 'Redmi Note 14', bt(.8, '80%')], ['headphones', 'Đã ngắt WH-1000XM4']], 124);
 note('flash nối Bluetooth, 3 s: icon theo loại, tên, pin (hình pin 16 vẽ tới mức, rồi số); UPower chỉ báo mức thô (K380): chỉ hình pin', 16, 162);
-note('điện thoại gửi pin theo bậc 20 % (HFP battchg 0–5): "~80%"; không gửi thì chỉ tên (pin đúng đến với GSConnect); ngắt: "Đã ngắt …", không trailing', 16, 176);
+note('điện thoại gửi pin theo bậc 20 % (HFP battchg 0–5): số ghi như nhận được; không gửi thì chỉ tên (pin đúng đến với GSConnect); ngắt: "Đã ngắt …", không trailing', 16, 176);
 note('tai nghe Bluetooth: chỉ flash này (pin), module plugged không flash thêm; lúc bật Buoy, lúc tắt Bluetooth: không flash (HUD đã báo)', 16, 190);
 
 // --- the Device tab ------------------------------------------------------------------------------
