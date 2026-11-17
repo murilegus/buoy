@@ -57,8 +57,9 @@ const usb = build({
     },
 });
 eq(line(usb), ['drive-removable-media-symbolic', 'USB 64 GB', null], 'drive in: its icon and name');
-eq([usb.ttl, usb.priority, usb.kind, usb.actions.map(a => a.label)], [TTL, PRIORITY.device, 'usb', ['Open', 'Eject']],
-    'drive in: 3 s, the devices\' priority, Open and Eject');
+eq([usb.ttl, usb.priority, usb.kind, usb.actions.map(a => [a.label, a.icon])],
+    [TTL, PRIORITY.device, 'usb', [['Open', 'folder-open-symbolic'], ['Eject', 'media-eject-symbolic']]],
+    'drive in: 3 s, the devices\' priority, Open and Eject with their icons (Ethan, 2026-11-17)');
 eq([usb.compact.card.title, usb.compact.card.app], ['USB 64 GB', '41 GB free of 64 GB'], 'drive in: its compact, the free space under its name');
 usb.onAction('eject');
 eq(did, 'eject', 'Eject ejects');

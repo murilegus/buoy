@@ -277,8 +277,8 @@ export function makeElement(e, mode, activity = null, sizes = {}) {
 export function actionButton(a, activity) {
     /** @type {{label?: string, child?: Clutter.Actor}} */
     let face = a.label ? {label: a.label} : {child: new St.Icon({...iconProps(a.icon), icon_size: 16})};
-    // one of a set of choices (`selected` given): its icon and its label
-    if ('selected' in a && a.label && a.icon)
+    // an icon and a label: both (a choice of a set, a drive's Open and Eject, 2026-11-17)
+    if (a.label && a.icon)
         face = {child: iconLabel(a.icon, a.label)};
     const button = new St.Button({
         style_class: 'buoy-action', can_focus: true,

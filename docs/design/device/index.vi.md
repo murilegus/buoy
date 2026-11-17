@@ -95,7 +95,7 @@ plugged, Bluetooth device, USB / phone / webcam plugged, Phone via GSConnect). S
 *Ethan, 2026-11-17 (mục M4 "USB / phone / webcam plugged").*
 
 - **Cắm ổ** (USB, thẻ nhớ, ổ rời): compact tự mở như cắm màn hình (alert, giữ 5 s lúc bạn có mặt): tên,
-  dung lượng trống, hai nút **Mở** (Files ở gốc ổ) và **Ngắt**; rồi pill 3 s. Thay thông báo "“USB 64 GB”
+  dung lượng trống, hai nút **Mở** (Files ở gốc ổ) và **Ngắt**, mỗi nút có icon (thư mục, đẩy đĩa); rồi pill 3 s. Thay thông báo "“USB 64 GB”
   connected" của GNOME (`ui/components/autorunManager.js`). Đó là ổ GNOME vừa tự gắn (`mount-added` của
   `Gio.VolumeMonitor`); ổ mạng, ổ thư mục ẩn, phân vùng của đĩa trong máy không tính. **Chốt**
 - **Điện thoại cắm dây**, chế độ truyền tệp (MTP, PTP): gvfs gắn như một ổ, nên là một ổ với icon điện

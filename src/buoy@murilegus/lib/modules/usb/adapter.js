@@ -34,8 +34,8 @@ function driveIn(ev) {
     const open = typeof ev.open === 'function' ? ev.open : null;
     const eject = typeof ev.eject === 'function' ? ev.eject : null;
     const actions = [
-        ...open ? [{id: 'open', label: 'Open'}] : [],
-        ...eject ? [{id: 'eject', label: 'Eject'}] : [],
+        ...open ? [{id: 'open', label: 'Open', icon: 'folder-open-symbolic'}] : [],
+        ...eject ? [{id: 'eject', label: 'Eject', icon: 'media-eject-symbolic'}] : [],
     ];
     return {
         ...flash(iconOf(ev.kind), name, 'drive-in', TTL, open),

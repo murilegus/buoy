@@ -54,10 +54,12 @@ fill(1, CX, cy, kw, 104, 28, [0, 0, 0]);
 fill(C.FILL2, CX + 14, cy + 8, 40, 40, 20); icon('hard-drive', CX + 26, cy + 20, 16);
 text('USB 64 GB', CX + 66, cy + 9, {wt: 600}); text('Trống 41 GB / 64 GB', CX + 66, cy + 29, {sz: SUB, a: C.FG_MUTED});
 const bw = (kw - 24 - 8) / 2;
-['Mở', 'Ngắt'].forEach((t, i) => {
+[['folder-open', 'Mở'], ['eject', 'Ngắt']].forEach(([ic, t], i) => {
     const bx = CX + 12 + i * (bw + 8);
     fill(C.FILL2, bx, cy + 60, bw, 32, 16);
-    text(t, bx + bw / 2, cy + 68, {sz: SUB, wt: 600, centre: true});
+    const e = text(t, 0, 0, {sz: SUB, wt: 600, measure: true});
+    icon(ic, bx + bw / 2 - (e.width + 22) / 2, cy + 68, 16);
+    text(t, bx + bw / 2 - (e.width + 22) / 2 + 22, cy + 68, {sz: SUB, wt: 600});
 });
 note('alert như cắm màn hình (giữ 5 s lúc bạn có mặt), rồi pill 3 s; thay thông báo “USB 64 GB” connected của GNOME', CX, cy + 112);
 note('Mở: Files ở gốc ổ; Ngắt: ghi nốt dữ liệu rồi tháo (eject, không được thì unmount); đang bận: hộp thoại GNOME liệt kê app', CX, cy + 126);
