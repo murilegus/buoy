@@ -32,12 +32,13 @@ export function readText(file, cancellable = null) {
  * @param {Gio.File} dir
  * @param {string} attributes  e.g. 'standard::name,standard::type,time::modified'
  * @param {?Gio.Cancellable} [cancellable]
+ * @param {boolean} [links]  the links themselves, not what they point to (`standard::symlink-target`)
  * @returns {Promise<Gio.FileInfo[]>} its children's infos; rejects with Gio's error when it
  *   cannot be listed (missing: Gio.IOErrorEnum.NOT_FOUND)
  */
-export function listInfos(dir, attributes, cancellable = null) {
+export function listInfos(dir, attributes, cancellable = null, links = false) {
     return new Promise((resolve, reject) => {
-        dir.enumerate_children_async(attributes, Gio.FileQueryInfoFlags.NONE,
+        dir.enumerate_children_async(attributes, links ? Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS : Gio.FileQueryInfoFlags.NONE,
             0, cancellable, (source, res) => {
                 let children;
                 try {

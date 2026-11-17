@@ -234,7 +234,7 @@ function updateLines(update, running) {
         return {
             title: `Buoy ${update.name} is out.`,
             lines: [...have ? [`You have ${have}.`] : [], 'Paste the command in a terminal to update.'],
-            actions: [{id: COPY, label: 'Copy command'}, {id: NOTES, label: 'Release notes'}],
+            actions: [{id: COPY, label: 'Copy command', icon: 'edit-copy-symbolic'}, {id: NOTES, label: 'Release notes', icon: 'external-link-symbolic'}],
         };
     }
     return {title: 'A newer Buoy is ready.', lines: ['Log out and back in to use it.'], actions: []};

@@ -85,6 +85,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Bluetooth bật, tắt; máy bay bật, tắt | `bluetooth-active`, `bluetooth-disabled`; `airplane-mode`, `airplane-mode-disabled` | tự vẽ, tự vẽ; `plane`, tự vẽ |
   | Màn hình riêng tư bật, tắt; bảng vẽ | `screen-privacy`, `screen-privacy-disabled`; `input-tablet` | `eye-slash`, `eye`; `pencil` |
   | Chuột, tay cầm chơi game | `input-mouse`, `input-gaming` | tự vẽ |
+  | Ổ cắm vào, webcam | `drive-removable-media`, `camera-web` | `hard-drive`, `camera` |
 
 - Việc chờ của Claude Code: `circle-dashed` của Gravity thay `circle`. **Chốt** (Ethan, 2026-11-12)
 - Âm lượng và mic ở mức 0 dùng icon tắt tiếng như Shell (`ui/status/volume.js` `getIcon`), dù gsd

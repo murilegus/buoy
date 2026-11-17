@@ -248,7 +248,8 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   (`has_builtin_panel` sai): chỉ Nối và Nhân bản, như GNOME. Không đổi được (`can_switch_config()`
   sai): không có nút, chỉ flash. **Chốt**
 - **Compact mời dùng tai nghe** (104): đĩa tròn với icon `headphones`, "Tai nghe", dòng dưới "Âm thanh
-  đang ở Loa"; một nút **Dùng** trải hết hàng (nút thường, không phải nút chọn). **Chốt**
+  đang ở Loa"; một nút **Dùng** với icon tai nghe trải hết hàng (nút thường, không phải nút chọn;
+  nút có icon thì vẽ cả icon, 2026-11-17). **Chốt**
 - Hai mục này có trong nhóm "Cắm vào" của tab Thiết bị khi làm mục đó.
 
 ## Chỗ trong code

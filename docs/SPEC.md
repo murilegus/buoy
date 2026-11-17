@@ -913,7 +913,10 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    link is read over EDS's own D-Bus (`CalendarFactory` → `Calendar.GetObjectList`, raw
    iCalendar: `LOCATION`, `DESCRIPTION`, `URL`, `X-GOOGLE-CONFERENCE`), only for an event
    about to start; no `gi://ECal` (not installed by default).
-6. **eject** — mount-added with one-tap eject (downloads moved to v0.1, §6c, 2026-11-06).
+6. **usb** (2026-11-17, Ethan; design/device "Ổ, điện thoại, webcam cắm vào") — a drive mounted
+   (a phone in file transfer mode too) opens its compact with Open and Eject, in place of GNOME's
+   "connected" notification; eject says "Safe to remove …", a pull without it "Unplugged …"; a
+   webcam plugged in or out flashes (downloads moved to v0.1, §6c, 2026-11-06).
 7. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
 8. **several pills** — pill 1 plus up to two idle-sized side pills (§2c).

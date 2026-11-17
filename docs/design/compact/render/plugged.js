@@ -95,7 +95,9 @@ if (MODE === 'flash') {
     fill([1, 1, 1, C.FILL2], CX + 14, oy + 8, 40, 40, 20); icon('headphones', CX + 26, oy + 20, 16);
     text('Tai nghe', CX + 66, oy + 9, {wt: 600}); text('Âm thanh đang ở Loa', CX + 66, oy + 29, {sz: SUB, a: C.FG_MUTED});
     fill([1, 1, 1, C.FILL2], CX + 12, oy + 60, kw - 24, 32, 16);
-    text('Dùng', CX + kw / 2, oy + 68, {sz: SUB, wt: 600, centre: true});
+    const ue = text('Dùng', 0, 0, {sz: SUB, wt: 600, measure: true});
+    icon('headphones', CX + kw / 2 - (ue.width + 22) / 2, oy + 68, 16);
+    text('Dùng', CX + kw / 2 - (ue.width + 22) / 2 + 22, oy + 68, {sz: SUB, wt: 600});
     note('tai nghe cắm mà âm thanh vẫn ra loa → compact này tự mở; Dùng: chuyển đầu ra (change_output)', CX, oy + 112);
     pill(CX + kw + 40, oy + 8, 'headphones', 'Tai nghe đã cắm');
     note('pill 3 s; rút ra trước khi dùng: nó đi', CX + kw + 40, oy + 46);

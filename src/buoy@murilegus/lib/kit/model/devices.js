@@ -1,6 +1,7 @@
 import {MODES} from './displays.js';
 import {isBluetoothSink} from './audio.js';
 import {batteryOf, kindIcon, kindName, sortWireless} from './bluetooth.js';
+import {formatSize, spaceLine} from './drives.js';
 import {PROFILES, STATE, batteryIcon, duration} from './power.js';
 
 /**
@@ -9,7 +10,7 @@ import {PROFILES, STATE, batteryIcon, duration} from './power.js';
  * holds ends in "+N", and a click opens a page in place. Pure: the tab (modules/device/tab.js)
  * reads the facts through kit/services and draws what this plans.
  *
- * A cell: {id, icon, value: ?string, name, page?: 'battery'|'display'|'bluetooth'|null,
+ * A cell: {id, icon, value: ?string, name, page?: 'battery'|'display'|'bluetooth'|'drive'|null,
  *   open?: ?string, detail?: ?string, meter?: ?object} — `page`: what a click shows; `open`: a
  *   .desktop it starts instead; `meter`: the value drawn — {type: 'battery', value, label?} a
  *   battery at its level, {type: 'bar', value, label, off?} a volume as the HUD's (the two read
@@ -31,6 +32,7 @@ const POWER_PANEL = 'gnome-power-panel.desktop';
 const DISPLAY_PANEL = 'gnome-display-panel.desktop';
 const SOUND_PANEL = 'gnome-sound-panel.desktop';
 const BLUETOOTH_PANEL = 'gnome-bluetooth-panel.desktop';
+const CAMERA_APP = 'org.gnome.Snapshot.desktop';    // GNOME's camera app, where installed
 
 /**
  * @param {number} height  the tab's body under the strip
@@ -188,9 +190,54 @@ export function isWired(sinkName) {
 }
 
 /**
+ * A drive plugged in (a USB stick, a card, a disk, a phone in file transfer mode): its free space
+ * as the value; a click shows its page (Open in Files, Eject).
+ *
+ * @param {{id: string, name: string, kind: string, free?: ?number, size?: ?number}} d  model/drives.js's drive
+ * @returns {object} its cell
+ */
+export function driveCell(d) {
+    return {
+        id: `drive:${d.id}`, icon: d.kind === 'phone' ? 'phone-symbolic' : 'drive-removable-media-symbolic',
+        value: formatSize(d.free), name: d.name || (d.kind === 'phone' ? 'Phone' : 'Drive'),
+        detail: spaceLine(d.free, d.size), page: 'drive', open: null,
+    };
+}
+
+/**
+ * A webcam plugged in: no value (Shell knows a camera is in use, not which); a click opens
+ * GNOME's camera app where installed.
+ *
+ * @param {{id: string, name: string}} c  model/drives.js's camera
+ * @returns {object} its cell
+ */
+export function cameraCell(c) {
+    return {id: `camera:${c.id}`, icon: 'camera-web-symbolic', value: null, name: c.name || 'Webcam', page: null, open: CAMERA_APP};
+}
+
+/**
+ * A drive's page (design/device "Đang cắm", 2026-11-17, Ethan): its free space at the head's
+ * end, Open in Files, Eject.
+ *
+ * @param {?{name: string, kind?: string, free?: ?number, size?: ?number}} d
+ * @returns {?object} {title, end, rows: [{id, icon, name}]}
+ */
+export function drivePage(d) {
+    if (!d)
+        return null;
+    return {
+        title: d.name || (d.kind === 'phone' ? 'Phone' : 'Drive'), end: spaceLine(d.free, d.size),
+        rows: [
+            {id: 'open', icon: 'folder-open-symbolic', name: 'Open in Files'},
+            {id: 'eject', icon: 'media-eject-symbolic', name: 'Eject'},
+        ],
+    };
+}
+
+/**
  * The groups from what is known now: This Computer (the battery or UPS, the power mode),
  * Wireless (Bluetooth devices connected, UPower's peripherals; low batteries first), Plugged In
- * (external displays, wired sound).
+ * (external displays, drives, webcams, wired sound).
  *
  * @param {object} facts
  * @param {?object} [facts.battery]  batteryCell's
@@ -198,13 +245,19 @@ export function isWired(sinkName) {
  * @param {object[]} [facts.displays]  displayCell's, external displays only
  * @param {?object} [facts.audio]  audioCell's
  * @param {object[]} [facts.wireless]  wirelessCell's
+ * @param {object[]} [facts.drives]  driveCell's
+ * @param {object[]} [facts.cameras]  cameraCell's
  * @returns {Array<{id: string, cells: object[]}>}
  */
-export function deviceGroups({battery = null, modes = null, displays = [], audio = null, wireless = []} = {}) {
+export function deviceGroups({battery = null, modes = null, displays = [], audio = null, wireless = [], drives = [], cameras = []} = {}) {
     return [
         {id: 'computer', cells: [batteryCell(battery), modeCell(modes)].filter(Boolean)},
         {id: 'wireless', cells: sortWireless(wireless).map(wirelessCell)},
-        {id: 'plugged', cells: [...(displays ?? []).map(displayCell), audioCell(audio)].filter(Boolean)},
+        {
+            id: 'plugged', cells: [
+                ...(displays ?? []).map(displayCell), ...(drives ?? []).map(driveCell), ...(cameras ?? []).map(cameraCell), audioCell(audio),
+            ].filter(Boolean),
+        },
     ];
 }
 

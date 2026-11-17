@@ -151,7 +151,8 @@ const gh = adapter.greeting({
 });
 eq([gh.text, gh.expanded.center.title, gh.expanded.center.lines],
     ['Buoy 0.2 is out.', 'Buoy 0.2 is out.', ['You have 0.1.1.', 'Paste the command in a terminal to update.']], 'GitHub: what is out, what you have, what to do');
-eq(gh.actions, [{id: COPY, label: 'Copy command'}, {id: NOTES, label: 'Release notes'}], 'GitHub: copy the command, read the notes');
+eq(gh.actions, [{id: COPY, label: 'Copy command', icon: 'edit-copy-symbolic'}, {id: NOTES, label: 'Release notes', icon: 'external-link-symbolic'}],
+    'GitHub: copy the command, read the notes, each with its icon (Ethan, 2026-11-17)');
 gh.onAction(COPY);
 gh.onAction(NOTES);
 gh.onAction(MORE);

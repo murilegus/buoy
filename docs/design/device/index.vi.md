@@ -49,7 +49,7 @@ plugged, Bluetooth device, USB / phone / webcam plugged, Phone via GSConnect). S
 - **Màn hình**: Nối / Nhân bản / Chỉ màn ngoài, đang dùng có ✓ (như compact cắm màn,
   [Compact](../compact/index.vi.md) "Cắm màn hình và tai nghe"), rồi Cài đặt màn hình.
 - **"+N"**: cả nhóm, mỗi thiết bị một hàng với chi tiết (độ phân giải, dung lượng trống…).
-- **Tai nghe, loa**: Cài đặt → Âm thanh. **Ổ USB**: mở trong Files. Các thiết bị khác: theo mục của chúng.
+- **Tai nghe, loa**: Cài đặt → Âm thanh. **Ổ**: trang Mở trong Files, Ngắt. Các thiết bị khác: theo mục của chúng.
 
 ## Không dây
 
@@ -88,12 +88,38 @@ plugged, Bluetooth device, USB / phone / webcam plugged, Phone via GSConnect). S
   Bluetooth, chỉ để xem. **Ngắt kết nối** như danh sách Bluetooth của Quick Settings; ngắt xong về các
   cột. Rồi **Cài đặt Bluetooth**. **Chốt** (Ethan, 2026-11-17)
 
+## Ổ, điện thoại, webcam cắm vào
+
+![Cắm ổ: compact Mở và Ngắt; các flash; cột Đang cắm; trang của ổ](images/drives.vi.png)
+
+*Ethan, 2026-11-17 (mục M4 "USB / phone / webcam plugged").*
+
+- **Cắm ổ** (USB, thẻ nhớ, ổ rời): compact tự mở như cắm màn hình (alert, giữ 5 s lúc bạn có mặt): tên,
+  dung lượng trống, hai nút **Mở** (Files ở gốc ổ) và **Ngắt**, mỗi nút có icon (thư mục, đẩy đĩa); rồi pill 3 s. Thay thông báo "“USB 64 GB”
+  connected" của GNOME (`ui/components/autorunManager.js`). Đó là ổ GNOME vừa tự gắn (`mount-added` của
+  `Gio.VolumeMonitor`); ổ mạng, ổ thư mục ẩn, phân vùng của đĩa trong máy không tính. **Chốt**
+- **Điện thoại cắm dây**, chế độ truyền tệp (MTP, PTP): gvfs gắn như một ổ, nên là một ổ với icon điện
+  thoại, Mở và Ngắt. Chỉ sạc thì không có ổ, không báo; pin điện thoại đến với GSConnect. **Chốt**
+- **Ngắt**: eject (tắt nguồn ổ khi được), không được thì unmount, qua thao tác của Shell
+  (`ui/shellMountOperation.js`): file đang mở thì hộp thoại của GNOME liệt kê app đang giữ. Còn dữ liệu
+  đang ghi: pill "Đang ghi vào USB 64 GB" ở tới khi xong; xong: flash **"Có thể rút USB 64 GB"**. Thông báo
+  của Shell cho việc đó ("Writing data to…", "…can be safely unplugged") không hiện: Buoy nói thay. **Chốt**
+- **Rút ra mà chưa ngắt**: flash **"Đã rút USB 64 GB"**. Chỉ unmount (trong Files), ổ còn cắm: không báo.
+  **Chốt**
+- **Webcam rời**: flash 3 s tên nó khi cắm, "Đã rút …" khi rút. Camera tích hợp không tính: cổng USB của
+  nó được firmware đánh dấu `fixed` (`/sys/bus/usb/devices/…/removable`; máy Ethan: camera 3-8 là
+  `fixed`). Shell chỉ biết có camera đang dùng (`Shell.CameraMonitor`), nên đọc thiết bị video của
+  kernel: theo dõi `/dev` (inotify, không hỏi định kỳ), đọc `/sys/class/video4linux` không chặn. **Chốt**
+- **Cột Đang cắm**: màn hình, ổ (giá trị là dung lượng trống), webcam (không giá trị: Shell không biết
+  camera nào đang dùng), âm thanh có dây. Bấm ổ: trang **Mở trong Files**, **Ngắt**, dung lượng ở đầu
+  trang; ngắt xong về các cột. Bấm webcam: mở app Camera (Snapshot) nếu máy có. **Chốt**
+
 ## Mục này làm gì
 
 Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công suất, chế độ năng lượng; UPS),
 **Không dây** (thiết bị Bluetooth, chuột và bàn phím 2.4 GHz; mục "Bluetooth device") và **Đang cắm**
-(màn hình ngoài từ module plugged; âm thanh có dây đang dùng). Ổ USB, webcam, điện thoại đến với mục
-của chúng và chỉ cần thêm ô vào nhóm.
+(màn hình ngoài từ module plugged; ổ, điện thoại cắm dây, webcam rời từ module usb; âm thanh có dây
+đang dùng). Điện thoại qua GSConnect đến với mục của nó.
 
 ## Chỗ trong code
 
@@ -107,6 +133,13 @@ của chúng và chỉ cần thêm ô vào nhóm.
 - `lib/kit/services/peripherals.js` — thiết bị UPower có pin, proxy D-Bus async chỉ khi tab còn
   (libupower-glib làm đồng bộ, và `get_devices2()` trả cho GJS thiết bị đã bị huỷ).
 - `lib/modules/bluetooth/` — flash nối, ngắt; pin đến sau cập nhật flash đang hiện.
+- `lib/kit/model/drives.js` — ổ nào tính, dung lượng ("41 GB free of 64 GB"), webcam nào tính, thông
+  báo nào của GNOME Buoy nói thay. Có test (`tests/usb.test.js`).
+- `lib/kit/services/drives.js` — `Gio.VolumeMonitor`, dung lượng, mở trong Files, ngắt qua
+  `ShellMountOperation` (tiến trình cho module usb).
+- `lib/kit/services/cameras.js` — webcam: `/dev` theo dõi, `/sys/class/video4linux` đọc qua link của nó
+  (Gio gộp "x/.." theo tên, không theo link).
+- `lib/modules/usb/` — compact cắm ổ, các flash ngắt, rút, webcam.
 - Hình pin: phần tử `{battery, label}` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/parts.js`
   `batteryLevel`).
 - `lib/modules/device/tab.js` — đọc qua `kit/services` (pin và chế độ của Quick Settings, màn hình của
