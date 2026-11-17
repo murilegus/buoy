@@ -9,7 +9,8 @@ import {choicePage, choiceRow, listBox, listHead} from '../../kit/ui/present/lis
 import {
     CELL_GAP, CELL_H, TITLE_H, bluetoothPage, deviceGroups, displayPage, drivePage, groupPage, isWired, planDevices, rowsFit, sinkAddress,
 } from '../../kit/model/devices.js';
-import {upowerOnly} from '../../kit/model/bluetooth.js';
+import {batteryOf, upowerOnly} from '../../kit/model/bluetooth.js';
+import {phonePage, withPhones} from '../../kit/model/phone.js';
 import {outputOf} from '../../kit/model/audio.js';
 import {batteryPage} from '../../kit/model/power.js';
 import {batteryToggle, profilesOf, profilesToggle, setProfile} from '../../kit/services/power.js';
@@ -19,6 +20,7 @@ import {disconnectDevice, readBluetooth, stopWaitingBluetooth, whenBluetooth} fr
 import {Peripherals} from '../../kit/services/peripherals.js';
 import {ejectDrive, openDrive, querySpace, readDrives, volumeMonitor} from '../../kit/services/drives.js';
 import {Cameras} from '../../kit/services/cameras.js';
+import {Phones, openGsconnect} from '../../kit/services/gsconnect.js';
 import {FADES, LIST_SHIFT} from '../../kit/model/motion.js';
 import {slideIn} from '../../kit/ui/spring.js';
 
@@ -82,6 +84,7 @@ export class DeviceTab {
         this._space = new Map();        // a drive's root URI → {free, size}, read once it shows
         this._volumes.connectObject('mount-added', redraw, 'mount-removed', redraw, this);
         this._cameras = new Cameras(redraw);
+        this._phones = new Phones(redraw);
     }
 
     // each drive's free space, read once (kit/services/drives.js querySpace), then a redraw
@@ -155,8 +158,10 @@ export class DeviceTab {
         const playingOn = sinkAddress(s?.name);
         const bluetooth = bt.map(d => ({...d, playing: !!playingOn && d.address?.toUpperCase() === playingOn}));
         const others = upowerOnly(this._peripherals?.list() ?? [], btAll.map(d => d.address).filter(Boolean));
+        const phones = this._phones?.list() ?? [];
         return {
-            battery, modes: profilesOf(this._modes), displays, audio, bluetooth, wireless: [...bluetooth, ...others],
+            battery, modes: profilesOf(this._modes), displays, audio, bluetooth, phones,
+            wireless: withPhones([...bluetooth, ...others], phones),
             drives: this._drives(), cameras: this._cameras?.list ?? [],
         };
     }
@@ -234,7 +239,7 @@ export class DeviceTab {
     // --- a click ---------------------------------------------------------------------------------
 
     _press(c) {
-        if (c.page === 'battery' || c.page === 'display' || c.page === 'bluetooth' || c.page === 'drive') {
+        if (['battery', 'display', 'bluetooth', 'drive', 'phone'].includes(c.page)) {
             let page = {kind: 'battery'};
             if (c.page === 'display')
                 page = {kind: 'display', key: c.id.slice('display:'.length)};
@@ -242,6 +247,8 @@ export class DeviceTab {
                 page = {kind: 'bluetooth', id: c.id.slice('wireless:'.length)};
             else if (c.page === 'drive')
                 page = {kind: 'drive', id: c.id.slice('drive:'.length)};
+            else if (c.page === 'phone')
+                page = {kind: 'phone', id: c.id.slice('wireless:gsconnect:'.length)};
             if (this._pageActor(page, this._facts(), []))
                 this._open(page);
             else
@@ -290,6 +297,8 @@ export class DeviceTab {
             return this._bluetoothPage(page.id, facts);
         if (page.kind === 'drive')
             return this._drivePage(page.id, facts);
+        if (page.kind === 'phone')
+            return this._phonePage(page.id, facts);
         const col = columns.find(c => c.id === page.id);
         if (!col)
             return null;
@@ -352,6 +361,27 @@ export class DeviceTab {
         return box;
     }
 
+    // the phone's page (design/device "Điện thoại qua GSConnect"): its battery at the head's end,
+    // Find My Phone (it rings), GSConnect's settings (the island goes). Gone: the columns again
+    _phonePage(id, facts) {
+        const d = facts.wireless.find(x => x.gsconnect && x.phoneId === id);
+        const p = d ? phonePage(d) : null;
+        if (!p)
+            return null;
+        const b = batteryOf(d.battery);
+        const end = b ? meterActor({type: 'battery', value: b.value, ...b.label ? {label: b.label} : {}}) : null;
+        const box = listBox(listHead(p.title, {back: () => this.back(), button: BUTTON, end}));
+        const rows = new St.BoxLayout({style_class: 'buoy-home-choices', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        for (const r of p.rows)
+            rows.add_child(choiceRow({icon: r.icon, name: r.name, value: r.value, plain: true}, () => this._phones?.ring(id)));
+        rows.add_child(choiceRow({icon: 'emblem-system-symbolic', name: p.settings.name, settings: true}, () => {
+            openGsconnect();
+            this._close?.();
+        }));
+        box.add_child(rows);
+        return box;
+    }
+
     // a Settings panel (Shell.AppSystem lookup_app, as Quick Settings opens them); the island goes
     _launch(desktopId) {
         const app = desktopId ? Shell.AppSystem.get_default().lookup_app(desktopId) : null;
@@ -377,6 +407,8 @@ export class DeviceTab {
         this._peripherals?.destroy();
         this._volumes?.disconnectObject(this);
         this._cameras?.destroy();
+        this._phones?.destroy();
+        this._phones = null;
         this._space = null;
         this._battery = this._modes = this._mm = this._mixer = this._sink = this._bt = this._peripherals = null;
         this._volumes = this._cameras = null;

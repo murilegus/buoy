@@ -78,6 +78,7 @@ for m in columns pages; do r device/render/device.js device/images/$m.vi.png $m;
 r device/render/wireless.js device/images/wireless.vi.png
 r device/render/bluetooth-page.js device/images/bluetooth-page.vi.png
 r device/render/drives.js device/images/drives.vi.png
+r device/render/phone.js device/images/phone.vi.png
 # headphones / display plugged
 for m in flash compact; do r compact/render/plugged.js compact/images/plugged-$m.vi.png $m; done
 

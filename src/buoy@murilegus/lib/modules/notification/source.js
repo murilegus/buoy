@@ -8,6 +8,8 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 import {Source} from '../../kit/services/source.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
 import {usbShows} from '../../kit/model/drives.js';
+import {GSCONNECT_APP, phoneNote} from '../../kit/model/phone.js';
+import {Phones} from '../../kit/services/gsconnect.js';
 import {DISMISS, Turns, actionIndex, agentShows, missedRow, powerShows, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
@@ -54,6 +56,8 @@ const SHARED_ID = 'notification:buoy:shared';
 export class NotificationSource extends Source {
     enable(stack, registry = null, settings = null) {
         super.enable(stack, registry, settings);
+        // the phone's name for its notifications' line ("Zalo · Redmi Note 14")
+        this._phones = new Phones(null);
         // app id → {key, list (alive, oldest first), seen, shown, id}
         this._pills = new Map();
         this._serial = 0;
@@ -122,6 +126,8 @@ export class NotificationSource extends Source {
     }
 
     disable() {
+        this._phones?.destroy();
+        this._phones = null;
         this._injections?.clear();
         this._injections = null;
         Main.messageTray.disconnectObject(this);
@@ -200,7 +206,7 @@ export class NotificationSource extends Source {
         if (!n.source)
             return;
         // one pill per app, not per Shell source: notify-send makes a source per process
-        const app = appIdOf(n.source);
+        const app = noteOf(n).app;
         const progressOn = this._settings?.get_boolean('modules-progress') === true;
         if (shownElsewhere(app, n.id, progressOn))
             return;
@@ -419,15 +425,18 @@ export class NotificationSource extends Source {
         this._sharing.start();
         const own = n.gicon ?? null;
         const themed = own instanceof Gio.ThemedIcon;
+        const note = noteOf(n);
+        // a phone's: its app's icon as GSConnect brings it, as the app's own logo
+        const phoneName = note.phone ? this._phones?.list().find(p => p.connected)?.name : null;
         const a = this._registry?.build(KIND, app, {
             id: String(pill.key),
-            title: n.title ?? '',
-            body: n.body ?? '',
-            markup: n.useBodyMarkup === true,
-            appName: src?.title ?? '',
-            appIcon: src?.icon ?? null,
-            icon: themed ? own : null,
-            image: own && !themed ? own : null,
+            title: note.title,
+            body: note.body,
+            markup: !note.phone && n.useBodyMarkup === true,
+            appName: phoneName ? `${note.appName} · ${phoneName}` : note.appName,
+            appIcon: note.phone ? own ?? 'phone-symbolic' : src?.icon ?? null,
+            icon: !note.phone && themed ? own : null,
+            image: !note.phone && own && !themed ? own : null,
             at: msOf(n.datetime) || Date.now(),
             count: pill.list.length,
             critical: n.urgency === MessageTray.Urgency.CRITICAL,
@@ -515,6 +524,21 @@ export function hasNotifications() {
 function mayShowNow(tray, n) {
     const limited = tray._busy || Main.layoutManager.primaryMonitor?.inFullscreen;
     return !limited || n.forFeedback || n.urgency === MessageTray.Urgency.CRITICAL;
+}
+
+/**
+ * A notification as Buoy says it: a phone's (GSConnect shows them all as its own) under the phone
+ * app it is from, its sender as the title (model/phone.js phoneNote, Ethan 2026-11-17).
+ *
+ * @param {MessageTray.Notification} n
+ * @returns {{app: string, appName: string, title: string, body: string, phone: boolean}}
+ */
+export function noteOf(n) {
+    const app = appIdOf(n.source);
+    if (app !== GSCONNECT_APP)
+        return {app, appName: n.source?.title ?? '', title: n.title ?? '', body: n.body ?? '', phone: false};
+    const p = phoneNote(n.title ?? '', n.body ?? '', themedName(n.gicon));
+    return {app: p.app, appName: p.app, title: p.title, body: p.body, phone: true};
 }
 
 /**
