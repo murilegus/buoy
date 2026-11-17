@@ -1,6 +1,6 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {BATTERY_TYPE, btKind} from '../model/bluetooth.js';
+import {bluetoothBattery, btKind} from '../model/bluetooth.js';
 
 /**
  * GNOME's Bluetooth client, reached through Quick Settings (FEATURES M4 "Bluetooth device"): Buoy
@@ -71,14 +71,11 @@ export function readBluetooth(client) {
         return [];
     const out = [];
     for (const d of client.getDevices()) {
-        let battery = null;
-        if (d.battery_type === BATTERY_TYPE.PERCENTAGE)
-            battery = {percentage: d.battery_percentage};
-        else if (d.battery_type === BATTERY_TYPE.COARSE)
-            battery = {level: d.battery_level};
+        const kind = btKind(d.type);
         out.push({
-            id: d.get_object_path(), name: d.alias || d.name || '', kind: btKind(d.type),
-            address: d.address ?? null, connected: d.connected === true, battery, bluetooth: true, device: d,
+            id: d.get_object_path(), name: d.alias || d.name || '', kind, address: d.address ?? null,
+            connected: d.connected === true, battery: bluetoothBattery(kind, d.battery_type, d.battery_percentage, d.battery_level),
+            bluetooth: true, device: d,
         });
     }
     return out;

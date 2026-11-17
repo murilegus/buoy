@@ -93,19 +93,42 @@ export function kindIcon(kind) {
 const COARSE = new Map([[LEVEL.CRITICAL, 0.05], [LEVEL.LOW, 0.2], [LEVEL.NORMAL, 0.55], [LEVEL.HIGH, 0.8], [LEVEL.FULL, 1]]);
 
 /**
- * @param {?{percentage?: ?number, level?: ?number}} b  a percentage, or UPower's coarse level
+ * @param {?{percentage?: ?number, level?: ?number, approx?: boolean}} b  a percentage, or UPower's
+ *   coarse level; `approx`: a percentage in steps (bluetoothBattery)
  * @returns {?{value: number, label: ?string, low: boolean}} the battery as drawn (0..1), its number
- *   ("80%"; none when told coarsely), low at or under LOW %; null when the device tells none
+ *   ("80%", "~80%" in steps; none when told coarsely), low at or under LOW %; null when the device
+ *   tells none
  */
 export function batteryOf(b) {
     if (typeof b?.percentage === 'number' && Number.isFinite(b.percentage)) {
         const p = Math.max(0, Math.min(100, Math.round(b.percentage)));
-        return {value: p / 100, label: `${p}%`, low: p <= LOW};
+        return {value: p / 100, label: b.approx === true ? `~${p}%` : `${p}%`, low: p <= LOW};
     }
     const v = COARSE.get(b?.level);
     if (v === undefined)
         return null;
     return {value: v, label: null, low: b.level === LEVEL.LOW || b.level === LEVEL.CRITICAL};
+}
+
+/**
+ * A Bluetooth device's battery as gnome-bluetooth hands it (`battery-type`, `-percentage`,
+ * `-level`). A phone's comes in steps of 20 %: it tells its battery over HFP as the AG's "battchg"
+ * indicator, 0–5, and PipeWire reports `value * 100 / 5` to BlueZ (spa/plugins/bluez5/
+ * backend-native.c rfcomm_hfp_hf, PipeWire 1.6.2) with no source BlueZ could show
+ * (Battery1.Source empty): a phone at 77 % says 80. Its number is "~80%" (Ethan, 2026-11-17).
+ *
+ * @param {string} kind  btKind()
+ * @param {number} type  BATTERY_TYPE
+ * @param {number} percentage
+ * @param {number} level  UPower's coarse level
+ * @returns {?{percentage?: number, level?: number, approx?: boolean}}
+ */
+export function bluetoothBattery(kind, type, percentage, level) {
+    if (type === BATTERY_TYPE.PERCENTAGE)
+        return kind === 'phone' ? {percentage, approx: true} : {percentage};
+    if (type === BATTERY_TYPE.COARSE)
+        return {level};
+    return null;
 }
 
 const nameOf = d => typeof d?.name === 'string' && d.name.trim() ? d.name.trim() : null;

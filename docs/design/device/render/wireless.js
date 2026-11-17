@@ -94,9 +94,9 @@ note('flash cắm, rút tai nghe (module plugged): âm lượng như phím âm l
 
 text('Pin: hình pin theo mức, rồi số', 16, 100, {sz: 12, wt: 600});
 row([['headphones', 'WH-1000XM4', bt(.8, '80%')], ['mouse', 'MX Master 3S', bt(.15, '15%')], ['keyboard', 'K380', bt(.5)],
-    ['smartphone', 'Pixel 8'], ['headphones', 'Đã ngắt WH-1000XM4']], 124);
+    ['smartphone', 'Redmi Note 14', bt(.8, '~80%')], ['headphones', 'Đã ngắt WH-1000XM4']], 124);
 note('flash nối Bluetooth, 3 s: icon theo loại, tên, pin (hình pin 16 vẽ tới mức, rồi số); UPower chỉ báo mức thô (K380): chỉ hình pin', 16, 162);
-note('điện thoại thường không gửi pin qua Bluetooth: chỉ tên (pin đến với GSConnect); ngắt: "Đã ngắt …", không trailing', 16, 176);
+note('điện thoại gửi pin theo bậc 20 % (HFP battchg 0–5): "~80%"; không gửi thì chỉ tên (pin đúng đến với GSConnect); ngắt: "Đã ngắt …", không trailing', 16, 176);
 note('tai nghe Bluetooth: chỉ flash này (pin), module plugged không flash thêm; lúc bật Buoy, lúc tắt Bluetooth: không flash (HUD đã báo)', 16, 190);
 
 // --- the Device tab ------------------------------------------------------------------------------
@@ -144,13 +144,16 @@ fill(C.FILL2, AX, ty + 56, 32, 32, 16); icon('chevron-left', AX + 8, ty + 64);
 text('WH-1000XM4', AX + 42, ty + 63, {wt: 600});
 battery(AX + AW - 4 - batteryW('80%'), ty + 72, .8, '80%');
 fill(C.FILL1, AX, ty + 96, AW, 36, 18);
-icon('bluetooth-slash', AX + 14, ty + 106, 16); text('Ngắt kết nối', AX + 40, ty + 105);
-fill(C.FILL1, AX, ty + 140, AW, 36, 18);
-icon('gear', AX + 14, ty + 150, 16, C.FG_MUTED); text('Cài đặt Bluetooth', AX + 40, ty + 149, {a: C.FG_MUTED});
-icon('arrow-up-right-from-square', AX + AW - 30, ty + 150, 16, C.FG_SUBTLE);
+icon('headphones', AX + 14, ty + 106, 16); text('Tai nghe', AX + 40, ty + 105);
+text('88:92:CC:70:9C:22', AX + AW - 14, ty + 105, {a: C.FG_MUTED, right: true});
+fill(C.FILL1, AX, ty + 136, AW, 36, 18);
+icon('bluetooth-slash', AX + 14, ty + 146, 16); text('Ngắt kết nối', AX + 40, ty + 145);
+fill(C.FILL1, AX, ty + 180, AW, 36, 18);
+icon('gear', AX + 14, ty + 190, 16, C.FG_MUTED); text('Cài đặt Bluetooth', AX + 40, ty + 189, {a: C.FG_MUTED});
+icon('arrow-up-right-from-square', AX + AW - 30, ty + 190, 16, C.FG_SUBTLE);
 
 const ny = ty + PH + 12;
 note('Không dây: thiết bị Bluetooth đang nối (của Quick Settings) và chuột, bàn phím 2.4 GHz có báo pin (UPower); pin yếu (≤ 20 %) lên trước.', 16, ny);
 note('Giá trị: pin là hình pin + số; âm lượng (tai nghe có dây, Đang cắm) là thanh 24 + số. Ô Pin của máy giữ số: icon của nó đã là pin. Âm thanh đang ra thiết bị: "· đang phát".', 16, ny + 14);
-note('Bấm thiết bị Bluetooth: trang có pin, Ngắt kết nối (như danh sách của Quick Settings), Cài đặt Bluetooth. Bấm thiết bị 2.4 GHz: Cài đặt → Nguồn.', 16, ny + 28);
+note('Bấm thiết bị Bluetooth: trang có pin, loại và địa chỉ, Ngắt kết nối (như danh sách của Quick Settings), Cài đặt Bluetooth. Bấm thiết bị 2.4 GHz: Cài đặt → Nguồn.', 16, ny + 28);
 surf.writeToPNG(out);
