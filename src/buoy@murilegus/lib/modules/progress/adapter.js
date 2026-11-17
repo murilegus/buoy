@@ -16,8 +16,8 @@
  * speed (bytes/s or null), fraction (0–1 or null), phase: 'running'|'done', focus?, open?}
  */
 
-/** "Done" stays this long in the pill, then the activity ends (SPEC §6c). */
-export const DONE_TTL = 2500;
+/** "Done" stays this long in the pill, then the activity ends (SPEC §6c): 3 s as every flash (2026-11-16). */
+export const DONE_TTL = 3000;
 /** A progress hidden at or above this ended; below, it was stopped (cancelled, closed). */
 export const DONE_AT = 0.99;
 /** A pill left "in the background" dims after this without word from the app. */

@@ -17,7 +17,7 @@
  *   shared       the screen is shared or recorded (§5): only the app is named
  *   actions      the notification's action labels, in its order
  *   activate()   the banner's click; onAction(id) a button: `a<i>` an action, `dismiss` ×
- *   expire()     the pill's 6 s ran out (its `onExpire`): what the banner's hide does
+ *   expire()     the pill's ttl ran out (its `onExpire`): what the banner's hide does
  *   seen()       its card had its 5 s while you were there, or you hovered it (onSeen)
  *   alertDone()  its card closed, seen or missed (onAlertDone)
  *   burst        its turn's notifications (Turns), 2 and up: the card says how many
@@ -27,9 +27,10 @@
 
 /**
  * How long a notification's pill stays (§2): its card's 5 s as an alert (the kit's ALERT_MS,
- * held while it waits for you or is hovered), then the pill 6 s (design/alerts-and-asks).
+ * held while it waits for you or is hovered), then the pill 3 s (design/alerts-and-asks; 6 s until
+ * 2026-11-16, Ethan: the pill after the card need not stay long).
  */
-export const TTL = 5000 + 6000;
+export const TTL = 5000 + 3000;
 /** Of the notification's own actions, the card shows the first three (§3); × is its header's. */
 export const MAX_OWN_ACTIONS = 3;
 export const DISMISS = 'dismiss';

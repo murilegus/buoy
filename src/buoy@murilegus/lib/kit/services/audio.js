@@ -29,7 +29,7 @@ export function defaultSink(control) {
 /**
  * @param {Gvc.MixerControl} control
  * @param {?Gvc.MixerStream} sink
- * @returns {?{id: number, formFactor: ?string, port: ?string, description: ?string, level: ?number, muted: boolean}}
+ * @returns {?{id: number, name: ?string, formFactor: ?string, port: ?string, description: ?string, level: ?number, muted: boolean}}
  *   what modules/plugged/adapter.js outputOf reads, and the volume as Shell's slider has it
  *   (StreamSlider.getLevel: volume over the normal maximum)
  */
@@ -39,6 +39,7 @@ export function readSink(control, sink) {
     const max = control.get_vol_max_norm();
     return {
         id: sink.get_id(),
+        name: sink.get_name() || null,      // PipeWire's node name: bluez_output.… for Bluetooth
         formFactor: sink.get_form_factor() || null,
         port: sink.get_ports().length > 0 ? sink.get_port()?.port ?? null : null,
         description: sink.get_description() || null,

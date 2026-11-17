@@ -138,8 +138,10 @@ export class PowerSource extends Source {
             this._show(FLASH, {what: 'charging', ...cur}, {fresh: !this._stack.has(this._id(FLASH))});
             this._slowShown = true;
         } else if (this._flash && this._stack.has(this._id(FLASH)) && plugAgain(this._flash, cur)) {
-            // the estimate and the rate come a few seconds after the plug: the flash takes them
-            this._show(FLASH, {what: this._flash, ...cur});
+            // the estimate and the rate come a few seconds after the plug: the flash takes them,
+            // its 3 s still running (UPower sends a new rate and estimate every few seconds while
+            // charging: each restarting the 3 s kept the flash up, Ethan 2026-11-16)
+            this._show(FLASH, {what: this._flash, ...cur}, {keepTtl: true});
         }
     }
 
@@ -152,14 +154,17 @@ export class PowerSource extends Source {
     }
 
     // one pill per key: a new flash replaces the last (and starts its 3 s again); the low
-    // warning is updated in place, its card opening again only when the level rises
-    _show(key, ev, {alert = false, fresh = false} = {}) {
+    // warning is updated in place, its card opening again only when the level rises.
+    // `keepTtl`: new figures for the same flash, its countdown left as it runs (kit/model/stack.js
+    // update restarts a ttl the patch carries)
+    _show(key, ev, {alert = false, fresh = false, keepTtl = false} = {}) {
         const a = this._registry?.build('power', 'system', {id: key, open: openPanel, ...ev});
         if (!a)
             return;
         if (alert)
             a.alert = true;
-        if (!fresh && this._stack.has(a.id) && this._stack.update(a.id, a, {alert}))
+        const {ttl: unusedTtl, ...figures} = a;
+        if (!fresh && this._stack.has(a.id) && this._stack.update(a.id, keepTtl ? figures : a, {alert}))
             return;
         this._stack.surface(a);
     }

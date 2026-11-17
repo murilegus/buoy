@@ -73,3 +73,61 @@ export function duration(s) {
         return `${r} min`;
     return r ? `${h} h ${r} min` : `${h} h`;
 }
+
+const pctOf = v => Math.max(0, Math.min(100, Math.round(v)));
+
+/**
+ * The battery's icon, Buoy's own (design/icons): charging; full (and plugged in, held at a limit,
+ * from 80 %); low under 20 % on battery; good otherwise.
+ *
+ * @param {{percentage: number, state: number}} b
+ * @returns {string}
+ */
+export function batteryIcon({percentage, state}) {
+    const pct = pctOf(percentage);
+    if (state === STATE.CHARGING)
+        return 'battery-good-charging-symbolic';
+    if (state === STATE.FULL || pct >= 80)
+        return 'battery-full-symbolic';
+    if (state !== STATE.PENDING_CHARGE && pct < 20)
+        return 'battery-low-symbolic';
+    return 'battery-good-symbolic';
+}
+
+/**
+ * "Full in 42 min" / "3 h 20 min left"; null when full or not known.
+ *
+ * @param {{state: number, timeToFull?: number, timeToEmpty?: number}} b
+ * @param {string} fullIn  "Full in" or "full in"
+ * @returns {?string}
+ */
+export function timeLine({state, timeToFull = 0, timeToEmpty = 0}, fullIn) {
+    if (state === STATE.FULL)
+        return null;
+    if (state === STATE.CHARGING) {
+        const t = duration(timeToFull);
+        return t ? `${fullIn} ${t}` : null;
+    }
+    const t = duration(timeToEmpty);
+    return t ? `${t} left` : null;
+}
+
+/**
+ * The page its click opens: the power modes, the one in use chosen, then Power Settings.
+ * Without power modes, none (the click opens Settings → Power as before).
+ *
+ * @param {object} b  as batteryTile
+ * @param {?{active: ?string, list: string[]}} modes
+ * @returns {?{title: string, end: ?string, rows: object[], settings: {name: string}}}
+ */
+export function batteryPage(b, modes) {
+    if (!modes?.list?.length || b?.present !== true || !Number.isFinite(b.percentage))
+        return null;
+    const charging = b.state === STATE.CHARGING;
+    return {
+        title: `Battery · ${pctOf(b.percentage)}%${charging ? ' · charging' : ''}`,
+        end: timeLine(b, 'full in'),
+        rows: modes.list.map(id => ({id, icon: PROFILES[id].icon, name: PROFILES[id].name, selected: id === modes.active})),
+        settings: {name: 'Power Settings'},
+    };
+}

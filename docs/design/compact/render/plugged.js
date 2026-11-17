@@ -57,7 +57,7 @@ if (MODE === 'flash') {
         });
     };
     row([['display', 'ViewSonic 27″'], ['display', 'Đã rút ViewSonic 27″']], 16);
-    note('màn hình: chờ lần chạm chuột/phím đầu tiên, rồi 4 s (tối đa 30 s); lúc bật Buoy không flash', x + 8, 24);
+    note('màn hình: chờ lần chạm chuột/phím đầu tiên, rồi 3 s (tối đa 30 s); lúc bật Buoy không flash', x + 8, 24);
     row([['headphones', 'WH-1000XM4', '64%'], ['headphones', 'Tai nghe', '64%'], ['headphones', 'Đã rút tai nghe', '62%'],
         ['headphones', 'Đã ngắt WH-1000XM4', '62%'], ['volume', 'Loa', '62%']], 76);
     note('tai nghe: 3 s khi cắm (Bluetooth: tên thiết bị; jack: "Tai nghe") và khi rút, trailing là âm lượng (rút: của loa); thay OSD âm lượng GNOME', 16, 128);
@@ -83,7 +83,7 @@ if (MODE === 'flash') {
     note('dòng dưới: độ phân giải của màn, cùng cách đang dùng (Mutter không đưa tần số quét)', CX, cy + 140);
     note('bấm vào pill hay compact: mở Cài đặt → Màn hình', CX, cy + 154);
     pill(CX + kw + 40, cy + 8, 'display', 'ViewSonic 27″');
-    note('pill: tới lần chạm đầu tiên, rồi 4 s', CX + kw + 40, cy + 46);
+    note('pill: tới lần chạm đầu tiên, rồi 3 s', CX + kw + 40, cy + 46);
     // headphones plugged in, the sound still on the speakers: Use
     const oy = cy + 180;
     fill([0, 0, 0, 1], CX, oy, kw, 104, 28);
@@ -93,6 +93,6 @@ if (MODE === 'flash') {
     text('Dùng', CX + kw / 2, oy + 68, {sz: SUB, wt: 600, centre: true});
     note('tai nghe cắm mà âm thanh vẫn ra loa → compact này tự mở; Dùng: chuyển đầu ra (change_output)', CX, oy + 112);
     pill(CX + kw + 40, oy + 8, 'headphones', 'Tai nghe đã cắm');
-    note('pill 6 s; rút ra trước khi dùng: nó đi', CX + kw + 40, oy + 46);
+    note('pill 3 s; rút ra trước khi dùng: nó đi', CX + kw + 40, oy + 46);
 }
 surf.writeToPNG(out);

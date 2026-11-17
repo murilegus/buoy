@@ -54,7 +54,7 @@ everything, §6).
 same call that queued it unless it holds the queue — full screen, busy, the lock screen.
 One that waited (2 s or more, stamped on the tray's `queue-changed`) still shows as a
 pill when the screen is back and plays its sound, but is not marked seen: it came while
-nobody could look, and its pill is a 6 s glance shared with the app's others, not
+nobody could look, and its pill is a 3 s glance shared with the app's others, not
 GNOME's banner that waits for the user to be active. The tab counts it as missed (§6).
 GNOME's own banner would have marked it seen; with replacement off, GNOME decides.
 
@@ -128,7 +128,7 @@ pill's content instead of adding a pill.
 | text | the notification's title; the app's name when it has none |
 | trailing | how many of the notifications it has shown are still in GNOME's list, from 2 on |
 
-- **How long:** its card's 5 s, then 6 s as a pill (`TTL` 11 s), held while its card is up
+- **How long:** its card's 5 s, then 3 s as a pill (`TTL` 8 s; 6 s until 2026-11-16, Ethan), held while its card is up
   or the pointer is on it. A new notification from the app starts it again.
 - **Critical** (`Urgency.CRITICAL`): no ttl, `needsYou` — tier 1 (PRIORITY.md §2); it
   stays until it is activated, dismissed or withdrawn by the app.
@@ -297,7 +297,7 @@ List                                             An app's view (a stack clicked)
 ("Screen Capture", the title), the card with the thumbnail (the notification's `gicon`),
 "Show in Files" (Shell's own action) and a click that opens the file (its `activated`).
 Decided 2026-11-08 (Ethan, seeing it): that is enough — no override of its own. The
-2026-11-05 extras are dropped: a ~3 s pill (it keeps the 6 s of any notification), the
+2026-11-05 extras are dropped: a ~3 s pill (it keeps the pill time of any notification), the
 thumbnail in minimal (the app's icon), and Delete.
 
 **Transient notifications go when their pill ends.** Shell sends both with

@@ -405,6 +405,10 @@
 .buoy-home-choice.buoy-home-choice-settings { margin-top: 8px; background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
 .buoy-home-choice.buoy-home-choice-settings:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-home-choice-settings .buoy-home-choice-end { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+/* a list of things, not a choice (the Device tab's "+N", design/device): each row on fill-1, its value at the end */
+.buoy-home-choice.buoy-home-choice-plain { color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ }
+.buoy-home-choice.buoy-home-choice-plain:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+.buoy-home-choice-value { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-feature-settings: "tnum"; }
 .buoy-home-hit:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-home-hit:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-home-title { color: #fff; /* fg */ font-weight: 600; }

@@ -1,4 +1,8 @@
 import {PRIORITY} from '../../kit/model/activity.js';
+import {MODES} from '../../kit/model/displays.js';
+
+export {MODES, modesFor, modeOf, monitorKey, diffMonitors} from '../../kit/model/displays.js';
+export {isHeadphones, outputOf} from '../../kit/model/audio.js';
 
 /**
  * A display or headphones plugged in (FEATURES M4 "Headphones / display plugged", design/compact
@@ -14,111 +18,20 @@ import {PRIORITY} from '../../kit/model/activity.js';
  *          use yet (a card whose profiles part speakers and headphones, kept on the speakers)
  */
 
+// every flash that only tells is 3 s (Ethan, 2026-11-16: 2.5, 3, 4 and 6 s made one)
 export const TTL = 3000;
 // A display's flash waits for you: the screens go dark and come back while the layout is set, for
 // seconds nothing tells (Ethan, 2026-11-15: 3 s, then 6 s, were over by then). It stays until the
 // first input after the plug (`settled`, the source's user-active watch), then DISPLAY_TTL;
 // with no input, DISPLAY_WAIT at most.
-export const DISPLAY_TTL = 4000;
+export const DISPLAY_TTL = 3000;
 export const DISPLAY_WAIT = 30000;
-// headphones plugged in but not used: as long, time to hover and press Use
-export const OFFER_TTL = 6000;
+// headphones plugged in but not used: Use is on its card (an alert, held while you are there), so
+// the pill after it is a flash like the others
+export const OFFER_TTL = 3000;
 
 const DISPLAY_PANEL = 'gnome-display-panel.desktop';
 const SOUND_PANEL = 'gnome-sound-panel.desktop';
-
-/**
- * The ways to use two displays, as GNOME's Super+P switcher names them (js/ui/switchMonitor.js),
- * in its order; "Built-in Only" is left out (Ethan: a display is plugged in to be used).
- * `config` is Meta.MonitorSwitchConfigType's name.
- */
-export const MODES = Object.freeze({
-    join: {label: 'Join', icon: 'shell-display-extend-all-symbolic', config: 'ALL_LINEAR', word: 'joined'},
-    mirror: {label: 'Mirror', icon: 'shell-display-mirror-symbolic', config: 'ALL_MIRROR', word: 'mirrored'},
-    external: {label: 'External Only', icon: 'shell-display-external-only-symbolic', config: 'EXTERNAL', word: 'external only'},
-});
-
-/**
- * @param {{canSwitch?: boolean, builtin?: boolean}} mm  Mutter's monitor manager: can_switch_config(), has-builtin-panel
- * @returns {string[]} the modes offered (switchMonitor.js: External Only with a built-in panel)
- */
-export function modesFor({canSwitch = false, builtin = false} = {}) {
-    if (!canSwitch)
-        return [];
-    return builtin ? ['join', 'mirror', 'external'] : ['join', 'mirror'];
-}
-
-/**
- * How the displays are used now, from what Mutter runs (get_switch_config() says UNKNOWN for a
- * layout set in Settings): the built-in panel off is external only, a logical monitor holding
- * two displays is mirrored, else joined.
- *
- * @param {{count?: number, builtinOn?: boolean, builtin?: boolean, mirrored?: boolean}} s
- * @returns {?string} a MODES key; null with one display
- */
-export function modeOf({count = 0, builtinOn = true, builtin = false, mirrored = false} = {}) {
-    if (count < 2 && !(builtin && !builtinOn))
-        return null;
-    if (builtin && !builtinOn)
-        return 'external';
-    return mirrored ? 'mirror' : 'join';
-}
-
-/**
- * @param {{connector?: string, vendor?: string, product?: string, serial?: string}} m
- * @returns {string} a display's identity: the same panel on the same port
- */
-export function monitorKey(m) {
-    return [m.connector, m.vendor, m.product, m.serial].map(v => v ?? '').join('|');
-}
-
-/**
- * @param {?Array<{key: string}>} prev  the displays last seen (null: not read yet)
- * @param {Array<{key: string}>} cur
- * @returns {{added: object[], removed: object[]}} nothing on the first reading (Buoy turned
- *   on) nor when only the layout changed (Join / Mirror: the same displays)
- */
-export function diffMonitors(prev, cur) {
-    if (!prev)
-        return {added: [], removed: []};
-    const was = new Set(prev.map(m => m.key)), is = new Set(cur.map(m => m.key));
-    return {added: cur.filter(m => !was.has(m.key)), removed: prev.filter(m => !is.has(m.key))};
-}
-
-/**
- * Headphones as GNOME tells them (ui/status/volume.js OutputStreamSlider._findHeadphones): a
- * headset or headphone device (Bluetooth, USB), or a port named so (a jack).
- *
- * @param {{formFactor?: ?string, port?: ?string}} sink
- * @returns {boolean}
- */
-export function isHeadphones({formFactor = null, port = null} = {}) {
-    if (formFactor === 'headset' || formFactor === 'headphone')
-        return true;
-    return typeof port === 'string' && port.toLowerCase().includes('headphone');
-}
-
-/**
- * The output the sound goes to, as the flash says it: a device's own name for Bluetooth and
- * USB headphones, "Headphones" for a jack, "Speakers" otherwise.
- *
- * @param {{id?: *, formFactor?: ?string, port?: ?string, description?: ?string}} sink
- * @returns {{key: string, output: string, name: string, device: boolean, sinkId: *, port: ?string}}
- *   `device`: headphones of their own (Bluetooth, USB), not a jack
- */
-export function outputOf(sink = {}) {
-    const headphones = isHeadphones(sink);
-    const device = sink.formFactor === 'headset' || sink.formFactor === 'headphone';
-    const own = typeof sink.description === 'string' && sink.description.trim() ? sink.description.trim() : null;
-    return {
-        key: `${sink.id ?? ''}|${sink.port ?? ''}`,
-        output: headphones ? 'headphones' : 'speakers',
-        name: headphones ? (device && own) || 'Headphones' : 'Speakers',
-        device: headphones && device,
-        sinkId: sink.id ?? null,
-        port: sink.port ?? null,
-    };
-}
 
 /**
  * The headphones the sound just left: unplugged or gone, or only switched away from by hand

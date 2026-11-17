@@ -79,8 +79,8 @@ const set = [];
 const inEv = {what: 'display-in', name: 'ViewSonic 27″', size: '2560 × 1440', mode: 'join', modes: ['join', 'mirror', 'external'], setMode: m => set.push(m), open: () => {}};
 const din = build(inEv);
 eq([din.priority, din.ttl, din.kind], [PRIORITY.device, DISPLAY_WAIT, 'device'], 'display in: priority 35, waits (30 s at most) for you');
-eq(build({...inEv, settled: true}).ttl, DISPLAY_TTL, 'display in: once you are back (input), 4 s');
-eq([TTL, DISPLAY_TTL, DISPLAY_WAIT], [3000, 4000, 30000], 'ttl: 3 s; a display 4 s after the first input, 30 s at most before');
+eq(build({...inEv, settled: true}).ttl, DISPLAY_TTL, 'display in: once you are back (input), 3 s');
+eq([TTL, DISPLAY_TTL, DISPLAY_WAIT], [3000, 3000, 30000], 'ttl: 3 s; a display 3 s after the first input, 30 s at most before (every flash 3 s, 2026-11-16)');
 eq(build({...inEv, settled: 'yes'}).ttl, DISPLAY_WAIT, 'display in: settled only when true');
 eq(line(din), ['video-display-symbolic', 'ViewSonic 27″', null],
     'display in: the display icon and its name, no trailing');
@@ -107,7 +107,7 @@ eq(planMinimal(build({...inEv, name: long})).text, long, 'display in: a long nam
 
 const dout = build({what: 'display-out', name: 'ViewSonic 27″'});
 eq([planMinimal(dout).text, dout.compact, dout.ttl, dout.priority], ['Unplugged ViewSonic 27″', null, DISPLAY_WAIT, PRIORITY.device], 'display out: waits for you too, nothing on hover');
-eq(build({what: 'display-out', name: 'X', settled: true}).ttl, DISPLAY_TTL, 'display out: 4 s once you are back');
+eq(build({what: 'display-out', name: 'X', settled: true}).ttl, DISPLAY_TTL, 'display out: 3 s once you are back');
 
 build({...inEv, open: opener()}).onPress();
 eq(opened, 'gnome-display-panel.desktop', 'display: a click opens Settings → Displays');
@@ -149,7 +149,7 @@ let used = 0;
 const offerEv = {what: 'offer', name: 'Headphones', current: 'Speakers', use: () => used++, open: opener()};
 const of = build(offerEv);
 eq(line(of), ['audio-headphones-symbolic', 'Headphones plugged in', null], 'offer: the headphones, plugged in, no volume (not playing there)');
-eq([of.ttl, of.priority, of.minimalAction], [OFFER_TTL, PRIORITY.device, false], 'offer: 6 s to hover, priority 35, no button on the pill');
+eq([of.ttl, of.priority, of.minimalAction], [OFFER_TTL, PRIORITY.device, false], 'offer: a 3 s pill (Use is on its card), priority 35, no button on the pill');
 const oc = planCompact(of).card;
 eq([oc.title, oc.header.text, oc.tight, oc.picture.icon], ['Headphones', 'Sound on Speakers', true, 'audio-headphones-symbolic'],
     'offer: its compact says where the sound is now');
@@ -162,7 +162,7 @@ eq(opened, 'gnome-sound-panel.desktop', 'offer: a click opens Settings → Sound
 const bare = build({what: 'offer'});
 eq([line(bare)[1], bare.compact, bare.actions.length, bare.onAction], ['Headphones plugged in', null, 0, null], 'offer: nothing to call → no compact, no button');
 eq(planCompact(build({...offerEv, current: ' '})).card.header.text, null, 'offer: where the sound is unknown → no line');
-eq(OFFER_TTL, 6000, 'offer: 6 s');
+eq(OFFER_TTL, 3000, 'offer: 3 s, as every flash');
 
 // --- what is not ours ---------------------------------------------------------------------------------------
 eq([adapter.device(null), adapter.device({}), adapter.device({what: 'usb'}), adapter.device({what: 'audio', output: 'hdmi'})],

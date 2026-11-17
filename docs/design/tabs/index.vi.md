@@ -15,4 +15,4 @@ chế độ nguồn), Không dây (Bluetooth, điện thoại như một thiết
 ## Từng tab
 
 - [Media](../media/index.vi.md) — thẻ như Home, chip cho nhiều player, nút và thanh luôn đủ.
-- Device — mục M4 riêng (thiết kế chưa vẽ).
+- [Thiết bị](../device/index.vi.md) — mỗi nhóm một cột (Máy này, Không dây, Đang cắm), "+N" khi nhiều.

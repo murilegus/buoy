@@ -46,7 +46,7 @@ eq([actionIndex('a0'), actionIndex('a12'), actionIndex(DISMISS), actionIndex('ax
     eq([p.text, p.leading, p.trailing], ['Lan', 'org.telegram.desktop', null], 'title, the app\'s icon, no count');
     eq([p.ttl, p.needsYou, p.pressFirst, p.minimalAction, p.alertStays], [TTL, false, true, false, false],
         'its card 5 s then the pill 6 s, running tier, click activates, no button in minimal, the card does not stay');
-    eq(TTL, 11000, 'TTL: the card\'s 5 s and the pill\'s 6 s (design/alerts-and-asks)');
+    eq(TTL, 8000, 'TTL: the card\'s 5 s and the pill\'s 3 s (2026-11-16)');
     eq(p.compact.card.actionsOnHover, true, 'its card\'s buttons only under the pointer, as GNOME 50\'s banner');
     const m = planMinimal(validate({id: 'x', kind: 'notification', ...p}), {light: 'off'});
     eq(m.text, 'Lan', 'minimal plan: the title');
