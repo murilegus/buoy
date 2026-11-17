@@ -7,6 +7,7 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 
 import {Source} from '../../kit/services/source.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
+import {usbShows} from '../../kit/model/drives.js';
 import {DISMISS, Turns, actionIndex, agentShows, missedRow, powerShows, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
@@ -211,6 +212,13 @@ export class NotificationSource extends Source {
         }
         // GNOME's low battery while the power pill shows it: read, no pill (adapter.js powerShows)
         if (this._stack?.find(a => a.kind === 'power' && powerShows(app, n.body, a))) {
+            n.acknowledged = true;
+            return;
+        }
+        // Shell's own drive notifications while the usb module says them: read, no pill
+        // (kit/model/drives.js usbShows: autorun's "connected", the unmount's progress)
+        if (n.source === MessageTray.getSystemSource() && this._settings?.get_boolean('modules-usb') === true &&
+            usbShows(title, themedName(n.gicon), this._stack?.find(a => a.kind === 'usb') ?? null)) {
             n.acknowledged = true;
             return;
         }
@@ -507,6 +515,15 @@ export function hasNotifications() {
 function mayShowNow(tray, n) {
     const limited = tray._busy || Main.layoutManager.primaryMonitor?.inFullscreen;
     return !limited || n.forFeedback || n.urgency === MessageTray.Urgency.CRITICAL;
+}
+
+/**
+ * @param {?Gio.Icon} gicon  a notification's
+ * @returns {?string} its themed icon's name (Notification's `iconName` getter reads
+ *   `gicon.iconName`, which a Gio.ThemedIcon does not have: ui/messageTray.js, Shell 50)
+ */
+function themedName(gicon) {
+    return gicon instanceof Gio.ThemedIcon ? gicon.get_names()[0] ?? null : null;
 }
 
 /**

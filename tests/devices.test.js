@@ -1,7 +1,7 @@
 // Run: gjs -m tests/devices.test.js   (pure: the Device tab's plan, FEATURES M4 "Device tab", design/device)
 import {
     CELL_H, CELL_GAP, TITLE_H, GROUPS, rowsFit, planDevices, batteryCell, modeCell, displayCell, audioCell, isWired,
-    deviceGroups, displayPage, groupPage, wirelessCell, bluetoothPage, volumeMeter, sinkAddress,
+    deviceGroups, displayPage, groupPage, wirelessCell, bluetoothPage, volumeMeter, sinkAddress, driveCell, cameraCell, drivePage,
 } from '../src/buoy@murilegus/lib/kit/model/devices.js';
 import {LEVEL} from '../src/buoy@murilegus/lib/kit/model/bluetooth.js';
 import {STATE} from '../src/buoy@murilegus/lib/kit/model/power.js';
@@ -137,5 +137,25 @@ eq([displayPage({name: 'X', modes: []}), displayPage(null)], [null, null], 'disp
 const gp = groupPage(many[0]);
 eq([gp.title, gp.rows.map(r => r.id)], ['Plugged In · 4', ['a', 'b', 'c', 'd']], '+N page: the whole group, its count');
 ok(groupPage(laptop[0]).rows.length === 2, '+N page: a group without "+N" lists its cells');
+
+// --- drives and webcams ----------------------------------------------------------------------------
+const dv = driveCell({id: 'file:///media/ethan/USB', name: 'USB 64 GB', kind: 'drive', free: 41.2e9, size: 64e9});
+eq([dv.id, dv.icon, dv.value, dv.name, dv.detail, dv.page, dv.open],
+    ['drive:file:///media/ethan/USB', 'drive-removable-media-symbolic', '41 GB', 'USB 64 GB', '41 GB free of 64 GB', 'drive', null],
+    'drive: its free space as the value; a click shows its page (Ethan, 2026-11-17)');
+eq([driveCell({id: 'mtp://x', name: 'Redmi Note 14', kind: 'phone'}).icon, driveCell({id: 'mtp://x', name: 'Redmi Note 14', kind: 'phone'}).value, driveCell({id: 'y', name: '', kind: 'phone'}).name],
+    ['phone-symbolic', null, 'Phone'], 'a phone: its icon, no space, a name');
+const cam = cameraCell({id: 'video2', name: 'HD Pro Webcam C920'});
+eq([cam.id, cam.icon, cam.value, cam.page, cam.open], ['camera:video2', 'camera-web-symbolic', null, null, 'org.gnome.Snapshot.desktop'],
+    'webcam: no value; a click opens GNOME\'s camera app');
+const pg = deviceGroups({
+    displays: [{key: 'a', name: 'ViewSonic 27″', mode: 'join'}], drives: [{id: 'u', name: 'USB 64 GB', kind: 'drive'}],
+    cameras: [{id: 'video2', name: 'C920'}], audio: {output: 'headphones', name: 'Logi', wired: true, level: 0.5},
+});
+eq(pg[2].cells.map(c => c.id), ['display:a', 'drive:u', 'camera:video2', 'audio'], 'Plugged In: displays, drives, webcams, wired sound');
+const dp2 = drivePage({name: 'USB 64 GB', free: 41.2e9, size: 64e9});
+eq([dp2.title, dp2.end, dp2.rows.map(r => [r.id, r.name])], ['USB 64 GB', '41 GB free of 64 GB', [['open', 'Open in Files'], ['eject', 'Eject']]],
+    'drive page: its space, Open in Files, Eject');
+eq([drivePage(null), drivePage({name: '', kind: 'phone'}).title, drivePage({name: 'X'}).end], [null, 'Phone', null], 'drive page: none, no name, no space');
 
 print('devices: ok');

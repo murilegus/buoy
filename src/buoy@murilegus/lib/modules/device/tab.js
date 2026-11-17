@@ -7,7 +7,7 @@ import {EmptyState, iconProps} from '../../kit/ui/present/elements.js';
 import {batteryLevel, label as textLabel, levelBar} from '../../kit/ui/present/parts.js';
 import {choicePage, choiceRow, listBox, listHead} from '../../kit/ui/present/lists.js';
 import {
-    CELL_GAP, CELL_H, TITLE_H, bluetoothPage, deviceGroups, displayPage, groupPage, isWired, planDevices, rowsFit, sinkAddress,
+    CELL_GAP, CELL_H, TITLE_H, bluetoothPage, deviceGroups, displayPage, drivePage, groupPage, isWired, planDevices, rowsFit, sinkAddress,
 } from '../../kit/model/devices.js';
 import {upowerOnly} from '../../kit/model/bluetooth.js';
 import {outputOf} from '../../kit/model/audio.js';
@@ -17,6 +17,8 @@ import {displayInfo, monitorManager, readMonitors, switchMode} from '../../kit/s
 import {defaultSink, mixer, readSink} from '../../kit/services/audio.js';
 import {disconnectDevice, readBluetooth, stopWaitingBluetooth, whenBluetooth} from '../../kit/services/bluetooth.js';
 import {Peripherals} from '../../kit/services/peripherals.js';
+import {ejectDrive, openDrive, querySpace, readDrives, volumeMonitor} from '../../kit/services/drives.js';
+import {Cameras} from '../../kit/services/cameras.js';
 import {FADES, LIST_SHIFT} from '../../kit/model/motion.js';
 import {slideIn} from '../../kit/ui/spring.js';
 
@@ -76,6 +78,27 @@ export class DeviceTab {
             redraw();
         });
         this._peripherals = new Peripherals(redraw);
+        this._volumes = volumeMonitor();
+        this._space = new Map();        // a drive's root URI → {free, size}, read once it shows
+        this._volumes.connectObject('mount-added', redraw, 'mount-removed', redraw, this);
+        this._cameras = new Cameras(redraw);
+    }
+
+    // each drive's free space, read once (kit/services/drives.js querySpace), then a redraw
+    _drives() {
+        const list = readDrives(this._volumes);
+        for (const d of list) {
+            if (this._space.has(d.id))
+                continue;
+            this._space.set(d.id, {free: null, size: null});
+            querySpace(d.mount).then(space => {
+                if (!this._space?.has(d.id))
+                    return;
+                this._space.set(d.id, space);
+                this._render();
+            });
+        }
+        return list.map(d => ({...d, ...this._space.get(d.id)}));
     }
 
     // each connected Bluetooth device's battery redraws its cell
@@ -132,7 +155,10 @@ export class DeviceTab {
         const playingOn = sinkAddress(s?.name);
         const bluetooth = bt.map(d => ({...d, playing: !!playingOn && d.address?.toUpperCase() === playingOn}));
         const others = upowerOnly(this._peripherals?.list() ?? [], btAll.map(d => d.address).filter(Boolean));
-        return {battery, modes: profilesOf(this._modes), displays, audio, bluetooth, wireless: [...bluetooth, ...others]};
+        return {
+            battery, modes: profilesOf(this._modes), displays, audio, bluetooth, wireless: [...bluetooth, ...others],
+            drives: this._drives(), cameras: this._cameras?.list ?? [],
+        };
     }
 
     // --- drawing ----------------------------------------------------------------------------------
@@ -208,12 +234,14 @@ export class DeviceTab {
     // --- a click ---------------------------------------------------------------------------------
 
     _press(c) {
-        if (c.page === 'battery' || c.page === 'display' || c.page === 'bluetooth') {
+        if (c.page === 'battery' || c.page === 'display' || c.page === 'bluetooth' || c.page === 'drive') {
             let page = {kind: 'battery'};
             if (c.page === 'display')
                 page = {kind: 'display', key: c.id.slice('display:'.length)};
             else if (c.page === 'bluetooth')
                 page = {kind: 'bluetooth', id: c.id.slice('wireless:'.length)};
+            else if (c.page === 'drive')
+                page = {kind: 'drive', id: c.id.slice('drive:'.length)};
             if (this._pageActor(page, this._facts(), []))
                 this._open(page);
             else
@@ -260,6 +288,8 @@ export class DeviceTab {
         }
         if (page.kind === 'bluetooth')
             return this._bluetoothPage(page.id, facts);
+        if (page.kind === 'drive')
+            return this._drivePage(page.id, facts);
         const col = columns.find(c => c.id === page.id);
         if (!col)
             return null;
@@ -298,6 +328,30 @@ export class DeviceTab {
         return box;
     }
 
+    // a drive's page (design/device "Đang cắm"): its free space at the head's end, Open in Files
+    // (the island goes), Eject (the usb module says how it went; the drive gone, the columns again)
+    _drivePage(id, facts) {
+        const d = facts.drives.find(x => x.id === id);
+        const p = d ? drivePage(d) : null;
+        if (!p)
+            return null;
+        const end = p.end ? textLabel(p.end, 'buoy-home-list-detail') : null;
+        const box = listBox(listHead(p.title, {back: () => this.back(), button: BUTTON, end}));
+        const rows = new St.BoxLayout({style_class: 'buoy-home-choices', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
+        for (const r of p.rows) {
+            rows.add_child(choiceRow({icon: r.icon, name: r.name, plain: true}, () => {
+                if (r.id === 'open') {
+                    openDrive(d.mount);
+                    this._close?.();
+                } else {
+                    ejectDrive(d.mount);
+                }
+            }));
+        }
+        box.add_child(rows);
+        return box;
+    }
+
     // a Settings panel (Shell.AppSystem lookup_app, as Quick Settings opens them); the island goes
     _launch(desktopId) {
         const app = desktopId ? Shell.AppSystem.get_default().lookup_app(desktopId) : null;
@@ -321,7 +375,11 @@ export class DeviceTab {
             d.disconnectObject(this);
         this._btWatched.clear();
         this._peripherals?.destroy();
+        this._volumes?.disconnectObject(this);
+        this._cameras?.destroy();
+        this._space = null;
         this._battery = this._modes = this._mm = this._mixer = this._sink = this._bt = this._peripherals = null;
+        this._volumes = this._cameras = null;
         this.actor?.destroy();
         this.actor = null;
     }

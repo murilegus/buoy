@@ -28,3 +28,11 @@ declare module 'gi://Soup?version=3.0' {
     const Soup: any;
     export default Soup;
 }
+// Shell's mount operation (js/ui/shellMountOperation.js), which @girs/gnome-shell does not type
+declare module 'resource:///org/gnome/shell/ui/shellMountOperation.js' {
+    export class ShellMountOperation {
+        constructor(source: any, params?: {existingDialog?: any});
+        mountOp: any;
+        close(): void;
+    }
+}

@@ -65,6 +65,9 @@ export const SYMBOLIC = {
     'input-keyboard': 'keyboard',
     // wireless devices (FEATURES M4 "Bluetooth device"): Gravity has no mouse nor gamepad
     'input-mouse': 'own:mouse',
+    // drives and webcams plugged in (FEATURES M4 "USB / phone / webcam plugged")
+    'drive-removable-media': 'hard-drive',
+    'camera-web': 'camera',
     'input-gaming': 'own:gamepad',
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',

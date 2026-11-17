@@ -64,6 +64,7 @@ src/buoy@murilegus/
     │   │   ├── audio.js        headphones as GNOME tells them, the output the sound goes to (plugged, the Device tab; 2026-11-16)
     │   │   ├── devices.js      the Device tab's plan: its groups and cells, a column's rows, "+N", its pages (design/device, 2026-11-16)
     │   │   ├── bluetooth.js    wireless devices: kind and icon (GnomeBluetooth, UPower), battery, which came and went, the Wireless column's order (bluetooth, the Device tab; 2026-11-17)
+    │   │   ├── drives.js       drives and webcams plugged in: which count, sizes, GNOME's notifications said instead (usb, the Device tab; 2026-11-17)
     │   │   └── mascot.js       Bu: 13 pose grids, lamp rule, frame timing; MASCOT.md is the source (2026-11-03)
     │   ├── services/       the Shell side without actors: buses, files, Shell's objects, the
     │   │   │               one wall clock. Imports model/ and services/, never ui/, St or Clutter
@@ -78,6 +79,8 @@ src/buoy@murilegus/
     │   │   ├── audio.js        where the sound goes, from Shell's Gvc mixer; the HUD asks it whether a volume OSD is the output moving to or from headphones (plugged, 2026-11-15)
     │   │   ├── bluetooth.js    Quick Settings' Bluetooth client: its devices, connected or not, disconnect (bluetooth, the Device tab; 2026-11-17)
     │   │   ├── peripherals.js  UPower's peripherals with a battery, async D-Bus proxies while the Device tab lives (2026-11-17)
+    │   │   ├── drives.js       Gio's volume monitor: drives, free space, open, eject through Shell's mount operation (usb, the Device tab; 2026-11-17)
+    │   │   ├── cameras.js      webcams plugged in: a /dev monitor, sysfs read without blocking (usb, the Device tab; 2026-11-17)
     │   │   ├── presence.js     you at the screen: input in the last second, away (session idle, locked), DND (alerts; 2026-11-12)
     │   │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
     │   │   └── devtools.js     `dev-mode`'s module hot swap
