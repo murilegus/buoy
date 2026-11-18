@@ -4,7 +4,7 @@
  *
  * Adapter data (CONTRACT.md §1/B3, ARCHITECTURE rule 3):
  *   {leading, text, trailing, expanded, actions, keyline, isStale}
- *   leading/trailing: 'icon-name' | Gio.Icon | {art (path, URI or Gio.Icon), icon} | {icon} |
+ *   leading/trailing: 'icon-name' | Gio.Icon | {art (path, URI or Gio.Icon), icon, round?} | {icon} |
  *   {progress: 0..1}
  *                     | {bar: 0..1} | {battery: 0..1, label?} | {countdown: s} | {until: ms since the epoch}
  *                     | {since: ms since the epoch} | {elapsed: ms since the epoch} | {text}
@@ -40,7 +40,9 @@
  *         `choices: {multi, items: [{id, label, detail?, selected}], other?: {id, textId,
  *         enterId, selected, text, hint}}` — an ask's rows of 32 to pick from, Other typed in
  *         place (design/alerts-and-asks "Hỏi nhiều lựa chọn"); each sends its id through
- *         onAction, the text as onAction(textId, text), Enter as onAction(enterId)
+ *         onAction, the text as onAction(textId, text), Enter as onAction(enterId).
+ *         `code` (+ `codeEnd`, an element): a one-time code shown large in place of the body;
+ *         `tag`: a short text at the body's end (a licence plate)
  *
  * Minimal is one set of data for every pill (CONTRACT.md §3): a side pill drops `text` and
  * keeps leading + trailing, so the short value that matters belongs in `trailing`.
@@ -230,6 +232,8 @@ export function element(e, {leading = false} = {}) {
         return {
             type: 'art', ...artIcon ? {gicon: artIcon} : {src: art},
             fallback: fb?.type === 'icon' ? fb.icon ?? null : null,
+            // a person's picture is round (a phone message's sender, design/device), a cover square
+            ...e.round === true ? {round: true} : {},
         };
     }
     const ic = icon(e.icon);
@@ -442,7 +446,7 @@ function planCard(c, p, light) {
     const header = {icon: element(c.icon), text: str(c.app), at: isNum(c.at) ? c.at : null};
     const title = str(c.title);
     const body = str(c.body);
-    if (!header.text && !title && !body)
+    if (!header.text && !title && !body && !str(c.code))
         return null;
     const el = element(c.picture, {leading: true});   // the card's leading: Bu may be there (an ask)
     let acts = actions(p.actions, MAX_ACTIONS.compact);
@@ -452,9 +456,15 @@ function planCard(c, p, light) {
         const keys = mnemonics(acts.map(a => a.label ?? a.id));
         acts = acts.map((a, i) => ({...a, key: keys[i], ...i === 1 ? {main: true} : {}}));
     }
+    const code = str(c.code);
     return {
         card: {
             header, title, body,
+            // a one-time code, large, in place of the message (design/device "Ứng dụng trên
+            // điện thoại"), with what counts it down at its end
+            ...code ? {code, codeEnd: element(c.codeEnd)} : {},
+            // a short tag at the message's end: a ride's licence plate
+            ...str(c.tag) ? {tag: str(c.tag)} : {},
             picture: el && el.type !== 'text' ? el : null,
             close: str(c.close),
             // its buttons only under the pointer (a notification's alert, as GNOME 50's

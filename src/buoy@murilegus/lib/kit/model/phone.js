@@ -190,3 +190,62 @@ export function phonePage(d) {
         settings: {name: 'GSConnect Settings'},
     };
 }
+
+// --- the phone's apps (part 2, design/device "Ứng dụng trên điện thoại", 2026-11-18, Ethan) ------------
+
+/** How long an OTP code stays on the island: its card's 5 s, then the pill counting down. */
+export const OTP_MS = 30000;
+
+// letters and digits on either side: \b is ASCII-only, and "mã" ends in a non-ASCII letter
+const WORD = '(?<![\\p{L}\\p{N}])(?:%s)(?![\\p{L}\\p{N}])';
+// what says a code is one: a bank's SMS ("Ma OTP cua Quy khach la …"), Google's ("G-… is your
+// Google verification code"), an app's ("Your Grab code is …"), with or without accents
+const OTP_WORDS = new RegExp(WORD.replace('%s', [
+    'otp', 'm[ãa]', 'codes?', 'passcode', 'x[áa]c (?:th[ựu]c|minh|nh[ậa]n)', 'verification', 'verify',
+    'm[ậa]t kh[ẩa]u', 'one-time', 'mfa', '2fa',
+].join('|')), 'iu');
+// 4 to 8 digits on their own: not part of an amount (2,000,000), a time (08:30), a date
+// (18/11/2026), a longer number (an account, a phone), a word (5000mAh); Google's "G-" before
+// it is fine
+const CODE = /(?<![\p{L}\p{N}.,:/-]|[\p{L}\p{N}][.,:/-])(?:G-)?(\d{4,8})(?![\p{L}\p{N}]|[.,:/]\p{N})/gu;
+// a year is not a code ("Het han 2026")
+const YEAR = /^(?:19|20)\d\d$/;
+
+/**
+ * The one-time code a phone notification carries, as GSConnect's own "Copy" button finds one
+ * (src/service/plugins/notification.js _receiveNotification: six digits alone) but wider: 4 to 8
+ * digits, said to be a code by a word near it (OTP, mã, code, xác thực, verification…).
+ *
+ * @param {*} text  its title and body
+ * @returns {?string} the code; null without one
+ */
+export function otpOf(text) {
+    if (typeof text !== 'string')
+        return null;
+    const word = OTP_WORDS.exec(text);
+    if (!word)
+        return null;
+    const codes = [...text.matchAll(CODE)].filter(m => !YEAR.test(m[1]));
+    // the first after the word ("Ma OTP … la 482913 … 2026"), else the first ("G-482913 is your … code")
+    const after = codes.find(m => m.index >= word.index);
+    return (after ?? codes[0])?.[1] ?? null;
+}
+
+/**
+ * @param {string} code
+ * @returns {string} as read aloud: "482 913", "4829", "1234 5678"
+ */
+export function spacedCode(code) {
+    if (typeof code !== 'string' || code.length < 6)
+        return code ?? '';
+    const half = Math.ceil(code.length / 2);
+    return `${code.slice(0, half)} ${code.slice(half)}`;
+}
+
+// Vietnamese plates: 59X1-234.56, 30A-123.45, 51F-12345, 59-X1 234.56
+const PLATE = /(?<![\p{L}\p{N}])(\d{2}-?[A-Z]{1,2}\d?[- ]?(?:\d{3}\.\d{2}|\d{4,5}))(?![\p{L}\p{N}])/u;
+
+/** @param {*} text  @returns {?string} the first licence plate in it, as written */
+export function plateOf(text) {
+    return typeof text === 'string' ? PLATE.exec(text)?.[1] ?? null : null;
+}

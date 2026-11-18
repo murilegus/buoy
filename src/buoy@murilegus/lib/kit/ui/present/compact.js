@@ -293,10 +293,31 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
     ], m));
 
     const below = hasActions && !actionsTop;
-    if (c.body) {
+    const margin = `margin: ${px(m.bodyGap)} ${px(m.side)} ${below ? 0 : px(m.vpad)};`;
+    if (c.code) {
+        // a one-time code, large, what counts it down at its end (design/device "Ứng dụng trên
+        // điện thoại"); in place of the message
+        const row = new St.BoxLayout({style_class: 'buoy-card-code-row', x_expand: true});
+        row.set_style(margin);
+        addAll(row, [
+            markShared(label(c.code, 'buoy-card-code', true), 'title', activity),
+            c.codeEnd ? makeElement(c.codeEnd, 'compact', activity) : null,
+        ]);
+        box.add_child(row);
+    } else if (c.body) {
         const body = wrapped(c.body, 'buoy-card-body');
-        body.set_style(`margin: ${px(m.bodyGap)} ${px(m.side)} ${below ? 0 : px(m.vpad)}; max-height: ${px(2 * m.row)};`);
-        box.add_child(body);
+        body.set_style(`max-height: ${px(2 * m.row)};`);
+        if (c.tag) {
+            // a short tag at its end, on the first line: a ride's licence plate
+            const row = new St.BoxLayout({style_class: 'buoy-card-tag-row', x_expand: true});
+            row.set_style(margin);
+            body.y_align = Clutter.ActorAlign.CENTER;
+            addAll(row, [body, label(c.tag, 'buoy-card-tag')]);
+            box.add_child(row);
+        } else {
+            body.set_style(`${margin} max-height: ${px(2 * m.row)};`);
+            box.add_child(body);
+        }
     }
     if (c.choices)
         box.add_child(choiceList(c.choices, activity, m, onType, choiceColumns));
@@ -304,8 +325,8 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
         const row = actionRow(p.actions, activity, m, {fill: !actionsEnd});
         // under the head with no message: 8 + 12 (design/alerts-and-asks "Ask 120")
         // `tight`: 12 under the picture (56 + 4), the power modes' 104
-        let above = c.body || c.choices ? m.actionsGap : m.bodyGap + m.actionsGap;
-        if (c.tight && !c.body && !c.choices)
+        let above = c.body || c.code || c.choices ? m.actionsGap : m.bodyGap + m.actionsGap;
+        if (c.tight && !c.body && !c.code && !c.choices)
             above = m.edge - m.vpad;
         row.set_style(`margin: ${px(above)} ${px(m.edge)} ${px(m.actionsGap)}; height: ${px(m.button)};`);
         box.add_child(row);
@@ -313,19 +334,18 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
     return box;
 }
 
-// A card's buttons: under it, a row of equal widths as GNOME's banner (`fill`) or each at
-// its own width, at least 112 (Home's tall card); in its head, at the right before ×, each
-// at its own width (Home's low card, design/home "nút góc phải trên": 136 / 152 do not fit
-// its 104)
+// A card's buttons: under it, across the row as GNOME's banner (`fill`): each its label's width
+// and an equal share of the rest (ui/messageList.js _addAction: x_expand, the box not
+// homogeneous), so a long label ("Đánh dấu là đã đọc") is not cut while a short one has room to
+// spare; or each at its own width, at least 112 (Home's tall card); in its head, at the right
+// before ×, each at its own width (Home's low card, design/home "nút góc phải trên": 136 / 152
+// do not fit its 104)
 function actionRow(actions, activity, m, {fill = false, top = false} = {}) {
     const row = new St.BoxLayout({
         style_class: 'buoy-card-actions', x_expand: fill,
         x_align: fill ? Clutter.ActorAlign.FILL : Clutter.ActorAlign.END,
         y_align: Clutter.ActorAlign.CENTER,
     });
-    // a set of choices (the power modes): each as wide as its label, the rest shared, so a
-    // long name ("Performance" in 600) is not cut while a short one has room to spare
-    row.layout_manager.homogeneous = fill && !actions.some(a => 'selected' in a);
     if (top)
         row.set_style(`height: ${px(m.button)};`);
     for (const a of actions) {

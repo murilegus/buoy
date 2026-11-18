@@ -142,6 +142,34 @@ phần 3 là cuộc gọi và tab Điện thoại).*
   không nút; dòng đổi ngay khi điện thoại nối hay rời. Không flash, không nhắc trong pill; tab Điện thoại (phần 3) nói cùng
   điều đó trong khung trống của nó. **Chốt** (Ethan, 2026-11-17)
 
+## Ứng dụng trên điện thoại
+
+![Mã OTP, tin Zalo/Messenger có ảnh người gửi, chuyến Grab/Be](images/apps.vi.png)
+
+*Ethan, 2026-11-18 (mục M4 "Phone via GSConnect", phần 2).*
+
+- **KDE Connect gửi gì** (`NotificationsPlugin.kt` `sendNotification`): tiêu đề, chữ, các nút (trừ nút
+  trả lời), `largeIcon` của thông báo, không có thì icon nhỏ; thông báo "đang diễn ra"
+  (`FLAG_ONGOING_EVENT`) và dịch vụ chạy nền thì không gửi. GSConnect đưa ảnh đó lên làm icon và tự thêm
+  nút "Copy 123456" khi thấy 6 chữ số (`plugins/notification.js` `_receiveNotification`).
+- **Mã OTP**, từ bất kỳ app nào trên điện thoại (SMS ngân hàng, Google, Zalo): 4–8 chữ số đi cùng chữ
+  OTP, mã, code, xác thực, xác minh, verification… (có dấu hay không); không phải số tiền, giờ, ngày,
+  năm, số điện thoại. Pill: chìa khoá, mã chia đôi ("482 913"), đếm ngược. Card: mã 2em đậm thay thân
+  tin, đếm ngược ở cuối dòng, một nút **Copy Code** hiện ngay (thay nút của GSConnect). Pill tắt khi
+  đếm về 0 (30 s từ lúc tin đến), cả khi card còn chờ bạn; tin vẫn trong tab Thông báo. Copy Code: mã vào
+  clipboard, pill thành "Code Copied" 3 s với icon của module copied. Chia sẻ màn hình: như mọi thông
+  báo lúc đó, không có mã. Thông báo của app trên máy tính không đổi. **Chốt**
+- **Zalo, Messenger**: ảnh KDE Connect gửi là ảnh người gửi (`largeIcon`), nên vẽ tròn: 24 trong pill,
+  40 trong card với chấm điện thoại ở góc (huy hiệu của card thông báo, design/compact). Không có ảnh
+  (icon theo theme): như phần 1. Nhóm: tên nhóm là tiêu đề, "Trâm: …" ở thân. **Chốt**
+- **Grab, Be**: chữ của app giữ nguyên, Buoy không đoán câu chữ (tìm thấy, đang đến, đã đến). Tin có
+  biển số (59X1-234.56, 30A-123.45, 51F-12345) là tin chuyến xe: pill có icon xe (`car` của Gravity, file
+  `route-car-symbolic`) và biển số ở cuối; card đưa biển số ra một ô `fill-3` cuối dòng thân tin và bỏ
+  nó khỏi chữ. Ở lại như thông báo thường. Tin không có biển số (khuyến mãi…) như thông báo thường.
+  Không có đếm phút xe tới hay bản đồ: KDE Connect không gửi tin "đang diễn ra". **Chốt** (Ethan,
+  2026-11-18: câu chữ thật để app tự hiển thị)
+- Trả lời ngay trong card (Zalo, Messenger, SMS): phần 3.
+
 ## Mục này làm gì
 
 Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công suất, chế độ năng lượng; UPS),
@@ -171,7 +199,15 @@ Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công 
 - `lib/kit/model/phone.js` — chỗ đang kẹt khi cài (cho prefs), pin của GSConnect, gộp điện thoại với
   Bluetooth, tách thông báo điện thoại thành app, người gửi, chữ. Có test (`tests/phone.test.js`).
 - `lib/kit/services/gsconnect.js` — dịch vụ của GSConnect: điện thoại, pin, `ring`; mở cài đặt của nó.
-- `lib/modules/notification/source.js` `noteOf` — thông báo điện thoại dưới app của nó (pill, card, tab).
+- `lib/modules/notification/source.js` `noteOf` — thông báo điện thoại dưới app của nó (pill, card, tab);
+  Copy Code, pill OTP tắt khi đếm về 0.
+- `lib/kit/model/phone.js` `otpOf`, `plateOf` — mã OTP, biển số (`tests/phone.test.js`).
+- `lib/modules/notification/adapter.js` (OTP, `senderPicture`, `ride`) và `apps/zalo.js`, `messenger.js`,
+  `grab.js`, `be.js` — theo tên app GSConnect đưa (`tests/notification.test.js`).
+- `scripts/phone-notification.sh` — giả một thông báo điện thoại như GSConnect đưa lên (Grab, Be, OTP,
+  Zalo…), không cần điện thoại hay chuyến xe thật.
+- Card: `code` (+ `codeEnd`) và `tag` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/compact.js`);
+  ảnh tròn `{art, round: true}`.
 - Hình pin: phần tử `{battery, label}` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/parts.js`
   `batteryLevel`).
 - `lib/modules/device/tab.js` — đọc qua `kit/services` (pin và chế độ của Quick Settings, màn hình của

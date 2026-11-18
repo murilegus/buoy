@@ -83,6 +83,9 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
 - Nội dung tin trải hết bề ngang từ lề trái, tối đa 2 dòng (`MAX_CARD_LINES` giữ 2), mỗi dòng 16,
   cách phần đầu 8 và cách hàng nút 12. Hàng nút trải hết bề ngang, cách mép 12, cao 32, bo 16
   (đồng tâm với bo 28). **Chốt**
+- Mỗi nút rộng theo chữ của nó, phần dư chia đều, như banner GNOME (`ui/messageList.js` `_addAction`:
+  `x_expand`, hàng không chia đều): chia ba bằng nhau thì nút chữ dài ("Đánh dấu là đã đọc") bị cắt.
+  **Chốt** (Ethan, 2026-11-18)
 - Chiều cao = 56 + 8 + 16 × số dòng + 12 + 32 + 12: **136** khi 1 dòng, **152** khi 2 dòng — cùng
   khoảng cách ở cả hai. (Trước đây thân ở giữa và chiều cao làm tròn lên bậc 32, nên card 1 dòng
   cách nút 2, card 2 dòng cách nút 10.) **Chốt** (Ethan, 2026-11-10)
