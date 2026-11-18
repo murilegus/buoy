@@ -170,6 +170,35 @@ phần 3 là cuộc gọi và tab Điện thoại).*
   2026-11-18: câu chữ thật để app tự hiển thị)
 - Trả lời ngay trong card (Zalo, Messenger, SMS): phần 3.
 
+## Cuộc gọi và tab Điện thoại
+
+![Cuộc gọi đến, đang gọi, trả lời trong card, tab Điện thoại và khung trống](images/calls.vi.png)
+
+*Ethan, 2026-11-18 (mục M4 "Phone via GSConnect", phần 3).*
+
+- **Cuộc gọi** (module `phone`, kind `call`): GSConnect hiện cuộc gọi đến và đang gọi thành thông báo của
+  nó, gỡ khi cúp máy (`plugins/telephony.js` `_notifyEvent`); id cho biết là cuộc gọi
+  ("<máy>|ringing|<người gọi>", "|talking|"), không phụ thuộc ngôn ngữ. Module notification để chúng
+  qua, không pill riêng. **Chốt**
+- **Đổ chuông**: pill có ảnh người gọi (KDE Connect gửi kèm; không có thì ống nghe xanh), tên, "Incoming"
+  xanh `#30d158`; cần bạn (kind call, 95): card mở ngay, ở lại tới khi thôi đổ chuông. **Mute**: điện thoại
+  im qua action `muteCall` của GSConnect (nút của chính thông báo thì Shell huỷ thông báo,
+  `ui/messageTray.js` `addAction`), pill thành "Silenced", card đóng. ×: card đóng, pill ở lại. Nghe, từ
+  chối: trên điện thoại (KDE Connect không có lệnh đó). **Chốt**
+- **Đang gọi**: pill ống nghe xanh, tên, đồng hồ xanh từ lúc nghe máy (thấy ở đây), tới khi cúp máy;
+  card không nút. **Chốt**
+- **Trả lời trong card**: như design/compact "Trả lời ngay trong card". Chỉ khi tin cho trả lời: mã trả lời
+  (UUID) của KDE Connect ở cuối id thông báo, cả SMS; chữ đi qua action `replyNotification` của GSConnect.
+  **Chốt**
+- **Tab Điện thoại**: trong ⋯ như Hẹn giờ, tự lên thanh tab khi có cuộc gọi; bấm ô điện thoại ở Home mở nó.
+  Đầu tab: điện thoại, pin, **Find My Phone**. Ba cột như tab Thiết bị, từ thông báo của điện thoại trong
+  danh sách GNOME, mới nhất trên: **Calls** (đang có, đồng hồ xanh; gọi nhỡ), **Messages** (SMS, tin trả lời
+  được, app nhắn tin), **Other**; 2 ô một cột ở 1920, "+N". Bấm ô: như bấm thông báo. Nút Trả lời trên ô: trang
+  có tin, ô nhập và Gửi. Trống: Bu và chỗ đang kẹt như dòng Điện thoại trong prefs, với nút giúp; đã sẵn
+  sàng mà chưa có gì: "No calls or messages". Dòng Điện thoại trong prefs nằm dưới module Phone. **Chốt**
+- Thử không cần điện thoại: `scripts/phone-notification.sh --call ringing|talking|end <tên>`,
+  `--reply <app> <tên> <chữ>`.
+
 ## Mục này làm gì
 
 Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công suất, chế độ năng lượng; UPS),
@@ -206,6 +235,10 @@ Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công 
   `grab.js`, `be.js` — theo tên app GSConnect đưa (`tests/notification.test.js`).
 - `scripts/phone-notification.sh` — giả một thông báo điện thoại như GSConnect đưa lên (Grab, Be, OTP,
   Zalo…), không cần điện thoại hay chuyến xe thật.
+- `lib/modules/phone/` — cuộc gọi (`source.js`, `adapter.js`) và tab Điện thoại (`tab.js`).
+- `lib/kit/model/phone.js` `callOf`, `replyOf`, `phoneGroups` — cuộc gọi, mã trả lời, cột của tab
+  (`tests/phone.test.js`); `kit/services/gsconnect.js` `phoneNotes`, `muteCall`, `reply`.
+- Card: `reply` (ô nhập và Gửi, `kit/ui/present/compact.js` `replyRow`); phần tử có `color`.
 - Card: `code` (+ `codeEnd`) và `tag` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/compact.js`);
   ảnh tròn `{art, round: true}`.
 - Hình pin: phần tử `{battery, label}` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/parts.js`

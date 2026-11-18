@@ -49,13 +49,15 @@ export function rowsFit(height) {
  *
  * @param {Array<{id: string, cells: object[]}>} groups
  * @param {number} rows  rowsFit()
+ * @param {ReadonlyArray<{id: string, title: string}>} [order]  the groups, in their order (the
+ *   Phone tab's are its own: model/phone.js PHONE_GROUPS)
  * @returns {Array<{id: string, title: string, count: number, cells: object[], more: ?{count: number, names: string, cells: object[]}}>}
  */
-export function planDevices(groups, rows) {
+export function planDevices(groups, rows, order = GROUPS) {
     const byId = new Map((groups ?? []).map(g => [g.id, Array.isArray(g.cells) ? g.cells.filter(Boolean) : []]));
     const n = Math.max(1, rows | 0);
     const out = [];
-    for (const {id, title} of GROUPS) {
+    for (const {id, title} of order) {
         const cells = byId.get(id) ?? [];
         if (!cells.length)
             continue;

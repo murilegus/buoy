@@ -42,7 +42,10 @@
  *         place (design/alerts-and-asks "Hỏi nhiều lựa chọn"); each sends its id through
  *         onAction, the text as onAction(textId, text), Enter as onAction(enterId).
  *         `code` (+ `codeEnd`, an element): a one-time code shown large in place of the body;
- *         `tag`: a short text at the body's end (a licence plate)
+ *         `tag`: a short text at the body's end (a licence plate); `reply: {state: 'typing' |
+ *         'sent' | 'failed', hint, text, textId, sendId, cancelId}`: in place of the buttons, an
+ *         entry and Send (typing: onAction(textId, text), Enter or Send onAction(sendId), the
+ *         keyboard let go onAction(cancelId)), "Sent: …", or "Couldn't send" and Retry
  *
  * Minimal is one set of data for every pill (CONTRACT.md §3): a side pill drops `text` and
  * keeps leading + trailing, so the short value that matters belongs in `trailing`.
@@ -236,9 +239,12 @@ export function element(e, {leading = false} = {}) {
             ...e.round === true ? {round: true} : {},
         };
     }
+    // an icon, a text or a clock in a colour of the activity's own: a call's green (design/device
+    // "Cuộc gọi và tab Điện thoại"); '#rrggbb' only
+    const tint = typeof e.color === 'string' && /^#[0-9a-f]{6}$/i.test(e.color) ? {color: e.color.toLowerCase()} : {};
     const ic = icon(e.icon);
     if (ic)
-        return e.backdrop === true ? {...ic, backdrop: true} : ic;
+        return e.backdrop === true ? {...ic, backdrop: true, ...tint} : {...ic, ...tint};
     if (isNum(e.progress))
         return {type: 'ring', value: clamp01(e.progress)};
     if (isNum(e.bar)) {
@@ -260,11 +266,11 @@ export function element(e, {leading = false} = {}) {
     if (isNum(e.until))
         return {type: 'until', at: e.until};
     if (isNum(e.since))
-        return {type: 'since', at: e.since};
+        return {type: 'since', at: e.since, ...tint};
     if (isNum(e.elapsed))
-        return {type: 'elapsed', at: e.elapsed};
+        return {type: 'elapsed', at: e.elapsed, ...tint};
     const text = str(e.text);
-    return text ? {type: 'text', text} : null;
+    return text ? {type: 'text', text, ...tint} : null;
 }
 
 /**
@@ -289,6 +295,8 @@ function actions(list, max) {
         .map(a => ({
             id: str(a.id), label: str(a.label), icon: str(a.icon),
             ...typeof a.selected === 'boolean' ? {selected: a.selected} : {},
+            // `types`: it opens an entry that takes the keyboard (a card's Reply)
+            ...a.types === true ? {types: true} : {},
         }));
 }
 
@@ -465,6 +473,9 @@ function planCard(c, p, light) {
             ...code ? {code, codeEnd: element(c.codeEnd)} : {},
             // a short tag at the message's end: a ride's licence plate
             ...str(c.tag) ? {tag: str(c.tag)} : {},
+            // the reply typed in place of the buttons, or how it went (design/compact "Trả lời
+            // ngay trong card")
+            ...planReply(c.reply),
             picture: el && el.type !== 'text' ? el : null,
             close: str(c.close),
             // its buttons only under the pointer (a notification's alert, as GNOME 50's
@@ -481,6 +492,20 @@ function planCard(c, p, light) {
         keyline: keyline(p.keyline),
         stale: p.isStale === true,
         light: lightSlot(light, {idle: false}),
+    };
+}
+
+const REPLY_STATES = new Set(['typing', 'sent', 'failed']);
+
+// compact.card.reply: {state: typing | sent | failed, hint, text, textId, sendId, cancelId}
+function planReply(r) {
+    if (!isPlain(r) || !REPLY_STATES.has(r.state))
+        return {};
+    return {
+        reply: {
+            state: r.state, hint: str(r.hint) ?? '', text: typeof r.text === 'string' ? r.text : '',
+            textId: str(r.textId) ?? 'reply-text', sendId: str(r.sendId) ?? 'reply-send', cancelId: str(r.cancelId) ?? 'reply-cancel',
+        },
     };
 }
 

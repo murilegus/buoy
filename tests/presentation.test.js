@@ -31,6 +31,11 @@ eq(element({glyph: 'eq'}), {type: 'glyph', name: 'eq'}, 'no colour: the plain gl
 eq([element({glyph: 'eq', color: 'red'}), element({glyph: 'eq', color: '#fff'}), element({glyph: 'eq', color: '#db286a80'}),
     element({glyph: 'eq', color: 'rgb(1,2,3); width: 99px'}), element({glyph: 'eq', color: 7}), element({glyph: 'eq', color: null})]
     .map(g => g.color ?? null), [null, null, null, null, null, null], 'only #rrggbb is a colour: anything else is dropped, the glyph stays');
+// a call's green on an icon, a text, a clock (design/device "Cuộc gọi và tab Điện thoại")
+eq([element({icon: 'call-start-symbolic', color: '#30D158'}), element({text: 'Incoming', color: '#30d158'}), element({elapsed: 5, color: '#30d158'})],
+    [{type: 'icon', icon: 'call-start-symbolic', color: '#30d158'}, {type: 'text', text: 'Incoming', color: '#30d158'}, {type: 'elapsed', at: 5, color: '#30d158'}],
+    'icon, text, elapsed with a colour');
+eq(element({icon: 'x-symbolic', color: 'green'}), {type: 'icon', icon: 'x-symbolic'}, 'not #rrggbb: no colour');
 eq([element({glyph: 'eq', color: '#ff9f0a'}), element({glyph: 'eq', color: '#FF453A'})].map(g => g.color), ['#ff9f0a', '#ff453a'],
     'a cover in a light\'s amber or red keeps its colour: the shape and the place tell them apart (Ethan, 2026-11-13)');
 eq([element({glyph: 'nope'}), element({glyph: 'audio-x-generic-symbolic', color: '#db286a'}), element({glyph: null})], [null, null, null],

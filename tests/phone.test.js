@@ -1,5 +1,8 @@
 // Run: gjs -m tests/phone.test.js   (pure: FEATURES M4 "Phone via GSConnect", parts 1 and 2; design/device "Điện thoại qua GSConnect")
-import {GSCONNECT_UUID, OTP_MS, batteryState, otpOf, phoneHomePage, phoneNote, phonePage, phoneSetup, phoneTile, plateOf, spacedCode, withPhones} from '../src/buoy@murilegus/lib/kit/model/phone.js';
+import {PHONE_GROUPS, callOf, phoneGroups, replyOf, shortName, GSCONNECT_UUID, OTP_MS, batteryState, otpOf, phoneHomePage, phoneNote, phonePage, phoneSetup, phoneTile, plateOf, spacedCode, withPhones} from '../src/buoy@murilegus/lib/kit/model/phone.js';
+import callAdapter, {GREEN, HIDE, MUTE} from '../src/buoy@murilegus/lib/modules/phone/adapter.js';
+import {validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
+import {planCompact, planMinimal} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import {wirelessCell} from '../src/buoy@murilegus/lib/kit/model/devices.js';
 
 function eq(actual, expected, msg) {
@@ -73,6 +76,74 @@ eq([hp.title, hp.end, hp.rows.map(r => [r.id, r.name, r.value, r.plain, r.select
     ['Redmi Note 14 · 77% · charging', 'full in 40 min', [['ring', 'Find My Phone', 'Rings it', true, false]], 'GSConnect Settings'],
     'tile\'s page: its battery in the title, the time at the end, Find My Phone, GSConnect\'s settings');
 eq([phoneHomePage(P({battery: null})).title, phoneHomePage(P({connected: false}))], ['Redmi Note 14', null], 'tile\'s page: no battery, not connected');
+
+// --- part 3: calls, replies, the Phone tab ------------------------------------------------------------
+eq(callOf('abc123|ringing|Quỳnh Trâm'), {device: 'abc123', state: 'ringing', caller: 'Quỳnh Trâm'}, 'call: ringing, from the id');
+eq(callOf('abc123|talking|+84 912 345 678'), {device: 'abc123', state: 'talking', caller: '+84 912 345 678'}, 'call: talking, a number');
+eq(callOf('abc123|ringing|A|B'), {device: 'abc123', state: 'ringing', caller: 'A|B'}, 'call: a | in the name kept');
+eq([callOf('abc123|missedCall|X'), callOf('abc|ringing|'), callOf('|ringing|X'), callOf('ringing|X'), callOf(null)], [null, null, null, null, null],
+    'not a call: another event, no caller, no device, too short, nothing');
+const U = '0f8fad5b-d9cb-469f-a165-70867728950e';
+eq(replyOf(`abc123|0|com.zing.zalo|12|null|10123|${U}`), {device: 'abc123', uuid: U}, 'reply: the UUID at the end, the device at the start');
+eq([replyOf('abc123|0|com.zing.zalo|12|null|10123'), replyOf(`|x|${U}`), replyOf(U), replyOf(null)], [null, null, null, null],
+    'no reply: not repliable, no device, the uuid alone, nothing');
+eq([shortName('Quỳnh Trâm'), shortName('Lan'), shortName('  '), shortName(null)], ['Trâm', 'Lan', '', ''], 'a reply\'s hint: the last word');
+eq(PHONE_GROUPS.map(g => g.id), ['calls', 'messages', 'other'], 'the tab\'s columns');
+{
+    const now = 1_800_000_000_000;
+    const g = phoneGroups([
+        {id: 'm1', app: 'Zalo', title: 'Quỳnh Trâm', body: 'Tối nay họp', at: now - 60000, reply: {uuid: U}},
+        {id: 'c1', app: 'Phone', title: 'Mẹ', body: 'Missed call', at: now - 600000},
+        {id: 's1', app: 'Messages', title: 'Vietcombank', body: 'Ma OTP', at: now - 120000},
+        {id: 'g1', app: 'Grab', title: 'Tài xế đã đến', body: '59X1-234.56', at: now - 30000},
+        {id: 't1', app: 'Phone', title: 'Lan', body: 'On a call', at: now - 5000, call: {state: 'talking', caller: 'Lan'}, since: now - 222000},
+    ], now);
+    eq(g.map(x => x.cells.map(c => c.id)), [['t1', 'c1'], ['m1', 's1'], ['g1']], 'tab: the call first, then missed; messages newest first; the rest');
+    eq(g[0].cells[0], {id: 't1', name: 'Lan', call: 'talking', detail: 'On a call', since: now - 222000}, 'tab: a call going on, its clock');
+    eq(g[0].cells[1].detail, 'Missed call · 10 min', 'tab: a missed call, how long ago');
+    eq([g[1].cells[0].reply, g[1].cells[1].reply, g[1].cells[0].detail], [true, false, 'Zalo · Tối nay họp'], 'tab: a message, can be answered or not');
+    eq(phoneGroups([{id: 'r', app: 'Phone', title: 'X', at: now, call: {state: 'ringing', caller: 'X'}}], now)[0].cells[0].detail, 'Incoming call', 'tab: ringing');
+    eq(phoneGroups(null).map(x => x.cells.length), [0, 0, 0], 'tab: nothing');
+    eq(phoneGroups([{id: 'z', app: 'Zalo', title: 'Lan', body: 'hi', at: now}], now).map(x => x.cells.length), [0, 1, 0],
+        'tab: a messaging app\'s, even one that cannot be answered: Messages');
+}
+
+// --- part 3: a call on the pill -------------------------------------------------------------------------
+{
+    class BytesIcon {}       // a Gio.Icon, not a plain object
+    const photo = new BytesIcon();
+    const did = [];
+    const ev = o => ({
+        id: 'k', caller: 'Quỳnh Trâm', state: 'ringing', photo: null, phoneName: 'Redmi Note 14', since: null,
+        muted: false, hidden: false, canMute: true, mute: () => did.push('mute'), hide: () => did.push('hide'), ...o,
+    });
+    const r = callAdapter.call(ev());
+    eq([r.text, r.leading, r.trailing, r.ttl, r.needsYou, r.alertStays], ['Quỳnh Trâm', {icon: 'call-start-symbolic', color: GREEN},
+        {text: 'Incoming', color: GREEN}, 0, true, true], 'ringing: the green handset, the caller, "Incoming" green; it needs you, its card stays');
+    eq([r.compact.card.app, r.compact.card.close, r.compact.card.tight, r.actions], ['Incoming Call · Redmi Note 14', HIDE, true,
+        [{id: MUTE, label: 'Mute', icon: 'audio-volume-muted-symbolic'}]], 'ringing card: where, ×, Mute 12 under the head');
+    r.onAction(MUTE);
+    r.onAction(HIDE);
+    r.onAction('other');
+    eq(did, ['mute', 'hide'], 'Mute and × reach the source');
+    const p = callAdapter.call(ev({photo}));
+    eq([p.leading, p.compact.card.picture, p.compact.card.icon], [{art: photo, round: true, icon: 'phone-symbolic'}, {art: photo, round: true, icon: 'phone-symbolic'}, 'phone-symbolic'],
+        'ringing with a photo: round, the phone on its corner');
+    const m = callAdapter.call(ev({muted: true}));
+    eq([m.trailing.text, m.actions, m.needsYou, m.alertStays], ['Silenced', [], false, false], 'muted: "Silenced", no Mute, the card may go');
+    const h = callAdapter.call(ev({hidden: true}));
+    eq([h.alertStays, h.actions.length], [false, 1], 'hidden (×): the card goes, the pill and Mute stay');
+    eq(callAdapter.call(ev({canMute: false})).actions, [], 'GSConnect cannot silence it: no Mute');
+    const t = callAdapter.call(ev({state: 'talking', since: 1000, photo}));
+    eq([t.leading, t.trailing, t.needsYou, t.alertStays, t.compact.card.close, t.actions, t.compact.card.app],
+        [{icon: 'call-start-symbolic', color: GREEN}, {elapsed: 1000, color: GREEN}, false, false, null, [], 'On a Call · Redmi Note 14'],
+        'talking: the green handset, a clock from when it was answered, no button');
+    eq(callAdapter.call(ev({state: 'talking', since: null})).trailing, null, 'talking, the start unknown: no clock');
+    eq(callAdapter.call(ev({caller: '', phoneName: null})).compact.card.app, 'Incoming Call', 'no caller, no phone name');
+    const a = validate({id: 'call:phone:k', kind: 'call', app: 'phone', ...t});
+    eq([planMinimal(a).trailing?.type, planMinimal(a).trailing?.color, planCompact(validate({id: 'c', kind: 'call', app: 'phone', ...r})).card.header.icon.color],
+        ['elapsed', GREEN, GREEN], 'planned: the clock and the handset keep their green');
+}
 
 print('phone: ok');
 

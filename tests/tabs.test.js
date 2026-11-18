@@ -230,6 +230,14 @@ print('tabs: ok');
         'pinned tabs in module order');
     eq(ids(planStrip([{...timer, tabInMore: true, tab: undefined}], [])), [HOME, 'timer'],
         'tabInMore without tab.js: an ordinary kind tab');
+    // Phone (2026-11-18, Ethan): in ⋯ as Timer, on the strip while a call is there
+    const phone = {id: 'phone', kinds: ['call'], tab: true, tabInMore: true, tabWhileLive: true};
+    st = planStrip([...all, phone], [], {pinned: ['calendar']});
+    eq([ids(st).includes('phone'), st.more.map(t => t.id)], [false, ['clipboard', 'timer', 'phone']], 'Phone: in ⋯ with no call');
+    st = planStrip([...all, phone], [act('c', 'call')], {pinned: ['calendar']});
+    eq([ids(st).at(-1), st.more.map(t => t.id), stripOrder(st).at(-1)], ['phone', ['clipboard', 'timer'], 'clipboard'],
+        'a call: Phone a live tab before the slot, out of ⋯');
+    eq(tabFor(act('c', 'call'), st), 'phone', 'a call opens the Phone tab');
 }
 
 // --- Device: pinned after Calendar by default, out of ⋯ (2026-11-13) ------------------

@@ -98,7 +98,9 @@ này ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dùng chung ở [B�
 
 ### Trả lời ngay trong card
 
-**Chốt** (Ethan, 2026-11-11). Chỉ cho nguồn nhận được trả lời: tin nhắn điện thoại qua GSConnect (M4
+**Chốt** (Ethan, 2026-11-11). Đã làm (2026-11-18, "Phone via GSConnect" phần 3): nút Trả lời có khi app
+trên điện thoại cho trả lời (KDE Connect gửi mã trả lời), chữ đi qua GSConnect (`replyNotification`),
+không mở cửa sổ; tab Điện thoại có cùng ô nhập trong trang của tin. Chỉ cho nguồn nhận được trả lời: tin nhắn điện thoại qua GSConnect (M4
 "Phone", Reply SMS). Thông báo của app desktop (Slack…) chỉ có nút Reply mở app: GNOME Shell không
 hỗ trợ trả lời ngay trong thông báo (`notificationDaemon.js`, `GetCapabilities` không có
 `inline-reply`).

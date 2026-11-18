@@ -12,6 +12,10 @@ các tab chỉ hiện khi có activity (Claude Code, Transfers…) ở chỗ k�
 chọn từ ⋯ (Clipboard khi chưa chọn), Timer trong ⋯. Device là mục M4 riêng, chỉ thiết kế và hiển thị tab (từng phần có mục implement riêng): ba nhóm Máy này (pin,
 chế độ nguồn), Không dây (Bluetooth, điện thoại như một thiết bị: pin, tìm máy; cuộc gọi, tin nhắn, Grab… ở tab Phone riêng), Đang cắm (USB, màn hình, tai nghe). **Chốt**
 
+**Tab Điện thoại** (Ethan, 2026-11-18, **Chốt**): trong ⋯ như Hẹn giờ, tự lên thanh tab (trước slot)
+khi đang có cuộc gọi; bấm ô điện thoại ở Home mở nó. Nội dung ở [Thiết bị](../device/index.vi.md)
+"Cuộc gọi và tab Điện thoại".
+
 ## Từng tab
 
 - [Media](../media/index.vi.md) — thẻ như Home, chip cho nhiều player, nút và thanh luôn đủ.

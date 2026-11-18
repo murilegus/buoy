@@ -156,6 +156,11 @@
       <summary>USB drives and webcams</summary>
       <description>A drive, a phone or a webcam plugged in; a drive offers Open and Eject, in place of GNOME's notification.</description>
     </key>
+    <key name="modules-phone" type="b">
+      <default>true</default>
+      <summary>Phone</summary>
+      <description>A call on the phone through GSConnect, ringing or going on, and the Phone tab with its calls and messages.</description>
+    </key>
     <key name="modules-copied" type="b">
       <default>true</default>
       <summary>Copied</summary>
