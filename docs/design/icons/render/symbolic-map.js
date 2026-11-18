@@ -68,6 +68,8 @@ export const SYMBOLIC = {
     // drives and webcams plugged in (FEATURES M4 "USB / phone / webcam plugged")
     'drive-removable-media': 'hard-drive',
     'camera-web': 'camera',
+    // the phone through GSConnect: Find My Phone
+    'find-location': 'magnifier',
     'input-gaming': 'own:gamepad',
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',

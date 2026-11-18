@@ -10,7 +10,7 @@ import {PROFILES, STATE, batteryIcon, duration} from './power.js';
  * holds ends in "+N", and a click opens a page in place. Pure: the tab (modules/device/tab.js)
  * reads the facts through kit/services and draws what this plans.
  *
- * A cell: {id, icon, value: ?string, name, page?: 'battery'|'display'|'bluetooth'|'drive'|null,
+ * A cell: {id, icon, value: ?string, name, page?: 'battery'|'display'|'bluetooth'|'drive'|'phone'|null,
  *   open?: ?string, detail?: ?string, meter?: ?object} — `page`: what a click shows; `open`: a
  *   .desktop it starts instead; `meter`: the value drawn — {type: 'battery', value, label?} a
  *   battery at its level, {type: 'bar', value, label, off?} a volume as the HUD's (the two read
@@ -164,20 +164,33 @@ export function sinkAddress(sinkName) {
 
 /**
  * A wireless device: its kind's icon, its battery drawn at its level with its number; a
- * Bluetooth device the sound plays on says so under its name. A click: a Bluetooth device's page;
- * UPower's (a 2.4 GHz mouse, keyboard) opens Settings → Power, where GNOME lists their batteries.
+ * Bluetooth device the sound plays on says so under its name, a phone charging too. A click: a
+ * Bluetooth device's page; the phone's through GSConnect (model/phone.js phonePage); UPower's (a
+ * 2.4 GHz mouse, keyboard) opens Settings → Power, where GNOME lists their batteries.
  *
- * @param {{id: string, name: string, kind: string, battery?: ?object, bluetooth?: boolean, playing?: boolean}} d
- *   model/bluetooth.js's device; `playing`: the sound goes to it
+ * @param {{id: string, name: string, kind: string, battery?: ?object, bluetooth?: boolean, playing?: boolean, gsconnect?: boolean, charging?: boolean}} d
+ *   model/bluetooth.js's device (model/phone.js withPhones for a phone); `playing`: the sound
+ *   goes to it
  * @returns {object} its cell
  */
 export function wirelessCell(d) {
     const b = batteryOf(d.battery);
+    let name = d.name, page = null, open = POWER_PANEL;
+    if (d.playing)
+        name = `${d.name} · Playing`;
+    else if (d.charging)
+        name = `${d.name} · Charging`;
+    if (d.gsconnect) {
+        page = 'phone';
+        open = null;
+    } else if (d.bluetooth) {
+        page = 'bluetooth';
+        open = BLUETOOTH_PANEL;
+    }
     return {
         id: `wireless:${d.id}`, icon: kindIcon(d.kind), value: b?.label ?? null,
         meter: b ? {type: 'battery', value: b.value, ...b.label ? {label: b.label} : {}} : null,
-        name: d.playing ? `${d.name} · Playing` : d.name,
-        page: d.bluetooth ? 'bluetooth' : null, open: d.bluetooth ? BLUETOOTH_PANEL : POWER_PANEL,
+        name, page, open,
     };
 }
 

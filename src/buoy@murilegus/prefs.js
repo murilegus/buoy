@@ -22,6 +22,7 @@ import {PATH} from './lib/kit/services/dbus.js';
 import {commandFor, hooksNote, install, installed, uninstall} from './lib/modules/agent/hooks.js';
 import {linesOf, releaseLabel} from './lib/modules/greeting/adapter.js';
 import notes from './lib/modules/greeting/notes.js';
+import {GSCONNECT_PAGE, GSCONNECT_SETTINGS, GSCONNECT_UUID, phoneSetup} from './lib/kit/model/phone.js';
 
 const IFACE = 'org.gnome.Shell.Extensions.Buoy';
 const REPOSITORY = 'https://github.com/murilegus/buoy';
@@ -924,6 +925,88 @@ export default class BuoyPreferences extends ExtensionPreferences {
         return row;
     }
 
+    // The phone (FEATURES M4 "Phone via GSConnect", 2026-11-17, Ethan): where setting it up stands
+    // and what helps — GSConnect missing (its page on extensions.gnome.org), off (Shell's
+    // EnableExtension), no phone paired (its own prefs). Read over D-Bus: Shell's
+    // org.gnome.Shell.Extensions (GetExtensionInfo, ExtensionStateChanged), GSConnect's
+    // ObjectManager for the phones paired. Never a flash nor a pill.
+    _phoneRow() {
+        const row = new Adw.ActionRow({title: 'Phone', subtitle: '…'});
+        const button = new Gtk.Button({valign: Gtk.Align.CENTER, visible: false});
+        row.add_suffix(button);
+        const shell = (method, args, type) => new Promise(resolve => {
+            Gio.DBus.session.call('org.gnome.Shell', '/org/gnome/Shell', 'org.gnome.Shell.Extensions', method,
+                args, type ? new GLib.VariantType(type) : null, Gio.DBusCallFlags.NONE, -1, null, (c, res) => {
+                    try {
+                        resolve(c.call_finish(res).deepUnpack());
+                    } catch {
+                        resolve(null);
+                    }
+                });
+        });
+        const paired = () => new Promise(resolve => {
+            Gio.DBus.session.call('org.gnome.Shell.Extensions.GSConnect', '/org/gnome/Shell/Extensions/GSConnect',
+                'org.freedesktop.DBus.ObjectManager', 'GetManagedObjects', null, new GLib.VariantType('(a{oa{sa{sv}}})'),
+                Gio.DBusCallFlags.NONE, -1, null, (c, res) => {
+                    try {
+                        const [objects] = /** @type {[{[path: string]: any}]} */ (c.call_finish(res).recursiveUnpack());
+                        resolve(Object.values(objects).map(o => o['org.gnome.Shell.Extensions.GSConnect.Device'])
+                            .filter(d => d?.Paired).map(d => ({name: d.Name, connected: d.Connected === true})));
+                    } catch {
+                        resolve([]);
+                    }
+                });
+        });
+        // GSConnect's own settings app (its "Mobile Settings"): Shell's OpenExtensionPrefs is refused
+        // while Buoy's prefs dialog shows (one at a time, extensionsService.js)
+        const openGsconnectSettings = () => {
+            const app = Gio.AppInfo.get_all().find(a => a.get_id() === GSCONNECT_SETTINGS) ?? null;
+            try {
+                if (app) {
+                    app.launch([], Gdk.Display.get_default()?.get_app_launch_context() ?? null);
+                    return;
+                }
+            } catch (e) {
+                console.debug(`Buoy: GSConnect settings: ${e.message}`);
+            }
+            shell('OpenExtensionPrefs', new GLib.Variant('(ssa{sv})', [GSCONNECT_UUID, '', {}]), null);
+        };
+        let status = null;
+        const sync = async () => {
+            const [info] = await shell('GetExtensionInfo', new GLib.Variant('(s)', [GSCONNECT_UUID]), '(a{sv})') ?? [{}];
+            const there = Object.keys(info ?? {}).length > 0;
+            const state = there ? info.state?.unpack?.() ?? info.state : null;
+            const s = phoneSetup({installed: there, state, paired: there && state === 1 ? await paired() : []});
+            status = s.status;
+            row.subtitle = s.text;
+            button.label = s.button ?? '';
+            button.visible = !!s.button;
+        };
+        button.connect('clicked', () => {
+            if (status === 'missing')
+                new Gtk.UriLauncher({uri: GSCONNECT_PAGE}).launch(this._window ?? null, null, null);
+            else if (status === 'off')
+                shell('EnableExtension', new GLib.Variant('(s)', [GSCONNECT_UUID]), '(b)').then(sync);
+            else if (status === 'unpaired' || status === 'away')
+                openGsconnectSettings();
+        });
+        const id = Gio.DBus.session.signal_subscribe('org.gnome.Shell', 'org.gnome.Shell.Extensions', 'ExtensionStateChanged',
+            '/org/gnome/Shell', null, Gio.DBusSignalFlags.NONE, (_c, _s, _p, _i, _n, params) => {
+                if (params.deepUnpack()[0] === GSCONNECT_UUID)
+                    sync();
+            });
+        // a phone connecting or going while prefs is open (GSConnect's device properties)
+        const devices = Gio.DBus.session.signal_subscribe('org.gnome.Shell.Extensions.GSConnect', 'org.freedesktop.DBus.Properties',
+            'PropertiesChanged', null, 'org.gnome.Shell.Extensions.GSConnect.Device', Gio.DBusSignalFlags.MATCH_ARG0_NAMESPACE, () => sync());
+        row.connect('destroy', () => {
+            Gio.DBus.session.signal_unsubscribe(id);
+            Gio.DBus.session.signal_unsubscribe(devices);
+        });
+        row.connect('map', () => sync());     // GSConnect may have changed while prefs was elsewhere
+        sync();
+        return row;
+    }
+
     _moduleRow(m, key) {
         const k = key(m.enableKey);
         const row = textRow(Adw.ExpanderRow, {title: k.get_summary(), subtitle: k.get_description(), show_enable_switch: true});
@@ -934,6 +1017,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
             row.add_row(this._claudeHooksRow(m.enableKey));
         if (m.id === 'calendar')
             row.add_row(this._accountsRow());
+        if (m.id === 'device')
+            row.add_row(this._phoneRow());
         if (m.standalone)
             row.add_row(this._pinRow(m.id));
         if (m.sample) {

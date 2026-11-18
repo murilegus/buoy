@@ -98,7 +98,8 @@ export function choiceRow({icon, name, detail = null, value = null, on = false, 
  * A choice page (kit/ui/home.js Glance `page()`, the Device tab's): its rows, the chosen with ✓,
  * then its settings row.
  *
- * @param {{title: string, end?: ?string, rows: Array<{id: string, icon: string, name: string, selected: boolean}>, settings?: ?{name: string}}} page
+ * @param {{title: string, end?: ?string, rows: Array<{id: string, icon: string, name: string, selected: boolean, value?: ?string, plain?: boolean}>, settings?: ?{name: string}}} page
+ *   `plain`: an action, not a choice (the phone's Find My Phone)
  * @param {object} opts
  * @param {function():void} opts.back
  * @param {number} opts.button
@@ -111,7 +112,7 @@ export function choicePage(page, {back, button, choose, settings = null}) {
     const box = listBox(listHead(page.title, {back, button, end}));
     const rows = new St.BoxLayout({style_class: 'buoy-home-choices', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
     for (const r of page.rows)
-        rows.add_child(choiceRow({icon: r.icon, name: r.name, on: r.selected}, () => choose(r.id)));
+        rows.add_child(choiceRow({icon: r.icon, name: r.name, on: r.selected, value: r.value ?? null, plain: r.plain === true}, () => choose(r.id)));
     if (page.settings && settings)
         rows.add_child(choiceRow({icon: 'emblem-system-symbolic', name: page.settings.name, settings: true}, settings));
     box.add_child(rows);

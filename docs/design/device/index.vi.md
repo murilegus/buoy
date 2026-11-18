@@ -114,12 +114,40 @@ plugged, Bluetooth device, USB / phone / webcam plugged, Phone via GSConnect). S
   camera nào đang dùng), âm thanh có dây. Bấm ổ: trang **Mở trong Files**, **Ngắt**, dung lượng ở đầu
   trang; ngắt xong về các cột. Bấm webcam: mở app Camera (Snapshot) nếu máy có. **Chốt**
 
+## Điện thoại qua GSConnect
+
+![Điện thoại trong cột Không dây, trang của nó, thông báo điện thoại, dòng Điện thoại trong prefs](images/phone.vi.png)
+
+*Ethan, 2026-11-17 (mục M4 "Phone via GSConnect", phần 1; phần 2 là app OTP, Grab/Be, Zalo/Messenger;
+phần 3 là cuộc gọi và tab Điện thoại).*
+
+- **Đọc từ dịch vụ của GSConnect** trên session bus (`org.gnome.Shell.Extensions.GSConnect`), như phần
+  Shell của chính nó (`src/utils/remote.js`): ObjectManager liệt kê điện thoại (Name, Connected,
+  Paired), mỗi điện thoại có GAction qua D-Bus: `battery` (đang sạc, mức), `ring`. Chỉ khi tab Thiết bị
+  còn (và module notification để lấy tên điện thoại); dịch vụ đến và đi theo GSConnect bật, tắt.
+- **Ô điện thoại** trong cột Không dây khi nó đang nối: pin đúng của GSConnect (không theo bậc 20 % như
+  Bluetooth), "· đang sạc" dưới tên khi sạc. Nối cả Bluetooth: một ô (tên trùng), pin của GSConnect.
+  Không flash khi nối, ngắt: điện thoại ra vào Wi-Fi liên tục. **Chốt**
+- **Bấm điện thoại**: trang có pin ở đầu, **Tìm điện thoại** (đổ chuông dù đang im lặng), **Cài đặt
+  GSConnect**. Cách nối (Wi-Fi / Bluetooth) GSConnect không đưa lên D-Bus, nên không có hàng đó. **Chốt**
+- **Thông báo điện thoại**: GSConnect đưa mọi thông báo lên dưới tên nó, tiêu đề là app trên điện thoại,
+  nội dung "người gửi: chữ" (`plugins/notification.js` `_receiveNotification`). Buoy đặt lại: app là app
+  trên điện thoại (pill, card, tab Thông báo nhóm theo Zalo, Messenger…), tiêu đề là người gửi, dòng
+  dưới "Zalo · Redmi Note 14". SMS là Messages, cuộc gọi nhỡ là Phone. Nút của thông báo giữ nguyên
+  (kể cả "Copy" mã OTP GSConnect tự thêm). **Chốt**
+- **Chưa dùng được**: Cài đặt Buoy → Modules → Thiết bị, dòng **Điện thoại** nói chỗ đang kẹt và nút
+  giúp: chưa cài GSConnect (mở trang của nó trên extensions.gnome.org), đã cài mà tắt (bật nó), chưa
+  ghép đôi (mở cài đặt GSConnect), đã ghép mà chưa nối ("Redmi Note 14 · not connected", mở KDE Connect
+  trên điện thoại, cùng mạng; Ethan, 2026-11-18: trước đó nó hiện như đã sẵn sàng). Nối rồi: "· connected",
+  không nút; dòng đổi ngay khi điện thoại nối hay rời. Không flash, không nhắc trong pill; tab Điện thoại (phần 3) nói cùng
+  điều đó trong khung trống của nó. **Chốt** (Ethan, 2026-11-17)
+
 ## Mục này làm gì
 
 Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công suất, chế độ năng lượng; UPS),
 **Không dây** (thiết bị Bluetooth, chuột và bàn phím 2.4 GHz; mục "Bluetooth device") và **Đang cắm**
 (màn hình ngoài từ module plugged; ổ, điện thoại cắm dây, webcam rời từ module usb; âm thanh có dây
-đang dùng). Điện thoại qua GSConnect đến với mục của nó.
+đang dùng); điện thoại qua GSConnect trong cột Không dây.
 
 ## Chỗ trong code
 
@@ -140,6 +168,10 @@ Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công 
 - `lib/kit/services/cameras.js` — webcam: `/dev` theo dõi, `/sys/class/video4linux` đọc qua link của nó
   (Gio gộp "x/.." theo tên, không theo link).
 - `lib/modules/usb/` — compact cắm ổ, các flash ngắt, rút, webcam.
+- `lib/kit/model/phone.js` — chỗ đang kẹt khi cài (cho prefs), pin của GSConnect, gộp điện thoại với
+  Bluetooth, tách thông báo điện thoại thành app, người gửi, chữ. Có test (`tests/phone.test.js`).
+- `lib/kit/services/gsconnect.js` — dịch vụ của GSConnect: điện thoại, pin, `ring`; mở cài đặt của nó.
+- `lib/modules/notification/source.js` `noteOf` — thông báo điện thoại dưới app của nó (pill, card, tab).
 - Hình pin: phần tử `{battery, label}` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/parts.js`
   `batteryLevel`).
 - `lib/modules/device/tab.js` — đọc qua `kit/services` (pin và chế độ của Quick Settings, màn hình của

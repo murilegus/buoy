@@ -12,7 +12,7 @@ import {tick} from '../../kit/ui/present/parts.js';
 import {agoText} from '../../kit/model/presentation.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
 import {actionIndex, buttonsOf, countText, rowText, stackGroups} from './adapter.js';
-import {appIdOf, msOf} from './source.js';
+import {msOf, noteOf} from './source.js';
 
 const ICON = 32;
 const BANNERS = 'org.gnome.desktop.notifications';
@@ -125,7 +125,7 @@ export class NotificationsTab {
     _render() {
         this.actor.destroy_all_children();
         const items = this._all().map(n => ({
-            n, app: appIdOf(n.source), appName: n.source?.title || 'Notification',
+            n, app: noteOf(n).app, appName: noteOf(n).appName || 'Notification',
             at: msOf(n.datetime), missed: this._missed.has(n),
         }));
         const {groups, missed, total} = stackGroups(items);
@@ -232,13 +232,14 @@ export class NotificationsTab {
 
     _card({n, appName, missed}, {withApp = true, avatar = false, count = 0, missedDot = missed, onOpen = null} = {}) {
         const shared = this._sharing.shared;
-        const text = rowText({title: n.title, body: n.body, markup: n.useBodyMarkup === true, appName}, shared);
+        const note = noteOf(n);
+        const text = rowText({title: note.title, body: note.body, markup: !note.phone && n.useBodyMarkup === true, appName}, shared);
         const card = new St.BoxLayout({
             style_class: 'buoy-ncard', x_expand: true, reactive: true, track_hover: true,
         });
 
         const main = new St.BoxLayout({style_class: 'buoy-ncard-main', x_expand: true});
-        main.add_child(cardIcon(n, avatar && !shared));
+        main.add_child(cardIcon(n, avatar && !shared, note.phone));
         const col = new St.BoxLayout({
             style_class: 'buoy-ncard-text', orientation: Clutter.Orientation.VERTICAL,
             x_expand: true, y_align: Clutter.ActorAlign.CENTER,
@@ -290,7 +291,7 @@ export class NotificationsTab {
         });
         x.connect('clicked', () => {
             if (onOpen)
-                this._all().filter(m => appIdOf(m.source) === appIdOf(n.source)).forEach(dismiss);
+                this._all().filter(m => noteOf(m).app === noteOf(n).app).forEach(dismiss);
             else
                 dismiss(n);
         });
@@ -320,8 +321,10 @@ function dismiss(n) {
 // A stack shows its app's logo; an app's view what the notification brings of its own
 // (Ethan, 2026-11-07): its picture (a chat's avatar, a thumbnail: image-data / image-path,
 // a GTK bytes icon), else its own icon when it differs from the app's, else the logo
-function cardIcon(n, avatar) {
-    const logo = n.source?.icon ?? null;
+// `phone`: a phone's notification (GSConnect's): its app's own icon, as GSConnect brings it from the
+// phone, is its logo — not GSConnect's, the same on every one (Ethan, 2026-11-18)
+function cardIcon(n, avatar, phone = false) {
+    const logo = phone && n.gicon ? n.gicon : n.source?.icon ?? null;
     let gicon = logo;
     if (avatar && n.gicon) {
         const themed = n.gicon instanceof Gio.ThemedIcon;
