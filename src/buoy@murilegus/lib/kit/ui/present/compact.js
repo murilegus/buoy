@@ -240,9 +240,11 @@ function rowList(rows, m) {
  *   (Home's card: 1920's 212 holds no more in one)
  * @param {?Function} [opts.onType]  a card's Other is about to be typed in: the island takes
  *   the keyboard for its entry (island.js _typeIn)
+ * @param {?Function} [opts.onClose]  its card's × was clicked: the pill closes the card even under
+ *   the pointer (pill.js _dismissCompact)
  * @returns {?Clutter.Actor} null when the activity has no compact
  */
-export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null} = {}) {
+export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null, onClose = null} = {}) {
     let p = planCompact(activity, {light});
     if (!p)
         return null;
@@ -250,7 +252,7 @@ export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metr
     // compact's 3 (presentation.js rowsThatFit, pickRows)
     if (maxHeight > 0 && p.rowsAvailable > 0)
         p = planCompact(activity, {light, maxRows: rowsThatFit(p, maxHeight, metrics)});
-    return p.card ? cardBox(p, activity, maxWidth, metrics, {hovered, actionsEnd, actionsTop, choiceColumns, onType}) : compactBox(p, activity, maxWidth, metrics);
+    return p.card ? cardBox(p, activity, maxWidth, metrics, {hovered, actionsEnd, actionsTop, choiceColumns, onType, onClose}) : compactBox(p, activity, maxWidth, metrics);
 }
 
 /** The name of a card's Other entry: the island looks for it to give it the keyboard. */
@@ -262,7 +264,7 @@ export const TYPE_ENTRY = 'buoy-type';
 // lines of 16, 8 under the head, and the buttons in a row 12 from the edges, 32 tall, 12
 // above and below: 136 with one line, 152 with two (104 without buttons). The compact's full
 // width. A click on it but a button is the pill's click (island.js).
-function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null} = {}) {
+function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null, onClose = null} = {}) {
     const c = p.card;
     const box = new St.BoxLayout({style_class: 'buoy-card', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
     if (maxWidth > 0)
@@ -289,7 +291,7 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
         markShared(avatar(c, activity, m), 'leading', activity),
         text.get_n_children() ? text : null,
         hasActions && actionsTop ? actionRow(p.actions, activity, m, {top: true}) : null,
-        c.close ? closeButton(c.close, activity, m) : null,
+        c.close ? closeButton(c.close, activity, m, onClose) : null,
     ], m));
 
     const below = (hasActions && !actionsTop) || !!c.reply;
@@ -595,14 +597,17 @@ function agoLabel(at) {
     return l;
 }
 
-function closeButton(id, activity, m) {
+function closeButton(id, activity, m, onClose = null) {
     const button = new St.Button({
         style_class: 'buoy-round', can_focus: true, accessible_name: 'Dismiss',
         child: new St.Icon({...iconProps('window-close-symbolic'), icon_size: 16}),
         y_align: Clutter.ActorAlign.CENTER,
     });
     button.set_size(m.button, m.button);
-    button.connect('clicked', () => activity.onAction?.(id));
+    button.connect('clicked', () => {
+        onClose?.();            // the card goes now, the pointer on it or not (pill.js)
+        activity.onAction?.(id);
+    });
     return button;
 }
 
