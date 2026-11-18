@@ -162,12 +162,12 @@ phần 3 là cuộc gọi và tab Điện thoại).*
 - **Zalo, Messenger**: ảnh KDE Connect gửi là ảnh người gửi (`largeIcon`), nên vẽ tròn: 24 trong pill,
   40 trong card với chấm điện thoại ở góc (huy hiệu của card thông báo, design/compact). Không có ảnh
   (icon theo theme): như phần 1. Nhóm: tên nhóm là tiêu đề, "Trâm: …" ở thân. **Chốt**
-- **Grab, Be**: chỉ các tin rời rạc (tìm thấy tài xế, đang đến, đã đến): pill có icon xe (`car` của
-  Gravity, file `route-car-symbolic`), trạng thái, biển số ở cuối; card đưa biển số ra một ô `fill-3`
-  cuối dòng thân tin và bỏ nó khỏi chữ. "Đã đến" ở lại 2 phút, còn lại như thông báo thường. Tin khác
-  của app (khuyến mãi) như thông báo thường. Câu chữ khớp theo mẫu thường gặp (tiếng Việt, tiếng Anh);
-  chỉnh khi có tin thật. Không có đếm phút xe tới hay bản đồ: KDE Connect không gửi tin "đang diễn ra".
-  **Chốt**
+- **Grab, Be**: chữ của app giữ nguyên, Buoy không đoán câu chữ (tìm thấy, đang đến, đã đến). Tin có
+  biển số (59X1-234.56, 30A-123.45, 51F-12345) là tin chuyến xe: pill có icon xe (`car` của Gravity, file
+  `route-car-symbolic`) và biển số ở cuối; card đưa biển số ra một ô `fill-3` cuối dòng thân tin và bỏ
+  nó khỏi chữ. Ở lại như thông báo thường. Tin không có biển số (khuyến mãi…) như thông báo thường.
+  Không có đếm phút xe tới hay bản đồ: KDE Connect không gửi tin "đang diễn ra". **Chốt** (Ethan,
+  2026-11-18: câu chữ thật để app tự hiển thị)
 - Trả lời ngay trong card (Zalo, Messenger, SMS): phần 3.
 
 ## Mục này làm gì
@@ -201,7 +201,7 @@ Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công 
 - `lib/kit/services/gsconnect.js` — dịch vụ của GSConnect: điện thoại, pin, `ring`; mở cài đặt của nó.
 - `lib/modules/notification/source.js` `noteOf` — thông báo điện thoại dưới app của nó (pill, card, tab);
   Copy Code, pill OTP tắt khi đếm về 0.
-- `lib/kit/model/phone.js` `otpOf`, `rideOf`, `plateOf` — mã OTP, chuyến xe, biển số (`tests/phone.test.js`).
+- `lib/kit/model/phone.js` `otpOf`, `plateOf` — mã OTP, biển số (`tests/phone.test.js`).
 - `lib/modules/notification/adapter.js` (OTP, `senderPicture`, `ride`) và `apps/zalo.js`, `messenger.js`,
   `grab.js`, `be.js` — theo tên app GSConnect đưa (`tests/notification.test.js`).
 - `scripts/phone-notification.sh` — giả một thông báo điện thoại như GSConnect đưa lên (Grab, Be, OTP,

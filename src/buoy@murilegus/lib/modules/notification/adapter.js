@@ -29,7 +29,7 @@
  *   copy(code)   put a phone's one-time code on the clipboard; copied: it is there now
  */
 
-import {ARRIVED_MS, OTP_MS, otpOf, rideOf, spacedCode} from '../../kit/model/phone.js';
+import {OTP_MS, otpOf, plateOf, spacedCode} from '../../kit/model/phone.js';
 
 /**
  * How long a notification's pill stays (§2): its card's 5 s as an alert (the kit's ALERT_MS,
@@ -539,9 +539,11 @@ function withoutPlate(body, plate) {
 }
 
 /**
- * A ride app's (Grab, Be): the car and what the ride is at on the pill, the licence plate at its
- * end and as the card's tag; "arrived" stays 2 min (model/phone.js rideOf). Anything else from it
- * (a promotion) is a notification as any other.
+ * A ride app's (Grab, Be): its own words as they come (Ethan, 2026-11-18: the app says what the
+ * ride is at, Buoy does not read it); a message with a licence plate is a ride's — the car on the
+ * pill, the plate at its end and as the card's tag, out of the message. Anything else from it (a
+ * promotion) is a notification as any other. KDE Connect sends no ongoing notification
+ * (NotificationsPlugin.kt sendNotification drops FLAG_ONGOING_EVENT): no live ETA nor map.
  *
  * @param {object} p  the notification's presentation
  * @param {object} ev
@@ -550,16 +552,15 @@ function withoutPlate(body, plate) {
 export function ride(p, ev) {
     if (!plain(ev) || p.attributes?.code)
         return p;
-    const r = rideOf(p.attributes?.title, p.attributes?.body);
-    if (!r)
+    const plate = plateOf(`${p.attributes?.title ?? ''} · ${p.attributes?.body ?? ''}`);
+    if (!plate)
         return p;
     return {
         ...p,
         leading: CAR_ICON,
-        trailing: r.plate ? {text: r.plate} : p.trailing,
-        compact: {card: {...p.compact.card, ...r.plate ? withoutPlate(p.compact.card.body, r.plate) : {}}},
-        ttl: r.state === 'arrived' && p.ttl > 0 ? ARRIVED_MS : p.ttl,
-        attributes: {...p.attributes, ride: r.state, plate: r.plate},
+        trailing: {text: plate},
+        compact: {card: {...p.compact.card, ...withoutPlate(p.compact.card.body, plate)}},
+        attributes: {...p.attributes, plate},
     };
 }
 

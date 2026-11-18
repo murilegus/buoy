@@ -408,15 +408,18 @@ eq(missedRow(2, [{name: '', icon: 'x'}, {name: 'A', icon: '  '}]).icons, [], 'no
     eq(zalo.notification({...BASE, appName: 'Zalo', phoneImage: photo}).leading, BASE.appIcon, 'a desktop app named Zalo: untouched');
     eq(cardOf(z).card.picture, {type: 'art', gicon: photo, fallback: 'phone-symbolic', round: true}, 'planned: a round art');
 
-    // Grab, Be: a ride
+    // Grab, Be: a ride — the app's own words, the plate drawn out (Ethan, 2026-11-18)
     const arrived = grab.notification(phoneEv({appName: 'Grab · Redmi Note 14', title: 'Tài xế đã đến', body: 'Nguyễn Văn An · Honda Vision trắng · 59X1-234.56'}));
-    eq([arrived.leading, arrived.text, arrived.trailing, arrived.compact.card.tag, arrived.ttl, arrived.attributes.ride],
-        ['route-car-symbolic', 'Tài xế đã đến', {text: '59X1-234.56'}, '59X1-234.56', 120000, 'arrived'], 'Grab arrived: the car, the plate, 2 min');
-    const coming = be.notification(phoneEv({title: 'Tài xế đang đến', body: 'Xe 30A-123.45'}));
-    eq([coming.leading, coming.ttl, coming.compact.card.tag], ['route-car-symbolic', TTL, '30A-123.45'], 'Be coming: the car, as long as any notification');
+    eq([arrived.leading, arrived.text, arrived.trailing, arrived.compact.card.tag, arrived.ttl, arrived.attributes.plate],
+        ['route-car-symbolic', 'Tài xế đã đến', {text: '59X1-234.56'}, '59X1-234.56', TTL, '59X1-234.56'], 'Grab with a plate: the car, its words, the plate');
+    const coming = be.notification(phoneEv({title: 'Your driver is on the way', body: 'Toyota Vios 51F-12345'}));
+    eq([coming.leading, coming.text, coming.ttl, coming.compact.card.tag], ['route-car-symbolic', 'Your driver is on the way', TTL, '51F-12345'],
+        'Be in English: the same, as long as any notification');
+    const noPlate = grab.notification(phoneEv({title: 'Tài xế đã đến', body: 'Tài xế đang chờ bạn'}));
+    eq([noPlate.leading, noPlate.text, noPlate.compact.card.tag], ['phone-symbolic', 'Tài xế đã đến', undefined], 'no plate: a notification as any other, its words');
     const promo = grab.notification(phoneEv({title: 'Giảm 50% cuối tuần', body: 'Nhập mã GRAB50 ngay'}));
     eq([promo.leading, promo.compact.card.tag], ['phone-symbolic', undefined], 'a promotion: a notification as any other');
-    const crit = grab.notification(phoneEv({title: 'Tài xế đã đến', body: '', critical: true}));
+    const crit = grab.notification(phoneEv({title: 'Tài xế đã đến', body: '59X1-234.56', critical: true}));
     eq(crit.ttl, 0, 'critical stays critical (no ttl)');
     eq(grab.notification(phoneEv({title: 'Tài xế đã đến', body: '59X1-234.56', shared: true})).leading, 'phone-symbolic', 'a shared screen: nothing said');
     eq(cardOf(arrived).card.tag, '59X1-234.56', 'planned: the tag reaches the card');

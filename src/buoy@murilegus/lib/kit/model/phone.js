@@ -249,38 +249,3 @@ const PLATE = /(?<![\p{L}\p{N}])(\d{2}-?[A-Z]{1,2}\d?[- ]?(?:\d{3}\.\d{2}|\d{4,5
 export function plateOf(text) {
     return typeof text === 'string' ? PLATE.exec(text)?.[1] ?? null : null;
 }
-
-const RIDE = /tài xế|tai xe|bác tài|driver|your ride|chuyến xe|chuyến đi/i;
-const ARRIVED = /đã (?:đến|tới)|has arrived|have arrived|is here|is waiting|đang (?:chờ|đợi) bạn/i;
-const FOUND = /(?:đã )?tìm (?:thấy|được) tài xế|đã nhận chuyến|driver found|found (?:you )?a driver|accepted your/i;
-const COMING = /đang (?:đến|tới)|sắp (?:đến|tới)|on (?:the|their|his|her) way|arriving|is coming/i;
-
-/** How long "the driver has arrived" stays: it is when you go out. */
-export const ARRIVED_MS = 120000;
-
-/**
- * A ride app's notification (Grab, Be): KDE Connect sends no ongoing one (NotificationsPlugin.kt
- * sendNotification drops FLAG_ONGOING_EVENT), so no live ETA nor map — only the ones that come
- * and go: a driver found, on the way, arrived.
- *
- * @param {*} title
- * @param {*} body
- * @returns {?{state: ?('found'|'coming'|'arrived'), plate: ?string}} null: not about a ride (a promotion)
- */
-export function rideOf(title, body) {
-    const text = [title, body].filter(x => typeof x === 'string').join(' · ');
-    const plate = plateOf(text);
-    if (!plate && !RIDE.test(text))
-        return null;
-    /** @type {?('found'|'coming'|'arrived')} */
-    let state = null;
-    if (ARRIVED.test(text))
-        state = 'arrived';
-    else if (FOUND.test(text))
-        state = 'found';
-    else if (COMING.test(text))
-        state = 'coming';
-    if (!state && !plate)
-        return null;
-    return {state, plate};
-}

@@ -1,5 +1,5 @@
 // Run: gjs -m tests/phone.test.js   (pure: FEATURES M4 "Phone via GSConnect", parts 1 and 2; design/device "Điện thoại qua GSConnect")
-import {ARRIVED_MS, GSCONNECT_UUID, OTP_MS, batteryState, otpOf, phoneHomePage, phoneNote, phonePage, phoneSetup, phoneTile, plateOf, rideOf, spacedCode, withPhones} from '../src/buoy@murilegus/lib/kit/model/phone.js';
+import {GSCONNECT_UUID, OTP_MS, batteryState, otpOf, phoneHomePage, phoneNote, phonePage, phoneSetup, phoneTile, plateOf, spacedCode, withPhones} from '../src/buoy@murilegus/lib/kit/model/phone.js';
 import {wirelessCell} from '../src/buoy@murilegus/lib/kit/model/devices.js';
 
 function eq(actual, expected, msg) {
@@ -95,14 +95,8 @@ eq([spacedCode('482913'), spacedCode('4829'), spacedCode('12345678'), spacedCode
     'the code as read: two halves from six digits');
 eq(OTP_MS, 30000, 'an OTP stays 30 s');
 
-// --- part 2: a ride (Grab, Be) ------------------------------------------------------------------------
-eq(rideOf('Tài xế đã đến', 'Nguyễn Văn An · Honda Vision trắng · 59X1-234.56'), {state: 'arrived', plate: '59X1-234.56'}, 'ride: arrived, its plate');
-eq(rideOf('Đã tìm thấy tài xế', 'Tài xế Nguyễn Văn An, xe 30A-123.45, đang đến'), {state: 'found', plate: '30A-123.45'}, 'ride: found wins over coming');
-eq(rideOf('Your driver is on the way', 'Toyota Vios 51F-12345'), {state: 'coming', plate: '51F-12345'}, 'ride: English, a plate without a dot');
-eq(rideOf('Your driver has arrived', null), {state: 'arrived', plate: null}, 'ride: arrived, no plate');
-eq(rideOf('Chuyến xe của bạn', '59X1-234.56'), {state: null, plate: '59X1-234.56'}, 'ride: a plate, no state');
-eq(rideOf('Giảm 50% chuyến đi cuối tuần', 'Nhập mã GRAB50'), null, 'a promotion: not a ride');
-eq(rideOf('Ưu đãi hôm nay', 'Đặt món ngay'), null, 'no ride word: not a ride');
-eq([plateOf('xe 59-X1 234.56 màu trắng'), plateOf('gọi 0912345678'), plateOf(null)], ['59-X1 234.56', null, null],
-    'plates: written apart; a phone number is none');
-eq(ARRIVED_MS, 120000, '"arrived" stays 2 min');
+// --- part 2: a ride's licence plate (Grab, Be) -------------------------------------------------------
+eq([plateOf('Nguyễn Văn An · Honda Vision trắng · 59X1-234.56'), plateOf('xe 30A-123.45 đang đến'), plateOf('Toyota Vios 51F-12345')],
+    ['59X1-234.56', '30A-123.45', '51F-12345'], 'plates: with a dot, without');
+eq([plateOf('xe 59-X1 234.56 màu trắng'), plateOf('gọi 0912345678'), plateOf('Nhập mã GRAB50'), plateOf(null)], ['59-X1 234.56', null, null, null],
+    'plates: written apart; a phone number, a promo code: none');
