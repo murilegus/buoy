@@ -334,19 +334,18 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
     return box;
 }
 
-// A card's buttons: under it, a row of equal widths as GNOME's banner (`fill`) or each at
-// its own width, at least 112 (Home's tall card); in its head, at the right before ×, each
-// at its own width (Home's low card, design/home "nút góc phải trên": 136 / 152 do not fit
-// its 104)
+// A card's buttons: under it, across the row as GNOME's banner (`fill`): each its label's width
+// and an equal share of the rest (ui/messageList.js _addAction: x_expand, the box not
+// homogeneous), so a long label ("Đánh dấu là đã đọc") is not cut while a short one has room to
+// spare; or each at its own width, at least 112 (Home's tall card); in its head, at the right
+// before ×, each at its own width (Home's low card, design/home "nút góc phải trên": 136 / 152
+// do not fit its 104)
 function actionRow(actions, activity, m, {fill = false, top = false} = {}) {
     const row = new St.BoxLayout({
         style_class: 'buoy-card-actions', x_expand: fill,
         x_align: fill ? Clutter.ActorAlign.FILL : Clutter.ActorAlign.END,
         y_align: Clutter.ActorAlign.CENTER,
     });
-    // a set of choices (the power modes): each as wide as its label, the rest shared, so a
-    // long name ("Performance" in 600) is not cut while a short one has room to spare
-    row.layout_manager.homogeneous = fill && !actions.some(a => 'selected' in a);
     if (top)
         row.set_style(`height: ${px(m.button)};`);
     for (const a of actions) {
