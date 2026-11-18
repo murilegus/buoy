@@ -72,6 +72,10 @@ export const SYMBOLIC = {
     'find-location': 'magnifier',
     // its apps (part 2): a ride (Grab, Be)
     'route-car': 'car',
+    // calls and replies (part 3)
+    'call-start': 'handset',
+    'call-missed': 'handset-arrow-in',
+    'mail-reply-sender': 'arrow-shape-turn-up-left',
     'input-gaming': 'own:gamepad',
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',

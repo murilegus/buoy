@@ -649,6 +649,7 @@ export class Pill {
         return buildCompact(shown, {
             maxWidth, metrics, hovered: this._builtHovered, light: this.role === 'centre' ? this.light : null,
             onType: () => this._island._typeIn(this),      // a card's Other: the keyboard
+            onClose: () => this._dismissCompact(),          // its ×: the card goes under the pointer
         });
     }
 
@@ -915,6 +916,15 @@ export class Pill {
         this._syncDot();
         this._island._compactShown(this, false);
         return true;
+    }
+
+    // A card's ×: it goes now, though the pointer is on it (a call's card only hides: its pill
+    // stays), as Shell's banner goes when dismissed under the pointer; the pointer counts again
+    // once it has left (holdCompact's _ignoreHover)
+    _dismissCompact() {
+        this._ignoreHover = this.hovered;
+        this._clearGrace();
+        this._stopCompact();
     }
 
     _stopCompact() {

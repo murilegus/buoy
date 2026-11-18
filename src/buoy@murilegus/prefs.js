@@ -1017,7 +1017,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
             row.add_row(this._claudeHooksRow(m.enableKey));
         if (m.id === 'calendar')
             row.add_row(this._accountsRow());
-        if (m.id === 'device')
+        if (m.id === 'phone')
             row.add_row(this._phoneRow());
         if (m.standalone)
             row.add_row(this._pinRow(m.id));

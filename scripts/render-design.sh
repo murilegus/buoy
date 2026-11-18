@@ -80,6 +80,7 @@ r device/render/bluetooth-page.js device/images/bluetooth-page.vi.png
 r device/render/drives.js device/images/drives.vi.png
 r device/render/phone.js device/images/phone.vi.png
 r device/render/apps.js device/images/apps.vi.png
+r device/render/calls.js device/images/calls.vi.png
 r home/render/phone.js home/images/phone-tile.vi.png
 # headphones / display plugged
 for m in flash compact; do r compact/render/plugged.js compact/images/plugged-$m.vi.png $m; done

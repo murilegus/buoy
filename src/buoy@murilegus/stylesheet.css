@@ -148,7 +148,7 @@
 .buoy-tab, .buoy-round, .buoy-action, .buoy-choice, .buoy-menu-row, .buoy-home-hit, .buoy-home-row, .buoy-home-choice,
 .buoy-agents-row, .buoy-agents-close, .buoy-agents-clear, .buoy-calendar-accounts, .buoy-calendar-arrow, .buoy-calendar-day, .buoy-calendar-row,
 .buoy-media-button, .buoy-media-chip, .buoy-media-play, .buoy-media-skip, .buoy-nback, .buoy-ncard,
-.buoy-nchip, .buoy-nclose, .buoy-transfers-action, .buoy-transfers-clear, .buoy-transfers-row {
+.buoy-nchip, .buoy-phone-chip, .buoy-nclose, .buoy-transfers-action, .buoy-transfers-clear, .buoy-transfers-row {
     transition-duration: 120ms;
 }
 
@@ -296,6 +296,13 @@
 .buoy-card-code-row { spacing: 8px; }
 /* a ride's licence plate at the message's end, on a fill-3 tag */
 .buoy-card-tag-row { spacing: 8px; }
+/* a reply in place of the card's buttons (design/compact "Trả lời ngay trong card"): the entry
+   fill-2 round 16, Send round 32 — dim while empty, cream with text (buoy-round-main) */
+.buoy-card-reply { spacing: 8px; }
+.buoy-reply-entry { padding: 0 12px; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+.buoy-reply-entry .hint-text { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-round.buoy-reply-empty { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-card-reply-note { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 0.85em; }
 .buoy-card-tag { font-weight: 700; font-feature-settings: "tnum"; padding: 4px 10px; border-radius: 8px; background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
 .buoy-card-actions { spacing: 8px; }
 .buoy-card-actions .buoy-action { padding: 0 12px; border-radius: 16px; }
@@ -463,6 +470,9 @@
 .buoy-hc .buoy-live-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-choice-mark { border-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-choice-entry .hint-text { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-reply-entry .hint-text { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-round.buoy-reply-empty { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-card-reply-note { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-key { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ border-color: rgba(255, 255, 255, 0.7); /* border-strong */ }
 .buoy-hc .buoy-empty { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-home-subtitle { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

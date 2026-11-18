@@ -147,7 +147,7 @@ export function withPhones(wireless, phones) {
 // GSConnect's icons for an SMS and a missed call: compared, never drawn by Buoy
 // (tests/icons.test.js asks a file for every quoted symbolic name in the code)
 const SMS_ICON = ['sms', 'symbolic'].join('-');
-const MISSED_ICON = ['call-missed', 'symbolic'].join('-');
+const MISSED_ICON = 'call-missed-symbolic';
 
 /**
  * A phone notification as GSConnect shows it (src/service/plugins/notification.js
@@ -248,4 +248,112 @@ const PLATE = /(?<![\p{L}\p{N}])(\d{2}-?[A-Z]{1,2}\d?[- ]?(?:\d{3}\.\d{2}|\d{4,5
 /** @param {*} text  @returns {?string} the first licence plate in it, as written */
 export function plateOf(text) {
     return typeof text === 'string' ? PLATE.exec(text)?.[1] ?? null : null;
+}
+
+// --- part 3: calls, replies, the Phone tab (design/device "Cuộc gọi và tab Điện thoại", 2026-11-18) ---
+
+/**
+ * A call GSConnect shows (src/service/plugins/telephony.js _notifyEvent): its GTK notification's
+ * id is "<device id>|ringing|<caller>" while the phone rings, "<device id>|talking|<caller>" while
+ * the call goes on (Device.showNotification prefixes the device's id); it is withdrawn when the
+ * call ends. The id says it whatever the language its body is in ("Incoming call").
+ *
+ * @param {*} id  a notification's id (Shell's GtkNotificationDaemonNotification `id`)
+ * @returns {?{device: string, state: 'ringing'|'talking', caller: string}}
+ */
+export function callOf(id) {
+    if (typeof id !== 'string')
+        return null;
+    const parts = id.split('|');
+    if (parts.length < 3 || !parts[0] || !['ringing', 'talking'].includes(parts[1]))
+        return null;
+    const caller = parts.slice(2).join('|').trim();
+    return caller ? {device: parts[0], state: /** @type {'ringing'|'talking'} */ (parts[1]), caller} : null;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * A phone notification that can be answered: KDE Connect gives a repliable one a reply id, a
+ * random UUID (RepliableNotification.kt), and GSConnect puts it at the end of the notification's
+ * id ("<device>|<Android key>|<uuid>", plugins/notification.js _receiveNotification) — an SMS's
+ * too, though its click opens GSConnect's messaging window instead.
+ *
+ * @param {*} id  a notification's id
+ * @returns {?{device: string, uuid: string}}
+ */
+export function replyOf(id) {
+    if (typeof id !== 'string')
+        return null;
+    const parts = id.split('|');
+    const uuid = parts.at(-1);
+    return parts.length >= 3 && parts[0] && UUID.test(uuid) ? {device: parts[0], uuid} : null;
+}
+
+/**
+ * "Trâm" from "Quỳnh Trâm": what a reply's hint calls the person (a Vietnamese name goes by its
+ * last word, as the reply's design has it)
+ *
+ * @param {*} name
+ * @returns {string}
+ */
+export function shortName(name) {
+    const words = typeof name === 'string' ? name.trim().split(/\s+/).filter(Boolean) : [];
+    return words.at(-1) ?? '';
+}
+
+/** The Phone tab's columns, in their order (design/device "Cuộc gọi và tab Điện thoại"). */
+export const PHONE_GROUPS = Object.freeze([
+    {id: 'calls', title: 'Calls'},
+    {id: 'messages', title: 'Messages'},
+    {id: 'other', title: 'Other'},
+]);
+
+// apps whose notifications are messages even when the phone gives no reply for them
+const MESSAGE_APPS = new Set(['messages', 'zalo', 'messenger', 'telegram', 'whatsapp', 'viber', 'signal', 'line', 'skype', 'discord', 'slack', 'gmail']);
+
+/**
+ * The Phone tab's cells, from the phone's notifications in GNOME's list (newest first in each
+ * column): a call going on or ringing first, then missed calls; messages — an SMS, anything
+ * that can be answered, a messaging app's (Zalo, Messenger…); the rest (a ride, another app's).
+ *
+ * @param {Array<{id: string, app: string, title: string, body: string, at: number, call?: ?object, reply?: ?object, since?: ?number}>} notes
+ *   the phone's notifications (source.js noteOf, with callOf and replyOf of their id)
+ * @param {number} [now]  ms since the epoch, for "10 min"
+ * @returns {Array<{id: string, cells: object[]}>} for model/devices.js planDevices with PHONE_GROUPS
+ */
+export function phoneGroups(notes, now = Date.now()) {
+    const calls = [], messages = [], other = [];
+    const sorted = [...notes ?? []].filter(n => n && typeof n.id === 'string')
+        .sort((a, b) => (b.at ?? 0) - (a.at ?? 0));
+    for (const n of sorted) {
+        const ago = agoShort(n.at, now);
+        if (n.call) {
+            const ringing = n.call.state === 'ringing';
+            calls.unshift({
+                id: n.id, name: n.call.caller, call: n.call.state,
+                detail: ringing ? 'Incoming call' : 'On a call', since: ringing ? null : n.since ?? null,
+            });
+        } else if (n.app === 'Phone') {
+            calls.push({id: n.id, name: n.title || 'Unknown', detail: ['Missed call', ago].filter(Boolean).join(' · ')});
+        } else if (n.reply || MESSAGE_APPS.has(String(n.app).toLowerCase())) {
+            messages.push({id: n.id, name: n.title || n.app, detail: [n.app, n.body].filter(Boolean).join(' · '), reply: !!n.reply});
+        } else {
+            other.push({id: n.id, name: n.title || n.app, detail: [n.app, n.body].filter(Boolean).join(' · ')});
+        }
+    }
+    return [{id: 'calls', cells: calls}, {id: 'messages', cells: messages}, {id: 'other', cells: other}];
+}
+
+// "now", "10 min", "2 h": a cell's age, short
+function agoShort(at, now) {
+    if (!Number.isFinite(at) || !Number.isFinite(now))
+        return null;
+    const min = Math.floor((now - at) / 60000);
+    if (min < 1)
+        return 'now';
+    if (min < 60)
+        return `${min} min`;
+    const h = Math.floor(min / 60);
+    return h < 24 ? `${h} h` : `${Math.floor(h / 24)} d`;
 }

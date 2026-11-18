@@ -27,9 +27,12 @@
  *   phoneImage   a phone's picture as it came (a Gio.Icon: its sender's photo for a message,
  *                KDE Connect's largeIcon), or null
  *   copy(code)   put a phone's one-time code on the clipboard; copied: it is there now
+ *   canReply     a phone's that can be answered (model/phone.js replyOf); replying: {state:
+ *                'typing' | 'sent' | 'failed' | null, text} its reply; reply(id, text?) the
+ *                reply's steps (REPLY, REPLY_TEXT, REPLY_SEND, REPLY_CANCEL)
  */
 
-import {OTP_MS, otpOf, plateOf, spacedCode} from '../../kit/model/phone.js';
+import {OTP_MS, otpOf, plateOf, shortName, spacedCode} from '../../kit/model/phone.js';
 
 /**
  * How long a notification's pill stays (§2): its card's 5 s as an alert (the kit's ALERT_MS,
@@ -487,6 +490,10 @@ export function missedRow(count, apps) {
 // --- the phone's apps (design/device "Ứng dụng trên điện thoại", 2026-11-18, Ethan) ----------------
 
 export const COPY_CODE = 'copy-code';
+export const REPLY = 'reply', REPLY_TEXT = 'reply-text', REPLY_SEND = 'reply-send', REPLY_CANCEL = 'reply-cancel';
+const REPLY_IDS = new Set([REPLY, REPLY_TEXT, REPLY_SEND, REPLY_CANCEL]);
+/** "Sent: …" stays this long, then the card closes (design/compact "Trả lời ngay trong card"). */
+export const SENT_MS = 2000;
 const COPY_ICON = 'edit-copy-symbolic';
 const OTP_ICON = 'dialog-password-symbolic';
 const CAR_ICON = 'route-car-symbolic';
@@ -513,6 +520,41 @@ function otp(p, ev, code) {
 }
 
 const plain = ev => ev.phone === true && ev.shared !== true;
+
+/**
+ * A phone message that can be answered (design/compact "Trả lời ngay trong card", 2026-11-11):
+ * Reply first, its own buttons after (three in all); Reply turns the buttons into an entry and
+ * Send — the card stays while it is typed in or did not go, "Sent: …" 2 s then it closes.
+ *
+ * @param {object} p  the notification's presentation
+ * @param {object} ev
+ * @returns {object}
+ */
+function withReply(p, ev) {
+    const r = ev.replying ?? null;
+    const state = ['typing', 'sent', 'failed'].includes(r?.state) ? r.state : null;
+    const text = typeof r?.text === 'string' ? r.text : '';
+    const own = buttonsOf(ev.actions).slice(0, MAX_OWN_ACTIONS - 1);
+    const card = {
+        ...p.compact.card,
+        ...state ? {
+            actionsOnHover: false,
+            reply: {
+                state, text, hint: `Reply to ${shortName(p.attributes.title) || p.attributes.app}…`,
+                textId: REPLY_TEXT, sendId: REPLY_SEND, cancelId: REPLY_CANCEL,
+            },
+        } : {},
+    };
+    const holding = state === 'typing' || state === 'failed';
+    return {
+        ...p,
+        compact: {card},
+        actions: [{id: REPLY, label: 'Reply', icon: 'mail-reply-sender-symbolic', types: true}, ...own],
+        ...holding ? {ttl: 0, alertStays: true} : {},
+        ...state === 'sent' ? {ttl: SENT_MS, alertStays: false} : {},
+        onAction: (id, value) => REPLY_IDS.has(id) ? ev.reply?.(id, value) : ev.onAction?.(id),
+    };
+}
 
 /**
  * A messaging app's (Zalo, Messenger): its sender's photo, round, as the pill's leading and the
@@ -610,6 +652,8 @@ export default {
         };
         // a phone's one-time code, whatever app it is from (a bank's SMS, Google's)
         const code = plain(ev) ? otpOf(`${title} ${body}`) : null;
-        return code ? otp(p, ev, code) : p;
+        if (code)
+            return otp(p, ev, code);
+        return plain(ev) && ev.canReply === true ? withReply(p, ev) : p;
     },
 };

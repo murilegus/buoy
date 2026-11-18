@@ -1,8 +1,10 @@
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
-import {GSCONNECT_SETTINGS, GSCONNECT_UUID, batteryState} from '../model/phone.js';
+import {GSCONNECT_APP, GSCONNECT_SETTINGS, GSCONNECT_UUID, batteryState, callOf, phoneNote, replyOf} from '../model/phone.js';
 
 /**
  * The phone through GSConnect (FEATURES M4 "Phone via GSConnect"): GSConnect runs its own
@@ -53,6 +55,37 @@ export function openGsconnect() {
     } catch (e) {
         console.debug(`Buoy: GSConnect prefs: ${e.message}`);
     }
+}
+
+/**
+ * @param {?MessageTray.Source} src
+ * @returns {boolean} GSConnect's own source: the phone's notifications (its app's policy id)
+ */
+export function isGsconnectSource(src) {
+    return src?.policy instanceof MessageTray.NotificationApplicationPolicy && src.policy.id === GSCONNECT_APP;
+}
+
+/**
+ * The phone's notifications in GNOME's list, as the Phone tab reads them: each under its phone
+ * app (model/phone.js phoneNote), a call by its id (callOf), one that can be answered (replyOf).
+ *
+ * @returns {Array<{n: MessageTray.Notification, id: string, app: string, title: string, body: string, at: number, call: ?object, reply: ?object, gicon: ?Gio.Icon}>}
+ */
+export function phoneNotes() {
+    const out = [];
+    for (const src of Main.messageTray.getSources().filter(isGsconnectSource)) {
+        for (const n of src.notifications) {
+            // a GTK notification's id (GtkNotificationDaemonNotification), not in Notification's type
+            const gtkId = /** @type {any} */ (n).id;
+            const id = typeof gtkId === 'string' ? gtkId : '';
+            const call = callOf(id);
+            const themed = n.gicon instanceof Gio.ThemedIcon ? n.gicon.get_names()[0] ?? null : null;
+            const p = call ? {app: 'Phone', title: call.caller, body: n.body ?? ''} : phoneNote(n.title ?? '', n.body ?? '', themed);
+            const at = n.datetime ? n.datetime.to_unix_usec() / 1000 : 0;
+            out.push({n, id: id || `${src.title}:${at}`, ...p, at, call, reply: replyOf(id), gicon: n.gicon ?? null});
+        }
+    }
+    return out;
 }
 
 export class Phones {
@@ -171,6 +204,56 @@ export class Phones {
                 return;
             }
         }
+    }
+
+    /** @param {string} device  a phone's Id  @returns {boolean} its ringing can be silenced */
+    canMute(device) {
+        return [...this._devices.values()].some(({proxy, actions}) =>
+            proxy?.Id === device && proxy.Connected && actions?.has_action('muteCall'));
+    }
+
+    /**
+     * Silence the phone's ringing, as GSConnect's Mute does (plugins/telephony.js muteCall:
+     * `kdeconnect.telephony.request_mute`), through the device's action, not the notification's
+     * button: Shell destroys a notification once one of its buttons ran (ui/messageTray.js
+     * addAction), and the call is still there.
+     *
+     * @param {string} device  a phone's Id
+     * @returns {boolean} asked
+     */
+    muteCall(device) {
+        for (const {proxy, actions} of this._devices.values()) {
+            if (proxy?.Id === device && actions?.has_action('muteCall')) {
+                actions.activate_action('muteCall', null);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Answer a phone notification with text, as GSConnect's own reply dialog does
+     * (plugins/notification.js replyNotification: a `kdeconnect.notification.reply` packet with
+     * the notification's reply id), without the dialog.
+     *
+     * @param {string} device  the phone's Id (the notification id's first part, model/phone.js replyOf)
+     * @param {string} uuid  its reply id
+     * @param {string} text
+     * @returns {boolean} handed to GSConnect (the phone not there, no reply action: false)
+     */
+    reply(device, uuid, text) {
+        for (const {proxy, actions} of this._devices.values()) {
+            if (proxy?.Id !== device || !proxy.Connected || !actions?.has_action('replyNotification'))
+                continue;
+            try {
+                actions.activate_action('replyNotification', new GLib.Variant('(ssa{ss})', [uuid, text, {}]));
+                return true;
+            } catch (e) {
+                console.debug(`Buoy: GSConnect reply: ${e.message}`);
+                return false;
+            }
+        }
+        return false;
     }
 
     destroy() {

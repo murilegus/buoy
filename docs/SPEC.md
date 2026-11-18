@@ -434,7 +434,9 @@ the pill shows what is useful *next* — what to prepare for, what is happening 
     module claims (D-Bus callers) get a tab while one of their activities has an expanded
     presentation, after them.
   - **In ⋯**: a module with `tabInMore` keeps its kind tab in ⋯, like a standalone tab (Timer,
-    2026-11-13, until its roadmap item says otherwise).
+    2026-11-13, until its roadmap item says otherwise). With `tabWhileLive` too, it is a live
+    tab while one of its activities is there, out of ⋯ meanwhile: Phone during a call
+    (2026-11-18, Ethan).
 - **Strip look** (2026-11-02, after Notchy): one rounded group hugging its tabs; the
   active tab shows icon + title on a lighter pill, the others only their icon (the title
   is their accessible name). Every tab has an icon: the module's `icon`, for an unclaimed

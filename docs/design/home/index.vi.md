@@ -171,7 +171,7 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
   **Chốt**
 - **Bấm ô**: danh sách thay thẻ chính và hàng ô, như ô pin: "Redmi Note 14 · 77% · đang sạc", thời gian
   ở cuối; **Tìm điện thoại** (đổ chuông), **Cài đặt GSConnect**. Có tab Điện thoại (phần 3) thì bấm ô
-  mở tab đó. **Chốt**
+  mở tab đó, Tìm điện thoại ở đầu tab (2026-11-18); tắt module Điện thoại thì danh sách như trên. **Chốt**
 - Code: `lib/modules/device/glance.js` (`PhoneGlance`, order 40), `kit/model/phone.js` `phoneTile`,
   `phoneHomePage`.
 

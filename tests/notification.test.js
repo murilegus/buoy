@@ -1,7 +1,7 @@
 // Run: gjs -m tests/notification.test.js   (no Shell needed; adapters are pure)
 import adapter, {
     TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, agentShows, powerShows, sharedLine, cardText, stackGroups, countText, rowText,
-    HELD_MS, waitedInQueue, Turns, MAX_WAITING, burstHeader, sharedBurst, missedRow, COPY_CODE, COPIED_MS,
+    HELD_MS, waitedInQueue, Turns, MAX_WAITING, burstHeader, sharedBurst, missedRow, COPY_CODE, COPIED_MS, REPLY, REPLY_TEXT, REPLY_SEND, REPLY_CANCEL, SENT_MS,
 } from '../src/buoy@murilegus/lib/modules/notification/adapter.js';
 import zalo from '../src/buoy@murilegus/lib/modules/notification/apps/zalo.js';
 import messenger from '../src/buoy@murilegus/lib/modules/notification/apps/messenger.js';
@@ -427,6 +427,33 @@ eq(missedRow(2, [{name: '', icon: 'x'}, {name: 'A', icon: '  '}]).icons, [], 'no
     eq(grab.notification(phoneEv({title: 'Tài xế đang đến', body: 'Xe 59X1-234.56, Honda Vision'})).compact.card.body, 'Xe, Honda Vision',
         'a plate mid-sentence: the words around it kept');
     eq(grab.notification(phoneEv({title: 'Tài xế đã đến', body: '59X1-234.56'})).compact.card.body, '59X1-234.56', 'only the plate: the message kept');
+    // a reply in the card (design/compact "Trả lời ngay trong card"; part 3)
+    const steps = [];
+    const rev = more => phoneEv({
+        appName: 'Zalo · Redmi Note 14', title: 'Quỳnh Trâm', body: 'Tối nay họp nhé', canReply: true,
+        actions: ['Đánh dấu đã đọc', 'Tắt thông báo', 'Thêm'], reply: (id, v) => steps.push([id, v]), onAction: id => steps.push(['own', id]), ...more,
+    });
+    const r0 = zalo.notification(rev());
+    eq(r0.actions.map(a => a.id), [REPLY, 'a0', 'a1'], 'can reply: Reply first, then its own, three in all');
+    eq([r0.actions[0].types, r0.compact.card.reply, r0.compact.card.picture], [true, undefined, undefined], 'Reply opens an entry; no reply yet');
+    r0.onAction(REPLY);
+    r0.onAction(REPLY_TEXT, 'Ok');
+    r0.onAction('a0');
+    eq(steps, [[REPLY, undefined], [REPLY_TEXT, 'Ok'], ['own', 'a0']], 'reply steps to the source, its own buttons to the notification');
+    const r1 = adapter.notification(rev({replying: {state: 'typing', text: 'Ok, mình'}}));
+    eq([r1.compact.card.reply, r1.ttl, r1.alertStays, r1.compact.card.actionsOnHover],
+        [{state: 'typing', text: 'Ok, mình', hint: 'Reply to Trâm…', textId: REPLY_TEXT, sendId: REPLY_SEND, cancelId: REPLY_CANCEL}, 0, true, false],
+        'typing: the entry with its text, the card stays');
+    const r2 = adapter.notification(rev({replying: {state: 'sent', text: 'Ok'}}));
+    eq([r2.compact.card.reply.state, r2.ttl, r2.alertStays], ['sent', SENT_MS, false], 'sent: "Sent: …" 2 s, then the card goes');
+    eq(adapter.notification(rev({replying: {state: 'failed', text: 'Ok'}})).alertStays, true, 'failed: the card stays, Retry');
+    eq(adapter.notification(rev({replying: {state: null, text: 'Ok'}})).compact.card.reply, undefined, 'let go: the buttons again');
+    eq(adapter.notification(rev({canReply: false})).actions.map(a => a.id), ['a0', 'a1', 'a2'], 'cannot reply: its own buttons only');
+    eq(adapter.notification(rev({shared: true})).actions.some(a => a.id === REPLY), false, 'a shared screen: no Reply');
+    eq(adapter.notification({...BASE, canReply: true}).actions.some(a => a.id === REPLY), false, 'a desktop app: no Reply (GNOME has no inline reply)');
+    eq(cardOf(r1).card.reply.state, 'typing', 'planned: the reply reaches the card');
+    eq(planCompact(validate({id: 'n', app: 'zalo', kind: 'notification', ...r0})).actions[0].types, true, 'planned: Reply keeps `types`');
+
     const reg = new Registry();
     reg.register('notification', adapter, {be, grab, messenger, zalo});
     eq(reg.build('notification', 'Zalo', phoneEv({id: 'z', phoneImage: photo, title: 'Lan', body: 'hi'}))?.leading?.round, true,

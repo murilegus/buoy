@@ -117,7 +117,8 @@ src/buoy@murilegus/
             │               title/icon: its tab in the strip; tabWhileLive: that tab only
             │               while one of its activities is there, before the slot
             │               (2026-11-07, -13); tabInMore: its tab in ⋯ like a standalone
-            │               one (2026-11-13); noTab: never a tab, its
+            │               one (2026-11-13), with tabWhileLive a live tab while its
+            │               activity is there (Phone, 2026-11-18); noTab: never a tab, its
             │               activities open on their own (the greeting, 2026-11-08); badge():
             │               a dot on its tab's icon (2026-11-08); home: {Card} or {Glance,
             │               order, wide} — its part of Home (below, 2026-11-12)

@@ -9,9 +9,9 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 import {Source} from '../../kit/services/source.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
 import {usbShows} from '../../kit/model/drives.js';
-import {GSCONNECT_APP, phoneNote} from '../../kit/model/phone.js';
+import {GSCONNECT_APP, callOf, phoneNote, replyOf} from '../../kit/model/phone.js';
 import {Phones} from '../../kit/services/gsconnect.js';
-import {DISMISS, Turns, actionIndex, agentShows, missedRow, powerShows, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
+import {DISMISS, REPLY, REPLY_CANCEL, REPLY_SEND, REPLY_TEXT, Turns, actionIndex, agentShows, missedRow, powerShows, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
 const REPLACE_KEY = 'notification-replace-banners';
@@ -207,7 +207,14 @@ export class NotificationSource extends Source {
         if (!n.source)
             return;
         // one pill per app, not per Shell source: notify-send makes a source per process
-        const app = noteOf(n).app;
+        const note = noteOf(n);
+        const app = note.app;
+        // a phone's call, ringing or going on, while the phone module shows calls: its pill
+        // says it (modules/phone), no notification of its own
+        if (note.call && this._settings?.get_boolean('modules-phone') === true) {
+            n.acknowledged = true;
+            return;
+        }
         const progressOn = this._settings?.get_boolean('modules-progress') === true;
         if (shownElsewhere(app, n.id, progressOn))
             return;
@@ -433,6 +440,40 @@ export class NotificationSource extends Source {
             this._show(app, {});
     }
 
+    // A phone message's reply: Reply opens the entry (the text typed before kept), each key keeps
+    // the text (no redraw), Send hands it to GSConnect, the keyboard let go brings the buttons back
+    _reply(app, pill, n, id, text) {
+        if (!pill.list.includes(n))
+            return;
+        if (pill.reply?.n !== n)
+            pill.reply = {n, state: null, text: ''};
+        const r = pill.reply;
+        if (id === REPLY_TEXT) {
+            if (r.state === 'typing')
+                r.text = typeof text === 'string' ? text : '';
+            return;
+        }
+        if (id === REPLY) {
+            r.state = 'typing';
+        } else if (id === REPLY_CANCEL) {
+            if (r.state !== 'typing')
+                return;
+            r.state = null;
+        } else if (id === REPLY_SEND) {
+            const to = replyOf(n.id);
+            const body = r.text.trim();
+            if (!to || !body)
+                return;
+            r.state = this._phones?.reply(to.device, to.uuid, body) ? 'sent' : 'failed';
+            if (r.state === 'sent')
+                this._seenOne(n);
+        } else {
+            return;
+        }
+        if (this._pills.get(app) === pill && this._live(pill))
+            this._show(app, {});
+    }
+
     _show(app, {anew = false, alert = false}) {
         const pill = this._pills.get(app);
         const {n, turn} = this._face(app, pill);
@@ -458,6 +499,10 @@ export class NotificationSource extends Source {
             phoneImage: note.phone && own && !themed ? own : null,
             copied: pill.copied === n,
             copy: code => this._copy(app, pill, n, code),
+            // answered in the card (design/compact "Trả lời ngay trong card")
+            canReply: note.phone && !!replyOf(n.id),
+            replying: pill.reply?.n === n ? pill.reply : null,
+            reply: (id, text) => this._reply(app, pill, n, id, text),
             at: msOf(n.datetime) || Date.now(),
             count: pill.list.length,
             critical: n.urgency === MessageTray.Urgency.CRITICAL,
@@ -580,12 +625,17 @@ function mayShowNow(tray, n) {
  * app it is from, its sender as the title (model/phone.js phoneNote, Ethan 2026-11-17).
  *
  * @param {MessageTray.Notification} n
- * @returns {{app: string, appName: string, title: string, body: string, phone: boolean}}
+ * @returns {{app: string, appName: string, title: string, body: string, phone: boolean, call?: object}}
  */
 export function noteOf(n) {
     const app = appIdOf(n.source);
     if (app !== GSCONNECT_APP)
         return {app, appName: n.source?.title ?? '', title: n.title ?? '', body: n.body ?? '', phone: false};
+    // a call (its id says it, model/phone.js callOf): the phone's Phone app, the caller; a GTK
+    // notification's id (GtkNotificationDaemonNotification), not in Notification's type
+    const call = callOf(/** @type {any} */ (n).id);
+    if (call)
+        return {app: 'Phone', appName: 'Phone', title: call.caller, body: n.body ?? '', phone: true, call};
     const p = phoneNote(n.title ?? '', n.body ?? '', themedName(n.gicon));
     return {app: p.app, appName: p.app, title: p.title, body: p.body, phone: true};
 }

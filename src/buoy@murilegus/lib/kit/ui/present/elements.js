@@ -226,6 +226,14 @@ export function buildElement(value, {size = 'minimal', leading = false, activity
  * @returns {?St.Widget}
  */
 export function makeElement(e, mode, activity = null, sizes = {}) {
+    const el = bareElement(e, mode, activity, sizes);
+    // its own colour (an icon, a text, a clock: a call's green), not while stale (dimmed `fg`)
+    if (el && e?.color && e.type !== 'glyph' && !activity?.isStale)
+        el.set_style(`color: ${e.color};`);
+    return el;
+}
+
+function bareElement(e, mode, activity, sizes) {
     if (!e)
         return null;
     const size = {...SIZE[mode], ...sizes};

@@ -20,7 +20,9 @@
  * - The slot, last: the tab chosen from ⋯ (`tabs-slot`), else the first free standalone tab
  *   (Clipboard). ⋯ lists the free standalone tabs (not the pinned ones, 2026-11-13), then
  *   the kind tabs a module keeps there
- *   (`tabInMore`: Timer, 2026-11-13), which are tabs like the standalone ones (no kinds).
+ *   (`tabInMore`: Timer, 2026-11-13), which are tabs like the standalone ones (no kinds); one
+ *   with `tabWhileLive` too is a live tab while one of its activities is there (Phone during a
+ *   call, 2026-11-18).
  * - Where you open from decides the tab (tabFor); nothing remembers the last tab.
  */
 
@@ -83,7 +85,12 @@ export function planStrip(modules, list, {slot = '', pinned = []} = {}) {
         if (m.noTab)
             continue;
         if (m.tabInMore && m.tab) {
-            inMore.push(m);
+            // in ⋯ — and with `tabWhileLive` too, on the strip while one of its activities is
+            // there (the Phone tab during a call, 2026-11-18, Ethan)
+            if (m.tabWhileLive && list.some(a => m.kinds.includes(a.kind)))
+                live.push(kindTab(m));
+            else
+                inMore.push(m);
             continue;
         }
         if (m.tabWhileLive) {

@@ -240,9 +240,11 @@ function rowList(rows, m) {
  *   (Home's card: 1920's 212 holds no more in one)
  * @param {?Function} [opts.onType]  a card's Other is about to be typed in: the island takes
  *   the keyboard for its entry (island.js _typeIn)
+ * @param {?Function} [opts.onClose]  its card's × was clicked: the pill closes the card even under
+ *   the pointer (pill.js _dismissCompact)
  * @returns {?Clutter.Actor} null when the activity has no compact
  */
-export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null} = {}) {
+export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metrics = compactMetrics(), hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null, onClose = null} = {}) {
     let p = planCompact(activity, {light});
     if (!p)
         return null;
@@ -250,7 +252,7 @@ export function buildCompact(activity, {maxWidth = 0, maxHeight = 0, light, metr
     // compact's 3 (presentation.js rowsThatFit, pickRows)
     if (maxHeight > 0 && p.rowsAvailable > 0)
         p = planCompact(activity, {light, maxRows: rowsThatFit(p, maxHeight, metrics)});
-    return p.card ? cardBox(p, activity, maxWidth, metrics, {hovered, actionsEnd, actionsTop, choiceColumns, onType}) : compactBox(p, activity, maxWidth, metrics);
+    return p.card ? cardBox(p, activity, maxWidth, metrics, {hovered, actionsEnd, actionsTop, choiceColumns, onType, onClose}) : compactBox(p, activity, maxWidth, metrics);
 }
 
 /** The name of a card's Other entry: the island looks for it to give it the keyboard. */
@@ -262,7 +264,7 @@ export const TYPE_ENTRY = 'buoy-type';
 // lines of 16, 8 under the head, and the buttons in a row 12 from the edges, 32 tall, 12
 // above and below: 136 with one line, 152 with two (104 without buttons). The compact's full
 // width. A click on it but a button is the pill's click (island.js).
-function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null} = {}) {
+function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false, actionsTop = false, choiceColumns = 1, onType = null, onClose = null} = {}) {
     const c = p.card;
     const box = new St.BoxLayout({style_class: 'buoy-card', orientation: Clutter.Orientation.VERTICAL, x_expand: true});
     if (maxWidth > 0)
@@ -289,10 +291,10 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
         markShared(avatar(c, activity, m), 'leading', activity),
         text.get_n_children() ? text : null,
         hasActions && actionsTop ? actionRow(p.actions, activity, m, {top: true}) : null,
-        c.close ? closeButton(c.close, activity, m) : null,
+        c.close ? closeButton(c.close, activity, m, onClose) : null,
     ], m));
 
-    const below = hasActions && !actionsTop;
+    const below = (hasActions && !actionsTop) || !!c.reply;
     const margin = `margin: ${px(m.bodyGap)} ${px(m.side)} ${below ? 0 : px(m.vpad)};`;
     if (c.code) {
         // a one-time code, large, what counts it down at its end (design/device "Ứng dụng trên
@@ -322,7 +324,7 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
     if (c.choices)
         box.add_child(choiceList(c.choices, activity, m, onType, choiceColumns));
     if (below) {
-        const row = actionRow(p.actions, activity, m, {fill: !actionsEnd});
+        const row = c.reply ? replyRow(c.reply, activity, m, onType) : actionRow(p.actions, activity, m, {fill: !actionsEnd, onType});
         // under the head with no message: 8 + 12 (design/alerts-and-asks "Ask 120")
         // `tight`: 12 under the picture (56 + 4), the power modes' 104
         let above = c.body || c.code || c.choices ? m.actionsGap : m.bodyGap + m.actionsGap;
@@ -340,7 +342,7 @@ function cardBox(p, activity, maxWidth, m, {hovered = false, actionsEnd = false,
 // spare; or each at its own width, at least 112 (Home's tall card); in its head, at the right
 // before ×, each at its own width (Home's low card, design/home "nút góc phải trên": 136 / 152
 // do not fit its 104)
-function actionRow(actions, activity, m, {fill = false, top = false} = {}) {
+function actionRow(actions, activity, m, {fill = false, top = false, onType = null} = {}) {
     const row = new St.BoxLayout({
         style_class: 'buoy-card-actions', x_expand: fill,
         x_align: fill ? Clutter.ActorAlign.FILL : Clutter.ActorAlign.END,
@@ -355,10 +357,86 @@ function actionRow(actions, activity, m, {fill = false, top = false} = {}) {
             b.add_style_class_name('buoy-action-wide');
         if (a.main)
             b.add_style_class_name('buoy-action-main');   // an ask's answer: cream
+        if (a.types)
+            b.connect('clicked', () => onType?.());     // Reply: its entry takes the keyboard
         if ('selected' in a)
             b.add_style_class_name(a.selected ? 'buoy-action-choice buoy-action-selected' : 'buoy-action-choice');
         row.add_child(b);
     }
+    return row;
+}
+
+// A reply in place of the buttons (design/compact "Trả lời ngay trong card", 2026-11-11, Ethan):
+// typing, an entry fill-2 round 16 and Send round 32 at its end — fill-2 with a dim arrow while
+// empty, cream with text; Enter sends too; the keyboard let go (Esc, a click outside) asks the
+// buttons back, the text kept. Sent: a ✓ line "Sent: …" fg-subtle. Failed: "Couldn't send" and
+// Retry. As tall as the buttons (32): the card keeps its height.
+function replyRow(r, activity, m, onType) {
+    const row = new St.BoxLayout({style_class: 'buoy-card-reply', x_expand: true});
+    if (r.state !== 'typing') {
+        const sent = r.state === 'sent';
+        addAll(row, [
+            sent ? new St.Icon({...iconProps('object-select-symbolic'), icon_size: 16, style_class: 'buoy-card-reply-note', y_align: Clutter.ActorAlign.CENTER}) : null,
+            label(sent ? `Sent: ${r.text}` : 'Couldn\'t send', 'buoy-card-reply-note', true),
+            sent ? null : actionButton({id: r.sendId, label: 'Retry'}, activity),
+        ]);
+        return row;
+    }
+    const entry = new St.Entry({
+        name: TYPE_ENTRY, style_class: 'buoy-reply-entry', text: r.text, hint_text: r.hint,
+        can_focus: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER,
+    });
+    entry.set_style(`height: ${px(m.button)}; border-radius: ${px(m.button / 2)};`);
+    const t = entry.clutter_text;
+    blinkingCaret(entry);
+    const send = new St.Button({
+        style_class: 'buoy-round buoy-reply-send', can_focus: false, accessible_name: 'Send',
+        width: m.button, height: m.button, y_align: Clutter.ActorAlign.CENTER,
+        child: new St.Icon({...iconProps('mail-send-symbolic'), icon_size: 16}),
+    });
+    const ready = () => {
+        const has = t.text.trim() !== '';
+        send.reactive = has;
+        if (has)
+            send.add_style_class_name('buoy-round-main');
+        else
+            send.remove_style_class_name('buoy-round-main');
+        if (has)
+            send.remove_style_class_name('buoy-reply-empty');
+        else
+            send.add_style_class_name('buoy-reply-empty');
+    };
+    ready();
+    const sendNow = () => {
+        if (t.text.trim())
+            activity.onAction?.(r.sendId);
+    };
+    t.connect('text-changed', () => {
+        activity.onAction?.(r.textId, t.text);
+        ready();
+    });
+    t.connect('activate', sendNow);
+    send.connect('clicked', sendNow);
+    t.connect('key-focus-in', () => onType?.());
+    // typing: the keyboard comes to the entry once it is on the stage — Reply's card is built
+    // again after the click, and again on a redraw while typed in (island.js _typeIn)
+    const take = entry.connect('notify::mapped', () => {
+        if (!entry.mapped)
+            return;
+        entry.disconnect(take);
+        onType?.();
+    });
+    // the keyboard let go (Esc, a click outside: island.js _letGo): the buttons again, after the
+    // current event — not when the entry goes with its card (sent)
+    let gone = false;
+    entry.connect('destroy', () => {
+        gone = true;
+    });
+    t.connect('key-focus-out', () => Promise.resolve().then(() => {
+        if (!gone && global.stage.key_focus !== t)
+            activity.onAction?.(r.cancelId);
+    }));
+    addAll(row, [entry, send]);
     return row;
 }
 
@@ -519,14 +597,17 @@ function agoLabel(at) {
     return l;
 }
 
-function closeButton(id, activity, m) {
+function closeButton(id, activity, m, onClose = null) {
     const button = new St.Button({
         style_class: 'buoy-round', can_focus: true, accessible_name: 'Dismiss',
         child: new St.Icon({...iconProps('window-close-symbolic'), icon_size: 16}),
         y_align: Clutter.ActorAlign.CENTER,
     });
     button.set_size(m.button, m.button);
-    button.connect('clicked', () => activity.onAction?.(id));
+    button.connect('clicked', () => {
+        onClose?.();            // the card goes now, the pointer on it or not (pill.js)
+        activity.onAction?.(id);
+    });
     return button;
 }
 
