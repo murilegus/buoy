@@ -282,7 +282,12 @@ export class NotificationSource extends Source {
         for (const t of [...joined, {app, item: n, count: 1}]) {
             this._pending.delete(t.item);
             const src = t.item.source;
-            const e = this._burst.apps.get(t.app) ?? {name: src?.title ?? t.app, icon: src?.icon ?? null, count: 0};
+            // a phone's: its app's name and icon, not GSConnect's (noteOf)
+            const note = noteOf(t.item);
+            const e = this._burst.apps.get(t.app) ?? {
+                name: note.phone ? note.appName : src?.title ?? t.app,
+                icon: note.phone ? t.item.gicon ?? null : src?.icon ?? null, count: 0,
+            };
             e.count += t.count;
             this._burst.apps.set(t.app, e);
             this._burst.at = Math.max(this._burst.at, msOf(t.item.datetime) || Date.now());

@@ -239,7 +239,7 @@ export class NotificationsTab {
         });
 
         const main = new St.BoxLayout({style_class: 'buoy-ncard-main', x_expand: true});
-        main.add_child(cardIcon(n, avatar && !shared));
+        main.add_child(cardIcon(n, avatar && !shared, note.phone));
         const col = new St.BoxLayout({
             style_class: 'buoy-ncard-text', orientation: Clutter.Orientation.VERTICAL,
             x_expand: true, y_align: Clutter.ActorAlign.CENTER,
@@ -321,8 +321,10 @@ function dismiss(n) {
 // A stack shows its app's logo; an app's view what the notification brings of its own
 // (Ethan, 2026-11-07): its picture (a chat's avatar, a thumbnail: image-data / image-path,
 // a GTK bytes icon), else its own icon when it differs from the app's, else the logo
-function cardIcon(n, avatar) {
-    const logo = n.source?.icon ?? null;
+// `phone`: a phone's notification (GSConnect's): its app's own icon, as GSConnect brings it from the
+// phone, is its logo — not GSConnect's, the same on every one (Ethan, 2026-11-18)
+function cardIcon(n, avatar, phone = false) {
+    const logo = phone && n.gicon ? n.gicon : n.source?.icon ?? null;
     let gicon = logo;
     if (avatar && n.gicon) {
         const themed = n.gicon instanceof Gio.ThemedIcon;
