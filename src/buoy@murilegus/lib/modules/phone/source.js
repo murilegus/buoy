@@ -1,4 +1,5 @@
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Source} from '../../kit/services/source.js';
@@ -6,6 +7,13 @@ import {Phones, isGsconnectSource} from '../../kit/services/gsconnect.js';
 import {callOf} from '../../kit/model/phone.js';
 
 const KIND = 'call';
+
+// The ring (design/device "Cuộc gọi và tab Điện thoại", 2026-11-18, Ethan): the sound theme's
+// incoming call (freedesktop `phone-incoming-call`, 1.5 s) every 3 s, at most a minute — the
+// phone stops ringing before that, and GSConnect withdraws the call
+const RING_SOUND = 'phone-incoming-call';
+const RING_EVERY_MS = 3000;
+const RING_MAX_MS = 60000;
 
 /**
  * A call on the phone (FEATURES M4 "Phone via GSConnect", part 3; design/device "Cuộc gọi và tab
@@ -19,6 +27,11 @@ const KIND = 'call';
  *   GSConnect's `muteCall` (the notification's own button would make Shell destroy it); × hides
  *   the card, the pill stays.
  * - Talking: a clock from when it was answered (seen here), till the call ends.
+ * - The ring: GNOME plays nothing for it (a GTK notification has no sound: ui/messageTray.js
+ *   playSound), so while the phone rings the computer rings too — Mutter's sound player
+ *   (meta-sound-player.c: silent with system sounds off), every 3 s, till it is answered, ends,
+ *   or Mute or × runs; not with Do Not Disturb, GSConnect's sound alerts off in GNOME's
+ *   notification settings (its policy's enableSound), or `phone-ring` off.
  * - The same id again (GSConnect re-sends it) replaces the notification (Shell destroys the old
  *   one, REPLACED): the activity stays.
  */
@@ -27,6 +40,7 @@ export class CallSource extends Source {
         super.enable(stack, registry, settings);
         this._calls = new Map();        // device|state|caller → {key, call, n, id, since, muted, hidden}
         this._phones = new Phones(() => this._redrawAll());
+        this._notifications = new Gio.Settings({schema_id: 'org.gnome.desktop.notifications'});
         const tray = Main.messageTray;
         tray.connectObject('source-added', (_t, src) => this._watch(src), this);
         tray.getSources().forEach(src => this._watch(src));
@@ -46,7 +60,10 @@ export class CallSource extends Source {
         const key = `${call.device}|${call.state}|${call.caller}`;
         let c = this._calls.get(key);
         if (!c) {
-            c = {key, call, n: null, id: null, since: call.state === 'talking' ? Date.now() : null, muted: false, hidden: false};
+            c = {
+                key, call, n: null, id: null, since: call.state === 'talking' ? Date.now() : null, muted: false, hidden: false,
+                ringing: 0, ringCancel: null,
+            };
             this._calls.set(key, c);
         }
         c.n?.disconnectObject(this);
@@ -78,12 +95,14 @@ export class CallSource extends Source {
             phoneName: phone?.name ?? null, since: c.since, muted: c.muted, hidden: c.hidden,
             canMute: c.call.state === 'ringing' && !!this._phones?.canMute(c.call.device),
             mute: () => {
+                this._stopRing(c);
                 if (this._phones?.muteCall(c.call.device)) {
                     c.muted = true;
                     this._show(c);
                 }
             },
             hide: () => {
+                this._stopRing(c);
                 c.hidden = true;
                 this._show(c);
             },
@@ -93,12 +112,52 @@ export class CallSource extends Source {
         if (c.id && this._stack.has(c.id) && this._stack.update(c.id, a))
             return;
         c.id = this._stack.surface({...a, alert: c.call.state === 'ringing'});
+        if (c.call.state === 'ringing' && !c.muted && !c.hidden)
+            this._ring(c);
+    }
+
+    // the computer rings with the phone (see above): now, then every 3 s
+    _ring(c) {
+        if (c.ringing || !this._mayRing(c))
+            return;
+        const until = Date.now() + RING_MAX_MS;
+        const once = () => {
+            c.ringCancel?.cancel();
+            c.ringCancel = new Gio.Cancellable();
+            global.display.get_sound_player().play_from_theme(RING_SOUND, 'Incoming call', c.ringCancel);
+        };
+        once();
+        c.ringing = GLib.timeout_add(GLib.PRIORITY_DEFAULT, RING_EVERY_MS, () => {
+            if (Date.now() >= until || !this._mayRing(c)) {
+                c.ringing = 0;
+                this._stopRing(c);
+                return GLib.SOURCE_REMOVE;
+            }
+            once();
+            return GLib.SOURCE_CONTINUE;
+        });
+    }
+
+    _mayRing(c) {
+        return this._calls?.get(c.key) === c && c.call.state === 'ringing' && !c.muted && !c.hidden &&
+            this._settings?.get_boolean('phone-ring') === true &&
+            this._notifications?.get_boolean('show-banners') === true &&
+            c.n?.source?.policy?.enableSound !== false;
+    }
+
+    _stopRing(c) {
+        if (c.ringing)
+            GLib.source_remove(c.ringing);
+        c.ringing = 0;
+        c.ringCancel?.cancel();
+        c.ringCancel = null;
     }
 
     _end(c) {
         if (this._calls?.get(c.key) !== c)
             return;
         this._calls.delete(c.key);
+        this._stopRing(c);
         c.n?.disconnectObject(this);
         if (c.id && this._stack?.has(c.id))
             this._stack.end(c.id);
@@ -117,6 +176,7 @@ export class CallSource extends Source {
         Main.messageTray.getSources().forEach(src => src.disconnectObject(this));
         this._phones?.destroy();
         this._phones = null;
+        this._notifications = null;
         super.disable();
     }
 }

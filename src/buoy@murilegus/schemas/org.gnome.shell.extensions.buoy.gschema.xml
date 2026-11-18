@@ -161,6 +161,11 @@
       <summary>Phone</summary>
       <description>A call on the phone through GSConnect, ringing or going on, and the Phone tab with its calls and messages.</description>
     </key>
+    <key name="phone-ring" type="b">
+      <default>true</default>
+      <summary>Ring on the computer</summary>
+      <description>The system's incoming call sound while the phone rings, until it stops, it is answered, or Mute or × is pressed. Silent with Do Not Disturb, GSConnect's sound alerts off, or system sounds off.</description>
+    </key>
     <key name="modules-copied" type="b">
       <default>true</default>
       <summary>Copied</summary>

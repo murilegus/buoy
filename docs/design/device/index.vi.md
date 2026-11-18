@@ -185,6 +185,11 @@ phần 3 là cuộc gọi và tab Điện thoại).*
   im qua action `muteCall` của GSConnect (nút của chính thông báo thì Shell huỷ thông báo,
   `ui/messageTray.js` `addAction`), pill thành "Silenced", card đóng. ×: card đóng, pill ở lại. Nghe, từ
   chối: trên điện thoại (KDE Connect không có lệnh đó). **Chốt**
+- **Chuông trên máy tính** (Ethan, 2026-11-18): GNOME không phát gì cho thông báo GTK
+  (`ui/messageTray.js` `playSound`), nên khi điện thoại đổ chuông Buoy phát `phone-incoming-call` của theme
+  âm thanh (1,5 s) mỗi 3 s qua Mutter (`meta-sound-player.c`, im khi tắt âm thanh hệ thống), tới khi bắt máy,
+  cúp, Mute hay ×, tối đa 1 phút. Im khi Không làm phiền, khi tắt âm báo của GSConnect trong cài đặt thông
+  báo GNOME, hoặc tắt `phone-ring` ("Ring on the computer", dưới module Phone). **Chốt**
 - **Đang gọi**: pill ống nghe xanh, tên, đồng hồ xanh từ lúc nghe máy (thấy ở đây), tới khi cúp máy;
   card không nút. **Chốt**
 - **Trả lời trong card**: như design/compact "Trả lời ngay trong card". Chỉ khi tin cho trả lời: mã trả lời
