@@ -22,7 +22,7 @@ import {PATH} from './lib/kit/services/dbus.js';
 import {commandFor, hooksNote, install, installed, uninstall} from './lib/modules/agent/hooks.js';
 import {linesOf, releaseLabel} from './lib/modules/greeting/adapter.js';
 import notes from './lib/modules/greeting/notes.js';
-import {GSCONNECT_PAGE, GSCONNECT_UUID, phoneSetup} from './lib/kit/model/phone.js';
+import {GSCONNECT_PAGE, GSCONNECT_SETTINGS, GSCONNECT_UUID, phoneSetup} from './lib/kit/model/phone.js';
 
 const IFACE = 'org.gnome.Shell.Extensions.Buoy';
 const REPOSITORY = 'https://github.com/murilegus/buoy';
@@ -957,6 +957,20 @@ export default class BuoyPreferences extends ExtensionPreferences {
                     }
                 });
         });
+        // GSConnect's own settings app (its "Mobile Settings"): Shell's OpenExtensionPrefs is refused
+        // while Buoy's prefs dialog shows (one at a time, extensionsService.js)
+        const openGsconnectSettings = () => {
+            const app = Gio.AppInfo.get_all().find(a => a.get_id() === GSCONNECT_SETTINGS) ?? null;
+            try {
+                if (app) {
+                    app.launch([], Gdk.Display.get_default()?.get_app_launch_context() ?? null);
+                    return;
+                }
+            } catch (e) {
+                console.debug(`Buoy: GSConnect settings: ${e.message}`);
+            }
+            shell('OpenExtensionPrefs', new GLib.Variant('(ssa{sv})', [GSCONNECT_UUID, '', {}]), null);
+        };
         let status = null;
         const sync = async () => {
             const [info] = await shell('GetExtensionInfo', new GLib.Variant('(s)', [GSCONNECT_UUID]), '(a{sv})') ?? [{}];
@@ -974,7 +988,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
             else if (status === 'off')
                 shell('EnableExtension', new GLib.Variant('(s)', [GSCONNECT_UUID]), '(b)').then(sync);
             else if (status === 'unpaired' || status === 'away')
-                shell('OpenExtensionPrefs', new GLib.Variant('(ssa{sv})', [GSCONNECT_UUID, '', {}]), null);
+                openGsconnectSettings();
         });
         const id = Gio.DBus.session.signal_subscribe('org.gnome.Shell', 'org.gnome.Shell.Extensions', 'ExtensionStateChanged',
             '/org/gnome/Shell', null, Gio.DBusSignalFlags.NONE, (_c, _s, _p, _i, _n, params) => {

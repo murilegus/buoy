@@ -1,7 +1,8 @@
 import Gio from 'gi://Gio';
+import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {GSCONNECT_UUID, batteryState} from '../model/phone.js';
+import {GSCONNECT_SETTINGS, GSCONNECT_UUID, batteryState} from '../model/phone.js';
 
 /**
  * The phone through GSConnect (FEATURES M4 "Phone via GSConnect"): GSConnect runs its own
@@ -39,8 +40,14 @@ export function gsconnectExtension() {
     return {installed: !!ext, state: ext?.state ?? null};
 }
 
-/** GSConnect's own settings, where a phone is paired (Shell opens an extension's prefs). */
+/** GSConnect's own settings, where a phone is paired: its app, else its extension prefs. */
 export function openGsconnect() {
+    const app = Shell.AppSystem.get_default().lookup_app(GSCONNECT_SETTINGS);
+    if (app) {
+        Main.overview.hide();
+        app.activate();
+        return;
+    }
     try {
         Main.extensionManager.openExtensionPrefs(GSCONNECT_UUID, '', {});
     } catch (e) {

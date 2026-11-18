@@ -13,6 +13,10 @@ import {duration} from './power.js';
 export const GSCONNECT_UUID = 'gsconnect@andyholmes.github.io';
 export const GSCONNECT_APP = 'org.gnome.Shell.Extensions.GSConnect';
 export const GSCONNECT_PAGE = 'https://extensions.gnome.org/extension/1319/gsconnect/';
+// GSConnect's own settings app, as its "Mobile Settings" opens it (src/extension.js): Shell's prefs
+// service shows one prefs dialog at a time, so from Buoy's prefs an extension's prefs would be
+// refused ("Already showing a prefs dialog", js/dbusServices/extensions/extensionsService.js)
+export const GSCONNECT_SETTINGS = 'org.gnome.Shell.Extensions.GSConnect.Preferences.desktop';
 
 // Shell's ExtensionState (misc/extensionUtils.js): ACTIVE 1
 const ACTIVE = 1;
