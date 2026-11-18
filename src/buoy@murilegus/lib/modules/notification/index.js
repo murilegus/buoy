@@ -1,5 +1,9 @@
 import {NotificationSource, hasNotifications} from './source.js';
 import adapter from './adapter.js';
+import be from './apps/be.js';
+import grab from './apps/grab.js';
+import messenger from './apps/messenger.js';
+import zalo from './apps/zalo.js';
 import {NotificationsTab} from './tab.js';
 
 // GNOME's notifications on the island (docs/NOTIFICATIONS.md): the banner GNOME would show
@@ -16,5 +20,7 @@ export default {
     kinds: ['notification'],
     source: NotificationSource,
     adapter,
+    // the phone's apps, by the name GSConnect gives them (FEATURES M4 "Phone via GSConnect", part 2)
+    apps: {be, grab, messenger, zalo},
     tab: NotificationsTab,
 };

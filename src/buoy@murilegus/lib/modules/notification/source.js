@@ -1,5 +1,6 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
@@ -406,6 +407,7 @@ export class NotificationSource extends Source {
     }
 
     _drop(app, pill) {
+        this._unarmCode(pill);
         this._pills.delete(app);
         pill.list.forEach(n => n.disconnectObject(this));
         if (this._live(pill))
@@ -420,6 +422,15 @@ export class NotificationSource extends Source {
         const t = this._turns.current;
         const turn = t?.app === app && pill.list.includes(t.item) ? t : null;
         return {n: turn?.item ?? pill.list.at(-1), turn};
+    }
+
+    // Copy Code (a phone's one-time code): on the clipboard as Shell puts text there (the copied
+    // module stays quiet for it: its owner is Shell's own), then "Code Copied" on the pill
+    _copy(app, pill, n, code) {
+        St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, code);
+        pill.copied = n;
+        if (this._pills.get(app) === pill && this._live(pill))
+            this._show(app, {});
     }
 
     _show(app, {anew = false, alert = false}) {
@@ -442,6 +453,11 @@ export class NotificationSource extends Source {
             appIcon: note.phone ? own ?? 'phone-symbolic' : src?.icon ?? null,
             icon: !note.phone && themed ? own : null,
             image: !note.phone && own && !themed ? own : null,
+            // a phone's: its picture as it came (a message's sender), its one-time code copied
+            phone: note.phone,
+            phoneImage: note.phone && own && !themed ? own : null,
+            copied: pill.copied === n,
+            copy: code => this._copy(app, pill, n, code),
             at: msOf(n.datetime) || Date.now(),
             count: pill.list.length,
             critical: n.urgency === MessageTray.Urgency.CRITICAL,
@@ -465,9 +481,37 @@ export class NotificationSource extends Source {
             pill.id = null;
             return;
         }
+        this._armCode(app, pill, a);
         if (live && !anew && this._stack.update(pill.id, a, {alert}))
             return;
         pill.id = this._stack.surface({...a, alert});
+    }
+
+    // A phone's one-time code goes when its countdown ends (design/device "Ứng dụng trên điện
+    // thoại": 30 s), held card or not: its ttl waits while the card does, the code's 30 s do not.
+    // The notification stays in GNOME's list.
+    _armCode(app, pill, a) {
+        const end = a.compact?.card?.codeEnd?.until;
+        if (pill.codeEnd === end)
+            return;
+        this._unarmCode(pill);
+        if (!Number.isFinite(end))
+            return;
+        pill.codeEnd = end;
+        pill.codeTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, Math.max(0, end - Date.now()), () => {
+            pill.codeTimer = 0;
+            pill.codeEnd = null;
+            if (this._pills?.get(app) === pill && this._live(pill) && this._stack.get(pill.id)?.attributes?.code)
+                this._stack.end(pill.id);
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _unarmCode(pill) {
+        if (pill.codeTimer)
+            GLib.source_remove(pill.codeTimer);
+        pill.codeTimer = 0;
+        pill.codeEnd = null;
     }
 
     // The banner's click (ui/messageList.js NotificationMessage vfunc_clicked).

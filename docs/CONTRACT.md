@@ -47,6 +47,8 @@ D-Bus API ──────────────────────┘ 
                                        // a message's card; actionsOnHover: its buttons only under the
                                        // pointer; picture may be {stack: [icon, …]} (≤ 3 logos)
                                        // tight: no message, the buttons 12 under the picture (104)
+                                       // code (+ codeEnd, an element): a one-time code, 2em, in place
+                                       // of the message; tag: a short text at its end (a licence plate)
   compact: {leading, text, subtitle, trailing, transport, progress, rows}  // the hover tier (Buoy's
                                        // own; was `peek`); transport = ≤3 actions; progress 0..1 or
                                        // live {position, length, at, playing} (ms), which runs with
@@ -105,7 +107,7 @@ export default { media(a) { ...detect 'Advertisement' → text 'Ad', trailing co
 
 Leading/trailing values an adapter may return (normalised by `kit/model/presentation.js#element`):
 `'icon-name'` or a `Gio.Icon` (icon) · `'eq'` / `'eq-paused'` (named glyphs: the equaliser, moving or stopped low) · `{glyph, color}` (a named glyph in a colour of the activity's own, `'#rrggbb'`: the equaliser in its cover's main colour; anything else is dropped and the glyph is `fg`) · `{art, icon}` (artwork with
-an icon fallback) · `{progress}` (ring) · `{bar, label?, off?}` (a bar; `label` its number
+an icon fallback); `{art, icon, round: true}` a person's photo, round (a phone message's sender) · `{progress}` (ring) · `{bar, label?, off?}` (a bar; `label` its number
 beside it, `off` dims both — a muted level, 2026-11-05; every volume) · `{battery, label?}` (a battery
 drawn at its level, 0..1, its number beside it; none for a coarse level — a Bluetooth device's, so a
 battery never reads as a volume, 2026-11-17) · `{countdown}` / `{text}` (text) ·

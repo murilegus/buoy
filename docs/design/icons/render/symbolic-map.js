@@ -70,6 +70,8 @@ export const SYMBOLIC = {
     'camera-web': 'camera',
     // the phone through GSConnect: Find My Phone
     'find-location': 'magnifier',
+    // its apps (part 2): a ride (Grab, Be)
+    'route-car': 'car',
     'input-gaming': 'own:gamepad',
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',
@@ -110,7 +112,7 @@ export const SYMBOLIC = {
 };
 
 /** names of ours, for ideas the theme has no name for: nothing to fall back to */
-export const OWN_NAMES = ['notifications-unread', 'task-todo', 'caps-lock', 'num-lock', 'fn-lock'];
+export const OWN_NAMES = ['notifications-unread', 'task-todo', 'caps-lock', 'num-lock', 'fn-lock', 'route-car'];
 
 /** @param {string} src  a drawing from SYMBOLIC @returns {string} its file, relative to this one */
 export const sourceFile = src => src.startsWith('own:') ? `own/${src.slice(4)}.svg` : `gravity-ui/${src}.svg`;

@@ -23,7 +23,13 @@
  *   burst        its turn's notifications (Turns), 2 and up: the card says how many
  *   alertKey     its turn's key while it has the card, else null (the kit's alertKey)
  *   alertState() the card may give way, is hovered (onAlertState)
+ *   phone        a phone's, through GSConnect (FEATURES M4 "Phone via GSConnect")
+ *   phoneImage   a phone's picture as it came (a Gio.Icon: its sender's photo for a message,
+ *                KDE Connect's largeIcon), or null
+ *   copy(code)   put a phone's one-time code on the clipboard; copied: it is there now
  */
+
+import {ARRIVED_MS, OTP_MS, otpOf, rideOf, spacedCode} from '../../kit/model/phone.js';
 
 /**
  * How long a notification's pill stays (§2): its card's 5 s as an alert (the kit's ALERT_MS,
@@ -478,6 +484,85 @@ export function missedRow(count, apps) {
     return {count: Math.max(0, Math.floor(count) || 0), title: 'Notifications', detail: detail || null, tab: 'notification', icons};
 }
 
+// --- the phone's apps (design/device "Ứng dụng trên điện thoại", 2026-11-18, Ethan) ----------------
+
+export const COPY_CODE = 'copy-code';
+const COPY_ICON = 'edit-copy-symbolic';
+const OTP_ICON = 'dialog-password-symbolic';
+const CAR_ICON = 'route-car-symbolic';
+const PHONE_ICON = 'phone-symbolic';
+/** "Code Copied" stays as every flash (design/compact). */
+export const COPIED_MS = 3000;
+
+// A one-time code: the key and the code on the pill, counting down its 30 s; the card the code
+// large with Copy Code (GSConnect's own "Copy 482913" left out: Buoy's finds 4 to 8 digits)
+function otp(p, ev, code) {
+    const end = Number.isFinite(ev.at) ? ev.at + OTP_MS : null;
+    const shown = spacedCode(code);
+    const o = {
+        ...p,
+        text: shown, leading: OTP_ICON, trailing: end ? {until: end} : null,
+        compact: {card: {...p.compact.card, body: null, code: shown, codeEnd: end ? {until: end} : null, actionsOnHover: false}},
+        actions: [{id: COPY_CODE, label: 'Copy Code', icon: COPY_ICON}],
+        ttl: OTP_MS,
+        onAction: id => id === COPY_CODE ? ev.copy?.(code) : ev.onAction?.(id),
+        attributes: {...p.attributes, code},
+    };
+    // copied: "Code Copied" a flash's 3 s, the card as it was
+    return ev.copied === true ? {...o, text: 'Code Copied', leading: COPY_ICON, trailing: null, ttl: COPIED_MS} : o;
+}
+
+const plain = ev => ev.phone === true && ev.shared !== true;
+
+/**
+ * A messaging app's (Zalo, Messenger): its sender's photo, round, as the pill's leading and the
+ * card's picture with the phone on its corner — KDE Connect sends a message's largeIcon, the
+ * sender, not the app's logo (NotificationsPlugin.kt extractIcon).
+ *
+ * @param {object} p  the notification's presentation
+ * @param {object} ev
+ * @returns {object}
+ */
+export function senderPicture(p, ev) {
+    if (!plain(ev) || !ev.phoneImage || p.attributes?.code)
+        return p;
+    const photo = {art: ev.phoneImage, round: true, icon: PHONE_ICON};
+    return {...p, leading: photo, compact: {card: {...p.compact.card, icon: PHONE_ICON, picture: photo}}};
+}
+
+// the plate as the card's tag, out of the message ("Nguyễn Văn An · Honda Vision trắng · 59X1-234.56"
+// → "Nguyễn Văn An · Honda Vision trắng"); a message that was only the plate stays
+function withoutPlate(body, plate) {
+    const rest = (body ?? '').replace(plate, ' ').replace(/\s*[·,;|]\s*(?=[·,;|]|$)/g, '')
+        .replace(/^\s*[·,;|:]\s*/, '').replace(/\s+/g, ' ').replace(/ ([,;])/g, '$1').trim();
+    return rest ? {body: rest, tag: plate} : {tag: plate};
+}
+
+/**
+ * A ride app's (Grab, Be): the car and what the ride is at on the pill, the licence plate at its
+ * end and as the card's tag; "arrived" stays 2 min (model/phone.js rideOf). Anything else from it
+ * (a promotion) is a notification as any other.
+ *
+ * @param {object} p  the notification's presentation
+ * @param {object} ev
+ * @returns {object}
+ */
+export function ride(p, ev) {
+    if (!plain(ev) || p.attributes?.code)
+        return p;
+    const r = rideOf(p.attributes?.title, p.attributes?.body);
+    if (!r)
+        return p;
+    return {
+        ...p,
+        leading: CAR_ICON,
+        trailing: r.plate ? {text: r.plate} : p.trailing,
+        compact: {card: {...p.compact.card, ...r.plate ? withoutPlate(p.compact.card.body, r.plate) : {}}},
+        ttl: r.state === 'arrived' && p.ttl > 0 ? ARRIVED_MS : p.ttl,
+        attributes: {...p.attributes, ride: r.state, plate: r.plate},
+    };
+}
+
 export default {
     notification(ev) {
         const app = plainText(ev.appName) || 'Notification';
@@ -493,7 +578,7 @@ export default {
         const critical = ev.critical === true;
         // every output sets the same fields: an update merges (stack.update), so nothing
         // of the app's previous notification may stay
-        return {
+        const p = {
             text: title || body || app,
             leading: appIcon,
             trailing: count > 1 ? {text: String(count)} : null,
@@ -522,5 +607,8 @@ export default {
             alertKey: Number.isInteger(ev.alertKey) ? ev.alertKey : null,
             attributes: {title, body, app},
         };
+        // a phone's one-time code, whatever app it is from (a bank's SMS, Google's)
+        const code = plain(ev) ? otpOf(`${title} ${body}`) : null;
+        return code ? otp(p, ev, code) : p;
     },
 };

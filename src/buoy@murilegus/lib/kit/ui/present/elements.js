@@ -243,7 +243,8 @@ export function makeElement(e, mode, activity = null, sizes = {}) {
             fallback_gicon: fallbackIcon(e.fallback ?? 'audio-x-generic-symbolic'),
             gicon: e.gicon ?? new Gio.FileIcon({file: file(e.src)}),
         });
-        const r = sizes.artRadius ?? ART_RADIUS[mode];
+        // a person's picture is a circle (design/device "Ứng dụng trên điện thoại")
+        const r = e.round ? size.art / 2 : sizes.artRadius ?? ART_RADIUS[mode];
         return r ? roundArt(icon, size.art, r) : icon;
     }
     case 'glyph':

@@ -291,6 +291,12 @@
 .buoy-card-badge { border-radius: 6px; border: 2px solid #000; /* surface */ background-color: #000; /* surface */ }
 /* two lines (presentation.js MAX_CARD_LINES): Pango keeps whole lines within its max-height */
 .buoy-card-body { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 0.85em; }
+/* a one-time code (design/device "Ứng dụng trên điện thoại"): 2em bold, its countdown muted at its end */
+.buoy-card-code { font-size: 2em; font-weight: 700; font-feature-settings: "tnum"; }
+.buoy-card-code-row { spacing: 8px; }
+/* a ride's licence plate at the message's end, on a fill-3 tag */
+.buoy-card-tag-row { spacing: 8px; }
+.buoy-card-tag { font-weight: 700; font-feature-settings: "tnum"; padding: 4px 10px; border-radius: 8px; background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
 .buoy-card-actions { spacing: 8px; }
 .buoy-card-actions .buoy-action { padding: 0 12px; border-radius: 16px; }
 /* on Home's main card the buttons keep their own width, at least 112, at the bottom right */

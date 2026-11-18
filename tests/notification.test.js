@@ -1,8 +1,12 @@
 // Run: gjs -m tests/notification.test.js   (no Shell needed; adapters are pure)
 import adapter, {
     TTL, MAX_OWN_ACTIONS, DISMISS, plainText, buttonsOf, actionIndex, shownElsewhere, agentShows, powerShows, sharedLine, cardText, stackGroups, countText, rowText,
-    HELD_MS, waitedInQueue, Turns, MAX_WAITING, burstHeader, sharedBurst, missedRow,
+    HELD_MS, waitedInQueue, Turns, MAX_WAITING, burstHeader, sharedBurst, missedRow, COPY_CODE, COPIED_MS,
 } from '../src/buoy@murilegus/lib/modules/notification/adapter.js';
+import zalo from '../src/buoy@murilegus/lib/modules/notification/apps/zalo.js';
+import messenger from '../src/buoy@murilegus/lib/modules/notification/apps/messenger.js';
+import grab from '../src/buoy@murilegus/lib/modules/notification/apps/grab.js';
+import be from '../src/buoy@murilegus/lib/modules/notification/apps/be.js';
 import {planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import {validate, tierOf} from '../src/buoy@murilegus/lib/kit/model/activity.js';
 import {Registry} from '../src/buoy@murilegus/lib/kit/services/registry.js';
@@ -357,6 +361,73 @@ eq(missedRow(2, [{name: '', icon: 'x'}, {name: 'A', icon: '  '}]).icons, [], 'no
     eq(powerShows('gnome-power-panel', null, low), true, 'no body: taken');
     eq(powerShows('gnome-power-panel', '18% battery remaining', {kind: 'power', attributes: {low: 'low', percentage: null}}), false,
         'no percentage known: one that says a percentage stays a notification');
+}
+
+// --- the phone's apps (FEATURES M4 "Phone via GSConnect", part 2; design/device "Ứng dụng trên điện thoại") --
+{
+    const AT = 1_800_000_000_000;
+    const phoneEv = o => ({...BASE, phone: true, appName: 'Messages · Redmi Note 14', appIcon: 'phone-symbolic', at: AT, ...o});
+    // an OTP code, whatever app it is from
+    const copied = [];
+    const o = adapter.notification(phoneEv({
+        title: 'Vietcombank', body: 'Ma OTP cua Quy khach la 482913. Khong chia se ma nay.',
+        actions: ['Copy 482913'], copy: c => copied.push(c), onAction: id => copied.push(`own:${id}`),
+    }));
+    eq([o.text, o.leading, o.trailing, o.ttl], ['482 913', 'dialog-password-symbolic', {until: AT + 30000}, 30000],
+        'OTP: the key, the code spaced, counting down its 30 s');
+    eq([o.compact.card.code, o.compact.card.codeEnd, o.compact.card.body, o.compact.card.title, o.compact.card.actionsOnHover],
+        ['482 913', {until: AT + 30000}, null, 'Vietcombank', false], 'OTP card: the code large in place of the message, its button at once');
+    eq(o.actions, [{id: COPY_CODE, label: 'Copy Code', icon: 'edit-copy-symbolic'}], 'OTP: Copy Code alone (GSConnect\'s "Copy 482913" left out)');
+    o.onAction(COPY_CODE);
+    o.onAction('dismiss');
+    eq(copied, ['482913', 'own:dismiss'], 'Copy Code copies the digits; × still the notification\'s');
+    eq(o.attributes.code, '482913', 'OTP: the code in the attributes (a profile may match it)');
+    const done = adapter.notification(phoneEv({title: 'Vietcombank', body: 'Ma OTP la 482913', copied: true}));
+    eq([done.text, done.leading, done.trailing, done.ttl], ['Code Copied', 'edit-copy-symbolic', null, COPIED_MS], 'copied: "Code Copied" 3 s');
+    const sh = adapter.notification(phoneEv({title: 'Vietcombank', body: 'Ma OTP la 482913', shared: true}));
+    eq([sh.attributes.code, JSON.stringify(sh).includes('482')], [undefined, false], 'a shared screen: no code anywhere');
+    const desk = adapter.notification({...BASE, title: 'GitHub', body: 'Your verification code is 482913'});
+    eq(desk.attributes.code, undefined, 'a desktop app\'s: a notification as any other (the phone\'s only, as designed)');
+    eq(adapter.notification(phoneEv({title: 'Mẹ', body: 'Tối nay về ăn cơm nhé'})).attributes.code, undefined, 'no code: a phone notification as part 1');
+    const cardOf = p => planCompact(validate({id: 'n', app: 'messages', kind: 'notification', ...p}));
+    eq(cardOf(o).card.code, '482 913', 'planned: the code reaches the card');
+    eq(planMinimal(validate({id: 'n', app: 'messages', kind: 'notification', ...o})).trailing?.type, 'until', 'planned: the pill counts down');
+
+    // Zalo, Messenger: the sender's photo, round
+    class FileIcon {}     // a Gio.Icon, not a plain object
+    const photo = new FileIcon();
+    const z = zalo.notification(phoneEv({appName: 'Zalo · Redmi Note 14', appIcon: photo, phoneImage: photo, title: 'Quỳnh Trâm', body: 'Tối nay họp lúc 8 giờ nhé'}));
+    eq([z.leading, z.compact.card.picture, z.compact.card.icon], [{art: photo, round: true, icon: 'phone-symbolic'}, {art: photo, round: true, icon: 'phone-symbolic'}, 'phone-symbolic'],
+        'Zalo: the photo round on the pill and the card, the phone on its corner');
+    const mz = messenger.notification(phoneEv({appIcon: photo, phoneImage: photo, title: 'Nhóm Thiết kế', body: 'Trâm: họp lúc 8 giờ'}));
+    eq([mz.leading.round, mz.compact.card.title, mz.compact.card.body], [true, 'Nhóm Thiết kế', 'Trâm: họp lúc 8 giờ'], 'Messenger: a group, its sender in the body');
+    const themedSms = zalo.notification(phoneEv({phoneImage: null, title: 'Lan', body: 'hi'}));
+    eq(themedSms.leading, 'phone-symbolic', 'no picture came (a themed icon): as part 1');
+    eq(zalo.notification(phoneEv({phoneImage: photo, title: 'Lan', body: 'hi', shared: true})).leading, 'phone-symbolic', 'a shared screen: no photo');
+    eq(zalo.notification(phoneEv({phoneImage: photo, title: 'Zalo', body: 'Mã xác thực Zalo của bạn là 5821'})).text, '5821', 'Zalo\'s own OTP: the code, not the photo');
+    eq(zalo.notification({...BASE, appName: 'Zalo', phoneImage: photo}).leading, BASE.appIcon, 'a desktop app named Zalo: untouched');
+    eq(cardOf(z).card.picture, {type: 'art', gicon: photo, fallback: 'phone-symbolic', round: true}, 'planned: a round art');
+
+    // Grab, Be: a ride
+    const arrived = grab.notification(phoneEv({appName: 'Grab · Redmi Note 14', title: 'Tài xế đã đến', body: 'Nguyễn Văn An · Honda Vision trắng · 59X1-234.56'}));
+    eq([arrived.leading, arrived.text, arrived.trailing, arrived.compact.card.tag, arrived.ttl, arrived.attributes.ride],
+        ['route-car-symbolic', 'Tài xế đã đến', {text: '59X1-234.56'}, '59X1-234.56', 120000, 'arrived'], 'Grab arrived: the car, the plate, 2 min');
+    const coming = be.notification(phoneEv({title: 'Tài xế đang đến', body: 'Xe 30A-123.45'}));
+    eq([coming.leading, coming.ttl, coming.compact.card.tag], ['route-car-symbolic', TTL, '30A-123.45'], 'Be coming: the car, as long as any notification');
+    const promo = grab.notification(phoneEv({title: 'Giảm 50% cuối tuần', body: 'Nhập mã GRAB50 ngay'}));
+    eq([promo.leading, promo.compact.card.tag], ['phone-symbolic', undefined], 'a promotion: a notification as any other');
+    const crit = grab.notification(phoneEv({title: 'Tài xế đã đến', body: '', critical: true}));
+    eq(crit.ttl, 0, 'critical stays critical (no ttl)');
+    eq(grab.notification(phoneEv({title: 'Tài xế đã đến', body: '59X1-234.56', shared: true})).leading, 'phone-symbolic', 'a shared screen: nothing said');
+    eq(cardOf(arrived).card.tag, '59X1-234.56', 'planned: the tag reaches the card');
+    eq(arrived.compact.card.body, 'Nguyễn Văn An · Honda Vision trắng', 'the plate out of the message: it is the tag');
+    eq(grab.notification(phoneEv({title: 'Tài xế đang đến', body: 'Xe 59X1-234.56, Honda Vision'})).compact.card.body, 'Xe, Honda Vision',
+        'a plate mid-sentence: the words around it kept');
+    eq(grab.notification(phoneEv({title: 'Tài xế đã đến', body: '59X1-234.56'})).compact.card.body, '59X1-234.56', 'only the plate: the message kept');
+    const reg = new Registry();
+    reg.register('notification', adapter, {be, grab, messenger, zalo});
+    eq(reg.build('notification', 'Zalo', phoneEv({id: 'z', phoneImage: photo, title: 'Lan', body: 'hi'}))?.leading?.round, true,
+        'the registry finds Zalo by the name GSConnect gives it');
 }
 
 print('notification: ok');

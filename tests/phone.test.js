@@ -1,5 +1,5 @@
-// Run: gjs -m tests/phone.test.js   (pure: FEATURES M4 "Phone via GSConnect", part 1; design/device "Điện thoại qua GSConnect")
-import {GSCONNECT_UUID, batteryState, phoneHomePage, phoneNote, phonePage, phoneSetup, phoneTile, withPhones} from '../src/buoy@murilegus/lib/kit/model/phone.js';
+// Run: gjs -m tests/phone.test.js   (pure: FEATURES M4 "Phone via GSConnect", parts 1 and 2; design/device "Điện thoại qua GSConnect")
+import {ARRIVED_MS, GSCONNECT_UUID, OTP_MS, batteryState, otpOf, phoneHomePage, phoneNote, phonePage, phoneSetup, phoneTile, plateOf, rideOf, spacedCode, withPhones} from '../src/buoy@murilegus/lib/kit/model/phone.js';
 import {wirelessCell} from '../src/buoy@murilegus/lib/kit/model/devices.js';
 
 function eq(actual, expected, msg) {
@@ -75,3 +75,34 @@ eq([hp.title, hp.end, hp.rows.map(r => [r.id, r.name, r.value, r.plain, r.select
 eq([phoneHomePage(P({battery: null})).title, phoneHomePage(P({connected: false}))], ['Redmi Note 14', null], 'tile\'s page: no battery, not connected');
 
 print('phone: ok');
+
+// --- part 2: an OTP code ------------------------------------------------------------------------------
+eq(otpOf('Vietcombank: Ma OTP cua Quy khach la 482913. Khong chia se ma nay. Het han 18/11/2026'), '482913',
+    'OTP: a bank SMS without accents, the code after the word, not the year');
+eq(otpOf('G-482913 is your Google verification code.'), '482913', 'OTP: Google\'s, G- before it, the word after');
+eq(otpOf('Your Grab code is 4829'), '4829', 'OTP: four digits');
+eq(otpOf('Mã xác thực của bạn là 12345678'), '12345678', 'OTP: eight digits, accented words');
+eq(otpOf('Mã OTP: 482913, giao dịch 2,000,000 VND lúc 08:30'), '482913', 'OTP: not the amount nor the time');
+eq(otpOf('Tối nay họp lúc 8 giờ, phòng 1203'), null, 'no OTP word: a number alone is not a code');
+eq(otpOf('Mã giao dịch: số dư 2,000,000 VND'), null, 'OTP word but no code: amounts are not codes');
+eq(otpOf('OTP 0912345678'), null, 'ten digits (a phone number): not a code');
+eq(otpOf('Ma OTP la 123'), null, 'three digits: too short');
+eq([otpOf(null), otpOf('')], [null, null], 'no text, no code');
+eq(otpOf('Dữ liệu được mã hoá từ 2026'), null, 'a year is not a code');
+eq(otpOf('Pin dự phòng 5000mAh, mã giảm SALE2026'), null, 'digits in a word (5000mAh, SALE2026): not a code');
+eq(otpOf('Smartcode 482913'), null, '"code" inside a word: not the word');
+eq([spacedCode('482913'), spacedCode('4829'), spacedCode('12345678'), spacedCode('1234567')], ['482 913', '4829', '1234 5678', '1234 567'],
+    'the code as read: two halves from six digits');
+eq(OTP_MS, 30000, 'an OTP stays 30 s');
+
+// --- part 2: a ride (Grab, Be) ------------------------------------------------------------------------
+eq(rideOf('Tài xế đã đến', 'Nguyễn Văn An · Honda Vision trắng · 59X1-234.56'), {state: 'arrived', plate: '59X1-234.56'}, 'ride: arrived, its plate');
+eq(rideOf('Đã tìm thấy tài xế', 'Tài xế Nguyễn Văn An, xe 30A-123.45, đang đến'), {state: 'found', plate: '30A-123.45'}, 'ride: found wins over coming');
+eq(rideOf('Your driver is on the way', 'Toyota Vios 51F-12345'), {state: 'coming', plate: '51F-12345'}, 'ride: English, a plate without a dot');
+eq(rideOf('Your driver has arrived', null), {state: 'arrived', plate: null}, 'ride: arrived, no plate');
+eq(rideOf('Chuyến xe của bạn', '59X1-234.56'), {state: null, plate: '59X1-234.56'}, 'ride: a plate, no state');
+eq(rideOf('Giảm 50% chuyến đi cuối tuần', 'Nhập mã GRAB50'), null, 'a promotion: not a ride');
+eq(rideOf('Ưu đãi hôm nay', 'Đặt món ngay'), null, 'no ride word: not a ride');
+eq([plateOf('xe 59-X1 234.56 màu trắng'), plateOf('gọi 0912345678'), plateOf(null)], ['59-X1 234.56', null, null],
+    'plates: written apart; a phone number is none');
+eq(ARRIVED_MS, 120000, '"arrived" stays 2 min');
