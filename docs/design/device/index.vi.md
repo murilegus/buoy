@@ -204,6 +204,8 @@ Tab và khuôn của nó, với những gì đã có: **Máy này** (pin, công 
 - `lib/kit/model/phone.js` `otpOf`, `rideOf`, `plateOf` — mã OTP, chuyến xe, biển số (`tests/phone.test.js`).
 - `lib/modules/notification/adapter.js` (OTP, `senderPicture`, `ride`) và `apps/zalo.js`, `messenger.js`,
   `grab.js`, `be.js` — theo tên app GSConnect đưa (`tests/notification.test.js`).
+- `scripts/phone-notification.sh` — giả một thông báo điện thoại như GSConnect đưa lên (Grab, Be, OTP,
+  Zalo…), không cần điện thoại hay chuyến xe thật.
 - Card: `code` (+ `codeEnd`) và `tag` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/compact.js`);
   ảnh tròn `{art, round: true}`.
 - Hình pin: phần tử `{battery, label}` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/parts.js`
