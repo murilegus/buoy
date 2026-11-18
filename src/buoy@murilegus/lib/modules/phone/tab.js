@@ -120,9 +120,13 @@ export class PhoneTab {
             head.add_child(batteryLevel({value: b.value, ...b.label ? {label: b.label} : {}}));
         head.add_child(new St.Widget({x_expand: true}));
         if (phone) {
+            // a chip as the Notifications tab's Do Not Disturb (icon 14, 12 px, fill-1)
+            const line = new St.BoxLayout({style_class: 'buoy-phone-chip-line'});
+            line.add_child(new St.Icon({...iconProps('find-location-symbolic'), icon_size: 14, y_align: Clutter.ActorAlign.CENTER}));
+            line.add_child(new St.Label({text: 'Find My Phone', y_align: Clutter.ActorAlign.CENTER}));
             const find = new St.Button({
-                style_class: 'buoy-phone-find', can_focus: true, accessible_name: 'Find My Phone',
-                child: iconLabel('find-location-symbolic', 'Find My Phone'), y_align: Clutter.ActorAlign.CENTER,
+                style_class: 'buoy-phone-chip', can_focus: true, accessible_name: 'Find My Phone',
+                child: line, y_align: Clutter.ActorAlign.CENTER,
             });
             find.connect('clicked', () => this._phones?.ring(phone.id));
             head.add_child(find);

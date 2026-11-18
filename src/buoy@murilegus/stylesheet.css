@@ -148,7 +148,7 @@
 .buoy-tab, .buoy-round, .buoy-action, .buoy-choice, .buoy-menu-row, .buoy-home-hit, .buoy-home-row, .buoy-home-choice,
 .buoy-agents-row, .buoy-agents-close, .buoy-agents-clear, .buoy-calendar-accounts, .buoy-calendar-arrow, .buoy-calendar-day, .buoy-calendar-row,
 .buoy-media-button, .buoy-media-chip, .buoy-media-play, .buoy-media-skip, .buoy-nback, .buoy-ncard,
-.buoy-nchip, .buoy-nclose, .buoy-transfers-action, .buoy-transfers-clear, .buoy-transfers-row {
+.buoy-nchip, .buoy-phone-chip, .buoy-nclose, .buoy-transfers-action, .buoy-transfers-clear, .buoy-transfers-row {
     transition-duration: 120ms;
 }
 

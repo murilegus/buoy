@@ -1,10 +1,13 @@
 /* The Phone tab (design/device "Cuộc gọi và tab Điện thoại"): the Device tab's columns and cells */
 .buoy-phone-head { spacing: 8px; margin-bottom: 8px; padding: 0 10px; }
 .buoy-phone-name { color: #fff; /* fg */ font-weight: 600; }
-.buoy-phone-find { padding: 0 12px; border-radius: 16px; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
-.buoy-phone-find:hover, .buoy-phone-help:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
-.buoy-phone-find:active, .buoy-phone-help:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
-.buoy-phone-find:focus, .buoy-phone-help:focus, .buoy-phone-cell:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+/* Find My Phone: a chip as the Notifications tab's Do Not Disturb (notification/stylesheet.css .buoy-nchip) */
+.buoy-phone-chip { padding: 4px 10px; border-radius: 999px; color: rgba(255, 255, 255, 0.7); /* fg-muted */ background-color: rgba(255, 255, 255, 0.08); /* fill-1 */ font-size: 12px; }
+.buoy-phone-chip:hover { background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ color: #fff; /* fg */ }
+.buoy-phone-chip-line { spacing: 5px; }
+.buoy-phone-help:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
+.buoy-phone-help:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
+.buoy-phone-chip:focus, .buoy-phone-help:focus, .buoy-phone-cell:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
 .buoy-phone-help { padding: 6px 14px; border-radius: 99px; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-phone-columns { spacing: 8px; }
 .buoy-phone-title { padding: 0 10px; spacing: 6px; }
