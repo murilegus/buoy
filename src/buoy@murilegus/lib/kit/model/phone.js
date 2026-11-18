@@ -7,6 +7,8 @@
  * A phone: {id, name, connected, paired, battery: ?{percentage, charging}}
  */
 
+import {duration} from './power.js';
+
 /** GSConnect's extension UUID, and its app id (the notifications it shows for the phone) */
 export const GSCONNECT_UUID = 'gsconnect@andyholmes.github.io';
 export const GSCONNECT_APP = 'org.gnome.Shell.Extensions.GSConnect';
@@ -19,34 +21,103 @@ const ACTIVE = 1;
  * Where setting the phone up stands, and what helps (prefs' Phone row; the Phone tab's empty
  * state with part 3). Never a flash nor a pill (Ethan, 2026-11-17).
  *
- * @param {{installed: boolean, state?: ?number, paired?: ?string[]}} s  GSConnect's extension
- *   (installed, Shell's ExtensionState), the names of the phones paired (null: not read)
- * @returns {{status: 'missing'|'off'|'unpaired'|'ready', text: string, button: ?string}}
+ * @param {{installed: boolean, state?: ?number, paired?: ?Array<{name: string, connected: boolean}>}} s
+ *   GSConnect's extension (installed, Shell's ExtensionState), the phones paired (null: not read)
+ * @returns {{status: 'missing'|'off'|'unpaired'|'away'|'ready', text: string, button: ?string}}
+ *   `away`: paired, none connected now (the phone off the network, KDE Connect closed): said so,
+ *   not ready (Ethan, 2026-11-18)
  */
 export function phoneSetup(s) {
     if (!s?.installed)
         return {status: 'missing', text: 'Needs GSConnect to see your phone', button: 'Install GSConnect'};
     if (s.state !== ACTIVE)
         return {status: 'off', text: 'GSConnect is off', button: 'Turn On GSConnect'};
-    const paired = (s.paired ?? []).filter(n => typeof n === 'string' && n.trim());
+    const paired = (s.paired ?? []).filter(p => typeof p?.name === 'string' && p.name.trim());
     if (!paired.length)
         return {status: 'unpaired', text: 'No phone paired yet (KDE Connect on the phone)', button: 'Open GSConnect'};
-    return {status: 'ready', text: paired.join(', '), button: null};
+    const on = paired.filter(p => p.connected === true);
+    if (!on.length) {
+        return {
+            status: 'away', button: 'Open GSConnect',
+            text: `${paired.map(p => p.name.trim()).join(', ')} · not connected (KDE Connect open on the phone, on the same network)`,
+        };
+    }
+    return {status: 'ready', text: `${on.map(p => p.name.trim()).join(', ')} · connected`, button: null};
 }
 
 /**
  * GSConnect's battery action state, `(bsii)`: charging, icon name, level (-1: unknown), time.
  *
  * @param {?Array} state  deepUnpack()ed
- * @returns {?{percentage: number, charging: boolean}}
+ * @returns {?{percentage: number, charging: boolean, time: number}}  `time`: s to full (charging)
+ *   or to empty, GSConnect's estimate; 0 not known
  */
 export function batteryState(state) {
     if (!Array.isArray(state))
         return null;
-    const [charging, , level] = state;
+    const [charging, , level, time] = state;
     if (typeof level !== 'number' || !Number.isFinite(level) || level < 0)
         return null;
-    return {percentage: Math.min(100, level), charging: charging === true};
+    return {percentage: Math.min(100, level), charging: charging === true, time: Number.isFinite(time) && time > 0 ? time : 0};
+}
+
+// under this the phone's battery is low (as the computer's, kit/model/power.js)
+const LOW = 20;
+
+const timeOf = (b, fullIn) => {
+    const t = duration(b.time);
+    if (!t)
+        return null;
+    return b.charging ? `${fullIn} ${t}` : `${t} left`;
+};
+
+/**
+ * Home's phone tile (design/home "Ô điện thoại", 2026-11-17, Ethan): its battery, its name; the
+ * top right corner says charging or low (else empty); from 200 wide, the time and that state.
+ *
+ * @param {?{name: string, connected?: boolean, battery: ?{percentage: number, charging: boolean, time?: number}}} p
+ * @returns {?{icon: string, value: string, caption: string, cornerIcon?: string, detail: string[]}}
+ *   null without a connected phone telling its battery
+ */
+export function phoneTile(p) {
+    const b = p?.battery;
+    if (!p?.connected || !b || !Number.isFinite(b.percentage))
+        return null;
+    const pct = Math.max(0, Math.min(100, Math.round(b.percentage)));
+    const low = !b.charging && pct < LOW;
+    let corner = null, state = null;
+    if (b.charging) {
+        corner = 'battery-good-charging-symbolic';
+        state = 'Charging';
+    } else if (low) {
+        corner = 'battery-low-symbolic';
+        state = 'Low battery';
+    }
+    return {
+        icon: 'phone-symbolic', value: `${pct}%`, caption: p.name || 'Phone',
+        ...corner ? {cornerIcon: corner} : {},
+        detail: [timeOf(b, 'Full in'), state].filter(Boolean),
+    };
+}
+
+/**
+ * What a click on the tile shows, in place of Home's card and row (as the battery tile's):
+ * "Redmi Note 14 · 77% · charging", its time at the end; Find My Phone; GSConnect's settings.
+ *
+ * @param {?object} p  as phoneTile
+ * @returns {?object} {title, end, rows, settings} (kit/ui/home.js Glance page)
+ */
+export function phoneHomePage(p) {
+    const b = p?.battery;
+    if (!p?.connected)
+        return null;
+    const pct = b && Number.isFinite(b.percentage) ? ` · ${Math.max(0, Math.min(100, Math.round(b.percentage)))}%` : '';
+    return {
+        title: `${p.name || 'Phone'}${pct}${b?.charging ? ' · charging' : ''}`,
+        end: b ? timeOf(b, 'full in') : null,
+        rows: [{id: 'ring', icon: 'find-location-symbolic', name: 'Find My Phone', value: 'Rings it', plain: true, selected: false}],
+        settings: {name: 'GSConnect Settings'},
+    };
 }
 
 const same = (a, b) => typeof a === 'string' && typeof b === 'string' && a.trim().toLowerCase() === b.trim().toLowerCase();

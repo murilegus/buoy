@@ -3,6 +3,7 @@
 // ("Power", "Bluetooth device", "Headphones / display plugged", "USB / phone / webcam
 // plugged", "Phone via GSConnect"); until then Bu says so (2026-11-13, Ethan).
 import {DeviceTab} from './tab.js';
+import {PhoneGlance} from './glance.js';
 
 export default {
     id: 'device',
@@ -12,4 +13,6 @@ export default {
     source: null,
     adapter: {},
     tab: DeviceTab,
+    // the phone GSConnect has connected, after the battery's tile (design/home "Ô điện thoại")
+    home: {Glance: PhoneGlance, order: 40},
 };

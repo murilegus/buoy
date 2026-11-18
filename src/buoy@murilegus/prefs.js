@@ -951,7 +951,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
                     try {
                         const [objects] = /** @type {[{[path: string]: any}]} */ (c.call_finish(res).recursiveUnpack());
                         resolve(Object.values(objects).map(o => o['org.gnome.Shell.Extensions.GSConnect.Device'])
-                            .filter(d => d?.Paired).map(d => d.Name));
+                            .filter(d => d?.Paired).map(d => ({name: d.Name, connected: d.Connected === true})));
                     } catch {
                         resolve([]);
                     }
@@ -973,7 +973,7 @@ export default class BuoyPreferences extends ExtensionPreferences {
                 new Gtk.UriLauncher({uri: GSCONNECT_PAGE}).launch(this._window ?? null, null, null);
             else if (status === 'off')
                 shell('EnableExtension', new GLib.Variant('(s)', [GSCONNECT_UUID]), '(b)').then(sync);
-            else if (status === 'unpaired')
+            else if (status === 'unpaired' || status === 'away')
                 shell('OpenExtensionPrefs', new GLib.Variant('(ssa{sv})', [GSCONNECT_UUID, '', {}]), null);
         });
         const id = Gio.DBus.session.signal_subscribe('org.gnome.Shell', 'org.gnome.Shell.Extensions', 'ExtensionStateChanged',
@@ -981,7 +981,13 @@ export default class BuoyPreferences extends ExtensionPreferences {
                 if (params.deepUnpack()[0] === GSCONNECT_UUID)
                     sync();
             });
-        row.connect('destroy', () => Gio.DBus.session.signal_unsubscribe(id));
+        // a phone connecting or going while prefs is open (GSConnect's device properties)
+        const devices = Gio.DBus.session.signal_subscribe('org.gnome.Shell.Extensions.GSConnect', 'org.freedesktop.DBus.Properties',
+            'PropertiesChanged', null, 'org.gnome.Shell.Extensions.GSConnect.Device', Gio.DBusSignalFlags.MATCH_ARG0_NAMESPACE, () => sync());
+        row.connect('destroy', () => {
+            Gio.DBus.session.signal_unsubscribe(id);
+            Gio.DBus.session.signal_unsubscribe(devices);
+        });
         row.connect('map', () => sync());     // GSConnect may have changed while prefs was elsewhere
         sync();
         return row;

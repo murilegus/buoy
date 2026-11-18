@@ -157,6 +157,24 @@ chính lấy phần còn lại: không cuộn, không chỗ trống.
 - Chọn một chế độ: đổi ngay, danh sách vẫn mở, flash đổi chế độ không hiện (đang nhìn Home rồi);
   ‹ hoặc Esc về Home. **Chốt**
 
+## Ô điện thoại
+
+*Ethan, 2026-11-17 (mục M4 "Phone via GSConnect", phần 1).*
+
+![Ô điện thoại: hẹp và rộng, sau ô pin; bấm ô mở danh sách](images/phone-tile.vi.png)
+
+- Ô nhìn nhanh của điện thoại GSConnect đang nối, **sau ô pin** (thứ tự thời tiết, sắp tới, pin, điện
+  thoại, hẹn giờ): số lớn là pin điện thoại (đúng số của GSConnect), dưới là tên máy. Không có điện
+  thoại nối thì không có ô, không nhắc gì. **Chốt**
+- **Góc trên phải** (`fg-subtle`, chỗ ô pin đặt chế độ): icon đang sạc hay pin yếu (dưới 20 %); không
+  thì trống. Ô rộng (từ 200): thời gian đầy / còn lại (GSConnect ước tính) và "Đang sạc" / "Pin yếu".
+  **Chốt**
+- **Bấm ô**: danh sách thay thẻ chính và hàng ô, như ô pin: "Redmi Note 14 · 77% · đang sạc", thời gian
+  ở cuối; **Tìm điện thoại** (đổ chuông), **Cài đặt GSConnect**. Có tab Điện thoại (phần 3) thì bấm ô
+  mở tab đó. **Chốt**
+- Code: `lib/modules/device/glance.js` (`PhoneGlance`, order 40), `kit/model/phone.js` `phoneTile`,
+  `phoneHomePage`.
+
 ## Chỗ trong code
 
 - `lib/kit/ui/home.js` — viết lại theo bố cục này: thẻ chính, hàng ô, quy tắc lấp, ô rộng; bỏ mục

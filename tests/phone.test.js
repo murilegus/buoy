@@ -1,5 +1,5 @@
 // Run: gjs -m tests/phone.test.js   (pure: FEATURES M4 "Phone via GSConnect", part 1; design/device "Điện thoại qua GSConnect")
-import {GSCONNECT_UUID, batteryState, phoneNote, phonePage, phoneSetup, withPhones} from '../src/buoy@murilegus/lib/kit/model/phone.js';
+import {GSCONNECT_UUID, batteryState, phoneHomePage, phoneNote, phonePage, phoneSetup, phoneTile, withPhones} from '../src/buoy@murilegus/lib/kit/model/phone.js';
 import {wirelessCell} from '../src/buoy@murilegus/lib/kit/model/devices.js';
 
 function eq(actual, expected, msg) {
@@ -14,13 +14,19 @@ eq(GSCONNECT_UUID, 'gsconnect@andyholmes.github.io', 'GSConnect\'s UUID');
 eq([phoneSetup(null).status, phoneSetup({installed: false}).button], ['missing', 'Install GSConnect'], 'missing: install it (its EGO page)');
 eq([phoneSetup({installed: true, state: 2}).status, phoneSetup({installed: true, state: 3}).button, phoneSetup({installed: true}).status],
     ['off', 'Turn On GSConnect', 'off'], 'installed, not active (off, an error, unknown): turn it on');
-eq([phoneSetup({installed: true, state: 1, paired: []}).status, phoneSetup({installed: true, state: 1, paired: ['  ']}).button],
+eq([phoneSetup({installed: true, state: 1, paired: []}).status, phoneSetup({installed: true, state: 1, paired: [{name: '  ', connected: true}]}).button],
     ['unpaired', 'Open GSConnect'], 'on, no phone paired: its settings');
-eq(phoneSetup({installed: true, state: 1, paired: ['Redmi Note 14']}), {status: 'ready', text: 'Redmi Note 14', button: null},
-    'ready: the phones paired, no button');
+eq(phoneSetup({installed: true, state: 1, paired: [{name: 'Redmi Note 14', connected: true}]}),
+    {status: 'ready', text: 'Redmi Note 14 · connected', button: null}, 'ready: the phone connected, no button');
+const away = phoneSetup({installed: true, state: 1, paired: [{name: 'Redmi Note 14', connected: false}]});
+eq([away.status, away.button, away.text.startsWith('Redmi Note 14 · not connected')], ['away', 'Open GSConnect', true],
+    'paired but not connected: said so, not ready (Ethan, 2026-11-18: it showed as ready)');
+eq(phoneSetup({installed: true, state: 1, paired: [{name: 'Old', connected: false}, {name: 'Redmi', connected: true}]}).text,
+    'Redmi · connected', 'two paired: the connected one');
 
 // --- battery ------------------------------------------------------------------------------------------
-eq(batteryState([true, 'battery-good-charging-symbolic', 77, 3600]), {percentage: 77, charging: true}, 'battery: GSConnect\'s (bsii)');
+eq(batteryState([true, 'battery-good-charging-symbolic', 77, 3600]), {percentage: 77, charging: true, time: 3600}, 'battery: GSConnect\'s (bsii), its time estimate');
+eq(batteryState([false, 'x', 50, -1]).time, 0, 'battery: no estimate, 0');
 eq([batteryState([false, 'x', -1, 0]), batteryState(null), batteryState([false, 'x', 'n', 0])], [null, null, null], 'battery: unknown level, nothing');
 eq(batteryState([false, 'x', 120, 0]).percentage, 100, 'battery: clamped');
 
@@ -50,5 +56,22 @@ eq(phoneNote('Quỳnh Trâm', 'Ok nhé', 'sms-symbolic'), {app: 'Messages', titl
 eq(phoneNote('Mẹ', 'Missed call', 'call-missed-symbolic').app, 'Phone', 'a missed call: Phone');
 eq(phoneNote('', ''), {app: 'Phone', title: 'Phone', body: ''}, 'notification: nothing, "Phone"');
 eq(phoneNote('Bank', ': 123456 is your code').title, 'Bank', 'notification: a body starting with ": " is not split');
+
+// --- Home's tile (design/home "Ô điện thoại") --------------------------------------------------------
+const P = o => ({id: 'abc', name: 'Redmi Note 14', connected: true, paired: true, battery: {percentage: 77, charging: true, time: 2400}, ...o});
+eq(phoneTile(P()), {icon: 'phone-symbolic', value: '77%', caption: 'Redmi Note 14', cornerIcon: 'battery-good-charging-symbolic', detail: ['Full in 40 min', 'Charging']},
+    'tile: the phone\'s battery, its name; charging in the corner; wide: the time and the state (Ethan, 2026-11-17)');
+eq(phoneTile(P({battery: {percentage: 54, charging: false, time: 32400}})), {icon: 'phone-symbolic', value: '54%', caption: 'Redmi Note 14', detail: ['9 h left']},
+    'tile: on battery, the corner empty, the time left');
+eq([phoneTile(P({battery: {percentage: 15, charging: false, time: 0}})).cornerIcon, phoneTile(P({battery: {percentage: 15, charging: false, time: 0}})).detail],
+    ['battery-low-symbolic', ['Low battery']], 'tile: low under 20 %, no estimate');
+eq([phoneTile(P({connected: false})), phoneTile(P({battery: null})), phoneTile(null)], [null, null, null],
+    'tile: not connected, no battery, nothing: no tile (nothing said)');
+eq(phoneTile(P({name: ''})).caption, 'Phone', 'tile: no name, "Phone"');
+const hp = phoneHomePage(P());
+eq([hp.title, hp.end, hp.rows.map(r => [r.id, r.name, r.value, r.plain, r.selected]), hp.settings.name],
+    ['Redmi Note 14 · 77% · charging', 'full in 40 min', [['ring', 'Find My Phone', 'Rings it', true, false]], 'GSConnect Settings'],
+    'tile\'s page: its battery in the title, the time at the end, Find My Phone, GSConnect\'s settings');
+eq([phoneHomePage(P({battery: null})).title, phoneHomePage(P({connected: false}))], ['Redmi Note 14', null], 'tile\'s page: no battery, not connected');
 
 print('phone: ok');

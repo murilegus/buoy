@@ -137,7 +137,9 @@ phần 3 là cuộc gọi và tab Điện thoại).*
   (kể cả "Copy" mã OTP GSConnect tự thêm). **Chốt**
 - **Chưa dùng được**: Cài đặt Buoy → Modules → Thiết bị, dòng **Điện thoại** nói chỗ đang kẹt và nút
   giúp: chưa cài GSConnect (mở trang của nó trên extensions.gnome.org), đã cài mà tắt (bật nó), chưa
-  ghép đôi (mở cài đặt GSConnect). Không flash, không nhắc trong pill; tab Điện thoại (phần 3) nói cùng
+  ghép đôi (mở cài đặt GSConnect), đã ghép mà chưa nối ("Redmi Note 14 · not connected", mở KDE Connect
+  trên điện thoại, cùng mạng; Ethan, 2026-11-18: trước đó nó hiện như đã sẵn sàng). Nối rồi: "· connected",
+  không nút; dòng đổi ngay khi điện thoại nối hay rời. Không flash, không nhắc trong pill; tab Điện thoại (phần 3) nói cùng
   điều đó trong khung trống của nó. **Chốt** (Ethan, 2026-11-17)
 
 ## Mục này làm gì
