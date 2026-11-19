@@ -84,6 +84,7 @@ r device/render/calls.js device/images/calls.vi.png
 r home/render/phone.js home/images/phone-tile.vi.png
 # headphones / display plugged
 for m in flash compact; do r compact/render/plugged.js compact/images/plugged-$m.vi.png $m; done
+r compact/render/attention.js compact/images/attention.vi.png
 
 # motion
 for m in curves compact expanded tabs; do r motion/render/motion.js motion/images/$m.vi.png $m; done

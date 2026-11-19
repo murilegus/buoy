@@ -257,6 +257,27 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   nút có icon thì vẽ cả icon, 2026-11-17). **Chốt**
 - Hai mục này có trong nhóm "Cắm vào" của tab Thiết bị khi làm mục đó.
 
+## Cửa sổ cần chú ý
+
+![Cửa sổ ở workspace khác, cùng workspace, nhiều cửa sổ, terminal kêu bell](images/attention.vi.png)
+
+*Ethan, 2026-11-19 (mục M4 "Attention on another workspace").*
+
+- **Khi nào**: cửa sổ không có focus đòi chú ý — Mutter `window-demands-attention`, `window-marked-urgent`
+  (link mở ở trình duyệt chỗ khác, app sẵn sàng muộn, terminal kêu bell); không tính cửa sổ đang focus hay
+  không có trên thanh tác vụ, như GNOME (`ui/windowAttentionHandler.js`). **Chốt**
+- **Pill** (kind `attention`, 50, module `attention`): logo app, tiêu đề cửa sổ, ở cuối số workspace của
+  nó trong ô vuông 16 viền 1.5 `fg-muted` (như hình workspace trong overview) khi không phải workspace
+  đang xem; cùng workspace thì không có ô (vẫn báo). Đến thì như thông báo: card 5 s rồi pill **ở lại** tới
+  khi cửa sổ được focus, thôi đòi chú ý hay đóng. Một pill mỗi app: cửa sổ mới nhất, "+1" cho các cửa sổ
+  khác. **Chốt**
+- **Card**: logo, tiêu đề, "Firefox · Workspace 2 · now", nút **Go to Window** (`arrow-right`), ×. Bấm pill
+  hay nút: sang workspace đó và focus (`Main.activateWindow`). ×: tắt pill, cửa sổ vẫn đòi chú ý; đòi lại thì
+  pill lại. Không có tab. **Chốt**
+- **Thay GNOME**: thông báo "“…” is ready" không hiện khi module chạy (handler của Shell được ngắt, nối lại
+  khi tắt). Chia sẻ màn hình: chỉ tên app. Terminal kêu bell dùng chung pill; mục "Terminal command
+  finished" sẽ nói chi tiết hơn. **Chốt**
+
 ## Chỗ trong code
 
 - `lib/kit/model/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`
@@ -266,4 +287,6 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   diện + huy hiệu), thân và nút trải ngang.
 - `lib/kit/model/presentation.js` — `MAX_CARD_LINES` giữ 2; `MAX_ROWS` giữ 3.
 - `stylesheet.css` — style hàng và card của compact.
+- `lib/modules/attention/` — cửa sổ cần chú ý (`tests/attention.test.js`); phần tử `{workspace, more}`
+  (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
 - SPEC §4 (bảng kích thước); NOTIFICATIONS.md §3 (card).

@@ -268,6 +268,19 @@ function bareElement(e, mode, activity, sizes) {
         return label(e.text, 'buoy-label');
     case 'until':
         return untilLabel(e.at);
+    case 'workspace': {
+        // "+1" and the workspace's number in a square (design/compact "Cửa sổ cần chú ý")
+        const box = new St.BoxLayout({style_class: 'buoy-workspace-line', y_align: Clutter.ActorAlign.CENTER});
+        if (e.more)
+            box.add_child(label(`+${e.more}`, 'buoy-label'));
+        if (e.n) {
+            box.add_child(new St.Bin({
+                style_class: 'buoy-workspace', y_align: Clutter.ActorAlign.CENTER,
+                child: new St.Label({text: String(e.n), x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER}),
+            }));
+        }
+        return box;
+    }
     case 'since':
         return sinceLabel(e.at);
     case 'elapsed':
