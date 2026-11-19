@@ -296,6 +296,10 @@
 .buoy-card-code-row { spacing: 8px; }
 /* a ride's licence plate at the message's end, on a fill-3 tag */
 .buoy-card-tag-row { spacing: 8px; }
+/* a window's workspace (design/compact "Cửa sổ cần chú ý"): its number in a 16 square, 1.5 px
+   fg-muted as the overview's thumbnails, "+1" before it */
+.buoy-workspace-line { spacing: 6px; }
+.buoy-workspace { width: 16px; height: 16px; border: 1.5px solid rgba(255, 255, 255, 0.7); /* fg-muted */ border-radius: 4px; color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 9px; font-weight: bold; }
 /* a reply in place of the card's buttons (design/compact "Trả lời ngay trong card"): the entry
    fill-2 round 16, Send round 32 — dim while empty, cream with text (buoy-round-main) */
 .buoy-card-reply { spacing: 8px; }

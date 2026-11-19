@@ -8,6 +8,7 @@
  *   {progress: 0..1}
  *                     | {bar: 0..1} | {battery: 0..1, label?} | {countdown: s} | {until: ms since the epoch}
  *                     | {since: ms since the epoch} | {elapsed: ms since the epoch} | {text}
+ *                     | {workspace: n, more?: k} (a window's workspace in a square, "+k" before it)
  *                     `until` counts down live, once a second while shown (ui/present/parts.js);
  *                     `since` is its twin, the time since then in minutes ("4 min"), the
  *                     text changing once a minute while shown (CODING-AGENTS.md §2);
@@ -205,6 +206,13 @@ export function element(e, {leading = false} = {}) {
             return null;
         const c = typeof e.color === 'string' && /^#[0-9a-f]{6}$/i.test(e.color) ? e.color.toLowerCase() : null;
         return c ? {...g, color: c} : g;
+    }
+    // a window's workspace (design/compact "Cửa sổ cần chú ý", 2026-11-19): its number in a square
+    // as the overview's thumbnails, "+N" before it for the app's other windows
+    if ('workspace' in e) {
+        const n = Number.isInteger(e.workspace) && e.workspace > 0 ? e.workspace : null;
+        const more = Number.isInteger(e.more) && e.more > 0 ? e.more : 0;
+        return n || more ? {type: 'workspace', n, more} : null;
     }
     // Bu's eyes, the idle plan `mascot` (MASCOT.md § Eyes): leading only; `stroll` false
     // keeps open eyes still (`idle-mascot-stroll`)

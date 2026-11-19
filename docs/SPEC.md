@@ -919,6 +919,11 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    (a phone in file transfer mode too) opens its compact with Open and Eject, in place of GNOME's
    "connected" notification; eject says "Safe to remove …", a pull without it "Unplugged …"; a
    webcam plugged in or out flashes (downloads moved to v0.1, §6c, 2026-11-06).
+6b. **attention** (2026-11-19, Ethan; design/compact "Cửa sổ cần chú ý") — a window that asks for
+   attention (Mutter's demands-attention / urgent, as Shell's ui/windowAttentionHandler.js) stays on
+   the pill till it is focused, stops asking or goes: the app's logo, the window's title, its
+   workspace's number when not the one shown; a click goes to it. GNOME's "“…” is ready"
+   notification is not shown meanwhile; a terminal's bell is one too.
 7. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
 8. **several pills** — pill 1 plus up to two idle-sized side pills (§2c).

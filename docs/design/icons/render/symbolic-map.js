@@ -76,6 +76,8 @@ export const SYMBOLIC = {
     'call-start': 'handset',
     'call-missed': 'handset-arrow-in',
     'mail-reply-sender': 'arrow-shape-turn-up-left',
+    // a window asking for attention: Go to Window
+    'go-jump': 'arrow-right',
     'input-gaming': 'own:gamepad',
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',

@@ -490,7 +490,7 @@ export const MODULE_GROUPS = [
     {
         id: 'live', title: 'Live in the Pill',
         description: 'What stays on the pill while it runs.',
-        modules: ['media', 'notification', 'progress', 'timer', 'phone', 'agent', 'privacy'],
+        modules: ['media', 'notification', 'attention', 'progress', 'timer', 'phone', 'agent', 'privacy'],
     },
     {
         id: 'feedback', title: 'Quick Feedback',
