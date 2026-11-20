@@ -735,8 +735,12 @@ notifications of its own.
   height, its circles 26 px at 1920 up to 40 px on large screens (2026-11-08, Ethan): a sixth of
   the six weeks' room, even, 26–40, the digits 12–16 px. The month's name in the accent, the
   year grey, weekends dimmed, today a filled circle, an accent dot on days with events; a
-  day's events as cards (dot · title · time). A row opens the calendar app (the date menu's
-  choice) and closes the island. No calendars → Bu with "Add an Online Account" (Settings). Home's Up next glance: the next of
+  day's events as cards (dot · title · time), the dot in the event's calendar's colour (EDS's
+  source `Color`). A row opens the event's page in the right column, the month kept
+  (2026-11-20, Ethan; design/tabs "Chi tiết sự kiện", after Google Calendar's): its title by
+  its calendar's colour, day and time, Join and Copy link, the place, the guests and who
+  answered, the reminders, the calendar, its own description (Google's block of links left
+  out); read from EDS when opened; ‹ or Esc back. Read only. No calendars → Bu with "Add an Online Account" (Settings). Home's Up next glance: the next of
   today's events, its time ("3:00 PM", "Now", "All day") over its title; wide, the next two,
   each a bar (the accent for one running; Shell's calendar server sends no calendar colour),
   the title and "3:00 PM · in 25 min"; a click opens the Calendar tab. Left out when nothing

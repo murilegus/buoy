@@ -35,7 +35,7 @@ const ROWS = [
     ['Cân bằng', 'power-profile-balanced'], ['Hiệu năng', 'power-profile-performance'],
     ['Màn hình cắm vào', 'video-display'], ['Nối màn', 'shell-display-extend-all'], ['Nhân bản màn', 'shell-display-mirror'],
     ['Chỉ màn ngoài', 'shell-display-external-only'], ['Tai nghe', 'audio-headphones'], ['Loa', 'audio-speakers'],
-    ['Chuột', 'input-mouse'], ['Tay cầm chơi game', 'input-gaming'], ['Ổ cắm vào', 'drive-removable-media'], ['Webcam', 'camera-web'], ['Tìm điện thoại', 'find-location'], ['Chuyến xe', 'route-car'], ['Cuộc gọi', 'call-start'], ['Gọi nhỡ', 'call-missed'], ['Trả lời', 'mail-reply-sender'], ['Chuyển tới cửa sổ', 'go-jump'], ['Tham gia họp', 'camera-video'],
+    ['Chuột', 'input-mouse'], ['Tay cầm chơi game', 'input-gaming'], ['Ổ cắm vào', 'drive-removable-media'], ['Webcam', 'camera-web'], ['Tìm điện thoại', 'find-location'], ['Chuyến xe', 'route-car'], ['Cuộc gọi', 'call-start'], ['Gọi nhỡ', 'call-missed'], ['Trả lời', 'mail-reply-sender'], ['Chuyển tới cửa sổ', 'go-jump'], ['Tham gia họp', 'camera-video'], ['Địa điểm', 'mark-location'], ['Khách', 'system-users'], ['Mô tả', 'format-justify-left'], ['Nhắc', 'appointment-soon'],
     ['#', 'Tải về, chép, nhập'],
     ['Tải về', 'folder-download'], ['Mở thư mục', 'folder-open'], ['Mở tệp', 'document-open'], ['Tệp chữ', 'text-x-generic'],
     ['Đã chép', 'edit-copy'], ['Mật khẩu', 'dialog-password'], ['Ảnh', 'image-x-generic'], ['Clipboard', 'edit-paste'],
