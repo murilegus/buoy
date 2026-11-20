@@ -101,6 +101,18 @@
       <summary>Meeting about to start</summary>
       <description>An event comes 5 minutes before it starts, with Join when it has a meeting link (Google Meet, Zoom, Teams, Webex, Jitsi), and stays till 10 minutes after; in place of GNOME's reminder for it.</description>
     </key>
+    <key name="calendar-refresh" type="s">
+      <choices>
+        <choice value="gnome"/>
+        <choice value="5m"/>
+        <choice value="10m"/>
+        <choice value="15m"/>
+        <choice value="30m"/>
+      </choices>
+      <default>'gnome'</default>
+      <summary>Refresh online calendars</summary>
+      <description>How often Google, Microsoft and other online calendars are fetched. As GNOME: every hour, so an event made shortly before may come late. A shorter time asks the calendar service (Evolution Data Server) to fetch them that often.</description>
+    </key>
     <key name="modules-device" type="b">
       <default>true</default>
       <summary>Devices</summary>

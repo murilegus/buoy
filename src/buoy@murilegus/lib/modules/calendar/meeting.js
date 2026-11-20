@@ -210,3 +210,55 @@ export default {
         };
     },
 };
+
+// --- refreshing online calendars -------------------------------------------------------------
+
+/**
+ * `calendar-refresh` (2026-11-20, Ethan: an event made on the web 20 min before did not come;
+ * EDS refreshes a remote calendar every 60 min, libedataserver/e-source-refresh.c
+ * `interval-minutes`): 'gnome' leaves it to EDS; else Buoy asks EDS to refresh that often.
+ *
+ * @param {*} value  the key's value
+ * @returns {?number} minutes, or null: as GNOME
+ */
+export function refreshMinutes(value) {
+    const m = typeof value === 'string' ? /^(\d+)m$/.exec(value) : null;
+    const n = m ? Number(m[1]) : 0;
+    return n >= 1 ? n : null;
+}
+
+// calendars on this computer: nothing to fetch
+const LOCAL_BACKENDS = new Set(['local', 'contacts', 'weather']);
+
+/**
+ * @param {*} sources  [{uid, data}]: EDS's sources, `data` the key file each one is
+ *   (org.gnome.evolution.dataserver.Source `Data`)
+ * @returns {string[]} the uids of the online calendars GNOME shows: a [Calendar] whose
+ *   backend fetches (CalDAV, Google, Microsoft, a web calendar), enabled and selected (Shell's
+ *   calendar server reads only selected ones: src/calendar-server/calendar-sources.c)
+ */
+export function onlineCalendars(sources) {
+    if (!Array.isArray(sources))
+        return [];
+    return sources.filter(s => {
+        if (!s || typeof s.uid !== 'string' || !s.uid || typeof s.data !== 'string')
+            return false;
+        const sections = {};
+        let at = null;
+        for (const line of s.data.split('\n')) {
+            const head = /^\[(.+)\]\s*$/.exec(line);
+            if (head) {
+                at = sections[head[1]] = {};
+                continue;
+            }
+            const kv = /^([\w-]+)=(.*)$/.exec(line);
+            if (at && kv)
+                at[kv[1]] = kv[2].trim();
+        }
+        const cal = sections['Calendar'];
+        if (!cal || LOCAL_BACKENDS.has(cal.BackendName ?? ''))
+            return false;
+        // GNOME's own defaults: enabled and selected unless the file says false
+        return sections['Data Source']?.Enabled !== 'false' && cal.Enabled !== 'false' && cal.Selected !== 'false';
+    }).map(s => s.uid);
+}

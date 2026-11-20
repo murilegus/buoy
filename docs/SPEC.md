@@ -919,7 +919,10 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    `LOCATION`, `DESCRIPTION`), only for an event about to start; no `gi://ECal` (not
    installed by default). evolution-alarm-notify's own "Reminders" for an event starting
    within 15 min is taken off as it comes; earlier reminders stay. `calendar-meeting-alert`
-   turns it off.
+   turns it off. EDS fetches an online calendar every 60 min (libedataserver
+   e-source-refresh.c), so an event made shortly before may come late: `calendar-refresh`
+   ('gnome' by default, or 5 / 10 / 15 / 30 min) has Buoy ask EDS to refresh the selected
+   online calendars that often (`Calendar.Refresh`; 2026-11-20, Ethan).
 6. **usb** (2026-11-17, Ethan; design/device "Ổ, điện thoại, webcam cắm vào") — a drive mounted
    (a phone in file transfer mode too) opens its compact with Open and Eject, in place of GNOME's
    "connected" notification; eject says "Safe to remove …", a pull without it "Unplugged …"; a

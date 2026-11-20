@@ -158,6 +158,11 @@ If Buoy is off or removed, the hooks do nothing and Claude Code carries on as wi
   service, Geoclue, for your city when the weather refreshes. Turn it off and pick a city
   to keep your location to yourself. Geoclue only answers when Location Services is on in
   GNOME Settings.
+- **Calendars**: Buoy reads your events from GNOME's calendar service (Evolution Data
+  Server), the same ones as the date menu. A meeting about to start has its link read there
+  too. GNOME fetches online calendars (Google, Microsoft) once an hour; set "Refresh online
+  calendars" (Settings → Modules → Calendar) shorter and Buoy asks that service to fetch them
+  more often. As GNOME by default.
 - **Album covers** are loaded from the address the music player gives, as GNOME's own media
   controls do.
 - **The clipboard**: when you copy, Buoy reads it (text, file names or an image thumbnail)

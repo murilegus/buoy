@@ -1,5 +1,5 @@
 // Run: gjs -m tests/meeting.test.js   (pure: FEATURES M4 "Meeting in 5 min · Join"; design/compact "Sắp họp")
-import adapter, {DISMISS, JOIN, LEAD, REMINDER, STAY, dueMeetings, eventIdParts, icsValues, meetingLink, nextWake, placeOf, reminderSaid}
+import adapter, {DISMISS, JOIN, LEAD, REMINDER, STAY, dueMeetings, eventIdParts, icsValues, meetingLink, nextWake, onlineCalendars, placeOf, refreshMinutes, reminderSaid}
     from '../src/buoy@murilegus/lib/modules/calendar/meeting.js';
 import {planCompact, planMinimal} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import {tierOf, validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
@@ -117,5 +117,23 @@ soon.onAction(JOIN);
 soon.onAction(DISMISS);
 soon.onAction('other');
 eq(did, ['join', 'dismiss'], 'Join and × reach the source');
+
+// --- refreshing online calendars ---------------------------------------------------------------
+eq([refreshMinutes('gnome'), refreshMinutes('15m'), refreshMinutes('5m'), refreshMinutes('0m'), refreshMinutes(null), refreshMinutes('x')],
+    [null, 15, 5, null, null, null], 'calendar-refresh: minutes, or null as GNOME');
+const src = (uid, body) => ({uid, data: `[Data Source]\nDisplayName=${uid}\nEnabled=true\n\n${body}`});
+const sources = [
+    src('google', '[Calendar]\nBackendName=caldav\nSelected=true\n'),
+    src('personal', '[Calendar]\nBackendName=local\nSelected=true\n'),
+    src('birthdays', '[Calendar]\nBackendName=contacts\nEnabled=true\n'),
+    src('holidays', '[Calendar]\nBackendName=caldav\n'),
+    src('unselected', '[Calendar]\nBackendName=caldav\nSelected=false\n'),
+    {uid: 'off', data: '[Data Source]\nEnabled=false\n[Calendar]\nBackendName=webcal\n'},
+    src('mail', '[Mail Account]\nBackendName=imapx\n'),
+    src('ews', '[Calendar]\nBackendName=ews\nSelected=true\n'),
+    {uid: '', data: '[Calendar]\nBackendName=caldav\n'}, null, {uid: 'nodata'},
+];
+eq(onlineCalendars(sources), ['google', 'holidays', 'ews'], 'online calendars: fetching backends, enabled and selected (unset = GNOME\'s true)');
+eq(onlineCalendars(null), [], 'no sources');
 
 print('meeting: ok');

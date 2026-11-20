@@ -6,8 +6,8 @@ import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 import {Source} from '../../kit/services/source.js';
 import {SharingWatch} from '../../kit/services/sharing.js';
 import {EventReader} from './events.js';
-import {readEvent} from './eds.js';
-import {REMINDER_APP, STAY, dueMeetings, meetingLink, nextWake, placeOf, reminderSaid} from './meeting.js';
+import {CalendarRefresher, readEvent} from './eds.js';
+import {REMINDER_APP, STAY, dueMeetings, refreshMinutes, meetingLink, nextWake, placeOf, reminderSaid} from './meeting.js';
 
 const KIND = 'calendar';
 // Events joined or dismissed: not shown again. Kept across disable (the lock screen turns Buoy
@@ -16,6 +16,7 @@ const KIND = 'calendar';
 // right after unlock the list may still be empty.
 const DONE = new Map();
 const KEY = 'calendar-meeting-alert';
+const REFRESH_KEY = 'calendar-refresh';
 
 /**
  * A meeting about to start (FEATURES M4 "Meeting in 5 min · Join"; design/compact "Sắp họp",
@@ -44,7 +45,13 @@ export class MeetingSource extends Source {
         this._cancel = new Gio.Cancellable();
         this._sharing = new SharingWatch(() => this._sync());
         this._reader = new EventReader(() => this._sync());
-        settings?.connectObject(`changed::${KEY}`, () => this._sync(), this);
+        // online calendars fetched more often than EDS's hour, when asked (`calendar-refresh`)
+        this._refresher = new CalendarRefresher();
+        const refresh = () => this._refresher.set(refreshMinutes(settings?.get_string(REFRESH_KEY)));
+        settings?.connectObject(
+            `changed::${KEY}`, () => this._sync(),
+            `changed::${REFRESH_KEY}`, refresh, this);
+        refresh();
         const tray = Main.messageTray;
         tray.connectObject('source-added', (_t, src) => this._watch(src), this);
         tray.getSources().forEach(src => this._watch(src));
@@ -196,6 +203,8 @@ export class MeetingSource extends Source {
         for (const src of Main.messageTray.getSources())
             src.disconnectObject(this);
         this._settings?.disconnectObject(this);
+        this._refresher?.stop();
+        this._refresher = null;
         for (const [key, m] of [...this._meetings ?? []])
             this._end(key, m);
         this._meetings = null;
