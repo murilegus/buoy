@@ -223,8 +223,7 @@ export const CHOICE_LABELS = {
     'privacy-dot': {pill: 'Buoy\'s dot', system: 'GNOME\'s icons', both: 'Both'},
     'idle-auto-switch': {'5m': '5 minutes', '10m': '10 minutes', '20m': '20 minutes', '30m': '30 minutes'},
     'calendar-refresh': {
-        'gnome': 'As GNOME (every hour)', '5m': 'Every 5 minutes', '10m': 'Every 10 minutes', '15m': 'Every 15 minutes',
-        '30m': 'Every 30 minutes',
+        'gnome': 'As GNOME', '5m': '5 minutes', '10m': '10 minutes', '15m': '15 minutes', '30m': '30 minutes',
     },
 };
 

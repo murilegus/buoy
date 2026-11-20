@@ -111,7 +111,7 @@
       </choices>
       <default>'gnome'</default>
       <summary>Refresh online calendars</summary>
-      <description>How often Google, Microsoft and other online calendars are fetched. As GNOME: every hour, so an event made shortly before may come late. A shorter time asks the calendar service (Evolution Data Server) to fetch them that often.</description>
+      <description>Google and others; GNOME fetches them hourly.</description>
     </key>
     <key name="modules-device" type="b">
       <default>true</default>

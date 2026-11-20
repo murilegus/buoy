@@ -303,7 +303,7 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   giữ. Tắt bằng `calendar-meeting-alert` (Modules → Calendar). **Chốt**
 - **Lịch online tải lại**: GNOME (EDS) chỉ tải lại lịch Google, Microsoft, CalDAV mỗi 60 phút, nên sự kiện
   tạo trên web hay điện thoại sát giờ có thể tới muộn hơn cuộc họp. Modules → Calendar → "Refresh online
-  calendars": **As GNOME (every hour)** mặc định; 5, 10, 15, 30 phút thì Buoy nhờ EDS tải lại các lịch
+  calendars": **As GNOME** (mỗi giờ) mặc định; 5, 10, 15, 30 phút thì Buoy nhờ EDS tải lại các lịch
   online đang hiện (`Calendar.Refresh`). **Chốt** (Ethan, 2026-11-20)
 
 ## Chỗ trong code

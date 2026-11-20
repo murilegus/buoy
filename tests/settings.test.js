@@ -508,5 +508,5 @@ console.log('settings: ok');
 // --- Refresh online calendars (FEATURES M4 "Meeting in 5 min · Join", 2026-11-20) ---------------
 eq([schema.get_key('calendar-refresh').get_default_value().unpack(), schema.get_key('calendar-refresh').get_range().recursiveUnpack()],
     ['gnome', ['enum', ['gnome', '5m', '10m', '15m', '30m']]], 'Refresh online calendars: as GNOME by default; 5, 10, 15, 30 min');
-eq([choiceLabel('calendar-refresh', 'gnome'), choiceLabel('calendar-refresh', '15m')], ['As GNOME (every hour)', 'Every 15 minutes'],
+eq([choiceLabel('calendar-refresh', 'gnome'), choiceLabel('calendar-refresh', '15m')], ['As GNOME', '15 minutes'],
     'Refresh online calendars: its labels');
