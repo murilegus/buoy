@@ -129,7 +129,9 @@ eq(plan.plans.find(p => p.id === 'clock').planOnly, true,
         'Copied: Show what was copied, a sample, no pin');
     eq([mod('clipboard').keys, mod('clipboard').standalone, mod('clipboard').sample], [[], true, null],
         'Clipboard: only Pin to the strip');
-    const hidden = planPrefs(order.filter(n => !['modules-calendar', 'modules-device', 'modules-clipboard'].includes(n)).map(name => ({name})));
+    eq(mod('calendar').keys, ['calendar-meeting-alert', 'calendar-refresh'], 'Calendar: Meeting about to start, Refresh online calendars (FEATURES M4)');
+    const hidden = planPrefs(order.filter(n => !['modules-calendar', 'modules-device', 'modules-clipboard'].includes(n) &&
+        !n.startsWith('calendar-')).map(name => ({name})));
     eq(hidden.groups.map(g => g.id), ['live', 'feedback', 'bu'], 'a group with no module left (tabs) is not drawn');
 }
 eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
@@ -266,8 +268,8 @@ try {
 }
 eq(threw.includes('idle key of no plan'), true, 'an idle-* key of no plan fails the test');
 eq(plan.modules.find(m => m.id === 'calendar'), {
-    id: 'calendar', enableKey: 'modules-calendar', keys: [], standalone: true, sample: null,
-}, 'a standalone module: its switch, pin, no sample');
+    id: 'calendar', enableKey: 'modules-calendar', keys: ['calendar-meeting-alert', 'calendar-refresh'], standalone: true, sample: null,
+}, 'a standalone module: its switch, its keys, pin, no sample');
 eq(plan.modules.find(m => m.id === 'media').sample !== null, true, 'media has a sample');
 {
     const hud = plan.modules.find(m => m.id === 'hud');
@@ -502,3 +504,9 @@ eq(donationLinks({nope: 'x'}), [], 'unknown services ignored');
 }
 
 console.log('settings: ok');
+
+// --- Refresh online calendars (FEATURES M4 "Meeting in 5 min · Join", 2026-11-20) ---------------
+eq([schema.get_key('calendar-refresh').get_default_value().unpack(), schema.get_key('calendar-refresh').get_range().recursiveUnpack()],
+    ['gnome', ['enum', ['gnome', '5m', '10m', '15m', '30m']]], 'Refresh online calendars: as GNOME by default; 5, 10, 15, 30 min');
+eq([choiceLabel('calendar-refresh', 'gnome'), choiceLabel('calendar-refresh', '15m')], ['As GNOME', '15 minutes'],
+    'Refresh online calendars: its labels');

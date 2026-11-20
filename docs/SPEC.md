@@ -910,11 +910,19 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    buttons). **bluetooth** (2026-11-17, Ethan; design/device "Không dây") — a 3 s flash when a
    Bluetooth device connects, with its battery drawn as a battery (a volume is always a bar), or
    goes; from Quick Settings' own client. Bluetooth headphones are said here, not by `plugged`.
-5. **calendar** — Up next in Home; alert 5 min before with Join when the event has
-   a meeting link. Shell's calendar server sends only id, summary, start and end, so the
-   link is read over EDS's own D-Bus (`CalendarFactory` → `Calendar.GetObjectList`, raw
-   iCalendar: `LOCATION`, `DESCRIPTION`, `URL`, `X-GOOGLE-CONFERENCE`), only for an event
-   about to start; no `gi://ECal` (not installed by default).
+5. **calendar** — Up next in Home; a timed event 5 min before its start as a card, its pill
+   counting down, the card again at the start ("now"), the pill staying 10 min after, till
+   Join or × (2026-11-20, Ethan; design/compact "Sắp họp"). Join when the event has a meeting
+   link (Google Meet, Zoom, Teams, Webex, Jitsi). Shell's calendar server sends only id,
+   summary, start and end, so the link is read over EDS's own D-Bus (`CalendarFactory`
+   `OpenCalendar` → `Calendar.GetObject`, raw iCalendar: `X-GOOGLE-CONFERENCE`, `URL`,
+   `LOCATION`, `DESCRIPTION`), only for an event about to start; no `gi://ECal` (not
+   installed by default). evolution-alarm-notify's own "Reminders" for an event starting
+   within 15 min is taken off as it comes; earlier reminders stay. `calendar-meeting-alert`
+   turns it off. EDS fetches an online calendar every 60 min (libedataserver
+   e-source-refresh.c), so an event made shortly before may come late: `calendar-refresh`
+   ('gnome' by default, or 5 / 10 / 15 / 30 min) has Buoy ask EDS to refresh the selected
+   online calendars that often (`Calendar.Refresh`; 2026-11-20, Ethan).
 6. **usb** (2026-11-17, Ethan; design/device "Ổ, điện thoại, webcam cắm vào") — a drive mounted
    (a phone in file transfer mode too) opens its compact with Open and Eject, in place of GNOME's
    "connected" notification; eject says "Safe to remove …", a pull without it "Unplugged …"; a

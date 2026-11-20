@@ -222,6 +222,9 @@ export const CHOICE_LABELS = {
     'activity-linger': {'5m': '5 minutes', '10m': '10 minutes', '20m': '20 minutes', '30m': '30 minutes'},
     'privacy-dot': {pill: 'Buoy\'s dot', system: 'GNOME\'s icons', both: 'Both'},
     'idle-auto-switch': {'5m': '5 minutes', '10m': '10 minutes', '20m': '20 minutes', '30m': '30 minutes'},
+    'calendar-refresh': {
+        'gnome': 'As GNOME', '5m': '5 minutes', '10m': '10 minutes', '15m': '15 minutes', '30m': '30 minutes',
+    },
 };
 
 /**

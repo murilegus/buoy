@@ -305,6 +305,9 @@ function actions(list, max) {
             ...typeof a.selected === 'boolean' ? {selected: a.selected} : {},
             // `types`: it opens an entry that takes the keyboard (a card's Reply)
             ...a.types === true ? {types: true} : {},
+            // `main`: the one to press, cream (fill-inverse) as an ask's answer (a meeting's
+            // Join, design/compact "Sắp họp")
+            ...a.main === true ? {main: true} : {},
         }));
 }
 

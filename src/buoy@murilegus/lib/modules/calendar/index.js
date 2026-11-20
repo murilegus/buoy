@@ -1,8 +1,10 @@
 // The calendar (FEATURES M3 "calendar"): the date menu's events, from every calendar EDS
 // knows. The next-event idle plan (SPEC §2a, `idle-content` 'calendar') with its feed, and
 // the Calendar tab (Today and the week ahead) — a standalone tab, in the slot until another
-// is chosen (SPEC §2b). The meeting alert with Join is M4.
+// is chosen (SPEC §2b). A meeting about to start, with Join (M4, source.js).
 import idle from './idle.js';
+import {MeetingSource} from './source.js';
+import meeting from './meeting.js';
 import {CalendarFeed} from './feed.js';
 import {CalendarTab} from './tab.js';
 import {CalendarGlance} from './home.js';
@@ -11,9 +13,9 @@ export default {
     id: 'calendar',
     title: 'Calendar',
     icon: 'x-office-calendar-symbolic',
-    kinds: [],
-    source: null,
-    adapter: {},
+    kinds: ['calendar'],
+    source: MeetingSource,
+    adapter: meeting,
     idle,
     feed: CalendarFeed,
     tab: CalendarTab,

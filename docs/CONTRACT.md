@@ -27,9 +27,10 @@ D-Bus API ──────────────────────┘ 
   style:     'standard' | 'transient', // transient = opens expanded, ends on click-outside
   alert:     false,                    // true on surface/update → its card opens on its pill (an alert)
   keyline:   null,                     // optional border tint
-  onPress, onExpand, actions: [{id, label, icon, selected?, types?}],  // ≤ 1 in minimal, ≤ 3 compact/expanded (HIG);
+  onPress, onExpand, actions: [{id, label, icon, selected?, types?, main?}],  // ≤ 1 in minimal, ≤ 3 compact/expanded (HIG);
                                        // `selected` (true/false): one of a set of choices, icon and label,
-                                       // the chosen one marked (the power modes, 2026-11-14)
+                                       // the chosen one marked (the power modes, 2026-11-14); `main: true`
+                                       // the one to press, cream (a meeting's Join, 2026-11-20)
   minimalAction: true,                 // false: no button in minimal, the compact has them (media)
   onAction(id, value?)                 // a button was pressed (ask: answers it); a tab may pass a value (seek)
   onExpire()                           // its ttl ended it (not end()): a transient notification goes (2026-11-08)
