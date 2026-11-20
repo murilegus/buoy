@@ -96,6 +96,11 @@
       <summary>Calendar</summary>
       <description>Today and the week ahead in the Calendar tab, and the next event as an idle plan.</description>
     </key>
+    <key name="calendar-meeting-alert" type="b">
+      <default>true</default>
+      <summary>Meeting about to start</summary>
+      <description>An event comes 5 minutes before it starts, with Join when it has a meeting link (Google Meet, Zoom, Teams, Webex, Jitsi), and stays till 10 minutes after; in place of GNOME's reminder for it.</description>
+    </key>
     <key name="modules-device" type="b">
       <default>true</default>
       <summary>Devices</summary>

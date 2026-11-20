@@ -278,6 +278,30 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   khi tắt). Chia sẻ màn hình: chỉ tên app. Terminal kêu bell dùng chung pill; mục "Terminal command
   finished" sẽ nói chi tiết hơn. **Chốt**
 
+## Sắp họp
+
+![Còn 5 phút, đến giờ, không có link họp, hai sự kiện cùng giờ, nhắc của GNOME](images/meeting.vi.png)
+
+*Ethan, 2026-11-20 (mục M4 "Meeting in 5 min · Join").*
+
+- **Khi nào**: sự kiện có giờ (không phải cả ngày) trong lịch của GNOME — cùng nguồn với pill nghỉ và tab
+  Lịch (date menu) — từ 5 phút trước giờ bắt đầu tới 10 phút sau (hay tới khi nó kết thúc, nếu sớm hơn).
+  **Chốt**
+- **Pill** (kind `calendar`, 25, module `calendar`): icon lịch, tiêu đề, ở cuối đếm ngược tới giờ bắt đầu;
+  đến giờ thì "now" màu xanh (`#30D158`, như cuộc gọi đang diễn ra). Một pill mỗi sự kiện. Không "cần
+  bạn". **Chốt**
+- **Card**: tiêu đề, "15:00 – 15:30 · in 5 min" (· địa điểm nếu có), nút **Join Google Meet** (Zoom,
+  Teams, Webex, Jitsi; `video`) là nút chính, kem như câu trả lời của ask (`fill-inverse`, chữ
+  `fg-on-inverse`: bảng màu không có nút xanh), và ×. Card đến lúc còn 5 phút và lần nữa lúc bắt đầu.
+  Không có link: không nút. Join mở link rồi tắt pill; × tắt pill; cả hai không hiện lại, kể cả sau khoá
+  máy. **Chốt**
+- **Link họp**: đọc từ EDS chỉ cho sự kiện sắp bắt đầu (`X-GOOGLE-CONFERENCE`, `URL`, `LOCATION`,
+  `DESCRIPTION`), vì calendar server của Shell chỉ gửi id, tiêu đề và giờ. Chia sẻ màn hình: "Event",
+  không tiêu đề, không địa điểm. **Chốt**
+- **Thay GNOME**: "Reminders" của evolution-alarm-notify cho sự kiện bắt đầu trong 15 phút tới (nhắc 10
+  phút mặc định của Google) bị gỡ ngay khi tới: không banner, không nằm trong danh sách. Nhắc sớm hơn vẫn
+  giữ. Tắt bằng `calendar-meeting-alert` (Modules → Calendar). **Chốt**
+
 ## Chỗ trong code
 
 - `lib/kit/model/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`

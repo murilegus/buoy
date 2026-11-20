@@ -129,7 +129,9 @@ eq(plan.plans.find(p => p.id === 'clock').planOnly, true,
         'Copied: Show what was copied, a sample, no pin');
     eq([mod('clipboard').keys, mod('clipboard').standalone, mod('clipboard').sample], [[], true, null],
         'Clipboard: only Pin to the strip');
-    const hidden = planPrefs(order.filter(n => !['modules-calendar', 'modules-device', 'modules-clipboard'].includes(n)).map(name => ({name})));
+    eq(mod('calendar').keys, ['calendar-meeting-alert'], 'Calendar: Meeting about to start (FEATURES M4)');
+    const hidden = planPrefs(order.filter(n => !['modules-calendar', 'modules-device', 'modules-clipboard'].includes(n) &&
+        !n.startsWith('calendar-')).map(name => ({name})));
     eq(hidden.groups.map(g => g.id), ['live', 'feedback', 'bu'], 'a group with no module left (tabs) is not drawn');
 }
 eq([...Object.values(plan).flat()].includes('clock-defaults-applied'), false,
@@ -266,8 +268,8 @@ try {
 }
 eq(threw.includes('idle key of no plan'), true, 'an idle-* key of no plan fails the test');
 eq(plan.modules.find(m => m.id === 'calendar'), {
-    id: 'calendar', enableKey: 'modules-calendar', keys: [], standalone: true, sample: null,
-}, 'a standalone module: its switch, pin, no sample');
+    id: 'calendar', enableKey: 'modules-calendar', keys: ['calendar-meeting-alert'], standalone: true, sample: null,
+}, 'a standalone module: its switch, its keys, pin, no sample');
 eq(plan.modules.find(m => m.id === 'media').sample !== null, true, 'media has a sample');
 {
     const hud = plan.modules.find(m => m.id === 'hud');
