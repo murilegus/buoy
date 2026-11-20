@@ -13,6 +13,7 @@
  *   join()     opens the link; dismiss() the pill goes, not asked again
  */
 import {isAllDay, normalise, spanText} from './agenda.js';
+import {keyFile, parseEvent, unescapeText} from './ical.js';
 
 const MIN = 60 * 1000;
 
@@ -101,32 +102,8 @@ const SERVICES = [
  *   §3.3.11), parameters dropped
  */
 export function icsValues(ics, name) {
-    if (typeof ics !== 'string')
-        return [];
-    const lines = ics.replace(/\r?\n[ \t]/g, '').split(/\r?\n/);
     const head = name.toUpperCase();
-    const found = [];
-    // the first VEVENT's own lines: not those of a VALARM inside it
-    let depth = 0;
-    for (const l of lines) {
-        const up = l.toUpperCase();
-        if (up.startsWith('BEGIN:')) {
-            if (depth || up === 'BEGIN:VEVENT')
-                depth++;
-            continue;
-        }
-        if (up.startsWith('END:') && depth) {
-            depth--;
-            if (!depth)
-                break;
-            continue;
-        }
-        if (depth === 1 && up.split(/[;:]/, 1)[0] === head)
-            found.push(l);
-    }
-    return found
-        .map(l => l.slice(l.indexOf(':') + 1)
-            .replace(/\\[nN]/g, '\n').replace(/\\([,;\\])/g, '$1'));
+    return parseEvent(ics).props.filter(p => p.name === head).map(p => unescapeText(p.value));
 }
 
 /**
@@ -243,18 +220,7 @@ export function onlineCalendars(sources) {
     return sources.filter(s => {
         if (!s || typeof s.uid !== 'string' || !s.uid || typeof s.data !== 'string')
             return false;
-        const sections = {};
-        let at = null;
-        for (const line of s.data.split('\n')) {
-            const head = /^\[(.+)\]\s*$/.exec(line);
-            if (head) {
-                at = sections[head[1]] = {};
-                continue;
-            }
-            const kv = /^([\w-]+)=(.*)$/.exec(line);
-            if (at && kv)
-                at[kv[1]] = kv[2].trim();
-        }
+        const sections = keyFile(s.data);
         const cal = sections['Calendar'];
         if (!cal || LOCAL_BACKENDS.has(cal.BackendName ?? ''))
             return false;

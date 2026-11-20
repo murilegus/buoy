@@ -44,6 +44,27 @@
 .buoy-calendar-title { color: #fff; /* fg */ font-weight: 600; }
 .buoy-calendar-time { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 12px; font-feature-settings: "tnum"; }
 .buoy-calendar-past { opacity: 0.5; }
+/* an event's page (design/tabs "Chi tiết sự kiện", 2026-11-20): an icon column, the lines after it */
+.buoy-calendar-page { spacing: 14px; padding: 2px 6px 8px 4px; }
+.buoy-calendar-page-head, .buoy-calendar-page-row { spacing: 14px; }
+.buoy-calendar-page-lines { spacing: 4px; }
+.buoy-calendar-page-icon { color: rgba(255, 255, 255, 0.7); /* fg-muted */ margin-top: 1px; }
+.buoy-calendar-square { width: 12px; height: 12px; border-radius: 3px; margin: 6px 2px 0; background-color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-calendar-page-title { color: #fff; /* fg */ font-size: 16px; font-weight: 700; }
+.buoy-calendar-page-sub { color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 12px; }
+.buoy-calendar-page-text { color: #fff; /* fg */ }
+.buoy-calendar-page-link { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ font-size: 11px; }
+.buoy-calendar-join { height: 32px; padding: 0 20px; border-radius: 16px; font-weight: 600; color: #000; /* fg-on-inverse */ background-color: #f1efe8; /* fill-inverse */ }
+.buoy-calendar-join:hover { background-color: #fff; /* fill-inverse-hover */ }
+.buoy-calendar-join:focus, .buoy-calendar-copy:focus { box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2); }
+.buoy-calendar-copy { width: 32px; height: 32px; border-radius: 16px; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+.buoy-calendar-copy:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
+.buoy-calendar-copy:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
+.buoy-calendar-person { spacing: 10px; padding-top: 4px; }
+.buoy-calendar-face { width: 28px; height: 28px; border-radius: 14px; font-weight: 600; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
+/* how a guest answered: yes cream, the rest fill-4 (no green: design/colours) */
+.buoy-calendar-badge { width: 12px; height: 12px; border-radius: 6px; font-size: 8px; font-weight: 700; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
+.buoy-calendar-badge-yes { color: #000; /* fg-on-inverse */ background-color: #f1efe8; /* fill-inverse */ }
 .buoy-calendar-accounts { padding: 6px 14px; border-radius: 99px; color: #fff; /* fg */ background-color: rgba(255, 255, 255, 0.12); /* fill-2 */ }
 .buoy-calendar-accounts:hover { background-color: rgba(255, 255, 255, 0.2); /* fill-3 */ }
 .buoy-calendar-accounts:active { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
@@ -66,3 +87,5 @@
 .buoy-hc .buoy-calendar-mark { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-calendar-now .buoy-calendar-mark { background-color: -st-accent-color; }
 .buoy-hc .buoy-calendar-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-calendar-square { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-calendar-page-link { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

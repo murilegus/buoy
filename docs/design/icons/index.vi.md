@@ -90,6 +90,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Cuộc gọi, gọi nhỡ, trả lời | `call-start`, `call-missed`, `mail-reply-sender` | `handset`, `handset-arrow-in`, `arrow-shape-turn-up-left` |
   | Chuyển tới cửa sổ | `go-jump` | `arrow-right` |
   | Tham gia cuộc họp | `camera-video` | `video` |
+  | Địa điểm, khách, mô tả, nhắc (trang sự kiện) | `mark-location`, `system-users`, `format-justify-left`, `appointment-soon` | `map-pin`, `persons`, `text-align-left`, `bell` |
 
 - Việc chờ của Claude Code: `circle-dashed` của Gravity thay `circle`. **Chốt** (Ethan, 2026-11-12)
 - Âm lượng và mic ở mức 0 dùng icon tắt tiếng như Shell (`ui/status/volume.js` `getIcon`), dù gsd

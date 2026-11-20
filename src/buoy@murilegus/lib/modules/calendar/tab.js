@@ -9,7 +9,10 @@ import St from 'gi://St';
 import {buildElement, EmptyState, iconLabel, iconProps} from '../../kit/ui/present/elements.js';
 import {FillBox} from '../../kit/ui/present/parts.js';
 import {agenda, dayRows, dayStart} from './agenda.js';
+import {calendarsOf, eventPage} from './details.js';
+import {readEvent, readSources} from './eds.js';
 import {EventReader} from './events.js';
+import {eventIdParts, meetingLink} from './meeting.js';
 import {CELL_MIN, cellFont, cellSize, isWeekend, monthDays, monthTitle, pickedTitle, stepDay, weekdayInitials} from './month.js';
 
 /** @import GioUnix from 'gi://GioUnix' */
@@ -21,16 +24,18 @@ import {CELL_MIN, cellFont, cellSize, isWeekend, monthDays, monthTitle, pickedTi
  * weekends dimmed, the months around in grey (a click goes there), today a circle filled
  * in the accent, the picked day lit, an accent dot under a day with events —
  * and the picked day under its title ("Today, 8 November") on the right: each event a card,
- * a dot, its title, its time at the end. Today picked: what is left of today, then the
- * week ahead (SPEC §3 "Up next"); another day: that day's. ‹ › move the picked day a
- * month, as the date menu's calendar does. The month grid is this tab's, not Home's. No
- * calendar colours: Shell's calendar server sends only id, title and times.
+ * a dot in its calendar's colour (EDS's sources, eds.js readSources; 2026-11-20), its title,
+ * its time at the end. Today picked: what is left of today, then the week ahead (SPEC §3
+ * "Up next"); another day: that day's. ‹ › move the picked day a month, as the date menu's
+ * calendar does. The month grid is this tab's, not Home's.
  *
  * The events are the date menu's (events.js), live while the tab is open; moving to a month
  * moves the date menu's calendar there, which loads that month (Shell's calendar server
- * has one range, its calendar's). A row opens the calendar app as the date menu's event list
- * does (ui/dateMenu.js EventsSection vfunc_clicked) and closes the island. No calendar at
- * all: Bu says so, with a button to Settings → Online Accounts.
+ * has one range, its calendar's). A row opens the event's page in the right column, the
+ * month kept (FEATURES M4 "Event details in the Calendar tab"; design/tabs "Chi tiết sự
+ * kiện", 2026-11-20, Ethan, after Google Calendar's): its iCalendar read from EDS then
+ * (eds.js readEvent, as the meeting's Join), the head drawn at once; ‹ or Esc back. No
+ * calendar at all: Bu says so, with a button to Settings → Online Accounts.
  *
  * Loading: a new range makes Shell's source drop its events at once and get them back a
  * moment later (ui/calendar.js `_loadEvents(true)`: clear, `changed`, then the server's
@@ -58,6 +63,16 @@ export class CalendarTab {
         this.actor.connect('notify::height', () => this._fitLaterOnce());
         this._reader = new EventReader(() => this._redraw(), {everyChange: true});
         this._reader.ensureToday();
+        this._event = null;         // the page: {e (agenda.js's), ics: 'reading' | string | null}
+        this._calendars = new Map();    // source uid → {name, color}
+        this._cancel = new Gio.Cancellable();
+        readSources(this._cancel).then(list => {
+            this._calendars = calendarsOf(list);
+            this._redraw();
+        }).catch(e => {
+            if (!e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+                console.warn(`Buoy: calendar: ${e.message}`);
+        });
         this._render();
     }
 
@@ -72,6 +87,8 @@ export class CalendarTab {
         if (this._fitLater)
             global.compositor.get_laters().remove(this._fitLater);
         this._fitLater = 0;
+        this._cancel?.cancel();
+        this._cancel = null;
         this._reader?.destroy();
         this._reader = null;
         this._close = null;
@@ -137,7 +154,7 @@ export class CalendarTab {
             hscrollbar_policy: St.PolicyType.NEVER, vscrollbar_policy: St.PolicyType.AUTOMATIC,
             overlay_scrollbars: true,
         });
-        list.set_child(this._listSide());
+        list.set_child(this._event ? this._pageSide() : this._listSide());
         this.actor.add_child(month);
         this.actor.add_child(list);
         this._side = month;
@@ -228,6 +245,7 @@ export class CalendarTab {
 
     _pick(day) {
         this._picked = day;
+        this._event = null;
         const d = new Date(day);
         if (d.getFullYear() !== this._year || d.getMonth() !== this._month) {
             this._year = d.getFullYear();
@@ -278,9 +296,13 @@ export class CalendarTab {
             button.add_style_class_name('buoy-calendar-past');
         if (e.now)
             button.add_style_class_name('buoy-calendar-now');
-        button.connect('clicked', () => this._openCalendar());
+        button.connect('clicked', () => this._open(e));
         const line = new St.BoxLayout({style_class: 'buoy-calendar-line', x_expand: true});
-        line.add_child(new St.Widget({style_class: 'buoy-calendar-mark', y_align: Clutter.ActorAlign.CENTER}));
+        const mark = new St.Widget({style_class: 'buoy-calendar-mark', y_align: Clutter.ActorAlign.CENTER});
+        const color = this._calendarOf(e)?.color;
+        if (color)
+            mark.set_style(`background-color: ${color};`);
+        line.add_child(mark);
         const title = new St.Label({
             text: e.title, style_class: 'buoy-calendar-title', x_expand: true, y_align: Clutter.ActorAlign.CENTER,
         });
@@ -294,25 +316,112 @@ export class CalendarTab {
         return button;
     }
 
-    // The date menu's choice of app (EventsSection._appInstalledChanged): the default for
-    // text/calendar when it is a recommended one, else the first recommended; Evolution
-    // opens on its calendar
-    _openCalendar() {
-        const apps = Gio.AppInfo.get_recommended_for_type('text/calendar');
-        if (!apps?.length)
-            return;
-        const preferred = Gio.AppInfo.get_default_for_type('text/calendar', false);
-        const app = preferred && apps.some(a => a.equal(preferred)) ? preferred : apps[0];
-        const context = global.create_app_launch_context(0, -1);
-        try {
-            if (app.get_id() === 'org.gnome.Evolution.desktop')
-                /** @type {GioUnix.DesktopAppInfo} */ (app).launch_action('calendar', context);
-            else
-                app.launch([], context);
-        } catch (e) {
-            console.warn(`Buoy: could not open the calendar: ${e.message}`);
+    /**
+     * @param {object} e  an event (agenda.js)
+     * @returns {?{name: string, color: ?string}} its calendar (its id names it)
+     */
+    _calendarOf(e) {
+        const uid = eventIdParts(e.id)?.source;
+        return uid ? this._calendars.get(uid) ?? null : null;
+    }
+
+    // its page, the head at once, the rest when EDS answers
+    _open(e) {
+        const ev = {e, ics: 'reading'};
+        this._event = ev;
+        this._render();
+        readEvent(e.id, this._cancel).then(ics => {
+            ev.ics = ics;
+        }).catch(err => {
+            if (!err.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+                console.warn(`Buoy: calendar: ${err.message}`);
+            ev.ics = null;
+        }).finally(() => {
+            if (this._event === ev)
+                this._render();
+        });
+    }
+
+    /** ‹ or Esc (kit/ui/home.js back): the list again; false when it shows already. */
+    back() {
+        if (!this._event)
+            return false;
+        this._event = null;
+        this._render();
+        return true;
+    }
+
+    // The event's page (design/tabs "Chi tiết sự kiện"): ‹, then as Google Calendar's — the
+    // title by its calendar's colour, the day and time; Join and Copy link; the place, the
+    // guests, the reminders, the calendar, the description. Each part only when it has one.
+    _pageSide() {
+        const {e, ics} = this._event;
+        const now = Date.now();
+        const text = typeof ics === 'string' ? ics : null;
+        const p = eventPage(e, text, now);
+        const cal = this._calendarOf(e);
+        const box = new St.BoxLayout({
+            style_class: 'buoy-calendar-page', orientation: Clutter.Orientation.VERTICAL, x_expand: true,
+        });
+        const back = new St.Button({
+            style_class: 'buoy-calendar-arrow', can_focus: true, accessible_name: 'Back', x_align: Clutter.ActorAlign.START,
+            child: new St.Icon({...iconProps('go-previous-symbolic'), icon_size: 16}),
+        });
+        back.connect('clicked', () => this.back());
+        box.add_child(back);
+
+        const square = new St.Widget({style_class: 'buoy-calendar-square', y_align: Clutter.ActorAlign.START});
+        if (cal?.color)
+            square.set_style(`background-color: ${cal.color};`);
+        const title = wrapped(p.title, 'buoy-calendar-page-title');
+        box.add_child(infoRow(square, [title, wrapped(p.when, 'buoy-calendar-page-sub')], 'buoy-calendar-page-head'));
+
+        // Join while it has not ended, as the meeting's card
+        const link = text ? meetingLink(text) : null;
+        if (link && (e.end > now || e.start + 10 * 60 * 1000 > now)) {
+            const join = new St.Button({
+                style_class: 'buoy-calendar-join', can_focus: true, label: `Join ${link.service}`,
+                x_align: Clutter.ActorAlign.START,
+            });
+            join.connect('clicked', () => {
+                try {
+                    Gio.AppInfo.launch_default_for_uri(link.url, global.create_app_launch_context(0, -1));
+                } catch (err) {
+                    console.warn(`Buoy: calendar: ${err.message}`);
+                }
+                this._close?.();
+            });
+            const copy = new St.Button({
+                style_class: 'buoy-calendar-copy', can_focus: true, accessible_name: 'Copy link',
+                child: new St.Icon({...iconProps('edit-copy-symbolic'), icon_size: 16}),
+            });
+            copy.connect('clicked', () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, link.url));
+            const buttons = new St.BoxLayout({x_expand: true});
+            buttons.add_child(join);
+            buttons.add_child(new St.Widget({x_expand: true}));
+            buttons.add_child(copy);
+            const url = new St.Label({text: link.url.replace(/^https:\/\//, ''), style_class: 'buoy-calendar-page-link'});
+            url.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+            box.add_child(infoRow(pageIcon('camera-video-symbolic'), [buttons, url]));
         }
-        this._close?.();
+        if (p.place)
+            box.add_child(infoRow(pageIcon('mark-location-symbolic'), [wrapped(p.place, 'buoy-calendar-page-text')]));
+        if (p.guests) {
+            /** @type {St.Widget[]} */
+            const parts = [
+                wrapped(`${p.guests.count} ${p.guests.count === 1 ? 'guest' : 'guests'}`, 'buoy-calendar-page-text'),
+                wrapped(p.guests.line, 'buoy-calendar-page-sub'),
+            ];
+            p.guests.people.forEach(g => parts.push(person(g)));
+            box.add_child(infoRow(pageIcon('system-users-symbolic'), parts));
+        }
+        if (p.description)
+            box.add_child(infoRow(pageIcon('format-justify-left-symbolic'), [wrapped(p.description, 'buoy-calendar-page-text')]));
+        if (p.reminders.length)
+            box.add_child(infoRow(pageIcon('appointment-soon-symbolic'), p.reminders.map(r => wrapped(r, 'buoy-calendar-page-text'))));
+        if (cal?.name)
+            box.add_child(infoRow(pageIcon('x-office-calendar-symbolic'), [wrapped(cal.name, 'buoy-calendar-page-text')]));
+        return box;
     }
 
     // Settings → Online Accounts, as Shell opens a panel (ui/status/network.js
@@ -355,4 +464,56 @@ function restingBu(text, fill = false) {
 // St has no text-transform: the section heads are written in capitals
 function header(text) {
     return new St.Label({text: text.toUpperCase(), style_class: 'buoy-calendar-header'});
+}
+
+// a row of the event's page: its icon (or the calendar's square) in a column of its own, then
+// its lines
+function infoRow(lead, lines, styleClass = 'buoy-calendar-page-row') {
+    const row = new St.BoxLayout({style_class: styleClass, x_expand: true});
+    lead.y_align = Clutter.ActorAlign.START;
+    row.add_child(lead);
+    const col = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true, style_class: 'buoy-calendar-page-lines'});
+    lines.forEach(l => col.add_child(l));
+    row.add_child(col);
+    return row;
+}
+
+function pageIcon(name) {
+    return new St.Icon({...iconProps(name), icon_size: 16, style_class: 'buoy-calendar-page-icon'});
+}
+
+function wrapped(text, styleClass) {
+    const l = new St.Label({text, style_class: styleClass, x_expand: true});
+    l.clutter_text.line_wrap = true;
+    l.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+    l.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+    return l;
+}
+
+// a guest: the first letter in a circle, how they answered on it (✓ yes, × no, ? maybe or not
+// yet), the address or name, "Organizer" under it
+function person(g) {
+    const row = new St.BoxLayout({style_class: 'buoy-calendar-person', x_expand: true});
+    const face = new St.Widget({layout_manager: new Clutter.BinLayout(), style_class: 'buoy-calendar-face'});
+    face.add_child(new St.Label({
+        text: (g.name || g.email).charAt(0).toUpperCase(), x_expand: true, y_expand: true,
+        x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.CENTER,
+    }));
+    const badge = new St.Bin({
+        style_class: `buoy-calendar-badge buoy-calendar-badge-${g.status}`, x_expand: true, y_expand: true,
+        x_align: Clutter.ActorAlign.END, y_align: Clutter.ActorAlign.END,
+    });
+    badge.set_child(g.status === 'yes' || g.status === 'no'
+        ? new St.Icon({...iconProps(g.status === 'yes' ? 'object-select-symbolic' : 'window-close-symbolic'), icon_size: 8})
+        : new St.Label({text: '?'}));
+    face.add_child(badge);
+    row.add_child(face);
+    const who = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true, y_align: Clutter.ActorAlign.CENTER});
+    const name = new St.Label({text: g.name || g.email, style_class: 'buoy-calendar-page-text'});
+    name.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+    who.add_child(name);
+    if (g.organizer)
+        who.add_child(new St.Label({text: 'Organizer', style_class: 'buoy-calendar-page-sub'}));
+    row.add_child(who);
+    return row;
 }
