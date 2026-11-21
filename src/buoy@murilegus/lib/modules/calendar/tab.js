@@ -152,7 +152,6 @@ export class CalendarTab {
         const list = new St.ScrollView({
             style_class: 'buoy-calendar-list', x_expand: true, y_expand: true,
             hscrollbar_policy: St.PolicyType.NEVER, vscrollbar_policy: St.PolicyType.AUTOMATIC,
-            overlay_scrollbars: true,
         });
         list.set_child(this._event ? this._pageSide() : this._listSide());
         this.actor.add_child(month);

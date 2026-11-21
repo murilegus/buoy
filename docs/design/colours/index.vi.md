@@ -43,8 +43,8 @@ cho một chỗ.
 | `fill-0` | trắng 4 % | mép card xếp chồng (thông báo) | `#141416` `#0e0e10` |
 | `fill-1` | trắng 8 % | card, chip, hàng lịch lúc nghỉ; hàng lúc hover | .07 .08 `#1c1c1e` |
 | `fill-2` | trắng 12 % | nút, thanh tab, ô ảnh lúc nghỉ; card lúc hover | .10 .11 .12 .13 `#1f1f1f` |
-| `fill-3` | trắng 20 % | nút lúc hover, tab đang chọn, ngày đang chọn, badge | .16 .17 .18 .20 .24 `#2c2c2e` `#2a2a2d` `#3a3a3c` |
-| `fill-4` | trắng 28 % | nút lúc nhấn | `#48484a` |
+| `fill-3` | trắng 20 % | nút lúc hover, tab đang chọn, ngày đang chọn, badge, thanh cuộn | .16 .17 .18 .20 .24 `#2c2c2e` `#2a2a2d` `#3a3a3c` |
+| `fill-4` | trắng 28 % | nút lúc nhấn, thanh cuộn lúc hover | `#48484a` |
 | `fill-inverse` | kem `#F1EFE8` (thân Bu), hover trắng | nút phát, chip đang bật | |
 | `fg-on-inverse` | đen | chữ, icon trên `fill-inverse` | |
 | `accent` | `-st-accent-color` của GNOME | cái đang chọn hoặc đang diễn ra: chip lọc đang bật, hôm nay, tên tháng, chấm có sự kiện, sự kiện đang diễn ra; không tự chọn. **Chốt** | |

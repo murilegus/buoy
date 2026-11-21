@@ -355,6 +355,17 @@
 
 /* Home's panel (kit/ui/home.js): the tab strip and the selected tab, only inside expanded. */
 .buoy-panel { padding: 10px 12px 12px; spacing: 8px; }
+/* Its scrollbars (design/tokens "Expanded", 2026-11-21): a 4 px bar in a 10 px lane, fill-3,
+   one step up on hover, two when held; GNOME's is 8 px of solid grey */
+.buoy-panel StScrollBar { min-width: 10px; min-height: 10px; padding: 3px; }
+.buoy-panel StScrollBar > .vhandle, .buoy-panel StScrollBar > .hhandle {
+    border: 0;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.2); /* fill-3 */
+}
+.buoy-panel StScrollBar > .vhandle:hover, .buoy-panel StScrollBar > .hhandle:hover { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
+.buoy-panel StScrollBar > .vhandle:active, .buoy-panel StScrollBar > .hhandle:active { background-color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-hc .buoy-panel StScrollBar > .vhandle:active, .buoy-hc .buoy-panel StScrollBar > .hhandle:active { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-tabs-row { spacing: 2px; }
 .buoy-tabs {
     padding: 3px;
