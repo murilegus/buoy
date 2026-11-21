@@ -69,6 +69,10 @@ export const SYMBOLIC = {
     'drive-removable-media': 'hard-drive',
     'camera-web': 'camera',
     'camera-video': 'video',
+    'mark-location': 'map-pin',
+    'system-users': 'persons',
+    'format-justify-left': 'text-align-left',
+    'appointment-soon': 'bell',
     // the phone through GSConnect: Find My Phone
     'find-location': 'magnifier',
     // its apps (part 2): a ride (Grab, Be)

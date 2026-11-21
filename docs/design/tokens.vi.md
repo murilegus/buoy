@@ -50,6 +50,7 @@ về đây thay vì chép số. Số px tính cho 1em = 11pt ≈ 14.67 px và l�
 | Home: thẻ chính | phần còn lại: 104 / 168 / 200 ở 1920 / 2560 / 3440 | dạng cao từ 160 | Chốt (Ethan, 2026-11-11) |
 | Home: ô | cao 100, rộng ≥ 120, cách 8; ô rộng 2 phần | N = 4 / 5 / 5 | Chốt (Ethan, 2026-11-11) |
 | Phần đầu không tab | 88 = 16 + leading 56 + 16, leading bo 12 | lời chào 88 | Chốt |
+| Thanh cuộn | thanh 4, bo tròn, trong làn 10 (cách mép 3) | thay thanh 8 xám đặc của GNOME; danh sách hẹp lại khi có thanh, không đè lên hàng | Chốt (Ethan, 2026-11-21) |
 
 ## Độ rộng tối đa trên thanh
 

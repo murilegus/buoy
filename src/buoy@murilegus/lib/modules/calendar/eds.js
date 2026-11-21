@@ -54,6 +54,19 @@ export async function readEvent(id, cancellable = null) {
 }
 
 /**
+ * EDS's sources, as they are now (its SourceManager's objects): each one's uid and key file.
+ *
+ * @param {?Gio.Cancellable} [cancellable]
+ * @returns {Promise<{uid: string, data: string}[]>}
+ */
+export async function readSources(cancellable = null) {
+    const [objects] = /** @type {[Record<string, Record<string, Record<string, any>>>]} */ ((await Gio.DBus.session.call(
+        SOURCES, SOURCES_PATH, 'org.freedesktop.DBus.ObjectManager', 'GetManagedObjects', null,
+        new GLib.VariantType('(a{oa{sa{sv}}})'), Gio.DBusCallFlags.NONE, TIMEOUT_MS, cancellable)).recursiveUnpack());
+    return Object.values(objects).map(o => o[SOURCE]).filter(Boolean).map(p => ({uid: p.UID, data: p.Data}));
+}
+
+/**
  * Buoy asks EDS to fetch the online calendars GNOME shows every `minutes` (`calendar-refresh`,
  * 2026-11-20, Ethan; EDS's own is 60 min). Each calendar is opened once and kept till stop()
  * (`Calendar.Refresh` runs in the backend after its reply: a calendar closed right after might
@@ -88,10 +101,7 @@ export class CalendarRefresher {
     }
 
     async _turn() {
-        const [objects] = /** @type {[Record<string, Record<string, Record<string, any>>>]} */ ((await this._call(
-            SOURCES, SOURCES_PATH, 'org.freedesktop.DBus.ObjectManager', 'GetManagedObjects', null, '(a{oa{sa{sv}}})')).recursiveUnpack());
-        const uids = onlineCalendars(Object.values(objects).map(o => o[SOURCE])
-            .filter(Boolean).map(p => ({uid: p.UID, data: p.Data})));
+        const uids = onlineCalendars(await readSources(this._cancel));
         for (const uid of [...this._open.keys()]) {
             if (!uids.includes(uid))
                 this._close(uid);
