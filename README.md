@@ -145,6 +145,14 @@ it off removes exactly Buoy's hooks. Running sessions pick the change up by them
 
 If Buoy is off or removed, the hooks do nothing and Claude Code carries on as without it.
 
+### Terminal
+
+When a command finishes in a Ptyxis tab you are not in, Buoy shows it in the pill; a click
+takes you to the tab. For its exit code and how long it ran, add the line from **Settings →
+Modules → Terminal commands → Exit code and time** to `~/.zshrc` or `~/.bashrc`. Buoy never
+edits those files. Without the line, zsh on Ubuntu does not tell Ptyxis when a command ends,
+so nothing shows.
+
 ## Privacy
 
 - **Nothing about you is sent anywhere by Buoy.** No account, no telemetry, no server.
@@ -168,6 +176,10 @@ If Buoy is off or removed, the hooks do nothing and Claude Code carries on as wi
 - **The clipboard**: when you copy, Buoy reads it (text, file names or an image thumbnail)
   to show it briefly. Turn "Show what was copied" off and it only says Copied, without
   reading. Nothing is stored.
+- **Terminal**: with Buoy's line in your shell's config, each command's exit code, start and
+  end time, directory and (zsh) command line are written to one small file per shell in
+  `$XDG_RUNTIME_DIR` (memory only, gone at logout). Buoy reads it only when Ptyxis says a
+  command finished.
 - **Claude Code** talks to Buoy over your session's local D-Bus. The prompt you type is
   never shown, and Buoy keeps no transcript or permission of its own; "Always" writes the
   rule Claude Code suggested into Claude Code's own settings.

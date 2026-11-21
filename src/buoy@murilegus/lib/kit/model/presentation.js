@@ -251,6 +251,12 @@ export function element(e, {leading = false} = {}) {
     // "Cuộc gọi và tab Điện thoại"); '#rrggbb' only
     const tint = typeof e.color === 'string' && /^#[0-9a-f]{6}$/i.test(e.color) ? {color: e.color.toLowerCase()} : {};
     const ic = icon(e.icon);
+    // an icon with a short text beside it, "+k" before: a command's ✓ and its time
+    // (design/compact "Lệnh terminal xong", 2026-11-21)
+    const iconLabel = str(e.label);
+    const iconMore = Number.isInteger(e.more) && e.more > 0 ? e.more : 0;
+    if (ic && (iconLabel || iconMore))
+        return {...ic, ...iconLabel ? {label: iconLabel} : {}, ...iconMore ? {more: iconMore} : {}, ...tint};
     if (ic)
         return e.backdrop === true ? {...ic, backdrop: true, ...tint} : {...ic, ...tint};
     if (isNum(e.progress))

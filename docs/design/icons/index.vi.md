@@ -89,6 +89,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Chuyến xe trên điện thoại (Grab, Be) | `route-car` (tên của Buoy) | `car` |
   | Cuộc gọi, gọi nhỡ, trả lời | `call-start`, `call-missed`, `mail-reply-sender` | `handset`, `handset-arrow-in`, `arrow-shape-turn-up-left` |
   | Chuyển tới cửa sổ | `go-jump` | `arrow-right` |
+  | Terminal (khi không có logo của app) | `utilities-terminal` | `terminal` |
   | Tham gia cuộc họp | `camera-video` | `video` |
   | Địa điểm, khách, mô tả, nhắc (trang sự kiện) | `mark-location`, `system-users`, `format-justify-left`, `appointment-soon` | `map-pin`, `persons`, `text-align-left`, `bell` |
 

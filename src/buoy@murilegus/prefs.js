@@ -20,6 +20,7 @@ import {SIZE as GRID, cells, helloAt, lampColour} from './lib/kit/model/mascot.j
 import {PATH} from './lib/kit/services/dbus.js';
 // the one module file prefs imports: pure, no Shell (CODING-AGENTS.md §8)
 import {commandFor, hooksNote, install, installed, uninstall} from './lib/modules/agent/hooks.js';
+import {hookAdded, hookLine} from './lib/modules/terminal/finished.js';
 import {linesOf, releaseLabel} from './lib/modules/greeting/adapter.js';
 import notes from './lib/modules/greeting/notes.js';
 import {GSCONNECT_PAGE, GSCONNECT_SETTINGS, GSCONNECT_UUID, phoneSetup} from './lib/kit/model/phone.js';
@@ -919,6 +920,32 @@ export default class BuoyPreferences extends ExtensionPreferences {
 
     // The calendars are every one EDS knows: Online Accounts adds Google, Microsoft 365,
     // Nextcloud… with no code of Buoy's (SPEC §3, 2026-11-06, Ethan)
+    // Buoy's shell hook (design/compact "Lệnh terminal xong", 2026-11-21, Ethan): the line to add
+    // to ~/.zshrc or ~/.bashrc and a button to copy it; Buoy never edits a shell's files. Whether
+    // one has it is read when the row shows.
+    _shellHookRow() {
+        const home = GLib.get_home_dir();
+        const line = hookLine(`${this.path}/hooks/shell.sh`, home);
+        const row = new Adw.ActionRow({title: 'Exit code and time', subtitle_selectable: true, use_markup: false});
+        const copy = new Gtk.Button({icon_name: 'edit-copy-symbolic', valign: Gtk.Align.CENTER, tooltip_text: 'Copy', css_classes: ['flat']});
+        copy.connect('clicked', () => Gdk.Display.get_default()?.get_clipboard().set(line));
+        row.add_suffix(copy);
+        const sync = () => {
+            const rc = ['.zshrc', '.bashrc'].find(name => {
+                try {
+                    const [, bytes] = Gio.File.new_for_path(GLib.build_filenamev([home, name])).load_contents(null);
+                    return hookAdded(new TextDecoder().decode(bytes));
+                } catch {
+                    return false;
+                }
+            });
+            row.subtitle = rc ? `In ~/${rc}: ${line}` : `Add this line to ~/.zshrc or ~/.bashrc:\n${line}`;
+        };
+        row.connect('map', sync);
+        sync();
+        return row;
+    }
+
     _accountsRow() {
         const row = new Adw.ButtonRow({title: 'Online Accounts', end_icon_name: 'adw-external-link-symbolic'});
         row.connect('activated', () => launchPanel('online-accounts'));
@@ -1015,6 +1042,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
             row.add_row(this._row(key(name)));
         if (m.id === 'agent')
             row.add_row(this._claudeHooksRow(m.enableKey));
+        if (m.id === 'terminal')
+            row.add_row(this._shellHookRow());
         if (m.id === 'calendar')
             row.add_row(this._accountsRow());
         if (m.id === 'phone')
