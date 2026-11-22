@@ -330,6 +330,36 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
 - **Không có hook**: pill chỉ có dòng lệnh của Ptyxis; card "Terminal · now" (tên Ubuntu đặt cho
   Ptyxis). Chia sẻ màn hình: "Command finished", không lệnh, không thư mục. **Chốt**
 
+## Hẹn giờ
+
+![Tab, pill và card, hết giờ, Pomodoro, ô Home, đồng bộ với GNOME Đồng hồ](images/timer.vi.png)
+
+*Ethan, 2026-11-22 (mục M4 "Timer").*
+
+- **Tab Hẹn giờ** (trong ⋯): trái chọn thời gian như Đồng hồ (h:mm:ss, −/+ một phút, 1 · 3 · 5 · 10 · 15
+  · 30 phút), **Bắt đầu** (kem), **Lưu** khi thời gian đó chưa lưu. Có hẹn giờ thì trái là vòng 116 của
+  cái sắp xong (hay cái được chọn): số còn lại, tên, giờ xong; ⏸ (kem), +1 phút, ■. Phải: **Đang
+  chạy** (bấm để chọn, "New Timer" về phần chọn thời gian), rồi **Đã lưu** — Pomodoro và danh sách của
+  GNOME Đồng hồ; ▶ chạy luôn; chuột phải (hay phím Menu): sửa tên, thời gian ở bên trái, xoá; Delete:
+  xoá. Esc: từ vòng về phần chọn thời gian, rồi đóng. **Chốt**
+- **Pill** (kind `timer`, 20): vòng còn lại ở đầu, tên ("Timer" khi không tên), số đếm ngược; nhiều hẹn
+  giờ: cái đang chạy sắp xong trước, "+1". Card: vòng, "7 min · ends 15:42", ⏸ / +1 min / ■, × ẩn pill
+  tới khi hẹn giờ đổi (vẫn chạy). Vòng và số tự vẽ lại mỗi giây chỉ khi đang hiện (`{ring}`, `{until}`
+  của kit); source chỉ có một timeout tới giờ xong gần nhất. **Chốt**
+- **Hết giờ**: card riêng ở lại tới khi bấm (`alertStays`), **Restart**, **Done** (kem), × là Done; âm
+  "complete" một lần, không tiếng khi Không làm phiền. Hết giờ lúc Buoy tắt (khoá máy, khởi động lại):
+  card hiện khi quay lại; hẹn giờ giữ qua khởi động lại (`timer-state`, giờ xong chứ không đếm). **Chốt**
+- **Pomodoro** (của Buoy): 25 phút làm, 5 nghỉ, 4 lượt rồi nghỉ 15 (prefs). Hết lượt làm: card **Take a
+  Break** (kem) / **Keep Going** / **Stop**; hết nghỉ: **Start Focus** / **Stop**. Không tự chạy tiếp.
+  Pill "Focus 2/4" / "Break". **Chốt**
+- **Ô Home** (sau ô điện thoại): khi không chạy, thời gian lần trước và "Timer"; bấm mở tab với thời gian
+  đó. Đang chạy thì Home có ô của chính hoạt động, ô này nhường chỗ. **Chốt**
+- **GNOME Đồng hồ**: danh sách đã lưu là `org.gnome.clocks timers` (thời gian + tên), dùng chung hai
+  chiều. Hẹn giờ đang chạy của Đồng hồ chỉ nằm trong tiến trình của nó (không D-Bus), nên Buoy không hiện
+  được; "Time is up!" của nó bị gỡ khi tới, thay bằng card "Time's up · Clocks" (chỉ Done). **Chốt**
+- **Giữ máy thức** (`timer-keep-awake`, bật): khi có hẹn giờ chạy, xin gnome-session không cho ngủ
+  (Inhibit, chỉ suspend); màn hình vẫn tắt và khoá. Bấm giờ (stopwatch): làm sau. **Chốt**
+
 ## Chỗ trong code
 
 - `lib/kit/model/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`
@@ -340,6 +370,8 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
 - `lib/kit/model/presentation.js` — `MAX_CARD_LINES` giữ 2; `MAX_ROWS` giữ 3.
 - `stylesheet.css` — style hàng và card của compact.
 - `lib/modules/attention/` — cửa sổ cần chú ý (`tests/attention.test.js`); phần tử `{workspace, more}`
+  (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
+- `lib/modules/timer/` — hẹn giờ (`tests/timer.test.js`); phần tử `{ring: {from, until}}` và `{until, more}`
   (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
 - `lib/modules/terminal/`, `hooks/shell.sh` — lệnh terminal xong (`tests/terminal.test.js`); phần tử
   `{icon, label, more}` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).

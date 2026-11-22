@@ -903,7 +903,14 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    activity per session with **Bu** as its leading: the pose follows the hook events
    (think · busy · ask · turn · error · compact · done · party, `MASCOT.md` § Agents);
    the agent's name leads the text (2026-11-03).
-3. **timer** — pomodoro + stopwatch, keep-awake, ring in the compact pill.
+3. **timer** (2026-11-22, Ethan; design/compact "Hẹn giờ") — timers in the pill, the time left as a
+   ring and a countdown, "+N" for the others; Pause / +1 min / Stop on the card; an ended one's card
+   stays till Restart or Done, with the theme's "complete" sound (none in Do Not Disturb). Pomodoro
+   (25 / 5 / 15, 4 rounds, prefs), each turn waiting for you. The Timer tab (in ⋯) sets a length or
+   shows a timer's ring; its saved timers are GNOME Clocks' own (`org.gnome.clocks timers`), both ways;
+   Clocks' "Time is up!" becomes Buoy's card (its running timers have no D-Bus). Kept over a lock and
+   a restart (ends, not ticks; one timeout). While one runs gnome-session is asked not to suspend
+   (`timer-keep-awake`). A tile on Home starts one. Stopwatch: later.
 4. **power** (2026-11-14, Ethan; design/compact "Pin và chế độ năng lượng", design/home "Ô pin và
    chế độ năng lượng") — read from Quick Settings' own UPower proxy and power-mode toggle, no proxy
    of Buoy's. A 3 s flash at plug in ("Full in 42 min"; below 20 W under 80 %: "18 W · slow charger"),

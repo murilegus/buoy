@@ -84,6 +84,11 @@ export const SYMBOLIC = {
     // a window asking for attention: Go to Window
     'go-jump': 'arrow-right',
     'utilities-terminal': 'terminal',
+    // the timer: − / + a minute, Restart, delete a saved one
+    'list-remove': 'minus',
+    'list-add': 'plus',
+    'view-refresh': 'arrow-rotate-left',
+    'user-trash': 'trash-bin',
     'input-gaming': 'own:gamepad',
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',

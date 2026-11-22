@@ -24,8 +24,9 @@ lại mỗi lần Home mở và mỗi khi stack đổi, nên Home không bao gi�
   notification" làm ô trống mà chữ dồn sát; khuôn chung cho mọi ô thì càng trống)
 
 ![Giờ cập nhật trên ô thời tiết, phương án A (chốt) và B](images/weather-updated.vi.png)
-- Hẹn giờ có một ô nhìn nhanh để bắt đầu, cả khi không chạy; thêm khi làm mục Timer. **Chốt**
-  (Ethan, 2026-11-11)
+- Hẹn giờ có một ô nhìn nhanh để bắt đầu, cả khi không chạy. **Chốt** (Ethan, 2026-11-11). Có từ
+  2026-11-22 ([Hẹn giờ](../compact/index.vi.md#hẹn-giờ)): thời gian lần trước và "Timer", bấm mở tab;
+  đang chạy thì ô của chính hoạt động thay nó.
 - Activity chưa có thẻ chính riêng dùng compact của nó (phần đầu 56 và thân) đặt trong thẻ, nên chỉ
   nhạc, câu hỏi của Claude Code, cuộc gọi và lời chào cần thiết kế riêng. **Chốt** (Ethan, 2026-11-12)
 - Compact trong thẻ vẽ số hàng vừa chiều cao của thẻ (56 + 8 + 16n + 8; không vừa hàng nào thì

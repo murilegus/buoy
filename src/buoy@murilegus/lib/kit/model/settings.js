@@ -60,6 +60,8 @@ export const PLACES = {
     'tabs-slot': null,          // set from the island's ⋯ menu, not here
     'daypart-starts': 'idle',   // kit/model/daypart.js; the clock plan reads it (FEATURES M3)
     'clock-defaults-applied': null, // bookkeeping: GNOME_CLOCK defaults written once
+    'timer-state': null,            // bookkeeping: the timers running, kept over a restart
+    'timer-last': null,             // bookkeeping: the length last started
     'dock-defaults-applied': null,  // bookkeeping: GNOME_DOCK defaults written once
     'weather-defaults-applied': null, // bookkeeping: GNOME_WEATHER defaults written once
 };

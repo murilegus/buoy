@@ -87,6 +87,7 @@ for m in flash compact; do r compact/render/plugged.js compact/images/plugged-$m
 r compact/render/attention.js compact/images/attention.vi.png
 r compact/render/meeting.js compact/images/meeting.vi.png
 r compact/render/terminal.js compact/images/terminal.vi.png
+r compact/render/timer.js compact/images/timer.vi.png
 r tabs/render/event.js tabs/images/event.vi.png
 
 # motion
