@@ -275,8 +275,8 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   hay nút: sang workspace đó và focus (`Main.activateWindow`). ×: tắt pill, cửa sổ vẫn đòi chú ý; đòi lại thì
   pill lại. Không có tab. **Chốt**
 - **Thay GNOME**: thông báo "“…” is ready" không hiện khi module chạy (handler của Shell được ngắt, nối lại
-  khi tắt). Chia sẻ màn hình: chỉ tên app. Terminal kêu bell dùng chung pill; mục "Terminal command
-  finished" sẽ nói chi tiết hơn. **Chốt**
+  khi tắt). Chia sẻ màn hình: chỉ tên app. Terminal kêu bell dùng chung pill; lệnh chạy xong có pill riêng
+  ([Lệnh terminal xong](#lệnh-terminal-xong)). **Chốt**
 
 ## Sắp họp
 
@@ -306,6 +306,30 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
   calendars": **As GNOME** (mỗi giờ) mặc định; 5, 10, 15, 30 phút thì Buoy nhờ EDS tải lại các lịch
   online đang hiện (`Calendar.Refresh`). **Chốt** (Ethan, 2026-11-20)
 
+## Lệnh terminal xong
+
+![Lệnh xong, lệnh lỗi, chưa có hook, nhiều lệnh, prefs](images/terminal.vi.png)
+
+*Ethan, 2026-11-21 (mục M4 "Terminal command finished in an unfocused tab").*
+
+- **Khi nào**: Ptyxis gửi "Command completed" khi một lệnh chạy từ 250 ms xong lúc cửa sổ của nó không
+  được focus (ptyxis-tab-notify.h). Buoy lấy thông báo đó, không hiện banner, không thành pill thông
+  báo. Cửa sổ đang focus mà lệnh xong ở tab khác: Ptyxis không gửi, Buoy không báo. **Chốt**
+- **Pill** (kind `terminal`, 50, module `terminal`): logo Ptyxis, dòng lệnh, ở cuối ✓ hoặc ✕ và thời
+  gian chạy (`fg-muted`): "48 s", "2:03", "1:05:10". Không xanh, không đỏ. Một pill cho Ptyxis: lệnh mới
+  nhất, "+1" cho các tab khác. Không "cần bạn". **Chốt**
+- **Card**: dòng lệnh, "exit 0 · 48 s · ~/works/buoy · now", nút **Go to Tab** (`arrow-right`), ×. Đến như
+  thông báo, rồi pill ở lại tới khi anh về tab đó (Ptyxis tự gỡ thông báo), gỡ nó trong danh sách của
+  GNOME, hay ×. Bấm pill hay nút: hành động của chính thông báo, Ptyxis mở đúng tab. **Chốt**
+- **Hook shell** (`hooks/shell.sh`): một dòng `source …` trong `~/.zshrc` hay `~/.bashrc`, chép từ prefs
+  (Modules → Terminal commands → Exit code and time); Buoy không sửa file của shell. Hook nạp `vte.sh`
+  nếu shell chưa nạp (zsh của Ubuntu không nạp, nên Ptyxis không báo gì) và gửi "preexec" mà `vte.sh`
+  chỉ gửi trong bash. Lệnh xong thì ghi mã thoát, giờ bắt đầu, giờ xong, thư mục (và dòng lệnh, zsh)
+  vào `$XDG_RUNTIME_DIR/buoy-shell-<pid>` bằng lệnh có sẵn của shell: không tiến trình, không D-Bus.
+  Buoy chỉ đọc khi thông báo của Ptyxis đến, lấy bản ghi xong trong 10 s và cùng lệnh. **Chốt**
+- **Không có hook**: pill chỉ có dòng lệnh của Ptyxis; card "Terminal · now" (tên Ubuntu đặt cho
+  Ptyxis). Chia sẻ màn hình: "Command finished", không lệnh, không thư mục. **Chốt**
+
 ## Chỗ trong code
 
 - `lib/kit/model/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`
@@ -317,4 +341,6 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
 - `stylesheet.css` — style hàng và card của compact.
 - `lib/modules/attention/` — cửa sổ cần chú ý (`tests/attention.test.js`); phần tử `{workspace, more}`
   (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
+- `lib/modules/terminal/`, `hooks/shell.sh` — lệnh terminal xong (`tests/terminal.test.js`); phần tử
+  `{icon, label, more}` (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
 - SPEC §4 (bảng kích thước); NOTIFICATIONS.md §3 (card).

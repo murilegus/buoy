@@ -39,11 +39,12 @@ import bluetooth from './lib/modules/bluetooth/index.js';
 import usb from './lib/modules/usb/index.js';
 import phone from './lib/modules/phone/index.js';
 import attention from './lib/modules/attention/index.js';
+import terminal from './lib/modules/terminal/index.js';
 import mascot from './lib/modules/mascot/index.js';
 
 // Static import list (EGO: no runtime code loading). Enabled set comes from GSettings.
 // Order is also the tab strip's order (SPEC §2b).
-const MODULES = [media, notification, attention, progress, timer, hud, home, input, agent, calendar, device, copied, clipboard, phone, clock, weather, greeting, privacy, power, plugged, bluetooth, usb, mascot];
+const MODULES = [media, notification, attention, terminal, progress, timer, hud, home, input, agent, calendar, device, copied, clipboard, phone, clock, weather, greeting, privacy, power, plugged, bluetooth, usb, mascot];
 
 export default class BuoyExtension extends Extension {
     enable() {

@@ -83,6 +83,7 @@ export const SYMBOLIC = {
     'mail-reply-sender': 'arrow-shape-turn-up-left',
     // a window asking for attention: Go to Window
     'go-jump': 'arrow-right',
+    'utilities-terminal': 'terminal',
     'input-gaming': 'own:gamepad',
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',

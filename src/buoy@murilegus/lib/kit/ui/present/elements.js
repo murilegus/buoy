@@ -240,11 +240,23 @@ function bareElement(e, mode, activity, sizes) {
     switch (e.type) {
     case 'mascot':
         return mascot(e, size.mascot, activity);
-    case 'icon':
-        return new St.Icon({
+    case 'icon': {
+        const ic = new St.Icon({
             style_class: 'buoy-icon', icon_size: size.icon,
             ...e.gicon ? {gicon: e.gicon} : iconProps(e.icon),
         });
+        if (!e.label && !e.more)
+            return ic;
+        // "+1", the icon and its text, fg-muted (design/compact "Lệnh terminal xong")
+        const box = new St.BoxLayout({style_class: 'buoy-icon-line', y_align: Clutter.ActorAlign.CENTER});
+        if (e.more)
+            box.add_child(label(`+${e.more}`, 'buoy-label'));
+        ic.y_align = Clutter.ActorAlign.CENTER;
+        box.add_child(ic);
+        if (e.label)
+            box.add_child(label(e.label, 'buoy-label'));
+        return box;
+    }
     case 'art': {
         const icon = new St.Icon({
             style_class: 'buoy-art', icon_size: size.art,

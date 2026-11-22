@@ -936,6 +936,14 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    the pill till it is focused, stops asking or goes: the app's logo, the window's title, its
    workspace's number when not the one shown; a click goes to it. GNOME's "“…” is ready"
    notification is not shown meanwhile; a terminal's bell is one too.
+6c. **terminal** (2026-11-21, Ethan; design/compact "Lệnh terminal xong") — Ptyxis's "Command
+   completed" (a command of 250 ms or more done while its window is not active) as a pill that
+   stays till Ptyxis takes it back (the tab focused), it is dismissed or ×: Ptyxis's logo, the
+   command, ✓ or ✕ and its time; the card says "exit 0 · 48 s · <dir>", Go to Tab activates the
+   notification's own action. The exit code, time and directory come from Buoy's shell hook
+   (`hooks/shell.sh`, a line in ~/.zshrc or ~/.bashrc copied from prefs), which also loads VTE's
+   shell integration where the shell does not (zsh on Ubuntu) and writes a small file per shell in
+   $XDG_RUNTIME_DIR, read only when the notification comes. Without it, the command alone.
 7. **privacy / recording** — cam/mic dots, recording timer; "call" activity when
    cam+mic are both in use.
 8. **several pills** — pill 1 plus up to two idle-sized side pills (§2c).

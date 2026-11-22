@@ -178,6 +178,11 @@
       <summary>Windows asking for attention</summary>
       <description>A window that asks for attention (an app ready on another workspace, a terminal's bell) stays on the pill till you go to it, in place of GNOME's notification.</description>
     </key>
+    <key name="modules-terminal" type="b">
+      <default>true</default>
+      <summary>Terminal commands</summary>
+      <description>A command that finished in a Ptyxis tab you are not in stays on the pill till you go to it, in place of Ptyxis's notification.</description>
+    </key>
     <key name="modules-phone" type="b">
       <default>true</default>
       <summary>Phone</summary>
