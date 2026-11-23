@@ -360,6 +360,30 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
 - **Giữ máy thức** (`timer-keep-awake`, bật): khi có hẹn giờ chạy, xin gnome-session không cho ngủ
   (Inhibit, chỉ suspend); màn hình vẫn tắt và khoá. Bấm giờ (stopwatch): làm sau. **Chốt**
 
+## Mạng
+
+![Flash mạng, khi nào không flash, đăng nhập mạng, icon](images/network.vi.png)
+
+*Ethan, 2026-11-23 (mục M4 "VPN / Wi-Fi / captive portal").* Đọc từ `NM.Client` của chính Shell (Quick
+Settings, `ui/status/network.js`), chỉ nghe tín hiệu. **Chốt**
+
+- **Flash 3 s** (kind `network`, 35): Wi-Fi nối (tên mạng, icon theo sóng), có dây (tên kết nối, không
+  tên: "Wired"), không còn mạng nào ("Offline", sau 3 s: mạng cũ nối lại trong 3 s thì không gì), VPN
+  bật ("VPN · <tên>", cả WireGuard) và tắt ("VPN Off"), nối mà không ra Internet sau 5 s ("No Internet"
+  ở cuối, một lần mỗi kết nối). Flash sau thay flash trước. Nối thất bại: thay "Connection failed" của
+  GNOME bằng "Couldn't Connect to <mạng đang nối>". **Chốt**
+- **Không flash** 15 s đầu sau khi bật Buoy (đăng nhập, mở khoá) hay máy thức dậy: NetworkManager tự nối
+  lại. Roaming (cùng kết nối): không. Chia sẻ màn hình: "Wi-Fi", "Wired", "VPN", không tên. **Chốt**
+- **Đăng nhập mạng**: thay "Sign in to Network" của GNOME (`CaptivePortalHandler`): card đến, rồi pill ở
+  lại tới khi Shell gỡ thông báo (đã có Internet, rời mạng); **Sign In** (kem) như bấm thông báo: trang
+  đăng nhập của GNOME. ×: ẩn pill, thông báo vẫn trong danh sách của GNOME. Đăng nhập xong: flash tên
+  mạng. **Chốt**
+- **Icon B**: Wi-Fi tự vẽ theo kiểu Gravity (`own/wifi-*`: chấm và cung nét 1.5), mức như Shell (80, 55,
+  30, 5); cung chưa sáng bỏ hẳn, không mờ (icon symbolic một màu); không sóng / mất mạng có gạch chéo. Có
+  dây `plug-connection`, VPN `shield-check` / `shield`, lỗi `circle-exclamation` của Gravity. **Chốt**
+  (Ethan, 2026-11-23)
+- Không có hàng mạng trong tab Thiết bị, không bật/tắt mạng từ Buoy: Quick Settings làm việc đó. **Chốt**
+
 ## Chỗ trong code
 
 - `lib/kit/model/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`
@@ -371,6 +395,7 @@ Gvc mà Quick Settings dùng (`ui/status/volume.js`): chỉ nghe tín hiệu, kh
 - `stylesheet.css` — style hàng và card của compact.
 - `lib/modules/attention/` — cửa sổ cần chú ý (`tests/attention.test.js`); phần tử `{workspace, more}`
   (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
+- `lib/modules/network/` — mạng (`tests/network.test.js`).
 - `lib/modules/timer/` — hẹn giờ (`tests/timer.test.js`); phần tử `{ring: {from, until}}` và `{until, more}`
   (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
 - `lib/modules/terminal/`, `hooks/shell.sh` — lệnh terminal xong (`tests/terminal.test.js`); phần tử
