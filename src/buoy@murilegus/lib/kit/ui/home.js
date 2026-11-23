@@ -182,7 +182,9 @@ export class Home {
         this._fitLater = 0;
 
         // The ⋯ menu floats over the tab (Notchy): a BinLayout stacks it on the column.
-        this.actor = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true});
+        // buoy-home-root: what the panel's own look hangs on (its scrollbars) — the body a tab
+        // switch leaves fades outside the column (_leave), and must look the same there
+        this.actor = new St.Widget({style_class: 'buoy-home-root', layout_manager: new Clutter.BinLayout(), x_expand: true});
         // y_expand: BinLayout centres a child that does not expand, so when the menu is
         // taller than the tab (an empty tab) the strip would slide down under it
         this._column = new St.BoxLayout({
