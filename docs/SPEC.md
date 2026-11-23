@@ -943,6 +943,12 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    the pill till it is focused, stops asking or goes: the app's logo, the window's title, its
    workspace's number when not the one shown; a click goes to it. GNOME's "“…” is ready"
    notification is not shown meanwhile; a terminal's bell is one too.
+6e. **print** (2026-11-23, Ethan; design/compact "Lệnh in") — CUPS's own D-Bus signals
+   (org.cups.cupsd.Notifier, sent for gsd's subscription; none of Buoy's): the job in the pill till it is
+   over, its pages done when CUPS says them (no total, so no bar), "+N"; printed or cancelled a flash,
+   aborted or stopped a card that stays; the printer's stopping problems a card and a pill while a job
+   waits, the low ones a flash. gsd's "Printers" notifications about the same job or printer are not
+   shown; a job held for a password stays GNOME's.
 6d. **network** (2026-11-23, Ethan; design/compact "Mạng") — from Shell's own NM.Client (Quick
    Settings): a 3 s flash when Wi-Fi or a cable connects (its name, Wi-Fi's strength), none is left
    ("Offline", told after 3 s and not at all when the same network is back), a VPN comes or goes,

@@ -51,6 +51,11 @@
       <summary>More download folders</summary>
       <description>Browser downloads show from your Downloads folder and from these, up to 10. Folders inside them are not watched.</description>
     </key>
+    <key name="modules-print" type="b">
+      <default>true</default>
+      <summary>Printing</summary>
+      <description>A print job in the pill till it is done, and the printer's problems, in place of GNOME's printer notifications.</description>
+    </key>
     <key name="modules-timer" type="b">
       <default>true</default>
       <summary>Timer</summary>

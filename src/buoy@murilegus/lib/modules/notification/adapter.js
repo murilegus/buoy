@@ -175,6 +175,28 @@ export function powerShows(appId, body, activity) {
 }
 
 /**
+ * gsd's "Printers" notifications (print-notifications: "Printing", "Printing completed", stopped,
+ * cancelled, the printer's toner and paper…) while the print module shows the same job or printer
+ * (FEATURES M4 "Print job progress", design/compact "Lệnh in", 2026-11-23, Ethan). gsd posts them as
+ * app "Printers" with the desktop entry gnome-printers-panel; their body names the job ("“%s” on
+ * %s") or the printer ("Printer “%s” is out of paper."). One with buttons (a job held for a
+ * password) stays GNOME's.
+ *
+ * @param {*} appId  the source's app id (source.js appIdOf)
+ * @param {*} body  the notification's body
+ * @param {number} actions  how many buttons it has
+ * @param {?object} activity  a print activity on the island, or null
+ * @returns {boolean} the print module says it: no pill of its own
+ */
+export function printShows(appId, body, actions, activity) {
+    if (appId !== 'gnome-printers-panel' || actions > 0 || !activity)
+        return false;
+    const b = typeof body === 'string' ? body : '';
+    const {printer = '', doc = ''} = activity.attributes ?? {};
+    return (printer !== '' && b.includes(printer)) || (doc !== '' && b.includes(doc));
+}
+
+/**
  * @param {number} count
  * @returns {string} the compact's line on a shared screen
  */

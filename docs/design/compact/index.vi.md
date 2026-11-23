@@ -384,6 +384,27 @@ Settings, `ui/status/network.js`), chỉ nghe tín hiệu. **Chốt**
   (Ethan, 2026-11-23)
 - Không có hàng mạng trong tab Thiết bị, không bật/tắt mạng từ Buoy: Quick Settings làm việc đó. **Chốt**
 
+## Lệnh in
+
+![Đang in, xong / huỷ / lỗi, máy in có vấn đề, thay thông báo của GNOME](images/print.vi.png)
+
+*Ethan, 2026-11-23 (mục M4 "Print job progress").* Đọc tín hiệu D-Bus của chính CUPS
+(`org.cups.cupsd.Notifier` trên bus hệ thống, cups `notifier/dbus.c`), mà CUPS gửi cho đăng ký của gsd
+(print-notifications `renew_subscription`); Buoy không đăng ký thêm, không dò. **Chốt**
+
+- **Đang in** (kind `print`, 30): pill ở lại tới khi xong: máy in, tên tài liệu, "Page 3" khi CUPS đã báo
+  (`job-impressions-completed`, gửi lúc lệnh in đổi trạng thái; không có tổng, nên không có thanh tiến
+  độ), "Waiting" khi đang chờ, "+1" khi có lệnh khác. Card: tên máy in, nút **Printers** (Cài đặt → Máy
+  in). **Chốt**
+- **Xong**: flash 3 s "Printed …" với số trang; **huỷ**: "Cancelled …"; **lỗi** (aborted, dừng): card ở
+  lại tới ×, Printers (kem). Lệnh in cần mật khẩu: để thông báo của GNOME (có nút). **Chốt**
+- **Máy in có vấn đề** (`printer-state-reasons`), chỉ khi có lệnh in của máy đó: hết giấy, kẹt giấy, mở
+  nắp / cửa, hết mực, ngoại tuyến, lỗi cấu hình: card rồi pill tới khi hết lỗi; sắp hết giấy / mực: flash,
+  một lần tới khi hết. Chữ như của GNOME. **Chốt**
+- **Thay GNOME**: thông báo "Printers" của gsd về đúng lệnh in hay máy in Buoy đang hiện không thành pill
+  thông báo (`printShows`); "Printer added", lệnh cần mật khẩu vẫn của GNOME. Tín hiệu không nói lệnh của
+  ai: máy dùng chung thì thấy cả lệnh in của người khác. **Chốt**
+
 ## Chỗ trong code
 
 - `lib/kit/model/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`
@@ -395,6 +416,7 @@ Settings, `ui/status/network.js`), chỉ nghe tín hiệu. **Chốt**
 - `stylesheet.css` — style hàng và card của compact.
 - `lib/modules/attention/` — cửa sổ cần chú ý (`tests/attention.test.js`); phần tử `{workspace, more}`
   (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
+- `lib/modules/print/` — lệnh in (`tests/print.test.js`); `printShows` ở `modules/notification/adapter.js`.
 - `lib/modules/network/` — mạng (`tests/network.test.js`).
 - `lib/modules/timer/` — hẹn giờ (`tests/timer.test.js`); phần tử `{ring: {from, until}}` và `{until, more}`
   (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
