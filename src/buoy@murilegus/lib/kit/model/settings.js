@@ -500,7 +500,7 @@ export const MODULE_GROUPS = [
     {
         id: 'feedback', title: 'Quick Feedback',
         description: 'A short flash after something you did.',
-        modules: ['hud', 'input', 'copied', 'power', 'plugged', 'bluetooth', 'usb'],
+        modules: ['hud', 'input', 'copied', 'power', 'plugged', 'bluetooth', 'usb', 'network'],
     },
     {
         id: 'tabs', title: 'Tabs',

@@ -176,6 +176,8 @@ so nothing shows.
 - **The clipboard**: when you copy, Buoy reads it (text, file names or an image thumbnail)
   to show it briefly. Turn "Show what was copied" off and it only says Copied, without
   reading. Nothing is stored.
+- **The network**: Buoy reads what GNOME's Quick Settings already knows (the network's name, the
+  VPN's) to show it for a moment when it changes; on a shared screen, without the names.
 - **Terminal**: with Buoy's line in your shell's config, each command's exit code, start and
   end time, directory and (zsh) command line are written to one small file per shell in
   `$XDG_RUNTIME_DIR` (memory only, gone at logout). Buoy reads it only when Ptyxis says a

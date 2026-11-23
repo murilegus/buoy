@@ -943,6 +943,13 @@ discrete hint (`size: 'wide'`), and the renderer ellipsizes or drops low-priorit
    the pill till it is focused, stops asking or goes: the app's logo, the window's title, its
    workspace's number when not the one shown; a click goes to it. GNOME's "“…” is ready"
    notification is not shown meanwhile; a terminal's bell is one too.
+6d. **network** (2026-11-23, Ethan; design/compact "Mạng") — from Shell's own NM.Client (Quick
+   Settings): a 3 s flash when Wi-Fi or a cable connects (its name, Wi-Fi's strength), none is left
+   ("Offline", told after 3 s and not at all when the same network is back), a VPN comes or goes,
+   or a connection stays without Internet 5 s ("No Internet", once); none for 15 s after Buoy starts
+   or the machine wakes. GNOME's "Connection failed" becomes a flash; its "Sign in to Network" a card,
+   then a pill that stays till it is gone, Sign In opening GNOME's sign-in. No network rows, no
+   switches: Quick Settings keeps those.
 6c. **terminal** (2026-11-21, Ethan; design/compact "Lệnh terminal xong") — Ptyxis's "Command
    completed" (a command of 250 ms or more done while its window is not active) as a pill that
    stays till Ptyxis takes it back (the tab focused), it is dismissed or ×: Ptyxis's logo, the

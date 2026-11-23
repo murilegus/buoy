@@ -88,6 +88,7 @@ r compact/render/attention.js compact/images/attention.vi.png
 r compact/render/meeting.js compact/images/meeting.vi.png
 r compact/render/terminal.js compact/images/terminal.vi.png
 r compact/render/timer.js compact/images/timer.vi.png
+r compact/render/network.js compact/images/network.vi.png
 r tabs/render/event.js tabs/images/event.vi.png
 
 # motion

@@ -4,10 +4,10 @@
  */
 export const KINDS = ['media', 'notification', 'progress', 'osd', 'input', 'power', 'device',
     'timer', 'ask', 'agent', 'attention', 'copied', 'phone', 'calendar', 'privacy', 'call',
-    'greeting', 'screen', 'bluetooth', 'usb', 'terminal'];
+    'greeting', 'screen', 'bluetooth', 'usb', 'terminal', 'network'];
 
 export const PRIORITY = {
-    media: 10, timer: 20, calendar: 25, progress: 30, device: 35, bluetooth: 35, usb: 35, agent: 35, power: 40,
+    media: 10, timer: 20, calendar: 25, progress: 30, device: 35, bluetooth: 35, usb: 35, network: 35, agent: 35, power: 40,
     copied: 45, attention: 50,
     terminal: 50,   // a command that finished: waits for you as a window asking (design/compact)
     screen: 55,     // a recording or a share: before anything running, after the moments (design/compact)
