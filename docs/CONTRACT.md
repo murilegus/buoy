@@ -116,8 +116,9 @@ an icon fallback); `{art, icon, round: true}` a person's photo, round (a phone m
 beside it, `off` dims both — a muted level, 2026-11-05; every volume) · `{battery, label?}` (a battery
 drawn at its level, 0..1, its number beside it; none for a coarse level — a Bluetooth device's, so a
 battery never reads as a volume, 2026-11-17) · `{countdown}` / `{text}` (text) ·
-`{until: ms since the epoch}` (a countdown the renderer runs once a second while shown,
-2026-11-05: a Spotify ad) · `{elapsed: ms since the epoch}` (its twin counting up, `0:42`,
+`{until: ms since the epoch, more?}` (a countdown the renderer runs once a second while shown,
+2026-11-05: a Spotify ad; "+k" before it, 2026-11-22: other timers) · `{ring: {from, until}}` (the time
+left as a ring, drawn again once a second while shown, 2026-11-22: a timer) · `{elapsed: ms since the epoch}` (its twin counting up, `0:42`,
 2026-11-14: a screen recording) · `{icon, backdrop: true}` (the icon on a round fill-2 plate in
 a compact's leading 40, 2026-11-14) ·
 **`{mascot: '<pose>', icon?}`** (Bu, added 2026-11-03): one of the 13 poses in

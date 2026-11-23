@@ -277,8 +277,15 @@ export function element(e, {leading = false} = {}) {
     }
     if (isNum(e.countdown))
         return {type: 'text', text: clock(e.countdown)};
-    if (isNum(e.until))
-        return {type: 'until', at: e.until};
+    if (isNum(e.until)) {
+        // "+k" before it: other timers running (design/compact "Hẹn giờ", 2026-11-22)
+        const more = Number.isInteger(e.more) && e.more > 0 ? e.more : 0;
+        return {type: 'until', at: e.until, ...more ? {more} : {}};
+    }
+    // the time left as a ring, from `from` to `until`, drawn again once a second while shown
+    // (a timer, design/compact "Hẹn giờ", 2026-11-22)
+    if (isPlain(e.ring) && isNum(e.ring.from) && isNum(e.ring.until) && e.ring.until > e.ring.from)
+        return {type: 'until-ring', from: e.ring.from, at: e.ring.until};
     if (isNum(e.since))
         return {type: 'since', at: e.since, ...tint};
     if (isNum(e.elapsed))

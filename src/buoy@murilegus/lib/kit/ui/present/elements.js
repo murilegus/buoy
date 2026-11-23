@@ -8,7 +8,7 @@ import St from 'gi://St';
 
 import {ART_CODE, ART_DECLARATIONS, artRadius, effectBox} from '../../model/rounded.js';
 import {element} from '../../model/presentation.js';
-import {LONG_BAR, batteryLevel, bodyFill, elapsedLabel, file, label, levelBar, meter, sinceLabel, untilLabel} from './parts.js';
+import {LONG_BAR, batteryLevel, bodyFill, elapsedLabel, file, label, levelBar, meter, sinceLabel, tick, untilLabel} from './parts.js';
 import {eqGlyph, mascot} from './motion.js';
 
 // Buoy's own symbolic icons (design/icons "Icon symbolic"): Gravity UI's, and the ones Buoy
@@ -278,8 +278,21 @@ function bareElement(e, mode, activity, sizes) {
         return batteryLevel(e);
     case 'text':
         return label(e.text, 'buoy-label');
-    case 'until':
-        return untilLabel(e.at);
+    case 'until': {
+        if (!e.more)
+            return untilLabel(e.at);
+        const box = new St.BoxLayout({style_class: 'buoy-icon-line', y_align: Clutter.ActorAlign.CENTER});
+        box.add_child(label(`+${e.more}`, 'buoy-label'));
+        box.add_child(untilLabel(e.at));
+        return box;
+    }
+    case 'until-ring': {
+        // the part left, once a second while shown (parts.js tick), as the until label
+        const left = () => Math.max(0, Math.min(1, (e.at - Date.now()) / (e.at - e.from)));
+        const ring = /** @type {any} */ (meter('ring', left(), size.ring));
+        tick(ring, () => ring.setValue(left()), () => Date.now() < e.at);
+        return ring;
+    }
     case 'workspace': {
         // "+1" and the workspace's number in a square (design/compact "Cửa sổ cần chú ý")
         const box = new St.BoxLayout({style_class: 'buoy-workspace-line', y_align: Clutter.ActorAlign.CENTER});

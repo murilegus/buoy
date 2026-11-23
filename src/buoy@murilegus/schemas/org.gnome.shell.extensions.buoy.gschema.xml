@@ -54,7 +54,47 @@
     <key name="modules-timer" type="b">
       <default>true</default>
       <summary>Timer</summary>
-      <description>Timers in the pill, with the Timer tab.</description>
+      <description>Timers in the pill, with the Timer tab; saved timers shared with GNOME Clocks.</description>
+    </key>
+    <key name="timer-keep-awake" type="b">
+      <default>true</default>
+      <summary>Keep the computer awake</summary>
+      <description>While a timer runs it does not suspend; the screen still turns off and locks.</description>
+    </key>
+    <key name="timer-pomodoro-work" type="i">
+      <range min="1" max="120"/>
+      <default>25</default>
+      <summary>Pomodoro focus</summary>
+      <description>Minutes of a focus turn.</description>
+    </key>
+    <key name="timer-pomodoro-break" type="i">
+      <range min="1" max="60"/>
+      <default>5</default>
+      <summary>Pomodoro break</summary>
+      <description>Minutes of a short break.</description>
+    </key>
+    <key name="timer-pomodoro-long" type="i">
+      <range min="1" max="120"/>
+      <default>15</default>
+      <summary>Pomodoro long break</summary>
+      <description>Minutes of the break after the last round.</description>
+    </key>
+    <key name="timer-pomodoro-rounds" type="i">
+      <range min="1" max="10"/>
+      <default>4</default>
+      <summary>Pomodoro rounds</summary>
+      <description>Focus turns before the long break.</description>
+    </key>
+    <key name="timer-state" type="s">
+      <default>''</default>
+      <summary>Timers running</summary>
+      <description>Bookkeeping: the timers running or paused, by when they end, so a restart keeps them.</description>
+    </key>
+    <key name="timer-last" type="i">
+      <range min="1" max="359999"/>
+      <default>300</default>
+      <summary>Last timer length</summary>
+      <description>Bookkeeping: the length last started, in seconds, for the tab and Home's tile.</description>
     </key>
     <key name="modules-greeting" type="b">
       <default>true</default>

@@ -201,6 +201,9 @@ ones you never changed yourself**, and only once:
 | | trash, volumes and devices | hidden |
 | GNOME Weather units | temperature, wind speed | °C, km/h |
 
+GNOME Clocks' saved timers are the Timer tab's own list: saving, renaming or deleting one in Buoy
+changes it in Clocks too (`org.gnome.clocks timers`), and the other way round.
+
 Change any of them back in GNOME Settings (or in Buoy's settings, which show the same
 values). Removing Buoy leaves them as they are; the uninstaller prints the
 `gsettings reset` commands for the ones still at Buoy's value.

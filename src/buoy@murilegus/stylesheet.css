@@ -357,17 +357,20 @@
 
 /* Home's panel (kit/ui/home.js): the tab strip and the selected tab, only inside expanded. */
 .buoy-panel { padding: 10px 12px 12px; spacing: 8px; }
-/* Its scrollbars (design/tokens "Expanded", 2026-11-21): a 4 px bar in a 10 px lane, fill-3,
-   one step up on hover, two when held; GNOME's is 8 px of solid grey */
-.buoy-panel StScrollBar { min-width: 10px; min-height: 10px; padding: 3px; }
-.buoy-panel StScrollBar > .vhandle, .buoy-panel StScrollBar > .hhandle {
+/* Its scrollbars (design/tokens "Expanded", 2026-11-21; narrower 2026-11-23): a 3 px bar in a 7 px
+   lane, fill-3, one step up on hover, two when held; GNOME's is 8 px of solid grey. On Home's root,
+   not the panel: a tab switch's leaving body fades outside the panel, and showed GNOME's bar
+   there; no transition, so nothing fades from GNOME's look either (2026-11-23, Ethan) */
+.buoy-home-root StScrollBar { min-width: 7px; min-height: 7px; padding: 2px; }
+.buoy-home-root StScrollBar > .vhandle, .buoy-home-root StScrollBar > .hhandle {
     border: 0;
     border-radius: 999px;
+    transition-duration: 0ms;
     background-color: rgba(255, 255, 255, 0.2); /* fill-3 */
 }
-.buoy-panel StScrollBar > .vhandle:hover, .buoy-panel StScrollBar > .hhandle:hover { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
-.buoy-panel StScrollBar > .vhandle:active, .buoy-panel StScrollBar > .hhandle:active { background-color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
-.buoy-hc .buoy-panel StScrollBar > .vhandle:active, .buoy-hc .buoy-panel StScrollBar > .hhandle:active { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-home-root StScrollBar > .vhandle:hover, .buoy-home-root StScrollBar > .hhandle:hover { background-color: rgba(255, 255, 255, 0.28); /* fill-4 */ }
+.buoy-home-root StScrollBar > .vhandle:active, .buoy-home-root StScrollBar > .hhandle:active { background-color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
+.buoy-hc .buoy-home-root StScrollBar > .vhandle:active, .buoy-hc .buoy-home-root StScrollBar > .hhandle:active { background-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-tabs-row { spacing: 2px; }
 .buoy-tabs {
     padding: 3px;
