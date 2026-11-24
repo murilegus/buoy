@@ -11,7 +11,7 @@ import {SharingWatch} from '../../kit/services/sharing.js';
 import {usbShows} from '../../kit/model/drives.js';
 import {GSCONNECT_APP, callOf, phoneNote, replyOf} from '../../kit/model/phone.js';
 import {Phones} from '../../kit/services/gsconnect.js';
-import {DISMISS, REPLY, REPLY_CANCEL, REPLY_SEND, REPLY_TEXT, Turns, actionIndex, agentShows, missedRow, powerShows, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
+import {DISMISS, REPLY, REPLY_CANCEL, REPLY_SEND, REPLY_TEXT, Turns, actionIndex, agentShows, missedRow, powerShows, printShows, sharedBurst, shownElsewhere, waitedInQueue} from './adapter.js';
 
 const KIND = 'notification';
 const REPLACE_KEY = 'notification-replace-banners';
@@ -226,6 +226,11 @@ export class NotificationSource extends Source {
         }
         // GNOME's low battery while the power pill shows it: read, no pill (adapter.js powerShows)
         if (this._stack?.find(a => a.kind === 'power' && powerShows(app, n.body, a))) {
+            n.acknowledged = true;
+            return;
+        }
+        // gsd's "Printers" notifications while the print module says the same: read, no pill
+        if (this._stack?.find(a => a.kind === 'print' && printShows(app, n.body, n.actions?.length ?? 0, a))) {
             n.acknowledged = true;
             return;
         }

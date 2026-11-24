@@ -91,6 +91,7 @@ Icon buổi trong ngày và thời tiết: 19 SVG màu, một họ, `scripts/ico
   | Chuyển tới cửa sổ | `go-jump` | `arrow-right` |
   | Terminal (khi không có logo của app) | `utilities-terminal` | `terminal` |
   | Mạng: Wi-Fi bốn mức, không sóng; có dây; VPN bật, tắt; lỗi | `network-wireless-signal-*`, `network-offline`; `network-wired`; `network-vpn`, `network-vpn-disabled`; `network-error` | tự vẽ (`own/wifi-*`); `plug-connection`; `shield-check`, `shield`; `circle-exclamation` |
+  | Lệnh in | `printer` | `printer` |
   | Hẹn giờ: −/+ một phút, chạy lại, xoá | `list-remove`, `list-add`, `view-refresh`, `user-trash` | `minus`, `plus`, `arrow-rotate-left`, `trash-bin` |
   | Tham gia cuộc họp | `camera-video` | `video` |
   | Địa điểm, khách, mô tả, nhắc (trang sự kiện) | `mark-location`, `system-users`, `format-justify-left`, `appointment-soon` | `map-pin`, `persons`, `text-align-left`, `bell` |

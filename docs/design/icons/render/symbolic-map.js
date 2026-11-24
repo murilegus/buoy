@@ -101,6 +101,8 @@ export const SYMBOLIC = {
     'network-vpn': 'shield-check',
     'network-vpn-disabled': 'shield',
     'network-error': 'circle-exclamation',
+    // a print job (design/compact "Lệnh in", 2026-11-23)
+    'printer': 'printer',
     'input-gaming': 'own:gamepad',
     'mail-unread': 'envelope',
     'weather-overcast': 'cloud',
