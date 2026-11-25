@@ -32,6 +32,9 @@ export const PLACES = {
     'greeting-version-seen': null,  // bookkeeping (GREETING.md §11)
     'greeting-update-checked': null, // bookkeeping: when GitHub was last asked (GREETING.md §11)
     'greeting-update-told': null,   // bookkeeping: the newer version Bu last spoke of
+    'greeting-boot': null,          // bookkeeping: the boot of the last look (GREETING.md §1)
+    'greeting-session': null,       // bookkeeping: the logind session of the last look
+    'greeting-asleep': null,        // bookkeeping: seconds asleep since boot at the last look
     // the weather's refresh (prefs' button asks, Buoy answers; 2026-11-12): bookkeeping
     'idle-weather-locate-now': null,
     'idle-weather-located': null,
@@ -215,6 +218,7 @@ export function switchValue(entry, active) {
 // Drop-down labels where the value itself would read badly ("Dark-text"); any other
 // choice shows as its value with a capital.
 export const CHOICE_LABELS = {
+    'greeting-style': {expanded: 'Expanded', minimal: 'In the pill', off: 'Off'},
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
     'idle-content': {'auto': 'Automatic', 'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event', 'mascot': 'Bu\'s Eyes'},
     'idle-clock-style': {

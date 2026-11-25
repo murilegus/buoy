@@ -19,6 +19,7 @@
  */
 
 import {TYPE_MS, typingMs} from '../../kit/model/presentation.js';
+import {daypartAt, normaliseStarts} from '../../kit/model/daypart.js';
 
 /** How long the greeting stays once its last line is in (Ethan, 2026-11-08). */
 export const SHOW_MS = 12000;
@@ -249,8 +250,196 @@ export function buSize(lines) {
     return lines >= 2 ? 80 : 60;
 }
 
+// --- Start, Wake, Welcome back, Leaving (GREETING.md §1–§6, FEATURES M4 "Greeting" part 1) ---------
+
+/** A sleep this long (s) is a fresh start: Wake (GREETING.md §1). */
+export const WAKE_S = 3 * 3600;
+/** Awake this long (s) on a boot: "Long day. Rest well." at shut down (§5). */
+export const LONG_DAY_S = 10 * 3600;
+/** A line this long or shorter fits pill 1 at rest: minimal; longer, or with a subtitle, compact (§6). */
+export const MINIMAL_MAX = 24;
+/** How long each shows (§1): Start and Wake ~8 s, Welcome back 4 s, Leaving till the session ends. */
+export const HELLO_MS = 8000;
+export const WELCOME_MS = 4000;
+export const LEAVE_MS = 10000;
+
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/**
+ * Which moment this enable is (GREETING.md §1), from facts read at enable and the bookkeeping
+ * keys: a new boot_id is Start; the same boot after a sleep of WAKE_S or more since the last
+ * reading is Wake; another logind session on the same boot is Welcome back; else nothing (a
+ * lock, a short sleep, Buoy turned off and on).
+ *
+ * @param {object} f
+ * @param {string} f.boot  /proc/sys/kernel/random/boot_id now
+ * @param {string} f.lastBoot  `greeting-boot`
+ * @param {string} f.session  this Shell's logind session id
+ * @param {string} f.lastSession  `greeting-session`
+ * @param {number} f.asleep  seconds asleep since boot now (CLOCK_BOOTTIME − CLOCK_MONOTONIC)
+ * @param {number} f.lastAsleep  `greeting-asleep`
+ * @returns {?string} 'start' | 'wake' | 'welcome' | null
+ */
+export function momentOf({boot, lastBoot, session, lastSession, asleep, lastAsleep}) {
+    if (typeof boot === 'string' && boot && boot !== lastBoot)
+        return 'start';
+    if (Number.isFinite(asleep) && Number.isFinite(lastAsleep) && asleep - lastAsleep >= WAKE_S)
+        return 'wake';
+    if (typeof session === 'string' && session && session !== lastSession)
+        return 'welcome';
+    return null;
+}
+
+/**
+ * @param {*} setName  `greeting-name`
+ * @param {*} realName  GLib.get_real_name() ("Unknown" when none)
+ * @param {*} userName  GLib.get_user_name()
+ * @returns {string} who Bu greets: the setting, else the real name's first word, else the user name
+ */
+export function nameOf(setName, realName, userName) {
+    const set = typeof setName === 'string' ? setName.trim() : '';
+    if (set)
+        return set;
+    const real = typeof realName === 'string' ? realName.trim() : '';
+    if (real && real !== 'Unknown')
+        return real.split(/\s+/)[0];
+    return typeof userName === 'string' && userName ? userName : 'there';
+}
+
+const timeOf = (d, clock) => {
+    const two = n => String(n).padStart(2, '0');
+    if (clock === '12h') {
+        const h = d.getHours() % 12 || 12;
+        return `${h}:${two(d.getMinutes())} ${d.getHours() < 12 ? 'AM' : 'PM'}`;
+    }
+    return `${two(d.getHours())}:${two(d.getMinutes())}`;
+};
+
+/**
+ * Line 2 (§2): "It's 07:42 on Friday, 6 November 2026." — the time in GNOME's `clock-format`.
+ *
+ * @param {number} now  ms since the epoch
+ * @param {string} clock  '24h' | '12h'
+ * @returns {string}
+ */
+export function whenLine(now, clock = '24h') {
+    const d = new Date(now);
+    return `It's ${timeOf(d, clock)} on ${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}.`;
+}
+
+/**
+ * Line 1 of Start, Wake (§3, rules 3–6; the intro, a birthday and the celebrations come first,
+ * part 3): late at night, Monday morning, the weekend, else by daypart.
+ *
+ * @param {object} f
+ * @param {number} f.now  ms since the epoch
+ * @param {*} [f.starts]  `daypart-starts`
+ * @param {string} f.name
+ * @returns {{title: string, pose: string}}
+ */
+export function helloLine({now, starts, name}) {
+    const d = new Date(now);
+    const s = normaliseStarts(starts).starts;
+    const part = daypartAt(d, s);
+    const h = d.getHours(), day = d.getDay();
+    // 01:00 until dawn starts
+    if (h >= 1 && h < s[0])
+        return {title: `Still up, ${name}? Don't stay too late.`, pose: 'wave'};
+    const early = part === 'dawn' || part === 'morning';
+    if (day === 1 && early)
+        return {title: `New week, ${name}.`, pose: 'wave'};
+    if ((day === 6 || day === 0) && (early || part === 'noon'))
+        return {title: day === 6 ? `Happy Saturday, ${name}.` : `Easy Sunday, ${name}.`, pose: 'wave'};
+    if (day === 6 || day === 0)
+        return {title: `Enjoy your weekend, ${name}.`, pose: 'wave'};
+    const by = {
+        dawn: `Good morning, ${name}.`, morning: `Good morning, ${name}.`, noon: `Good day, ${name}.`,
+        afternoon: `Good afternoon, ${name}.`, evening: `Good evening, ${name}.`, night: `Still up, ${name}?`,
+    };
+    return {title: by[part], pose: 'wave'};
+}
+
+/**
+ * Leaving's title (§5; a celebration's evening is part 3).
+ *
+ * @param {object} f
+ * @param {string} f.leave  'update' | 'restart' | 'logout' | 'shutdown'
+ * @param {number} f.now
+ * @param {*} [f.starts]
+ * @param {string} f.name
+ * @returns {{title: string, pose: string}}
+ */
+export function leavingLine({leave, now, starts, name}) {
+    if (leave === 'update')
+        return {title: 'Updating. Back in a moment.', pose: 'busy'};
+    if (leave === 'restart')
+        return {title: 'Be right back.', pose: 'wave'};
+    if (leave === 'logout')
+        return {title: `Catch you later, ${name}.`, pose: 'wave'};
+    const d = new Date(now);
+    const part = daypartAt(d, starts);
+    if (d.getDay() === 5 && ['afternoon', 'evening', 'night'].includes(part))
+        return {title: `Have a good weekend, ${name}.`, pose: 'done'};
+    if (part === 'evening' || part === 'night')
+        return {title: `Good night, ${name}.`, pose: 'sleep'};
+    return {title: `See you soon, ${name}.`, pose: 'wave'};
+}
+
+/**
+ * @param {string} title
+ * @param {?string} subtitle
+ * @returns {string} 'minimal' (one short line) | 'compact' (a subtitle, or a line too long for pill 1)
+ */
+export function sizeOf(title, subtitle = null) {
+    return subtitle || title.length > MINIMAL_MAX ? 'compact' : 'minimal';
+}
+
+const buOf = pose => pose === 'wave' ? {mascot: 'wave', hello: true} : {mascot: pose};
+
+// Start, Wake (expanded, or minimal by `greeting-style`), Welcome back, Leaving
+function moment(ev) {
+    const name = typeof ev.name === 'string' && ev.name ? ev.name : 'there';
+    let line, sub = null, ttl;
+    if (ev.case === 'leaving') {
+        line = leavingLine({leave: ev.leave, now: ev.now, starts: ev.starts, name});
+        if (ev.leave === 'shutdown' && ev.longDay === true)
+            sub = 'Long day. Rest well.';
+        ttl = LEAVE_MS;
+    } else if (ev.case === 'welcome') {
+        line = {title: `Welcome back, ${name}.`, pose: 'wave'};
+        ttl = WELCOME_MS;
+    } else {
+        line = helloLine({now: ev.now, starts: ev.starts, name});
+        ttl = HELLO_MS;
+    }
+    const bu = buOf(line.pose);
+    const hello = (ev.case === 'start' || ev.case === 'wake') && ev.style !== 'minimal';
+    if (hello) {
+        const lines = [whenLine(ev.now, ev.clock)];
+        const typing = ev.animations === false ? 0 : typingMs([line.title, ...lines], TYPE_MS);
+        return {
+            text: line.title, leading: bu, trailing: null, compact: null,
+            expanded: {leading: {...bu, size: buSize(lines.length)}, center: {title: line.title, lines, typed: true, hero: true}, trailing: null},
+            actions: [], minimalAction: false, style: 'transient', ttl: typing + ttl,
+            attributes: {case: ev.case, size: 'expanded'},
+        };
+    }
+    const size = sizeOf(line.title, sub);
+    return {
+        text: line.title, leading: bu, trailing: null,
+        compact: size === 'compact' ? {leading: bu, text: line.title, subtitle: sub} : null,
+        expanded: null, actions: [], minimalAction: false,
+        ttl: ev.case === 'start' || ev.case === 'wake' ? WELCOME_MS : ttl,
+        // a note opens the compact on its own (an alert), as a flash with a choice
+        alert: size === 'compact',
+        attributes: {case: ev.case, size},
+    };
+}
+
 export default {
     greeting(ev) {
+        if (['start', 'wake', 'welcome', 'leaving'].includes(ev.case))
+            return moment(ev);
         const shortcut = typeof ev.shortcut === 'string' ? ev.shortcut : '<Super>b';
         const about = ev.case === 'update' ? updateLines(ev.update, ev.running) : null;
         const said = ev.case === 'first-run' ? linesOf({intro: true}, {shortcut}) : linesOf(ev.note, {shortcut});

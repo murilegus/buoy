@@ -106,6 +106,41 @@
       <summary>Greeting</summary>
       <description>Bu says hello the first time, and what is new after an update.</description>
     </key>
+    <key name="greeting-style" type="s">
+      <choices>
+        <choice value="expanded"/>
+        <choice value="minimal"/>
+        <choice value="off"/>
+      </choices>
+      <default>'expanded'</default>
+      <summary>Greeting</summary>
+      <description>When the computer starts or wakes from a long sleep.</description>
+    </key>
+    <key name="greeting-farewell" type="b">
+      <default>true</default>
+      <summary>Say goodbye</summary>
+      <description>A line when you shut down, restart or log out.</description>
+    </key>
+    <key name="greeting-name" type="s">
+      <default>''</default>
+      <summary>Your name</summary>
+      <description>What Bu calls you; empty: your first name.</description>
+    </key>
+    <key name="greeting-boot" type="s">
+      <default>''</default>
+      <summary>Last boot</summary>
+      <description>Bookkeeping: the boot Bu last saw, to tell a start.</description>
+    </key>
+    <key name="greeting-session" type="s">
+      <default>''</default>
+      <summary>Last session</summary>
+      <description>Bookkeeping: the login session Bu last saw, to tell a welcome back.</description>
+    </key>
+    <key name="greeting-asleep" type="i">
+      <default>0</default>
+      <summary>Time asleep</summary>
+      <description>Bookkeeping: seconds asleep since boot when Bu last looked, to tell a wake.</description>
+    </key>
     <key name="greeting-intro-shown" type="b">
       <default>false</default>
       <summary>Introduction shown</summary>

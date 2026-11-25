@@ -90,6 +90,7 @@ r compact/render/terminal.js compact/images/terminal.vi.png
 r compact/render/timer.js compact/images/timer.vi.png
 r compact/render/network.js compact/images/network.vi.png
 r compact/render/print.js compact/images/print.vi.png
+r expanded/render/greeting.js expanded/images/greeting.vi.png
 r tabs/render/event.js tabs/images/event.vi.png
 
 # motion
