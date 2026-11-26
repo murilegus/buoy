@@ -6,9 +6,9 @@ import weather, {
     ART, artFor, card,
 } from '../src/buoy@murilegus/lib/modules/weather/idle.js';
 import {
-    readInfo, nextHour, unitNames, IP_ONLY_METRES, goodFix, nextFix, locateOutcome, shouldRetry, RETRY_MS,
+    readInfo, nextHour, rainSoon, wetKind, unitNames, IP_ONLY_METRES, goodFix, nextFix, locateOutcome, shouldRetry, RETRY_MS,
     useOwnInfo, SAME_PLACE_KM, keptReading,
-} from '../src/buoy@murilegus/lib/modules/weather/read.js';
+} from '../src/buoy@murilegus/lib/kit/model/weather.js';
 import {STATE_COLOURS} from '../src/buoy@murilegus/lib/kit/model/palette.js';
 import {planIdle, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 
@@ -132,7 +132,7 @@ eq(relevance({now, data: {...state, next: {at: now.getTime() + 2 * 3600 * 1000, 
 eq([relevance({now, data: null}), relevance({now, data: {...state, temp: undefined}})], [null, null],
     'nothing to show: null (auto skips it)');
 
-// --- reading GWeather.Info (read.js), with a fake info --------------------------------------
+// --- reading GWeather.Info (kit/model/weather.js), with a fake info --------------------------------------
 const U = {display: 0, celsius: 2, speed: 0, speedLabel: 'km/h', beaufort: false};
 const t0 = Date.UTC(2026, 10, 6, 8, 10);
 const fc = (secs, tempC, icon) => ({
@@ -162,10 +162,23 @@ function fakeInfo(over = {}) {
     eq(s, {
         place: 'Ho Chi Minh', temp: 88.2, tempC: 31.2, feels: 94.1, icon: 'weather-clear-symbolic',
         wind: {speed: 12.4, unit: 'km/h', dir: 3, beaufort: false}, humidity: '75%',
-        next: {at: t0 + 1800 * 1000, tempC: 28, icon: 'weather-showers-symbolic'}, updated: t0,
-    }, 'every value read, in the user\'s unit and in °C; the next forecast within the hour');
+        next: {at: t0 + 1800 * 1000, tempC: 28, icon: 'weather-showers-symbolic'},
+        rain: {at: t0 + 1800 * 1000, kind: 'rain'}, unit: null, updated: t0,
+    }, 'every value read, in the user\'s unit and in °C; the next forecast within the hour; rain coming');
     eq(present({data: s}).text, '88°', 'what the pill shows from it');
     eq(relevance({now: new Date(t0), data: s}).score, 75, 'and auto sees the rain coming');
+}
+{
+    // the greeting's facts (GREETING.md §8): the wind's force, the unit's symbol, rain coming
+    const UB = {...U, bft: 5, tempLabel: '°C'};
+    const s = readInfo(fakeInfo({get_value_wind: unit => [true, unit === 5 ? 2.6 : 12.4, 3]}), {now: t0, units: UB});
+    eq([s.wind.force, s.unit], [3, '°C'], 'the force on Beaufort\'s scale, the unit\'s symbol');
+    eq(rainSoon('weather-showers-symbolic', [fc(t0 / 1000 + 1800, 28, 'weather-showers-symbolic')], t0), null, 'raining now: not "coming"');
+    eq(rainSoon('weather-clear', [fc(t0 / 1000 + 4 * 3600, 28, 'weather-showers-symbolic')], t0), null, 'past 3 h: no');
+    eq(rainSoon('weather-clear', [fc(t0 / 1000 + 3600, 28, 'weather-few-clouds'), fc(t0 / 1000 + 7200, 25, 'weather-snow-symbolic')], t0),
+        {at: t0 + 7200 * 1000, kind: 'snow'}, 'the first wet one, its kind');
+    eq(rainSoon('weather-clear', [fc(t0 / 1000 + 600, 28, 'weather-storm')], t0).kind, 'storm', 'a storm');
+    eq([wetKind('weather-showers-scattered-symbolic'), wetKind('weather-clear'), wetKind(null)], ['rain', null, null], 'wet kinds');
 }
 eq(readInfo(fakeInfo({get_humidity: () => 'Unknown'}), {now: t0, units: U}).humidity, null,
     'GWeather\'s "Unknown" humidity: none');

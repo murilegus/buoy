@@ -2,7 +2,7 @@
 // reads GNOME's weather client while the plan is in use (kit/services/idle.js); its source
 // answers prefs' refresh button (2026-11-12).
 import idle from './idle.js';
-import {WeatherFeed} from './feed.js';
+import {WeatherFeed} from '../../kit/services/weather.js';
 import {WeatherSource} from './source.js';
 import {WeatherGlance} from './home.js';
 

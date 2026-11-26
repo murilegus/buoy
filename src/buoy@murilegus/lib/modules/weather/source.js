@@ -1,12 +1,12 @@
 import GLib from 'gi://GLib';
 
 import {Source} from '../../kit/services/source.js';
-import {WeatherFeed, dropWeather} from './feed.js';
+import {WeatherFeed, dropWeather} from '../../kit/services/weather.js';
 import {keys} from './idle.js';
 
 const ASK = 'idle-weather-locate-now';
-// the most a refresh may take: Geoclue's 15 s, then the fetch (feed.js LOCATE_TIMEOUT); with
-// its second ask (no Wi-Fi fix, read.js RETRY_MS) that much again after it
+// the most a refresh may take: Geoclue's 15 s, then the fetch (kit/services/weather.js LOCATE_TIMEOUT); with
+// its second ask (no Wi-Fi fix, kit/model/weather.js RETRY_MS) that much again after it
 const CAP_SECONDS = 40;
 const RETRY_CAP_SECONDS = 120 + 40;
 
@@ -15,7 +15,7 @@ const RETRY_CAP_SECONDS = 120 + 40;
  * prefs runs in a process of its own and cannot ask where we are without GNOME asking the
  * user, so it writes the time to `idle-weather-locate-now`, and this source — Buoy in the
  * Shell, `org.gnome.Shell` to Geoclue — answers: a feed of its own locates again, Wi-Fi first
- * (feed.js `_locate`, #188's rules), and fetches the weather, once; feed.js writes how it
+ * (kit/services/weather.js `_locate`, #188's rules), and fetches the weather, once; kit/services/weather.js writes how it
  * went for prefs' place row. No activity, no polling: one signal, and while a refresh runs,
  * one feed and one cap timer, both gone when it ends or on disable.
  */

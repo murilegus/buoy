@@ -1,5 +1,8 @@
 /**
- * GWeather.Info → the weather plan's plain state (idle.js). Pure: it only calls the
+ * GNOME's weather, shared by the weather plan and the greeting (GREETING.md §8, 2026-11-26: moved
+ * from modules/weather/read.js so both read it through the kit, ARCHITECTURE rule 1).
+ *
+ * GWeather.Info → the weather plan's plain state (modules/weather/idle.js). Pure: it only calls the
  * getters of the info it is given and takes GWeather's units as arguments, so a fake info
  * tests it without a network (tests/weather.test.js).
  *
@@ -14,9 +17,77 @@
  * @property {number} speed     GWeather.SpeedUnit.DEFAULT
  * @property {string} speedLabel  GWeather.SpeedUnit.to_string(DEFAULT): "km/h"
  * @property {boolean} beaufort  the default speed unit is Beaufort
+ * @property {number} [bft]  GWeather.SpeedUnit.BFT, for the wind's force
+ * @property {string} [tempLabel]  the display unit's symbol: "°C", "°F", "K"
  */
 
+/** How often the client is asked again while the idle pill shows it, in minutes. */
+export const REFRESH = Object.freeze({'30m': 30, '1h': 60});
+export const DEFAULT_REFRESH = '30m';
+
+/**
+ * @param {object} opts  the weather plan's keys' values
+ * @returns {number} ms between two asks while the idle pill shows the weather
+ */
+export function refreshMs(opts) {
+    const minutes = REFRESH[opts?.['idle-weather-refresh']] ?? REFRESH[DEFAULT_REFRESH];
+    return minutes * 60 * 1000;
+}
+
+// GWeather's icon names (libgweather gweather-weather.c, the conditions' icons), without
+// -symbolic and -night: the words GNOME's own Weather shows for them
+export const CONDITIONS = [
+    ['weather-clear', 'Clear'],
+    ['weather-few-clouds', 'Partly cloudy'],
+    ['weather-overcast', 'Cloudy'],
+    ['weather-fog', 'Fog'],
+    ['weather-showers-scattered', 'Light rain'],
+    ['weather-showers', 'Rain'],
+    ['weather-snow', 'Snow'],
+    ['weather-storm', 'Thunderstorm'],
+    ['weather-windy', 'Windy'],
+    ['weather-tornado', 'Tornado'],
+    ['weather-severe-alert', 'Severe weather'],
+];
+const WET = new Set(['weather-showers-scattered', 'weather-showers', 'weather-snow', 'weather-storm']);
+
+function baseOf(icon) {
+    return typeof icon === 'string' ? icon.replace(/-symbolic$/, '').replace(/-night$/, '') : '';
+}
+
+/**
+ * @param {*} icon  GWeather's (symbolic) icon name
+ * @returns {?string} the condition in words, null for an icon it does not name
+ */
+export function conditionOf(icon) {
+    const base = baseOf(icon);
+    return CONDITIONS.find(([name]) => name === base)?.[1] ?? null;
+}
+
+/**
+ * @param {*} icon
+ * @returns {boolean} rain, snow or a storm
+ */
+export function isWet(icon) {
+    return WET.has(baseOf(icon));
+}
+
+/**
+ * @param {*} icon
+ * @returns {?string} 'snow' | 'storm' | 'rain' for a wet one, else null
+ */
+export function wetKind(icon) {
+    const base = baseOf(icon);
+    if (!WET.has(base))
+        return null;
+    if (base === 'weather-snow')
+        return 'snow';
+    return base === 'weather-storm' ? 'storm' : 'rain';
+}
+
 const HOUR = 60 * 60 * 1000;
+/** Rain coming: a wet forecast within this long of a dry now (GREETING.md §8). */
+export const RAIN_WINDOW = 3 * HOUR;
 
 const TEMPS = ['default', 'kelvin', 'centigrade', 'fahrenheit'];
 const SPEEDS = ['default', 'ms', 'kph', 'mph', 'knots', 'bft'];
@@ -77,11 +148,40 @@ export function nextHour(list, now, units) {
 }
 
 /**
+ * Rain coming (GREETING.md §8): now dry, a wet forecast within RAIN_WINDOW — the first one.
+ *
+ * @param {?string} icon  now's condition icon
+ * @param {object[]} list  GWeather.Info get_forecast_list()
+ * @param {number} now  ms
+ * @returns {?{at: number, kind: string}} its time and 'rain' | 'snow' | 'storm', or null
+ */
+export function rainSoon(icon, list, now) {
+    if (isWet(icon))
+        return null;
+    for (const f of Array.isArray(list) ? list : []) {
+        const [ts] = value(f, 'get_value_update') ?? [0];
+        const at = finite(ts) ? ts * 1000 : 0;
+        if (at <= now)
+            continue;
+        if (at - now > RAIN_WINDOW)
+            return null;
+        let fi = null;
+        try {
+            fi = f.get_symbolic_icon_name() ?? null;
+        } catch {}
+        const kind = wetKind(fi);
+        if (kind)
+            return {at, kind};
+    }
+    return null;
+}
+
+/**
  * @param {?object} info  GWeather.Info
  * @param {object} opts
  * @param {number} opts.now  ms
  * @param {Units} opts.units
- * @param {?string} [opts.place]  the location's name (feed.js, as the date menu shows it)
+ * @param {?string} [opts.place]  the location's name (kit/services/weather.js, as the date menu shows it)
  * @returns {?object} idle.js state, or null when the info has no current temperature
  */
 export function readInfo(info, {now, units, place = null}) {
@@ -93,6 +193,8 @@ export function readInfo(info, {now, units, place = null}) {
     const [tempC] = value(info, 'get_value_temp', units.celsius) ?? [null];
     const [feels] = value(info, 'get_value_apparent', units.display) ?? [null];
     const wind = value(info, 'get_value_wind', units.speed);
+    // the force on Beaufort's scale, for the greeting's words (GREETING.md §8)
+    const force = Number.isInteger(units.bft) ? value(info, 'get_value_wind', units.bft) : null;
     let humidity = null, icon = null, list = [];
     try {
         humidity = info.get_humidity();
@@ -106,11 +208,16 @@ export function readInfo(info, {now, units, place = null}) {
         feels: finite(feels) ? feels : null,
         icon: typeof icon === 'string' && icon ? icon : null,
         wind: wind && finite(wind[0])
-            ? {speed: wind[0], unit: units.speedLabel, dir: wind[1], beaufort: units.beaufort}
+            ? {
+                speed: wind[0], unit: units.speedLabel, dir: wind[1], beaufort: units.beaufort,
+                ...force && finite(force[0]) ? {force: Math.round(force[0])} : {},
+            }
             : null,
         // GWeather says "Unknown" (translated) when the provider gave none
         humidity: typeof humidity === 'string' && /\d/.test(humidity) ? humidity : null,
         next: nextHour(list, now, units),
+        rain: rainSoon(icon, list, now),
+        unit: typeof units.tempLabel === 'string' ? units.tempLabel : null,
         updated: now,
     };
 }
@@ -150,7 +257,7 @@ export function goodFix(fix) {
 }
 
 /**
- * One step of a "Use my location" ask (modules/weather/feed.js `_locate`), pure: called with
+ * One step of a "Use my location" ask (kit/services/weather.js `_locate`), pure: called with
  * each fix Geoclue gives (`Geoclue.Simple`'s first location, then each `notify::location`)
  * and once more, with no fix, when the ask's time is up.
  *

@@ -1,5 +1,8 @@
 // Run: gjs -m tests/moments.test.js   (pure: FEATURES M4 "Greeting" part 1; GREETING.md §1–§6)
-import adapter, {HELLO_MS, LEAVE_MS, LONG_DAY_S, MINIMAL_MAX, WAKE_S, WELCOME_MS, helloLine, leavingLine, momentOf, nameOf, sizeOf, whenLine}
+import adapter, {
+    HELLO_MS, LEAVE_MS, LONG_DAY_S, MINIMAL_MAX, WAKE_S, WEATHER_WAIT_MS, WELCOME_MS, helloLine, leavingLine, momentOf, nameOf, rainLine, sizeOf,
+    weatherLine, whenLine, windWords,
+}
     from '../src/buoy@murilegus/lib/modules/greeting/adapter.js';
 import {planExpanded, planMinimal, planCompact} from '../src/buoy@murilegus/lib/kit/model/presentation.js';
 import {validate} from '../src/buoy@murilegus/lib/kit/model/activity.js';
@@ -88,5 +91,33 @@ const plan = planExpanded(validate({...start, id: 'greeting:buoy', kind: 'greeti
 eq(plan.leading.type, 'mascot', 'expanded: Bu leads');
 eq(planMinimal(validate({...welcome, id: 'greeting:buoy', kind: 'greeting', source: 'greeting'})).text, 'Welcome back, Ethan.', 'minimal: the line');
 eq(planCompact(validate({...night, id: 'greeting:buoy', kind: 'greeting', source: 'greeting'}))?.subtitle ?? null, 'Long day. Rest well.', 'compact: the note under');
+
+// --- the weather (§8, part 2) ----------------------------------------------------------------------
+eq(WEATHER_WAIT_MS, 3000, 'Start waits ~3 s for a first reading');
+eq([0, 0.4, 1, 3, 4, 5, 6, 12, null, -1].map(windWords), ['calm', 'calm', 'light breeze', 'light breeze', 'breezy', 'breezy', 'strong wind', 'strong wind', null, null],
+    'the wind in words by Beaufort force');
+const W = {place: 'Ho Chi Minh City', temp: 28.4, unit: '°C', icon: 'weather-few-clouds-symbolic', wind: {speed: 9, force: 2}};
+eq(weatherLine(W), 'Ho Chi Minh City: 28 °C, partly cloudy, light breeze.', 'the place, the temperature in the user\'s unit, the condition, the wind');
+eq([weatherLine({...W, unit: null, wind: null, icon: null}), weatherLine({...W, temp: -0.3}), weatherLine({...W, place: ''}), weatherLine(null)],
+    ['Ho Chi Minh City: 28°.', 'Ho Chi Minh City: 0 °C, partly cloudy, light breeze.', null, null], 'parts unknown left out; no place, no line');
+const R = kind => ({at: at(20, 17), kind});
+eq([rainLine(R('rain')), rainLine(R('snow')), rainLine(R('storm')), rainLine(R('rain'), '12h'), rainLine(null)],
+    ['Rain around 17:00, take an umbrella.', 'Snow around 17:00, dress warm.', 'Storms around 17:00, stay dry.', 'Rain around 5:00 PM, take an umbrella.', null],
+    'the umbrella, snow and storms, in GNOME\'s clock format');
+const sw = adapter.greeting(ev({case: 'start', weather: W}));
+eq([sw.expanded.center.lines, sw.expanded.leading.size], [['It\'s 07:42 on Friday, 20 November 2026.', 'Ho Chi Minh City: 28 °C, partly cloudy, light breeze.'], 80],
+    'Start with the weather: three lines, Bu 80');
+eq(adapter.greeting(ev({case: 'start'})).expanded.leading.size, 60, 'without: two lines, Bu 60');
+eq(adapter.greeting(ev({case: 'wake', weather: {...W, rain: R('rain')}})).expanded.center.lines[1], 'Rain around 17:00, take an umbrella.', 'rain coming: line 3 says the umbrella');
+const wb = adapter.greeting(ev({case: 'welcome', weather: {...W, rain: R('rain')}}));
+eq([wb.compact?.subtitle, wb.alert], ['Rain around 17:00, take an umbrella.', true], 'Welcome back with rain coming: compact, the umbrella under');
+eq(adapter.greeting(ev({case: 'welcome', weather: W})).compact, null, 'no rain: minimal');
+const rainyEve = {...W, rain: {at: at(19, 19), kind: 'rain'}};
+eq(adapter.greeting(ev({case: 'leaving', leave: 'shutdown', now: at(19, 15), weather: {...W, rain: R('rain')}, longDay: true})).compact.subtitle,
+    'Rain around 17:00, take an umbrella.', 'Leaving: rain first, over the long day');
+eq(adapter.greeting(ev({case: 'leaving', leave: 'logout', now: at(19, 15), weather: {...W, rain: R('rain')}})).compact.subtitle,
+    'Rain around 17:00, take an umbrella.', 'a log out too');
+eq(adapter.greeting(ev({case: 'leaving', leave: 'shutdown', now: at(19, 15), weather: rainyEve})).compact, null, 'rain only in the evening: no umbrella for the night');
+eq(adapter.greeting(ev({case: 'leaving', leave: 'restart', now: at(19, 15), weather: {...W, rain: R('rain')}})).compact, null, 'a restart: no umbrella');
 
 print('moments: ok');

@@ -5,9 +5,8 @@ import GWeather from 'gi://GWeather';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {withPlace} from '../../kit/model/settings.js';
-import {refreshMs} from './idle.js';
-import {RETRY_MS, goodFix, keptReading, locateOutcome, nextFix, readInfo, shouldRetry, unitNames, useOwnInfo} from './read.js';
+import {withPlace} from '../model/settings.js';
+import {RETRY_MS, goodFix, keptReading, locateOutcome, nextFix, readInfo, refreshMs, shouldRetry, unitNames, useOwnInfo} from '../model/weather.js';
 
 // As long as Geoclue may take for a first fix before this ask gives up (Wi-Fi scan, IP)
 const LOCATE_TIMEOUT = 15;
@@ -18,7 +17,7 @@ const LOCATE_TIMEOUT = 15;
 // (2026-11-12). {ask, waiters: [function(moved)]}
 let shared = null;
 
-// Buoy's own GWeather.Info (read.js useOwnInfo), one for every feed (2026-11-13, Ethan: Home's
+// Buoy's own GWeather.Info (kit/model/weather.js useOwnInfo), one for every feed (2026-11-13, Ethan: Home's
 // weather tile came and went): Home makes a feed each time it opens, and a fresh Info has no
 // weather until its fetch comes back — so the tile was missing, then came and made Home lay
 // out again. Kept with its last weather between feeds, as Shell keeps its client's; it never
@@ -27,7 +26,7 @@ let shared = null;
 // place is not wanted any more. {info, id, last, loading, users: Set<function()>}
 let ownInfo = null;
 
-// The last good reading, whichever feed read it (read.js keptReading): a failed fetch leaves
+// The last good reading, whichever feed read it (kit/model/weather.js keptReading): a failed fetch leaves
 // GWeather empty, and this is shown instead while it is recent. {state, at, key}
 let lastGood = null;
 
@@ -101,7 +100,7 @@ function dropOwnInfo() {
  * - When Shell's client locates on its own (GNOME Weather installed: `_useAutoLocation`) it
  *   ignores `locations` and keeps whatever Geoclue gave it — often an IP guess, Hanoi for a
  *   Vietnamese ISP — so the plan read a place Buoy had not chosen (2026-11-13, Ethan). Then,
- *   when the client's place is not Buoy's (read.js useOwnInfo), the feed reads a GWeather.Info
+ *   when the client's place is not Buoy's (kit/model/weather.js useOwnInfo), the feed reads a GWeather.Info
  *   of its own for Buoy's place, made as Shell makes its own, fetched on the same terms
  *   (only while shown) — one for every feed, kept with its last weather (ownInfo, below).
  */
@@ -141,7 +140,7 @@ export class WeatherFeed {
         this._read(false);
     }
 
-    // Shell's client, or Buoy's own Info while the client is somewhere else (read.js
+    // Shell's client, or Buoy's own Info while the client is somewhere else (kit/model/weather.js
     // useOwnInfo); the own one is made here and fetched only while shown
     _pick() {
         const client = this._client;
@@ -217,7 +216,7 @@ export class WeatherFeed {
             const u = units(this._units);
             const fresh = readInfo(info, {now: Date.now(), units: u, place: placeOf(info.location)});
             // GWeather empties the reading as a fetch starts and leaves it empty when one
-            // fails: the last good one stays while it is recent (read.js keptReading)
+            // fails: the last good one stays while it is recent (kit/model/weather.js keptReading)
             const kept = keptReading({
                 fresh: fresh && !src.loading ? fresh : null, loading: src.loading, kept: lastGood,
                 key: readingKey(info.location, u), at: src.lastMs, now: Date.now(),
@@ -329,7 +328,7 @@ export class WeatherFeed {
     }
 
     /**
-     * Where we are, from Geoclue (SPEC §2a weather, 2026-11-12, #188); read.js nextFix
+     * Where we are, from Geoclue (SPEC §2a weather, 2026-11-12, #188); kit/model/weather.js nextFix
      * decides on each fix. A good one is the place at once. An IP-only one (20 km or
      * coarser: usual right after login, and Hanoi for any Vietnamese ISP) makes the ask keep
      * the client and wait on Simple's `notify::location` (as Shell's own misc/weather.js
@@ -387,7 +386,7 @@ export class WeatherFeed {
 
     /**
      * @param {object} ask  the running ask (_locate)
-     * @param {?import('./read.js').Fix} fix  the fix just given; null: the time is up
+     * @param {?import('../model/weather.js').Fix} fix  the fix just given; null: the time is up
      */
     _onFix(ask, fix) {
         if (this._locating !== ask)
@@ -412,7 +411,7 @@ export class WeatherFeed {
         this._endLocate(ask, moved);
     }
 
-    // where the place first in `locations` came from (read.js nextFix `previous`): none,
+    // where the place first in `locations` came from (kit/model/weather.js nextFix `previous`): none,
     // the IP-only fix this feed wrote last ('weak'), else a good fix or the user ('good')
     _previousPlace() {
         const first = placeList()[0];
@@ -430,7 +429,7 @@ export class WeatherFeed {
         answerWaiters(ask, moved);
     }
 
-    // No Wi-Fi fix: ask once more in RETRY_MS (read.js shouldRetry), the scan is usually there
+    // No Wi-Fi fix: ask once more in RETRY_MS (kit/model/weather.js shouldRetry), the scan is usually there
     // by then; the weather follows a new place, or is asked for again
     _armRetry(outcome) {
         if (this._retryId || !shouldRetry(outcome, this._retried))
@@ -587,7 +586,7 @@ function stopAsk(ask) {
 }
 
 // Geoclue.Simple's location (a LocationProxy: Latitude, Longitude, Accuracy in metres) as
-// read.js's plain Fix
+// kit/model/weather.js's plain Fix
 function fixOf(simple) {
     const loc = simple?.get_location();
     return loc ? {latitude: loc.latitude, longitude: loc.longitude, accuracy: loc.accuracy} : null;
@@ -606,7 +605,10 @@ function settingsOf(id) {
     return Gio.SettingsSchemaSource.get_default()?.lookup(id, true) ? new Gio.Settings({schema_id: id}) : null;
 }
 
-// The units the user chose in GNOME Weather's keys (read.js unitNames), else the locale's
+// The display unit's symbol; DEFAULT (the locale's) is not known here
+const TEMP_LABELS = {CENTIGRADE: '°C', FAHRENHEIT: '°F', KELVIN: 'K'};
+
+// The units the user chose in GNOME Weather's keys (kit/model/weather.js unitNames), else the locale's
 // (Automatic): GWeather's DEFAULT reads only the locale. to_string names the speed unit ("km/h")
 function units(settings) {
     const names = unitNames(settings?.get_string('temperature-unit'), settings?.get_string('speed-unit'));
@@ -618,6 +620,8 @@ function units(settings) {
         speed,
         speedLabel,
         beaufort: speedLabel === GWeather.SpeedUnit.to_string(GWeather.SpeedUnit.BFT),
+        bft: GWeather.SpeedUnit.BFT,
+        tempLabel: TEMP_LABELS[names.temperature] ?? null,
     };
 }
 

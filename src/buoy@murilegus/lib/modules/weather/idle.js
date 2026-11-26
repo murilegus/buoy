@@ -1,11 +1,11 @@
 /**
  * The weather idle plan (SPEC §2a, FEATURES M3 "weather"): the condition icon and the
  * temperature in the idle pill; its compact (hover) adds what it feels like, the wind and
- * the humidity. Presentation only, pure (no St, no GWeather, no timer): feed.js reads
+ * the humidity. Presentation only, pure (no St, no GWeather, no timer): kit/services/weather.js reads
  * GNOME's weather client (the date menu's, same location) into the plain state below and
  * the kit hands it over as `ctx.data`.
  *
- * State (read.js `readInfo`), null while there is none (no location, offline, not loaded):
+ * State (kit/model/weather.js `readInfo`), null while there is none (no location, offline, not loaded):
  *   {place, temp, tempC, feels?, icon, wind?: {speed, unit, dir, beaufort}, humidity?,
  *    next?: {at, tempC, icon}, updated}
  *   temp, feels  in the user's unit (GWeather's default: Weather's, else the locale's)
@@ -16,24 +16,15 @@
 
 import {DEFAULT_STARTS, normaliseStarts} from '../../kit/model/daypart.js';
 
-/** How often the client is asked again while the idle pill shows it, in minutes. */
-export const REFRESH = Object.freeze({'30m': 30, '1h': 60});
-export const DEFAULT_REFRESH = '30m';
+// the refresh and the conditions live in the kit, shared with the greeting (GREETING.md §8)
+export {REFRESH, DEFAULT_REFRESH, refreshMs, conditionOf, isWet} from '../../kit/model/weather.js';
+import {CONDITIONS, conditionOf, isWet, refreshMs} from '../../kit/model/weather.js';
 
 /** This plan's own keys (ARCHITECTURE rule 9: shown under it on the Island page). */
 export const keys = Object.freeze(['idle-weather-automatic', 'idle-weather-refresh']);
 
 /** No wall clock: nothing here changes with the minute (kit/services/idle.js). */
 export const ticks = false;
-
-/**
- * @param {object} opts  this plan's keys' values
- * @returns {number} ms between two asks while the idle pill shows the weather
- */
-export function refreshMs(opts) {
-    const minutes = REFRESH[opts?.['idle-weather-refresh']] ?? REFRESH[DEFAULT_REFRESH];
-    return minutes * 60 * 1000;
-}
 
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
 
@@ -47,44 +38,6 @@ export function degrees(t) {
         return null;
     const r = Math.round(t) || 0;
     return r < 0 ? `−${-r}°` : `${r}°`;
-}
-
-// GWeather's icon names (libgweather gweather-weather.c, the conditions' icons), without
-// -symbolic and -night: the words GNOME's own Weather shows for them
-const CONDITIONS = [
-    ['weather-clear', 'Clear'],
-    ['weather-few-clouds', 'Partly cloudy'],
-    ['weather-overcast', 'Cloudy'],
-    ['weather-fog', 'Fog'],
-    ['weather-showers-scattered', 'Light rain'],
-    ['weather-showers', 'Rain'],
-    ['weather-snow', 'Snow'],
-    ['weather-storm', 'Thunderstorm'],
-    ['weather-windy', 'Windy'],
-    ['weather-tornado', 'Tornado'],
-    ['weather-severe-alert', 'Severe weather'],
-];
-const WET = new Set(['weather-showers-scattered', 'weather-showers', 'weather-snow', 'weather-storm']);
-
-function baseOf(icon) {
-    return typeof icon === 'string' ? icon.replace(/-symbolic$/, '').replace(/-night$/, '') : '';
-}
-
-/**
- * @param {*} icon  GWeather's (symbolic) icon name
- * @returns {?string} the condition in words, null for an icon it does not name
- */
-export function conditionOf(icon) {
-    const base = baseOf(icon);
-    return CONDITIONS.find(([name]) => name === base)?.[1] ?? null;
-}
-
-/**
- * @param {*} icon
- * @returns {boolean} rain, snow or a storm
- */
-export function isWet(icon) {
-    return WET.has(baseOf(icon));
 }
 
 // GWeather.WindDirection, in its order: 0 variable, then 1 N … 16 NNW
@@ -133,7 +86,7 @@ export function artFor(icon) {
 
 /**
  * @param {object} [ctx]
- * @param {?object} [ctx.data]  the feed's state (read.js)
+ * @param {?object} [ctx.data]  the feed's state (kit/model/weather.js)
  * @returns {?object} presentation data for the idle pill: {leading, text, compact,
  *   accessibleName}; null while there is no weather (the pill shows nothing)
  */
@@ -170,7 +123,7 @@ export function present({data: weather} = {}) {
  * Home's weather block (SPEC §3, 2026-11-08): the same icon and temperature as the pill,
  * the condition beside it, and the place over the details the compact gives on hover.
  *
- * @param {?object} weather  the feed's state (read.js)
+ * @param {?object} weather  the feed's state (kit/model/weather.js)
  * @returns {?{leading: (string|object), temp: string, condition: ?string, place: ?string,
  *   detail: ?string, accessibleName: string}} null while there is no weather (Home leaves
  *   the block out); `detail` "Feels like 34° · Wind NE 12 km/h · Humidity 75%" (feels
@@ -201,7 +154,7 @@ const HOUR = 60 * 60 * 1000;
  *
  * @param {object} [ctx]
  * @param {Date} [ctx.now]
- * @param {?object} [ctx.data]  the feed's state (read.js)
+ * @param {?object} [ctx.data]  the feed's state (kit/model/weather.js)
  * @param {*} [ctx.starts]  `daypart-starts`
  * @returns {?{score: number}}
  */

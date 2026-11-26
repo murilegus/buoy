@@ -32,7 +32,12 @@ không mở expanded ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dù
   GNOME: một câu (cập nhật, khởi động lại, đăng xuất, tối thứ Sáu, buổi tối, còn lại), compact với "Long day.
   Rest well." khi đã thức hơn 10 giờ; tắt bằng `greeting-farewell`. **Chốt**
 - **Ba phần**: (1) bốn thời điểm, câu chào, cỡ, prefs kiểu / lời chào khi tắt / tên — xong 2026-11-25; (2)
-  dòng thời tiết và báo mưa; (3) ngày đặc biệt và sinh nhật. **Chốt** (Ethan, 2026-11-25)
+  dòng thời tiết và báo mưa — xong 2026-11-26: dòng 3 chỉ có chữ, không có icon màu của trời (vùng giữa
+  của expanded không có icon cho từng dòng); (3) ngày đặc biệt và sinh nhật. **Chốt** (Ethan, 2026-11-25)
+- **Thời tiết** (phần 2): đọc qua feed thời tiết của kit, dùng chung với plan thời tiết (cùng nơi, cùng
+  đơn vị). Bật máy, thức dậy: hỏi tin mới khi cũ, chờ tới ~3 s; tới muộn thì điền dòng 3 vào chỗ. Mưa
+  trong 3 giờ tới (trời đang khô): "Rain around 17:00, take an umbrella." thay dòng 3, là ghi chú của
+  đăng nhập lại, và của tắt máy / đăng xuất khi mưa trước buổi tối. **Chốt**
 
 ## Chỗ trong code
 

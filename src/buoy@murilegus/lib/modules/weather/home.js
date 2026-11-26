@@ -7,7 +7,7 @@ import St from 'gi://St';
 import {fallbackIcon} from '../../kit/ui/present/elements.js';
 import {sinceLabel} from '../../kit/ui/home.js';
 
-import {WeatherFeed} from './feed.js';
+import {WeatherFeed} from '../../kit/services/weather.js';
 import {card, keys} from './idle.js';
 
 /** The colour icon on a tile: 24, 2 past each side of the 20 cell (design/home). */
@@ -20,7 +20,7 @@ const WEATHER_APP = 'org.gnome.Weather.desktop';
 /**
  * Home's weather glance (design/home, 2026-11-11): a tile with Buoy's colour icon, the
  * temperature and the condition; wide, the icon at 48 and "the place · feels like" under the
- * condition. Its data is the weather plan's feed (feed.js: the date menu's weather client),
+ * condition. Its data is the weather plan's feed (kit/services/weather.js: the date menu's weather client),
  * made with the glance and gone with it — Home's glances live while the island is open — and
  * told it shows, so a stale reading is fetched once and then on `idle-weather-refresh` while
  * Home stays open (rule 8: nothing while closed). No weather → not ready, and Home leaves
