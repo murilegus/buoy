@@ -50,6 +50,33 @@ happening underneath.
 
 Everything in it: [release notes](https://github.com/murilegus/buoy/releases/latest).
 
+## Coming in 0.2
+
+On `main` now, in the next release:
+
+<p align="center">
+  <img src="docs/screenshots/whats-new.png" alt="Buoy 0.2: pills for a meeting about to start, two timers, a terminal command done in 48 s, a VPN on and a print job on page 3; Bu's hello with the time and the weather; a meeting card with Join Google Meet; the Timer tab with its ring; an event's page in the Calendar tab">
+</p>
+
+- **Meetings:** five minutes before a calendar event, a card with **Join** (Google Meet,
+  Zoom, Teams, Webex, Jitsi). Click an event in the Calendar tab for its page: the place,
+  the guests, the description, the reminders.
+- **Timers:** the time left as a ring in the pill, Pause, +1 min and Stop, Pomodoro, and a
+  Timer tab. Your saved timers are GNOME Clocks' own list.
+- **Your phone**, through GSConnect: its battery, its notifications and one-time codes, calls
+  with a reply right in the card, and a Phone tab.
+- **Quick feedback:** headphones and displays plugged in, the battery and power modes,
+  Bluetooth devices, USB drives and webcams, Wi-Fi, a VPN or a network asking you to sign in,
+  print jobs, and a command that finished in a Ptyxis tab you are not in.
+- **Windows asking for attention** on another workspace stay on the pill until you go there.
+- **Privacy dots** for the microphone, the camera and a shared screen; a screen recording
+  in the pill with Stop.
+- **Claude Code** asks its questions in the pill; **Bu's eyes** can rest in the idle pill.
+- **Bu says hello** when the computer starts or wakes from a long sleep — with the time,
+  the weather or an umbrella, holidays like Tết and Mid-Autumn, and your birthday — welcome
+  back after a log in, and goodbye when you shut down.
+- **A Devices tab** (this computer, wireless and plugged devices) and a redesigned look throughout.
+
 ## Requirements
 
 - **GNOME Shell 50** — tested on Ubuntu 26.04. Older or newer Shells are refused by the
