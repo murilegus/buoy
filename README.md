@@ -58,6 +58,21 @@ On `main` now, in the next release:
   <img src="docs/screenshots/whats-new.png" alt="Buoy 0.2: pills for a meeting about to start, two timers, a terminal command done in 48 s, a VPN on and a print job on page 3; Bu's hello with the time and the weather; a meeting card with Join Google Meet; the Timer tab with its ring; an event's page in the Calendar tab">
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/greeting.gif" width="600" height="140" alt="Bu waves as his hello types itself in: Good afternoon, Ethan; the time and date; Ho Chi Minh City, 28 °C, partly cloudy, light breeze">
+</p>
+<p align="center">
+  <img src="docs/screenshots/meeting.gif" width="600" height="130" alt="A meeting four minutes away: its card with Join Google Meet comes on its own, then folds into a pill counting down to it">
+</p>
+<p align="center">
+  <img src="docs/screenshots/timer.gif" width="600" height="130" alt="A tea timer in the pill, its ring counting down; under the pointer its card with Pause, +1 min and Stop">
+</p>
+<p align="center">
+  <img src="docs/screenshots/terminal.gif" width="600" height="130" alt="cargo build finished in a Ptyxis tab you are not in: a card with exit 0, 48 s and Go to Tab, then a pill with a check and 48 s">
+  <br>
+  <img src="docs/screenshots/vpn.gif" width="200" height="50" alt="A flash as the VPN comes on">
+</p>
+
 - **Meetings:** five minutes before a calendar event, a card with **Join** (Google Meet,
   Zoom, Teams, Webex, Jitsi). Click an event in the Calendar tab for its page: the place,
   the guests, the description, the reminders.
