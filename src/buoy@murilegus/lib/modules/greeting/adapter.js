@@ -20,6 +20,7 @@
 
 import {TYPE_MS, typingMs} from '../../kit/model/presentation.js';
 import {daypartAt, normaliseStarts} from '../../kit/model/daypart.js';
+import {conditionOf} from '../../kit/model/weather.js';
 
 /** How long the greeting stays once its last line is in (Ethan, 2026-11-08). */
 export const SHOW_MS = 12000;
@@ -394,6 +395,67 @@ export function sizeOf(title, subtitle = null) {
     return subtitle || title.length > MINIMAL_MAX ? 'compact' : 'minimal';
 }
 
+// --- the weather (GREETING.md §8, FEATURES M4 "Greeting" part 2) ----------------------------------
+
+/** How long Start and Wake wait for a first weather reading before showing without it (§2). */
+export const WEATHER_WAIT_MS = 3000;
+
+/**
+ * @param {*} force  the wind on Beaufort's scale
+ * @returns {?string} 0 "calm", 1–3 "light breeze", 4–5 "breezy", 6 and up "strong wind"
+ */
+export function windWords(force) {
+    if (!Number.isFinite(force) || force < 0)
+        return null;
+    if (force < 1)
+        return 'calm';
+    if (force <= 3)
+        return 'light breeze';
+    return force <= 5 ? 'breezy' : 'strong wind';
+}
+
+/**
+ * Line 3 (§8): "Ho Chi Minh City: 28 °C, partly cloudy, light breeze." — a part not known left out.
+ *
+ * @param {?object} w  the weather's state (kit/model/weather.js readInfo)
+ * @returns {?string} null without a place or a temperature
+ */
+export function weatherLine(w) {
+    if (!w || typeof w.place !== 'string' || !w.place || !Number.isFinite(w.temp))
+        return null;
+    const t = Math.round(w.temp) || 0;
+    const temp = w.unit ? `${t} ${w.unit}` : `${t}°`;
+    const cond = conditionOf(w.icon);
+    const wind = windWords(w.wind?.force);
+    return `${w.place}: ${[temp, cond ? cond.toLowerCase() : null, wind].filter(Boolean).join(', ')}.`;
+}
+
+/**
+ * The umbrella (§8): "Rain around 17:00, take an umbrella.", snow and storms their own.
+ *
+ * @param {?{at: number, kind: string}} rain  kit/model/weather.js rainSoon
+ * @param {string} [clock]  '24h' | '12h'
+ * @returns {?string}
+ */
+export function rainLine(rain, clock = '24h') {
+    if (!rain || !Number.isFinite(rain.at))
+        return null;
+    const at = timeOf(new Date(rain.at), clock);
+    if (rain.kind === 'snow')
+        return `Snow around ${at}, dress warm.`;
+    if (rain.kind === 'storm')
+        return `Storms around ${at}, stay dry.`;
+    return `Rain around ${at}, take an umbrella.`;
+}
+
+// the rain line when rain is coming before the evening (Leaving, §5: not for a night's sleep)
+function rainBefore(ev) {
+    const rain = ev.weather?.rain;
+    if (!rain || daypartAt(new Date(rain.at), ev.starts) === 'evening' || daypartAt(new Date(rain.at), ev.starts) === 'night')
+        return null;
+    return rainLine(rain, ev.clock);
+}
+
 const buOf = pose => pose === 'wave' ? {mascot: 'wave', hello: true} : {mascot: pose};
 
 // Start, Wake (expanded, or minimal by `greeting-style`), Welcome back, Leaving
@@ -402,11 +464,15 @@ function moment(ev) {
     let line, sub = null, ttl;
     if (ev.case === 'leaving') {
         line = leavingLine({leave: ev.leave, now: ev.now, starts: ev.starts, name});
-        if (ev.leave === 'shutdown' && ev.longDay === true)
+        // at most one note, rain first (§5)
+        if (ev.leave === 'shutdown' || ev.leave === 'logout')
+            sub = rainBefore(ev);
+        if (!sub && ev.leave === 'shutdown' && ev.longDay === true)
             sub = 'Long day. Rest well.';
         ttl = LEAVE_MS;
     } else if (ev.case === 'welcome') {
         line = {title: `Welcome back, ${name}.`, pose: 'wave'};
+        sub = rainLine(ev.weather?.rain, ev.clock);
         ttl = WELCOME_MS;
     } else {
         line = helloLine({now: ev.now, starts: ev.starts, name});
@@ -415,7 +481,9 @@ function moment(ev) {
     const bu = buOf(line.pose);
     const hello = (ev.case === 'start' || ev.case === 'wake') && ev.style !== 'minimal';
     if (hello) {
-        const lines = [whenLine(ev.now, ev.clock)];
+        // line 3: rain coming, else the weather; none known yet, left out (§2)
+        const third = rainLine(ev.weather?.rain, ev.clock) ?? weatherLine(ev.weather);
+        const lines = [whenLine(ev.now, ev.clock), ...third ? [third] : []];
         const typing = ev.animations === false ? 0 : typingMs([line.title, ...lines], TYPE_MS);
         return {
             text: line.title, leading: bu, trailing: null, compact: null,

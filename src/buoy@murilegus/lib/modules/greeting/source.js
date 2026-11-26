@@ -10,7 +10,8 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 
 import {Source} from '../../kit/services/source.js';
 import {readText} from '../../kit/services/files.js';
-import {caseOf, noteFor, updateOf, latestOf, due, versionName, LATEST_URL, RELEASES, UPDATE_COMMAND, MARKER, LONG_DAY_S, momentOf, nameOf} from './adapter.js';
+import {WeatherFeed} from '../../kit/services/weather.js';
+import {caseOf, noteFor, updateOf, latestOf, due, versionName, LATEST_URL, RELEASES, UPDATE_COMMAND, MARKER, LONG_DAY_S, WEATHER_WAIT_MS, momentOf, nameOf} from './adapter.js';
 import notes from './notes.js';
 
 const KIND = 'greeting';
@@ -58,6 +59,11 @@ const TIMEOUT = 15;     // s, the one request
  *   (no lock on suspend) is read again on logind's PrepareForSleep(false).
  * - A first run or What's new has the say on that enable; the moment is only written down.
  * - Not over a fullscreen window, no retry; `greeting-style` off: nothing.
+ * - The weather (§8, part 2): the kit's feed, the weather plan's (the date menu's client, Buoy's
+ *   place and units). Start and Wake ask it for news when old, as the plan does while shown, and
+ *   wait up to WEATHER_WAIT_MS for a first reading; one that comes while the hello is up fills its
+ *   line in place. Welcome back and Leaving take what it has, no ask. The feed is dropped when the
+ *   greeting goes (one timeout at its end) or on disable.
  * - Leaving: EndSessionDialog's `_confirm(signal)` (its confirm buttons, after the dialog
  *   closes) is wrapped by the InjectionManager: Bu says it, the original runs unchanged at once.
  */
@@ -74,6 +80,10 @@ export class GreetingSource extends Source {
         this._cancellable = null;
         this._session = null;
         this._momentId = null;
+        this._feed = null;
+        this._feedTimer = 0;
+        this._waitTimer = 0;
+        this._moment = null;             // the event shown, to show again with the weather
         this._injections = new InjectionManager();
         this._cancelRead = new Gio.Cancellable();
         // Shell's one dialog (ui/main.js endSessionDialog), called through it as hud's `osd`
@@ -108,6 +118,7 @@ export class GreetingSource extends Source {
         this._cancelRead?.cancel();
         this._cancelRead = null;
         this._unwaitStart();
+        this._dropFeed();
         this._injections?.clear();
         this._injections = null;
         LoginManager.getLoginManager().disconnectObject(this);
@@ -201,7 +212,77 @@ export class GreetingSource extends Source {
         // over a fullscreen window: nothing, and no retry later (GREETING.md §1)
         if (global.display.focus_window?.is_fullscreen())
             return;
-        this._put(this._registry?.build(KIND, 'buoy', this._momentEvent(kind)));
+        const feed = this._weather(kind === 'start' || kind === 'wake');
+        const show = () => {
+            this._clearWait();
+            this._moment = this._momentEvent(kind, {weather: feed?.state ?? null});
+            this._put(this._registry?.build(KIND, 'buoy', this._moment));
+        };
+        // Start, Wake: a first reading may be on its way (§2: wait ~3 s, then show without it)
+        if (feed && !feed.state && (kind === 'start' || kind === 'wake')) {
+            this._onWeather = show;
+            this._waitTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, WEATHER_WAIT_MS, () => {
+                this._waitTimer = 0;
+                show();
+                return GLib.SOURCE_REMOVE;
+            });
+            return;
+        }
+        show();
+    }
+
+    // the kit's weather feed, the plan's own (kit/services/weather.js); `ask`: news when old
+    _weather(ask) {
+        this._dropFeed();
+        try {
+            this._feed = new WeatherFeed(() => this._weatherChanged());
+        } catch (e) {
+            console.warn(`Buoy: greeting: no weather: ${e.message}`);
+            return null;
+        }
+        if (ask) {
+            const s = this._settings;
+            this._feed.shown(true, {
+                'idle-weather-automatic': s.get_boolean('idle-weather-automatic'),
+                'idle-weather-refresh': s.get_string('idle-weather-refresh'),
+            });
+        }
+        return this._feed;
+    }
+
+    _weatherChanged() {
+        const state = this._feed?.state ?? null;
+        if (!state)
+            return;
+        if (this._waitTimer) {
+            this._onWeather?.();          // it came within the wait
+            return;
+        }
+        // it came while the hello is up: its line in place
+        const m = this._moment;
+        if (!m || !this._momentId || !this._stack?.has(this._momentId) || m.weather)
+            return;
+        this._moment = {...m, weather: state, animations: false};
+        const a = this._registry?.build(KIND, 'buoy', this._moment);
+        if (a)
+            this._stack.update(this._momentId, a);
+    }
+
+    _clearWait() {
+        if (this._waitTimer)
+            GLib.source_remove(this._waitTimer);
+        this._waitTimer = 0;
+        this._onWeather = null;
+    }
+
+    _dropFeed() {
+        this._clearWait();
+        if (this._feedTimer)
+            GLib.source_remove(this._feedTimer);
+        this._feedTimer = 0;
+        this._feed?.shown(false);
+        this._feed?.destroy();
+        this._feed = null;
     }
 
     // Shell's dialog confirmed (its own `_confirm`, which goes on unchanged)
@@ -217,7 +298,8 @@ export class GreetingSource extends Source {
                 leave = dialog?._type === UPDATE_RESTART || (dialog?._checkBox?.visible && dialog._checkBox.checked) ? 'update' : 'restart';
             // CLOCK_MONOTONIC stops while asleep: the time awake on this boot
             const longDay = GLib.get_monotonic_time() / 1e6 > LONG_DAY_S;
-            this._put(this._registry?.build(KIND, 'buoy', this._momentEvent('leaving', {leave, longDay})));
+            const feed = this._weather(false);
+            this._put(this._registry?.build(KIND, 'buoy', this._momentEvent('leaving', {leave, longDay, weather: feed?.state ?? null})));
         } catch (e) {
             console.warn(`Buoy: greeting: ${e.message}`);
         }
@@ -229,6 +311,14 @@ export class GreetingSource extends Source {
         if (this._momentId && this._stack.has(this._momentId))
             this._stack.end(this._momentId);
         this._momentId = this._stack.surface(a);
+        // the feed goes with the greeting: no ask, no timer of the plan's left behind (rule 8)
+        if (this._feedTimer)
+            GLib.source_remove(this._feedTimer);
+        this._feedTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, (a.ttl || 0) + 2000, () => {
+            this._feedTimer = 0;
+            this._dropFeed();
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     _case() {

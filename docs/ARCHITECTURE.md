@@ -158,11 +158,14 @@ src/buoy@murilegus/
 ```
 
 A module may keep more pure files beside these when they are worth testing alone
-(weather's `read.js`: GWeather.Info → the plan's state, tested with a fake info; calendar's
+(calendar's
 `agenda.js` and `month.js`: which event is next, its words, the tab's days and month; media's
 `layout.js`: the Media tab's card, art, controls and chips, 2026-11-13) and a
 Shell-side reader its feed and tab share (calendar's `events.js`: the date menu's event
-source, 2026-11-08).
+source, 2026-11-08). What two modules need is the kit's, not one module's (rule 1): GNOME's
+weather (`kit/model/weather.js`: GWeather.Info → the plain state, tested with a fake info;
+`kit/services/weather.js`: the date menu's client, the feed the weather plan and the greeting
+share) moved there from the weather module's `read.js` and `feed.js` (2026-11-26, GREETING.md §8).
 
 ### Stylesheets
 

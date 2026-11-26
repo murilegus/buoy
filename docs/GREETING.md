@@ -42,7 +42,8 @@ once-a-day greeting of 2026-11-03).
 - **M4 in three parts** (2026-11-25, Ethan; design/expanded "Lời chào"): (1) the moments of §1 with
   §3 rules 3–6, §4–§6 without rain or celebrations, and the prefs `greeting-style`,
   `greeting-farewell`, `greeting-name`; (2) the weather line and rain (§8), the client moved
-  into the kit; (3) special days and the birthday (§7, §3 rules 2a–2b). Part 1 is in.
+  into the kit; (3) special days and the birthday (§7, §3 rules 2a–2b). Parts 1 and 2 are in; line 3 is text
+  only, without the condition's colour icon (the expanded center has no icon per line, 2026-11-26).
 
 ## 1. Moments
 
@@ -280,7 +281,7 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
   the size from `{moment, now, daypart, weekday, name, special?, weather?, rain?, longDay?,
   intro?}`), `holidays.js` (data + `specialDay(date, region, birthday)`, pure), `source.js`
   (the moments of §1, the weather wait, the InjectionManager on `_confirm`).
-- Kit: `kit/weather.js` / `kit/weatherclient.js` shared with the weather plan; an
+- Kit: `kit/model/weather.js` / `kit/services/weather.js` shared with the weather plan (2026-11-26); an
   expanded `{mascot}` leading may be as tall as the text block beside it (80 / 60 px
   instead of the fixed 50, §2) — the regions and their `grow` are unchanged; a pill that
   is expanded still reports hover to the stack (hover holds its ttl).
