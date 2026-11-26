@@ -36,3 +36,13 @@ declare module 'resource:///org/gnome/shell/ui/shellMountOperation.js' {
         close(): void;
     }
 }
+
+// ui/endSessionDialog.js (a Shell module, not a typelib): @girs has no types for it (greeting's Leaving wraps its _confirm)
+declare module 'resource:///org/gnome/shell/ui/endSessionDialog.js' {
+    export class EndSessionDialog {
+        _type: number;                                  // endSessionDialog.js OpenAsync
+        _checkBox: {visible: boolean, checked: boolean}; // endSessionDialog.js _init
+        _confirm(signal: string): Promise<void>;        // endSessionDialog.js _confirm
+    }
+}
+

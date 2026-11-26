@@ -39,6 +39,10 @@ once-a-day greeting of 2026-11-03).
   days, weather (§1–§10) — is FEATURES M4 "greeting".
 - **Later versions.** Each release adds its notes to the What's new table (§11): what is
   new and what was fixed, said once after the update.
+- **M4 in three parts** (2026-11-25, Ethan; design/expanded "Lời chào"): (1) the moments of §1 with
+  §3 rules 3–6, §4–§6 without rain or celebrations, and the prefs `greeting-style`,
+  `greeting-farewell`, `greeting-name`; (2) the weather line and rain (§8), the client moved
+  into the kit; (3) special days and the birthday (§7, §3 rules 2a–2b). Part 1 is in.
 
 ## 1. Moments
 

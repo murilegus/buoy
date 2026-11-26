@@ -21,7 +21,7 @@ import {PATH} from './lib/kit/services/dbus.js';
 // the one module file prefs imports: pure, no Shell (CODING-AGENTS.md §8)
 import {commandFor, hooksNote, install, installed, uninstall} from './lib/modules/agent/hooks.js';
 import {hookAdded, hookLine} from './lib/modules/terminal/finished.js';
-import {linesOf, releaseLabel} from './lib/modules/greeting/adapter.js';
+import {linesOf, nameOf, releaseLabel} from './lib/modules/greeting/adapter.js';
 import notes from './lib/modules/greeting/notes.js';
 import {GSCONNECT_PAGE, GSCONNECT_SETTINGS, GSCONNECT_UUID, phoneSetup} from './lib/kit/model/phone.js';
 
@@ -435,9 +435,27 @@ export default class BuoyPreferences extends ExtensionPreferences {
         }
         if (type === 's' && k.get_range().recursiveUnpack()[0] === 'enum')
             return this._choiceRow(k);
+        if (name === 'greeting-name')
+            return this._nameRow(k);
         if (type === 'as' && name.endsWith('-folders'))
             return this._folderList(k);
         throw new Error(`prefs.js has no row for ${name} (${type})`);
+    }
+
+    // `greeting-name` (GREETING.md §9): an entry prefilled with what Bu calls you now (your first
+    // name while the key is empty); Apply writes it, the first name itself keeps the key empty
+    _nameRow(k) {
+        const name = k.get_name();
+        const first = nameOf('', GLib.get_real_name(), GLib.get_user_name());
+        const row = new Adw.EntryRow({title: k.get_summary(), show_apply_button: true, use_markup: false});
+        row.text = this._settings.get_string(name) || first;
+        row.connect('apply', () => {
+            const t = row.text.trim();
+            this._settings.set_string(name, t === first ? '' : t);
+            if (!t)
+                row.text = first;
+        });
+        return row;
     }
 
     // `daypart-starts` (FEATURES M3, kit/model/daypart.js): an expander with the six parts,

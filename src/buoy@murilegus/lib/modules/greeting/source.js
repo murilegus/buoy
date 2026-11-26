@@ -4,13 +4,20 @@ import Soup from 'gi://Soup?version=3.0';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as EndSessionDialog from 'resource:///org/gnome/shell/ui/endSessionDialog.js';
+import * as LoginManager from 'resource:///org/gnome/shell/misc/loginManager.js';
+import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {Source} from '../../kit/services/source.js';
-import {caseOf, noteFor, updateOf, latestOf, due, versionName, LATEST_URL, RELEASES, UPDATE_COMMAND, MARKER} from './adapter.js';
+import {readText} from '../../kit/services/files.js';
+import {caseOf, noteFor, updateOf, latestOf, due, versionName, LATEST_URL, RELEASES, UPDATE_COMMAND, MARKER, LONG_DAY_S, momentOf, nameOf} from './adapter.js';
 import notes from './notes.js';
 
 const KIND = 'greeting';
 const UPDATE_ID = 'greeting-update';
+const MOMENT_ID = 'greeting-moment';
+// EndSessionDialog's types (ui/endSessionDialog.js DialogType): a restart for updates says "Updating"
+const UPDATE_RESTART = 3;
 const TIMEOUT = 15;     // s, the one request
 
 /**
@@ -41,6 +48,18 @@ const TIMEOUT = 15;     // s, the one request
  *   day (`greeting-update-checked`), at enable only — nothing polled. The answer is read
  *   as a version-name or dropped (adapter.js latestOf).
  * - Bu says it once per release (`greeting-update-told`), when the island is seen.
+ *
+ * Start, Wake, Welcome back, Leaving (GREETING.md §1–§6, FEATURES M4 "Greeting" part 1):
+ *
+ * - Read at enable, nothing polled: the boot (/proc/sys/kernel/random/boot_id), the time asleep
+ *   since boot (/proc/uptime less CLOCK_MONOTONIC, which stops while suspended), this Shell's
+ *   logind session (XDG_SESSION_ID); against `greeting-boot`, `greeting-asleep`,
+ *   `greeting-session`, written back each time (adapter.js momentOf). A wake while Buoy stays on
+ *   (no lock on suspend) is read again on logind's PrepareForSleep(false).
+ * - A first run or What's new has the say on that enable; the moment is only written down.
+ * - Not over a fullscreen window, no retry; `greeting-style` off: nothing.
+ * - Leaving: EndSessionDialog's `_confirm(signal)` (its confirm buttons, after the dialog
+ *   closes) is wrapped by the InjectionManager: Bu says it, the original runs unchanged at once.
  */
 export class GreetingSource extends Source {
     enable(stack, registry = null, settings = null, opts = {}) {
@@ -54,6 +73,20 @@ export class GreetingSource extends Source {
         this._cancelUpdateSeen = null;
         this._cancellable = null;
         this._session = null;
+        this._momentId = null;
+        this._injections = new InjectionManager();
+        this._cancelRead = new Gio.Cancellable();
+        // Shell's one dialog (ui/main.js endSessionDialog), called through it as hud's `osd`
+        this._injections.overrideMethod(EndSessionDialog.EndSessionDialog.prototype, '_confirm', original => signal => {
+            const dialog = Main.endSessionDialog;
+            this._leaving(dialog, signal);
+            return original.call(dialog, signal);
+        });
+        LoginManager.getLoginManager().connectObject('prepare-for-sleep', (_m, sleeping) => {
+            if (!sleeping)
+                this._readMoment(true);
+        }, this);
+        this._readMoment(false);
         settings?.connectObject('changed::greeting-intro-shown', () => {
             if (!this._writing && !settings.get_boolean('greeting-intro-shown'))
                 this._schedule();          // About asked for the introduction again
@@ -72,6 +105,15 @@ export class GreetingSource extends Source {
     }
 
     disable() {
+        this._cancelRead?.cancel();
+        this._cancelRead = null;
+        this._unwaitStart();
+        this._injections?.clear();
+        this._injections = null;
+        LoginManager.getLoginManager().disconnectObject(this);
+        if (this._momentId && this._stack?.has(this._momentId))
+            this._stack.end(this._momentId);
+        this._momentId = null;
         this._cancelSeen?.();
         this._cancelSeen = null;
         this._stopUpdate();
@@ -83,6 +125,110 @@ export class GreetingSource extends Source {
         this._id = null;
         this._ext = null;
         super.disable();
+    }
+
+    // --- Start, Wake, Welcome back, Leaving ----------------------------------------------------
+
+    // the facts of this enable (or of a wake while on: `wakeOnly`), the moment, the keys written back
+    async _readMoment(wakeOnly) {
+        const cancel = this._cancelRead;
+        const [boot, uptime] = await Promise.all([
+            wakeOnly ? Promise.resolve(null) : readText('/proc/sys/kernel/random/boot_id', cancel),
+            readText('/proc/uptime', cancel),
+        ]);
+        const s = this._settings;
+        if (!s || cancel.is_cancelled())
+            return;
+        const up = Number.parseFloat(uptime ?? '');
+        const asleep = Number.isFinite(up) ? Math.max(0, Math.round(up - GLib.get_monotonic_time() / 1e6)) : NaN;
+        const facts = {
+            boot: wakeOnly ? s.get_string('greeting-boot') : (boot ?? '').trim(),
+            lastBoot: s.get_string('greeting-boot'),
+            session: wakeOnly ? s.get_string('greeting-session') : GLib.getenv('XDG_SESSION_ID') ?? '',
+            lastSession: s.get_string('greeting-session'),
+            asleep, lastAsleep: s.get_int('greeting-asleep'),
+        };
+        // a new boot starts its sleep count again
+        if (facts.boot !== facts.lastBoot)
+            facts.lastAsleep = 0;
+        const moment = momentOf(facts);
+        if (facts.boot)
+            s.set_string('greeting-boot', facts.boot);
+        if (facts.session)
+            s.set_string('greeting-session', facts.session);
+        if (Number.isFinite(asleep))
+            s.set_int('greeting-asleep', asleep);
+        if (moment && !this._case())
+            this._whenStarted(() => this._showMoment(moment));
+    }
+
+    // its own handler: the first run's and the update's wait on the same signal and let theirs go
+    _whenStarted(fn) {
+        if (!Main.layoutManager._startingUp) {
+            fn();
+            return;
+        }
+        this._unwaitStart();
+        this._startId = Main.layoutManager.connect('startup-complete', () => {
+            this._unwaitStart();
+            fn();
+        });
+    }
+
+    _unwaitStart() {
+        if (this._startId)
+            Main.layoutManager.disconnect(this._startId);
+        this._startId = 0;
+    }
+
+    // the facts the adapter builds a moment's lines from
+    _momentEvent(kind, extra = {}) {
+        const s = this._settings;
+        return {
+            id: MOMENT_ID, case: kind, now: Date.now(), style: s.get_string('greeting-style'),
+            starts: s.get_value('daypart-starts').deepUnpack(),
+            clock: new Gio.Settings({schema_id: 'org.gnome.desktop.interface'}).get_string('clock-format'),
+            name: nameOf(s.get_string('greeting-name'), GLib.get_real_name(), GLib.get_user_name()),
+            animations: St.Settings.get().enable_animations,
+            ...extra,
+        };
+    }
+
+    _showMoment(kind) {
+        const s = this._settings;
+        if (!this._stack || !s || s.get_string('greeting-style') === 'off')
+            return;
+        // over a fullscreen window: nothing, and no retry later (GREETING.md §1)
+        if (global.display.focus_window?.is_fullscreen())
+            return;
+        this._put(this._registry?.build(KIND, 'buoy', this._momentEvent(kind)));
+    }
+
+    // Shell's dialog confirmed (its own `_confirm`, which goes on unchanged)
+    _leaving(dialog, signal) {
+        try {
+            const s = this._settings;
+            if (!this._stack || !s?.get_boolean('greeting-farewell'))
+                return;
+            let leave = 'shutdown';
+            if (signal === 'ConfirmedLogout')
+                leave = 'logout';
+            else if (signal === 'ConfirmedReboot')
+                leave = dialog?._type === UPDATE_RESTART || (dialog?._checkBox?.visible && dialog._checkBox.checked) ? 'update' : 'restart';
+            // CLOCK_MONOTONIC stops while asleep: the time awake on this boot
+            const longDay = GLib.get_monotonic_time() / 1e6 > LONG_DAY_S;
+            this._put(this._registry?.build(KIND, 'buoy', this._momentEvent('leaving', {leave, longDay})));
+        } catch (e) {
+            console.warn(`Buoy: greeting: ${e.message}`);
+        }
+    }
+
+    _put(a) {
+        if (!a)
+            return;
+        if (this._momentId && this._stack.has(this._momentId))
+            this._stack.end(this._momentId);
+        this._momentId = this._stack.surface(a);
     }
 
     _case() {

@@ -42,3 +42,8 @@ declare module '@girs/gnome-shell/ui/status/keyboard' {
     // keyboard.js getInputSourceManager: the manager singleton
     export function getInputSourceManager(): any;
 }
+
+declare module '@girs/gnome-shell/ui/main' {
+    // main.js _initializeUI: Shell's one end-session dialog
+    export const endSessionDialog: import('resource:///org/gnome/shell/ui/endSessionDialog.js').EndSessionDialog;
+}

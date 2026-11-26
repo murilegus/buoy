@@ -93,7 +93,7 @@ eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_
 eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'print', 'timer', 'greeting', 'calendar', 'device', 'input', 'agent', 'privacy', 'power', 'plugged', 'bluetooth', 'usb', 'attention', 'network', 'terminal', 'phone', 'copied', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet, nor a module that is only an idle plan');
 eq(plan.modules.find(m => m.id === 'privacy')?.keys, ['privacy-dot'], 'privacy: its switch and where the dot shows');
-eq(plan.modules.find(m => m.id === 'greeting')?.keys, ['greeting-updates'], 'greeting: its switch and "a newer Buoy", its bookkeeping hidden');
+eq(plan.modules.find(m => m.id === 'greeting')?.keys, ['greeting-style', 'greeting-farewell', 'greeting-name', 'greeting-updates'], 'greeting: the style, goodbye, the name, "a newer Buoy"; its bookkeeping hidden');
 eq(MODULE_GROUPS.find(g => g.modules.includes('greeting'))?.title, 'Bu', 'greeting in the Bu group (2026-11-08)');
 eq(plan.plans.find(p => p.id === 'clock').planOnly, true,
     'clock: its switch on its plan row on the Island page, not on Modules (2026-11-06, Ethan)');
