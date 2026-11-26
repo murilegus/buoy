@@ -42,8 +42,9 @@ once-a-day greeting of 2026-11-03).
 - **M4 in three parts** (2026-11-25, Ethan; design/expanded "Lời chào"): (1) the moments of §1 with
   §3 rules 3–6, §4–§6 without rain or celebrations, and the prefs `greeting-style`,
   `greeting-farewell`, `greeting-name`; (2) the weather line and rain (§8), the client moved
-  into the kit; (3) special days and the birthday (§7, §3 rules 2a–2b). Parts 1 and 2 are in; line 3 is text
-  only, without the condition's colour icon (the expanded center has no icon per line, 2026-11-26).
+  into the kit; (3) special days and the birthday (§7, §3 rules 2a–2b). All three are in (2026-11-26); line 3 is text
+  only, without the condition's colour icon (the expanded center has no icon per line). Welcome back
+  says a birthday as it says a celebration; the birthday is a month and a day in prefs.
 
 ## 1. Moments
 
@@ -224,7 +225,7 @@ Added 2026-11-16 (Ethan): Mother's and Father's Day, the first full moon, Vietna
   January or February of the next Gregorian year), some 6 KB (Ethan, 2026-11-07: through
   2099) — from `scripts/lunar.js` (the Vietnamese lunar calendar at UTC+7, Hồ Ngọc Đức's
   algorithm, run by hand like `scripts/icons.js`; its output is data in `holidays.js`,
-  nothing is computed at runtime). Past 2099 the
+  nothing is computed at runtime; `gjs -m scripts/lunar.js --write`). Past 2099 the
   lunar days are silently skipped. Test anchors: Tết 2026 = 17 February; the others checked
   against a published Vietnamese lunar calendar when the table is made.
 - **Mother's and Father's Day** are a rule, not a table: the nth Sunday of a month, computed

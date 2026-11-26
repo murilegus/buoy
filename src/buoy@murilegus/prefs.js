@@ -437,6 +437,8 @@ export default class BuoyPreferences extends ExtensionPreferences {
             return this._choiceRow(k);
         if (name === 'greeting-name')
             return this._nameRow(k);
+        if (name === 'greeting-birthday')
+            return this._birthdayRow(k);
         if (type === 'as' && name.endsWith('-folders'))
             return this._folderList(k);
         throw new Error(`prefs.js has no row for ${name} (${type})`);
@@ -455,6 +457,42 @@ export default class BuoyPreferences extends ExtensionPreferences {
             if (!t)
                 row.text = first;
         });
+        return row;
+    }
+
+    // `greeting-birthday` (GREETING.md §9): a month and a day, "MM-DD"; None leaves it empty
+    _birthdayRow(k) {
+        const name = k.get_name();
+        const months = ['None', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+            'September', 'October', 'November', 'December'];
+        const row = new Adw.ActionRow({title: k.get_summary(), subtitle: k.get_description(), use_markup: false});
+        const month = Gtk.DropDown.new_from_strings(months);
+        month.valign = Gtk.Align.CENTER;
+        const day = new Gtk.SpinButton({valign: Gtk.Align.CENTER, adjustment: new Gtk.Adjustment({lower: 1, upper: 31, step_increment: 1}), numeric: true});
+        row.add_suffix(month);
+        row.add_suffix(day);
+        let syncing = false;
+        const read = () => {
+            const m = /^(\d{2})-(\d{2})$/.exec(this._settings.get_string(name));
+            syncing = true;
+            month.selected = m ? Number(m[1]) : 0;
+            day.value = m ? Number(m[2]) : 1;
+            day.sensitive = !!m;
+            syncing = false;
+        };
+        const write = () => {
+            if (syncing)
+                return;
+            const mm = month.selected;
+            // the longest each month can be (February: 29, a leap year's birthday)
+            const max = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mm] ?? 31;
+            const dd = Math.min(Math.round(day.value), max);
+            day.sensitive = mm > 0;
+            this._settings.set_string(name, mm ? `${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}` : '');
+        };
+        month.connect('notify::selected', write);
+        day.connect('value-changed', write);
+        read();
         return row;
     }
 

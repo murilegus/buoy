@@ -120,4 +120,23 @@ eq(adapter.greeting(ev({case: 'leaving', leave: 'logout', now: at(19, 15), weath
 eq(adapter.greeting(ev({case: 'leaving', leave: 'shutdown', now: at(19, 15), weather: rainyEve})).compact, null, 'rain only in the evening: no umbrella for the night');
 eq(adapter.greeting(ev({case: 'leaving', leave: 'restart', now: at(19, 15), weather: {...W, rain: R('rain')}})).compact, null, 'a restart: no umbrella');
 
+// --- special days (§7, part 3) -----------------------------------------------------------------------
+const SP = (o = {}) => ({birthday: false, celebrate: null, observe: null, ...o});
+eq(helloLine({now: at(20, 8), name: N, special: SP({birthday: true, celebrate: {line: 'Merry Christmas, {name}!'}})}),
+    {title: 'Happy birthday, Ethan!', pose: 'party'}, 'a birthday wins, Bu parties');
+eq(helloLine({now: at(23, 8), name: N, special: SP({celebrate: {line: 'Happy Lunar New Year, {name}!'}})}),
+    {title: 'Happy Lunar New Year, Ethan!', pose: 'party'}, 'a celebration over Monday\'s line');
+const obs = adapter.greeting(ev({case: 'start', special: SP({observe: {name: 'Teachers\' Day'}}), weather: W}));
+eq(obs.expanded.center.lines, ['It\'s 07:42 on Friday, 20 November 2026. Today is Teachers\' Day.', 'Ho Chi Minh City: 28 °C, partly cloudy, light breeze.'],
+    'an observance on line 2, the weather kept');
+const long = adapter.greeting(ev({case: 'start', special: SP({observe: {name: 'the First Full Moon Festival'}}), weather: W}));
+eq(long.expanded.center.lines, ['It\'s 07:42 on Friday, 20 November 2026.', 'Today is the First Full Moon Festival.'],
+    'too long for one line: on line 3, the weather drops');
+eq(adapter.greeting(ev({case: 'welcome', special: SP({celebrate: {line: 'Merry Christmas, {name}!'}})})).text, 'Merry Christmas, Ethan!',
+    'Welcome back on a celebration: its line');
+eq(leavingLine({leave: 'shutdown', now: at(20, 20), name: N, special: SP({celebrate: {line: 'Merry Christmas, {name}!'}})}),
+    {title: 'Merry Christmas, Ethan.', pose: 'party'}, 'shut down on its evening: its line, over Friday\'s');
+eq(leavingLine({leave: 'shutdown', now: at(19, 10), name: N, special: SP({celebrate: {line: 'Merry Christmas, {name}!'}})}).title,
+    'See you soon, Ethan.', 'in the morning: the usual');
+
 print('moments: ok');

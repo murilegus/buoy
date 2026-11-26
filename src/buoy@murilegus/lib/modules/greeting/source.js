@@ -11,6 +11,7 @@ import {InjectionManager} from 'resource:///org/gnome/shell/extensions/extension
 import {Source} from '../../kit/services/source.js';
 import {readText} from '../../kit/services/files.js';
 import {WeatherFeed} from '../../kit/services/weather.js';
+import {regionOf, specialDay} from './holidays.js';
 import {caseOf, noteFor, updateOf, latestOf, due, versionName, LATEST_URL, RELEASES, UPDATE_COMMAND, MARKER, LONG_DAY_S, WEATHER_WAIT_MS, momentOf, nameOf} from './adapter.js';
 import notes from './notes.js';
 
@@ -201,6 +202,11 @@ export class GreetingSource extends Source {
             clock: new Gio.Settings({schema_id: 'org.gnome.desktop.interface'}).get_string('clock-format'),
             name: nameOf(s.get_string('greeting-name'), GLib.get_real_name(), GLib.get_user_name()),
             animations: St.Settings.get().enable_animations,
+            // a birthday, a celebration, an observance (§7, part 3): the region by the time zone
+            special: specialDay(new Date(), {
+                region: regionOf(GLib.TimeZone.new_local().get_identifier()),
+                holidays: s.get_string('greeting-holidays'), birthday: s.get_string('greeting-birthday'),
+            }),
             ...extra,
         };
     }

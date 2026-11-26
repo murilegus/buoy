@@ -257,6 +257,8 @@ export function buSize(lines) {
 export const WAKE_S = 3 * 3600;
 /** Awake this long (s) on a boot: "Long day. Rest well." at shut down (§5). */
 export const LONG_DAY_S = 10 * 3600;
+/** Line 2 and an observance on one line, at most this long (the expanded center's width, §2). */
+export const LINE_MAX = 68;
 /** A line this long or shorter fits pill 1 at rest: minimal; longer, or with a subtitle, compact (§6). */
 export const MINIMAL_MAX = 24;
 /** How long each shows (§1): Start and Wake ~8 s, Welcome back 4 s, Leaving till the session ends. */
@@ -336,10 +338,16 @@ export function whenLine(now, clock = '24h') {
  * @param {number} f.now  ms since the epoch
  * @param {*} [f.starts]  `daypart-starts`
  * @param {string} f.name
+ * @param {?object} [f.special]  holidays.js specialDay: a birthday, a celebration (§7)
  * @returns {{title: string, pose: string}}
  */
-export function helloLine({now, starts, name}) {
+export function helloLine({now, starts, name, special = null}) {
     const d = new Date(now);
+    // a birthday, then a celebration (§3 rules 2a, 2b; §7)
+    if (special?.birthday)
+        return {title: `Happy birthday, ${name}!`, pose: 'party'};
+    if (special?.celebrate)
+        return {title: special.celebrate.line.replace('{name}', name), pose: 'party'};
     const s = normaliseStarts(starts).starts;
     const part = daypartAt(d, s);
     const h = d.getHours(), day = d.getDay();
@@ -368,9 +376,10 @@ export function helloLine({now, starts, name}) {
  * @param {number} f.now
  * @param {*} [f.starts]
  * @param {string} f.name
+ * @param {?object} [f.special]  holidays.js specialDay: a birthday, a celebration (§7)
  * @returns {{title: string, pose: string}}
  */
-export function leavingLine({leave, now, starts, name}) {
+export function leavingLine({leave, now, starts, name, special = null}) {
     if (leave === 'update')
         return {title: 'Updating. Back in a moment.', pose: 'busy'};
     if (leave === 'restart')
@@ -379,6 +388,9 @@ export function leavingLine({leave, now, starts, name}) {
         return {title: `Catch you later, ${name}.`, pose: 'wave'};
     const d = new Date(now);
     const part = daypartAt(d, starts);
+    // shut down on a celebration's evening: its line (§5 rule 4)
+    if (special?.celebrate && (part === 'evening' || part === 'night'))
+        return {title: special.celebrate.line.replace('{name}', name).replace(/!$/, '.'), pose: 'party'};
     if (d.getDay() === 5 && ['afternoon', 'evening', 'night'].includes(part))
         return {title: `Have a good weekend, ${name}.`, pose: 'done'};
     if (part === 'evening' || part === 'night')
@@ -463,7 +475,7 @@ function moment(ev) {
     const name = typeof ev.name === 'string' && ev.name ? ev.name : 'there';
     let line, sub = null, ttl;
     if (ev.case === 'leaving') {
-        line = leavingLine({leave: ev.leave, now: ev.now, starts: ev.starts, name});
+        line = leavingLine({leave: ev.leave, now: ev.now, starts: ev.starts, name, special: ev.special});
         // at most one note, rain first (§5)
         if (ev.leave === 'shutdown' || ev.leave === 'logout')
             sub = rainBefore(ev);
@@ -471,19 +483,28 @@ function moment(ev) {
             sub = 'Long day. Rest well.';
         ttl = LEAVE_MS;
     } else if (ev.case === 'welcome') {
-        line = {title: `Welcome back, ${name}.`, pose: 'wave'};
+        line = ev.special?.birthday || ev.special?.celebrate
+            ? helloLine({now: ev.now, starts: ev.starts, name, special: ev.special})   // §4: its line
+            : {title: `Welcome back, ${name}.`, pose: 'wave'};
         sub = rainLine(ev.weather?.rain, ev.clock);
         ttl = WELCOME_MS;
     } else {
-        line = helloLine({now: ev.now, starts: ev.starts, name});
+        line = helloLine({now: ev.now, starts: ev.starts, name, special: ev.special});
         ttl = HELLO_MS;
     }
     const bu = buOf(line.pose);
     const hello = (ev.case === 'start' || ev.case === 'wake') && ev.style !== 'minimal';
     if (hello) {
         // line 3: rain coming, else the weather; none known yet, left out (§2)
-        const third = rainLine(ev.weather?.rain, ev.clock) ?? weatherLine(ev.weather);
-        const lines = [whenLine(ev.now, ev.clock), ...third ? [third] : []];
+        let third = rainLine(ev.weather?.rain, ev.clock) ?? weatherLine(ev.weather);
+        let when = whenLine(ev.now, ev.clock);
+        // an observance on line 2, or on line 3 in place of the weather when too long (§2)
+        const today = ev.special?.observe ? `Today is ${ev.special.observe.name}.` : null;
+        if (today && `${when} ${today}`.length <= LINE_MAX)
+            when = `${when} ${today}`;
+        else if (today)
+            third = today;
+        const lines = [when, ...third ? [third] : []];
         const typing = ev.animations === false ? 0 : typingMs([line.title, ...lines], TYPE_MS);
         return {
             text: line.title, leading: bu, trailing: null, compact: null,
