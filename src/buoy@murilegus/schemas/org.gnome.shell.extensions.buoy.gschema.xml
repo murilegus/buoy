@@ -104,7 +104,7 @@
     <key name="modules-greeting" type="b">
       <default>true</default>
       <summary>Greeting</summary>
-      <description>Bu says hello the first time, and what is new after an update.</description>
+      <description>Bu says hello when the computer starts, welcome back and goodbye, special days, and what is new after an update.</description>
     </key>
     <key name="greeting-style" type="s">
       <choices>
@@ -113,7 +113,7 @@
         <choice value="off"/>
       </choices>
       <default>'expanded'</default>
-      <summary>Greeting</summary>
+      <summary>Hello</summary>
       <description>When the computer starts or wakes from a long sleep.</description>
     </key>
     <key name="greeting-farewell" type="b">
@@ -125,6 +125,21 @@
       <default>''</default>
       <summary>Your name</summary>
       <description>What Bu calls you; empty: your first name.</description>
+    </key>
+    <key name="greeting-birthday" type="s">
+      <default>''</default>
+      <summary>Your birthday</summary>
+      <description>Bu wishes you a happy birthday.</description>
+    </key>
+    <key name="greeting-holidays" type="s">
+      <choices>
+        <choice value="auto"/>
+        <choice value="global"/>
+        <choice value="off"/>
+      </choices>
+      <default>'auto'</default>
+      <summary>Holidays</summary>
+      <description>Your region's by the time zone.</description>
     </key>
     <key name="greeting-boot" type="s">
       <default>''</default>

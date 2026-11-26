@@ -218,6 +218,7 @@ export function switchValue(entry, active) {
 // Drop-down labels where the value itself would read badly ("Dark-text"); any other
 // choice shows as its value with a capital.
 export const CHOICE_LABELS = {
+    'greeting-holidays': {auto: 'Local and global', global: 'Global', off: 'Off'},
     'greeting-style': {expanded: 'Expanded', minimal: 'In the pill', off: 'Off'},
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
     'idle-content': {'auto': 'Automatic', 'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event', 'mascot': 'Bu\'s Eyes'},

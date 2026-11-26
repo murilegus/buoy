@@ -33,7 +33,12 @@ không mở expanded ([Alert và ask](../alerts-and-asks/index.vi.md)). Số dù
   Rest well." khi đã thức hơn 10 giờ; tắt bằng `greeting-farewell`. **Chốt**
 - **Ba phần**: (1) bốn thời điểm, câu chào, cỡ, prefs kiểu / lời chào khi tắt / tên — xong 2026-11-25; (2)
   dòng thời tiết và báo mưa — xong 2026-11-26: dòng 3 chỉ có chữ, không có icon màu của trời (vùng giữa
-  của expanded không có icon cho từng dòng); (3) ngày đặc biệt và sinh nhật. **Chốt** (Ethan, 2026-11-25)
+  của expanded không có icon cho từng dòng); (3) ngày đặc biệt và sinh nhật — xong 2026-11-26. **Chốt** (Ethan, 2026-11-25)
+- **Ngày đặc biệt** (phần 3): sinh nhật (prefs: tháng và ngày) rồi lễ (Tết ba ngày, Trung thu, Giáng sinh…)
+  thay dòng 1, Bu ăn mừng; ngày kỷ niệm thêm "Today is …" vào dòng 2, dài quá thì xuống dòng 3 thay thời
+  tiết. Đăng nhập lại cũng nói; tắt máy buổi tối ngày lễ: câu của lễ. Vùng theo múi giờ
+  (`Asia/Ho_Chi_Minh` → Việt Nam); prefs "Holidays": Local and global / Global / Off. Lịch âm là bảng
+  2026–2099 do `scripts/lunar.js` sinh (thuật toán Hồ Ngọc Đức, UTC+7). **Chốt**
 - **Thời tiết** (phần 2): đọc qua feed thời tiết của kit, dùng chung với plan thời tiết (cùng nơi, cùng
   đơn vị). Bật máy, thức dậy: hỏi tin mới khi cũ, chờ tới ~3 s; tới muộn thì điền dòng 3 vào chỗ. Mưa
   trong 3 giờ tới (trời đang khô): "Rain around 17:00, take an umbrella." thay dòng 3, là ghi chú của
