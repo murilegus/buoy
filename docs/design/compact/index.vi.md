@@ -405,6 +405,28 @@ Settings, `ui/status/network.js`), chỉ nghe tín hiệu. **Chốt**
   thông báo (`printShows`); "Printer added", lệnh cần mật khẩu vẫn của GNOME. Tín hiệu không nói lệnh của
   ai: máy dùng chung thì thấy cả lệnh in của người khác. **Chốt**
 
+## Đang gọi
+
+![Đang gọi: pill, card với Tắt micro và Cho thông báo; ô "Đang dùng" ở Home](images/call.vi.png)
+
+*Ethan, 2026-11-27 (mục M4 "Privacy dot", phần còn lại).* Camera và micro cùng bật quá 10 s là một
+cuộc gọi; chỉ một trong hai (ghi âm, ghi chú giọng nói) thì chỉ có chấm như bây giờ. **Chốt**
+
+- **Pill** (kind `screen`, `what: 'call'`): icon camera, "In a call", đồng hồ từ lúc bắt đầu (tính cả
+  10 s chờ), chấm xanh ở đầu phải. Hết gọi khi camera hay micro tắt quá 10 s. **Chốt**
+- **Card** (hover): "In a call · Firefox" — app đang ghi âm, mixer của GNOME biết tên
+  (`get_source_outputs`); không biết thì chỉ "In a call". Dòng dưới **"Since 10:35"**, không chạy đồng
+  hồ (khác bản vẽ: đồng hồ chạy ở pill rồi), thêm "· Do Not Disturb on" khi Buoy bật nó. Nút **Mute** /
+  **Unmute** (kem) đổi micro như nút của Quick Settings; **Allow Notifications** tắt Không làm phiền cho
+  cuộc gọi này. Không có nút kết thúc: Buoy không điều khiển được app gọi. **Chốt**
+- **Không làm phiền**: bắt đầu gọi thì tắt `show-banners` (cùng công tắc trong lịch) nếu đang bật; hết gọi
+  thì bật lại, chỉ khi chính Buoy tắt nó và anh không đổi gì trong lúc gọi. prefs: "Do Not Disturb in
+  calls" (`privacy-call-dnd`, bật mặc định). **Chốt**
+- **Ô "Đang dùng" ở Home**: đứng đầu phần nhìn nhanh, chỉ khi micro hay camera đang dùng. Một icon (camera
+  nếu có, không thì micro — khác bản vẽ hai icon, ô 128 không đủ chỗ), số lớn là tên app ghi âm hay
+  "Camera", dòng dưới "Microphone, camera", "2 apps" khi nhiều. Bấm: Cài đặt → Quyền riêng tư. Màn hình
+  không có ô này: chia sẻ, quay đã có ô của activity, với Stop. **Chốt**
+
 ## Chỗ trong code
 
 - `lib/kit/model/shapes.js` — `COMPACT_H` → 56 + 16n theo nội dung; `CARD_MAX_H` 160 → 152; compact `r`
@@ -418,6 +440,7 @@ Settings, `ui/status/network.js`), chỉ nghe tín hiệu. **Chốt**
   (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
 - `lib/modules/print/` — lệnh in (`tests/print.test.js`); `printShows` ở `modules/notification/adapter.js`.
 - `lib/modules/network/` — mạng (`tests/network.test.js`).
+- `lib/modules/privacy/` — đang gọi, ô "Đang dùng" (`call.js`, `glance.js`, `store.js`; `tests/call.test.js`).
 - `lib/modules/timer/` — hẹn giờ (`tests/timer.test.js`); phần tử `{ring: {from, until}}` và `{until, more}`
   (`kit/model/presentation.js`, vẽ ở `kit/ui/present/elements.js`).
 - `lib/modules/terminal/`, `hooks/shell.sh` — lệnh terminal xong (`tests/terminal.test.js`); phần tử

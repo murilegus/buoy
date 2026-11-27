@@ -351,8 +351,11 @@ activity, with its clock and Stop (§6b, design/compact "Chia sẻ và quay màn
 2026-11-14). GNOME's own indicators for the same things (the camera, microphone and
 remote-access icons in the system cluster, the recording and sharing buttons in the bar)
 are hidden while the module is on; `privacy-dot = pill | system | both`, default `pill`
-(`system`: GNOME's alone and no dot; `both`: both). Not yet: the "in use by …" row in Home
-and the "in call" activity with auto-DND (FEATURES M4).
+(`system`: GNOME's alone and no dot; `both`: both). Camera and microphone both on for 10 s
+make a call (2026-11-27, design/compact "Đang gọi"): an "In a call" activity with its clock,
+Mute and the app recording; Do Not Disturb while it lasts (`privacy-call-dnd`), given back
+only if Buoy set it and nothing changed it meanwhile. Home's first glance, "in use", names
+the apps recording (the mixer knows them; nothing names the camera's).
 
 ### 2a-iii. `auto`: a smart stack of idle plans
 

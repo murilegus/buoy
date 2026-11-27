@@ -98,9 +98,10 @@ a card or expanded, like the light.
 Precedence when several: red › green › purple (design/colours "Chấm riêng tư", 2026-11-11), one
 dot. Location has no dot, as in GNOME and on Apple's devices.
 Click → Home. A recording or a share is an activity of its own (kind `screen`, priority
-55): its clock in the pill, Stop in its compact and on Home's card (design/compact). The
-"in use by …" row for the microphone and the camera is not built: Mutter and
-`Shell.CameraMonitor` name no app, and design/home keeps the dot in the pill only.
+55): its clock in the pill, Stop in its compact and on Home's card (design/compact). Camera
+and microphone both on make an "In a call" activity, and Home's "in use" glance names the apps
+recording (2026-11-27, design/compact "Đang gọi"); the camera's app stays unnamed, as
+`Shell.CameraMonitor` only counts.
 
 GNOME's own indicators (camera, microphone and remote access in the system cluster, the
 recording and sharing buttons in the bar) are hidden while the `privacy` module is on
