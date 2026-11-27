@@ -40,8 +40,9 @@ Pure JS (GJS), no daemon, ships on extensions.gnome.org.
 - Vietnamese or English in chat, English in code and comments. `docs/` is bilingual: `page.md`
   in English, `page.vi.md` in Vietnamese. Design pages are written and decided in Vietnamese
   first, then translated; the other docs keep English as their source (ARCHITECTURE, "The docs
-  and their site"); a change to `page.md` updates `page.vi.md` in the same PR (FEATURES is English
-  only). Images with words come in two versions, `x.vi.png` and `x.en.png`.
+  and their site"); a change to either twin updates the other in the same PR (FEATURES is English
+  only). Images with words come in two versions, `x.vi.png` and `x.en.png`, drawn together by
+  `scripts/render-design.sh` (`t(vi, en)` in `docs/design/render/lib.js`).
 
 ## Commands
 - `pnpm test` — gjs unit tests (adapters, contract). Run before saying something works.

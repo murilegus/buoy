@@ -144,19 +144,20 @@ v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` and `clipboard` (two 
 
 **The docs and their site** (2026-11-10, FEATURES M4 "Design docs and site"). `docs/` is
 bilingual: `page.md` English, `page.vi.md` Vietnamese. Design pages are decided in Vietnamese
-first; other docs keep English as source (translated 2026-11-27; a change to one updates the other in the same PR; FEATURES is
-English only). `mkdocs.yml` builds
+first, then translated; other docs keep English as source (both translated 2026-11-27). A change
+to one twin updates the other in the same PR; FEATURES is English only. `mkdocs.yml` builds
 the site (MkDocs Material, mkdocs-static-i18n) only in CI (`.github/workflows/docs.yml` →
 GitHub Pages; versions in `requirements-docs.txt`), never in the extension or `package.json`.
 
 ```
 docs/design/
-├── index.vi.md       units and rules for every part (em, 56 + 16n, concentric radii); index.md in English
+├── index.vi.md       units and rules for every part (em, 56 + 16n, concentric radii); each .vi.md
+│                     has its English twin beside it (index.md, tokens.md)
 ├── tokens.vi.md      the one table of numbers: sizes, radii, gaps, type
 ├── render/lib.js     shared by render scripts: draws at 3×, fits text to its 1× width, t(vi, en)
 └── <part>/           colours, pill, compact, alerts-and-asks, expanded, home, media, device, tabs,
     │                 icons, mascot, motion
-    ├── index.vi.md   purpose, anatomy, sizes, states, decisions (date, who), open, code
+    ├── index.vi.md   purpose, anatomy, sizes, states, decisions (date, who), open, code; index.md
     ├── images/       x.vi.png, x.en.png (x.png when it has no words); the site serves each as x.png
     ├── clips/        x.vi.png, x.en.png: motion as animated PNG, 30 fps (scripts/apng.js)
     └── render/       gjs scripts drawing the images; scripts/render-design.sh runs them all

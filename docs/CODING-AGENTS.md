@@ -62,7 +62,7 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 - **Name**, hover only (2026-11-12, Ethan): `session_title` (any event; Desktop titles
   every session, the CLI after `/rename`), whole (the renderer ellipsizes); else the
   worktree's slug; else the label.
-- **Minimal** (2026-11-12, Ethan, design/pill "Claude Code ở pill 1", C + D): Bu ·
+- **Minimal** (2026-11-12, Ethan, design/pill "Claude Code in pill 1", C + D): Bu ·
   "{project} · {what it does}" ("buoy · Running pnpm test", "buoy · Waiting for you",
   "buoy · Done in 4 min"; no project "Claude · …") · elapsed (kit `{since}`: "<1 min",
   "4 min", "1 h 5 min"; re-read every 20 s while shown). With a task list: the current task
@@ -71,7 +71,7 @@ Claude Code ──hook, JSON on stdin──► hooks/claude.js (gjs) ──D-Bus
 - **Compact** (hover): title the name, else the label; subtitle what it does ("Thinking",
   "Running pnpm test", "Editing src/…/pill.js", "Fetching example.com", "Waiting for you",
   "Done in 4 min"; sharing: "Running a command", "Editing a file"…, §7). Rows
-  (design/compact "Danh sách hàng"): the task list (§3), else the turn's last three steps
+  (design/compact "Row list"): the task list (§3), else the turn's last three steps
   — ▶ running, ✓ done; all ✓ at Stop, gone at the next prompt (2026-11-13). No rows while
   sharing.
 - **Expanded**: only the permission prompt (§4).
@@ -162,8 +162,7 @@ a pulse in place: no expanded presentation (kit island.js render, `expandable`).
   terminal's `permission_prompt` must not end it. The terminal shows its own dialog
   meanwhile; first answer wins. Desktop asks via `--permission-prompt-tool=stdio`, hooks
   alongside: first decision applies.
-- **A question is answered in Buoy** (2026-11-12, design/alerts-and-asks "Hỏi nhiều lựa
-  chọn"; 2026-11-13, Ethan). `AskUserQuestion` arrives as a waiting `PermissionRequest`.
+- **A question is answered in Buoy** (2026-11-12, design/alerts-and-asks "Multiple-choice questions"; 2026-11-13, Ethan). `AskUserQuestion` arrives as a waiting `PermissionRequest`.
   Card at the compact's width: Bu, the question, "Claude Code · buoy · 1 / 3"; a 32 row per
   choice (round mark single, square multi), Other last, typed in place (click takes the
   keyboard via the island's modal grab; Esc lets go, text kept); Skip · Next, Back · Submit

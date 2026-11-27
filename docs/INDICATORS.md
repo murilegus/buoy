@@ -73,12 +73,12 @@ buttons) replaces the compact; answer there; leaving closes it, still red (2026-
 Mic and camera come from GNOME's Quick Settings indicators (input slider visible and not muted;
 camera icon bound to `Shell.CameraMonitor`), so Buoy counts what GNOME counts
 (`modules/privacy/source.js`, 2026-11-14). Precedence: red › green › purple, one dot
-(design/colours "Chấm riêng tư", 2026-11-11). Location has no dot, as in GNOME and Apple.
+(design/colours "Privacy dot", 2026-11-11). Location has no dot, as in GNOME and Apple.
 
 Click → Home. A recording or share is its own activity (kind `screen`, priority 55): its clock
 in the pill, Stop in its compact and on Home's card (design/compact). Camera plus microphone make
 an "In a call" activity, and Home's "in use" glance names the recording apps (2026-11-27,
-design/compact "Đang gọi"); the camera's app stays unnamed (`Shell.CameraMonitor` only counts).
+design/compact "In a call"); the camera's app stays unnamed (`Shell.CameraMonitor` only counts).
 
 While the `privacy` module is on, GNOME's own indicators (camera, microphone, remote access in
 the system cluster; recording and sharing buttons in the bar) are hidden, so a fact shows once
@@ -115,7 +115,7 @@ The one place an app may put its colour (Apple's `keylineTint`): it says **who**
  (left slot)  ←── adapter / idle plan ──→  (right slot)
 ```
 
-The slots are pill 1's ends (2026-11-10, design/pill "Đèn ở hai đầu"): an 8 px dot centred in
+The slots are pill 1's ends (2026-11-10, design/pill "Lights at both ends"): an 8 px dot centred in
 each round cap; the pill grows at both ends by that radius plus half the dot (20 at 1×), so the
 zones never move; the cap counts the lights. `kit/ui/pill.js` draws them; adapters and idle plans cannot. Side pills,
 compact, card and expanded have none.
@@ -124,5 +124,5 @@ compact, card and expanded have none.
 
 Colour is never the only channel: the compact names the state ("2 missed", "Waiting: Claude
 Code wants to run `git push`"), and Home's row names the app behind the dot. High contrast
-raises borders and quiet text (design/colours "Tương phản cao"); lights and dots keep their
+raises borders and quiet text (design/colours "High contrast"); lights and dots keep their
 colours, each ≥ 3:1 on black.
