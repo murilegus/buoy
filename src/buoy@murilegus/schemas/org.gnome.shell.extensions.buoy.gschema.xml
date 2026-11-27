@@ -238,6 +238,11 @@
       <summary>Privacy &amp; screen</summary>
       <description>A dot on the pill while the microphone, the camera or the screen is in use; a recording or a screen share in the pill, with Stop.</description>
     </key>
+    <key name="privacy-call-dnd" type="b">
+      <default>true</default>
+      <summary>Do Not Disturb in calls</summary>
+      <description>While the camera and the microphone are both on.</description>
+    </key>
     <key name="privacy-dot" type="s">
       <choices>
         <choice value="pill"/>

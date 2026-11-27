@@ -73,7 +73,7 @@ lại mỗi lần Home mở và mỗi khi stack đổi, nên Home không bao gi�
    5 ở 2560 và 3440.
 2. **Activity trước**, Bị nhỡ đứng đầu, mỗi cái một ô. Nhiều hơn N: N − 1 ô và ô **+K** (bấm xem
    tất cả), nên activity nào cũng tới được.
-3. **Còn chỗ:** phần nhìn nhanh theo thứ tự thời tiết, sắp tới, pin, điện thoại, hẹn giờ…, mỗi cái
+3. **Còn chỗ:** phần nhìn nhanh theo thứ tự đang dùng (micro, camera; design/compact "Đang gọi"), thời tiết, sắp tới, pin, điện thoại, hẹn giờ…, mỗi cái
    một ô. Hết chỗ thì bỏ; phần nhìn nhanh không vào +K.
 4. **Còn dư:** thời tiết rồi sắp tới nở thành ô rộng. Còn ít hơn N phần mà không còn gì để nở: các
    ô rộng ra cho đầy hàng.

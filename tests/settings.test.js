@@ -92,7 +92,7 @@ eq(['cluster-radius', 'cluster-opacity'].map(n => schema.get_key(n).get_default_
     'radius 16 (a pill, like the island) and opacity 17 % by default, a panel button\'s hover (2026-11-04)');
 eq(plan.modules.map(m => m.id), ['media', 'notification', 'hud', 'progress', 'print', 'timer', 'greeting', 'calendar', 'device', 'input', 'agent', 'privacy', 'power', 'plugged', 'bluetooth', 'usb', 'attention', 'network', 'terminal', 'phone', 'copied', 'clipboard'],
     'Modules: schema order, without the modules that ship nothing yet, nor a module that is only an idle plan');
-eq(plan.modules.find(m => m.id === 'privacy')?.keys, ['privacy-dot'], 'privacy: its switch and where the dot shows');
+eq(plan.modules.find(m => m.id === 'privacy')?.keys, ['privacy-call-dnd', 'privacy-dot'], 'privacy: Do Not Disturb in calls, where the dot shows');
 eq(plan.modules.find(m => m.id === 'greeting')?.keys, ['greeting-style', 'greeting-farewell', 'greeting-name', 'greeting-birthday', 'greeting-holidays', 'greeting-updates'], 'greeting: the style, goodbye, the name, "a newer Buoy"; its bookkeeping hidden');
 eq(MODULE_GROUPS.find(g => g.modules.includes('greeting'))?.title, 'Bu', 'greeting in the Bu group (2026-11-08)');
 eq(plan.plans.find(p => p.id === 'clock').planOnly, true,

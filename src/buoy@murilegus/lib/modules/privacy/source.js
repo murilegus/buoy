@@ -1,6 +1,13 @@
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {getMixerControl} from 'resource:///org/gnome/shell/ui/status/volume.js';
 
 import {Source} from '../../kit/services/source.js';
+import {MUTE, NOTIFY} from './adapter.js';
+import {CALL_SETTLE, recordingApps, restoreBanners} from './call.js';
+import {inUse} from './store.js';
 
 /**
  * What the microphone, the camera and the screen are doing, read from GNOME's own
@@ -22,6 +29,13 @@ import {Source} from '../../kit/services/source.js';
  * `system` keeps them and draws no dot, `both` both. Quick Settings builds its indicators
  * asynchronously (ui/panel.js QuickSettings _setupIndicators): until they are there, the
  * source waits for them on the indicator box.
+ *
+ * A call (design/compact "Đang gọi", 2026-11-27, Ethan): the camera and the microphone both in
+ * use for CALL_SETTLE (muted counts: a muted call is still one), ended when either is off as long.
+ * It is a pill with its clock, Mute / Unmute (the input stream's own mute, as Quick Settings'
+ * slider) and the app recording when the mixer names it. With `privacy-call-dnd` it turns GNOME's
+ * Do Not Disturb on (`show-banners`) if it was off, and back off at the end — only if Buoy turned it
+ * on and nobody changed it meanwhile (call.js restoreBanners). Home's "in use" tile reads store.js.
  */
 export class PrivacySource extends Source {
     enable(stack, registry = null, settings = null) {
@@ -30,6 +44,17 @@ export class PrivacySource extends Source {
         this._shown = new Map();        // what ('shell' | 'portal' | 'sharing') → activity id
         this._since = {};               // what → when it started
         this._hidden = [];              // GNOME's indicators Buoy hides: [{actor, restore}]
+        this._call = null;              // {since} while in a call
+        this._callTimer = 0;            // the settle before a call starts or ends
+        this._dnd = {ours: false, changed: false};
+        this._writing = false;
+        this._banners = new Gio.Settings({schema_id: 'org.gnome.desktop.notifications'});
+        this._banners.connectObject('changed::show-banners', () => {
+            if (this._writing)
+                return;
+            this._dnd.changed = true;   // someone else: not Buoy's to undo
+            this._showCall();
+        }, this);
 
         const controller = global.backend.get_remote_access_controller?.() ?? null;
         controller?.connectObject('new-handle', (_c, handle) => this._addHandle(handle), this);
@@ -59,6 +84,14 @@ export class PrivacySource extends Source {
         this._camIcon?.disconnectObject(this);
         this._input = this._camIcon = this._volumeInput = this._camera = this._remoteAccess = null;
         this._restoreHidden();
+        if (this._callTimer)
+            GLib.source_remove(this._callTimer);
+        this._callTimer = 0;
+        if (this._call)
+            this._endCall();            // Do Not Disturb back as it was, if it was Buoy's
+        this._banners?.disconnectObject(this);
+        this._banners = null;
+        inUse.set({mic: false, cam: false, apps: []});
         for (const id of this._shown.values())
             this._stack?.end(id);
         this._shown.clear();
@@ -221,10 +254,102 @@ export class PrivacySource extends Source {
                 this._shown.delete(what);
             }
         }
-        const mic = this._input?.visible === true && this._input.stream?.is_muted !== true;
+        const micOn = this._input?.visible === true;
+        const mic = micOn && this._input.stream?.is_muted !== true;
         const cam = this._camIcon?.visible === true;
         const dot = this._mode() !== 'system';
         this._stack.setPrivacy(dot ? {mic, cam, screen: screen.shell || screen.portal || screen.sharing} : {});
+        inUse.set({mic: micOn, cam, apps: micOn ? this._apps() : []});
+        this._callSync(micOn && cam);
+    }
+
+    // --- a call ---------------------------------------------------------------------
+
+    // the apps recording, by the mixer's names (ui/status/volume.js reads the same outputs)
+    _apps() {
+        try {
+            return recordingApps(getMixerControl().get_source_outputs()
+                .map(o => ({name: o.get_name(), app: o.get_application_id()})));
+        } catch {
+            return [];
+        }
+    }
+
+    // both on (or either off) for CALL_SETTLE before the call starts (or ends)
+    _callSync(both) {
+        if (both === !!this._call) {
+            if (this._callTimer)
+                GLib.source_remove(this._callTimer);
+            this._callTimer = 0;
+            if (this._call)
+                this._showCall();       // muted, unmuted, another app
+            return;
+        }
+        if (this._callTimer)
+            return;
+        this._callTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, CALL_SETTLE, () => {
+            this._callTimer = 0;
+            if (both)
+                this._startCall();
+            else
+                this._endCall();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _startCall() {
+        this._call = {since: Date.now() - CALL_SETTLE};
+        this._dnd = {ours: false, changed: false};
+        if (this._settings?.get_boolean('privacy-call-dnd') !== false && this._banners?.get_boolean('show-banners')) {
+            this._setBanners(false);
+            this._dnd.ours = true;
+        }
+        this._showCall();
+    }
+
+    _endCall() {
+        this._call = null;
+        const id = this._shown.get('call');
+        if (id && this._stack?.has(id))
+            this._stack.end(id);
+        this._shown.delete('call');
+        if (this._banners && restoreBanners({...this._dnd, banners: this._banners.get_boolean('show-banners')}))
+            this._setBanners(true);
+        this._dnd = {ours: false, changed: false};
+    }
+
+    _setBanners(on) {
+        this._writing = true;
+        try {
+            this._banners.set_boolean('show-banners', on);
+        } finally {
+            this._writing = false;
+        }
+    }
+
+    _showCall() {
+        if (!this._call || !this._stack)
+            return;
+        const stream = this._input?.stream ?? null;
+        const a = this._registry?.build('screen', 'system', {
+            id: 'call', what: 'call', since: this._call.since, app: this._apps()[0] ?? null,
+            muted: stream?.is_muted === true, dnd: this._dnd.ours && !this._dnd.changed,
+            onAction: id => {
+                if (id === MUTE && stream) {
+                    stream.change_is_muted(!stream.is_muted);
+                } else if (id === NOTIFY) {
+                    this._setBanners(true);
+                    this._dnd.ours = false;
+                    this._showCall();
+                }
+            },
+        });
+        if (!a)
+            return;
+        const id = this._shown.get('call');
+        if (id && this._stack.has(id) && this._stack.update(id, a))
+            return;
+        this._shown.set('call', this._stack.surface(a));
     }
 
     _show(what) {
