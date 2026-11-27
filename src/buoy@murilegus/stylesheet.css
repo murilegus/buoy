@@ -300,6 +300,7 @@
    fg-muted as the overview's thumbnails, "+1" before it */
 .buoy-workspace-line { spacing: 6px; }
 .buoy-icon-line { spacing: 4px; }
+.buoy-icon.buoy-icon-subtle { color: rgba(255, 255, 255, 0.5); /* fg-subtle */ }
 .buoy-icon-line .buoy-icon { color: rgba(255, 255, 255, 0.7); /* fg-muted */ }
 .buoy-workspace { width: 16px; height: 16px; border: 1.5px solid rgba(255, 255, 255, 0.7); /* fg-muted */ border-radius: 4px; color: rgba(255, 255, 255, 0.7); /* fg-muted */ font-size: 9px; font-weight: bold; }
 /* a reply in place of the card's buttons (design/compact "Trả lời ngay trong card"): the entry
@@ -488,6 +489,7 @@
 .buoy-hc .buoy-compact-row-detail { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-compact-row-dim .buoy-compact-row-text, .buoy-hc .buoy-compact-row-dim .buoy-icon { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-live-time { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
+.buoy-hc .buoy-icon.buoy-icon-subtle { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-choice-mark { border-color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-choice-entry .hint-text { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }
 .buoy-hc .buoy-reply-entry .hint-text { color: rgba(255, 255, 255, 0.7); /* fg-subtle */ }

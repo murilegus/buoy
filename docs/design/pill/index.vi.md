@@ -84,6 +84,34 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
 ![Pill thật trong Shell ảo ở tỷ lệ 1× và 2×](images/shell-scale1-vs-2.vi.png)
 ![Pill thật ở tỷ lệ 2×, điểm ảnh thật](images/shell-pill-scale2.png)
 
+## Idle plan Pin
+
+*Ethan, 2026-11-27 (mục M4 "Idle plan `power`", phương án A + Y).* Pin và chế độ năng lượng của
+GNOME trên pill idle. Đọc từ đúng hai đối tượng Quick Settings đang giữ, như mục Power
+(design/compact "Pin và chế độ năng lượng"): không proxy riêng, không hỏi định kỳ.
+
+![Idle plan Pin: bốn lúc, và một phút sau khi cắm hoặc rút](images/idle-power-pill.vi.png)
+
+- **Pill**: icon pin của Buoy, số %, chế độ là icon 16 ở cuối, `fg-subtle`. Luôn vừa 131, chỗ
+  chừa sẵn của idle, nên đổi plan không giật. Không có power-profiles-daemon: không icon chế độ.
+  Máy không có pin: plan không hiện, `auto` bỏ qua. **Chốt** (Ethan, 2026-11-27)
+- **Một phút sau khi cắm hoặc rút**: sau flash 3 s của mục Power, `auto` giữ pill cho plan này đến
+  hết 60 s, như "Sắp tới" giữ pill trước sự kiện. Khi UPower có ước tính (10–15 s sau), pill nói
+  đủ: "72% · đầy sau 1 giờ 10 phút", "64% · còn 3 giờ 20 phút". Ước tính đầu tiên được giữ trong
+  phút đó, để chữ không đổi theo mỗi lần UPower cập nhật; hết 60 s thì về %. **Chốt** (ý của Ethan,
+  2026-11-14; chốt 2026-11-27)
+- **`auto`**: phút sau khi cắm hoặc rút 80 (giữ pill); dùng pin dưới 30% 60, dùng pin 30; đang sạc
+  25; đầy hoặc giữ ở ngưỡng 15; không có pin thì không hiện. Pin yếu (dưới 20%) đã là activity ưu
+  tiên 70, ở lại tới khi cắm, nên không cần điểm riêng. Có trong `idle-auto-plans` mặc định, sau
+  Thời tiết. **Chốt** (2026-11-27)
+
+![Compact của idle plan Pin: có chế độ năng lượng và không có](images/idle-power-compact.vi.png)
+
+- **Compact** (rê chuột): phần đầu nói về pin, "Pin · 82% · đang sạc" trên "Đầy sau 42 phút · Cân
+  bằng"; ba chế độ là nút, cùng bố cục với compact chế độ năng lượng (design/compact), cao 104. Bấm
+  nút: đổi ngay, compact ở lại, không flash. Không có daemon: chỉ phần đầu, cao 56. Bấm pill ngoài
+  nút: mở Home như mọi idle plan. **Chốt** (Ethan, 2026-11-27)
+
 ## Font và tỷ lệ màn hình
 
 - Em chỉ làm **cỡ** chữ lớn nhỏ theo hệ thống, không đổi **hình dạng** chữ. Ở 1em, đồng hồ rộng
@@ -189,5 +217,8 @@ Chọn **C**, và **D** khi Claude có danh sách việc. **Chốt** (Ethan, 202
 - `stylesheet.css` — `#panel.buoy` cao 40px → 2.75em; chữ trong pill 13px → 1em; `.buoy-light`
   7 → 8, ở tâm hình tròn đầu; `.buoy-idle-zones` spacing 7 → 6 và bỏ `padding-left: 2px` của
   `.buoy-idle`; `.buoy-minimal` spacing 8 → 6, nút giữ 8 sau trailing (`margin-left: 2px`); `.buoy-text` đậm 600 và số đều như `.buoy-idle-text`.
+- `lib/modules/power/idle.js` (thuần, `tests/idle-power.test.js`), `feed.js` — idle plan Pin; icon
+  `subtle` trong `lib/kit/model/presentation.js`; nút của compact idle đi qua
+  `lib/kit/services/idle.js` tới feed.
 - SPEC §2 cấu trúc pill ("that zone nudges inward" → pill nở ra ở hai đầu), §2a-i/ii (đèn), §2c
   (tối đa 2 pill phụ bên phải, pill phụ 131), bảng kích thước §4.

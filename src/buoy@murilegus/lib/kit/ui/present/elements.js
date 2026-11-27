@@ -242,7 +242,7 @@ function bareElement(e, mode, activity, sizes) {
         return mascot(e, size.mascot, activity);
     case 'icon': {
         const ic = new St.Icon({
-            style_class: 'buoy-icon', icon_size: size.icon,
+            style_class: e.subtle ? 'buoy-icon buoy-icon-subtle' : 'buoy-icon', icon_size: size.icon,
             ...e.gicon ? {gicon: e.gicon} : iconProps(e.icon),
         });
         if (!e.label && !e.more)

@@ -187,6 +187,7 @@ Rules:
 | `clock` | a *second* clock, unlike the cluster's: a daypart icon (`kit/model/daypart.js`, §2d; six colour SVGs at 20 px — the sun on an arc, peach `#FFB889` at dawn and evening, yellow `#FFD23F` by day, then the moon; `scripts/icons.js` palette A) + the time in bold even figures, GNOME's format (`clock-format`, locale, `clock-show-seconds`). `idle-clock-style` (2026-11-08, Ethan): icon + daypart in words ("Afternoon", default) · icon + time · icon · words · time | `clock` | `GnomeDesktop.WallClock` (as the lock screen), only while the idle pill shows |
 | `weather` | condition icon + temperature ("31°", the user's unit, rounded as the date menu). Compact: "31° · Partly cloudy" over "Feels like 34° · Wind NE 12 km/h · Humidity 75%", unknown parts left out. Buoy's own colour icons, one per GNOME condition (13, night variants), symbolic as fallback (2026-11-06, Ethan). Place, units, refresh: below | `weather` | the date menu's `WeatherClient` (`misc/weather.js`), only while shown: at once when older than `idle-weather-refresh` (30 min / 1 h), then on that interval |
 | `next-event` (`calendar`) | today's next event: icon, title, the time at the end ("3:00 PM", "until 4:00 PM", "all day"; the title ellipsizes), growing up to the minimal cap. Compact: title over "3:00 PM – 4:00 PM · in 25 min". One starting within 30 min beats one running; then all-day (`idle-calendar-all-day`); none left → only the light. No Join (Shell's calendar server sends only id, title, times) | `calendar` | the date menu's event source; the wall clock's minute |
+| `power` | Buoy's battery icon and the percentage, the power mode a subtle icon at the end; for the minute after a plug in or an unplug, the first estimate in full ("72% · full in 1 h 10 min"). Compact: the battery over the three power modes as buttons (design/pill "Battery idle plan", 2026-11-27, Ethan) | `power` (in Automatic's stack after the weather) | Quick Settings' UPower and power-profiles proxies (signals); one 60 s timer per plug |
 | `mascot` | Bu's eyes, modes idle · sleep · missed · waiting; in idle they stroll in pixel steps, one beat every few seconds (`idle-mascot-stroll`); asleep at night, after 60 s without input, in power-saver, with animations off (MASCOT.md § Eyes) | `mascot` (on, last in Automatic's stack, 2026-11-14, Ethan) | light, daypart, idle monitor, power profile; one beat timer only while strolling |
 
 **Weather place** (2026-11-06, Ethan; GNOME Weather is not installed on Ubuntu, so Shell's client
@@ -268,6 +269,7 @@ stack (`stack.setPrivacy`). A muted microphone has no dot (`ui/status/volume.js`
   | `weather` | first hour of morning 70 · a change in the next hour (rain, ≥ 5 °C swing) 75 · else 35 · no place `null` |
   | news (M5) | 40; 55 for an item < 1 h old from a followed source |
   | exchange rate / stocks (M5) | 30; 70 past the user's threshold |
+  | `power` | the minute after a plug in or an unplug **80** (holds) · on battery under 30 % 60 · on battery 30 · charging 25 · full or held 15 · no battery `null` |
   | `clock` | 10, always available |
   | `mascot` | 10, only when in `idle-auto-plans` |
 
@@ -277,7 +279,7 @@ stack (`stack.setPrivacy`). A muted microphone has no dot (`ui/status/volume.js`
 - **Re-rank** on a plan's `changed` and one kit timer, `idle-auto-switch` 5 (default)/10/20/30 min,
   alive only while idle with `auto`. Between turns a re-rank keeps the shown plan while it has
   something.
-- **Interests**: `idle-auto-plans` (as), default `['calendar', 'weather', 'clock', 'mascot']`. Prefs
+- **Interests**: `idle-auto-plans` (as), default `['calendar', 'weather', 'power', 'clock', 'mascot']`. Prefs
   **Island**: a reorderable list with switches, each plan's keys under it; a plan whose module is
   off is greyed ("Turn on in Modules") and does not exist (rule 6) — Show set to it leaves the pill
   empty, its row says so. A module that is only a plan (clock, weather) has no Modules switch

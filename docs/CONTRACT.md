@@ -116,6 +116,7 @@ Leading/trailing values (normalised by `kit/model/presentation.js#element`):
 | `{ring: {from, until}}` | time left as a ring, redrawn each second while shown (a timer, 2026-11-22) |
 | `{elapsed: ms since epoch}` | counting up, `0:42` (a screen recording, 2026-11-14) |
 | `{icon, backdrop: true}` | the icon on a round fill-2 plate in a compact's leading 40 (2026-11-14) |
+| `{icon, subtle: true}` | a quiet icon in fg-subtle beside what it qualifies (the idle battery's power mode, 2026-11-27) |
 | **`{mascot: '<pose>', icon?}`** | Bu (2026-11-03): one of 13 poses in `MASCOT.md`; unknown → `icon`, else `idle`. The lamp shows the pose's colour; the buoy light stays at pill 1's left end (INDICATORS). Frames, swap timer and colours are the kit's |
 
 **One minimal for every place** (2026-11-05): an adapter returns one `leading · text ·

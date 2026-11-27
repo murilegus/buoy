@@ -252,7 +252,7 @@ Planned keys are listed too; the schema holds landed ones. Every key applies at 
 | `apps-hidden` | as | apps whose activities never surface; any id, slugged (2026-11-02) |
 | `apps-plain` | as | apps using the default adapter, not their override; any id, slugged |
 | `idle-content` | s | `auto` (default) \| `none` \| an idle plan id |
-| `idle-auto-plans` | as | plans `auto` shows, in turn; default `calendar`, `weather`, `clock`, `mascot` (Bu's eyes on by default, 2026-11-14) |
+| `idle-auto-plans` | as | plans `auto` shows, in turn; default `calendar`, `weather`, `power`, `clock`, `mascot` (Bu's eyes on by default, 2026-11-14; the battery after the weather, 2026-11-27) |
 | `idle-auto-switch` | s | minutes per `auto` turn: `5m` (default), `10m`, `20m`, `30m` (2026-11-13, Ethan) |
 | `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`, bad → default. Island → When Idle → Parts of the day: each part's colour icon and a drop-down of its start hours, never empty or out of order (2026-11-13) |
 | `tabs-pinned` | as | standalone tabs shown fixed; default `['calendar', 'device']`; no prefs row |

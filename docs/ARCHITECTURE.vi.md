@@ -259,7 +259,7 @@ Liệt kê cả các key dự kiến; schema chứa các key đã có. Mọi key
 | `apps-hidden` | as | các app có activity không bao giờ hiện; id bất kỳ, được slug (2026-11-02) |
 | `apps-plain` | as | các app dùng adapter mặc định, không dùng override của nó; id bất kỳ, được slug |
 | `idle-content` | s | `auto` (mặc định) \| `none` \| id của một idle plan |
-| `idle-auto-plans` | as | các plan mà `auto` hiện, lần lượt; mặc định `calendar`, `weather`, `clock`, `mascot` (mắt của Bu bật mặc định, 2026-11-14) |
+| `idle-auto-plans` | as | các plan mà `auto` hiện, lần lượt; mặc định `calendar`, `weather`, `power`, `clock`, `mascot` (mắt của Bu bật mặc định, 2026-11-14; pin sau thời tiết, 2026-11-27) |
 | `idle-auto-switch` | s | số phút mỗi lượt `auto`: `5m` (mặc định), `10m`, `20m`, `30m` (2026-11-13, Ethan) |
 | `daypart-starts` | ai | giờ bắt đầu của rạng sáng, sáng, trưa, chiều, tối, đêm; mặc định `[5, 7, 11, 13, 18, 22]`, sai → mặc định. Island → When Idle → Parts of the day: icon màu của mỗi buổi và một danh sách thả xuống các giờ bắt đầu, không bao giờ trống hay sai thứ tự (2026-11-13) |
 | `tabs-pinned` | as | các standalone tab hiện cố định; mặc định `['calendar', 'device']`; không có hàng trong prefs |

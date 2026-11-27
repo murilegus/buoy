@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {MAX_FOLDERS as progressMaxFolders} from '../src/buoy@murilegus/lib/modules/progress/adapter.js';
-import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, withPlan, movePlan, planRows, PLACES, weatherNote, placeStatus, agoWords, LOCATE_WAIT_MS, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER, lingerMs} from
+import {GNOME_CLOCK, GNOME_DOCK, gnomeDefaults, switchOn, switchValue, dockMonitor, dockMonitorChoices, dockMonitorValue, displaysFromState, planPrefs, nestedIn, setPinned, addApp, sampleFor, packDict, toVariant, donationLinks, SAMPLES, HIDDEN_MODULES, STANDALONE, NESTED, SLIDERS, CHOICE_LABELS, choiceLabel, addFolder, shortPath, MAX_FOLDERS, MODULE_GROUPS, idleOffNote, IDLE_PLANS, withPlan, movePlan, planRows, PLACES, weatherNote, placeStatus, agoWords, LOCATE_WAIT_MS, placeLabel, searchPlaces, withPlace, WEATHER_UNITS, GNOME_WEATHER, lingerMs, PLAN_LINES} from
     '../src/buoy@murilegus/lib/kit/model/settings.js';
 import {check} from '../src/buoy@murilegus/lib/kit/services/dbus.js';
 
@@ -147,13 +147,13 @@ eq(plan.idle, ['idle-content', 'idle-auto-switch', 'daypart-starts'], 'When idle
     eq([idleOffNote('none', plans, on(false)), idleOffNote('free', plans, on(false))], [null, null],
         'Nothing, or a plan with no module switch: nothing to say');
 }
-eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['auto', 'none', 'clock', 'weather', 'calendar', 'mascot']],
+eq(schema.get_key('idle-content').get_range().recursiveUnpack(), ['enum', ['auto', 'none', 'clock', 'weather', 'calendar', 'power', 'mascot']],
     'idle-content: none or a plan (auto comes with the smart stack)');
 eq(IDLE_PLANS.filter(id => id !== 'none').every(id => schema.get_key('idle-content').range_check(new GLib.Variant('s', id))),
     true, 'every plan can be chosen in Show');
 eq(schema.get_key('idle-content').get_default_value().unpack(), 'auto', 'Automatic by default, now that it has landed');
-eq(schema.get_key('idle-auto-plans').get_default_value().deepUnpack(), ['calendar', 'weather', 'clock', 'mascot'],
-    'the stack: every plan, the next event first in a tie');
+eq(schema.get_key('idle-auto-plans').get_default_value().deepUnpack(), ['calendar', 'weather', 'power', 'clock', 'mascot'],
+    'the stack: every plan, the next event first in a tie, the battery after the weather (2026-11-27)');
 eq([schema.get_key('idle-auto-switch').get_range().recursiveUnpack(), schema.get_key('idle-auto-switch').get_default_value().unpack()],
     [['enum', ['5m', '10m', '20m', '30m']], '5m'], 'Switch every: 5, 10, 20 or 30 minutes, 5 by default (SPEC §2a-iii)');
 eq(choiceLabel('idle-auto-switch', '20m'), '20 minutes', 'Switch every: its label');
@@ -163,8 +163,11 @@ eq(plan.plans, [
     {id: 'clock', enableKey: 'modules-clock', keys: ['idle-clock-style'], planOnly: true},
     {id: 'weather', enableKey: 'modules-weather', keys: ['idle-weather-automatic', 'idle-weather-refresh'], planOnly: true},
     {id: 'calendar', enableKey: 'modules-calendar', keys: ['idle-calendar-all-day'], planOnly: false},
+    {id: 'power', enableKey: 'modules-power', keys: [], planOnly: false},
     {id: 'mascot', enableKey: 'modules-mascot', keys: ['idle-mascot-stroll'], planOnly: true},
-], 'Plans: the clock, the weather, the next event (its switch on Modules: it has a tab), then Bu\'s eyes (only a plan)');
+], 'Plans: the clock, the weather, the next event (its switch on Modules: it has a tab), the battery (its switch on Modules: Quick Feedback), then Bu\'s eyes (only a plan)');
+eq([plan.modules.some(m => m.id === 'power'), choiceLabel('idle-content', 'power'), PLAN_LINES.power !== undefined],
+    [true, 'Battery', true], 'battery: keeps its Modules row (its flashes), Show: Battery, a line on its plan row');
 eq([schema.get_key('modules-mascot').get_default_value().unpack(), schema.get_key('idle-auto-plans').get_default_value().deepUnpack().includes('mascot')],
     [true, true], 'Bu\'s eyes: on by default, last in Automatic\'s stack (Ethan, 2026-11-14)');
 eq(choiceLabel('idle-content', 'mascot'), 'Bu\'s Eyes', 'Show: Bu\'s Eyes');

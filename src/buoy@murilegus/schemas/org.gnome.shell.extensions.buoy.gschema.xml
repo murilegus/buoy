@@ -335,6 +335,7 @@
         <choice value="clock"/>
         <choice value="weather"/>
         <choice value="calendar"/>
+        <choice value="power"/>
         <choice value="mascot"/>
       </choices>
       <default>'auto'</default>
@@ -347,7 +348,7 @@
       <description>Shown when nothing with a time is left today.</description>
     </key>
     <key name="idle-auto-plans" type="as">
-      <default>['calendar', 'weather', 'clock', 'mascot']</default>
+      <default>['calendar', 'weather', 'power', 'clock', 'mascot']</default>
       <summary>Plans in the stack</summary>
       <description>The idle plans Automatic may show, in the order they take turns.</description>
     </key>

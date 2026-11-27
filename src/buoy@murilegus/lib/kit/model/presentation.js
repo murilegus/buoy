@@ -257,8 +257,10 @@ export function element(e, {leading = false} = {}) {
     const iconMore = Number.isInteger(e.more) && e.more > 0 ? e.more : 0;
     if (ic && (iconLabel || iconMore))
         return {...ic, ...iconLabel ? {label: iconLabel} : {}, ...iconMore ? {more: iconMore} : {}, ...tint};
+    // `subtle`: a quiet icon in fg-subtle, beside what it qualifies (the idle battery's power
+    // mode, design/pill "Idle plan Pin", 2026-11-27)
     if (ic)
-        return e.backdrop === true ? {...ic, backdrop: true, ...tint} : {...ic, ...tint};
+        return {...ic, ...e.backdrop === true ? {backdrop: true} : {}, ...e.subtle === true ? {subtle: true} : {}, ...tint};
     if (isNum(e.progress))
         return {type: 'ring', value: clamp01(e.progress)};
     if (isNum(e.bar)) {

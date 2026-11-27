@@ -132,6 +132,7 @@ export class Island {
         this.idle = null;
         this.onIdleShown = null;
         this.onIdleScroll = null;   // (step) → handled: kit/services/idle.js in `auto`
+        this.onIdleAction = null;   // (id): a button of the idle plan's compact (kit/services/idle.js)
         this._idleShown = false;
 
         this._rightBoxId = Main.panel._rightBox.connect('notify::allocation',
@@ -1200,6 +1201,7 @@ export class Island {
         this._syncIdleShown();      // tells the idle plan to stop its clock
         this.onIdleShown = null;
         this.onIdleScroll = null;
+        this.onIdleAction = null;
         if (this._layoutLater) {
             global.compositor.get_laters().remove(this._layoutLater);
             this._layoutLater = 0;

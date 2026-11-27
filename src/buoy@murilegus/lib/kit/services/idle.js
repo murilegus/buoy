@@ -58,6 +58,7 @@ export class IdleContent {
         });
         island.onIdleShown = shown => this._shown(shown);
         island.onIdleScroll = step => this._scroll(step);
+        island.onIdleAction = id => this._act(id);
         this.sync();
     }
 
@@ -231,6 +232,13 @@ export class IdleContent {
         });
     }
 
+    // A button of the shown plan's compact (the battery's power modes): its feed acts, the
+    // plan stays pure
+    _act(id) {
+        const id0 = this.module?.id;
+        this._feeds.get(id0)?.act?.(id);
+    }
+
     _scroll(step) {
         if (!this._auto || !this._island.idleShown)
             return false;
@@ -281,6 +289,8 @@ export class IdleContent {
             this._island.onIdleShown = null;
         if (this._island.onIdleScroll)
             this._island.onIdleScroll = null;
+        if (this._island.onIdleAction)
+            this._island.onIdleAction = null;
         this._island.setIdle(null);
     }
 }
