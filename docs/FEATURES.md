@@ -45,7 +45,7 @@ to their places there (2026-11-12, Ethan).
 
 | | Item | Done when |
 |---|---|---|
-| [~] | Design docs and site | done: `docs/design` per part (Vietnamese first), tokens, MkDocs site in en and vi built in CI. Left: root docs made shorter, then translated; English design pages and images |
+| [~] | Design docs and site | done: `docs/design` per part (Vietnamese first), tokens, MkDocs site in en and vi built in CI. root docs shorter (2026-11-27). Left: root docs translated; English design pages and images |
 | [x] | Restructure: kit, stylesheet, icons | ARCHITECTURE first; kit in `model/` `services/` `ui/`, `present.js` split by tier; a lint check of the import boundaries; one stylesheet in sections plus each tab's CSS beside its module, loaded by kit (not `@import`); `icons/color` and `icons/symbolic`; `install.sh` of 0.1 still works; nothing visible changes |
 | [x] | Colours by role | as design/colours: the stylesheet uses only the palette's roles, checked by `tests/palette.test.js`; lights amber `#FF9F0A`, red `#FF453A`; Bu's lamps, stale Bu at 50 %, Bu's tile `#000`; high contrast; INDICATORS and MASCOT updated |
 | [x] | Sizes in em: the bar and the pill | as design/pill, icons and mascot; nothing clipped at scale 1 and 2, with Large Text and a wide font; SPEC §2, §4 updated |

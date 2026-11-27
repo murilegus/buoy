@@ -1,50 +1,34 @@
 # Greeting — Bu says hello, welcome back and see you soon
 
-The reference for every moment Buoy speaks on its own: when it does, what it says, how
-big, for how long, and which pose Bu takes. SPEC §2d points here; a new moment, line or
-holiday needs a change here first. Decided with Ethan, 2026-11-06 (replaces the
-once-a-day greeting of 2026-11-03).
+Every moment Buoy speaks on its own: when, what, how big, how long, which pose (SPEC §2d).
+A new moment, line or holiday changes this file first. Decided with Ethan, 2026-11-06.
 
 ## Principles
 
-1. **Moments, not days.** Buoy greets on an event (the machine starts, wakes from a long
-   sleep, a new login, the session ends), every time it happens. There is no
-   once-a-day rule and no `greeting-last-day`.
-2. **Short and useful.** A greeting says one friendly thing and at most two useful ones
-   (the time and date, the weather or an umbrella). It never asks for anything.
-3. **The right size.** One short line → minimal. Two ideas → compact (title + subtitle).
-   Never a long minimal: a line that would not fit pill 1 at rest moves to compact.
-   Expanded only for a fresh start (§2).
-4. **Out of the way.** Not over a fullscreen window, never takes the keyboard, any real
-   activity interrupts it, a click outside closes it. It is a transient activity like any
-   other (SPEC §2, CONTRACT.md §1).
-5. **Bu is the face.** Every greeting leads with Bu (`MASCOT.md`); the pose follows the
-   moment (§6). No other icon competes with him.
-6. **Words in one place.** Every string is in `modules/greeting/adapter.js`, English first;
-   Vietnamese and other languages come with gettext (M5 localisation). The adapter is
-   pure: it builds every line from plain facts the source hands it.
-7. **Typed in** (2026-11-08, Ethan). A greeting's text types itself in, a character at a
-   time, then stands still: one timer while it types, gone when the last character is in,
-   when the greeting closes and on disable. With animations off
-   (`org.gnome.desktop.interface enable-animations`) the text is there at once. Hover
-   holds the greeting as usual; the typing goes on under the pointer.
+1. **Moments, not days.** Greet on every event (start, long-sleep wake, login, session end).
+   No once-a-day rule.
+2. **Short and useful.** One friendly thing, at most two useful ones (time and date, weather
+   or umbrella). Never asks for anything.
+3. **The right size.** One short line → minimal; two ideas, or a line too long for pill 1 at
+   rest → compact. Expanded only for a fresh start (§2).
+4. **Out of the way.** A transient activity (SPEC §2, CONTRACT.md §1): not over fullscreen,
+   never takes the keyboard, any real activity interrupts it, a click outside closes it.
+5. **Bu is the face.** Every greeting leads with Bu, pose per moment (§6). No other icon.
+6. **Words in one place.** Every string in `modules/greeting/adapter.js` (pure), English
+   first; other languages with gettext (M5).
+7. **Typed in** (2026-11-08, Ethan). Text types in a character at a time on one timer, removed
+   when done, on close and disable. `enable-animations` off → whole at once. Hover holds the
+   greeting; typing goes on.
 
 ## 0. Scope by release
 
-*2026-11-08, Ethan.*
-
-- **v0.1 (FEATURES M3 "greeting: first run and What's new").** Only §11: Bu's hello the
-  first time Buoy runs, with the basics of using it, and the What's new mechanism that
-  later versions fill. The rest of this file — Start, Wake, Welcome back, Leaving, special
-  days, weather (§1–§10) — is FEATURES M4 "greeting".
-- **Later versions.** Each release adds its notes to the What's new table (§11): what is
-  new and what was fixed, said once after the update.
-- **M4 in three parts** (2026-11-25, Ethan; design/expanded "Lời chào"): (1) the moments of §1 with
-  §3 rules 3–6, §4–§6 without rain or celebrations, and the prefs `greeting-style`,
-  `greeting-farewell`, `greeting-name`; (2) the weather line and rain (§8), the client moved
-  into the kit; (3) special days and the birthday (§7, §3 rules 2a–2b). All three are in (2026-11-26); line 3 is text
-  only, without the condition's colour icon (the expanded center has no icon per line). Welcome back
-  says a birthday as it says a celebration; the birthday is a month and a day in prefs.
+- **v0.1** (FEATURES M3 "greeting: first run and What's new", 2026-11-08, Ethan): only §11.
+  §1–§10 are M4 "greeting". Each release adds its notes to What's new (§11).
+- **M4 in three parts** (2026-11-25, Ethan; design/expanded "Lời chào"), all in 2026-11-26:
+  (1) §1, §3 rules 3–6, §4–§6, prefs `greeting-style`, `greeting-farewell`, `greeting-name`;
+  (2) weather and rain (§8), client moved into the kit; (3) special days and birthday (§7, §3
+  rules 2a–2b). Line 3 is text only (no icon per line in the expanded center). Welcome back
+  says a birthday as a celebration; the birthday is a month and day in prefs.
 
 ## 1. Moments
 
@@ -52,35 +36,27 @@ once-a-day greeting of 2026-11-03).
 |---|---|---|---|
 | **Start** — the machine was off or rebooted | `/proc/sys/kernel/random/boot_id` differs from `greeting-boot` | expanded (§2) | ~8 s, held while hovered; Bu waves 5 s |
 | **Wake** — back from a sleep or hibernation of 3 h or more | time asleep since the last disable ≥ 3 h (below) | expanded (§2) | as Start |
-| **Welcome back** — a new login, same boot (after a log out) | the logind session differs from `greeting-session`, same boot | minimal, or compact with a note (§4) | 4 s, held while hovered |
+| **Welcome back** — a new login, same boot | the logind session differs from `greeting-session`, same boot | minimal, or compact with a note (§4) | 4 s, held while hovered |
 | **Leaving** — shut down, restart or log out from Shell's dialog | `Main.endSessionDialog` `_confirm(signal)` (below) | minimal, or compact with a note (§5) | until the session ends (~1.5 s) |
 | A lock, a short sleep, the extension turned off and on | — | nothing | — |
-| A fullscreen window has focus at that moment | `global.display.focus_window.is_fullscreen()` | nothing (no retry later) | — |
-| Any moment with `greeting-style = off` | — | nothing; Leaving follows `greeting-farewell` | — |
+| A fullscreen window has focus | `global.display.focus_window.is_fullscreen()` | nothing (no retry) | — |
+| `greeting-style = off` | — | nothing; Leaving follows `greeting-farewell` | — |
 
-How the moments are told apart (all read at `enable`, nothing polled):
+All read at `enable`, nothing polled:
 
-- **Boot.** `boot_id` is new on every boot (kernel, `random/boot_id`), unlike the boot
-  time, which a hibernation resume keeps. Stored in `greeting-boot` once a Start shows.
-- **Session.** The logind session of this Shell (`misc/loginManager.js`
-  `getCurrentSessionProxy`, its `Id`; `XDG_SESSION_ID` as fallback). A log out and in on
-  the same boot gives a new one → Welcome back. Stored in `greeting-session`.
-- **Sleep.** Shell disables extensions on lock and enables them on unlock (Buoy has no
-  `session-modes`, `ui/extensionSystem.js`), and suspend locks first. The time the machine
-  spent asleep since boot is `CLOCK_BOOTTIME − CLOCK_MONOTONIC` (`/proc/uptime` minus
-  `GLib.get_monotonic_time()`): both tick while awake, only the first while suspended or
-  hibernated. `disable` stores it (`greeting-asleep`, s); `enable` compares. Suspend and
-  hibernate cannot be told apart (logind's `PrepareForSleep` does not say which) and do
-  not need to be: a long sleep is a fresh start either way. Threshold 3 h, fixed.
-- **Leaving.** `Main.endSessionDialog` (`ui/endSessionDialog.js`): a confirm button closes
-  the dialog first, then calls `_confirm(signal)` (`ConfirmedLogout`, `ConfirmedShutdown`,
-  `ConfirmedReboot`; `_type` tells a restart for updates). Buoy wraps `_confirm` with the
-  extension's InjectionManager, shows the line, and lets the original run unchanged — the
-  session does not wait for Buoy. Best effort: a power button without the dialog,
-  `systemctl poweroff` or a crash says nothing.
-- **First install.** `greeting-intro-shown` false → the next Start or Wake is the intro
-  (§3, priority 1); set once it showed. Since v0.1 the intro is §11's first run, shown on
-  the first enable, so a Start or Wake finds it already shown.
+- **Boot.** `boot_id` is new each boot (boot time survives hibernation). Saved once a Start shows.
+- **Session.** `misc/loginManager.js` `getCurrentSessionProxy` `Id` (fallback
+  `XDG_SESSION_ID`).
+- **Sleep.** Shell disables extensions on lock, enables on unlock (no `session-modes`,
+  `ui/extensionSystem.js`); suspend locks first. Asleep since boot = `CLOCK_BOOTTIME −
+  CLOCK_MONOTONIC` (`/proc/uptime` minus `GLib.get_monotonic_time()`), saved by `disable` in
+  `greeting-asleep` (s), compared by `enable`. Suspend and hibernate count alike. 3 h, fixed.
+- **Leaving.** `ui/endSessionDialog.js` closes the dialog, then calls `_confirm(signal)`
+  (`ConfirmedLogout`, `ConfirmedShutdown`, `ConfirmedReboot`; `_type` tells a restart for
+  updates). Buoy wraps `_confirm` (InjectionManager), shows the line, runs the original
+  unchanged. No dialog (power button, `systemctl poweroff`, crash) → nothing.
+- **First install.** `greeting-intro-shown` false → the next Start or Wake is the intro (§3
+  rule 1); since v0.1 that is §11's first run, on the first enable.
 
 ## 2. Start and Wake: the expanded hello
 
@@ -93,33 +69,23 @@ How the moments are told apart (all read at `enable`, nothing polled):
  leading   center (grows)
 ```
 
-- **Layout.** The expanded presentation's own regions (CONTRACT.md §2): Bu in `leading`, the
-  three lines in `center`, which takes all the width left (`grow: 'center'`, the default);
-  no `trailing`. Bu is as tall as the text block — 80 px for three lines, 60 px for two
-  (a multiple of his 10 cells, MASCOT.md: whole pixels) — and centred with it. Ethan,
-  2026-11-07: Bu on the left and more room for the words; no fixed column ratio. Expanded
-  width as any activity (SPEC §4); height fits the text.
-- **Line 1 — the greeting**, large (the expanded title, larger than other titles). Chosen
-  by §3.
-- **Line 2 — when**: "It's 07:42 on Friday, 6 November 2026." The time in GNOME's format
-  (`clock-format`, 12/24 h), the date in the locale's long form. On an observance (§7) it
-  becomes "It's 07:42 on Friday, 6 November 2026. Today is Teachers' Day." — or, when too
-  long for one line, the observance moves to line 3 and the weather drops.
-- **Line 3 — the weather** (§8): "Ho Chi Minh City: 28 °C, partly cloudy, light breeze.",
-  with the condition's colour icon before it. Or the umbrella line. No weather yet → the
-  line is left out (Bu shrinks to 60 px) and filled in place if it arrives while open
-  (the source waits ~3 s for a first update before showing without it).
-- **Intro** (first install): line 2 is "Hover me for more, click for Home, Super+B to
-  reach me." and there is no line 3.
-- **Timing.** ~8 s, held while the pointer is on it (the stack's hover hold, SPEC §2e);
-  a click outside closes it at once; Esc does nothing (it never took the keyboard).
-- `greeting-style = minimal`: line 1 alone in the pill for 4 s (compact if it needs a
-  note, as Welcome back).
+- **Layout** (2026-11-07, Ethan; CONTRACT.md §2): Bu in `leading`, lines in `center`
+  (`grow: 'center'`), no `trailing`. Bu is as tall as the text (80 px for three lines, 60 for
+  two) and centred with it. Width as any activity (SPEC §4).
+- **Line 1**: the greeting (§3), the expanded title, larger than other titles.
+- **Line 2**: "It's 07:42 on Friday, 6 November 2026." (`clock-format`; the locale's long
+  date). An observance (§7) appends "Today is Teachers' Day."; too long → it takes line 3 and
+  the weather drops.
+- **Line 3**: the weather or umbrella line (§8). None yet → left out (Bu 60 px), filled in
+  place if it arrives; the source waits ~3 s first.
+- **Intro** (first install): the lines of §11, no line 3.
+- **Timing.** ~8 s, held while hovered (SPEC §2e); a click outside closes it; Esc does nothing.
+- `greeting-style = minimal`: line 1 alone for 4 s (compact with a note, as Welcome back).
 
 ## 3. Line 1: which greeting
 
-The first rule that applies wins. `name` is `greeting-name`, or the real name
-(`GLib.get_real_name()`), or the user name.
+First rule that applies wins. `name` is `greeting-name`, or `GLib.get_real_name()`, or the
+user name.
 
 | # | When (local time at the moment) | Line 1 | Bu |
 |---|---|---|---|
@@ -133,7 +99,7 @@ The first rule that applies wins. `name` is `greeting-name`, or the real name
 | 5 | Saturday or Sunday, afternoon to night | "Enjoy your weekend, {name}." | wave |
 | 6 | Otherwise, by daypart (`kit/model/daypart.js`) | dawn, morning → "Good morning, {name}." · noon → "Good day, {name}." · afternoon → "Good afternoon, {name}." · evening → "Good evening, {name}." · night → "Still up, {name}?" | wave |
 
-Observances (§7, kind `observe`) never take line 1; they go on line 2.
+Observances (§7) never take line 1; they go on line 2.
 
 ## 4. Welcome back
 
@@ -145,11 +111,11 @@ Observances (§7, kind `observe`) never take line 1; they go on line 2.
 
 ## 5. Leaving
 
-The first rule that applies wins for the title; at most one subtitle, rain first.
+First rule wins for the title; at most one subtitle, rain first.
 
 | # | When | Title | Bu |
 |---|---|---|---|
-| 1 | Restart for updates (dialog type `UPDATE_RESTART`) | "Updating. Back in a moment." | busy |
+| 1 | Restart for updates (dialog type `UPDATE_RESTART`, or the install-updates box ticked) | "Updating. Back in a moment." | busy |
 | 2 | Restart | "Be right back." | wave |
 | 3 | Log out | "Catch you later, {name}." | wave |
 | 4 | Shut down on a celebration's evening (§7) | its line, e.g. "Merry Christmas, {name}." | party |
@@ -159,7 +125,7 @@ The first rule that applies wins for the title; at most one subtitle, rain first
 
 | Subtitle (→ compact) | When |
 |---|---|
-| "Rain around 17:00, take an umbrella." | shut down or log out, rain coming within 3 h, before the evening (§8) |
+| "Rain around 17:00, take an umbrella." | shut down or log out, rain within 3 h, before the evening (§8) |
 | "Long day. Rest well." | shut down after more than 10 h awake on this boot (`/proc/uptime` minus the time asleep) |
 
 ## 6. Sizes and Bu
@@ -170,24 +136,20 @@ The first rule that applies wins for the title; at most one subtitle, rain first
 | **compact** | a title and one subtitle, or a line too long for minimal | 40 px | title over subtitle |
 | **expanded** | Start and Wake (§2), unless `greeting-style = minimal` | 80 / 60 px, in `leading` | three or two lines in `center`, which grows |
 
-Poses (MASCOT.md § Poses): `wave` plays for 5 s (Ethan, 2026-11-06; MASCOT's `once` is
-~2 s, so the greeting asks for longer), then `idle`. `party` plays once, then `done`.
-`sleep`, `done` are still; `busy` loops while shown. The lamp is the pose's own: the
-greeting never shows amber or red (INDICATORS § Bu's lamp) unless the stack has them.
+Poses (MASCOT.md § Poses): `wave` 5 s (Ethan, 2026-11-06), then `idle`; `party` once, then
+`done`; `sleep`, `done` still; `busy` loops. The lamp is the pose's own (INDICATORS § Bu's lamp).
 
 ## 7. Special days
 
 A built-in table, data only (ARCHITECTURE rule 7), `modules/greeting/holidays.js`, tested.
-Two kinds:
 
-- **celebrate** — takes line 1 (§3 priority 2b), Bu `party`; also the Leaving title on its
-  evening.
-- **observe** — line 1 stays the day's greeting; line 2 adds "Today is {name}."
+- **celebrate** — takes line 1 (§3 rule 2b), Bu `party`; also the Leaving title on its evening.
+- **observe** — line 1 stays; line 2 adds "Today is {name}."
 
-The region comes from the **time zone**, not the locale (an `en_US` session in Ho Chi
-Minh City is common): `GLib.TimeZone.new_local().get_identifier()`, e.g.
-`Asia/Ho_Chi_Minh` (or `Asia/Saigon`) → Vietnam. `greeting-holidays`: `auto` (global +
-the region's) · `global` (global only) · `off`. A region is added by a PR with its data.
+The region comes from the **time zone**, not the locale:
+`GLib.TimeZone.new_local().get_identifier()`, e.g. `Asia/Ho_Chi_Minh` (or `Asia/Saigon`) →
+Vietnam. `greeting-holidays`: `auto` (global + region) · `global` · `off`. A region is added by
+a PR with its data.
 
 | Region | Date | Kind | Line |
 |---|---|---|---|
@@ -217,45 +179,31 @@ the region's) · `global` (global only) · `off`. A region is added by a PR with
 | Vietnam | 20 November | observe | "Today is Teachers' Day." |
 | Vietnam | Kitchen Gods' day, 23rd of the 12th lunar month | observe | "Today is Kitchen Gods' Day." |
 
-Added 2026-11-16 (Ethan): Mother's and Father's Day, the first full moon, Vietnamese Doctors', Children's and Family Day, Buddha's birthday, Vu Lan, Kitchen Gods' day — all observances.
-
-- **Lunar dates** are a generated table of Gregorian dates for 2026–2099 — per lunar year the
-  first day of Tết, the first full moon, Hùng Kings' day, Buddha's birthday, Vu Lan,
-  Mid-Autumn and Kitchen Gods' day (Tết's 2nd and 3rd days follow; Kitchen Gods' day falls in
-  January or February of the next Gregorian year), some 6 KB (Ethan, 2026-11-07: through
-  2099) — from `scripts/lunar.js` (the Vietnamese lunar calendar at UTC+7, Hồ Ngọc Đức's
-  algorithm, run by hand like `scripts/icons.js`; its output is data in `holidays.js`,
-  nothing is computed at runtime; `gjs -m scripts/lunar.js --write`). Past 2099 the
-  lunar days are silently skipped. Test anchors: Tết 2026 = 17 February; the others checked
-  against a published Vietnamese lunar calendar when the table is made.
-- **Mother's and Father's Day** are a rule, not a table: the nth Sunday of a month, computed
-  (pure, like Easter). The date is the one Vietnam and most countries keep (the UK's Mothering
-  Sunday is not).
-- **Two on one day**: the birthday wins over a celebration; a celebration over an
-  observance (the observance still goes on line 2). Two observances (Buddha's birthday on
-  Mother's Day): the region's over the global one, line 2 says one (2026-11-16).
-- Shown at Start, Wake and Welcome back, and on the Leaving title for celebrations; never
-  more than the moments of §1.
+- **Lunar dates** (2026-11-07, Ethan): Gregorian dates for 2026–2099 of each lunar row (Tết's
+  2nd and 3rd days follow; Kitchen Gods' day falls in the next Gregorian year), ~6 KB, generated
+  by hand with `gjs -m scripts/lunar.js --write` (UTC+7, Hồ Ngọc Đức's algorithm); nothing
+  computed at runtime. Past 2099: skipped. Anchor: Tết 2026 = 17 February.
+- **Mother's and Father's Day** (2026-11-16, with the other observances added then): nth
+  Sunday, computed like Easter; the date Vietnam and most countries keep (not the UK's).
+- **Two on one day**: birthday › celebration › observance (still on line 2); two observances:
+  the region's (2026-11-16).
+- Shown at Start, Wake, Welcome back, and as the Leaving title for celebrations.
 
 ## 8. Weather
 
 From GNOME's own client, the date menu's (`dateMenu.js` WeatherSection `_weatherClient`),
-read through the kit's shared weather helpers (`kit/weather.js`, pure; Shell side
-`kit/weatherclient.js`) — the same reading as the weather plan, not through the weather
-module (ARCHITECTURE rule 1). Same place and units: the plan's "Use my location" and
-units rows (SPEC §2a, `org.gnome.GWeather4`).
+read through the kit's shared weather helpers (`kit/model/weather.js`, pure; Shell side
+`kit/services/weather.js`) as the weather plan reads it, not through the weather module
+(ARCHITECTURE rule 1). Same place and units as the plan (SPEC §2a, `org.gnome.GWeather4`).
 
-- **Line**: "{place}: {temp} {unit}, {condition}, {wind}." — the place as the date menu
-  names it; the temperature rounded in the user's unit with its symbol ("28 °C"); the
-  condition in words, lower case ("partly cloudy"); the wind in words by Beaufort force:
-  0 → "calm", 1–3 → "light breeze", 4–5 → "breezy", 6 and up → "strong wind".
-- **Rain coming**: the current condition is dry and a forecast within the next 3 h is
-  wet (rain, showers, storm, snow — the weather plan's `isWet`). Line 3 (or the subtitle)
-  becomes "Rain around 17:00, take an umbrella." (snow: "Snow around 17:00, dress
-  warm."; storm: "Storms around 17:00, stay dry."), the hour of the first wet forecast in
-  GNOME's time format.
-- **No data** (no place, offline, no client): no weather line, no umbrella; never an
-  error.
+- **Line**: "{place}: {temp} {unit}, {condition}, {wind}." — e.g. "Ho Chi Minh City: 28 °C,
+  partly cloudy, light breeze."; place as the date menu names it, temperature rounded,
+  condition in lower case, wind by Beaufort: 0 "calm", 1–3 "light breeze", 4–5 "breezy", 6+
+  "strong wind".
+- **Rain coming**: dry now, a wet forecast (the plan's `isWet`) within 3 h → "Rain around
+  17:00, take an umbrella." (snow: "Snow around 17:00, dress warm."; storm: "Storms around
+  17:00, stay dry."), the first wet hour in GNOME's time format.
+- **No data**: no weather line, no umbrella, never an error.
 
 ## 9. Settings
 
@@ -278,31 +226,25 @@ units rows (SPEC §2a, `org.gnome.GWeather4`).
 
 ## 10. Code and tests
 
-- `modules/greeting/`: `index.js` (kind `greeting`), `adapter.js` (pure: every line and
-  the size from `{moment, now, daypart, weekday, name, special?, weather?, rain?, longDay?,
-  intro?}`), `holidays.js` (data + `specialDay(date, region, birthday)`, pure), `source.js`
-  (the moments of §1, the weather wait, the InjectionManager on `_confirm`).
-- Kit: `kit/model/weather.js` / `kit/services/weather.js` shared with the weather plan (2026-11-26); an
-  expanded `{mascot}` leading may be as tall as the text block beside it (80 / 60 px
-  instead of the fixed 50, §2) — the regions and their `grow` are unchanged; a pill that
-  is expanded still reports hover to the stack (hover holds its ttl).
-- Tests (`tests/greeting.test.js`): every row of §3–§5 and its priority; each daypart;
-  weekdays and weekends; 01:00 vs dawn; sizes (24 characters, long names stay whole —
-  the renderer ellipsizes); no weather, rain, snow, storm; Beaufort words; holidays —
-  fixed dates, Easter 2026–2030, the nth Sunday (Mother's Day 2026 = 10 May, Father's Day
-  2026 = 21 June), the lunar anchors, Kitchen Gods' day in the next Gregorian year, birthday over a
-  celebration, observance on line 2, `global` vs `auto` vs `off`, time zone → region; no
-  measurements in the output.
-- In the Shell (headless): Start (a new `boot_id` faked in settings), Wake (a faked sleep
-  total), Welcome back (another session id), Leaving (the dialog's confirm), fullscreen,
-  `off`; the weather filled in place; hover hold; a real activity interrupting.
+- `modules/greeting/`: `index.js` (kind `greeting`); `adapter.js` (pure: lines and size from
+  `{moment, now, daypart, weekday, name, special?, weather?, rain?, longDay?, intro?}`);
+  `holidays.js` (data + pure `specialDay(date, region, birthday)`); `source.js` (§1, the
+  weather wait, the `_confirm` injection).
+- Kit: `kit/model/weather.js` / `kit/services/weather.js`, shared with the weather plan
+  (2026-11-26); an expanded `{mascot}` leading may match the text's height (80 / 60 px, not
+  50); an expanded pill still reports hover to the stack.
+- Tests (`tests/greeting.test.js`): every row and priority of §3–§5, dayparts, weekends, 01:00
+  vs dawn, sizes (24 characters; long names stay whole, the renderer ellipsizes), weather
+  cases and Beaufort words, holidays (Easter 2026–2030, Mother's Day 2026 = 10 May, Father's
+  Day 2026 = 21 June, lunar anchors, precedence, `auto`/`global`/`off`, time zone → region);
+  no measurements in the output.
+- In the Shell (headless): each moment faked (`boot_id`, sleep total, session id, the dialog's
+  confirm), fullscreen, `off`, weather filled in place, hover hold, a real activity interrupting.
 
 ## 11. First run and What's new
 
-*V0.1, 2026-11-08, Ethan.*
-
-One mechanism, two cases, read at `enable` against `metadata.json` `version` (EGO's
-integer):
+*v0.1, 2026-11-08, Ethan.* One mechanism, read at `enable` against `metadata.json` `version`
+(EGO's integer):
 
 | Case | When | What Bu says |
 |---|---|---|
@@ -310,87 +252,52 @@ integer):
 | **What's new** | `greeting-version-seen` lower than the running version, the intro already shown | that version's notes: what is new, what was fixed |
 | Neither | the version already seen | nothing |
 
-- **When it shows.** On the first `enable` that finds the case, once the island is on
-  screen: not over a fullscreen window (it waits until the island is seen again, not
-  until the next login), never while the screen is locked (Buoy runs only unlocked).
-  Both keys are written once it showed — the first run sets `greeting-version-seen` to
-  the running version too, so a later update speaks only of what came after it.
-  Updating from EGO then re-logging in is an `enable` like any other: What's new shows
-  then, it does not wait for a Start.
-- **Size.** Expanded, a transient activity (closes on a click outside, any real activity
-  interrupts it, never takes the keyboard), Bu in the leading waving 5 s (`wave`, then
-  `idle`), the lines typed in (principle 7). Held while hovered; it stays until closed or
-  ~12 s after the last line is in, longer than §2's 8 s since there is more to read.
-- **First run's lines.** "Hi, I'm Bu." then the basics, one per line: hover the pill for
-  more; click it for Home; its keyboard shortcut — the user's own, `keybind-focus` ("Super+B" by default; a changed one is said as set, none leaves the line out, 2026-11-08, Ethan); scroll on the idle pill
-  to see what else it can show; ⚙ in Home for settings. The exact words live in
-  `modules/greeting/adapter.js`.
-- **What's new's lines.** "New in Buoy {version}" (`version-name` when `metadata.json` has
-  one, else the number; EGO writes its own counter into `version` on upload, so the
-  comparison follows EGO's releases),
-  then up to 4 lines from the notes, new things first, then fixes; more than that ends
-  with "…and more", and a click on it opens Buoy's prefs on About → What's new (below;
-  2026-11-08, Ethan). Notes are bundled, never fetched (no network, EGO):
-  `modules/greeting/notes.js`, one entry per version `{version, name, added: [], fixed:
-  []}`, written with each release. A version with no entry says nothing and still counts
-  as seen. Skipped versions (an update from v0.1 straight to v0.4): the newest version's
-  notes only, not a list of every release.
-- **About → What's new** (prefs, 2026-11-08, Ethan). A row on the About page opens a
-  subpage with every version's notes, newest first — the running version's on top; for
-  v0.1 that is the introduction. Each version's heading: the running one "Buoy 0.2 — this
-  version", an older one "Buoy 0.1 — 8 November 2026", its release day (`date` in
-  notes.js, written when it ships). The same `notes.js` (pure data, so prefs may import it,
-  as it does `kit/model/settings.js`): written once, said by Bu and listed here. To open prefs on
-  that page ("…and more"), the Shell side writes the bookkeeping key `prefs-page` =
-  `whats-new` and opens prefs (`Main.extensionManager.openExtensionPrefs`); prefs reads
-  it when it builds its window, shows the page and clears the key, and an open prefs
-  window follows the key's change. A key, because Shell's `OpenExtensionPrefs` passes
-  nothing else on (`js/dbusServices/extensions/extensionsService.js`: of the options only
-  `modal`).
-- **About → "Show Bu's introduction again"** (prefs, 2026-11-08, Ethan). A button that
-  sets `greeting-intro-shown` back to false; the greeting's source watches that key and
-  shows the first run at once (no wait for the next enable) — over the prefs window, in
-  the pill, as on a fresh install — then sets it true again. GSettings carries it, as
-  every prefs change; no D-Bus of its own. `greeting-version-seen` stays: replaying the
-  intro says nothing about versions.
-- **Tests.** The case from the two keys and the version (fresh install, update, same
-  version, a downgrade says nothing, a version with no notes); the lines for each; the
-  cap and "…and more"; the typing's steps and its end (pure: the text shown after n ms);
-  animations off → whole.
+- **When.** The first `enable` that finds the case, once the island is seen (not over
+  fullscreen: it waits; never while locked). Both keys are written once shown; the first run
+  also sets `greeting-version-seen`. An EGO update then re-login is an ordinary `enable`.
+- **Form.** Expanded transient (principle 4), Bu `wave` 5 s then `idle`, typed in (principle
+  7). Held while hovered; stays until closed or ~12 s after the last line is in.
+- **First run's lines.** "Hi, I'm Bu." then one basic per line: hover for more; click for
+  Home; the shortcut, the user's `keybind-focus` ("Super+B" by default; said as set, none →
+  line left out; 2026-11-08, Ethan); scroll on the idle pill for what else it shows; ⚙ in Home
+  for settings. Exact words in `adapter.js`.
+- **What's new's lines.** "New in Buoy {version}" (`version-name` if `metadata.json` has one,
+  else the number EGO writes), then up to 4 lines, new first, then fixes; more → "…and more",
+  which opens prefs on About → What's new (2026-11-08, Ethan). Notes are bundled, never
+  fetched: `modules/greeting/notes.js`, `{version, name, added: [], fixed: []}` per release. No
+  entry → nothing said, still counts as seen. Skipped versions: the newest notes only.
+- **About → What's new** (2026-11-08, Ethan): a subpage, every version's notes newest first
+  (v0.1's is the intro). Headings "Buoy 0.2 — this version", "Buoy 0.1 — 8 November 2026"
+  (`date` in notes.js, pure data so prefs imports it). To open it the Shell side sets
+  `prefs-page` = `whats-new` and calls `Main.extensionManager.openExtensionPrefs`; prefs shows
+  the page and clears the key (an open window follows the change). A key, because
+  `OpenExtensionPrefs` passes on only `modal` (`js/dbusServices/extensions/extensionsService.js`).
+- **About → "Show Bu's introduction again"** (2026-11-08, Ethan): sets `greeting-intro-shown`
+  false; the source sees it, shows the first run at once in the pill, sets it true.
+  `greeting-version-seen` stays.
+- **Tests.** The case (fresh, update, same, downgrade → nothing, no notes); lines; the cap and
+  "…and more"; typing steps and end (pure: text after n ms); animations off → whole.
 
 ### A newer Buoy
 
-*2026-11-13, Ethan.* Bu also says when a newer version is ready, once per release, in the
-same form as What's new (expanded, typed in, ~12 s). `greeting-updates` (on by default, a
-row under Greeting in prefs) turns it off. Two ways to know, by how Buoy was installed:
+*2026-11-13, Ethan.* Bu says when a newer version is ready, once per release, as What's new
+(expanded, typed in, ~12 s). `greeting-updates` (default on, a row under Greeting) turns it off.
 
 | Installed from | How Buoy knows | What Bu says |
 |---|---|---|
-| extensions.gnome.org | GNOME Shell looks itself at the session's start and each day, and downloads the update (`ui/extensionSystem.js` `init`, `ui/extensionDownloader.js` `checkForUpdates`, `downloadExtensionUpdate`); it then sets Buoy's `hasUpdate` and emits `extension-state-changed` (`notifyExtensionUpdate`). Buoy reads that: **no request of its own** | "A newer Buoy is ready." / "Log out and back in to use it." (Shell installs it at the next login, `_installExtensionUpdates`) |
-| `install.sh` | one GET of GitHub's latest release (`api.github.com/repos/murilegus/buoy/releases/latest`), **the one network call Buoy makes** (FEATURES M3) | "Buoy 0.2 is out." / "You have 0.1.1." / "Paste the command in a terminal to update." with **Copy command** (install.sh's `--update` line, to the clipboard) and **Release notes** (the release's page, in the browser) |
+| extensions.gnome.org | Shell checks at session start and daily and downloads the update (`ui/extensionDownloader.js` `checkForUpdates`), then sets Buoy's `hasUpdate` and emits `extension-state-changed` (`notifyExtensionUpdate`). Buoy reads that: **no request of its own** | "A newer Buoy is ready." / "Log out and back in to use it." (Shell installs it at the next login, `_installExtensionUpdates`) |
+| `install.sh` | one GET of `api.github.com/repos/murilegus/buoy/releases/latest`, **the one network call Buoy makes** (FEATURES M3) | "Buoy 0.2 is out." / "You have 0.1.1." / "Paste the command in a terminal to update." with **Copy command** (install.sh's `--update` line, to the clipboard) and **Release notes** (the release's page, in the browser) |
 | a development checkout (a link) | nothing | nothing |
 
-- **Which install.** `install.sh` leaves an empty file, `.check-updates`, in the extension's
-  folder; GitHub is asked only when it is there. An update from extensions.gnome.org
-  replaces the whole folder (`_installExtensionUpdates`: delete, then move), so the mark
-  goes and Shell's own check takes over without a setting to change.
-- **When.** On an `enable` with no first run or What's new to show, after Shell's startup:
-  Shell's `hasUpdate` first; else, with the mark, GitHub — at most once a day
-  (`greeting-update-checked`, seconds since the epoch; an answer of any kind counts, no
-  answer asks again at the next enable). Nothing is polled and there is no timer (rule 8):
-  a session left open for days asks again only at the next unlock.
-- **What is sent.** The request itself: no version, no id, the user agent "Buoy". Buoy
-  cannot update itself (no code is downloaded or run, rule 7): it says, the user runs
-  `install.sh --update`.
-- **What is read.** Only the release's tag, and only as a version-name (one to four
-  numbers, `adapter.js` `versionName`); anything else — not JSON, a draft, a pre-release,
-  an error page — is dropped. Nothing from the network is shown or opened as it came: the
-  notes' address is built from that version-name.
-- **Once.** `greeting-update-told` keeps what Bu said last: the release's version-name
-  (GitHub), or `shell:<running version>` (Shell: the update applies at the next login, so
-  once per running version). Not over a fullscreen window: it waits until the island is
-  seen, as the greeting does.
-- **Tests.** Tags and what is not one; newer, the same, older ("0.10" after "0.9"); every
-  answer GitHub may give; due after a day and when the clock goes back; once per release
-  from either source; Bu's lines and buttons for each.
-
+- **Which install.** `install.sh` leaves an empty `.check-updates` in the extension's folder;
+  GitHub is asked only then. An EGO update replaces the folder, so the mark goes.
+- **When.** An `enable` with no first run or What's new, after Shell's startup: `hasUpdate`
+  first; else, with the mark, GitHub at most daily (`greeting-update-checked`, epoch s; any
+  answer counts, none → ask next enable). No polling, no timer (rule 8).
+- **Sent**: the bare request, user agent "Buoy". Buoy never updates itself (rule 7).
+- **Read**: only the tag, as a version-name (one to four numbers, `adapter.js` `versionName`);
+  anything else is dropped. The notes' address is built from it, never taken from the network.
+- **Once.** `greeting-update-told`: the version-name (GitHub) or `shell:<running version>`
+  (Shell). Waits out fullscreen, as the greeting.
+- **Tests.** Tags and non-tags; newer/same/older ("0.10" after "0.9"); every GitHub answer;
+  daily due and clock going back; once per release from either source; lines and buttons.
