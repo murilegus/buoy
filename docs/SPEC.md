@@ -549,8 +549,8 @@ its tokens.*
 - **Shared parts fly** (2026-11-13): the leading and title an activity has in both forms (pill ↔
   compact or card, Home's card ↔ Media tab, tile ↔ its tab) fly on the background's spring as clones
   at their end size, moved and scaled, never re-laid; the old part hidden meanwhile; found by their
-  mark (`kit/ui/present/flight.js` markShared). The rest, on expand, into the compact and any growth
-  > 25 %: at its final place, clipped to the background every frame, opacity following (full from
+  mark (`kit/ui/present/flight.js` markShared). The rest, on expand, into the compact and any growth over
+  25 %: at its final place, clipped to the background every frame, opacity following (full from
   halfway); collapse clips the same. A slide moves content with its background.
 - **Fades** 100 ms out, 200 ms in; hover, press, checked colours 120 ms (`transition-duration`).
 - **Press**: 4 px smaller each way on `snap`, held 90 ms, back.

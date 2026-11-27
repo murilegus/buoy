@@ -144,7 +144,8 @@ v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` and `clipboard` (two 
 
 **The docs and their site** (2026-11-10, FEATURES M4 "Design docs and site"). `docs/` is
 bilingual: `page.md` English, `page.vi.md` Vietnamese. Design pages are decided in Vietnamese
-first; other docs keep English as source (shortened 2026-11-27, translated next). `mkdocs.yml` builds
+first; other docs keep English as source (translated 2026-11-27; a change to one updates the other in the same PR; FEATURES is
+English only). `mkdocs.yml` builds
 the site (MkDocs Material, mkdocs-static-i18n) only in CI (`.github/workflows/docs.yml` →
 GitHub Pages; versions in `requirements-docs.txt`), never in the extension or `package.json`.
 
