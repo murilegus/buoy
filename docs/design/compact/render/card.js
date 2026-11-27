@@ -6,14 +6,14 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, GREY, icon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, GREY, icon, SAMPLE, t} from '../../render/lib.js';
 const R = 28, PAD = 14, LEAD = 40, TX = PAD + LEAD + 12, PW = 404, W = 860;
 const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED;   // subtitle and body: fg-muted
 const cards = [
-  {avatar: true, msg: 'Pushed the pill shapes to the branch — can you review the compact and the card before the 3 PM sync?', buttons: ['Reply', 'Mark as read'], note: 'ảnh đại diện + logo app'},
-  {avatar: true, msg: 'On my way, 5 min.', buttons: ['Reply', 'Mark as read'], note: '1 dòng + nút'},
-  {avatar: false, app: 'Files', title: 'Download finished', msg: 'buoy-0.1.2.zip — 84 kB', buttons: ['Open', 'Show in folder'], note: 'không có ảnh: logo app 40, không huy hiệu'},
-  {avatar: true, msg: 'Pushed the pill shapes to the branch. Can you review the compact, the card and the expanded Home before the 3 PM sync? I left notes in DECISIONS.md and the renders are next to it.', buttons: ['Reply', 'Mark as read'], note: 'tin dài: cắt ở 2 dòng'},
+  {avatar: true, msg: 'Pushed the pill shapes to the branch — can you review the compact and the card before the 3 PM sync?', buttons: ['Reply', 'Mark as read'], note: t('ảnh đại diện + logo app', 'avatar + app logo')},
+  {avatar: true, msg: 'On my way, 5 min.', buttons: ['Reply', 'Mark as read'], note: t('1 dòng + nút', '1 line + buttons')},
+  {avatar: false, app: 'Files', title: 'Download finished', msg: 'buoy-0.1.2.zip — 84 kB', buttons: ['Open', 'Show in folder'], note: t('không có ảnh: logo app 40, không huy hiệu', 'no image: app logo 40, no badge')},
+  {avatar: true, msg: 'Pushed the pill shapes to the branch. Can you review the compact, the card and the expanded Home before the 3 PM sync? I left notes in DECISIONS.md and the renders are next to it.', buttons: ['Reply', 'Mark as read'], note: t('tin dài: cắt ở 2 dòng', 'long message: cut at 2 lines')},
 ];
 // measure at 1× (hinted, as on screen)
 const meas = new cairo.Context(new cairo.ImageSurface(cairo.Format.ARGB32, 4, 4));
@@ -56,7 +56,7 @@ for (const c of cards) {
   cr.setSourceRGBA(...G2, 1); cr.moveTo(x + PAD + 2, y + 56 + 8 + (16 - lh) / 2); PangoCairo.show_layout(cr, L); L.set_spacing(0);
   c.buttons.forEach((t, k) => { cr.setSourceRGBA(1, 1, 1, C.FILL2); rr(x + 12 + k * (bw + 8), by, bw, 32, 16); cr.fill();
     const e = text(t, 0, 0, 9.5, 600, W1, 1, 0, 0, true); text(t, x + 12 + k * (bw + 8) + (bw - e.width) / 2, by + 16 - e.height / 2, 9.5, 600, W1); });
-  text(`${c.note}\n${c.lines} dòng · ${PW}×${h}`, x + PW + 16, y + 10, 8.5, 400, W1, .75);
+  text(t(`${c.note}\n${c.lines} dòng · ${PW}×${h}`, `${c.note}\n${c.lines} line${c.lines > 1 ? 's' : ''} · ${PW}×${h}`), x + PW + 16, y + 10, 8.5, 400, W1, .75);
   y += h + 26;
 }
 surf.writeToPNG(ARGV[0]);

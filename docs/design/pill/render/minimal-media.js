@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, COVER, EQ, drawEq} from '../../render/lib.js';
+import {SCALE as SC, COVER, EQ, drawEq, t} from '../../render/lib.js';
 const W = 660, H = 120, PW = 336;
 // a title too long for the cap, on purpose: the sample (lib.js SAMPLE) fits, this shows the ellipsis
 const TITLE = 'MƯA TUYỆT VỌNG REMIX - KHẢI ĐĂNG X ĐẠT G';
@@ -29,8 +29,8 @@ function pill(y, {pad, box, art, artR, size, px, gap, label, six = false}) {
   setup(size, px, 600, tw); L.set_text(TITLE, -1); const e = L.get_pixel_extents()[1];
   cr.setSourceRGB(1, 1, 1); cr.moveTo(tx, y + Math.round((32 - e.height) / 2)); PangoCairo.show_layout(cr, L);
   const shown = L.get_line(0).length;                                       // bytes, so count chars instead
-  setup(8, false, 400, 0); L.set_text(`${label} · chữ có ${Math.round(tw)} px`, -1); cr.setSourceRGBA(1, 1, 1, .8); cr.moveTo(x + PW + 12, y + 9); PangoCairo.show_layout(cr, L);
+  setup(8, false, 400, 0); L.set_text(t(`${label} · chữ có ${Math.round(tw)} px`, `${label} · text gets ${Math.round(tw)} px`), -1); cr.setSourceRGBA(1, 1, 1, .8); cr.moveTo(x + PW + 12, y + 9); PangoCairo.show_layout(cr, L);
 }
-pill(14, {pad: 14, box: 20, art: 20, artR: 6, size: 13, px: true, gap: 8, label: 'hiện tại: lề 14, chữ 13 px'});
-pill(66, {pad: 8, box: 24, art: 24, artR: 6, size: 11, px: false, gap: 6, six: true, label: 'đã chốt: lề 8, leading 24, khoảng 6, chữ 1em'});
+pill(14, {pad: 14, box: 20, art: 20, artR: 6, size: 13, px: true, gap: 8, label: t('hiện tại: lề 14, chữ 13 px', 'now: padding 14, text 13 px')});
+pill(66, {pad: 8, box: 24, art: 24, artR: 6, size: 11, px: false, gap: 6, six: true, label: t('đã chốt: lề 8, leading 24, khoảng 6, chữ 1em', 'decided: padding 8, leading 24, gap 6, text 1em')});
 surf.writeToPNG(ARGV[0]);

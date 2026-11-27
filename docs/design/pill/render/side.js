@@ -6,7 +6,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, COVER, SAMPLE, EQ, drawEq, icon, drawBu} from '../../render/lib.js';
+import {SCALE as SC, C, COVER, SAMPLE, EQ, drawEq, icon, drawBu, t} from '../../render/lib.js';
 
 const [out, MODE] = ARGV;
 const W1 = C.WHITE, PAD = 8, CELL = 24, GAP = 6, H = 32, SIDE = 132;
@@ -62,25 +62,25 @@ function badge(n, x, y) {
 const CASES = [
     {name: SAMPLE.app, lead: LEADS.art, trail: TRAILS.eq},
     {name: 'Claude Code', lead: LEADS.bu, trail: TRAILS.text('1 min')},
-    {name: 'Tải về', lead: LEADS.icon('arrow-down-to-line'), trail: TRAILS.text('42%')},
-    {name: 'Hẹn giờ', lead: LEADS.icon('alarm'), trail: TRAILS.text('4:59')},
+    {name: t('Tải về', 'Download'), lead: LEADS.icon('arrow-down-to-line'), trail: TRAILS.text('42%')},
+    {name: t('Hẹn giờ', 'Timer'), lead: LEADS.icon('alarm'), trail: TRAILS.text('4:59')},
 ];
 
 // The options. x is the pill's left edge; each lays out its leading, trailing and +N.
 const OPTIONS = [
-    {key: 'A', label: 'A — hiện tại: cả nhóm canh giữa', layout: (c, x, y, more) => {
+    {key: 'A', label: t('A — hiện tại: cả nhóm canh giữa', 'A — as now: the whole group centred'), layout: (c, x, y, more) => {
         const parts = [CELL, c.trail.w, ...more ? [badgeW(more)] : []];
         let cx = x + (SIDE - (parts.reduce((s, w) => s + w, 0) + GAP * (parts.length - 1))) / 2;
         c.lead(cx, y + 4); cx += CELL + GAP; c.trail.draw(cx, y); cx += c.trail.w + GAP;
         if (more) badge(more, cx, y);
     }},
-    {key: 'B', label: 'B — hai đầu: leading sát lề trái, trailing sát lề phải; +N sau trailing', layout: (c, x, y, more) => {
+    {key: 'B', label: t('B — hai đầu: leading sát lề trái, trailing sát lề phải; +N sau trailing', 'B — both ends: leading at the left padding, trailing at the right; +N after trailing'), layout: (c, x, y, more) => {
         c.lead(x + PAD, y + 4);
         let rx = x + SIDE - PAD;
         if (more) rx -= badgeW(more) + GAP, badge(more, rx + GAP, y);
         c.trail.draw(rx - c.trail.w, y);
     }},
-    {key: 'C', label: 'C — hai đầu; có +N thì +N thay chỗ trailing (trailing xem ở compact)', layout: (c, x, y, more) => {
+    {key: 'C', label: t('C — hai đầu; có +N thì +N thay chỗ trailing (trailing xem ở compact)', 'C — both ends; with +N, +N takes the trailing\'s place (trailing seen in compact)'), layout: (c, x, y, more) => {
         c.lead(x + PAD, y + 4);
         if (more) badge(more, x + SIDE - PAD - badgeW(more), y);
         else c.trail.draw(x + SIDE - PAD - c.trail.w, y);
@@ -90,7 +90,7 @@ const OPTIONS = [
 function side() {
     const COLW = SIDE + 16, LEFT = 24, W = LEFT + 2 * (CASES.length * COLW) + 40, ROW = 64;
     const surf = canvas(W, 60 + OPTIONS.length * ROW + 40);
-    title('Pill phụ 132 × 32: không có +N (trái) và có +N, pill phụ cuối (phải)', 24, 12);
+    title(t('Pill phụ 132 × 32: không có +N (trái) và có +N, pill phụ cuối (phải)', 'Side pill 132 × 32: without +N (left) and with +N, the last side pill (right)'), 24, 12);
     CASES.forEach((c, i) => {
         caption(c.name, LEFT + i * COLW, 32, .7);
         caption(`${c.name} · +2`, LEFT + (CASES.length + i) * COLW + 24, 32, .7);
@@ -104,7 +104,8 @@ function side() {
             shape(bx, y, SIDE); o.layout(c, bx, y, 2);
         });
     });
-    caption('Pill phụ cố định 132 (bằng idle), lề 8, ô leading 24, khoảng 6; chữ của pill phụ bỏ, chỉ còn giá trị ngắn ở trailing (SPEC §2c).',
+    caption(t('Pill phụ cố định 132 (bằng idle), lề 8, ô leading 24, khoảng 6; chữ của pill phụ bỏ, chỉ còn giá trị ngắn ở trailing (SPEC §2c).',
+        'Side pill fixed at 132 (as idle), padding 8, leading box 24, gap 6; the side pill drops its text, only a short value stays as trailing (SPEC §2c).'),
         24, 60 + OPTIONS.length * ROW + 12, .75);
     surf.writeToPNG(out);
 }
@@ -125,19 +126,19 @@ function pill1(x, y, parts, maxW = 336) {
 }
 
 const CLAUDE = [
-    {label: 'A — hiện tại: "Claude · dự án", thời gian chạy', rows: [
+    {label: t('A — hiện tại: "Claude · dự án", thời gian chạy', 'A — as now: "Claude · project", time running'), rows: [
         {text: 'Claude · buoy', trail: '1 min'},
         {text: 'Claude · buoy', trail: '12 min', pose: 'think'},
     ]},
-    {label: 'B — chỉ dự án (Bu đã là Claude), thời gian chạy', rows: [
+    {label: t('B — chỉ dự án (Bu đã là Claude), thời gian chạy', 'B — project only (Bu already is Claude), time running'), rows: [
         {text: 'buoy', trail: '1 min'},
         {text: 'buoy', trail: '12 min', pose: 'think'},
     ]},
-    {label: 'C — dự án · việc đang làm (cắt "…"), thời gian chạy', rows: [
+    {label: t('C — dự án · việc đang làm (cắt "…"), thời gian chạy', 'C — project · current task (cut with "…"), time running'), rows: [
         {text: 'buoy · Running pnpm test', trail: '1 min'},
         {text: 'buoy · Editing src/…/compact.js', trail: '12 min'},
     ]},
-    {label: 'D — có danh sách việc: dự án · việc đang làm, tiến độ thay thời gian', rows: [
+    {label: t('D — có danh sách việc: dự án · việc đang làm, tiến độ thay thời gian', 'D — with a task list: project · current task, progress instead of time'), rows: [
         {text: 'buoy · Run pnpm test', trail: '2 / 5'},
         {text: 'buoy · Update the docs', trail: '4 / 5'},
     ]},
@@ -146,13 +147,14 @@ const CLAUDE = [
 function claude() {
     const LEFT = 24, W = LEFT + 2 * 360 + 40, ROW = 60;
     const surf = canvas(W, 50 + CLAUDE.length * ROW + 40);
-    title('Claude Code ở pill 1 (co theo nội dung, 132 … 336 ở 1920)', 24, 12);
+    title(t('Claude Code ở pill 1 (co theo nội dung, 132 … 336 ở 1920)', 'Claude Code on pill 1 (fits its content, 132 … 336 at 1920)'), 24, 12);
     CLAUDE.forEach((o, r) => {
         const y = 56 + r * ROW;
         text(o.label, 24, y - 18, {pt: 8, wt: 600, a: .9});
         o.rows.forEach((p, i) => pill1(LEFT + i * 360, y, p));
     });
-    caption('Đèn ở hai đầu và cỡ chữ như pill (design/pill); hover mở compact: "Claude Code", dự án · tiến độ, các việc.',
+    caption(t('Đèn ở hai đầu và cỡ chữ như pill (design/pill); hover mở compact: "Claude Code", dự án · tiến độ, các việc.',
+        'Lights at both ends and text size as the pill (design/pill); hover opens compact: "Claude Code", project · progress, the tasks.'),
         24, 50 + CLAUDE.length * ROW + 12, .75);
     surf.writeToPNG(out);
 }

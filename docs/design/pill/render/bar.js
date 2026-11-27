@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC} from '../../render/lib.js';
+import {SCALE as SC, t} from '../../render/lib.js';
 const [out, scrW, sym] = [ARGV[0], Number(ARGV[1]), ARGV[2] === 'sym'];   // sym: pill 2 left, pill 3 right
 const W = scrW, H = 190, EM = 14.667;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
@@ -22,8 +22,9 @@ const expW = even(Math.min(760, Math.max(560, W * .28)));
 const leftC = Number(ARGV[3] ?? 93), rightC = Number(ARGV[4] ?? 293), MARGIN = 12, GAP = 8;
 const measured = ARGV[3] === undefined;
 const idle = 131, minMax = Math.min(even(24 * EM), even(expW * .6)), cmpMax = Math.min(even(28 * EM), even(expW * .72));
-for (const [x, w, t] of [[4, leftC, `cụm trái ${leftC}${measured ? '' : ' (giả định)'}`], [W - 4 - rightC, rightC, `_rightBox ${rightC}${measured ? '' : ' (giả định)'}`]]) {
-  cr.setSourceRGBA(1, 1, 1, .1); rr(x, 4, w, 32, 16); cr.fill(); text(t, x + 14, 12, 8.5, 400, W1, .7); }
+const assumed = measured ? '' : t(' (giả định)', ' (assumed)');
+for (const [x, w, label] of [[4, leftC, t(`cụm trái ${leftC}`, `left cluster ${leftC}`) + assumed], [W - 4 - rightC, rightC, `_rightBox ${rightC}${assumed}`]]) {
+  cr.setSourceRGBA(1, 1, 1, .1); rr(x, 4, w, 32, 16); cr.fill(); text(label, x + 14, 12, 8.5, 400, W1, .7); }
 const cx = W / 2, p1x = cx - minMax / 2;
 function pill(x, w, label, sub) { rr(x + .5, 4.5, w - 1, 31, 15.5); cr.setSourceRGB(0, 0, 0); cr.fillPreserve(); cr.setSourceRGBA(1, 1, 1, .12); cr.setLineWidth(1); cr.stroke();
   cr.setSourceRGB(.95, .6, .4); rr(x + 8, 8, 24, 24, 7); cr.fill(); text(label, x + 38, 11, 11, 600, W1); if (sub) { const e = text(sub, 0, 0, 11, 600, W1, 1, true); text(sub, x + w - 8 - e.width, 11, 11, 600, W1, .55); } }
@@ -37,13 +38,13 @@ if (sym) {
 cr.setSourceRGBA(1, 1, 1, .5); cr.setLineWidth(1);
 const ruler = (a, b, y, t) => { cr.moveTo(a, y + .5); cr.lineTo(b, y + .5); cr.moveTo(a + .5, y - 3); cr.lineTo(a + .5, y + 3); cr.moveTo(b - .5, y - 3); cr.lineTo(b - .5, y + 3); cr.stroke();
   const e = text(t, 0, 0, 8, 400, W1, 1, true); text(t, (a + b) / 2 - e.width / 2, y + 3, 8, 400, W1, .8); };
-ruler(p1x, p1x + minMax, 44, `pill 1 rộng tối đa ${minMax} (${(minMax / EM).toFixed(1)}em)`);
-ruler(x, W - 4 - rightC, 44, `dư ${W - 4 - rightC - x}`);
-ruler(4 + leftC, lx, 44, `dư ${lx - 4 - leftC}`);
-text(sym ? 'pill 2 bên trái · pill 3 bên phải' : 'pill 2, 3 bên phải (hiện tại)', W / 2 - 60, H - 34, 9, 600, W1, .85);
+ruler(p1x, p1x + minMax, 44, t(`pill 1 rộng tối đa ${minMax} (${(minMax / EM).toFixed(1)}em)`, `pill 1 at most ${minMax} wide (${(minMax / EM).toFixed(1)}em)`));
+ruler(x, W - 4 - rightC, 44, t(`dư ${W - 4 - rightC - x}`, `spare ${W - 4 - rightC - x}`));
+ruler(4 + leftC, lx, 44, t(`dư ${lx - 4 - leftC}`, `spare ${lx - 4 - leftC}`));
+text(sym ? t('pill 2 bên trái · pill 3 bên phải', 'pill 2 on the left · pill 3 on the right') : t('pill 2, 3 bên phải (hiện tại)', 'pills 2, 3 on the right (as now)'), W / 2 - 60, H - 34, 9, 600, W1, .85);
 cr.setDash([4, 3], 0); cr.setSourceRGBA(1, 1, 1, .55); rr(cx - cmpMax / 2 + .5, 70.5, cmpMax - 1, 87, 27.5); cr.stroke(); cr.setDash([], 0);
-text(`compact rộng tối đa ${cmpMax} (${(cmpMax / EM).toFixed(1)}em) × 56 + 16n, tối đa 152`, cx - cmpMax / 2 + 20, 106, 9, 400, W1, .8);
+text(t(`compact rộng tối đa ${cmpMax} (${(cmpMax / EM).toFixed(1)}em) × 56 + 16n, tối đa 152`, `compact at most ${cmpMax} wide (${(cmpMax / EM).toFixed(1)}em) × 56 + 16n, at most 152`), cx - cmpMax / 2 + 20, 106, 9, 400, W1, .8);
 cr.setDash([2, 4], 0); cr.setSourceRGBA(1, .5, .5, .5); rr(cx - expW / 2 + .5, 64.5, expW - 1, H - 66, 27.5); cr.stroke(); cr.setDash([], 0);
-text(`expanded rộng ${expW}`, cx - expW / 2 + 12, H - 18, 8.5, 400, [1, .7, .7], .8);
+text(t(`expanded rộng ${expW}`, `expanded ${expW} wide`), cx - expW / 2 + 12, H - 18, 8.5, 400, [1, .7, .7], .8);
 text(`${W} px`, 8, H - 18, 9, 600, W1, .8);
 surf.writeToPNG(out);

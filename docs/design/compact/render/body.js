@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, taskState, icon, C, GREY, drawBu, drawEq, EQ, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, taskState, icon, C, GREY, drawBu, drawEq, EQ, SAMPLE, t} from '../../render/lib.js';
 const R = 28, PAD = 14, LEAD = 40, IND = 12, PW = 340, TX = PAD + LEAD + IND;   // text column at 66
 const W = 1120, colX = [20, 520];
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, 760 * SC);
@@ -39,14 +39,14 @@ const label = (t, x, y) => text(t, x, y, 9, 600, W1, .85);
 const NOTI = 'Pushed the pill shapes to the branch — can you review the compact and the card before the 3 PM sync?';
 const CARD = [[.3, .55, .95], [.3, .55, .95]];
 let y = 30;
-label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', colX[0], 8); label('Đề xuất — dùng cột dưới leading', colX[1], 8);
+label(t('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 'Now — body indented to the text column (red = empty space)'), colX[0], 8); label(t('Đề xuất — dùng cột dưới leading', 'Proposed — use the column under the leading'), colX[1], 8);
 // 1) media + bar
 { const h = 88;
   let x = colX[0]; panel(x, y, h); head(x, y, SAMPLE.track, SAMPLE.sub); bar(x, y + 64, x + TX, x + PW - PAD); waste(x, y, h);
   x = colX[1]; panel(x, y, h); head(x, y, SAMPLE.track, SAMPLE.sub); bar(x, y + 64, x + PAD + 6, x + PW - PAD - 6);
-  text('thanh dài hết bề ngang', x + PW + 8, y + 60, 8, 400, W1, .6); y += h + 22; }
+  text(t('thanh dài hết bề ngang', 'bar runs the full width'), x + PW + 8, y + 60, 8, 400, W1, .6); y += h + 22; }
 // 1b) media, big art spanning head + bar
-{ const h = 88, x = colX[1]; label('…hoặc ảnh bìa 72 chiếm cả hai hàng', x, y - 16); panel(x, y, h);
+{ const h = 88, x = colX[1]; label(t('…hoặc ảnh bìa 72 chiếm cả hai hàng', '…or a 72 cover art spanning both rows'), x, y - 16); panel(x, y, h);
   art(x + 8, y + 8, 72, 20); const tx = x + 8 + 72 + 12;   // inset 8 → r 28 − 8 = 20, concentric
   text(SAMPLE.track, tx, y + 10, 11, 600, W1); text(SAMPLE.sub, tx, y + 30, 9.5, 400, G);
   roundBtn(x + PW - PAD - 16, y + R, 'eq');
@@ -59,7 +59,7 @@ label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 
   rows.forEach(([k, a, b], j) => row(x, y + 64 + j * 16, a, b, k));
   x = colX[1]; panel(x, y, h); head(x, y, 'Claude Code', 'buoy · 2 / 3', 'bu', '■');
   rows.forEach(([k, a, b], j) => { const ry = y + 64 + j * 16; taskState(cr, k, x + PAD + LEAD / 2 - 8, ry, 16); row(x, ry, a, b, k); });
-  text('check xong · play-fill đang làm · circle chờ, dưới leading', x + PW + 8, y + 76, 8, 400, W1, .6, false, 140); y += h + 22; }
+  text(t('check xong · play-fill đang làm · circle chờ, dưới leading', 'check done · play-fill doing · circle to do, under the leading'), x + PW + 8, y + 76, 8, 400, W1, .6, false, 140); y += h + 22; }
 // 3) card
 { let x = colX[0];
   const nI = text(NOTI, 0, 0, 9.5, 400, G2, 1, true, PW - PAD - TX).lines, hI = snap(56 + nI * 16 + 6 + 28 + 12);
@@ -68,7 +68,7 @@ label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 
   { const by = y + hI - 12 - 28, bw = (PW - PAD - TX - 8) / 2;
     ['Reply', 'Mark as read'].forEach((t, k) => { cr.setSourceRGBA(1, 1, 1, C.FILL2); rr(x + TX + k * (bw + 8), by, bw, 28, 14); cr.fill();
       const e = text(t, 0, 0, 9.5, 600, W1, 1, true); text(t, x + TX + k * (bw + 8) + (bw - e.width) / 2, by + 6, 9.5, 600, W1); }); }
-  text(`${nI} dòng · ${hI}`, x + PW + 8, y + 10, 8, 400, W1, .6);
+  text(t(`${nI} dòng · ${hI}`, `${nI} line${nI > 1 ? 's' : ''} · ${hI}`), x + PW + 8, y + 10, 8, 400, W1, .6);
   x = colX[1];
   const nF = text(NOTI, 0, 0, 9.5, 400, G2, 1, true, PW - 2 * PAD - 4).lines, hF = snap(56 + nF * 16 + 6 + 32 + 12);
   panel(x, y, hF); head(x, y, SAMPLE.person, 'Slack · 2 min', CARD, '×');
@@ -78,7 +78,7 @@ label('Hiện tại — thân thụt theo cột chữ (đỏ = chỗ trống)', 
       const e = text(t, 0, 0, 9.5, 600, W1, 1, true); text(t, x + 12 + k * (bw + 8) + (bw - e.width) / 2, by + 8, 9.5, 600, W1); });
     cr.setDash([2, 2], 0); cr.setSourceRGBA(1, .45, .45, .6); cr.setLineWidth(1);
     cr.newSubPath(); cr.arc(x + R, y + hF - R, R - .5, Math.PI / 2, Math.PI); cr.stroke(); cr.newSubPath(); cr.arc(x + 12 + 16, by + 16, 16, Math.PI / 2, Math.PI); cr.stroke(); cr.setDash([], 0); }
-  text(`${nF} dòng · ${hF}; nút cách 12, cao 32 → bo 16 đồng tâm góc`, x + PW + 8, y + 10, 8, 400, W1, .6, false, 140);
+  text(t(`${nF} dòng · ${hF}; nút cách 12, cao 32 → bo 16 đồng tâm góc`, `${nF} line${nF > 1 ? 's' : ''} · ${hF}; buttons inset 12, 32 tall → radius 16, concentric with the corner`), x + PW + 8, y + 10, 8, 400, W1, .6, false, 140);
   y += Math.max(hI, hF) + 20; }
 // crop to what was drawn
 const out = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, y * SC);

@@ -10,7 +10,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t} from '../../render/lib.js';
 
 const [out, MODE = 'tile'] = ARGV;
 const W1 = C.WHITE, SUB = 9.35, BIG = 16.5, TILE_H = 100;
@@ -39,7 +39,7 @@ const note = (t, x, y) => text(t, x, y, {sz: 8.5, a: .7});
 // gauge — Gravity's scales-balanced; the leaf ours, the gauge Gravity's speedometer at full
 // (icons/render/draw-own.js)
 const MODES = {saver: 'power-saver', balanced: 'scales-balanced', perf: 'power-performance'};
-const NAMES = {saver: 'Tiết kiệm pin', balanced: 'Cân bằng', perf: 'Hiệu năng'};
+const NAMES = {saver: t('Tiết kiệm pin', 'Power Saver'), balanced: t('Cân bằng', 'Balanced'), perf: t('Hiệu năng', 'Performance')};
 const draw = (name, x, y, s = 16, a = 1) => icon(name, x, y, s, W1, a);
 
 // a battery tile (design/home "Kích thước": leading 20 at 12, value 1.5em 600, caption 0.85em
@@ -67,21 +67,21 @@ function pill(x, y, lead, t, trail = null) {
 
 if (MODE === 'tile') {
     const T = [
-        {ic: 'battery-charging', val: '82%', cap: 'Đang sạc', m: 'balanced', det: ['đầy sau 42 phút', 'Cân bằng']},
-        {ic: 'battery', val: '64%', cap: 'Pin', m: 'balanced', det: ['còn 3 giờ 20 phút', 'Cân bằng']},
-        {ic: 'battery-low', val: '18%', cap: 'Pin yếu', m: 'saver', det: ['còn 25 phút', 'Tiết kiệm pin']},
-        {ic: 'battery-full', val: '100%', cap: 'Đã sạc đầy', m: 'perf', det: ['', 'Hiệu năng']},
+        {ic: 'battery-charging', val: '82%', cap: t('Đang sạc', 'Charging'), m: 'balanced', det: [t('đầy sau 42 phút', 'Full in 42 min'), t('Cân bằng', 'Balanced')]},
+        {ic: 'battery', val: '64%', cap: t('Pin', 'Battery'), m: 'balanced', det: [t('còn 3 giờ 20 phút', '3 h 20 min left'), t('Cân bằng', 'Balanced')]},
+        {ic: 'battery-low', val: '18%', cap: t('Pin yếu', 'Low battery'), m: 'saver', det: [t('còn 25 phút', '25 min left'), t('Tiết kiệm pin', 'Power Saver')]},
+        {ic: 'battery-full', val: '100%', cap: t('Đã sạc đầy', 'Fully charged'), m: 'perf', det: ['', t('Hiệu năng', 'Performance')]},
     ];
     T.forEach((t, i) => tile(16 + i * 136, 16, 128, t));
-    note('ô hẹp 128: chế độ là icon ở góc trên phải (fg-subtle)', 16, 16 + TILE_H + 8);
+    note(t('ô hẹp 128: chế độ là icon ở góc trên phải (fg-subtle)', 'narrow tile 128: the mode is an icon top right (fg-subtle)'), 16, 16 + TILE_H + 8);
     T.slice(0, 2).forEach((t, i) => tile(16 + 4 * 136 + 8 + i * 228, 16, 220, t));
-    note('ô rộng (từ 200): thêm thời gian và tên chế độ', 16 + 4 * 136 + 8, 16 + TILE_H + 8);
+    note(t('ô rộng (từ 200): thêm thời gian và tên chế độ', 'wide tile (from 200): adds the time and the mode name'), 16 + 4 * 136 + 8, 16 + TILE_H + 8);
 } else if (MODE === 'list') {
     const AX = 16, AW = 388, ay = 16, AH = 236;
     fill([0, 0, 0, 1], AX, ay, AW, AH, 28);
     fill([1, 1, 1, C.FILL2], AX + 12, ay + 12, 32, 32, 16); icon('chevron-left', AX + 20, ay + 20);
-    text('Pin · 82% · đang sạc', AX + 54, ay + 19, {wt: 600});
-    text('đầy sau 42 phút', AX + AW - 16, ay + 20, {sz: SUB, a: C.FG_SUBTLE, right: true});
+    text(t('Pin · 82% · đang sạc', 'Battery · 82% · charging'), AX + 54, ay + 19, {wt: 600});
+    text(t('đầy sau 42 phút', 'full in 42 min'), AX + AW - 16, ay + 20, {sz: SUB, a: C.FG_SUBTLE, right: true});
     ['saver', 'balanced', 'perf'].forEach((m, i) => {
         const ry = ay + 56 + i * 40, on = m === 'balanced';
         if (on)
@@ -92,22 +92,22 @@ if (MODE === 'tile') {
             icon('check', AX + AW - 40, ry + 10, 16);
     });
     fill([1, 1, 1, C.FILL1], AX + 12, ay + 184, AW - 24, 36, 18);
-    icon('gear', AX + 26, ay + 194, 16, W1, C.FG_MUTED); text('Cài đặt nguồn', AX + 52, ay + 193, {a: C.FG_MUTED});
+    icon('gear', AX + 26, ay + 194, 16, W1, C.FG_MUTED); text(t('Cài đặt nguồn', 'Power Settings'), AX + 52, ay + 193, {a: C.FG_MUTED});
     icon('arrow-up-right-from-square', AX + AW - 40, ay + 194, 16, W1, C.FG_SUBTLE);
-    note('hàng 36 bo 18, cách 4; chọn xong vẫn ở danh sách, ‹ về Home', AX, ay + AH + 8);
+    note(t('hàng 36 bo 18, cách 4; chọn xong vẫn ở danh sách, ‹ về Home', 'rows 36, radius 18, gap 4; after a choice it stays on the list, ‹ back to Home'), AX, ay + AH + 8);
 } else if (MODE === 'flash') {
-    const F = [['battery-charging', 'Đang sạc', '72%'], ['battery-charging', '18 W · sạc chậm', '40%'],
-        ['battery', 'Dùng pin', '64%'], ['battery-full', 'Đã sạc đầy', '100%'], ['battery-low', 'Pin yếu', '18%']];
+    const F = [['battery-charging', t('Đang sạc', 'Charging'), '72%'], ['battery-charging', t('18 W · sạc chậm', '18 W · slow charger'), '40%'],
+        ['battery', t('Dùng pin', 'On battery'), '64%'], ['battery-full', t('Đã sạc đầy', 'Fully charged'), '100%'], ['battery-low', t('Pin yếu', 'Low battery'), '18%']];
     let x = 16;
     F.forEach(([ic, t, p]) => { const w = pill(x, 16, ic, t, p); text(`${Math.round(w)}`, x + w / 2, 52, {sz: 8, a: .55, centre: true}); x += w + 16; });
     x = 16;
     ['saver', 'balanced', 'perf'].forEach(m => { const w = pill(x, 72, MODES[m], NAMES[m]); x += w + 16; });
-    note('pin: 3 s khi cắm, rút, đầy; sạc chậm thêm một lần khi tốc độ đến; pin yếu ở lại tới khi cắm sạc · chế độ: 3 s khi đổi, cả khi máy tự đổi', 16, 116);
+    note(t('pin: 3 s khi cắm, rút, đầy; sạc chậm thêm một lần khi tốc độ đến; pin yếu ở lại tới khi cắm sạc · chế độ: 3 s khi đổi, cả khi máy tự đổi', 'battery: 3 s on plug, unplug, full; slow charging once more when the rate arrives; low battery stays until plugged in · mode: 3 s on a change, also when the system changes it'), 16, 116);
 } else if (MODE === 'compact') {
     const CX = 16, cy = 16, kw = 404;
     fill([0, 0, 0, 1], CX, cy, kw, 104, 28);
     fill([1, 1, 1, C.FILL2], CX + 14, cy + 8, 40, 40, 20); draw(MODES.balanced, CX + 26, cy + 20, 16);
-    text('Chế độ năng lượng', CX + 66, cy + 9, {wt: 600}); text('Cân bằng · pin 82%, đang sạc', CX + 66, cy + 29, {sz: SUB, a: C.FG_MUTED});
+    text(t('Chế độ năng lượng', 'Power Mode'), CX + 66, cy + 9, {wt: 600}); text(t('Cân bằng · pin 82%, đang sạc', 'Balanced · battery 82%, charging'), CX + 66, cy + 29, {sz: SUB, a: C.FG_MUTED});
     const bwd = (kw - 24 - 16) / 3;
     ['saver', 'balanced', 'perf'].forEach((m, i) => {
         const bx = CX + 12 + i * (bwd + 8), on = m === 'balanced';
@@ -115,11 +115,11 @@ if (MODE === 'tile') {
         draw(MODES[m], bx + 14, cy + 68, 16, on ? 1 : C.FG_MUTED);
         text(NAMES[m], bx + 36, cy + 68, {sz: SUB, wt: on ? 600 : 400, a: on ? 1 : C.FG_MUTED});
     });
-    note('104 = 56 + 4 + 32 + 12: phần đầu 56, hàng nút 32 cách mép 12 (như card)', CX, cy + 112);
-    note('nút đang chọn fill-3, chữ 600; các nút khác fill-2, fg-muted', CX, cy + 126);
-    note('đổi chế độ → compact này tự mở (alert, giữ 5 s lúc bạn có mặt); bấm một nút: đổi ngay', CX, cy + 140);
+    note(t('104 = 56 + 4 + 32 + 12: phần đầu 56, hàng nút 32 cách mép 12 (như card)', '104 = 56 + 4 + 32 + 12: head 56, button row 32, 12 from the edge (as card)'), CX, cy + 112);
+    note(t('nút đang chọn fill-3, chữ 600; các nút khác fill-2, fg-muted', 'the chosen button fill-3, text 600; the other buttons fill-2, fg-muted'), CX, cy + 126);
+    note(t('đổi chế độ → compact này tự mở (alert, giữ 5 s lúc bạn có mặt); bấm một nút: đổi ngay', 'mode change → this compact opens by itself (alert, held 5 s while you are there); click a button: changes at once'), CX, cy + 140);
     // the mode flash it comes from
-    pill(CX + kw + 40, cy + 8, MODES.balanced, 'Cân bằng');
+    pill(CX + kw + 40, cy + 8, MODES.balanced, t('Cân bằng', 'Balanced'));
     note('flash 3 s', CX + kw + 40, cy + 46);
 } else if (MODE === 'icons') {
     Object.entries(MODES).forEach(([m, n], i) => {
@@ -129,6 +129,6 @@ if (MODE === 'tile') {
     });
     let x = 480;
     Object.entries(MODES).forEach(([m, n]) => { x += pill(x, 28, n, NAMES[m]) + 16; });
-    note('lá / cân / đồng hồ như GNOME: cân của Gravity (scales-balanced); lá tự vẽ; đồng hồ là speedometer của Gravity, kim hết cỡ', 16, 84);
+    note(t('lá / cân / đồng hồ như GNOME: cân của Gravity (scales-balanced); lá tự vẽ; đồng hồ là speedometer của Gravity, kim hết cỡ', 'leaf / scales / gauge as in GNOME: Gravity\'s scales (scales-balanced); the leaf our own; the gauge Gravity\'s speedometer, needle at full'), 16, 84);
 }
 surf.writeToPNG(out);

@@ -11,7 +11,7 @@ import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
 import GLib from 'gi://GLib';
-import {SCALE as SC, C, COVER, EQ, drawEq, icon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, COVER, EQ, drawEq, icon, SAMPLE, t as tr} from '../../render/lib.js';
 const [out, MODE] = ARGV;
 // stills at 3× (lib.js SCALE); the clips at 2×, frames for scripts/apng.js
 const S = MODE.startsWith('clip-') ? 2 : SC;
@@ -90,15 +90,15 @@ function title(t, x, y, maxW = 0) {
 
 // ---- curves --------------------------------------------------------------------------------------
 function curves() {
-    const W = 980, H = 420, surf = canvas(W, H);
+    const W = tr(980, 1010), H = 420, surf = canvas(W, H);
     const gx = 60, gy = 48, gw = 600, gh = 300, T = 0.9, lo = -0.08, hi = 1.16;
     const X = t => gx + t / T * gw, Y = v => gy + (hi - v) / (hi - lo) * gh;
-    title('Năm lò xo của Buoy (tiến trình theo thời gian), cạnh EASE_OUT_BACK 460 ms đang dùng', 24, 14);
+    title(tr('Năm lò xo của Buoy (tiến trình theo thời gian), cạnh EASE_OUT_BACK 460 ms đang dùng', "Buoy's five springs (progress over time), beside EASE_OUT_BACK 460 ms in use now"), 24, 14);
     fill([1, 1, 1, .04], gx, gy, gw, gh, 6);
     cr.setLineWidth(1);
     for (const v of [0, .5, 1]) {
         cr.setSourceRGBA(1, 1, 1, v === 1 ? .35 : .12); cr.moveTo(gx, Y(v)); cr.lineTo(gx + gw, Y(v)); cr.stroke();
-        caption(v === 1 ? 'đích' : `${v * 100} %`, gx - 6, Y(v) - 6, {right: true});
+        caption(v === 1 ? tr('đích', 'target') : `${v * 100} %`, gx - 6, Y(v) - 6, {right: true});
     }
     for (let ms = 0; ms <= 900; ms += 100) {
         cr.setSourceRGBA(1, 1, 1, .08); cr.moveTo(X(ms / 1000), gy); cr.lineTo(X(ms / 1000), gy + gh); cr.stroke();
@@ -120,7 +120,7 @@ function curves() {
         plot(spring(SPRING[n]), rgb, a);
     // the legend: name, d, bounce, overshoot, when it settles
     const lx = gx + gw + 36;
-    title('Lò xo', lx, gy - 6);
+    title(tr('Lò xo', 'Springs'), lx, gy - 6);
     let ly = gy + 16;
     const settle = s => { const f = spring(s); let last = 0; for (let ms = 0; ms < 3000; ms++) if (Math.abs(1 - f(ms / 1000)) > 1 / 800) last = ms + 1; return last; };
     const peak = s => { const f = spring(s); let p = 0; for (let ms = 0; ms < 3000; ms++) p = Math.max(p, f(ms / 1000)); return p - 1; };
@@ -128,15 +128,18 @@ function curves() {
         const [rgb, a] = LINES[n], s = SPRING[n];
         cr.setSourceRGBA(...rgb, a); cr.setLineWidth(2); cr.moveTo(lx, ly + 7); cr.lineTo(lx + 20, ly + 7); cr.stroke();
         text(n, lx + 28, ly, {sz: 9.5, wt: 700});
-        caption(`d ${s.d * 1000} ms · bounce ${s.bounce} · vọt ${(peak(s) * 100).toFixed(1)} % · lắng ${settle(s)} ms`, lx + 28, ly + 15);
+        caption(tr(`d ${s.d * 1000} ms · bounce ${s.bounce} · vọt ${(peak(s) * 100).toFixed(1)} % · lắng ${settle(s)} ms`,
+            `d ${s.d * 1000} ms · bounce ${s.bounce} · overshoot ${(peak(s) * 100).toFixed(1)} % · settles ${settle(s)} ms`), lx + 28, ly + 15);
         ly += 40;
     }
     cr.setSourceRGBA(1, 1, 1, .35); cr.setDash([5, 4], 0); cr.moveTo(lx, ly + 7); cr.lineTo(lx + 20, ly + 7); cr.stroke(); cr.setDash([], 0);
     text('EASE_OUT_BACK', lx + 28, ly, {sz: 9.5, wt: 700, a: .7});
-    caption('460 ms · vọt 10 % · đang dùng', lx + 28, ly + 15);
-    ['Nở (open, move, snap) nảy nhẹ; thu và đổi cỡ (close, size) không nảy. d là lúc chuyển động trông đã xong;',
+    caption(tr('460 ms · vọt 10 % · đang dùng', '460 ms · overshoot 10 % · in use now'), lx + 28, ly + 15);
+    tr(['Nở (open, move, snap) nảy nhẹ; thu và đổi cỡ (close, size) không nảy. d là lúc chuyển động trông đã xong;',
         'lắng là khi còn cách đích dưới 0.5 px trên quãng 400 px. Vọt quá: expanded rộng 12 px, compact rộng 4 px.',
-    ].forEach((l, i) => caption(l, 24, gy + gh + 32 + i * 14));
+    ], ['Growing (open, move, snap) bounces a little; shrinking and resizing (close, size) do not. d is when the motion looks done;',
+        'settles is when it is under 0.5 px from the target over a 400 px travel. Overshoot: expanded 12 px wider, compact 4 px wider.',
+    ]).forEach((l, i) => caption(l, 24, gy + gh + 32 + i * 14));
     surf.writeToPNG(out);
 }
 
@@ -204,9 +207,11 @@ function morph(fx, fy, cw, from, to, x, ms, rest, travel = true) {
 function compact() {
     const CW = 420, W = 24 + 3 * CW + 2 * 12 + 24, H = 2 * (34 + 2 * 140) + 40, surf = canvas(W, H);
     const rows = [
-        {t: 'Rê chuột 300 ms → compact: nền nở bằng move (400 ms, bounce 0.2); leading, tên và equaliser đi tới chỗ mới cùng nền; đèn đi bằng fade-out; phụ đề và thanh lộ theo mép nền',
+        {t: tr('Rê chuột 300 ms → compact: nền nở bằng move (400 ms, bounce 0.2); leading, tên và equaliser đi tới chỗ mới cùng nền; đèn đi bằng fade-out; phụ đề và thanh lộ theo mép nền',
+            'Hover 300 ms → compact: the background grows on move (400 ms, bounce 0.2); leading, title and equaliser travel to their new place with it; the light leaves by fade-out; subtitle and bar are uncovered by the background\'s edge'),
             spring: SPRING.move, from: PILL, to: COMPACT, ms: [0, 60, 120, 200, 300, 450], rest: {from: pillRest, to: compactRest}},
-        {t: 'Rời chuột (sau 200 ms ân hạn) → pill: close (360 ms, không nảy); leading, tên và equaliser về chỗ cũ; phụ đề và thanh đi bằng fade-out; đèn hiện lại từ nửa đường',
+        {t: tr('Rời chuột (sau 200 ms ân hạn) → pill: close (360 ms, không nảy); leading, tên và equaliser về chỗ cũ; phụ đề và thanh đi bằng fade-out; đèn hiện lại từ nửa đường',
+            'Pointer leaves (after 200 ms grace) → pill: close (360 ms, no bounce); leading, title and equaliser go back; subtitle and bar leave by fade-out; the light comes back from halfway'),
             spring: SPRING.close, from: COMPACT, to: PILL, ms: [0, 50, 100, 160, 240, 400], rest: {from: compactRest, to: pillRest}},
     ];
     rows.forEach((r, ri) => {
@@ -242,9 +247,11 @@ function expanded() {
     const CW = 760, W = 24 + 3 * CW + 2 * 12 + 24, H = 2 * (40 + 2 * 330) + 40, surf = canvas(W, H);
     const SIDE = 131, GAP = 8;
     const rows = [
-        {t: 'Bấm → expanded: nền nở bằng open (500 ms, bounce 0.25); ảnh, tên và equaliser của pill đi tới thẻ chính của Home; thanh tab và phần còn lại lộ theo mép nền; hai pill phụ trượt vào giữa bằng move và mờ ở nửa sau',
+        {t: tr('Bấm → expanded: nền nở bằng open (500 ms, bounce 0.25); ảnh, tên và equaliser của pill đi tới thẻ chính của Home; thanh tab và phần còn lại lộ theo mép nền; hai pill phụ trượt vào giữa bằng move và mờ ở nửa sau',
+            "Click → expanded: the background grows on open (500 ms, bounce 0.25); the pill's art, title and equaliser travel to Home's main card; the tab bar and the rest are uncovered by the background's edge; the two side pills slide to the centre on move and fade in their second half"),
             spring: SPRING.open, from: PILL, to: EXP, ms: [0, 80, 160, 260, 400, 640], open: true, rest: {from: pillRest, to: REST.expanded}},
-        {t: 'Thu về: nền thu bằng close (360 ms, không nảy); ảnh, tên và equaliser về pill; phần còn lại đi bằng fade-out; đèn hiện lại; pill phụ trượt ra và hiện lại',
+        {t: tr('Thu về: nền thu bằng close (360 ms, không nảy); ảnh, tên và equaliser về pill; phần còn lại đi bằng fade-out; đèn hiện lại; pill phụ trượt ra và hiện lại',
+            'Back: the background shrinks on close (360 ms, no bounce); art, title and equaliser go back to the pill; the rest leaves by fade-out; the light comes back; the side pills slide out and reappear'),
             spring: SPRING.close, from: EXP, to: PILL, ms: [0, 60, 120, 200, 300, 480], open: false, rest: {from: REST.expanded, to: pillRest}},
     ];
     rows.forEach((r, ri) => {
@@ -275,7 +282,7 @@ function expanded() {
 // ---- tabs ----------------------------------------------------------------------------------------
 // The strip as design/tabs: 32 high, the chosen tab fill-3 24 high at 4 with icon + name, the
 // others icon only in cells of 36.
-const TABS = [['house', 'Home'], ['music-note', 'Media'], ['bell', 'Thông báo'], ['arrow-down-to-line', 'Tải về'], ['calendar', 'Lịch']];
+const TABS = [['house', 'Home'], ['music-note', 'Media'], ['bell', tr('Thông báo', 'Notifications')], ['arrow-down-to-line', tr('Tải về', 'Transfers')], ['calendar', tr('Lịch', 'Calendar')]];
 function stripLayout(chosen) { // x and width of each tab when `chosen` shows its name
     let x = 4;
     return TABS.map(([, name], i) => {
@@ -318,7 +325,8 @@ function body(x, y, w, h, kind, a, dx) {
 function tabs() {
     const CW = 360, W = 24 + 5 * CW + 4 * 12 + 24, H = 520, surf = canvas(W, H);
     const f = spring(SPRING.snap);
-    title('Đổi tab Home → Media: vạch chọn trượt và đổi rộng bằng snap (240 ms); tên đổi bằng fade; thân cũ lùi 12 px sang trái, thân mới tới từ 12 px bên phải', 24, 16);
+    title(tr('Đổi tab Home → Media: vạch chọn trượt và đổi rộng bằng snap (240 ms); tên đổi bằng fade; thân cũ lùi 12 px sang trái, thân mới tới từ 12 px bên phải',
+        'Tab switch Home → Media: the selection slides and changes width on snap (240 ms); the names swap by fade; the old body moves 12 px left, the new one comes from 12 px right'), 24, 16);
     [0, 40, 80, 140, 240].forEach((ms, i) => {
         const p = f(ms / 1000), fx = 24 + i * (CW + 12), fy = 50;
         shape(fx, fy, CW, 180);
@@ -329,7 +337,8 @@ function tabs() {
         cr.restore();
         caption(`${ms} ms · ${Math.round(p * 100)} %`, fx + 4, fy + 188);
     });
-    title('Danh sách tại chỗ (Bị nhỡ, +K): tới từ 24 px bên phải bằng move và fade-in; ‹ đi ngược lại', 24, 270);
+    title(tr('Danh sách tại chỗ (Bị nhỡ, +K): tới từ 24 px bên phải bằng move và fade-in; ‹ đi ngược lại',
+        'A list in place (Missed, +K): comes from 24 px right on move and fade-in; ‹ goes the other way'), 24, 270);
     const g = spring(SPRING.move);
     [0, 60, 120, 200, 400].forEach((ms, i) => {
         const p = g(ms / 1000), fx = 24 + i * (CW + 12), fy = 304;
@@ -340,10 +349,11 @@ function tabs() {
         cr.save(); cr.translate(dx, 0);
         if (a > 0) {
             text('‹', fx + 16, fy + 14, {sz: 13, wt: 700, a});
-            text('Bị nhỡ · 7', fx + 32, fy + 16, {sz: 10, wt: 700, a});
+            text(tr('Bị nhỡ · 7', 'Missed · 7'), fx + 32, fy + 16, {sz: 10, wt: 700, a});
             for (let k = 0; k < 4; k++) {
                 fill([...C.AMBER, .9 * a], fx + 16, fy + 50 + k * 32, 16, 16, 8);
-                text(['Thông báo · 3', 'Tải xong: report.pdf', 'Hẹn giờ: Trà', 'Claude Code xong'][k], fx + 44, fy + 50 + k * 32, {sz: 9.5, wt: 600, a});
+                text(tr(['Thông báo · 3', 'Tải xong: report.pdf', 'Hẹn giờ: Trà', 'Claude Code xong'],
+                    ['Notifications · 3', 'Downloaded: report.pdf', "Time's up · Trà", 'Claude Code: Done'])[k], fx + 44, fy + 50 + k * 32, {sz: 9.5, wt: 600, a});
             }
         }
         cr.restore(); cr.restore();
@@ -382,8 +392,8 @@ function clipCompact() {
     const grow = spring(SPRING.move), shrink = spring(SPRING.close);
     frames(2.4, t => {
         const surf = canvas(W, H), ph = phase(t, .3, 1.4);
-        [[true, 'Đề xuất: lò xo move / close, leading và tên đi tới chỗ mới'],
-            [false, 'Hiện nay: EASE_OUT_BACK 460 ms, nội dung mờ đi rồi lộ ra']].forEach(([mine, label], ri) => {
+        [[true, tr('Đề xuất: lò xo move / close, leading và tên đi tới chỗ mới', 'Proposed: move / close springs, leading and title travel to their new place')],
+            [false, tr('Hiện nay: EASE_OUT_BACK 460 ms, nội dung mờ đi rồi lộ ra', 'Now: EASE_OUT_BACK 460 ms, content fades out then is uncovered')]].forEach(([mine, label], ri) => {
             const y0 = 12 + ri * ROW, fy = y0 + 28;
             rowLabel(label, y0);
             const rest = {from: pillRest, to: compactRest}, back = {from: compactRest, to: pillRest};
@@ -402,8 +412,8 @@ function clipExpanded() {
     const grow = spring(SPRING.open), shrink = spring(SPRING.close), slide = spring(SPRING.move);
     frames(2.8, t => {
         const surf = canvas(W, H), ph = phase(t, .3, 1.7);
-        [[true, 'Đề xuất: lò xo open / close, ảnh và tên đi tới thẻ chính của Home'],
-            [false, 'Hiện nay: EASE_OUT_BACK 460 ms, nội dung mờ đi rồi lộ ra']].forEach(([mine, label], ri) => {
+        [[true, tr('Đề xuất: lò xo open / close, ảnh và tên đi tới thẻ chính của Home', "Proposed: open / close springs, art and title travel to Home's main card")],
+            [false, tr('Hiện nay: EASE_OUT_BACK 460 ms, nội dung mờ đi rồi lộ ra', 'Now: EASE_OUT_BACK 460 ms, content fades out then is uncovered')]].forEach(([mine, label], ri) => {
             const y0 = 12 + ri * ROW, fy = y0 + 28, cx = 24 + CW / 2;
             rowLabel(label, y0);
             // the side pills merge into the centre while it is open
@@ -435,7 +445,7 @@ function clipTabs() {
         // Home → Media at 0.3 s, Media → Home at 1.3 s
         const go = t < 1.3 ? {from: 0, to: 1, ms: (t - .3) * 1000} : {from: 1, to: 0, ms: (t - 1.3) * 1000};
         const kinds = ['home', 'media'];
-        [[true, 'Đề xuất: vạch chọn trượt (snap), thân dời theo hướng'], [false, 'Hiện nay: đổi tức thì']].forEach(([mine, label], ri) => {
+        [[true, tr('Đề xuất: vạch chọn trượt (snap), thân dời theo hướng', 'Proposed: the selection slides (snap), the body shifts by direction')], [false, tr('Hiện nay: đổi tức thì', 'Now: switches at once')]].forEach(([mine, label], ri) => {
             const y0 = 12 + ri * ROW, fx = 24, fy = y0 + 28;
             rowLabel(label, y0);
             shape(fx, fy, CW, 180);

@@ -6,7 +6,7 @@ import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x, LAMPS} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, LAMPS, t} from '../../render/lib.js';
 import {POSES, PALETTE, frameAt, cells, lampColour} from '../../../../src/buoy@murilegus/lib/kit/model/mascot.js';
 const out = ARGV[0];
 const ICONS = `${import.meta.url.replace('file://', '').replace(/docs\/design\/.*/, '')}src/buoy@murilegus/icons/color`;
@@ -75,24 +75,24 @@ function bu(pose, x, y, cell, alpha = 1, lamp = LAMP) {
 
 // 1. icons
 panel(16, 16, 748, 150);
-head('Icon buổi và thời tiết (bảng A)', 32, 30);
+head(t('Icon buổi và thời tiết (bảng A)', 'Daypart and weather icons (palette A)'), 32, 30);
 ['daypart-dawn', 'daypart-morning', 'daypart-noon', 'daypart-evening', 'daypart-night', 'weather-few-clouds',
     'weather-overcast', 'weather-showers', 'weather-snow', 'weather-fog', 'weather-storm'].forEach((n, i) => icon(n, 32 + i * 44, 52, 40));
-[['mặt trời', '#FFD23F'], ['cam đào', '#FFB889'], ['xanh ngọc', '#5CD6E6'], ['mây', '#CFE6FB'], ['mây sau', '#7FA8D0'],
-    ['tuyết', '#BFF2FA'], ['sương', '#9DBBD6'], ['chân trời', '#7A838D']].forEach(([n, h], i) => swatch(36 + i * 62, 108, h, n));
+[[t('mặt trời', 'sun'), '#FFD23F'], [t('cam đào', 'peach'), '#FFB889'], [t('xanh ngọc', 'turquoise'), '#5CD6E6'], [t('mây', 'cloud'), '#CFE6FB'],
+    [t('mây sau', 'back cloud'), '#7FA8D0'], [t('tuyết', 'snow'), '#BFF2FA'], [t('sương', 'fog'), '#9DBBD6'], [t('chân trời', 'horizon'), '#7A838D']].forEach(([n, h], i) => swatch(36 + i * 62, 108, h, n));
 
 // 2. Bu
 panel(16, 182, 748, 278);
-head('Bu: thân và đèn theo dáng', 32, 196);
+head(t('Bu: thân và đèn theo dáng', 'Bu: body and light per pose'), 32, 196);
 bu('idle', 36, 222, 5);
-[['thân', PALETTE.B], ['sọc', PALETTE.S], ['chấm', PALETTE.D], ['"z"', PALETTE.Z], ['nước', PALETTE.W]]
+[[t('thân', 'body'), PALETTE.B], [t('sọc', 'stripe'), PALETTE.S], [t('chấm', 'dot'), PALETTE.D], ['"z"', PALETTE.Z], [t('nước', 'water'), PALETTE.W]]
     .forEach(([n, h], i) => swatch(104 + i * 52, 230, h, n));
-text('Mờ khi stale:', 380, 224, {sz: 8, a: .7});
-[[1, 'thường'], [.4, '40 % (nay)'], [.5, '50 % (mới)']].forEach(([a, n], i) => {
+text(t('Mờ khi stale:', 'Dimmed when stale:'), 380, 224, {sz: 8, a: .7});
+[[1, t('thường', 'normal')], [.4, t('40 % (nay)', '40 % (now)')], [.5, t('50 % (mới)', '50 % (new)')]].forEach(([a, n], i) => {
     bu('stale', 384 + i * 80, 240, 4, a); text(n, 404 + i * 80, 284, {sz: 7, a: .6, centre: true});
 });
 const PS = ['idle', 'done', 'busy', 'wave', 'think', 'compact', 'error', 'sleep', 'missed', 'ask'];
-[['nay', OLD, 300], ['mới', LAMP, 388]].forEach(([row, lamp, y]) => {
+[[t('nay', 'now'), OLD, 300], [t('mới', 'new'), LAMP, 388]].forEach(([row, lamp, y]) => {
     text(row, 32, y - 12, {sz: 7.5, wt: 700, a: .7});
     PS.forEach((p, i) => {
         const x = 36 + i * 72;
@@ -104,7 +104,7 @@ const PS = ['idle', 'done', 'busy', 'wave', 'think', 'compact', 'error', 'sleep'
 
 // 3. close to a state colour
 panel(16, 476, 748, 212);
-head('Gần màu trạng thái', 32, 490);
+head(t('Gần màu trạng thái', 'Close to a state colour'), 32, 490);
 function pill(x, y, iconName, label, left, right) {
     font(11, 600); L.set_text(label, -1); fit(L, cr, width1x(L.get_font_description(), label));
     const tw = Math.round(width1x(L.get_font_description(), label)), th = L.get_pixel_extents()[1].height;
@@ -119,14 +119,14 @@ function pill(x, y, iconName, label, left, right) {
     cr.setSourceRGB(1, 1, 1); cr.moveTo(zx + 30, y + Math.round((32 - th) / 2)); PangoCairo.show_layout(cr, L);
 }
 pill(32, 516, 'daypart-dawn', '5:48 AM', null, STATE.mic);
-text('cam đào cạnh chấm mic', 32, 554, {sz: 7.5, a: .6});
+text(t('cam đào cạnh chấm mic', 'peach next to the mic dot'), 32, 554, {sz: 7.5, a: .6});
 pill(32, 584, 'daypart-noon', '12:05 PM', STATE.missed, null);
-text('mặt trời cạnh đèn amber', 32, 622, {sz: 7.5, a: .6});
-[['cam đào', '#FFB889', 'mic', STATE.mic], ['mặt trời', '#FFD23F', 'amber', STATE.missed],
+text(t('mặt trời cạnh đèn amber', 'sun next to the amber light'), 32, 622, {sz: 7.5, a: .6});
+[[t('cam đào', 'peach'), '#FFB889', 'mic', STATE.mic], [t('mặt trời', 'sun'), '#FFD23F', 'amber', STATE.missed],
     ['wave', NEW.wave, 'amber', STATE.missed], ['done', NEW.done, 'cam', STATE.cam]].forEach(([a, ha, b, hb], r) => {
     const y = 514 + r * 38;
     text(`${a} – ${b}`, 260, y + 6, {sz: 8, a: .8});
-    [['thường', x => x], ['mù lục', deut]].forEach(([n, f], k) => {
+    [[t('thường', 'normal'), x => x], [t('mù lục', 'deuteranopia'), deut]].forEach(([n, f], k) => {
         const x = 380 + k * 190, ca = f(hex(ha)), cb = f(hex(hb));
         cr.setSourceRGB(...ca); cr.arc(x + 10, y + 11, 10, 0, 2 * Math.PI); cr.fill();
         cr.setSourceRGB(...cb); cr.arc(x + 34, y + 11, 10, 0, 2 * Math.PI); cr.fill();
@@ -135,6 +135,6 @@ text('mặt trời cạnh đèn amber', 32, 622, {sz: 7.5, a: .6});
         if (r === 0) text(n, x + 22, 498, {sz: 8, wt: 600, a: .7, centre: true});
     });
 });
-text('ΔE dưới 20: gần, dễ nhầm ở cỡ nhỏ.', 380, 666, {sz: 7, a: .5});
+text(t('ΔE dưới 20: gần, dễ nhầm ở cỡ nhỏ.', 'ΔE under 20: close, easy to confuse at small sizes.'), 380, 666, {sz: 7, a: .5});
 
 surf.writeToPNG(out);

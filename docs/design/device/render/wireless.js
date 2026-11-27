@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t} from '../../render/lib.js';
 
 const [out] = ARGV;
 const W1 = C.WHITE, SUB = 9.35, PW = 560, PH = 280;
@@ -87,17 +87,17 @@ function row(items, y) {
     return x;
 }
 
-text('Âm lượng: thanh và số, như HUD', 16, 12, {sz: 12, wt: 600});
-row([['headphones', 'Logi USB Headset', lv(.64, '64%')], ['headphones', 'Tai nghe', lv(.64, '64%', true)],
-    ['headphones', 'Đã rút tai nghe', lv(.62, '62%')], ['volume', 'Loa', lv(.62, '62%')]], 36);
-note('flash cắm, rút tai nghe (module plugged): âm lượng như phím âm lượng, thanh 40 rồi số; tắt tiếng: cả hai mờ (fg-subtle)', 16, 74);
+text(t('Âm lượng: thanh và số, như HUD', 'Volume: a bar and a number, as the HUD'), 16, 12, {sz: 12, wt: 600});
+row([['headphones', 'Logi USB Headset', lv(.64, '64%')], ['headphones', t('Tai nghe', 'Headphones'), lv(.64, '64%', true)],
+    ['headphones', t('Đã rút tai nghe', 'Unplugged Headphones'), lv(.62, '62%')], ['volume', t('Loa', 'Speakers'), lv(.62, '62%')]], 36);
+note(t('flash cắm, rút tai nghe (module plugged): âm lượng như phím âm lượng, thanh 40 rồi số; tắt tiếng: cả hai mờ (fg-subtle)', 'headphones plugged, unplugged flash (module plugged): volume as the volume keys, a 40 bar then the number; muted: both dim (fg-subtle)'), 16, 74);
 
-text('Pin: hình pin theo mức, rồi số', 16, 100, {sz: 12, wt: 600});
+text(t('Pin: hình pin theo mức, rồi số', 'Battery: a battery drawn to its level, then the number'), 16, 100, {sz: 12, wt: 600});
 row([['headphones', 'WH-1000XM4', bt(.8, '80%')], ['mouse', 'MX Master 3S', bt(.15, '15%')], ['keyboard', 'K380', bt(.5)],
-    ['smartphone', 'Redmi Note 14', bt(.8, '80%')], ['headphones', 'Đã ngắt WH-1000XM4']], 124);
-note('flash nối Bluetooth, 3 s: icon theo loại, tên, pin (hình pin 16 vẽ tới mức, rồi số); UPower chỉ báo mức thô (K380): chỉ hình pin', 16, 162);
-note('điện thoại gửi pin theo bậc 20 % (HFP battchg 0–5): số ghi như nhận được; không gửi thì chỉ tên (pin đúng đến với GSConnect); ngắt: "Đã ngắt …", không trailing', 16, 176);
-note('tai nghe Bluetooth: chỉ flash này (pin), module plugged không flash thêm; lúc bật Buoy, lúc tắt Bluetooth: không flash (HUD đã báo)', 16, 190);
+    ['smartphone', 'Redmi Note 14', bt(.8, '80%')], ['headphones', t('Đã ngắt WH-1000XM4', 'Disconnected WH-1000XM4')]], 124);
+note(t('flash nối Bluetooth, 3 s: icon theo loại, tên, pin (hình pin 16 vẽ tới mức, rồi số); UPower chỉ báo mức thô (K380): chỉ hình pin', 'Bluetooth connected flash, 3 s: icon by kind, name, battery (a 16 battery drawn to its level, then the number); UPower gives only a coarse level (K380): the battery alone'), 16, 162);
+note(t('điện thoại gửi pin theo bậc 20 % (HFP battchg 0–5): số ghi như nhận được; không gửi thì chỉ tên (pin đúng đến với GSConnect); ngắt: "Đã ngắt …", không trailing', 'a phone sends battery in 20 % steps (HFP battchg 0–5): the number as received; none sent: name only (the exact battery comes with GSConnect); disconnected: "Disconnected …", no trailing'), 16, 176);
+note(t('tai nghe Bluetooth: chỉ flash này (pin), module plugged không flash thêm; lúc bật Buoy, lúc tắt Bluetooth: không flash (HUD đã báo)', 'Bluetooth headphones: this flash only (battery), module plugged adds none; when Buoy starts, when Bluetooth turns off: no flash (the HUD has said it)'), 16, 190);
 
 // --- the Device tab ------------------------------------------------------------------------------
 function panel(x, y) {
@@ -105,7 +105,7 @@ function panel(x, y) {
     fill(C.FILL1, x + 12, y + 12, 268, 32, 16);
     ['house', 'music-note', 'bell', 'calendar'].forEach((n, i) => icon(n, x + 24 + i * 36, y + 20, 16, C.FG_MUTED));
     fill(C.FILL3, x + 160, y + 14, 112, 28, 14);
-    icon('display', x + 170, y + 20, 16); text('Thiết bị', x + 192, y + 19, {sz: SUB, wt: 600});
+    icon('display', x + 170, y + 20, 16); text(t('Thiết bị', 'Devices'), x + 192, y + 19, {sz: SUB, wt: 600});
     fill(C.FILL1, x + PW - 44, y + 12, 32, 32, 16); icon('gear', x + PW - 36, y + 20, 16, C.FG_MUTED);
 }
 function columns(x, y, groups) {
@@ -128,32 +128,32 @@ function columns(x, y, groups) {
 }
 const lvs = (v, label) => ({w: levelW(label, 24), draw: (x, cy) => level(x, cy, v, label, {bw: 24})});
 const ty = 236;
-text('Tab Thiết bị: cột Không dây', 16, ty - 24, {sz: 12, wt: 600});
+text(t('Tab Thiết bị: cột Không dây', 'Devices tab: the Wireless column'), 16, ty - 24, {sz: 12, wt: 600});
 columns(16, ty, [
-    {title: 'Máy này', rows: [['battery', 'Pin · dùng 11 W', '76%'], ['scales-balanced', 'Chế độ năng lượng', 'Cân bằng']]},
-    {title: 'Không dây', rows: [['mouse', 'MX Master 3S', bt(.15, '15%')], ['headphones', 'WH-1000XM4 · đang phát', bt(.8, '80%')], ['smartphone', 'Pixel 8', null]]},
-    {title: 'Đang cắm', rows: [['display', 'ViewSonic 27″', 'Nối'], ['headphones', 'Logi USB Headset', lvs(.64, '64%')]]},
+    {title: t('Máy này', 'This Computer'), rows: [['battery', t('Pin · dùng 11 W', 'Battery · using 11 W'), '76%'], ['scales-balanced', t('Chế độ năng lượng', 'Power Mode'), t('Cân bằng', 'Balanced')]]},
+    {title: t('Không dây', 'Wireless'), rows: [['mouse', 'MX Master 3S', bt(.15, '15%')], ['headphones', t('WH-1000XM4 · đang phát', 'WH-1000XM4 · Playing'), bt(.8, '80%')], ['smartphone', 'Pixel 8', null]]},
+    {title: t('Đang cắm', 'Plugged In'), rows: [['display', 'ViewSonic 27″', t('Nối', 'Join')], ['headphones', 'Logi USB Headset', lvs(.64, '64%')]]},
 ]);
 
 // a Bluetooth device's page, in place of the columns
 const px = 16 + PW + 48;
-text('Bấm một thiết bị Bluetooth', px, ty - 24, {sz: 12, wt: 600});
+text(t('Bấm một thiết bị Bluetooth', 'Click a Bluetooth device'), px, ty - 24, {sz: 12, wt: 600});
 panel(px, ty);
 const AX = px + 12, AW = PW - 24;
 fill(C.FILL2, AX, ty + 56, 32, 32, 16); icon('chevron-left', AX + 8, ty + 64);
 text('WH-1000XM4', AX + 42, ty + 63, {wt: 600});
 battery(AX + AW - 4 - batteryW('80%'), ty + 72, .8, '80%');
 fill(C.FILL1, AX, ty + 96, AW, 36, 18);
-icon('headphones', AX + 14, ty + 106, 16); text('Tai nghe', AX + 40, ty + 105);
+icon('headphones', AX + 14, ty + 106, 16); text(t('Tai nghe', 'Headphones'), AX + 40, ty + 105);
 text('88:92:CC:70:9C:22', AX + AW - 14, ty + 105, {a: C.FG_MUTED, right: true});
 fill(C.FILL1, AX, ty + 136, AW, 36, 18);
-icon('bluetooth-slash', AX + 14, ty + 146, 16); text('Ngắt kết nối', AX + 40, ty + 145);
+icon('bluetooth-slash', AX + 14, ty + 146, 16); text(t('Ngắt kết nối', 'Disconnect'), AX + 40, ty + 145);
 fill(C.FILL1, AX, ty + 180, AW, 36, 18);
-icon('gear', AX + 14, ty + 190, 16, C.FG_MUTED); text('Cài đặt Bluetooth', AX + 40, ty + 189, {a: C.FG_MUTED});
+icon('gear', AX + 14, ty + 190, 16, C.FG_MUTED); text(t('Cài đặt Bluetooth', 'Bluetooth Settings'), AX + 40, ty + 189, {a: C.FG_MUTED});
 icon('arrow-up-right-from-square', AX + AW - 30, ty + 190, 16, C.FG_SUBTLE);
 
 const ny = ty + PH + 12;
-note('Không dây: thiết bị Bluetooth đang nối (của Quick Settings) và chuột, bàn phím 2.4 GHz có báo pin (UPower); pin yếu (≤ 20 %) lên trước.', 16, ny);
-note('Giá trị: pin là hình pin + số; âm lượng (tai nghe có dây, Đang cắm) là thanh 24 + số. Ô Pin của máy giữ số: icon của nó đã là pin. Âm thanh đang ra thiết bị: "· đang phát".', 16, ny + 14);
-note('Bấm thiết bị Bluetooth: trang có pin, loại và địa chỉ, Ngắt kết nối (như danh sách của Quick Settings), Cài đặt Bluetooth. Bấm thiết bị 2.4 GHz: Cài đặt → Nguồn.', 16, ny + 28);
+note(t('Không dây: thiết bị Bluetooth đang nối (của Quick Settings) và chuột, bàn phím 2.4 GHz có báo pin (UPower); pin yếu (≤ 20 %) lên trước.', 'Wireless: connected Bluetooth devices (Quick Settings\') and 2.4 GHz mice, keyboards that report a battery (UPower); low battery (≤ 20 %) first.'), 16, ny);
+note(t('Giá trị: pin là hình pin + số; âm lượng (tai nghe có dây, Đang cắm) là thanh 24 + số. Ô Pin của máy giữ số: icon của nó đã là pin. Âm thanh đang ra thiết bị: "· đang phát".', 'Values: battery is a battery + number; volume (wired headphones, Plugged In) is a 24 bar + number. The computer\'s Battery tile keeps the number: its icon is a battery already. Sound going to the device: "· Playing".'), 16, ny + 14);
+note(t('Bấm thiết bị Bluetooth: trang có pin, loại và địa chỉ, Ngắt kết nối (như danh sách của Quick Settings), Cài đặt Bluetooth. Bấm thiết bị 2.4 GHz: Cài đặt → Nguồn.', 'Click a Bluetooth device: a page with battery, kind and address, Disconnect (as Quick Settings\' list), Bluetooth Settings. Click a 2.4 GHz device: Settings → Power.'), 16, ny + 28);
 surf.writeToPNG(out);

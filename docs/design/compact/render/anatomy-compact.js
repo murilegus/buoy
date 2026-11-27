@@ -9,26 +9,26 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {taskState, icon, C, GREY, drawBu, drawEq, EQ, SAMPLE} from '../../render/lib.js';
+import {taskState, icon, C, GREY, drawBu, drawEq, EQ, SAMPLE, t} from '../../render/lib.js';
 
 const SC = 3, W = 760, R = 28, PAD = 14, CW = 404, X = 40;   // the compact at 1920: min(28em, 0.72 × expanded)
 const W1 = C.WHITE, G = GREY.MUTED, G2 = GREY.MUTED, CY = [.4, .85, 1], RD = [1, .5, .5];   // CY, RD: guide marks
 const ART = [[.95, .55, .35], [.35, .25, .75]];
 const ALL = [
-    {group: 'media', kind: 'head', h: 56, title: 'Phần đầu 56: nhạc không có thanh tiến trình (radio, luồng trực tiếp)'},
-    {group: 'media', kind: 'media', h: 88, title: 'Nhạc 88: ảnh bìa 72'},
-    {group: 'rows', kind: 'rows', h: 120, title: 'Claude Code 120: 3 hàng (88 / 104 / 120 cho 1 / 2 / 3 hàng)'},
-    {group: 'ask', kind: 'card', ask: true, h: 120, lines: [], title: 'Ask 120: Claude Code hỏi, không có thân — chờ trả lời'},
-    {group: 'ask', kind: 'card', ask: true, h: 136, lines: ['pnpm verify && git push origin docs/m4-redesign-items'], title: 'Ask 136: Claude Code xin chạy lệnh, lệnh là thân 1 dòng — chờ trả lời'},
-    {group: 'ask', kind: 'card', ask: true, h: 152, lines: ['rm -rf dist && pnpm build && cp -r dist/* ~/.local/share/', 'gnome-shell/extensions/buoy@murilegus/'], buttons: ['Deny', 'Allow'], title: 'Ask 152: thân 2 dòng, 2 nút — chờ trả lời'},
-    {group: 'question', kind: 'question', w: 404, step: '1 / 3', buttons: ['Skip', 'Next'], sel: [0], title: 'Hỏi nhiều câu, câu 1 / 3, chọn một: 56 + 8 + 5 × 32 + 12 + 32 + 12 = 280 — Next sang câu sau',
-        q: 'Hôm nay bạn muốn mình giúp việc gì?', options: [['Viết code', 'Viết script, prototype hoặc tính năng mới'], ['Sửa lỗi dự án', 'Debug hoặc review code trong một dự án có sẵn (ví dụ buoy)'],
-            ['Tạo tài liệu', 'Soạn tài liệu, báo cáo, slide hoặc trang web'], ['Hỏi đáp', 'Chỉ cần giải thích hoặc trả lời một câu hỏi'], ['Other', '']]},
-    {group: 'question', kind: 'question', w: 404, step: '3 / 3', multi: true, buttons: ['Back', 'Submit'], sel: [0, 3], other: 'Vala cho phần đo chữ', title: 'Câu cuối 3 / 3, chọn nhiều, có Other đang gõ: 56 + 8 + 4 × 32 + 12 + 32 + 12 = 248 — Submit gửi cả ba câu',
-        q: 'Dùng những công cụ nào?', options: [['GJS', 'Chạy thẳng trong GNOME Shell, không cần build'], ['TypeScript', 'Thêm bước build, kiểu rõ ràng hơn'],
-            ['Unit test', 'pnpm test trước khi xong'], ['Other', '']]},
-    {group: 'card', kind: 'card', h: 136, lines: ['On my way, 5 min.'], title: 'Card 136: 1 dòng + nút'},
-    {group: 'card', kind: 'card', h: 152, lines: ['Pushed the pill shapes to the branch — can you', 'review the compact and the card before the sync?'], title: 'Card 152: 2 dòng + nút'},
+    {group: 'media', kind: 'head', h: 56, title: t('Phần đầu 56: nhạc không có thanh tiến trình (radio, luồng trực tiếp)', 'Head 56: music with no progress bar (radio, live stream)')},
+    {group: 'media', kind: 'media', h: 88, title: t('Nhạc 88: ảnh bìa 72', 'Music 88: cover art 72')},
+    {group: 'rows', kind: 'rows', h: 120, title: t('Claude Code 120: 3 hàng (88 / 104 / 120 cho 1 / 2 / 3 hàng)', 'Claude Code 120: 3 rows (88 / 104 / 120 for 1 / 2 / 3 rows)')},
+    {group: 'ask', kind: 'card', ask: true, h: 120, lines: [], title: t('Ask 120: Claude Code hỏi, không có thân — chờ trả lời', 'Ask 120: Claude Code asks, no body — waiting for an answer')},
+    {group: 'ask', kind: 'card', ask: true, h: 136, lines: ['pnpm verify && git push origin docs/m4-redesign-items'], title: t('Ask 136: Claude Code xin chạy lệnh, lệnh là thân 1 dòng — chờ trả lời', 'Ask 136: Claude Code asks to run a command, the command is a 1-line body — waiting for an answer')},
+    {group: 'ask', kind: 'card', ask: true, h: 152, lines: ['rm -rf dist && pnpm build && cp -r dist/* ~/.local/share/', 'gnome-shell/extensions/buoy@murilegus/'], buttons: ['Deny', 'Allow'], title: t('Ask 152: thân 2 dòng, 2 nút — chờ trả lời', 'Ask 152: 2-line body, 2 buttons — waiting for an answer')},
+    {group: 'question', kind: 'question', w: 404, step: '1 / 3', buttons: ['Skip', 'Next'], sel: [0], title: t('Hỏi nhiều câu, câu 1 / 3, chọn một: 56 + 8 + 5 × 32 + 12 + 32 + 12 = 280 — Next sang câu sau', 'Several questions, question 1 / 3, single choice: 56 + 8 + 5 × 32 + 12 + 32 + 12 = 280 — Next goes to the next question'),
+        q: t('Hôm nay bạn muốn mình giúp việc gì?', 'What would you like help with today?'), options: [[t('Viết code', 'Write code'), t('Viết script, prototype hoặc tính năng mới', 'Write a script, a prototype or a new feature')], [t('Sửa lỗi dự án', 'Fix a project'), t('Debug hoặc review code trong một dự án có sẵn (ví dụ buoy)', 'Debug or review code in an existing project (e.g. buoy)')],
+            [t('Tạo tài liệu', 'Write docs'), t('Soạn tài liệu, báo cáo, slide hoặc trang web', 'Draft documents, reports, slides or a web page')], [t('Hỏi đáp', 'Ask'), t('Chỉ cần giải thích hoặc trả lời một câu hỏi', 'Just explain something or answer a question')], ['Other', '']]},
+    {group: 'question', kind: 'question', w: 404, step: '3 / 3', multi: true, buttons: ['Back', 'Submit'], sel: [0, 3], other: 'Vala cho phần đo chữ', title: t('Câu cuối 3 / 3, chọn nhiều, có Other đang gõ: 56 + 8 + 4 × 32 + 12 + 32 + 12 = 248 — Submit gửi cả ba câu', 'Last question 3 / 3, multiple choice, Other being typed: 56 + 8 + 4 × 32 + 12 + 32 + 12 = 248 — Submit sends all three answers'),
+        q: t('Dùng những công cụ nào?', 'Which tools should we use?'), options: [['GJS', t('Chạy thẳng trong GNOME Shell, không cần build', 'Runs straight in GNOME Shell, no build needed')], ['TypeScript', t('Thêm bước build, kiểu rõ ràng hơn', 'Adds a build step, clearer types')],
+            ['Unit test', t('pnpm test trước khi xong', 'pnpm test before done')], ['Other', '']]},
+    {group: 'card', kind: 'card', h: 136, lines: ['On my way, 5 min.'], title: t('Card 136: 1 dòng + nút', 'Card 136: 1 line + buttons')},
+    {group: 'card', kind: 'card', h: 152, lines: ['Pushed the pill shapes to the branch — can you', 'review the compact and the card before the sync?'], title: t('Card 152: 2 dòng + nút', 'Card 152: 2 lines + buttons')},
 ];
 const ROWS = ALL.filter(r => r.group === ARGV[1]);
 if (!ROWS.length) throw new Error(`no group "${ARGV[1]}"`);
@@ -107,9 +107,9 @@ for (const it of ROWS) {
         dim(x, lx, y - 4, '14'); dim(lx, lx + 40, y - 4, '40'); dim(lx + 40, tx, y - 4, '12');
         dim(xr - 32, xr, y - 4, '32'); dim(xr, x + pw, y - 4, '14');
         vdim(x + pw + 6, y, y + 8, '8'); vdim(x + pw + 6, y + 8, y + 48, '40'); vdim(x + pw + 6, y + 48, y + 56, '8');
-        text('tiêu đề 1em', tx + 110, y + 11, 5.5, 600, CY); text('phụ đề 0.85em', tx + 140, y + 31, 5.5, 600, CY);
-        text('equaliser 22 × 14 giữa ô 32, tâm ở y = 28', xr - 150, y + h + 3, 5.5, 600, CY);
-        text('bo 28', x + 4, y + h + 3, 5.5, 600, CY);
+        text(t('tiêu đề 1em', 'title 1em'), tx + 110, y + 11, 5.5, 600, CY); text(t('phụ đề 0.85em', 'subtitle 0.85em'), tx + 140, y + 31, 5.5, 600, CY);
+        text(t('equaliser 22 × 14 giữa ô 32, tâm ở y = 28', 'equaliser 22 × 14 centred in the 32 slot, centre at y = 28'), xr - 150, y + h + 3, 5.5, 600, CY);
+        text(t('bo 28', 'radius 28'), x + 4, y + h + 3, 5.5, 600, CY);
     }
 
     if (it.kind === 'media') {
@@ -123,7 +123,7 @@ for (const it of ROWS) {
         text('1:24', tx, by + 11, 8.5, 400, W1, .5); right('-2:11', xr, by + 11, 8.5, .5);
         dim(x, ax, y - 4, '8'); dim(ax, ax + 72, y - 4, '72'); dim(ax + 72, tx, y - 4, '12'); dim(xr, x + pw, y - 4, '14');
         vdim(x + pw + 6, y, y + 8, '8'); vdim(x + pw + 6, y + 8, y + 80, '72'); vdim(x + pw + 6, y + 80, y + 88, '8');
-        text('bo 20 = 28 − 8, đồng tâm với góc', ax, y + h + 3, 5.5, 600, CY);
+        text(t('bo 20 = 28 − 8, đồng tâm với góc', 'radius 20 = 28 − 8, concentric with the corner'), ax, y + h + 3, 5.5, 600, CY);
     }
 
     if (it.kind === 'rows') {
@@ -143,8 +143,8 @@ for (const it of ROWS) {
         });
         dim(x, lx, y - 4, '14'); dim(lx, lx + 40, y - 4, '40'); dim(lx + 40, tx, y - 4, '12');
         dim(lx, lx + 12, y + h + 4, '12', CY, true); dim(lx + 12, lx + 28, y + h + 4, '16', CY, true);
-        text('✓ xong · ▶ đang làm · ◌ chờ (mờ cùng chữ); 16 trong hàng 16, giữa cột leading; chữ thẳng cột với tiêu đề (0.85em)', lx + 34, y + h + 4, 5.5, 600, CY);
-        vdim(x + pw + 6, y, y + 56, '56 phần đầu');
+        text(t('✓ xong · ▶ đang làm · ◌ chờ (mờ cùng chữ); 16 trong hàng 16, giữa cột leading; chữ thẳng cột với tiêu đề (0.85em)', '✓ done · ▶ doing · ◌ to do (dimmed with its text); 16 in a 16 row, centred in the leading column; text in line with the title (0.85em)'), lx + 34, y + h + 4, 5.5, 600, CY);
+        vdim(x + pw + 6, y, y + 56, t('56 phần đầu', '56 head'));
         [[0, '8'], [8, '16'], [24, '16'], [40, '16'], [56, '8']].forEach(([o, t], k, all) => {
             const b = k + 1 < all.length ? all[k + 1][0] : 64;
             vdim(x + pw + 6, y + 56 + o, y + 56 + b, t);
@@ -183,7 +183,7 @@ for (const it of ROWS) {
             } else {
                 const o = text('Type your own answer', 0, 0, 9.35, 400, G, 1, 0, true); text('Type your own answer', tx + a.width + 8, cy - o.height / 2 + 1, 9.35, 400, G);
             }
-            vdim(x + pw + 6, ry, ry + 32, j ? '32' : '32: dòng 18 ở giữa, 7 trên 7 dưới');
+            vdim(x + pw + 6, ry, ry + 32, j ? '32' : t('32: dòng 18 ở giữa, 7 trên 7 dưới', '32: line 18 in the middle, 7 above, 7 below'));
         });
         const by = y + h - 12 - 32, bw = (pw - 24 - 8) / 2;
         it.buttons.forEach((t, k) => {
@@ -191,14 +191,14 @@ for (const it of ROWS) {
             const e = text(t, 0, 0, 9.5, 600, W1, 1, 0, true);
             text(t, x + 12 + k * (bw + 8) + (bw - e.width) / 2, by + 16 - e.height / 2, 9.5, 600, k ? [0, 0, 0] : W1);
         });
-        vdim(x + pw + 6, y, y + 56, '56 phần đầu'); vdim(x + pw + 6, y + 56, top, '8');
-        vdim(x + pw + 6, top + 32 * it.options.length, by, '12'); vdim(x + pw + 6, by, by + 32, '32 nút'); vdim(x + pw + 6, by + 32, y + h, '12');
+        vdim(x + pw + 6, y, y + 56, t('56 phần đầu', '56 head')); vdim(x + pw + 6, y + 56, top, '8');
+        vdim(x + pw + 6, top + 32 * it.options.length, by, '12'); vdim(x + pw + 6, by, by + 32, t('32 nút', '32 buttons')); vdim(x + pw + 6, by + 32, y + h, '12');
         if (it.step === '1 / 3') {
-            text('mỗi lựa chọn một hàng 32, một dòng: nhãn 1em, mô tả 0.85em xám cùng dòng, dài thì "…"; chọn một: tròn, chọn nhiều: vuông; rộng 404 (tối đa compact ở 1920)', x, y + h + 4, 5.5, 600, CY);
-            text('cao vượt 152: tối đa bằng expanded (rộng/2 = 280 ở 1920); câu 1, 2: Skip · Next; câu cuối: Back · Submit', x, y + h + 14, 5.5, 600, CY);
+            text(t('mỗi lựa chọn một hàng 32, một dòng: nhãn 1em, mô tả 0.85em xám cùng dòng, dài thì "…"; chọn một: tròn, chọn nhiều: vuông; rộng 404 (tối đa compact ở 1920)', 'each option one 32 row, one line: label 1em, description 0.85em grey on the same line, "…" when long; single choice: round, multiple: square; 404 wide (the widest compact at 1920)'), x, y + h + 4, 5.5, 600, CY);
+            text(t('cao vượt 152: tối đa bằng expanded (rộng/2 = 280 ở 1920); câu 1, 2: Skip · Next; câu cuối: Back · Submit', 'taller than 152: at most as tall as the expanded (width/2 = 280 at 1920); questions 1, 2: Skip · Next; last question: Back · Submit'), x, y + h + 14, 5.5, 600, CY);
         } else {
-            text('Back về câu trước, mọi câu trả lời (cả chữ đã gõ) giữ nguyên; Submit gửi mọi câu một lần: answers = {câu hỏi: nhãn},', x, y + h + 4, 5.5, 600, CY);
-            text('chọn nhiều nối bằng ", ", Other gửi chữ đã gõ — phần chữ tự do và trộn với nhãn chưa có trong tài liệu hook: phải thử', x, y + h + 14, 5.5, 600, CY);
+            text(t('Back về câu trước, mọi câu trả lời (cả chữ đã gõ) giữ nguyên; Submit gửi mọi câu một lần: answers = {câu hỏi: nhãn},', 'Back goes to the previous question, every answer (typed text too) is kept; Submit sends all answers at once: answers = {question: label},'), x, y + h + 4, 5.5, 600, CY);
+            text(t('chọn nhiều nối bằng ", ", Other gửi chữ đã gõ — phần chữ tự do và trộn với nhãn chưa có trong tài liệu hook: phải thử', 'multiple choices joined with ", ", Other sends the typed text — free text, and mixing it with labels, is not in the hook docs yet: to be tried'), x, y + h + 14, 5.5, 600, CY);
         }
     }
 
@@ -226,19 +226,19 @@ for (const it of ROWS) {
             text(t, x + 12 + k * (bw + 8) + (bw - e.width) / 2, by + 16 - e.height / 2, 9.5, 600, hi ? [0, 0, 0] : W1);
         });
         if (!it.ask) guide(lx + 24, y + 32, 18, 18, 5);
-        vdim(x + pw + 6, y, y + 56, '56 phần đầu');
+        vdim(x + pw + 6, y, y + 56, t('56 phần đầu', '56 head'));
         if (n) {
             vdim(x + pw + 6, y + 56, top, '8');
-            vdim(x + pw + 6, top, top + 16 * n, `${16 * n} = ${n} dòng × 16`); vdim(x + pw + 6, top + 16 * n, by, '12');
-        } else vdim(x + pw + 6, y + 56, by, '20 = 8 + 12, không thân');
-        vdim(x + pw + 6, by, by + 32, '32 nút'); vdim(x + pw + 6, by + 32, y + h, '12');
+            vdim(x + pw + 6, top, top + 16 * n, t(`${16 * n} = ${n} dòng × 16`, `${16 * n} = ${n} line${n > 1 ? 's' : ''} × 16`)); vdim(x + pw + 6, top + 16 * n, by, '12');
+        } else vdim(x + pw + 6, y + 56, by, t('20 = 8 + 12, không thân', '20 = 8 + 12, no body'));
+        vdim(x + pw + 6, by, by + 32, t('32 nút', '32 buttons')); vdim(x + pw + 6, by + 32, y + h, '12');
         dim(x, x + 12, by + 40, '12', CY, true); dim(x + 12 + bw, x + 12 + bw + 8, by + 40, '8', CY, true);
         dim(x + pw - 12, x + pw, by + 40, '12', CY, true);
-        text('nút bo 16 = 28 − 12', x + 12 + bw / 2 - 30, by + 50, 5.5, 600, CY);
-        if (n === 2 && !it.ask) text('logo app 18 ở góc dưới phải ảnh đại diện 40; tối đa 2 dòng', lx + 52, y + 46, 5.5, 600, CY);
-        if (it.ask) text('Bu 40 ở leading; không có ×: phải chọn một nút', lx + 52, y + 46, 5.5, 600, CY);
+        text(t('nút bo 16 = 28 − 12', 'button radius 16 = 28 − 12'), x + 12 + bw / 2 - 30, by + 50, 5.5, 600, CY);
+        if (n === 2 && !it.ask) text(t('logo app 18 ở góc dưới phải ảnh đại diện 40; tối đa 2 dòng', 'app logo 18 at the bottom right of the 40 avatar; 2 lines at most'), lx + 52, y + 46, 5.5, 600, CY);
+        if (it.ask) text(t('Bu 40 ở leading; không có ×: phải chọn một nút', 'Bu 40 at the leading; no ×: one button must be chosen'), lx + 52, y + 46, 5.5, 600, CY);
     }
     y += h + GAPY;
 }
-text(`Rộng ${ROWS[0].w ?? CW} ở đây; compact rộng cố định min(28em, 0.72 × expanded): 404 ở 1920, 410 ở 2560 (Ethan, 2026-11-12).`, X, H - 22, 6.5, 400, W1, .75);
+text(t(`Rộng ${ROWS[0].w ?? CW} ở đây; compact rộng cố định min(28em, 0.72 × expanded): 404 ở 1920, 410 ở 2560 (Ethan, 2026-11-12).`, `${ROWS[0].w ?? CW} wide here; the compact has a fixed width, min(28em, 0.72 × expanded): 404 at 1920, 410 at 2560 (Ethan, 2026-11-12).`), X, H - 22, 6.5, 400, W1, .75);
 surf.writeToPNG(ARGV[0]);

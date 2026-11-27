@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t} from '../../render/lib.js';
 
 const [out] = ARGV;
 const SUB = 9.35, KW = 404;
@@ -67,7 +67,7 @@ const NX = 16 + KW + 40;
 
 // --- 1. flashes ---------------------------------------------------------------------------------
 let y = 40;
-title('1 · Flash 3 s khi mạng đổi lúc anh đang dùng máy (Quick Feedback)', 16, y - 26);
+title(t('1 · Flash 3 s khi mạng đổi lúc anh đang dùng máy (Quick Feedback)', '1 · A 3 s flash when the network changes while you use the computer (Quick Feedback)'), 16, y - 26);
 let x = 16;
 const row = (items, yy) => {
     x = 16;
@@ -75,34 +75,34 @@ const row = (items, yy) => {
         x += pill(x, yy, l, t, tr) + 14;
     });
 };
-row([['w:3', 'Highlands Coffee'], ['g:plug-connection', 'Có dây'], ['w:0', 'Mất mạng'],
-    ['w:2', 'Highlands Coffee', 'Không có Internet']], y);
-note('Wi-Fi nối: tên mạng (SSID), icon theo sóng. Có dây: "Có dây". Mất kết nối chính, không còn mạng nào: "Mất mạng".', 16, y + 40);
-note('Nối mà không ra Internet (NetworkManager: LIMITED / NONE, không phải portal): tên mạng, "Không có Internet" ở cuối.', 16, y + 54);
+row([['w:3', 'Highlands Coffee'], ['g:plug-connection', t('Có dây', 'Wired')], ['w:0', t('Mất mạng', 'Offline')],
+    ['w:2', 'Highlands Coffee', t('Không có Internet', 'No Internet')]], y);
+note(t('Wi-Fi nối: tên mạng (SSID), icon theo sóng. Có dây: "Có dây". Mất kết nối chính, không còn mạng nào: "Mất mạng".', 'Wi-Fi connected: the network name (SSID), icon by signal. Wired: "Wired". Main connection lost, no network left: "Offline".'), 16, y + 40);
+note(t('Nối mà không ra Internet (NetworkManager: LIMITED / NONE, không phải portal): tên mạng, "Không có Internet" ở cuối.', 'Connected but no Internet (NetworkManager: LIMITED / NONE, not a portal): the network name, "No Internet" at the end.'), 16, y + 54);
 y += 96;
-row([['g:shield-check', 'VPN · Công ty'], ['g:shield', 'Đã tắt VPN'], ['g:circle-exclamation', 'Không nối được Highlands Coffee']], y);
-note('VPN (cả WireGuard) bật: "VPN · <tên>"; tắt: "Đã tắt VPN". Nối thất bại: thay thông báo "Connection failed" của GNOME (status/network.js).', 16, y + 40);
-note('Chuyển mạng (Wi-Fi A → B): một flash, mạng mới. Đổi qua lại trong 3 s: flash sau cùng thay cái trước, không xếp hàng.', 16, y + 54);
+row([['g:shield-check', t('VPN · Công ty', 'VPN · Work')], ['g:shield', t('Đã tắt VPN', 'VPN Off')], ['g:circle-exclamation', t('Không nối được Highlands Coffee', 'Couldn\'t Connect to Highlands Coffee')]], y);
+note(t('VPN (cả WireGuard) bật: "VPN · <tên>"; tắt: "Đã tắt VPN". Nối thất bại: thay thông báo "Connection failed" của GNOME (status/network.js).', 'VPN (WireGuard too) on: "VPN · <name>"; off: "VPN Off". Failed to connect: in place of GNOME\'s "Connection failed" notification (status/network.js).'), 16, y + 40);
+note(t('Chuyển mạng (Wi-Fi A → B): một flash, mạng mới. Đổi qua lại trong 3 s: flash sau cùng thay cái trước, không xếp hàng.', 'Switching networks (Wi-Fi A → B): one flash, the new network. Back and forth within 3 s: the last flash replaces the one before, no queue.'), 16, y + 54);
 
 // --- 2. when not ------------------------------------------------------------------------------------
 y += 112;
-title('2 · Khi nào không flash', 16, y - 26);
-note('Lúc bật Buoy, mở khoá, thức dậy sau ngủ (NetworkManager nối lại): 15 s đầu không flash — anh không vừa đổi gì.', 16, y);
-note('Chia sẻ / quay màn hình: không tên mạng, chỉ "Wi-Fi", "VPN".', 16, y + 14);
-note('Đổi điểm phát cùng tên (roaming), mạng cũ nối lại sau chập chờn dưới 3 s: không flash.', 16, y + 28);
+title(t('2 · Khi nào không flash', '2 · When there is no flash'), 16, y - 26);
+note(t('Lúc bật Buoy, mở khoá, thức dậy sau ngủ (NetworkManager nối lại): 15 s đầu không flash — anh không vừa đổi gì.', 'When Buoy starts, on unlock, on waking from sleep (NetworkManager reconnects): no flash in the first 15 s — you did not just change anything.'), 16, y);
+note(t('Chia sẻ / quay màn hình: không tên mạng, chỉ "Wi-Fi", "VPN".', 'Sharing / recording the screen: no network name, only "Wi-Fi", "VPN".'), 16, y + 14);
+note(t('Đổi điểm phát cùng tên (roaming), mạng cũ nối lại sau chập chờn dưới 3 s: không flash.', 'Moving to an access point with the same name (roaming), the old network back after a drop under 3 s: no flash.'), 16, y + 28);
 
 // --- 3. captive portal ---------------------------------------------------------------------------------
 y += 76;
-title('3 · Mạng cần đăng nhập (captive portal)', 16, y - 26);
-card(16, y, 'w:3', 'Đăng nhập mạng', 'Highlands Coffee', [{label: 'Đăng nhập', main: true}]);
-pill(NX, y + 8, 'w:3', 'Đăng nhập mạng', 'Highlands Coffee');
-note('Thay thông báo "Sign in to Network" của GNOME (CaptivePortalHandler): card đến như thông báo, rồi pill ở lại', NX, y + 50);
-note('tới khi đăng nhập xong (NetworkManager: FULL) hay rời mạng. "Đăng nhập" (kem): trang đăng nhập của GNOME', NX, y + 64);
-note('(portal helper), như bấm thông báo. ×: ẩn pill, GNOME vẫn chờ. Xong: flash "Highlands Coffee" (đã có Internet).', NX, y + 78);
+title(t('3 · Mạng cần đăng nhập (captive portal)', '3 · A network that needs sign-in (captive portal)'), 16, y - 26);
+card(16, y, 'w:3', t('Đăng nhập mạng', 'Sign In to Network'), 'Highlands Coffee', [{label: t('Đăng nhập', 'Sign In'), main: true}]);
+pill(NX, y + 8, 'w:3', t('Đăng nhập mạng', 'Sign In to Network'), 'Highlands Coffee');
+note(t('Thay thông báo "Sign in to Network" của GNOME (CaptivePortalHandler): card đến như thông báo, rồi pill ở lại', 'In place of GNOME\'s "Sign in to Network" notification (CaptivePortalHandler): the card comes like a notification, then the pill stays'), NX, y + 50);
+note(t('tới khi đăng nhập xong (NetworkManager: FULL) hay rời mạng. "Đăng nhập" (kem): trang đăng nhập của GNOME', 'until signed in (NetworkManager: FULL) or off the network. "Sign In" (cream): GNOME\'s sign-in page'), NX, y + 64);
+note(t('(portal helper), như bấm thông báo. ×: ẩn pill, GNOME vẫn chờ. Xong: flash "Highlands Coffee" (đã có Internet).', '(portal helper), like clicking the notification. ×: hides the pill, GNOME still waits. Done: flash "Highlands Coffee" (Internet now).'), NX, y + 78);
 
 // --- 4. icons --------------------------------------------------------------------------------------------
 y += 104 + 60;
-title('4 · Icon: B, Buoy tự vẽ theo kiểu Gravity — chốt (Ethan, 2026-11-23)', 16, y - 26);
+title(t('4 · Icon: B, Buoy tự vẽ theo kiểu Gravity — chốt (Ethan, 2026-11-23)', '4 · Icons: B, Buoy\'s own in the Gravity style — decided (Ethan, 2026-11-23)'), 16, y - 26);
 const sample = (lx, ly, label, specs) => {
     text(label, lx, ly, {sz: 10, wt: 600});
     specs.forEach((sp, i) => {
@@ -110,14 +110,14 @@ const sample = (lx, ly, label, specs) => {
         ic(sp, lx + i * 44 + 10, ly + 30, 16);
     });
 };
-sample(16, y, 'Wi-Fi rất mạnh, mạnh, vừa, yếu, không sóng / mất mạng; có dây, VPN bật, VPN tắt, lỗi',
+sample(16, y, t('Wi-Fi rất mạnh, mạnh, vừa, yếu, không sóng / mất mạng; có dây, VPN bật, VPN tắt, lỗi', 'Wi-Fi excellent, good, ok, weak, no signal / offline; wired, VPN on, VPN off, error'),
     ['w:4', 'w:3', 'w:2', 'w:1', 'w:0', 'g:plug-connection', 'g:shield-check', 'g:shield', 'g:circle-exclamation']);
-note('Wi-Fi: chấm và cung nét 1.5 đầu tròn (own/wifi-*); cung chưa sáng bỏ hẳn chứ không mờ: icon symbolic của Buoy một màu,', 16, y + 70);
-note('St tô lại mọi fill (icons.test.js). Không sóng, mất mạng: đủ ba cung và gạch chéo. Mức sóng như Shell (80, 55, 30, 5).', 16, y + 84);
+note(t('Wi-Fi: chấm và cung nét 1.5 đầu tròn (own/wifi-*); cung chưa sáng bỏ hẳn chứ không mờ: icon symbolic của Buoy một màu,', 'Wi-Fi: a dot and arcs, 1.5 stroke, round caps (own/wifi-*); unlit arcs are left out, not dimmed: Buoy\'s symbolic icons are one colour,'), 16, y + 70);
+note(t('St tô lại mọi fill (icons.test.js). Không sóng, mất mạng: đủ ba cung và gạch chéo. Mức sóng như Shell (80, 55, 30, 5).', 'St recolours every fill (icons.test.js). No signal, offline: all three arcs and a slash. Signal levels as in Shell (80, 55, 30, 5).'), 16, y + 84);
 
 // --- 5. not here -----------------------------------------------------------------------------------------
 y += 150;
-title('5 · Ngoài mục này', 16, y - 26);
-note('Không có hàng mạng trong tab Thiết bị, không bật/tắt Wi-Fi hay VPN từ Buoy: Quick Settings của GNOME làm việc đó.', 16, y);
-note('Đọc từ NM.Client của chính Shell (Quick Settings), chỉ nghe tín hiệu, không dò; không module mới nào chạy khi tắt.', 16, y + 14);
+title(t('5 · Ngoài mục này', '5 · Not in this item'), 16, y - 26);
+note(t('Không có hàng mạng trong tab Thiết bị, không bật/tắt Wi-Fi hay VPN từ Buoy: Quick Settings của GNOME làm việc đó.', 'No network row in the Device tab, no Wi-Fi or VPN on/off from Buoy: GNOME\'s Quick Settings does that.'), 16, y);
+note(t('Đọc từ NM.Client của chính Shell (Quick Settings), chỉ nghe tín hiệu, không dò; không module mới nào chạy khi tắt.', 'Read from Shell\'s own NM.Client (Quick Settings), signals only, no polling; no new module runs when off.'), 16, y + 14);
 surf.writeToPNG(out);

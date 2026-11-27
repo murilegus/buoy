@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, icon, SAMPLE, t} from '../../render/lib.js';
 const out = ARGV[0];
 const W = 24 + 4 * 404 + 3 * 28 + 24, H = 360;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
@@ -41,7 +41,7 @@ function card(x, y, {buttons = false, shared = false, hold = ''} = {}) {
     if (shared) { fill([1, 1, 1, C.FILL2], x + 14, y + 8, 40, 40, 10); fill([.45, .2, .5, 1], x + 25, y + 19, 18, 18, 4.5); }
     else avatar(x + 14, y + 8);
     text(shared ? 'Slack' : SAMPLE.person, x + 66, y + 10, {wt: 600});
-    text(shared ? 'Thông báo mới · bây giờ' : 'Slack · #design · bây giờ', x + 66, y + 30, {sz: SUB, a: C.FG_MUTED});
+    text(shared ? t('Thông báo mới · bây giờ', 'New notification · now') : t('Slack · #design · bây giờ', 'Slack · #design · now'), x + 66, y + 30, {sz: SUB, a: C.FG_MUTED});
     cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(x + w - 30, y + 28, 16, 0, 2 * Math.PI); cr.fill(); icon(cr, 'xmark', x + w - 38, y + 20, 16);
     if (lines) text(BODY, x + 14, y + 64, {sz: SUB, a: .85, maxW: w - 28, lines});
     if (buttons) {
@@ -61,17 +61,17 @@ function pill(cx, y, label) {
     text(label, x + 38, y + 7, {wt: 600});
 }
 const xs = [0, 1, 2, 3].map(i => 24 + i * (404 + 28)), TOP = 46;
-const heads = ['1 · Tới: card tự mở trên pill, không nút (5 s)', '2 · Rê chuột: hiện hàng nút, giữ lại', '3 · Hết 5 s: thu về pill, tiêu đề đầy đủ', '4 · Đang chia sẻ màn hình: chỉ tên app'];
+const heads = [t('1 · Tới: card tự mở trên pill, không nút (5 s)', '1 · Arrives: the card opens by itself on the pill, no buttons (5 s)'), t('2 · Rê chuột: hiện hàng nút, giữ lại', '2 · Hover: the button row shows, the card stays'), t('3 · Hết 5 s: thu về pill, tiêu đề đầy đủ', '3 · After 5 s: back to the pill, the full title'), t('4 · Đang chia sẻ màn hình: chỉ tên app', '4 · Sharing the screen: the app name only')];
 heads.forEach((t, i) => text(t, xs[i], 14, {sz: 9, wt: 700}));
-card(xs[0], TOP, {hold: 'Như banner GNOME: tên, nguồn, 2 dòng thân; × vẫn có. Cao 104.'});
-card(xs[1], TOP, {buttons: true, hold: 'Như banner GNOME khi rê chuột: hiện nút của app. Cao 152; đếm giờ dừng.'});
+card(xs[0], TOP, {hold: t('Như banner GNOME: tên, nguồn, 2 dòng thân; × vẫn có. Cao 104.', 'Like the GNOME banner: name, source, 2 body lines; × still there. Height 104.')});
+card(xs[1], TOP, {buttons: true, hold: t('Như banner GNOME khi rê chuột: hiện nút của app. Cao 152; đếm giờ dừng.', "Like the GNOME banner on hover: the app's buttons show. Height 152; the timer stops.")});
 pill(xs[2] + 202, TOP, `New message from ${SAMPLE.person}`);
-text('Pill: tiêu đề đầy đủ của thông báo, như app gửi (không sửa riêng cho app nào);', xs[2], TOP + 44, {sz: 8, a: .7});
-text('rê chuột mở lại card, có nút.', xs[2], TOP + 60, {sz: 8, a: .7});
-card(xs[3], TOP, {shared: true, hold: 'Như hiện nay (NOTIFICATIONS §5): không tên người, không thân.'});
-['v0.1: thông báo chỉ là pill (tiêu đề, 6 s); muốn đọc nội dung hay bấm nút phải rê chuột vào pill.',
- 'GNOME 50 (ui/messageTray.js _showNotification, ui/messageList.js NotificationMessage): banner hiện ngay tiêu đề và một dòng thân; rê chuột vào thì',
- 'mở rộng (thân tới 6 dòng) và hiện nút (_expandBanner); khẩn cấp hoặc "force-expanded" thì mở rộng sẵn. Ẩn sau 4 s, chỉ tính khi người dùng đang thao tác.',
- 'Thông báo là một alert: card tự mở 5 s, không nút; rê chuột thì hiện nút và giữ; rồi về pill. Khẩn cấp: card có nút, ở đến khi xử lý.',
+text(t('Pill: tiêu đề đầy đủ của thông báo, như app gửi (không sửa riêng cho app nào);', "Pill: the notification's full title, as the app sent it (nothing changed for any one app);"), xs[2], TOP + 44, {sz: 8, a: .7});
+text(t('rê chuột mở lại card, có nút.', 'hover opens the card again, with buttons.'), xs[2], TOP + 60, {sz: 8, a: .7});
+card(xs[3], TOP, {shared: true, hold: t('Như hiện nay (NOTIFICATIONS §5): không tên người, không thân.', 'As now (NOTIFICATIONS §5): no sender name, no body.')});
+[t('v0.1: thông báo chỉ là pill (tiêu đề, 6 s); muốn đọc nội dung hay bấm nút phải rê chuột vào pill.', 'v0.1: a notification is only a pill (title, 6 s); to read it or click a button you hover on the pill.'),
+ t('GNOME 50 (ui/messageTray.js _showNotification, ui/messageList.js NotificationMessage): banner hiện ngay tiêu đề và một dòng thân; rê chuột vào thì', 'GNOME 50 (ui/messageTray.js _showNotification, ui/messageList.js NotificationMessage): the banner shows the title and one body line at once; on hover it'),
+ t('mở rộng (thân tới 6 dòng) và hiện nút (_expandBanner); khẩn cấp hoặc "force-expanded" thì mở rộng sẵn. Ẩn sau 4 s, chỉ tính khi người dùng đang thao tác.', 'expands (body up to 6 lines) and shows the buttons (_expandBanner); urgent or "force-expanded" ones open expanded. Hidden after 4 s, counted only while the user is active.'),
+ t('Thông báo là một alert: card tự mở 5 s, không nút; rê chuột thì hiện nút và giữ; rồi về pill. Khẩn cấp: card có nút, ở đến khi xử lý.', 'A notification is an alert: the card opens by itself for 5 s, no buttons; hover shows the buttons and keeps it; then back to the pill. Urgent: the card has buttons and stays until dealt with.'),
 ].forEach((l, i) => text(l, 24, 250 + i * 18, {sz: 8.5, a: i ? .8 : .95}));
 surf.writeToPNG(out);

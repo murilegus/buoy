@@ -51,6 +51,8 @@ Các thay đổi ở đây chưa có trong code: chúng là các mục redesign 
 
 Ảnh vẽ bằng gjs + cairo, thẳng ở 3× nên phóng to vẫn nét: `scripts/render-design.sh` vẽ lại tất
 cả. Mỗi phần có `images/` (ảnh) và `render/` (script); `render/lib.js` dùng chung (đo chữ ở 1×,
-giãn chữ 3× cho khớp). Ảnh có chữ có hai bản: `x.vi.png` (nhãn tiếng Việt) và `x.en.png` (tiếng
-Anh, làm khi dịch trang). Chữ giả lập trên giao diện (tên bài, tin nhắn, nút) giữ tiếng Anh như
-Buoy hiển thị thật.
+giãn chữ 3× cho khớp). Mỗi ảnh vẽ hai bản cùng lúc: `x.vi.png` (nhãn tiếng Việt) và `x.en.png`
+(tiếng Anh); script chọn chữ bằng `t(vi, en)` của `lib.js`. Ảnh không có chữ chỉ giữ một bản
+`x.png` cho cả hai site. Bản tiếng Anh dùng đúng chuỗi Buoy hiển thị (nút, tên tab, giờ); nội
+dung mẫu (bài hát, tên người, tin nhắn, tên file) giống nhau ở hai bản. Ảnh chụp từ Shell không
+vẽ lại: script ghép và ảnh gốc của chúng nằm ngoài repo.

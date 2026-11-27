@@ -12,7 +12,7 @@ import PangoCairo from 'gi://PangoCairo';
 import Rsvg from 'gi://Rsvg?version=2.0';
 import GLib from 'gi://GLib';
 import cairo from 'cairo';
-import {SCALE as SC, C, drawBu, drawEq, EQ, icon as gicon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, drawBu, drawEq, EQ, icon as gicon, SAMPLE, t} from '../../render/lib.js';
 const [out, MODE] = ARGV;
 // Buoy's colour icons (weather, daypart), the ones the extension ships
 const COLOUR = GLib.build_filenamev([GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]),
@@ -145,22 +145,22 @@ function heroMusic(x, y, w, h) {
 function heroAsk(x, y, w, h) {
     fill([1, 1, 1, C.FILL1], x, y, w, h, 16);
     drawBu(cr, 'ask', x + 12, y + 8, 4);
-    text('Cho chạy lệnh này?', x + 64, y + 10, {wt: 600});
+    text(t('Cho chạy lệnh này?', 'Claude Code wants to run'), x + 64, y + 10, {wt: 600});
     text('Claude Code · buoy · Bash', x + 64, y + 30, {sz: SUB, a: C.FG_MUTED});
     text('pnpm test -- shapes', x + 64, y + 52, {sz: SUB, a: .85});
-    pillBtn(x + w - 12 - 104, y + h - 12 - 32, 104, 'Cho phép', true);
-    pillBtn(x + w - 12 - 216, y + h - 12 - 32, 104, 'Từ chối');
+    pillBtn(x + w - 12 - 104, y + h - 12 - 32, 104, t('Cho phép', 'Allow'), true);
+    pillBtn(x + w - 12 - 216, y + h - 12 - 32, 104, t('Từ chối', 'Deny'));
 }
 function heroGreet(x, y, w, h) {
     fill([1, 1, 1, C.FILL1], x, y, w, h, 16);
     const cell = h >= TALL ? 6 : 5, bs = cell * 10;
     drawBu(cr, 'wave', x + 20, y + (h - bs) / 2, cell);
     const tx = x + 20 + bs + 22, lines = h >= TALL ? 3 : 1, top = y + h / 2 - (28 + lines * 18) / 2;
-    text('Chào buổi chiều, Ethan', tx, top, {sz: 14, wt: 700});
-    text('Thứ Tư, 11 tháng 11', tx, top + 28, {sz: SUB, a: C.FG_MUTED});
+    text(t('Chào buổi chiều, Ethan', 'Good afternoon, Ethan'), tx, top, {sz: 14, wt: 700});
+    text(t('Thứ Tư, 11 tháng 11', 'Wednesday, November 11'), tx, top + 28, {sz: SUB, a: C.FG_MUTED});
     if (h >= TALL) {
-        text('Tiếp theo: Design review lúc 3:00', tx, top + 46, {sz: SUB, a: C.FG_MUTED});
-        text('Không có gì đang chạy', tx, top + 64, {sz: SUB, a: C.FG_SUBTLE});
+        text(t('Tiếp theo: Design review lúc 3:00', 'Next: Design review at 3:00'), tx, top + 46, {sz: SUB, a: C.FG_MUTED});
+        text(t('Không có gì đang chạy', 'Nothing running'), tx, top + 64, {sz: SUB, a: C.FG_SUBTLE});
     }
 }
 // an activity without a card of its own: its compact (here the head 56) in the card, centred
@@ -169,7 +169,7 @@ function heroRec(x, y, w, h) {
     const hy = y + (h - 56) / 2;
     cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(x + 34, hy + 28, 20, 0, 2 * Math.PI); cr.fill();
     icon('video', x + 24, hy + 18, 20);
-    text('Đang quay màn hình', x + 66, hy + 11, {wt: 600}); text('0:42 · từ 14:03', x + 66, hy + 31, {sz: SUB, a: C.FG_SUBTLE});
+    text(t('Đang quay màn hình', 'Recording the screen'), x + 66, hy + 11, {wt: 600}); text(t('0:42 · từ 14:03', '0:42 · from 14:03'), x + 66, hy + 31, {sz: SUB, a: C.FG_SUBTLE});
     round(x + w - 14 - 16, hy + 28, 'stop-fill', true);
 }
 const HEROES = {music: heroMusic, ask: heroAsk, greet: heroGreet, rec: heroRec};
@@ -177,16 +177,16 @@ const HEROES = {music: heroMusic, ask: heroAsk, greet: heroGreet, rec: heroRec};
 // ---- tiles: a leading 20 at 12 (a symbolic 16 in its middle, Bu 20 filling it, a colour icon 24 over
 // it by 2), a value 1.5em 600, a caption 0.85em fg-muted; a detail column on the right from 200 wide ----
 const ITEMS = {
-    missed: {ic: 'bell', val: '7', cap: 'Bị nhỡ', det: ['3 thông báo', '4 việc'], amber: true},
+    missed: {ic: 'bell', val: '7', cap: t('Bị nhỡ', 'Missed'), det: [t('3 thông báo', '3 notifications'), t('4 việc', '4 activities')], amber: true},
     claude: {ic: 'bu', val: '2 / 3', cap: 'Claude Code', det: ['Run pnpm test', 'buoy']},
-    dl: {ic: 'arrow-down-to-line', val: '42%', cap: 'report.pdf', det: ['2.1 MB/s', 'còn 30 s']},
-    timer: {ic: 'alarm', val: '12:40', cap: 'Pomodoro', det: ['vòng 2 / 4', '']},
-    call: {ic: 'smartphone', val: '3:12', cap: SAMPLE.person, det: ['đang gọi', '']},
+    dl: {ic: 'arrow-down-to-line', val: '42%', cap: 'report.pdf', det: ['2.1 MB/s', t('còn 30 s', '30 s left')]},
+    timer: {ic: 'alarm', val: '12:40', cap: 'Pomodoro', det: [t('vòng 2 / 4', 'Focus 2/4'), '']},
+    call: {ic: 'smartphone', val: '3:12', cap: SAMPLE.person, det: [t('đang gọi', 'On a call'), '']},
     music: {ic: 'music-note', val: '1:24', cap: SAMPLE.track, det: [SAMPLE.artist, '']},
-    wx: {ic: 'weather-few-clouds', val: '31°', cap: 'Ít mây', det: ['cảm giác 34°', 'gió 12 km/h'], wide: true},
-    up: {ic: 'calendar', val: '3:00', cap: 'Design review', det: ['25 phút nữa', 'phòng 3'], wide: true},
-    bat: {ic: 'battery-charging', val: '82%', cap: 'Pin', det: ['đang sạc', 'còn 4 giờ']},
-    rec: {ic: 'video', val: '0:42', cap: 'Đang quay', det: ['từ 14:03', '']},
+    wx: {ic: 'weather-few-clouds', val: '31°', cap: t('Ít mây', 'Partly cloudy'), det: [t('cảm giác 34°', 'Feels like 34°'), t('gió 12 km/h', 'Wind 12 km/h')], wide: true},
+    up: {ic: 'calendar', val: '3:00', cap: 'Design review', det: [t('25 phút nữa', 'in 25 min'), t('phòng 3', 'Room 3')], wide: true},
+    bat: {ic: 'battery-charging', val: '82%', cap: t('Pin', 'Battery'), det: [t('đang sạc', 'Charging'), t('còn 4 giờ', '4 h left')]},
+    rec: {ic: 'video', val: '0:42', cap: t('Đang quay', 'Recording'), det: [t('từ 14:03', 'from 14:03'), '']},
 };
 function lead(x, y, ic, amber) {
     if (ic === 'bu') drawBu(cr, 'busy', x + 12, y + 12, 2);
@@ -196,7 +196,7 @@ function lead(x, y, ic, amber) {
 function small(x, y, w, key, more = 0) {
     if (more) {
         fill([1, 1, 1, C.FILL1], x, y, w, TILE_H, 16); lead(x, y, 'ellipsis-vertical');
-        text(`+${more}`, x + 12, y + 40, {sz: BIG, wt: 600}); text('xem tất cả', x + 12, y + 68, {sz: SUB, a: C.FG_MUTED});
+        text(`+${more}`, x + 12, y + 40, {sz: BIG, wt: 600}); text(t('xem tất cả', 'See all'), x + 12, y + 68, {sz: SUB, a: C.FG_MUTED});
         return;
     }
     const it = ITEMS[key], am = it.amber;
@@ -215,15 +215,15 @@ function wideWx(x, y, w) {
     colour('weather-few-clouds', x + 14, y + 26, 48);
     const tx = x + 76;
     text('31°', tx, y + 14, {sz: 22, wt: 600});
-    text('Ít mây', tx, y + 48, {sz: SUB, wt: 600});
-    text('TP.HCM · cảm giác 34°', tx, y + 66, {sz: SUB, a: C.FG_MUTED, maxW: w - (tx - x) - 12});
+    text(t('Ít mây', 'Partly cloudy'), tx, y + 48, {sz: SUB, wt: 600});
+    text(t('TP.HCM · cảm giác 34°', 'Ho Chi Minh City · Feels like 34°'), tx, y + 66, {sz: SUB, a: C.FG_MUTED, maxW: w - (tx - x) - 12});
 }
 // the wide up next: two events, each with its calendar's colour; "+1" when more are left today
 function wideUp(x, y, w) {
     fill([1, 1, 1, C.FILL1], x, y, w, TILE_H, 16);
-    icon('calendar', x + 14, y + 14); text('Sắp tới', x + 38, y + 14, {sz: SUB, wt: 600, a: C.FG_MUTED});
+    icon('calendar', x + 14, y + 14); text(t('Sắp tới', 'Up next'), x + 38, y + 14, {sz: SUB, wt: 600, a: C.FG_MUTED});
     text('+1', x + w - 14, y + 14, {sz: SUB, a: C.FG_SUBTLE, right: true});
-    [['Design review', '3:00 · 25 phút nữa', [.75, .45, .95]], ['Gym', '5:30', [.3, .8, .45]]].forEach(([t, v, c], i) => {
+    [['Design review', t('3:00 · 25 phút nữa', '3:00 · in 25 min'), [.75, .45, .95]], ['Gym', '5:30', [.3, .8, .45]]].forEach(([t, v, c], i) => {
         const ry = y + 40 + i * 28;
         fill([...c, 1], x + 14, ry + 1, 3, 20, 1.5);
         text(t, x + 24, ry + 2, {sz: SUB, wt: 600, maxW: w - 150});
@@ -275,14 +275,14 @@ if (MODE === 'states') {
     const EW = 560, EH = 280, GX = 40, GY = 84, W = 24 + 2 * EW + GX + 24, H = 50 + 2 * (EH + GY) - 20;
     const surf = canvas(W, H), G = ['wx', 'up', 'bat'];
     const S = [
-        [24, 50, 'music', ['claude'], G, 'A · Đang phát nhạc: thẻ chính là nhạc',
-            ['Thẻ chính = activity đứng đầu stack, kèm nút của nó.', 'Ô = các activity còn lại, rồi phần nhìn nhanh.']],
-        [24 + EW + GX, 50, 'ask', ['music'], G, 'B · Claude Code hỏi: thẻ chính chuyển sang câu hỏi',
-            ['Ask đứng trước nhạc trong stack nên lên thẻ chính, có nút trả lời;', 'nhạc lùi xuống thành một ô.']],
-        [24, 50 + EH + GY, 'greet', [], G, 'C · Không có gì chạy: lời chào và ngày',
-            ['Thẻ chính thành lời chào, không bao giờ trống;', 'ô dư cho thời tiết nở rộng.']],
-        [24 + EW + GX, 50 + EH + GY, 'music', ['missed', 'claude', 'dl', 'timer', 'call'], G, 'D · Bị nhỡ và nhiều việc: Bị nhỡ đầu tiên, dư thì +K',
-            ['Bị nhỡ: nền amber 16 %; mở Home thì đèn amber tắt.', 'Nhiều activity hơn N: N − 1 ô và +K; phần nhìn nhanh nhường chỗ.']],
+        [24, 50, 'music', ['claude'], G, t('A · Đang phát nhạc: thẻ chính là nhạc', 'A · Music playing: the main card is music'),
+            [t('Thẻ chính = activity đứng đầu stack, kèm nút của nó.', 'Main card = the activity at the top of the stack, with its buttons.'), t('Ô = các activity còn lại, rồi phần nhìn nhanh.', 'Tiles = the other activities, then the glance.')]],
+        [24 + EW + GX, 50, 'ask', ['music'], G, t('B · Claude Code hỏi: thẻ chính chuyển sang câu hỏi', 'B · Claude Code asks: the main card turns to the question'),
+            [t('Ask đứng trước nhạc trong stack nên lên thẻ chính, có nút trả lời;', 'The ask is ahead of music in the stack, so it takes the main card, with reply buttons;'), t('nhạc lùi xuống thành một ô.', 'music steps down to a tile.')]],
+        [24, 50 + EH + GY, 'greet', [], G, t('C · Không có gì chạy: lời chào và ngày', 'C · Nothing running: a greeting and the date'),
+            [t('Thẻ chính thành lời chào, không bao giờ trống;', 'The main card becomes a greeting, never empty;'), t('ô dư cho thời tiết nở rộng.', 'spare room lets the weather tile widen.')]],
+        [24 + EW + GX, 50 + EH + GY, 'music', ['missed', 'claude', 'dl', 'timer', 'call'], G, t('D · Bị nhỡ và nhiều việc: Bị nhỡ đầu tiên, dư thì +K', 'D · Missed and many things: Missed first, the overflow +K'),
+            [t('Bị nhỡ: nền amber 16 %; mở Home thì đèn amber tắt.', 'Missed: amber 16 % background; opening Home turns the amber light off.'), t('Nhiều activity hơn N: N − 1 ô và +K; phần nhìn nhanh nhường chỗ.', 'More activities than N: N − 1 tiles and +K; the glance gives way.')]],
     ];
     S.forEach(([x, y, hero, acts, gl, t, n], i) => { home(x, y, EW, EH, hero, acts, gl, t, {bellDot: i === 3}); note(x, y + EH + 8, n); });
     surf.writeToPNG(out);
@@ -292,22 +292,22 @@ if (MODE === 'states') {
 if (MODE === 'lists') {
     const EW = 560, EH = 280, GX = 40, W = 24 + 3 * EW + 2 * GX + 24, H = 50 + EH + 90;
     const surf = canvas(W, H), G = ['wx', 'up', 'bat'], x0 = 24, x1 = 24 + EW + GX, x2 = 24 + 2 * (EW + GX);
-    home(x0, 50, EW, EH, 'music', ['missed', 'claude', 'dl', 'timer', 'call'], G, '1 · Home: ô Bị nhỡ đầu hàng, ô +K cuối hàng', {bellDot: true});
-    list(x1, 50, EW, EH, '2 · Bấm Bị nhỡ: danh sách thay thẻ chính và hàng ô', 'Bị nhỡ · 7', [
-        ['bell', 'Thông báo · 3', 'Slack, Zalo, Gmail', '2:41 PM'],
-        ['smartphone', 'Cuộc gọi nhỡ', `${SAMPLE.person} · Điện thoại`, '2:40 PM'],
-        ['arrow-down-to-line', 'report.pdf đã tải xong', 'Tải về', '2:38 PM'],
-        ['alarm', 'Pomodoro hết giờ', 'Hẹn giờ', '2:30 PM'],
-        ['bu', 'Claude Code xong', 'buoy · 3 / 3', '2:12 PM']], {amber: true, action: 'xmark', bellDot: true});
-    list(x2, 50, EW, EH, '3 · Bấm +K: mọi activity đang chạy, theo stack', 'Đang diễn ra · 5', [
+    home(x0, 50, EW, EH, 'music', ['missed', 'claude', 'dl', 'timer', 'call'], G, t('1 · Home: ô Bị nhỡ đầu hàng, ô +K cuối hàng', '1 · Home: the Missed tile first in the row, the +K tile last'), {bellDot: true});
+    list(x1, 50, EW, EH, t('2 · Bấm Bị nhỡ: danh sách thay thẻ chính và hàng ô', '2 · Click Missed: a list replaces the main card and the tile row'), t('Bị nhỡ · 7', 'Missed · 7'), [
+        ['bell', t('Thông báo · 3', 'Notifications · 3'), 'Slack, Zalo, Gmail', '2:41 PM'],
+        ['smartphone', t('Cuộc gọi nhỡ', 'Missed call'), t(`${SAMPLE.person} · Điện thoại`, `${SAMPLE.person} · Phone`), '2:40 PM'],
+        ['arrow-down-to-line', t('report.pdf đã tải xong', 'report.pdf downloaded'), t('Tải về', 'Transfers'), '2:38 PM'],
+        ['alarm', t('Pomodoro hết giờ', 'Time\'s up · Pomodoro'), t('Hẹn giờ', 'Timer'), '2:30 PM'],
+        ['bu', t('Claude Code xong', 'Claude Code done'), 'buoy · 3 / 3', '2:12 PM']], {amber: true, action: 'xmark', bellDot: true});
+    list(x2, 50, EW, EH, t('3 · Bấm +K: mọi activity đang chạy, theo stack', '3 · Click +K: every running activity, in stack order'), t('Đang diễn ra · 5', 'Ongoing · 5'), [
         ['music-note', SAMPLE.track, SAMPLE.artist, '1:24'],
         ['bu', 'Claude Code', 'Run pnpm test', '2 / 3'],
         ['arrow-down-to-line', 'report.pdf', '2.1 MB/s', '42%'],
-        ['alarm', 'Pomodoro', 'vòng 2 / 4', '12:40'],
-        ['smartphone', SAMPLE.person, 'đang gọi', '3:12']]);
-    note(x1, 50 + EH + 8, ['Hàng 32 một dòng; bấm hàng mở chỗ của nó (thông báo → tab Thông báo, mục Nhỡ khi vắng)', 'và hàng rời danh sách; × xoá hết; ‹ hoặc Esc về Home.']);
-    note(x2, 50 + EH + 8, ['Cùng khuôn danh sách; bấm hàng mở tab của activity đó.', 'Dài hơn 5 hàng thì danh sách cuộn, chỉ ở đây.']);
-    note(x0, 50 + EH + 8, ['Bị nhỡ đếm cả thông báo chưa xem và việc kết thúc lúc không thấy.']);
+        ['alarm', 'Pomodoro', t('vòng 2 / 4', 'Focus 2/4'), '12:40'],
+        ['smartphone', SAMPLE.person, t('đang gọi', 'On a call'), '3:12']]);
+    note(x1, 50 + EH + 8, [t('Hàng 32 một dòng; bấm hàng mở chỗ của nó (thông báo → tab Thông báo, mục Nhỡ khi vắng)', 'Rows of 32, one line; clicking a row opens its place (a notification → Notifications tab, Missed while away)'), t('và hàng rời danh sách; × xoá hết; ‹ hoặc Esc về Home.', 'and the row leaves the list; × clears all; ‹ or Esc back to Home.')]);
+    note(x2, 50 + EH + 8, [t('Cùng khuôn danh sách; bấm hàng mở tab của activity đó.', 'The same list; clicking a row opens that activity\'s tab.'), t('Dài hơn 5 hàng thì danh sách cuộn, chỉ ở đây.', 'Over 5 rows the list scrolls, only here.')]);
+    note(x0, 50 + EH + 8, [t('Bị nhỡ đếm cả thông báo chưa xem và việc kết thúc lúc không thấy.', 'Missed counts unseen notifications and things that ended while out of sight.')]);
     surf.writeToPNG(out);
 }
 
@@ -317,14 +317,14 @@ if (MODE === 'music') {
     const EW = 560, EH = 280, GX = 40, GY = 84, W = 24 + 2 * EW + GX + 24, H = 50 + 2 * (EH + GY) - 20;
     const surf = canvas(W, H), G = ['wx', 'up', 'bat'];
     const cells = [
-        [24, 50, {hover: false, paused: false}, 'music', ['claude'], 'A · Thẻ nhạc lúc nghỉ: equaliser ở chỗ ⏸, không còn ⏮ ⏭',
-            ['Equaliser theo màu bìa, chạy khi Home đang mở; ⏮ ⏭ ở tab Media.', 'Bấm thẻ: tab Media, equaliser đi tới ô ↗ của tab.']],
-        [24 + EW + GX, 50, {hover: true, paused: false}, 'music', ['claude'], 'B · Rê chuột vào ô (hay focus bàn phím): nút ⏸',
-            ['Như các nút chính: kem, trắng dưới con trỏ. Đổi qua lại bằng mờ chéo tại chỗ.', 'Bấm: dừng; nút thành ▶ ngay, không nháy.']],
-        [24, 50 + EH + GY, {hover: false, paused: true}, 'music', ['claude'], 'C · Đang dừng: equaliser thấp; rê chuột thì ▶',
-            ['Các thanh hạ xuống trong 200 ms rồi đứng yên.', '']],
-        [24 + EW + GX, 50 + EH + GY, {hover: false, paused: false}, 'ask', ['music'], 'D · Nhạc là một ô: equaliser ở góc trên phải',
-            ['Khi thẻ chính là việc khác (ở đây: Claude hỏi), nhạc lùi xuống một ô.', 'Equaliser ở góc trên phải, cách mép 12; bấm ô: tab Media, equaliser đi tới ô ↗.']],
+        [24, 50, {hover: false, paused: false}, 'music', ['claude'], t('A · Thẻ nhạc lúc nghỉ: equaliser ở chỗ ⏸, không còn ⏮ ⏭', 'A · Music card at rest: the equaliser where ⏸ was, no more ⏮ ⏭'),
+            [t('Equaliser theo màu bìa, chạy khi Home đang mở; ⏮ ⏭ ở tab Media.', 'The equaliser in the cover\'s colour, moving while Home is open; ⏮ ⏭ in the Media tab.'), t('Bấm thẻ: tab Media, equaliser đi tới ô ↗ của tab.', 'Click the card: Media tab, the equaliser goes to the tab\'s ↗ slot.')]],
+        [24 + EW + GX, 50, {hover: true, paused: false}, 'music', ['claude'], t('B · Rê chuột vào ô (hay focus bàn phím): nút ⏸', 'B · Hover the slot (or keyboard focus): the ⏸ button'),
+            [t('Như các nút chính: kem, trắng dưới con trỏ. Đổi qua lại bằng mờ chéo tại chỗ.', 'Like the main buttons: cream, white under the pointer. Swapped by a crossfade in place.'), t('Bấm: dừng; nút thành ▶ ngay, không nháy.', 'Click: pause; the button turns ▶ at once, no flicker.')]],
+        [24, 50 + EH + GY, {hover: false, paused: true}, 'music', ['claude'], t('C · Đang dừng: equaliser thấp; rê chuột thì ▶', 'C · Paused: the equaliser low; ▶ on hover'),
+            [t('Các thanh hạ xuống trong 200 ms rồi đứng yên.', 'The bars drop over 200 ms, then stay still.'), '']],
+        [24 + EW + GX, 50 + EH + GY, {hover: false, paused: false}, 'ask', ['music'], t('D · Nhạc là một ô: equaliser ở góc trên phải', 'D · Music as a tile: the equaliser top right'),
+            [t('Khi thẻ chính là việc khác (ở đây: Claude hỏi), nhạc lùi xuống một ô.', 'When the main card is something else (here: Claude asks), music steps down to a tile.'), t('Equaliser ở góc trên phải, cách mép 12; bấm ô: tab Media, equaliser đi tới ô ↗.', 'The equaliser top right, 12 from the edge; click the tile: Media tab, the equaliser goes to the ↗ slot.')]],
     ];
     for (const [x, y, st, hero, acts, title, lines] of cells) {
         SLOT = st;
@@ -339,10 +339,10 @@ if (MODE === 'music') {
 if (MODE === 'screen') {
     const EW = 560, EH = 280, GX = 40, W = 24 + 2 * EW + GX + 24, H = 50 + EH + 70;
     const surf = canvas(W, H), G = ['wx', 'up', 'bat'];
-    home(24, 50, EW, EH, 'rec', ['music'], G, 'A · Đang quay và nghe nhạc: bản ghi (55) là thẻ chính');
-    home(24 + EW + GX, 50, EW, EH, 'ask', ['rec', 'music'], G, 'B · Claude Code hỏi lúc đang quay: bản ghi thành một ô');
-    note(24, 50 + EH + 8, ['Bản ghi chưa có thẻ riêng: dùng compact của nó (leading 40, tiêu đề, đồng hồ, Dừng) đặt trong thẻ.', 'Nhạc lùi thành ô.']);
-    note(24 + EW + GX, 50 + EH + 8, ['Ô: icon video, đồng hồ chạy, "Đang quay". Không có tab: bấm ô thì nó lên thẻ chính, có nút Dừng.', 'Chấm đỏ vẫn ở pill, không lặp lại trong Home.']);
+    home(24, 50, EW, EH, 'rec', ['music'], G, t('A · Đang quay và nghe nhạc: bản ghi (55) là thẻ chính', 'A · Recording and playing music: the recording (55) is the main card'));
+    home(24 + EW + GX, 50, EW, EH, 'ask', ['rec', 'music'], G, t('B · Claude Code hỏi lúc đang quay: bản ghi thành một ô', 'B · Claude Code asks while recording: the recording becomes a tile'));
+    note(24, 50 + EH + 8, [t('Bản ghi chưa có thẻ riêng: dùng compact của nó (leading 40, tiêu đề, đồng hồ, Dừng) đặt trong thẻ.', 'The recording has no card of its own yet: its compact (leading 40, title, clock, Stop) sits in the card.'), t('Nhạc lùi thành ô.', 'Music steps down to a tile.')]);
+    note(24 + EW + GX, 50 + EH + 8, [t('Ô: icon video, đồng hồ chạy, "Đang quay". Không có tab: bấm ô thì nó lên thẻ chính, có nút Dừng.', 'Tile: video icon, running clock, "Recording". No tab: clicking the tile brings it to the main card, with a Stop button.'), t('Chấm đỏ vẫn ở pill, không lặp lại trong Home.', 'The red dot stays on the pill, not repeated in Home.')]);
     surf.writeToPNG(out);
 }
 
@@ -352,30 +352,30 @@ if (MODE === 'anatomy') {
     const surf = canvas(W, H), ax = 40, ay = 70, ACTS = ['claude'], G = ['wx', 'up', 'bat'];
     const g = home(ax, ay, 560, 280, 'music', ACTS, G, '1920 · 560 × 280: N = 4');
     const vx = ax + 570;
-    vdim(vx, ay, ay + 12, '12'); vdim(vx, ay + 12, ay + 44, '32 thanh tab'); vdim(vx, ay + 44, ay + 56, '12');
-    vdim(vx, ay + 56, ay + 56 + g.heroH, `${g.heroH} thẻ chính = phần còn lại`);
+    vdim(vx, ay, ay + 12, '12'); vdim(vx, ay + 12, ay + 44, t('32 thanh tab', '32 tab bar')); vdim(vx, ay + 44, ay + 56, '12');
+    vdim(vx, ay + 56, ay + 56 + g.heroH, t(`${g.heroH} thẻ chính = phần còn lại`, `${g.heroH} main card = the rest`));
     vdim(vx, ay + 56 + g.heroH, ay + 64 + g.heroH, '8');
-    vdim(vx, ay + 64 + g.heroH, ay + 164 + g.heroH, '100 hàng ô');
+    vdim(vx, ay + 64 + g.heroH, ay + 164 + g.heroH, t('100 hàng ô', '100 tile row'));
     vdim(vx, ay + 268, ay + 280, '12');
     dim(ax, ax + 12, ay + 292, '12', CY, true); dim(ax + 12, ax + 548, ay + 292, '536 = 4 × 128 + 3 × 8', CY, true);
     // inside a tile: the leading box and the two lines
     const tY = ay + 56 + g.heroH + 8, tX = ax + 12;
     cr.newPath(); cr.setSourceRGBA(...CY, .6); cr.setLineWidth(.5);
     [[tX + 12, tY + 12, 20, 20], [tX + 12, tY + 40, 54, 22], [tX + 12, tY + 68, 80, 14]].forEach(r => cr.rectangle(...r)); cr.stroke();
-    note(ax, ay + 314, ['Ô: leading 20 ở 12 (icon 16 ở giữa; Bu 20 lấp đầy; icon màu 24 lố 2 mỗi bên) · số 1.5em 600 ở 40 ·',
-        'chú thích 0.85em fg-muted ở 68. Ô rộng từ 200: thêm cột chi tiết bên phải. Thẻ và ô: fill-1, bo 16 = 28 − 12.',
-        'Ảnh bìa của thẻ nhạc: cạnh = cao thẻ − 16, tối đa 184, cách mép 8 (thẻ cao hơn: ở giữa), bo 8; cột chữ theo mép trên và dưới của ảnh.'], .85);
+    note(ax, ay + 314, [t('Ô: leading 20 ở 12 (icon 16 ở giữa; Bu 20 lấp đầy; icon màu 24 lố 2 mỗi bên) · số 1.5em 600 ở 40 ·', 'Tile: leading 20 at 12 (icon 16 centred; Bu 20 fills it; colour icon 24 over by 2 each side) · number 1.5em 600 at 40 ·'),
+        t('chú thích 0.85em fg-muted ở 68. Ô rộng từ 200: thêm cột chi tiết bên phải. Thẻ và ô: fill-1, bo 16 = 28 − 12.', 'caption 0.85em fg-muted at 68. Tiles from 200 wide: a detail column on the right. Card and tiles: fill-1, radius 16 = 28 − 12.'),
+        t('Ảnh bìa của thẻ nhạc: cạnh = cao thẻ − 16, tối đa 184, cách mép 8 (thẻ cao hơn: ở giữa), bo 8; cột chữ theo mép trên và dưới của ảnh.', 'Music card cover: side = card height − 16, at most 184, 8 from the edge (taller card: centred), radius 8; the text column keeps to the cover\'s top and bottom.')], .85);
     const rx = ax, ry = ay + 380;
-    ['Tính lại mỗi lần Home mở và mỗi khi stack đổi:',
-     '1. N = floor((rộng nội dung + 8) / 128): số ô một hàng, mỗi ô ≥ 120.',
-     '2. Thẻ chính = activity đứng đầu stack; không có → lời chào. Luôn có.',
-     '3. Thẻ chính cao = nội dung − 8 − 100; dưới 160 dạng thấp, từ 160 dạng cao.',
-     '4. Không có ô nào: thẻ chính cao hết phần nội dung.',
-     'Không cuộn, không chỗ trống: chiều rộng chia đều cho các ô, chiều cao do thẻ chính.'].forEach((l, i) =>
+    [t('Tính lại mỗi lần Home mở và mỗi khi stack đổi:', 'Worked out each time Home opens and whenever the stack changes:'),
+     t('1. N = floor((rộng nội dung + 8) / 128): số ô một hàng, mỗi ô ≥ 120.', '1. N = floor((content width + 8) / 128): tiles per row, each ≥ 120.'),
+     t('2. Thẻ chính = activity đứng đầu stack; không có → lời chào. Luôn có.', '2. Main card = the activity at the top of the stack; none → the greeting. Always there.'),
+     t('3. Thẻ chính cao = nội dung − 8 − 100; dưới 160 dạng thấp, từ 160 dạng cao.', '3. Main card height = content − 8 − 100; under 160 the low form, from 160 the tall form.'),
+     t('4. Không có ô nào: thẻ chính cao hết phần nội dung.', '4. No tiles: the main card takes the full content height.'),
+     t('Không cuộn, không chỗ trống: chiều rộng chia đều cho các ô, chiều cao do thẻ chính.', 'No scrolling, no empty space: the width is shared by the tiles, the height set by the main card.')].forEach((l, i) =>
         text(l, rx, ry + i * 17, {sz: 8.5, a: i ? .85 : 1, wt: i ? 400 : 700}));
     const bx = ax + 560 + 150;
-    home(bx, ay, 716, 344, 'music', ACTS, G, '2560 · 716 × 344: N = 5, thẻ chính 168 (dạng cao)');
-    home(bx, ay + 344 + 70, 760, 376, 'music', ACTS, G, '3440 · 760 × 376: N = 5, thẻ chính 200, ảnh bìa 184');
+    home(bx, ay, 716, 344, 'music', ACTS, G, t('2560 · 716 × 344: N = 5, thẻ chính 168 (dạng cao)', '2560 · 716 × 344: N = 5, main card 168 (tall form)'));
+    home(bx, ay + 344 + 70, 760, 376, 'music', ACTS, G, t('3440 · 760 × 376: N = 5, thẻ chính 200, ảnh bìa 184', '3440 · 760 × 376: N = 5, main card 200, cover 184'));
     surf.writeToPNG(out);
 }
 
@@ -384,18 +384,18 @@ if (MODE === 'fill') {
     const EW = 560, EH = 280, GX = 36, GY = 80, W = 24 + 2 * EW + 760 + 2 * GX + 24, H = 50 + 2 * (EH + GY) - 10;
     const surf = canvas(W, H), c0 = 24, c1 = 24 + EW + GX, c2 = 24 + 2 * (EW + GX), r0 = 50, r1 = 50 + EH + GY;
     const S = [
-        [c0, r0, EW, EH, 'greet', [], [], 'a · Không việc, không nhìn nhanh: lời chào cao hết', 'Máy bàn, không vị trí, không lịch: vẫn đầy.'],
-        [c1, r0, EW, EH, 'greet', [], ['wx', 'up'], 'b · Không việc, máy bàn: thời tiết và sắp tới đều rộng', 'Sắp tới rộng: 2 sự kiện, vạch màu của lịch.'],
-        [c2, r0, 760, 376, 'music', ['claude'], ['wx', 'up', 'bat'], 'c · 3440, N = 5: ô dư cho thời tiết rộng', 'Cùng quy tắc ở mọi cỡ, chỉ N đổi.'],
-        [c0, r1, EW, EH, 'music', [], ['wx'], 'd · Nhạc + chỉ thời tiết: thời tiết rộng, kéo cho đầy hàng', 'Hết thứ để nở thì các ô rộng ra; ô nhỏ từ 200 thêm cột chi tiết.'],
-        [c1, r1, EW, EH, 'music', ['claude'], ['wx', 'up', 'bat'], 'e · Nhạc + Claude: đủ 4 ô, không ô nào rộng', 'Thời tiết nhỏ vẫn là icon màu (24).'],
+        [c0, r0, EW, EH, 'greet', [], [], t('a · Không việc, không nhìn nhanh: lời chào cao hết', 'a · No activity, no glance: the greeting takes the full height'), t('Máy bàn, không vị trí, không lịch: vẫn đầy.', 'Desktop, no location, no calendar: still full.')],
+        [c1, r0, EW, EH, 'greet', [], ['wx', 'up'], t('b · Không việc, máy bàn: thời tiết và sắp tới đều rộng', 'b · No activity, desktop: weather and up next both wide'), t('Sắp tới rộng: 2 sự kiện, vạch màu của lịch.', 'Wide up next: 2 events, each with its calendar\'s colour bar.')],
+        [c2, r0, 760, 376, 'music', ['claude'], ['wx', 'up', 'bat'], t('c · 3440, N = 5: ô dư cho thời tiết rộng', 'c · 3440, N = 5: spare room makes the weather wide'), t('Cùng quy tắc ở mọi cỡ, chỉ N đổi.', 'Same rule at every size, only N changes.')],
+        [c0, r1, EW, EH, 'music', [], ['wx'], t('d · Nhạc + chỉ thời tiết: thời tiết rộng, kéo cho đầy hàng', 'd · Music + weather only: weather wide, stretched to fill the row'), t('Hết thứ để nở thì các ô rộng ra; ô nhỏ từ 200 thêm cột chi tiết.', 'Nothing left to widen: the tiles grow; a small tile from 200 adds a detail column.')],
+        [c1, r1, EW, EH, 'music', ['claude'], ['wx', 'up', 'bat'], t('e · Nhạc + Claude: đủ 4 ô, không ô nào rộng', 'e · Music + Claude: all 4 tiles, none wide'), t('Thời tiết nhỏ vẫn là icon màu (24).', 'Small weather still has the colour icon (24).')],
     ];
     S.forEach(([x, y, w, h, hero, acts, gl, t, n]) => { home(x, y, w, h, hero, acts, gl, t); note(x, y + h + 8, [n]); });
     const ny = r0 + 376 + 44;
-    ['Cách lấp hàng ô (N ô một hàng):',
-     '1. Activity trước (Bị nhỡ đầu tiên), mỗi cái một ô; nhiều hơn N: N − 1 ô và +K, nên activity luôn tới được.',
-     '2. Còn chỗ: phần nhìn nhanh theo thứ tự thời tiết, sắp tới, pin, điện thoại, hẹn giờ…, mỗi cái một ô; hết chỗ thì bỏ (không vào +K).',
-     '3. Còn dư: thời tiết rồi sắp tới nở thành ô rộng (2 phần). Ít hơn N phần mà không còn gì để nở: các ô rộng ra cho đầy hàng.'].forEach((l, i) =>
+    [t('Cách lấp hàng ô (N ô một hàng):', 'How the tile row fills (N tiles per row):'),
+     t('1. Activity trước (Bị nhỡ đầu tiên), mỗi cái một ô; nhiều hơn N: N − 1 ô và +K, nên activity luôn tới được.', '1. Activities first (Missed first), one tile each; more than N: N − 1 tiles and +K, so every activity stays reachable.'),
+     t('2. Còn chỗ: phần nhìn nhanh theo thứ tự thời tiết, sắp tới, pin, điện thoại, hẹn giờ…, mỗi cái một ô; hết chỗ thì bỏ (không vào +K).', '2. Room left: the glance in the order weather, up next, battery, phone, timer…, one tile each; out of room, dropped (not into +K).'),
+     t('3. Còn dư: thời tiết rồi sắp tới nở thành ô rộng (2 phần). Ít hơn N phần mà không còn gì để nở: các ô rộng ra cho đầy hàng.', '3. Still spare: weather, then up next, grow into wide tiles (2 units). Fewer than N units and nothing left to grow: the tiles widen to fill the row.')].forEach((l, i) =>
         text(l, c2, ny + i * 17, {sz: 8.5, wt: i ? 400 : 700, a: i ? .85 : 1, maxW: 760}));
     surf.writeToPNG(out);
 }

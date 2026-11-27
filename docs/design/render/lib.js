@@ -12,6 +12,13 @@ import {SAMPLE as COVER_SIDE, mainColour, lifted} from '../../../src/buoy@murile
 
 export const SCALE = 3;
 
+// The labels' language (design/index "Vẽ lại ảnh"): an image written as x.en.png gets English
+// labels, any other Vietnamese; DESIGN_LANG overrides it for scripts that write frames, not one
+// PNG. t(vi, en) picks one. Text Buoy itself shows (buttons, titles, sample content) is the
+// same in both.
+export const LANG = GLib.getenv('DESIGN_LANG') ?? (/\.en\.png$/.test(ARGV[0] ?? '') ? 'en' : 'vi');
+export const t = (vi, en) => (LANG === 'en' ? en : vi);
+
 // The palette as decided (design/colours), one place for every drawing. Roles over the island's
 // black: white at an alpha (FG*, FILL*, BORDER) or as the grey it gives on black (GREY.*). The
 // wallpaper and the guide marks (cyan, red) are not palette.

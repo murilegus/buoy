@@ -6,19 +6,19 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, t} from '../../render/lib.js';
 const out = ARGV[0];
 
 const OPTIONS = [
-    ['A · hiện tại', {missed: '#EF9F27', waiting: '#E24B4A', mic: '#F0997B', cam: '#5DCAA5'}],
-    ['B · bảng GNOME', {missed: '#FFA348', waiting: '#ED333B', mic: '#F0997B', cam: '#5DCAA5'}],
-    ['C · tươi hơn', {missed: '#FF9F0A', waiting: '#FF453A', mic: '#F0997B', cam: '#5DCAA5'}],
-    ['D · C, chấm mới', {missed: '#FF9F0A', waiting: '#FF453A', mic: '#BF5AF2', cam: '#30D158'}, ['mic', 'cam']],
+    [t('A · hiện tại', 'A · as now'), {missed: '#EF9F27', waiting: '#E24B4A', mic: '#F0997B', cam: '#5DCAA5'}],
+    [t('B · bảng GNOME', 'B · GNOME palette'), {missed: '#FFA348', waiting: '#ED333B', mic: '#F0997B', cam: '#5DCAA5'}],
+    [t('C · tươi hơn', 'C · more vivid'), {missed: '#FF9F0A', waiting: '#FF453A', mic: '#F0997B', cam: '#5DCAA5'}],
+    [t('D · C, chấm mới', 'D · C, new dots'), {missed: '#FF9F0A', waiting: '#FF453A', mic: '#BF5AF2', cam: '#30D158'}, ['mic', 'cam']],
 ];
 const NAMES = {missed: 'missed', waiting: 'waiting', mic: 'mic', cam: 'cam'};
-const SIMS = [['thường', null],
-    ['mù đỏ', [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]]],
-    ['mù lục', [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.011820, 0.042940, 0.968881]]]];
+const SIMS = [[t('thường', 'normal'), null],
+    [t('mù đỏ', 'protanopia'), [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]]],
+    [t('mù lục', 'deuteranopia'), [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.011820, 0.042940, 0.968881]]]];
 
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const lin = c => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
@@ -68,8 +68,8 @@ OPTIONS.forEach(([name, c, shown = ['missed', 'waiting']], r) => {
     const rgb = Object.fromEntries(Object.entries(c).map(([k, v]) => [k, hex(v)]));
     const w1 = pill(120, y, '2:41 PM', rgb.missed, null);
     pill(120 + w1 + 12, y, '2:41 PM', rgb.waiting, rgb.mic);
-    const w3 = pill(120, y + 44, 'Đang ghi âm', null, rgb.mic);
-    pill(120 + w3 + 12, y + 44, 'Đang chia sẻ', null, rgb.cam);
+    const w3 = pill(120, y + 44, t('Đang ghi âm', 'Recording'), null, rgb.mic);
+    pill(120 + w3 + 12, y + 44, t('Đang chia sẻ', 'Sharing'), null, rgb.cam);
     SIMS.forEach(([, m], i) => {
         const x0 = SX + i * SW;
         rr(x0 - 4, y - 2, SW - 12, ROW - 12, 12); cr.setSourceRGB(0, 0, 0); cr.fill();

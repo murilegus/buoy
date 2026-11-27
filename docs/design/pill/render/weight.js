@@ -7,13 +7,13 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {colourIcon} from '../../render/lib.js';
+import {colourIcon, t} from '../../render/lib.js';
 
 const OUT = 2, LABEL = 120, STRIP = 250, COLGAP = 24, HEAD = 44, ROW = 70, FOOT = 64;
 const W = LABEL + 2 * STRIP + COLGAP + 16, H = HEAD + 3 * ROW + FOOT;
 const PAD = 8, BOX = 24, GAP = 6, CLOCK = '10∶45∶30 AM', WIDEST = '88∶88∶88 AM';
 const WALL = [0.20, 0.17, 0.35], WHITE = [1, 1, 1];
-const ROWS = [[400, '400 · regular'], [600, '600 · đang chốt'], [700, '700 · như thanh']];
+const ROWS = [[400, '400 · regular'], [600, t('600 · đang chốt', '600 · being decided')], [700, t('700 · như thanh', '700 · as the bar')]];
 
 function layout(cr, t, pt, wt, tnum = true) {
     const L = PangoCairo.create_layout(cr);
@@ -54,8 +54,8 @@ const cr = new cairo.Context(surf);
 cr.setSourceRGB(0.11, 0.11, 0.12); cr.paint();
 cr.scale(OUT, OUT);
 const colX = [LABEL, LABEL + STRIP + COLGAP];
-show(cr, 'Tỷ lệ 1× (màn thường; phóng 2 lần, giữ nguyên điểm ảnh)', colX[0], 22, 8, 600, WHITE, .85, false);
-show(cr, 'Tỷ lệ 2× (HiDPI)', colX[1], 22, 8, 600, WHITE, .85, false);
+show(cr, t('Tỷ lệ 1× (màn thường; phóng 2 lần, giữ nguyên điểm ảnh)', 'Scale 1× (regular screen; enlarged 2×, pixels kept)'), colX[0], 22, 8, 600, WHITE, .85, false);
+show(cr, t('Tỷ lệ 2× (HiDPI)', 'Scale 2× (HiDPI)'), colX[1], 22, 8, 600, WHITE, .85, false);
 
 ROWS.forEach(([wt, name], i) => {
     const y = HEAD + i * ROW;
@@ -68,10 +68,12 @@ ROWS.forEach(([wt, name], i) => {
     // 2×: straight onto the 2× canvas
     cr.save(); cr.translate(colX[1], y); const m2 = strip(cr, wt); cr.restore();
     [[0, m1], [1, m2]].forEach(([c, m]) => {
-        show(cr, `pill ${m.pw} = 8 + 24 + 6 + chữ ${m.tw} + 8`, colX[c] + m.px, y + 50, 6.5, 400, WHITE, .7, false);
+        show(cr, t(`pill ${m.pw} = 8 + 24 + 6 + chữ ${m.tw} + 8`, `pill ${m.pw} = 8 + 24 + 6 + text ${m.tw} + 8`), colX[c] + m.px, y + 50, 6.5, 400, WHITE, .7, false);
     });
 });
 const fy = HEAD + 3 * ROW + 8;
-show(cr, 'SF Pro Display 11pt, số đều. Ô leading 24 → chữ: 8. Độ rộng pill đo theo nhãn rộng nhất "88∶88∶88 AM" ở từng tỷ lệ.', 12, fy + 6, 7, 400, WHITE, .75, false);
-show(cr, 'Chữ hai bên pill ("vi", "87 %") là chữ của thanh GNOME, đậm 700 (#panel, _panel.scss).', 12, fy + 22, 7, 400, WHITE, .75, false);
+show(cr, t('SF Pro Display 11pt, số đều. Ô leading 24 → chữ: 8. Độ rộng pill đo theo nhãn rộng nhất "88∶88∶88 AM" ở từng tỷ lệ.',
+    'SF Pro Display 11pt, tabular digits. Leading box 24 → text: 8. Pill width measured on the widest label "88∶88∶88 AM" at each scale.'), 12, fy + 6, 7, 400, WHITE, .75, false);
+show(cr, t('Chữ hai bên pill ("vi", "87 %") là chữ của thanh GNOME, đậm 700 (#panel, _panel.scss).',
+    'The text either side of the pill ("vi", "87 %") is the GNOME bar\'s own, bold 700 (#panel, _panel.scss).'), 12, fy + 22, 7, 400, WHITE, .75, false);
 surf.writeToPNG(ARGV[0]);

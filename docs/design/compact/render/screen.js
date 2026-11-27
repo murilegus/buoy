@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x, C, drawBu, icon as gicon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, C, drawBu, icon as gicon, SAMPLE, t} from '../../render/lib.js';
 const out = ARGV[0];
 // Gravity UI (design/icons): video for recording, display-pulse for sharing, music-note for music
 const {RED, CREAM, WALL} = C;
@@ -59,14 +59,14 @@ function bar(y, caption) {
 }
 
 // 1. bars
-text('Trên thanh', 16, 12, {sz: 10, wt: 700, a: 1});
-bar(32, 'Chỉ quay: pill 1 là bản ghi, đồng hồ chạy; chấm đỏ bên phải.');
+text(t('Trên thanh', 'On the bar'), 16, 12, {sz: 10, wt: 700, a: 1});
+bar(32, t('Chỉ quay: pill 1 là bản ghi, đồng hồ chạy; chấm đỏ bên phải.', 'Recording only: pill 1 is the recording, its clock running; the red dot on the right.'));
 pill(W / 2, 36, {lead: 'video', label: '0:42', right: RED});
-bar(96, 'Quay và nghe nhạc: bản ghi (55) đứng trước nhạc (10); nhạc sang pill phụ.');
+bar(96, t('Quay và nghe nhạc: bản ghi (55) đứng trước nhạc (10); nhạc sang pill phụ.', 'Recording and music: the recording (55) comes before music (10); music moves to the secondary pill.'));
 const [px, pw] = pill(W / 2, 100, {lead: 'video', label: '0:42', right: RED});
 pill(px + pw + 8 + 131 / 2, 100, {lead: 'music-note', label: '1:24'});
-bar(160, 'Claude Code hỏi trong lúc quay: ask (cần bạn) lên pill 1, đèn đỏ trái; bản ghi sang pill phụ; chấm đỏ vẫn ở pill 1.');
-const [qx, qw] = pill(W / 2, 164, {bu: true, label: 'Cần trả lời', left: RED, right: RED});
+bar(160, t('Claude Code hỏi trong lúc quay: ask (cần bạn) lên pill 1, đèn đỏ trái; bản ghi sang pill phụ; chấm đỏ vẫn ở pill 1.', 'Claude Code asks while recording: the ask (needs you) takes pill 1, red light on the left; the recording moves to the secondary pill; the red dot stays on pill 1.'));
+const [qx, qw] = pill(W / 2, 164, {bu: true, label: t('Cần trả lời', 'Needs your answer'), left: RED, right: RED});
 pill(qx + qw + 8 + 131 / 2, 164, {lead: 'video', label: '0:42'});
 
 // 2. compacts on hover
@@ -86,17 +86,17 @@ function compact(x, y, {lead, title, sub, w = 300}) {
     return bx;
 }
 const notes = (x, y, lines) => lines.forEach((l, i) => text(l, x, y + i * 13, {sz: 7.5, a: .65}));
-const b1 = compact(16, 256, {lead: 'video', title: 'Đang quay màn hình', sub: '0:42 · từ 14:03'});
-notes(16, 322, ['Rộng cố định min(28em, 0.72 × expanded), 404 ở 1920.', 'Cao 56, chỉ phần đầu; bo 28.',
-    'Leading 40: nền fill-2, icon trắng.', 'Tiêu đề 1em 600 fg; dòng dưới 0.85em fg-subtle,', 'đồng hồ chạy và giờ bắt đầu.',
-    'Dừng: nút tròn 32, fill-inverse, stop-fill đen;', `cách mép phải 14, tâm y = 28.`]);
-compact(400, 256, {lead: 'display-pulse', title: 'Đang chia sẻ màn hình', sub: '12:05 · từ 13:51'});
-notes(400, 322, ['Giống hệt, khác icon và chữ.', 'App quay qua portal (OBS…): "Ứng dụng đang quay màn hình".',
-    'Không biết tên app: Mutter không đưa tên', '(MetaRemoteAccessHandle chỉ có is-recording).',
-    'Dừng tất cả phiên chia sẻ, như nút của GNOME.']);
-text('Bấm vào pill (không phải nút Dừng): mở Home, bản ghi là thẻ chính hoặc một ô. Không có tab riêng.', 16, 432, {sz: 8, a: .8});
-text('Không đèn trong compact; chấm đỏ trở lại khi compact thu về pill.', 16, 448, {sz: 8, a: .8});
-text('Mic và camera không thành activity: chỉ chấm (tím, xanh), bấm mở Home.', 16, 464, {sz: 8, a: .8});
-text('Nút của GNOME trên thanh (quay: đỏ, đồng hồ; chia sẻ: cam) ẩn khi module privacy bật.', 16, 480, {sz: 8, a: .8});
+const b1 = compact(16, 256, {lead: 'video', title: t('Đang quay màn hình', 'Recording the screen'), sub: t('0:42 · từ 14:03', '0:42 · from 14:03')});
+notes(16, 322, [t('Rộng cố định min(28em, 0.72 × expanded), 404 ở 1920.', 'Fixed width min(28em, 0.72 × expanded), 404 at 1920.'), t('Cao 56, chỉ phần đầu; bo 28.', 'Height 56, the head only; radius 28.'),
+    t('Leading 40: nền fill-2, icon trắng.', 'Leading 40: fill-2 background, white icon.'), t('Tiêu đề 1em 600 fg; dòng dưới 0.85em fg-subtle,', 'Title 1em 600 fg; the line below 0.85em fg-subtle,'), t('đồng hồ chạy và giờ bắt đầu.', 'the running clock and the start time.'),
+    t('Dừng: nút tròn 32, fill-inverse, stop-fill đen;', 'Stop: round button 32, fill-inverse, black stop-fill;'), t(`cách mép phải 14, tâm y = 28.`, `14 from the right edge, centre y = 28.`)]);
+compact(400, 256, {lead: 'display-pulse', title: t('Đang chia sẻ màn hình', 'Sharing the screen'), sub: t('12:05 · từ 13:51', '12:05 · from 13:51')});
+notes(400, 322, [t('Giống hệt, khác icon và chữ.', 'The same, only the icon and text differ.'), t('App quay qua portal (OBS…): "Ứng dụng đang quay màn hình".', 'An app recording through the portal (OBS…): "An app is recording the screen".'),
+    t('Không biết tên app: Mutter không đưa tên', 'The app has no name: Mutter does not give it'), t('(MetaRemoteAccessHandle chỉ có is-recording).', '(MetaRemoteAccessHandle only has is-recording).'),
+    t('Dừng tất cả phiên chia sẻ, như nút của GNOME.', 'Stops every sharing session, like the GNOME button.')]);
+text(t('Bấm vào pill (không phải nút Dừng): mở Home, bản ghi là thẻ chính hoặc một ô. Không có tab riêng.', 'Click on the pill (not the Stop button): opens Home, the recording is the main card or a tile. No tab of its own.'), 16, 432, {sz: 8, a: .8});
+text(t('Không đèn trong compact; chấm đỏ trở lại khi compact thu về pill.', 'No lights in the compact; the red dot comes back when the compact shrinks back to the pill.'), 16, 448, {sz: 8, a: .8});
+text(t('Mic và camera không thành activity: chỉ chấm (tím, xanh), bấm mở Home.', 'Mic and camera do not become activities: only dots (purple, green), click opens Home.'), 16, 464, {sz: 8, a: .8});
+text(t('Nút của GNOME trên thanh (quay: đỏ, đồng hồ; chia sẻ: cam) ẩn khi module privacy bật.', 'The GNOME buttons on the bar (recording: red, clock; sharing: orange) are hidden while the privacy module is on.'), 16, 480, {sz: 8, a: .8});
 
 surf.writeToPNG(out);

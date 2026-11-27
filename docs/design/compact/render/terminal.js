@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t} from '../../render/lib.js';
 
 const [out] = ARGV;
 const SUB = 9.35, KW = 404;
@@ -57,7 +57,8 @@ function pill(x, y, t, end = null, more = null) {
         text(more, tx, y + 8, {wt: 600, a: C.FG_MUTED, right: true});
     return w;
 }
-function card(x, y, t, sub, button = 'Về tab') {
+const GO_TAB = t('Về tab', 'Go to Tab');
+function card(x, y, t, sub, button = GO_TAB) {
     cr.newPath(); rr(x, y, KW, 104, 28); cr.setSourceRGB(0, 0, 0); cr.fill();
     logo(x + 14, y + 8, 40);
     text(t, x + 66, y + 10, {wt: 600, max: KW - 120});
@@ -72,48 +73,48 @@ const PX = 16 + KW + 32;
 
 // --- 1. done -------------------------------------------------------------------------------------
 let y = 40;
-title('1 · Lệnh xong khi cửa sổ Ptyxis không có focus: card như thông báo, rồi pill ở lại', 16, y - 26);
-card(16, y, 'cargo build --release', 'exit 0 · 48 s · ~/works/song-ngoai-khoi · bây giờ');
+title(t('1 · Lệnh xong khi cửa sổ Ptyxis không có focus: card như thông báo, rồi pill ở lại', '1 · A command done while Ptyxis\'s window has no focus: the card like a notification, then the pill stays'), 16, y - 26);
+card(16, y, 'cargo build --release', t('exit 0 · 48 s · ~/works/song-ngoai-khoi · bây giờ', 'exit 0 · 48 s · ~/works/song-ngoai-khoi · now'));
 pill(PX, y + 8, 'cargo build --release', {ok: true, time: '48 s'});
-note('pill: logo Ptyxis, dòng lệnh, ✓ và thời gian chạy ở cuối (fg-muted).', PX, y + 50);
-note('Ở lại tới khi anh về tab đó (Ptyxis tự gỡ thông báo khi tab có focus), như "Cửa sổ cần chú ý".', PX, y + 64);
-note('Bấm pill hay "Về tab": Ptyxis mở đúng tab (hành động của chính thông báo, app.focus-tab-by-uuid).', PX, y + 86);
-note('Thay thông báo "Command completed" của Ptyxis: không hiện thêm cái đó.', PX, y + 100);
+note(t('pill: logo Ptyxis, dòng lệnh, ✓ và thời gian chạy ở cuối (fg-muted).', 'pill: the Ptyxis logo, the command line, ✓ and the run time at the end (fg-muted).'), PX, y + 50);
+note(t('Ở lại tới khi anh về tab đó (Ptyxis tự gỡ thông báo khi tab có focus), như "Cửa sổ cần chú ý".', 'Stays until you go back to that tab (Ptyxis takes its notification back when the tab has focus), like "Window needs attention".'), PX, y + 64);
+note(t('Bấm pill hay "Về tab": Ptyxis mở đúng tab (hành động của chính thông báo, app.focus-tab-by-uuid).', 'Click the pill or "Go to Tab": Ptyxis opens that tab (the notification\'s own action, app.focus-tab-by-uuid).'), PX, y + 86);
+note(t('Thay thông báo "Command completed" của Ptyxis: không hiện thêm cái đó.', 'In place of Ptyxis\'s "Command completed" notification: that one does not show as well.'), PX, y + 100);
 
 // --- 2. failed -----------------------------------------------------------------------------------
 y += 104 + 64;
-title('2 · Lệnh lỗi', 16, y - 26);
-card(16, y, 'pnpm verify', 'exit 1 · 2 phút 3 s · ~/works/buoy · bây giờ');
+title(t('2 · Lệnh lỗi', '2 · A command that failed'), 16, y - 26);
+card(16, y, 'pnpm verify', t('exit 1 · 2 phút 3 s · ~/works/buoy · bây giờ', 'exit 1 · 2 min 3 s · ~/works/buoy · now'));
 pill(PX, y + 8, 'pnpm verify', {ok: false, time: '2:03'});
-note('✕ thay ✓, mã thoát trong card. Không xanh, không đỏ: xong hay lỗi nói bằng icon và chữ (design/colours).', PX, y + 50);
-note('Thời gian: "48 s", "2:03", "1:05:10" trên pill; card nói đủ "2 phút 3 s".', PX, y + 64);
-note('Ctrl+C (130) cũng là lỗi; lệnh bị dừng bằng Ctrl+Z thì không báo.', PX, y + 78);
+note(t('✕ thay ✓, mã thoát trong card. Không xanh, không đỏ: xong hay lỗi nói bằng icon và chữ (design/colours).', '✕ for ✓, the exit code in the card. No green, no red: done or failed is told by icon and words (design/colours).'), PX, y + 50);
+note(t('Thời gian: "48 s", "2:03", "1:05:10" trên pill; card nói đủ "2 phút 3 s".', 'Time: "48 s", "2:03", "1:05:10" on the pill; the card says it in full, "2 min 3 s".'), PX, y + 64);
+note(t('Ctrl+C (130) cũng là lỗi; lệnh bị dừng bằng Ctrl+Z thì không báo.', 'Ctrl+C (130) is a failure too; a command stopped with Ctrl+Z is not told.'), PX, y + 78);
 
 // --- 3. no hook ----------------------------------------------------------------------------------
 y += 104 + 64;
-title('3 · Chưa có hook (bash có vte.sh)', 16, y - 26);
+title(t('3 · Chưa có hook (bash có vte.sh)', '3 · No hook yet (bash with vte.sh)'), 16, y - 26);
 pill(16, y, 'rsync -a ảnh/ nas:/backup');
-note('Chỉ có thông báo của Ptyxis: pill không có ✓/✕ và thời gian; card "Terminal · bây giờ" (tên Ubuntu đặt cho Ptyxis).', 16, y + 44);
-note('zsh của Ubuntu không nạp vte.sh, nên Ptyxis không báo gì; hook của Buoy nạp nó.', 16, y + 58);
+note(t('Chỉ có thông báo của Ptyxis: pill không có ✓/✕ và thời gian; card "Terminal · bây giờ" (tên Ubuntu đặt cho Ptyxis).', 'Ptyxis\'s notification only: no ✓/✕ or time on the pill; the card says "Terminal · now"'), 16, y + 44);
+note(t('zsh của Ubuntu không nạp vte.sh, nên Ptyxis không báo gì; hook của Buoy nạp nó.', '("Terminal" is Ubuntu\'s name for Ptyxis). Ubuntu\'s zsh does not load vte.sh, so Ptyxis\ntells nothing; Buoy\'s hook loads it.'), 16, y + 58);
 
-title('4 · Nhiều lệnh xong', PX, y - 26);
+title(t('4 · Nhiều lệnh xong', '4 · Several commands done'), PX, y - 26);
 pill(PX, y, 'cargo build --release', {ok: true, time: '48 s'}, '+1');
-note('Một pill cho Ptyxis: lệnh mới nhất, "+1" cho các tab khác cũng xong; bấm: tab mới nhất.', PX, y + 44);
-note('Thứ tự như "Cửa sổ cần chú ý" (attention): sau thông báo, cuộc gọi, ask. Không đèn đỏ.', PX, y + 58);
+note(t('Một pill cho Ptyxis: lệnh mới nhất, "+1" cho các tab khác cũng xong; bấm: tab mới nhất.', 'One pill for Ptyxis: the newest command, "+1" for the other tabs done too; click: the newest tab.'), PX, y + 44);
+note(t('Thứ tự như "Cửa sổ cần chú ý" (attention): sau thông báo, cuộc gọi, ask. Không đèn đỏ.', 'Order as "Window needs attention" (attention): after notifications, calls, asks. No red light.'), PX, y + 58);
 
 // --- 5. prefs ------------------------------------------------------------------------------------
 y += 32 + 100;
-title('5 · Prefs: cài hook', 16, y - 26);
+title(t('5 · Prefs: cài hook', '5 · Prefs: installing the hook'), 16, y - 26);
 const PW = 620;
 fill(1, 16, y, PW, 112, 12, [.19, .19, .2]);
-text('Lệnh terminal xong', 32, y + 12, {wt: 600});
-text('Thêm dòng này vào ~/.zshrc hoặc ~/.bashrc để Buoy biết mã thoát và thời gian chạy.', 32, y + 30, {sz: SUB, a: C.FG_MUTED});
+text(t('Lệnh terminal xong', 'Exit code and time'), 32, y + 12, {wt: 600});
+text(t('Thêm dòng này vào ~/.zshrc hoặc ~/.bashrc để Buoy biết mã thoát và thời gian chạy.', 'Add this line to ~/.zshrc or ~/.bashrc:'), 32, y + 30, {sz: SUB, a: C.FG_MUTED});
 fill(C.FILL1, 32, y + 56, PW - 32 - 16 - 44, 36, 8);
 text('source ~/.local/share/gnome-shell/extensions/buoy@murilegus/hooks/shell.sh', 44, y + 67, {sz: 9, mono: true, a: C.FG_MUTED});
 fill(C.FILL2, 16 + PW - 16 - 36, y + 56, 36, 36, 8); icon('copy', 16 + PW - 16 - 26, y + 66, 16);
-note('Nút chép, như chép link họp. Buoy không tự sửa file của shell.', 16, y + 122);
-note('Hook: nạp vte.sh nếu chưa có, ghi mã thoát, thời gian và thư mục của lệnh vừa xong', PX + 220, y + 6);
-note('vào một file nhỏ trong $XDG_RUNTIME_DIR (lệnh có sẵn của shell, không chạy thêm', PX + 220, y + 20);
-note('tiến trình, không D-Bus). Buoy chỉ đọc file đó khi thông báo của Ptyxis đến.', PX + 220, y + 34);
-note('Không có Buoy: hook không làm gì khác, shell chạy như cũ.', PX + 220, y + 56);
+note(t('Nút chép, như chép link họp. Buoy không tự sửa file của shell.', 'A copy button, like copying a meeting link. Buoy never edits the shell\'s files itself.'), 16, y + 122);
+note(t('Hook: nạp vte.sh nếu chưa có, ghi mã thoát, thời gian và thư mục của lệnh vừa xong', 'Hook: loads vte.sh if not loaded, writes the exit code, time and folder of the command just done'), PX + 220, y + 6);
+note(t('vào một file nhỏ trong $XDG_RUNTIME_DIR (lệnh có sẵn của shell, không chạy thêm', 'to a small file in $XDG_RUNTIME_DIR (the shell\'s built-in commands, no extra'), PX + 220, y + 20);
+note(t('tiến trình, không D-Bus). Buoy chỉ đọc file đó khi thông báo của Ptyxis đến.', 'process, no D-Bus). Buoy reads that file only when Ptyxis\'s notification comes.'), PX + 220, y + 34);
+note(t('Không có Buoy: hook không làm gì khác, shell chạy như cũ.', 'Without Buoy: the hook does nothing else, the shell runs as before.'), PX + 220, y + 56);
 surf.writeToPNG(out);

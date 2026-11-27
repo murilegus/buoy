@@ -154,12 +154,12 @@ Pages; phiên bản trong `requirements-docs.txt`), không bao giờ trong exten
 docs/design/
 ├── index.vi.md       units and rules for every part (em, 56 + 16n, concentric radii); index.md in English
 ├── tokens.vi.md      the one table of numbers: sizes, radii, gaps, type
-├── render/lib.js     shared by render scripts: draws at 3×, fits text to its 1× width
+├── render/lib.js     shared by render scripts: draws at 3×, fits text to its 1× width, t(vi, en)
 └── <part>/           colours, pill, compact, alerts-and-asks, expanded, home, media, device, tabs,
     │                 icons, mascot, motion
     ├── index.vi.md   purpose, anatomy, sizes, states, decisions (date, who), open, code
-    ├── images/       x.vi.png, x.en.png; mkdocs-static-i18n serves each as x.png
-    ├── clips/        x.vi.png: motion as animated PNG, 30 fps (scripts/apng.js)
+    ├── images/       x.vi.png, x.en.png (x.png when it has no words); the site serves each as x.png
+    ├── clips/        x.vi.png, x.en.png: motion as animated PNG, 30 fps (scripts/apng.js)
     └── render/       gjs scripts drawing the images; scripts/render-design.sh runs them all
 ```
 

@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, EQ, drawBu, drawEq, icon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, EQ, drawBu, drawEq, icon, SAMPLE, t} from '../../render/lib.js';
 const out = ARGV[0];
 
 const W = 16 + 2 * (560 + 16), H = 350;
@@ -57,12 +57,13 @@ function home(X, title, {border, subtle, disabled}) {
         fill(C.FILL1, tx, ty, w, 100, 16);
         if (ic === 'bu') drawBu(cr, 'busy', tx + 12, ty + 12, 2); else icon(cr, ic, tx + 14, ty + 14, 16);
         text(v, tx + 12, ty + 40, {sz: 16.5, wt: 600}); text(c, tx + 12, ty + 68, {sz: 9.35, a: C.FG_MUTED});
-        if (n === 2) { text('25 phút nữa', tx + w - 14, ty + 44, {sz: 9.35, a: subtle, right: true}); text('phòng 3', tx + w - 14, ty + 62, {sz: 9.35, a: subtle, right: true}); }
+        if (n === 2) { text(t('25 phút nữa', 'in 25 min'), tx + w - 14, ty + 44, {sz: 9.35, a: subtle, right: true}); text(t('phòng 3', 'Room 3'), tx + w - 14, ty + 62, {sz: 9.35, a: subtle, right: true}); }
         return tx + w + 8;
     }, cx);
-    text(`viền ${Math.round(border * 100)} % · chữ phụ ${Math.round(subtle * 100)} % (${ratio(subtle)}:1) · chữ tắt ${Math.round(disabled * 100)} % (⏭ ở tab Media khi không có bài sau)`,
+    text(t(`viền ${Math.round(border * 100)} % · chữ phụ ${Math.round(subtle * 100)} % (${ratio(subtle)}:1) · chữ tắt ${Math.round(disabled * 100)} % (⏭ ở tab Media khi không có bài sau)`,
+        `border ${Math.round(border * 100)} % · subtle text ${Math.round(subtle * 100)} % (${ratio(subtle)}:1) · disabled text ${Math.round(disabled * 100)} % (⏭ on the Media tab with no next track)`),
         X, Y + PH + 10, {sz: 7.5, a: .7});
 }
-home(16, 'Thường', {border: .12, subtle: .5, disabled: .28});
-home(16 + 560 + 16, 'Tương phản cao', {border: .5, subtle: .7, disabled: .5});
+home(16, t('Thường', 'Normal'), {border: .12, subtle: .5, disabled: .28});
+home(16 + 560 + 16, t('Tương phản cao', 'High contrast'), {border: .5, subtle: .7, disabled: .5});
 surf.writeToPNG(out);
