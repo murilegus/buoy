@@ -47,7 +47,7 @@ GNOME-style vectors. Not in other modules' pills, and never instead of the light
   own colour**; the stack's amber/red is the pill's edge dot (2026-11-08, Ethan). Amber and red
   appear in the lamp only as `missed` and `ask`. Hues near full saturation, clear of the lights
   and privacy dots: `think` pink (purple is the mic), `error` a lighter grey, never red (2026-11-11,
-  design/colours "Minh hoạ"). The lamp never blinks.
+  design/colours "Illustration"). The lamp never blinks.
 - **Motion, only with an activity.** `busy`, `think` loop while visible; `wave`, `party` play
   once (~2 s). Two frames swapped every 500 ms, no easing. The timer is in
   `kit/ui/present/motion.js`, only while a moving pose is mapped; removed on pose change,
@@ -412,7 +412,7 @@ beat is one change, then stillness (ARCHITECTURE rule 8).
 ### Expressions
 
 *Decided and built 2026-11-14 (Ethan), FEATURES M4 "Bu's eyes: expressions".* Drawn as in
-design/mascot "Biểu cảm của mắt" (`docs/design/mascot/render/eyes.js`): rounded bars, arcs and
+design/mascot "Eye expressions" (`docs/design/mascot/render/eyes.js`): rounded bars, arcs and
 polylines only.
 
 | Expression | When | For |

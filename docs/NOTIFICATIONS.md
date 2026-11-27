@@ -109,7 +109,7 @@ makes per process); a new notification replaces its content.
 
 A notification's compact is a **card** (2026-11-07, Ethan: "at least like GNOME's
 banner"), the kit shape `compact.card` (`kit/model/presentation.js` planCard,
-`kit/ui/present/compact.js`), also used by §7. Layout: design/compact "Card thông báo"
+`kit/ui/present/compact.js`), also used by §7. Layout: design/compact "Notification card"
 (2026-11-12) — head (picture 40, app logo on its corner, sender over "App · time", round
 × 32), message full width (2 lines of 16), buttons 12 from the edges; 104 tall without
 buttons, 136 / 152 with; full compact width, ≤ 160.

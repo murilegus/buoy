@@ -24,7 +24,7 @@ A new moment, line or holiday changes this file first. Decided with Ethan, 2026-
 
 - **v0.1** (FEATURES M3 "greeting: first run and What's new", 2026-11-08, Ethan): only §11.
   §1–§10 are M4 "greeting". Each release adds its notes to What's new (§11).
-- **M4 in three parts** (2026-11-25, Ethan; design/expanded "Lời chào"), all in 2026-11-26:
+- **M4 in three parts** (2026-11-25, Ethan; design/expanded "Greeting"), all in 2026-11-26:
   (1) §1, §3 rules 3–6, §4–§6, prefs `greeting-style`, `greeting-farewell`, `greeting-name`;
   (2) weather and rain (§8), client moved into the kit; (3) special days and birthday (§7, §3
   rules 2a–2b). Line 3 is text only (no icon per line in the expanded center). Welcome back

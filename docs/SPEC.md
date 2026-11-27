@@ -145,7 +145,7 @@ not Apple's mapping (CONTRACT.md §2).
 |---|---|---|---|
 | **Idle** | no activity | 132×32 r16 at 1× (the clock at its longest, §4); content per `idle-content` (§2a) | hover → +0.75em wide, +2 high; with the amber light the missed list as a compact, with the red light the waiting ask's card (2026-11-13); press → a pulse; **click → Home** (while Bu's eyes show: on release, and a hold ≥ 0.5 s pokes Bu, MASCOT § Expressions) |
 | **Minimal** | one or more activities | pill 1 (highest priority) at screen centre, content-fit; up to two side pills to its right, idle-sized, as many as fit (§2c) | hover 300 ms → its compact; **click → the activity's tab**; Home on the `+N` badge or while the missed list shows |
-| **Compact** | pointer rests on a pill; an alert (5 s); an ask until answered | grows in place: top edge kept, width min(28em, 0.72 × expanded) (2026-11-12, Ethan); height 56 + 16n up to 152 (§4, design/compact); an ask's card of choices up to expanded's height | the activity's compact content (media: art 72, its bar, the equaliser flown into the ⏸ slot, design/compact "Nhạc"), or the amber missed list (INDICATORS.md); buttons run their action, a click elsewhere = the pill's click; collapses 200 ms after the pointer leaves; an alert's stays 5 s (longer hovered), an ask's until answered (keys work after Super+B) |
+| **Compact** | pointer rests on a pill; an alert (5 s); an ask until answered | grows in place: top edge kept, width min(28em, 0.72 × expanded) (2026-11-12, Ethan); height 56 + 16n up to 152 (§4, design/compact); an ask's card of choices up to expanded's height | the activity's compact content (media: art 72, its bar, the equaliser flown into the ⏸ slot, design/compact "Music"), or the amber missed list (INDICATORS.md); buttons run their action, a click elsewhere = the pill's click; collapses 200 ms after the pointer leaves; an alert's stays 5 s (longer hovered), an ask's until answered (keys work after Super+B) |
 | **Expanded** | a click from idle, minimal or compact; the stack for a transient | `EXPANDED` (§4) | only a click outside (or Esc after a click-open) closes, at once; buttons run their action (2026-11-01) |
 
 Rules:
@@ -225,7 +225,7 @@ is replaced the instant an activity surfaces. Nothing animates while idle: a cha
 
 Pill structure in every state: `[light] leading · text · trailing [dot]`. The ends are Buoy's status
 lights; the zones belong to the plan (idle) or the adapter (minimal). **Lights at pill 1's ends**
-(2026-11-10, Ethan; design/pill "Đèn ở hai đầu"): an 8 px dot centred in the end's cap (16 from the
+(2026-11-10, Ethan; design/pill "Lights at both ends"): an 8 px dot centred in the end's cap (16 from the
 edge at 1×); the pill grows at **both** ends by 20 (idle 132 → 172), so the content never moves.
 No light, no growth. The cap counts the lights; the text ellipsizes. A light coming or going is one
 small morph. Side pills, compact, card and expanded have no light. The grey light only in `none`.
@@ -244,15 +244,13 @@ other; the lamp keeps its pose's colour (INDICATORS § Bu's lamp).
 ### 2a-ii. Privacy dot (pill 1's right end, idle and minimal)
 
 One dot at the centre of pill 1's right end, idle or not: **purple** microphone, **green** camera,
-**red** screen shared or recorded; one at a time, red › green › purple (design/colours "Chấm riêng
-tư", 2026-11-11). Ends grow as for the light (§2a). The pill draws it; the `privacy` module tells the
+**red** screen shared or recorded; one at a time, red › green › purple (design/colours "Privacy dot", 2026-11-11). Ends grow as for the light (§2a). The pill draws it; the `privacy` module tells the
 stack (`stack.setPrivacy`). A muted microphone has no dot (`ui/status/volume.js`
 `_updatePrivacyIndicator`). Click → Home.
-- A recording or share is also an activity with its clock and Stop (design/compact "Chia sẻ và quay
-  màn hình", 2026-11-14).
+- A recording or share is also an activity with its clock and Stop (design/compact "Screen sharing and recording", 2026-11-14).
 - GNOME's own indicators for these are hidden while the module is on: `privacy-dot = pill | system
   | both`, default `pill`.
-- Camera and microphone both on for 10 s make a call (2026-11-27, design/compact "Đang gọi"): "In a
+- Camera and microphone both on for 10 s make a call (2026-11-27, design/compact "In a call"): "In a
   call" with its clock, Mute and the app recording; Do Not Disturb while it lasts
   (`privacy-call-dnd`), given back only if Buoy set it and nothing changed it. Home's first glance,
   "in use", names the apps recording (the mixer knows them; nothing names the camera's).
@@ -337,7 +335,7 @@ stack (`stack.setPrivacy`). A muted microphone has no dot (`ui/status/volume.js`
 - **Side pills 2 and 3**: the idle size (132 × 32 at 1×): leading, a short trailing (equaliser,
   `40%`, `4:59`) and `+N`; no text, so the short value goes in `trailing` (CONTRACT.md §3). Leading at
   the left edge, trailing at the right, `+N` at the right edge before it (2026-11-12, Ethan,
-  design/pill "Pill phụ"). Their full content is their compact.
+  design/pill "Side pills"). Their full content is their compact.
 - **How many**: as many as fit before the system cluster (12 px margin), at most two, re-measured
   when it resizes; side pills go before pill 1 narrows. Pill 1 widest, 300 px cluster: 1366 → one,
   1920+ → two.
@@ -498,8 +496,7 @@ Glances and module cards live for the open only (rule 8). Every tab opens at the
 - **Calendar tab** (2026-11-08, Ethan): the month on one side (circles 26–40 px with the room, digits
   12–16; month name in the accent, year grey, weekends dim, today filled, an accent dot on event
   days), the picked day's events on the other (today: the week ahead) as cards in the calendar's
-  colour (EDS `Color`). A row opens the event's page in that column (2026-11-20, design/tabs "Chi
-  tiết sự kiện"). Read only. No calendars → Bu with "Add an Online Account".
+  colour (EDS `Color`). A row opens the event's page in that column (2026-11-20, design/tabs "Event details"). Read only. No calendars → Bu with "Add an Online Account".
 - **Battery glance** (2026-11-12, Ethan) — Quick Settings' own UPower DisplayDevice proxy
   (`ui/status/system.js` PowerToggle): percentage, "Battery" or "Charging"; none on a desktop. The
   power mode's icon top right; a click lists the three modes in place, Settings → Power last
@@ -600,28 +597,28 @@ its tokens.*
    (MASCOT.md § Agents), the agent's name first (CODING-AGENTS.md).
 Each item below is decided in full on its design page; here, what it is and where it reads from.
 
-3. **timer** (2026-11-22, Ethan; design/compact "Hẹn giờ") — ring and countdown, Pomodoro, the Timer
+3. **timer** (2026-11-22, Ethan; design/compact "Timer") — ring and countdown, Pomodoro, the Timer
    tab; saved timers are GNOME Clocks' (`org.gnome.clocks timers`), both ways, and Clocks' "Time is
    up!" becomes Buoy's card. `timer-keep-awake`. Stopwatch: later.
-4. **power** (2026-11-14, Ethan; design/compact "Pin và chế độ năng lượng") — plug, unplug, full, low
+4. **power** (2026-11-14, Ethan; design/compact "Battery and power mode") — plug, unplug, full, low
    battery (replacing gsd's notification) and power mode, from Quick Settings' own UPower proxy.
-   **bluetooth** (2026-11-17, Ethan; design/device "Không dây") — connect/disconnect flashes with the
+   **bluetooth** (2026-11-17, Ethan; design/device "Wireless") — connect/disconnect flashes with the
    device's battery, from Quick Settings' client.
-5. **calendar** (2026-11-20, Ethan; design/compact "Sắp họp") — a meeting 5 min ahead with Join; the
+5. **calendar** (2026-11-20, Ethan; design/compact "Meeting soon") — a meeting 5 min ahead with Join; the
    link read over EDS's D-Bus (`Calendar.GetObject`) only for an event about to start, no `gi://ECal`;
    evolution-alarm-notify's reminder within 15 min is taken off (`calendar-meeting-alert`);
    `calendar-refresh` asks EDS to refresh online calendars (`Calendar.Refresh`; EDS's own 60 min).
 6. **usb** (2026-11-17, Ethan; design/device) — a mounted drive with Open and Eject, replacing GNOME's
    notification; a webcam flashes.
-6b. **attention** (2026-11-19, Ethan; design/compact "Cửa sổ cần chú ý") — a window demanding
+6b. **attention** (2026-11-19, Ethan; design/compact "Windows that need attention") — a window demanding
    attention (as `ui/windowAttentionHandler.js`) stays on the pill till focused or quiet; GNOME's
    "“…” is ready" is not shown meanwhile.
-6e. **print** (2026-11-23, Ethan; design/compact "Lệnh in") — CUPS's own signals
+6e. **print** (2026-11-23, Ethan; design/compact "Print jobs") — CUPS's own signals
    (`org.cups.cupsd.Notifier`, for gsd's subscription; none of Buoy's); gsd's matching "Printers"
    notifications hidden.
-6d. **network** (2026-11-23, Ethan; design/compact "Mạng") — Shell's NM.Client: connect, offline, VPN,
+6d. **network** (2026-11-23, Ethan; design/compact "Network") — Shell's NM.Client: connect, offline, VPN,
    no Internet, captive portal. No rows or switches.
-6c. **terminal** (2026-11-21, Ethan; design/compact "Lệnh terminal xong") — Ptyxis's "Command
+6c. **terminal** (2026-11-21, Ethan; design/compact "Terminal command finished") — Ptyxis's "Command
    completed" as a pill; exit code, time and directory from `hooks/shell.sh` (a line in ~/.zshrc or
    ~/.bashrc, from prefs; files in `$XDG_RUNTIME_DIR` read only when the notification comes).
 7. **privacy / recording** — the dots, recording and sharing, "In a call" (§2a-ii).

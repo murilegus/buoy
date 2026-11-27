@@ -52,10 +52,23 @@ plugins:
           default: true
           name: English
           build: true
-          # Design is only its landing page until the pages are translated
           nav:
             - Buoy: index.md
-            - Design: design/index.md
+            - Design:
+                - design/index.md
+                - Tokens: design/tokens.md
+                - Colours: design/colours/index.md
+                - Pill: design/pill/index.md
+                - Compact: design/compact/index.md
+                - Alerts and asks: design/alerts-and-asks/index.md
+                - Expanded: design/expanded/index.md
+                - Home: design/home/index.md
+                - Tabs: design/tabs/index.md
+                - Media: design/media/index.md
+                - Device: design/device/index.md
+                - Icons: design/icons/index.md
+                - Bu: design/mascot/index.md
+                - Motion: design/motion/index.md
             - Product: &product
                 - SPEC.md
                 - FEATURES.md

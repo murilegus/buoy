@@ -145,19 +145,21 @@ Module của v0.1: `media`, `hud`, `home`, `progress`, `copied` và `clipboard` 
   bước release.
 
 **Docs và site của chúng** (2026-11-10, FEATURES M4 "Design docs and site"). `docs/` song ngữ:
-`page.md` tiếng Anh, `page.vi.md` tiếng Việt. Trang thiết kế được quyết bằng tiếng Việt trước;
-các docs khác giữ tiếng Anh làm bản gốc (dịch 2026-11-27; sửa một bản thì sửa bản kia trong cùng PR; FEATURES chỉ có tiếng Anh). `mkdocs.yml` dựng
+`page.md` tiếng Anh, `page.vi.md` tiếng Việt. Trang thiết kế được quyết bằng tiếng Việt trước,
+rồi dịch; các docs khác giữ tiếng Anh làm bản gốc (cả hai đã dịch 2026-11-27). Sửa một bản thì
+sửa bản kia trong cùng PR; FEATURES chỉ có tiếng Anh. `mkdocs.yml` dựng
 site (MkDocs Material, mkdocs-static-i18n) chỉ trong CI (`.github/workflows/docs.yml` → GitHub
 Pages; phiên bản trong `requirements-docs.txt`), không bao giờ trong extension hay `package.json`.
 
 ```
 docs/design/
-├── index.vi.md       units and rules for every part (em, 56 + 16n, concentric radii); index.md in English
+├── index.vi.md       units and rules for every part (em, 56 + 16n, concentric radii); each .vi.md
+│                     has its English twin beside it (index.md, tokens.md)
 ├── tokens.vi.md      the one table of numbers: sizes, radii, gaps, type
 ├── render/lib.js     shared by render scripts: draws at 3×, fits text to its 1× width, t(vi, en)
 └── <part>/           colours, pill, compact, alerts-and-asks, expanded, home, media, device, tabs,
     │                 icons, mascot, motion
-    ├── index.vi.md   purpose, anatomy, sizes, states, decisions (date, who), open, code
+    ├── index.vi.md   purpose, anatomy, sizes, states, decisions (date, who), open, code; index.md
     ├── images/       x.vi.png, x.en.png (x.png when it has no words); the site serves each as x.png
     ├── clips/        x.vi.png, x.en.png: motion as animated PNG, 30 fps (scripts/apng.js)
     └── render/       gjs scripts drawing the images; scripts/render-design.sh runs them all
