@@ -1,58 +1,43 @@
 # Indicators — the buoy light and the privacy dot
 
-The reference for every status mark on the pill. One table, stick to it; a new colour or
-position needs a change here first (SPEC §2a-i / §2a-ii point to this file).
-
-> **v0.2 redesign:** where the lights sit and how the pill grows around them are decided in
-> [Design](design/index.md) (Pill; in Vietnamese first): pill 1 only, an 8 px dot at the centre
-> of each end circle. Their colours are the palette's roles (design/colours,
-> `kit/model/palette.js`, in the code since 2026-11-12). Their meaning stays here.
+Every status mark on the pill. A new colour or position needs a change here first (SPEC §2a-i,
+§2a-ii). Where the marks sit and how the pill grows around them is in [Design](design/index.md)
+(Pill); their colours are palette roles (`kit/model/palette.js`, design/colours).
 
 ## Principles
 
-1. **Two edge slots, nothing else.** Left edge = *the buoy light* (about you: what you
-   missed or what is waiting for you). Right edge = *the privacy dot* (about the machine:
-   what is sensing right now). No third slot, no badges on icons.
-2. **Static.** A mark changes state by changing colour or appearing/disappearing, never by
-   blinking, pulsing or breathing (SPEC §8: nothing animates while idle).
-3. **Only when meaningful.** A slot is not drawn when it has nothing to say; the three
-   content zones then use the full pill. The only exception is the grey "off" light in
-   idle `none`, so an empty pill never reads as broken.
-4. **Same in idle, minimal and compact.** Expanded hides both: Home and the compact's
-   missed list already explain them.
-5. **One colour = one meaning**, across every module. Modules never pick colours.
+1. **Two edge slots, nothing else.** Left = *the buoy light* (about you: what you missed or
+   what waits for you). Right = *the privacy dot* (about the machine: what senses now). No
+   third slot, no badges on icons.
+2. **Static.** A mark changes colour or appears/disappears; never blinks, pulses or breathes
+   (SPEC §8).
+3. **Only when meaningful.** An empty slot is not drawn. Exception: the grey "off" light in
+   idle `none`, so an empty pill never looks broken.
+4. **Same in idle, minimal and compact.** Expanded hides both (Home and the missed list
+   explain them).
+5. **One colour = one meaning**, across modules. Modules never pick colours.
 
 ## Buoy light (left edge)
 
 | Colour | Token | Meaning | Set by | Cleared by | Shown in |
 |---|---|---|---|---|---|
 | white 20 % | `light-off` | nothing | — | — | idle `none` only |
-| amber `#FF9F0A` | `light-missed` | ≥1 activity ended while the island was hidden (fullscreen), you were away (GNOME's session idle) or in Do Not Disturb (2026-11-13); missed history has entries. Not counted (2026-11-01): `osd`, `copied`, `input` (feedback for your own action), `ask` (red instead), hidden apps | `stack` on end-while-unseen (`setUnseen`) or away (`setAway`) | Home shown (the list stays there until Clear, 2026-11-03), or history emptied | idle, minimal, compact |
-| red `#FF453A` | `light-waiting` | an `ask` activity exists that could not surface (fullscreen, dismissed) and still has no answer | `stack` when an `ask` is queued but not shown | the ask is answered, times out (→ deny), or is ended by the caller | idle, minimal, compact |
+| amber `#FF9F0A` | `light-missed` | missed history has entries: an activity ended or came while the island was hidden (fullscreen), you were away (GNOME's session idle, after `idle-delay`), the screen locked, or in Do Not Disturb; or a notification never had its 5 s while you were present (cut short, no room in a burst) (2026-11-12, Ethan; NOTIFICATIONS §2). Not counted: `osd`, `copied`, `input` (your own action), `ask` (red), hidden apps (2026-11-01) | `stack` (`setUnseen`, `setAway`) | opening Home, or history emptied; Home's Missed tile stays until every row is opened or cleared | idle, minimal |
+| red `#FF453A` | `light-waiting` | an `ask` that could not surface (fullscreen, dismissed) is still unanswered | `stack`, an `ask` queued but not shown | answered, timed out (→ deny), or ended by the caller | idle, minimal |
 
-Precedence: red › amber › off. Only one light is drawn.
+Precedence: red › amber › off; one light drawn.
 
-> **v0.2** (2026-11-12, Ethan; design/alerts-and-asks): amber also covers what ended or came
-> while you were away (GNOME's session idle, after `idle-delay`), the screen locked, or in Do Not
-> Disturb, and notifications that never had their 5 s while you were present (a card cut short,
-> one with no room in a burst). Opening Home turns it off; Home's Missed tile stays until every
-> row is opened or cleared. NOTIFICATIONS §2 has the notification rules.
-
-Not states: the clock plan's daypart icons (SPEC §2a, 2026-11-04) are yellow
-`#FFD23F` and peach `#FFB889` (palette A) beside the light, never amber or red; `tests/clock.test.js`
-checks the files.
+Not states: the clock plan's daypart icons (SPEC §2a, 2026-11-04) beside the light are yellow
+`#FFD23F` and peach `#FFB889`, never amber or red (`tests/clock.test.js`).
 
 ### Bu's lamp
 
 *2026-11-03; 2026-11-08.*
 
-Bu's lamp shows its pose's colour, always. The buoy light is the pill's edge dot on a pill
-Bu leads too: amber/red never reach the lamp (2026-11-08, Ethan: the lamp is too small to
-read as the light; it replaced the 2026-11-03 rule "the lamp is the light, no edge slot").
-The lamp's colour is — chosen by the kit, never by a module; static, never
-blinking; never another colour from this file, except amber for `missed` and red for `ask`.
-This rule is the lamp's: the rest of Bu (body, stripe, water…) is MASCOT.md's fixed
-palette, none of which is a state colour here (2026-11-03).
+Bu's lamp always shows its pose's colour, chosen by the kit, static. On a pill Bu leads, the
+buoy light is still the edge dot: amber/red reach the lamp only as the `missed`/`ask` poses'
+own colours (2026-11-08, Ethan: the lamp is too small to read as the light). The rest of Bu is
+MASCOT.md's fixed palette, none of it a state colour.
 
 | Colour | Poses |
 |---|---|
@@ -67,69 +52,60 @@ palette, none of which is a state colour here (2026-11-03).
 | `#5AD8F5` | compact |
 | `#8A8880` | error (grey, never red: red is ask) |
 | foreground | turn |
-| `#5F5E5A` | error |
-| `#B5D4F4` | compact |
 
-Hover on the centre pill while the light is amber opens its compact as the missed list
-(2026-11-05: up to 3 rows, newest first, each the kind's icon, its text and the time it
-ended; was one ellipsized line, `2 missed · Copy done · Tea 4:00`); hover clears nothing. Click →
-Home, whose Missed section lists them with their times and turns the light off (SPEC §3,
-2026-11-03). With an activity running, the list takes the place of the activity's own compact
-(media's transport comes back once Home has been shown), and a click while the list shows
-opens Home, not the activity's tab; a click before it shows (the first 300 ms) opens the
-tab as usual (`tabs.js` `pressTarget`, 2026-11-04). Hover on the centre pill while the light is
-red shows the waiting ask's own card — the newest unanswered one not on screen, with its buttons —
-in place of the activity's compact: answer it there; the pointer leaving closes it, still red
-(2026-11-13, Ethan; `stack.waiting`).
+Hover on the centre pill while amber: its compact becomes the missed list (up to 3 rows,
+newest first: icon, text, end time, 2026-11-05); hover clears nothing. Click → Home, whose
+Missed section lists them and turns the light off (SPEC §3). With an activity running the list
+replaces its compact (media's transport returns once Home was shown); a click while the list
+shows opens Home, before it shows (first 300 ms) the activity's tab (`tabs.js` `pressTarget`,
+2026-11-04). Hover while red: the waiting ask's own card (newest unanswered off screen, with its
+buttons) replaces the compact; answer there; leaving closes it, still red (2026-11-13, Ethan;
+`stack.waiting`).
 
 ## Privacy dot (right edge)
 
 | Colour | Token | Meaning | Source | Shown in |
 |---|---|---|---|---|
-| purple `#BF5AF2` | `dot-mic` | microphone in use by some app | Gvc source-output streams | idle, minimal, compact |
-| green `#30D158` | `dot-cam` | camera in use | `Shell.CameraMonitor` | idle, minimal, compact |
-| red `#FF453A` | `dot-screen` | screen is being shared or recorded (the waiting red, on the other side) | Shell's screencast (`screenshotUI` `screencast-in-progress`) and Mutter's remote access handles | idle, minimal |
+| purple `#BF5AF2` | `dot-mic` | microphone in use | Gvc source-output streams | idle, minimal |
+| green `#30D158` | `dot-cam` | camera in use | `Shell.CameraMonitor` | idle, minimal |
+| red `#FF453A` | `dot-screen` | screen shared or recorded (the waiting red, other side) | Shell's screencast (`screenshotUI` `screencast-in-progress`), Mutter's remote access handles | idle, minimal |
 
-The microphone and the camera are read from GNOME's own Quick Settings indicators (the input
-slider's visibility, not muted; the camera icon bound to `Shell.CameraMonitor`), so Buoy
-counts what GNOME counts (`modules/privacy/source.js`, built 2026-11-14). Not in a compact,
-a card or expanded, like the light.
+Mic and camera come from GNOME's Quick Settings indicators (input slider visible and not muted;
+camera icon bound to `Shell.CameraMonitor`), so Buoy counts what GNOME counts
+(`modules/privacy/source.js`, 2026-11-14). Precedence: red › green › purple, one dot
+(design/colours "Chấm riêng tư", 2026-11-11). Location has no dot, as in GNOME and Apple.
 
-Precedence when several: red › green › purple (design/colours "Chấm riêng tư", 2026-11-11), one
-dot. Location has no dot, as in GNOME and on Apple's devices.
-Click → Home. A recording or a share is an activity of its own (kind `screen`, priority
-55): its clock in the pill, Stop in its compact and on Home's card (design/compact). Camera
-and microphone both on make an "In a call" activity, and Home's "in use" glance names the apps
-recording (2026-11-27, design/compact "Đang gọi"); the camera's app stays unnamed, as
-`Shell.CameraMonitor` only counts.
+Click → Home. A recording or share is its own activity (kind `screen`, priority 55): its clock
+in the pill, Stop in its compact and on Home's card (design/compact). Camera plus microphone make
+an "In a call" activity, and Home's "in use" glance names the recording apps (2026-11-27,
+design/compact "Đang gọi"); the camera's app stays unnamed (`Shell.CameraMonitor` only counts).
 
-GNOME's own indicators (camera, microphone and remote access in the system cluster, the
-recording and sharing buttons in the bar) are hidden while the `privacy` module is on
-(`privacy-dot = pill | system | both`, default `pill`) so the same fact is shown once.
+While the `privacy` module is on, GNOME's own indicators (camera, microphone, remote access in
+the system cluster; recording and sharing buttons in the bar) are hidden, so a fact shows once
+(`privacy-dot = pill | system | both`, default `pill`).
 
 ## Keyline tint (the pill's 1 px border)
 
-The one place an app may put its colour on the pill — Apple's `keylineTint`. It says
-**who** is speaking, never **what** is happening (that is the job of the two slots).
+The one place an app may put its colour (Apple's `keylineTint`): it says **who** speaks, never
+**what** happens (that is the slots' job).
 
 | | Rule |
 |---|---|
-| default | `rgba(255,255,255,0.12)` — idle always, and any activity whose adapter sets `keyline: null` |
-| activity | adapter may set `keyline: '#1DB954'` (brand colour of the app); applies in compact and expanded of that activity only |
-| idle plans | may not set a keyline |
-| several pills | each pill carries its own |
-| cover-art colour | if ever added (deferred), it feeds the keyline, never the background |
-| state colours | the lights' amber and red, the dots' purple and green are reserved for the slots; an adapter must not use them as keyline (`kit/model/palette.js` STATE_COLOURS) |
-| setting | `keyline = brand \| none`, default `brand`; `none` = plain black pill like iOS |
-| theme accent | never the keyline: an accent border at rest would say nothing and pull the eye all day. The accent is only the keyboard focus ring (`Super+B`, SPEC §2c), as everywhere in GNOME; while ringed, the 1 px border is the accent and the keyline waits (2026-11-04) |
-| motion | not eased (St can't); it switches with the content swap |
+| default | `rgba(255,255,255,0.12)`: idle always, and an activity with `keyline: null` |
+| activity | adapter may set `keyline: '#1DB954'` (the app's brand colour), in that activity's compact and expanded only |
+| idle plans | may not set one |
+| several pills | each carries its own |
+| cover-art colour | if ever added (deferred), feeds the keyline, never the background |
+| state colours | amber, red, purple, green are the slots'; never a keyline (`kit/model/palette.js` STATE_COLOURS) |
+| setting (planned, no key yet) | `keyline = brand \| none`, default `brand`; `none` = plain black pill like iOS |
+| theme accent | never the keyline (it would pull the eye all day); only the keyboard focus ring (`Super+B`, SPEC §2c), as in GNOME; while ringed the border is the accent and the keyline waits (2026-11-04) |
+| motion | not eased (St can't); switches with the content swap |
 
 ## What is NOT an indicator
 
-- Media playing → that is a compact activity, not a light.
-- "Charging", "VPN on", "DND on" → activities (transient) or system-cluster icons, never a
-  light colour. Adding a fourth colour is a SPEC change, not a module decision.
-- Progress → trailing ring inside the activity, not an edge slot.
+- Media playing, progress (a trailing ring): activities, not slots.
+- "Charging", "VPN on", "DND on": transient activities or system-cluster icons, never a light.
+  A fourth colour is a SPEC change, not a module decision.
 
 ## Layout
 
@@ -139,16 +115,14 @@ The one place an app may put its colour on the pill — Apple's `keylineTint`. I
  (left slot)  ←── adapter / idle plan ──→  (right slot)
 ```
 
-The slots are pill 1's ends (2026-11-10, design/pill "Đèn ở hai đầu"; built 2026-11-12): an
-8 px dot at the centre of the end's round cap, and the pill grows at both ends by that radius
-and half the dot (20 at 1×), so the zones never move (one short morph). The cap counts the
-lights. The pill draws them (`kit/ui/pill.js`); adapters and idle plans cannot draw into
-them. Side pills, a compact, a card and expanded have none.
+The slots are pill 1's ends (2026-11-10, design/pill "Đèn ở hai đầu"): an 8 px dot centred in
+each round cap; the pill grows at both ends by that radius plus half the dot (20 at 1×), so the
+zones never move; the cap counts the lights. `kit/ui/pill.js` draws them; adapters and idle plans cannot. Side pills,
+compact, card and expanded have none.
 
 ## Accessibility
 
-Colour is never the only channel: the hover compact names the state in words
-("2 missed", "Waiting: Claude Code wants to run `git push`"), and the Home row for the
-privacy dot names the app. GNOME's high contrast raises the borders and the quieter text
-(design/colours "Tương phản cao"); the lights and dots keep their colours, each 3:1 or more on
-black already.
+Colour is never the only channel: the compact names the state ("2 missed", "Waiting: Claude
+Code wants to run `git push`"), and Home's row names the app behind the dot. High contrast
+raises borders and quiet text (design/colours "Tương phản cao"); lights and dots keep their
+colours, each ≥ 3:1 on black.

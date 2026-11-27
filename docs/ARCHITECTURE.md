@@ -2,258 +2,166 @@
 
 *Decided 2026-10-30.*
 
-Organised **by module/feature** (option B). Alternatives considered: by layer (hard to add
-or switch off a feature), by app (system sources don't belong to an app), satellite
-extensions per module (later, once there is a community), data-only adapters (engine grows
-into a language). B is what Isle and GSConnect do; contributors recognise it.
+Organised **by module/feature**, like Isle and GSConnect. Rejected: by layer (hard to switch a
+feature off), by app (system sources have no app), one extension per module (Open for later),
+data-only adapters (the engine grows into a language).
 
 ## Layout
 
 ```
 src/buoy@murilegus/
 ├── metadata.json
-├── stylesheet.css          the kit's and the panel's CSS, in sections (Stylesheets, below)
-├── extension.js            enable(): panel → kit → load enabled modules
-├── panel.js                top bar rework: left cluster (app/workspace), bare tray, system cluster (QS + clock)
-├── wallpaper.js            the wallpaper Shell draws, decoded once per change, for cluster-contrast (2026-11-04)
-├── glyphs.js               one-colour bitmap tray icons (Electron's white glyphs) tinted like the text (2026-11-04)
-├── reach.js                the Overview's workspace backgrounds grow under the see-through bar, so closing it ends on the whole wallpaper (2026-11-04)
-├── corners.js              rounded top corners on maximized windows (SPEC §1a, 2026-11-02)
-├── prefs.js                Adw prefs: Island, Modules (one row per module, in groups: live in the pill,
-│                           quick feedback, tabs, Bu — kit/model/settings.js MODULE_GROUPS, 2026-11-06), Apps, Panel (clusters,
-│                           2026-11-04), Windows (corners, 2026-11-04), About (version, Bu,
-│                           metadata `donations` as "Support Buoy", `dev-mode`)
-├── schemas/                GSettings: the one source of every key, its summary and range
-├── hooks/                  claude.js: Claude Code's hook (run by Claude Code, never by Buoy),
-│                           installed from prefs; stdin → D-Bus `Agent` (CODING-AGENTS.md, 2026-11-07)
-├── icons/
-│   ├── color/              the daypart and weather colour SVGs (one family, scripts/icons.js is the
-│   │                       source and draws docs/icons.png; 2026-11-06)
-│   └── symbolic/           `<theme name>-symbolic.svg`: Gravity UI's drawings and Buoy's own, named
-│                           as GNOME's theme names the icon, tinted by St with the text colour;
-│                           written by scripts/symbolic-icons.js (design/icons, 2026-11-12)
+├── stylesheet.css      kit and panel CSS, in sections (Stylesheets)
+├── extension.js        enable(): panel → kit → enabled modules
+├── panel.js            top bar: left cluster (app/workspace), bare tray, system cluster (QS + clock)
+├── wallpaper.js        Shell's wallpaper, decoded once per change, for cluster-contrast
+├── glyphs.js           one-colour bitmap tray icons (Electron's white glyphs), tinted like text
+├── reach.js            Overview backgrounds reach under the see-through bar
+├── corners.js          rounded top corners on maximized windows (SPEC §1a)
+├── prefs.js            Adw pages: Island, Modules (grouped by kit/model/settings.js MODULE_GROUPS),
+│                       Apps, Panel, Windows, About (version, Bu, `donations`, `dev-mode`)
+├── schemas/            GSettings: the one source of every key, summary and range
+├── hooks/              claude.js: Claude Code's hook (run by Claude Code), installed from prefs:
+│                       stdin → D-Bus `Agent` (CODING-AGENTS.md); shell.sh: the shell hook for
+│                       the terminal module (a line in ~/.zshrc or ~/.bashrc, from prefs)
+├── icons/color/        daypart and weather SVGs, from scripts/icons.js
+├── icons/symbolic/     `<theme name>-symbolic.svg` (Gravity UI and Buoy's own), from
+│                       scripts/symbolic-icons.js (design/icons)
 └── lib/
-    ├── kit/                FRAMEWORK — stable API; the only thing modules import. Three layers
-    │   │                   (2026-11-12, FEATURES M4 "Restructure"); `eslint.config.js` checks who
-    │   │                   imports what (rule 1, 2), `tests/boundaries.mjs` checks that check
-    │   ├── settings.js     re-exports model/settings.js: the path 0.1's install.sh imports on
-    │   │                   --uninstall (Outside the extension); keep it
-    │   ├── model/          pure: no St, Clutter, Meta, Shell, Main, Gio, no files; GLib only (a
-    │   │   │               timer, a variant). Imports model/ only. Unit-tested with plain gjs
-    │   │   ├── activity.js     contract (CONTRACT.md §1), validate + normalise
-    │   │   ├── stack.js        an injected clock: surface / update / end / schedule / ask; the pill order (PRIORITY.md);
-    │   │   │                   ttl, stale, transient, alert; `apps-hidden` filter; missed history;
-    │   │   │                   feedback over pill 1 (`pillWindow`), hover hold (2026-11-05)
-    │   │   ├── presentation.js presentation data → render plan (2026-11-01)
-    │   │   ├── shapes.js       the pill's sizes from the monitor and the em (rule 11)
-    │   │   ├── home.js         Home's plan: the main card, the row of tiles and its fill rules (design/home, 2026-11-12)
-    │   │   ├── motion.js       the springs and fades (design/motion), pure: the spring's closed form, settling (2026-11-13)
-    │   │   ├── flight.js       shared parts in flight, pure: where a part takes off, its pose on the way (2026-11-13)
-    │   │   ├── tabs.js         which tabs exist, where an open starts (2026-11-02)
-    │   │   ├── keys.js         keyboard: an ask's keys, ←/→ steps (2026-11-03)
-    │   │   ├── settings.js     prefs: which page each schema key goes to, samples (2026-11-03)
-    │   │   ├── cluster.js      what the left cluster shows (app / workspace / hover) (2026-11-04)
-    │   │   ├── contrast.js     wallpaper placement + luminance → dark or light text per side (2026-11-04)
-    │   │   ├── cover.js        a cover's main colour, lifted to read on black: the equaliser's (2026-11-13)
-    │   │   ├── rounded.js      which windows get round top corners, where the arcs fall, the shader (2026-11-04)
-    │   │   ├── daypart.js      hour → dawn…night from `daypart-starts` (2026-11-03)
-    │   │   ├── smartstack.js   idle `auto`: ranks plans by `relevance()` (2026-11-08)
-    │   │   ├── palette.js      the colours by role, high contrast, the state colours (design/colours, 2026-11-12)
-    │   │   ├── power.js        UPower's states, the power modes, "42 min", the battery's icon and page: the power module, Home's battery tile, the Device tab (2026-11-14)
-    │   │   ├── displays.js     the ways to use two displays, how they are used now, which came and went (plugged, the Device tab; 2026-11-16)
-    │   │   ├── audio.js        headphones as GNOME tells them, the output the sound goes to (plugged, the Device tab; 2026-11-16)
-    │   │   ├── devices.js      the Device tab's plan: its groups and cells, a column's rows, "+N", its pages (design/device, 2026-11-16)
-    │   │   ├── bluetooth.js    wireless devices: kind and icon (GnomeBluetooth, UPower), battery, which came and went, the Wireless column's order (bluetooth, the Device tab; 2026-11-17)
-    │   │   ├── drives.js       drives and webcams plugged in: which count, sizes, GNOME's notifications said instead (usb, the Device tab; 2026-11-17)
-    │   │   ├── phone.js        the phone through GSConnect: setting it up, its battery, its notifications' parts, one cell with its Bluetooth self (the Device tab, notification, prefs; 2026-11-17)
-    │   │   └── mascot.js       Bu: 13 pose grids, lamp rule, frame timing; MASCOT.md is the source (2026-11-03)
-    │   ├── services/       the Shell side without actors: buses, files, Shell's objects, the
-    │   │   │               one wall clock. Imports model/ and services/, never ui/, St or Clutter
-    │   │   ├── registry.js     app-id normalisation table; adapter resolution; app profiles
-    │   │   ├── source.js       the base class of a module's source.js
+    ├── kit/            FRAMEWORK, the only thing modules import; three layers (2026-11-12),
+    │   │               imports checked by `eslint.config.js`, tested in `tests/boundaries.mjs`
+    │   ├── settings.js re-exports model/settings.js; 0.1's install.sh imports this path: keep it
+    │   ├── model/      pure, GLib only (timer, variant); imports model/ only; tested with plain gjs
+    │   │   ├── activity.js     contract (CONTRACT.md §1): validate, normalise
+    │   │   ├── stack.js        injected clock; surface/update/end/schedule/ask; order (PRIORITY.md);
+    │   │   │                   ttl, stale, transient, alert; `apps-hidden`; missed; `pillWindow`
+    │   │   ├── presentation.js presentation data → render plan
+    │   │   ├── shapes.js       pill sizes from monitor and em (rule 11)
+    │   │   ├── home.js, tabs.js, keys.js   Home's plan (design/home); which tabs, where an open
+    │   │   │                   starts; an ask's keys, ←/→
+    │   │   ├── motion.js, flight.js        springs and fades; shared parts in flight (design/motion)
+    │   │   ├── settings.js     each key's prefs page, samples
+    │   │   ├── cluster.js, contrast.js, rounded.js   left cluster; text contrast; window corners
+    │   │   ├── palette.js, cover.js        colour roles, high contrast, state colours
+    │   │   │                   (design/colours); a cover's colour lifted for black
+    │   │   ├── daypart.js, smartstack.js   hour → part from `daypart-starts`; `auto` by `relevance()`
+    │   │   ├── weather.js, power.js, displays.js, audio.js, devices.js, bluetooth.js, drives.js,
+    │   │   │   phone.js        plain state for those modules and the Device tab (design/device)
+    │   │   └── mascot.js       Bu: 13 pose grids, lamp, frame timing (source: MASCOT.md)
+    │   ├── services/   Shell side, no actors: buses, files, Shell objects, the one wall clock;
+    │   │   │           imports model/ and services/, never ui/, St, Clutter
+    │   │   ├── registry.js     app-id slugs, adapter resolution, app profiles
+    │   │   ├── source.js       base class of a module's source.js
     │   │   ├── dbus.js         org.gnome.Shell.Extensions.Buoy
-    │   │   ├── files.js        small files read without blocking the Shell: readText, listInfos/listNames, ppidOf (EGO review, 2026-11-09); readPixels, a picture decoded small (2026-11-13)
-    │   │   ├── apps.js         a bus peer's app: its pid, then /proc parents to a window (agent, media; 2026-11-07)
-    │   │   ├── sharing.js      the screen shared or recorded, from Shell's indicators (agent, notification; 2026-11-07)
-    │   │   ├── power.js        GNOME's battery and power-mode toggles in Quick Settings; switching the mode, silently from Home (2026-11-14)
-    │   │   ├── displays.js     Mutter's displays: read, their size and mode, switch_config (plugged, the Device tab; 2026-11-16)
-    │   │   ├── audio.js        where the sound goes, from Shell's Gvc mixer; the HUD asks it whether a volume OSD is the output moving to or from headphones (plugged, 2026-11-15)
-    │   │   ├── bluetooth.js    Quick Settings' Bluetooth client: its devices, connected or not, disconnect (bluetooth, the Device tab; 2026-11-17)
-    │   │   ├── peripherals.js  UPower's peripherals with a battery, async D-Bus proxies while the Device tab lives (2026-11-17)
-    │   │   ├── drives.js       Gio's volume monitor: drives, free space, open, eject through Shell's mount operation (usb, the Device tab; 2026-11-17)
-    │   │   ├── cameras.js      webcams plugged in: a /dev monitor, sysfs read without blocking (usb, the Device tab; 2026-11-17)
-    │   │   ├── gsconnect.js    GSConnect's service: the phones, their battery and ring, its prefs (the Device tab, notification; 2026-11-17)
-    │   │   ├── presence.js     you at the screen: input in the last second, away (session idle, locked), DND (alerts; 2026-11-12)
-    │   │   ├── idle.js         idle-content: picks the plan, its wall clock only while the idle pill shows (2026-11-04)
-    │   │   └── devtools.js     `dev-mode`'s module hot swap
-    │   └── ui/             actors. Imports anything in kit/, never a module
+    │   │   ├── files.js        async reads: readText, listInfos/listNames, ppidOf, readPixels
+    │   │   ├── apps.js         a bus peer's app: pid, /proc parents, window
+    │   │   ├── presence.js     input in the last second, away (idle, locked), DND
+    │   │   ├── idle.js         picks the idle plan; wall clock only while the idle pill shows
+    │   │   ├── devtools.js     `dev-mode` hot swap
+    │   │   └── sharing.js, weather.js, power.js, displays.js, audio.js, bluetooth.js,
+    │   │       peripherals.js, drives.js, cameras.js, gsconnect.js   readers of GNOME's own
+    │   │                       objects (Quick Settings, Gvc, Mutter, UPower, Gio, date menu)
+    │   └── ui/         actors; imports anything in kit/, never a module
     │       ├── island.js       the pills together: capacity, slots, merge/split, grab, alert
-    │       ├── pill.js         one pill: content, sizing, hover → compact, morph (2026-11-01; tier names 2026-11-05)
-    │       ├── spring.js       springs on the frame clock: one Clutter.Timeline per actor, stopped once settled (2026-11-13)
-    │       ├── strip.js        a row of choices whose chosen fill slides to the next: the tab strip, the Media tab's chips (2026-11-13)
-    │       ├── home.js         the panel a click opens: tab strip + tab body (Home: the main card
-    │       │                   and the row of tiles, design/home 2026-11-12; kind, standalone)
-    │       ├── styles.js       a module's stylesheet.css, loaded while it runs (Stylesheets, below)
-    │       └── present/        render plan → St actors. The ONLY place content actors are made,
-    │           │               one file per tier (2026-11-12; was present.js)
-    │           ├── parts.js        labels, meters (ring, bar, level, battery, live position), timed labels,
-    │           │                   tick(), FillBox, progressBar()
-    │           ├── motion.js       what moves, each by rule 8: the marquee, Bu and his stillness,
-    │           │                   the equaliser, typed text; dimStale()
-    │           ├── lists.js        a page in place of a body: ‹ and its title, rows of 36 (Home's glance pages, the Device tab's; 2026-11-16)
-    │           ├── flight.js       shared parts: markShared() on the leading and the title, Flights
-    │           │                   flies their clones between forms (pill, Home) (2026-11-13)
-    │           ├── elements.js     one element of presentation data as an actor (cover art: St.Icon,
-    │           │                   loaded async, rounded by a Shell.GLSLEffect — not a CSS
-    │           │                   background-image, which St keeps in its texture cache), action
-    │           │                   buttons and their keys, the light, EmptyState
-    │           ├── minimal.js      the pill in the bar and the idle pill
-    │           ├── compact.js      the hover tier: the compact, the card, Missed's
-    │           └── expanded.js     the expanded view
-    └── modules/            FEATURES — one self-contained folder each
-        └── <id>/
-            ├── index.js    export default {id, kinds, source, adapter, tab?,
-            │               title?, icon?, tabWhileLive?, tabInMore?, noTab?, badge?}
-            │               title/icon: its tab in the strip; tabWhileLive: that tab only
-            │               while one of its activities is there, before the slot
-            │               (2026-11-07, -13); tabInMore: its tab in ⋯ like a standalone
-            │               one (2026-11-13), with tabWhileLive a live tab while its
-            │               activity is there (Phone, 2026-11-18); noTab: never a tab, its
-            │               activities open on their own (the greeting, 2026-11-08); badge():
-            │               a dot on its tab's icon (2026-11-08); home: {Card} or {Glance,
-            │               order, wide} — its part of Home (below, 2026-11-12)
-            ├── source.js   watches a system facility, calls stack.surface/update/end;
-            │               `enable(stack, registry, settings, {dbus, extension})` (settings: its `<id>-…`
-            │               keys, 2026-11-05)
-            ├── adapter.js  default presentation for this module's kinds
-            ├── tab.js      content for its tab in expanded (optional): export a class,
-            │               `new Tab({close, from})` → {actor, destroy(), update?(activities)} (`from`: the activity whose pill opened it, 2026-11-07); optional `choose(id)`: one of its activities was pressed on Home, show that one (2026-11-13); a kind
-            │               tab's `update` gets its kind's activities at once and on each
-            │               change (2026-11-05); built on first selection, destroyed when
-            │               expanded closes; `close()` closes the island after an action
-            │               that brings a window up (2026-11-06)
-            ├── home.js     its part of Home (optional, SPEC §3, design/home, 2026-11-12):
-            │               a Card for its kinds' activity on the main card (media), `new
-            │               Card({open, close})` → {actor, show(activity, {height, form,
-            │               width}), destroy()}; or a Glance tile (weather, calendar, home's
-            │               battery), `new Glance({open, close, changed, settings})` →
-            │               {ready, tile: {icon, value, caption, detail?}, wide?(width),
-            │               activate(), refresh?(), destroy()}; made the first time Home
-            │               shows, kept for the open, destroyed when expanded closes;
-            │               `changed()` when its tile changes
-            ├── idle.js     idle plan for `idle-content` (optional; clock, weather, calendar);
-            │               pure: `keys` (its idle-<id>-… keys), `present(ctx, opts)` →
-            │               presentation data (its `compact` is the idle pill's hover tier,
-            │               2026-11-06), `seconds(opts)` (tick each second), `ticks: false`
-            │               (no wall clock), `relevance(ctx, opts)` for `auto` (SPEC §2a-iii);
-            │               ctx = {now, clock, starts, data}
-            ├── feed.js     the Shell side of an idle plan with data of its own (optional;
-            │               weather 2026-11-06, calendar 2026-11-08): index.js `feed`, `new Feed(onChanged)` →
-            │               {state, shown(shown, opts), destroy()}; `state` is the plan's
-            │               `ctx.data`. Made by kit/services/idle.js while its plan is the one in use,
-            │               told when the idle pill shows so it fetches only then (rule 8)
-            ├── stylesheet.css  its own CSS: its tab's and its Home block's (optional;
-            │               Stylesheets, below)
-            └── apps/       per-app overrides, <slug>.js, same method names as adapter.js
+    │       ├── pill.js         one pill: content, sizing, hover → compact, morph
+    │       ├── spring.js       springs on the frame clock, one Clutter.Timeline per actor
+    │       ├── strip.js        choices with a sliding fill (tab strip, Media chips)
+    │       ├── home.js         what a click opens: tab strip + body
+    │       ├── styles.js       a module's stylesheet.css while it runs
+    │       └── present/        render plan → St actors, the ONLY place content actors are made:
+    │                           parts.js, motion.js (rule 8), lists.js, flight.js, elements.js,
+    │                           minimal.js, compact.js, expanded.js
+    └── modules/<id>/   FEATURES, one self-contained folder each (files below)
 ```
 
-A module may keep more pure files beside these when they are worth testing alone
-(calendar's
-`agenda.js` and `month.js`: which event is next, its words, the tab's days and month; media's
-`layout.js`: the Media tab's card, art, controls and chips, 2026-11-13) and a
-Shell-side reader its feed and tab share (calendar's `events.js`: the date menu's event
-source, 2026-11-08). What two modules need is the kit's, not one module's (rule 1): GNOME's
-weather (`kit/model/weather.js`: GWeather.Info → the plain state, tested with a fake info;
-`kit/services/weather.js`: the date menu's client, the feed the weather plan and the greeting
-share) moved there from the weather module's `read.js` and `feed.js` (2026-11-26, GREETING.md §8).
+Cover art (`present/elements.js`) is an St.Icon loaded async and rounded by a Shell.GLSLEffect,
+not a CSS background-image, which St keeps in its texture cache.
+
+| Module file | Role |
+|---|---|
+| `index.js` | `export default {id, kinds, source, adapter, tab?, title?, icon?, tabWhileLive?, tabInMore?, noTab?, badge?, home?, feed?}`. `title`, `icon`: its tab. `tabWhileLive`: the tab only while its activity is there, before the slot. `tabInMore`: the tab in ⋯; with `tabWhileLive`, live while its activity is (Phone). `noTab`: activities open on their own (greeting). `badge()`: a dot on the tab's icon. `home`: `{Card}` or `{Glance, order, wide}` |
+| `source.js` | watches a facility, calls `stack.surface/update/end`; `enable(stack, registry, settings, {dbus, extension})`; its keys are `<id>-…` |
+| `adapter.js` | default presentation for its kinds |
+| `tab.js` | optional. `new Tab({close, from})` → `{actor, destroy(), update?(activities), choose?(id)}`. `from`: the opening pill's activity; `update`: a kind tab's activities, at once and on change; `choose`: its activity pressed on Home; `close()`: after an action that raises a window. Built on first selection, destroyed when expanded closes |
+| `home.js` | optional (SPEC §3, design/home). `new Card({open, close})` → `{actor, show(activity, {height, form, width}), destroy()}` (media). `new Glance({open, close, changed, settings})` → `{ready, tile: {icon, value, caption, detail?}, wide?(width), activate(), refresh?(), destroy()}`, `changed()` when the tile changes (weather, calendar, battery). Made when Home first shows, destroyed when expanded closes |
+| `idle.js` | optional idle plan, pure: `keys` (`idle-<id>-…`), `present(ctx, opts)` → presentation data (`compact` = the idle pill's hover tier), `seconds(opts)` (tick each second), `ticks: false` (no wall clock), `relevance(ctx, opts)` for `auto` (SPEC §2a-iii); `ctx = {now, clock, starts, data}` |
+| `feed.js` | optional Shell side of an idle plan's data: index.js `feed`, `new Feed(onChanged)` → `{state, shown(shown, opts), destroy()}`, `state` = `ctx.data`. kit/services/idle.js makes it while its plan is in use and tells it when the idle pill shows, so it fetches only then (rule 8) |
+| `stylesheet.css` | optional: its tab's and Home block's CSS (Stylesheets) |
+| `apps/<slug>.js` | per-app overrides, same methods as `adapter.js` |
+
+A module may add pure files worth testing alone (calendar's `agenda.js`, `month.js`; media's
+`layout.js`) and a Shell-side reader its feed and tab share (calendar's `events.js`). What two
+modules need is the kit's (rule 1), as weather moved there (2026-11-26, GREETING.md §8).
 
 ### Stylesheets
 
-*2026-11-12, FEATURES M4 "Restructure".* `stylesheet.css` holds the panel's and the kit's
-CSS in sections, in this order: the panel, the pill and its content, compact, the card, Home
-and the tab strip. A module's own CSS (its tab, its Home block) is
-`lib/modules/<id>/stylesheet.css`; `kit/ui/styles.js` loads it when the module starts and
-unloads it when it stops (rule 6: off, nothing of it is loaded), as Shell loads an
-extension's (`ui/extensionSystem.js` `_loadExtensionStylesheet`: `St.Theme.load_stylesheet`,
-no `@import`). Shell's theme reload carries them over (`ui/main.js` `loadTheme`). Two rules
-follow from St:
+*2026-11-12.* `stylesheet.css` sections, in order: panel, pill and content, compact, card, Home
+and tab strip. A module's own CSS (tab, Home block) is `lib/modules/<id>/stylesheet.css`, loaded
+by `kit/ui/styles.js` while the module runs (rule 6: off, nothing of it is loaded), as Shell
+loads an extension's (`ui/extensionSystem.js` `_loadExtensionStylesheet`, no `@import`); theme
+reloads keep it (`ui/main.js` `loadTheme`).
 
-- At equal specificity **`stylesheet.css` wins over a module's**: St matches the stylesheets
-  loaded last first, and a later match wins (`st-theme.c` `st_theme_load_stylesheet` prepends,
-  `_st_theme_get_matched_properties` sorts stably by specificity); Shell loads Buoy's before
-  `enable()`. A module rule that restyles a kit class names its own container too
+- At equal specificity **`stylesheet.css` wins over a module's** (`st-theme.c`
+  `st_theme_load_stylesheet` prepends, `_st_theme_get_matched_properties` sorts stably; Shell
+  loads Buoy's first). A module rule restyling a kit class names its own container too
   (`.buoy-agents-line .buoy-agents-time` over `.buoy-label`).
-- A module's selectors are its own: classes named `buoy-<its words>-…`, used only by its
-  files; the kit's classes are styled only in `stylesheet.css`.
+- A module's classes are `buoy-<its words>-…`, used only by it; kit classes are styled only in
+  `stylesheet.css`.
 
-Colours (2026-11-12, FEATURES M4 "Colours by role"): inside the island every colour is a role
-of `kit/model/palette.js` (design/colours), written as its value with the role in a comment,
-since St reads no CSS variables; the bar keeps GNOME's. `tests/palette.test.js` reads every
-stylesheet and fails on a colour that is not a role or names the wrong one. GNOME's high
-contrast (`St.Settings` `high-contrast`) puts `buoy-hc` on the island; each stylesheet ends
-with a block of `.buoy-hc …` rules raising `border`, `border-strong`, `fg-subtle` and
-`fg-disabled`, one for every rule that uses them (the test checks), and repeating after them
-any rule that must still win (`.buoy-media-on`, today in the calendar).
+Colours: inside the island every colour is a `kit/model/palette.js` role (design/colours),
+written as its value with the role in a comment (St has no CSS variables); the bar keeps
+GNOME's. `tests/palette.test.js` fails on a non-role colour or a wrong role. High contrast
+(`St.Settings` `high-contrast`) adds `buoy-hc` to the island; each stylesheet ends with
+`.buoy-hc` rules raising `border`, `border-strong`, `fg-subtle`, `fg-disabled` wherever used
+(tested), then any rule that must still win (`.buoy-media-on`, in the calendar).
 
 ### Module kinds
 
 | Type | Has | Example |
 |---|---|---|
-| **source module** | `kinds` + `source.js` + `adapter.js`, optionally `tab.js`, `apps/` | media, hud, progress, agent (Claude Code: kind `agent`, its asks through the kit's `ask`), copied (feedback `copied`) |
-| **idle plan** | `idle.js` (optionally also a source module) | clock, weather, calendar, mascot |
-| **standalone tab** | `tab.js` only, `kinds: []` | launcher; also the tab of a feedback-only module (`clipboard`, SPEC §2b) |
+| **source module** | `kinds`, `source.js`, `adapter.js`; optional `tab.js`, `apps/` | media, hud, progress, agent (asks via the kit's `ask`), copied |
+| **idle plan** | `idle.js` (may also be a source module: calendar) | clock, weather, calendar, mascot |
+| **standalone tab** | `tab.js` only, `kinds: []`; never surfaces activities | launcher; a feedback-only module's tab (`clipboard`, SPEC §2b) |
 
-One module may combine the first two (calendar: next-event activity + idle plan + tab).
-A standalone tab never surfaces activities; if it needs to, it becomes a source module.
-
-v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` (the copied flash) and `clipboard` (the Clipboard tab; one module 2026-11-05, apart again 2026-11-07, Ethan: two switches), `input` (the input source as feedback; was `layout`, renamed 2026-11-05: it covers IBus input methods, not only keyboard layouts), `agent` (Claude Code's sessions and permission prompts; was the stub `ask`, 2026-11-07); `notification`,
-`timer` is imported as a stub without a source until its roadmap item, so its tab shows
-from v0.1 (2026-11-02);
-idle plans `clock`, `weather`, `calendar` (next event, 2026-11-08); standalone tabs `calendar` (the month and the picked day's events, 2026-11-08), `clipboard` (stub `tab.js`, in that order, 2026-11-02). `greeting`: its first run and What's new in v0.1, the rest in M4 (2026-11-08).
+v0.1 modules: `media`, `hud`, `home`, `progress`, `copied` and `clipboard` (two switches,
+2026-11-07, Ethan), `input`, `agent`; stubs `notification`, `timer` so their tabs show
+(2026-11-02); idle plans `clock`, `weather`, `calendar`; standalone tabs `calendar`, then
+`clipboard`; `greeting`: first run and What's new, the rest in M4 (2026-11-08).
 
 ## Outside the extension
 
 *2026-11-08.*
 
-`install.sh` (repo root) installs, updates and removes Buoy for one user without EGO, from
-a GitHub release, a zip or a clone, and leaves its mark in the folder (`.check-updates`: only
-then does the greeting ask GitHub for a newer release, GREETING.md §11, 2026-11-13); it
-uses the installed extension's own `hooks.js` and
-`lib/kit/settings.js` (pure) on removal. Both paths stay: the install.sh of 0.1 and later
-imports them from whatever version is installed (since 2026-11-12 `lib/kit/settings.js`
-re-exports `kit/model/settings.js`). A tag `v<version-name>` publishes a release
-(`.github/workflows/release.yml`, `scripts/release-check.sh`) with
-`docs/releases/<version-name>.md` as its notes; `tests/metadata.test.js` keeps the version's
-name the same in metadata.json, notes.js and package.json, and checks that metadata's
-`settings-schema` names the schema (`enable()` throws without it).
-`README.md` is for people who use Buoy (install, settings, privacy, limits);
-`CONTRIBUTING.md` holds the repository tree, the setup and the release steps (2026-11-08).
+- `install.sh` installs, updates, removes Buoy without EGO (release, zip or clone) and leaves
+  `.check-updates`: only then does the greeting check GitHub for a release (GREETING.md §11).
+  Removal uses the installed `hooks.js` and `lib/kit/settings.js`; both paths stay for every
+  install.sh since 0.1.
+- A tag `v<version-name>` publishes a release (`.github/workflows/release.yml`,
+  `scripts/release-check.sh`, notes `docs/releases/<version-name>.md`). `tests/metadata.test.js`
+  keeps the version name equal in metadata.json, notes.js, package.json and checks
+  `settings-schema` (`enable()` throws without it).
+- `README.md` is for users; `CONTRIBUTING.md` holds the repo tree, setup and release steps.
 
 **The docs and their site** (2026-11-10, FEATURES M4 "Design docs and site"). `docs/` is
-bilingual: `page.md` in English and `page.vi.md` in Vietnamese side by side; a design page is
-written and decided in Vietnamese first, the other docs keep English as their source (they are
-not translated yet: Ethan wants them made shorter first). `mkdocs.yml` (repo root) builds the
-site with MkDocs Material and mkdocs-static-i18n — only in CI (`.github/workflows/docs.yml` →
-GitHub Pages; versions in `requirements-docs.txt`, beside `mkdocs.yml`), never part of the extension or of
-`package.json`. The design lives in `docs/design/`:
+bilingual: `page.md` English, `page.vi.md` Vietnamese. Design pages are decided in Vietnamese
+first; other docs keep English as source (shortened 2026-11-27, translated next). `mkdocs.yml` builds
+the site (MkDocs Material, mkdocs-static-i18n) only in CI (`.github/workflows/docs.yml` →
+GitHub Pages; versions in `requirements-docs.txt`), never in the extension or `package.json`.
 
 ```
 docs/design/
-├── index.vi.md         the units and rules every part follows (em, 56 + 16n, concentric radii)
-├── tokens.vi.md        the one table of numbers: sizes, radii, gaps, type
-├── render/lib.js       shared by the render scripts: draws at 3×, fits text to its 1× width
-└── <part>/             colours (the palette the CSS draws from), pill, compact,
-                        alerts-and-asks, expanded, tabs, icons, mascot
-    ├── index.vi.md     purpose, anatomy, sizes, states, decisions (date, who), open, code
-    ├── images/         x.vi.png (labels in Vietnamese), x.en.png (English, with the translation);
-    │                   each page links its own (mkdocs-static-i18n serves both as x.png)
-    ├── clips/          x.vi.png, motion as an animated PNG (30 fps, design/motion, 2026-11-12): an
-    │                   image, so GitHub and the site both play it; scripts/apng.js makes it
-    └── render/         the gjs scripts that draw those images
+├── index.vi.md       units and rules for every part (em, 56 + 16n, concentric radii); index.md in English
+├── tokens.vi.md      the one table of numbers: sizes, radii, gaps, type
+├── render/lib.js     shared by render scripts: draws at 3×, fits text to its 1× width
+└── <part>/           colours, pill, compact, alerts-and-asks, expanded, home, media, device, tabs,
+    │                 icons, mascot, motion
+    ├── index.vi.md   purpose, anatomy, sizes, states, decisions (date, who), open, code
+    ├── images/       x.vi.png, x.en.png; mkdocs-static-i18n serves each as x.png
+    ├── clips/        x.vi.png: motion as animated PNG, 30 fps (scripts/apng.js)
+    └── render/       gjs scripts drawing the images; scripts/render-design.sh runs them all
 ```
 
-`scripts/render-design.sh` redraws every image. The render scripts and `render/` folders are
-left out of the site (`exclude_docs`).
+Scripts and `render/` stay out of the site (`exclude_docs`).
 
 ## Data flow
 
@@ -263,133 +171,108 @@ source.js ──ev──► registry.build(kind, app, ev) ──activity──�
                       ├─ ~/.config/buoy/apps/<slug>.json   (user, data only)
                       ├─ modules/<m>/apps/<slug>.js[kind]   (repo, code)
                       └─ modules/<m>/adapter.js[kind]        (default)
-D-Bus callers send presentation data directly: no adapter, but the registry slugs the app
-and applies the user's profile (Registry.present). API: DBUS.md.
+D-Bus callers send presentation data: no adapter, but the app is slugged and the profile
+applied (Registry.present). API: DBUS.md.
 ```
 
 ### App profiles
 
-*2026-11-02.*
-
-`~/.config/buoy/apps/<app>.json`: per-user, data only (rule 7): icon, title template,
-hideBody, priority, ttl, regex replace/skip. The registry applies them for every adapter
-and reloads them when a file changes; adapters never handle these keys. Format, event
-fields and order: [PROFILES.md](PROFILES.md).
+*2026-11-02.* `~/.config/buoy/apps/<app>.json`, data only (rule 7), applied by the registry for
+every adapter and reloaded on change; adapters never see them. [PROFILES.md](PROFILES.md).
 
 ## Rules
 
-1. **Modules import `kit/` only.** Never another module. Modules talk through activities.
-   Inside the kit, `model/` imports model/ and GLib only, `services/` never imports `ui/`,
-   St or Clutter, and nothing in the kit imports a module. `pnpm lint` checks these
-   (`eslint.config.js`, `no-restricted-imports`; its cases in `tests/boundaries.mjs`,
-   2026-11-12).
-2. **`kit/` may import `Main`/Shell. `adapter.js` and `apps/*.js` may not** — no `St`, no
-   `Main`, no timers. They are pure functions `event → presentation data`, testable with `gjs`.
-   `source.js` and `tab.js` may use Shell APIs. So `adapter.js`, `apps/*.js`, `idle.js` and
-   `hooks.js` import only their own module's files and `kit/model/`, and prefs.js nothing
-   that needs the Shell (`kit/ui/`, `St`, `Main`, a module's source, tab, home or feed),
-   checked by `pnpm lint` as rule 1 (2026-11-12).
-3. **Adapters return data, never actors.** Shape of the data is fixed by `presentation.js`:
-   `{leading, text, trailing, expanded:{leading,trailing,center,bottom}, actions, ttl,
-   priority, keyline, style, sizeHint, onPress, compact}` (`compact` = the hover tier, was
-   `peek` until 2026-11-05; SPEC §2). An override returns the same shape. Names in code
-   follow the tiers: `shapes.minimal` / `planMinimal` / `buildMinimal` for the pill in the
-   bar, `planCompact` / `buildCompact` for the hover tier, `shapes.side` for the 120 px side
-   pills (2026-11-05).
-4. **Per-app overrides live under the module of the kind they override.** An app present
-   in two kinds has two small files. No central `apps/<app>/` folder.
-5. **One slug per app** across every source (MPRIS bus name, desktop id, notification
-   app name) — the table lives in `kit/services/registry.js`; modules only see the slug.
-6. **Module off = not imported** (`modules-<id>` false): no signal connected, no actor
-   created, zero cost. Hiding an app (`apps-hidden`) is a stack filter, not an adapter concern.
-7. **No code loaded at runtime** (EGO rule). User customisation is JSON profiles only:
-   icon, title template, hide body, priority, ttl, simple regex. Logic needs a PR. Also for
-   EGO review: no synchronous file IO in the Shell process (`kit/services/files.js` reads
-   async; the one exception is St's own stylesheet load, as Shell does it);
-   signals tied to their owner with `connectObject` / `disconnectObject`; the Extension object
-   is passed down from `extension.js`, never looked up by URL.
-8. **No polling while closed; no blur; nothing animating while idle.** A source that must
-   poll (progress bar position) polls only while its activity is visible. "Animating"
-   means looping or continuous motion: a change of idle content (clock minute, `auto`
-   switching plans) is one transition, then stillness (clarified 2026-11-03). Bu's eyes
-   stroll by the same rule: a scripted beat every few seconds, each a few single frames
-   (stepped, never eased), only while visible and in use; asleep and still after 60 s
-   without input, in power-saver and with animations off (`MASCOT.md` § Eyes, 2026-11-03).
-   Bu's moving poses are not idle content: they swap two frames every 500 ms only while
-   their activity's pill is mapped, and hold still after `mascot-rest-after` (60 s)
-   without input and with animations off (`MASCOT.md` § Drawing rules, 2026-11-04).
-   The media equaliser moves only while it is mapped and playing (paused, its bars stand
-   low and still: the `eq-paused` glyph, 2026-11-07), one
-   endless `scale-y` transition per bar, none unmapped or with animations off; it does
-   not rest without input, since music plays untouched (2026-11-05, Ethan). So does a
-   compact or Media-tab title too long for its width: it scrolls only while it is mapped
-   and animations are on, one Clutter.Timeline, translation only (2026-11-05, Ethan).
-9. Every setting is a key in `schemas/…gschema.xml` with a `<summary>` and a
-   `<description>` (prefs shows them; `<range>`/`<choices>` bound the control). No preview
-   key: a module's row has "Show a sample", sent through D-Bus `Surface` like any script. A module's
-   own keys are named `<id>-…` and appear inside its row on the Modules page, **except an
-   idle plan's**: keys named `idle-<plan>-…` appear on the **Island** page under their
-   plan, so what the idle pill shows and how is set in one place (2026-11-04, Ethan). A
-   module that is only an idle plan (clock, weather) has its switch on its plan's row there too and
-   no row on Modules (2026-11-06, Ethan; was a switch-only row on Modules); a module that
-   is more than its plan keeps its row on Modules. Each key has exactly one place: `kit/model/settings.js` places the rest
-   and lists the idle plans (prefs cannot import a module, below), and
-   `tests/settings.test.js` fails on a key with no place or no text, or an `idle-<plan>-…`
-   key anywhere but under its plan. A key enters the schema with the item that implements it, so prefs
-   has no switch without an effect. (Changed 2026-11-03 from `index.js#schema`: prefs.js
-   runs in its own process and cannot import a module's index.js, which pulls in Shell
-   code. One exception, 2026-11-07: `modules/agent/hooks.js`, pure and importing nothing,
-   which prefs uses to add and remove Buoy's entries in Claude Code's settings.) Shell-level keys that belong to no module (panel clusters, window corners) get
-   their own prefs pages; their code lives next to `panel.js`, not under `modules/`.
-10. Standalone tabs are on but not pinned by default (SPEC §2b, 2026-11-02; was "off by
-    default"): the strip's slot shows Calendar until another is chosen, and ⋯ lists Calendar
-    (marked, in the slot) then Clipboard. Each builds its actor on first selection and
-    destroys it when expanded closes; closed costs nothing however many are enabled.
-11. **Adapters never return measurements.** No `width`, `height`, `x`, px, or monitor
-    queries — only content plus discrete hints (`size: 'wide'`, region `priority`). Sizes
-    are derived in `kit/model/shapes.js` from the monitor; the renderer fits content (ellipsize
-    text, drop low-priority regions). An adapter written on one screen behaves on every screen.
+1. **Modules import `kit/` only**, never another module; they talk through activities. In the
+   kit, `model/` imports model/ and GLib only, `services/` never `ui/`, St or Clutter, nothing
+   a module. `pnpm lint` checks (`eslint.config.js`, cases in `tests/boundaries.mjs`, 2026-11-12).
+2. **`kit/` may import `Main`/Shell. `adapter.js` and `apps/*.js` may not**: no `St`, `Main`,
+   timers; pure `event → presentation data`, testable with `gjs`. `source.js`, `tab.js` may use
+   Shell APIs. `adapter.js`, `apps/*.js`, `idle.js`, `hooks.js` import only their module's files
+   and `kit/model/`; prefs.js nothing needing the Shell (`kit/ui/`, `St`, `Main`, a module's
+   source, tab, home, feed). Lint-checked with rule 1.
+3. **Adapters return data, never actors**, in the shape `presentation.js` fixes: `{leading,
+   text, trailing, expanded:{leading,trailing,center,bottom}, actions, ttl, priority, keyline,
+   style, sizeHint, onPress, compact}` (`compact` = hover tier, SPEC §2); overrides too. Code
+   names follow the tiers (2026-11-05): `shapes.minimal`/`planMinimal`/`buildMinimal` (pill in
+   the bar), `planCompact`/`buildCompact` (hover), `shapes.side` (120 px side pills).
+4. **Per-app overrides live under the module of the kind they override.** An app in two kinds
+   has two small files; no central `apps/<app>/`.
+5. **One slug per app** across sources (MPRIS bus name, desktop id, notification app name),
+   from the table in `kit/services/registry.js`; modules see only the slug.
+6. **Module off = not imported** (`modules-<id>` false): no signal, no actor, zero cost. Hiding
+   an app (`apps-hidden`) is a stack filter, not an adapter concern.
+7. **No code loaded at runtime** (EGO). User customisation is JSON profiles only (icon, title
+   template, hide body, priority, ttl, simple regex); logic needs a PR. Also for EGO review: no
+   sync file IO in the Shell (`kit/services/files.js` is async; St's stylesheet load excepted,
+   as Shell does it); signals bound with `connectObject`/`disconnectObject`; the Extension
+   object passed down from `extension.js`, never looked up by URL.
+8. **No polling while closed; no blur; nothing animating while idle.** A source that must poll
+   (progress position) polls only while its activity is visible. Animating = looping or
+   continuous motion; a change of idle content (clock minute, `auto` switching) is one
+   transition, then stillness (2026-11-03). Allowed, never with animations off:
+   - Bu's eyes: a scripted beat every few seconds, a few stepped frames, only visible and in
+     use; asleep after 60 s without input and in power-saver (`MASCOT.md` § Eyes, 2026-11-03).
+   - Bu's moving poses: two frames every 500 ms while their pill is mapped; still after
+     `mascot-rest-after` (60 s) without input (`MASCOT.md` § Drawing rules, 2026-11-04).
+   - Media equaliser: mapped and playing only (paused: low still bars, `eq-paused`), one
+     endless `scale-y` per bar; no rest without input, music plays untouched (2026-11-05, Ethan).
+   - A title too long for a compact or the Media tab scrolls while mapped: one
+     Clutter.Timeline, translation only (2026-11-05, Ethan).
+9. Every setting is a `schemas/…gschema.xml` key with `<summary>` and `<description>` (prefs
+   shows them; `<range>`/`<choices>` bound it). No preview key: a module's row has "Show a
+   sample", sent via D-Bus `Surface`. A module's keys are `<id>-…` in its Modules row, **except
+   idle plans'**: `idle-<plan>-…` sit under their plan on the **Island** page (2026-11-04,
+   Ethan); a module that is only an idle plan (clock, weather) has its switch there and no
+   Modules row (2026-11-06, Ethan). `kit/model/settings.js` gives each key one place and lists
+   the idle plans, as prefs.js cannot import a module's index.js (2026-11-03); exception
+   `modules/agent/hooks.js`, pure, for Claude Code's settings (2026-11-07).
+   `tests/settings.test.js` fails on a key without place or text, or `idle-<plan>-…` elsewhere.
+   A key lands with the item that implements it. Shell-level keys (clusters, corners) get their
+   own pages; their code sits beside `panel.js`.
+10. Standalone tabs (SPEC §2b, 2026-11-13): Calendar and Devices pinned by default
+    (`tabs-pinned`); the slot shows the first other standalone tab (Clipboard) until another is
+    chosen; ⋯ lists the unpinned ones, the slot's marked.
+    Each builds its actor on first selection and destroys it when expanded closes; closed costs
+    nothing.
+11. **Adapters never return measurements**: no `width`, `height`, `x`, px or monitor queries,
+    only content and discrete hints (`size: 'wide'`, region `priority`). `kit/model/shapes.js`
+    derives sizes from the monitor; the renderer fits content (ellipsizes, drops low-priority
+    regions). An adapter written on one screen works on every screen.
 
 ## Settings model
 
-Planned keys are listed here too; the schema holds only the ones whose item has landed
-(2026-11-04: `modules-*`, `apps-hidden`, `apps-plain`, `tabs-pinned`, `tabs-slot`,
-`expanded-width`, `dev-mode`, `keybind-focus`, `cluster-background`, `cluster-radius`,
-`cluster-opacity`, `cluster-contrast`, `left-cluster-empty`, `clock-defaults-applied`, `dock-defaults-applied`, `window-corners`, `window-corners-radius`, `mascot-rest-after`, `daypart-starts`, `modules-clock`, `idle-content`, `idle-clock-style`). Every key applies at once — prefs and
-`gsettings` alike; `modules-<id>` starts or stops only that module.
+Planned keys are listed too; the schema holds landed ones. Every key applies at once (prefs or
+`gsettings`); `modules-<id>` starts or stops only that module.
 
 | Key | Type | Effect |
 |---|---|---|
-| `modules-<id>` | b | the module runs or not; applies at once (prefs: its row's switch) |
-| `apps-hidden` | as | apps whose activities never surface; any app id, slugged (2026-11-02) |
-| `apps-plain` | as | apps that use the default adapter instead of their override; any app id, slugged |
-| `idle-content` | s | `auto` (default) \| `none` \| any module's idle plan id |
-| `idle-auto-plans` | as | plans `auto` may show, in the order they take turns; default `calendar`, `weather`, `clock`, `mascot` (Bu's eyes on by default, 2026-11-14) |
-| `idle-auto-switch` | s | minutes per turn of `auto` while idle: `5m` (default), `10m`, `20m`, `30m` (2026-11-13, Ethan; was `idle-auto-interval`, 2–30) |
-| `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`; bad values → defaults. In the schema since M3 daypart; on the Island page, When Idle → Parts of the day: each part's colour icon and a drop-down of the hours it may start at, so none is empty or out of order (2026-11-13) |
-| `tabs-pinned` | as | standalone tab ids shown as fixed tabs (settings only; `['calendar', 'device']` by default) |
-| `tabs-slot` | s | standalone tab in the slot, set from ⋯; empty = the first enabled one (2026-11-02) |
-| `dev-mode` | b | exposes `stateObj.reload(id)` module hot swap |
+| `modules-<id>` | b | the module runs (its row's switch) |
+| `apps-hidden` | as | apps whose activities never surface; any id, slugged (2026-11-02) |
+| `apps-plain` | as | apps using the default adapter, not their override; any id, slugged |
+| `idle-content` | s | `auto` (default) \| `none` \| an idle plan id |
+| `idle-auto-plans` | as | plans `auto` shows, in turn; default `calendar`, `weather`, `clock`, `mascot` (Bu's eyes on by default, 2026-11-14) |
+| `idle-auto-switch` | s | minutes per `auto` turn: `5m` (default), `10m`, `20m`, `30m` (2026-11-13, Ethan) |
+| `daypart-starts` | ai | start hours of dawn, morning, noon, afternoon, evening, night; default `[5, 7, 11, 13, 18, 22]`, bad → default. Island → When Idle → Parts of the day: each part's colour icon and a drop-down of its start hours, never empty or out of order (2026-11-13) |
+| `tabs-pinned` | as | standalone tabs shown fixed; default `['calendar', 'device']`; no prefs row |
+| `tabs-slot` | s | slot tab, set from ⋯; empty = first enabled (2026-11-02) |
+| `dev-mode` | b | exposes `stateObj.reload(id)` hot swap |
 | `cluster-background` | s | never \| hover \| always; default `hover` (2026-11-04) |
-| `cluster-radius` | i | that background's corner radius, 0–16 px; default `16` |
-| `cluster-opacity` | i | that background's opacity, 5–100 %, in the panel foreground colour like a panel button's hover; default `17` (2026-11-04) |
-| `cluster-contrast` | s | auto \| dark-text \| light-text; default `auto` (2026-11-04: values name the text, not GNOME's light/dark) |
+| `cluster-radius`, `cluster-opacity` | i | its radius 0–16 px, default `16`; opacity 5–100 % of the panel foreground, default `17` |
+| `cluster-contrast` | s | auto \| dark-text \| light-text (names the text); default `auto` |
 | `left-cluster-empty` | s | workspace \| hidden |
-| `clock-defaults-applied` | b | bookkeeping: the first enable gave GNOME's clock keys Buoy's defaults (time alone, 24 h) where the user had not set them; the clock switches in prefs are GNOME's own keys (2026-11-04) |
-| `dock-defaults-applied` | b | bookkeeping: the first enable gave Ubuntu Dock's keys (`dash-to-dock`) Buoy's defaults — bottom, auto-hide, not edge to edge, 32 px, primary display, no trash or volumes — where the user had not set them; the Dock rows in prefs are the dock's own keys (2026-11-04) |
-| `weather-defaults-applied` | b | bookkeeping: the first enable gave GNOME Weather's units (`org.gnome.GWeather4` `temperature-unit`, `speed-unit`) °C and km/h where the user had not chosen them; the Weather plan's unit rows in prefs are those keys (2026-11-06) |
-| `window-corners` | b | round the top corners of windows whose top edge meets the bar (maximized, tiled, moved up); default `true` (2026-11-02; top edge 2026-11-04) |
-| `window-corners-radius` | i | that radius in logical px, 0–32; default `15` (Adwaita `--window-radius`) |
-| `idle-clock-style`, `idle-weather-refresh`, `idle-mascot-stroll` | — | declared by those modules (`idle-weather-refresh`: `30m` \| `1h`, default `30m`; `idle-weather-automatic` b, default `true`: the place from Geoclue, else the city picked in prefs, 2026-11-06; `idle-mascot-stroll` b, default `true`: Bu's eyes look around, 2026-11-14) |
-| `greeting-style`, `greeting-farewell`, `greeting-name`, `greeting-birthday`, `greeting-holidays`; bookkeeping `greeting-intro-shown`, `greeting-boot`, `greeting-session`, `greeting-asleep` | — | declared by `greeting` (GREETING.md §9; `greeting-last-day` dropped 2026-11-06) |
-| `expanded-width` | i | expanded width, logical px; `0` (default) = derived from the monitor. No height key: like iOS, height fits content up to width/2 (changed from `expanded-size (ii)` 2026-11-01) |
-| `progress-folders` | as | folders watched for downloads besides the XDG Downloads dir, at most 10, non-recursive (SPEC §6c, 2026-11-03; M3 and renamed from `transfers-folders` 2026-11-06, rule 9) |
-| `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc (default Super+B, SPEC §2c) |
-| `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60 (MASCOT.md, 2026-11-04); the kit's, as Bu is. On the Island page's Pill group since Claude Code's sessions draw Bu (2026-11-07; hidden before: nothing drew Bu, 2026-11-06, Ethan) |
-| `activity-linger` | s | `5m` \| `10m` \| `20m` \| `30m`, default `5m`: how long an activity that only waits (`linger`: a paused player, an agent done or waiting for you) stays without news, and how long a permission prompt waits before Deny (SPEC §2, 2026-11-07, Ethan; replaces `media-hide-paused-after` and `agent-ask-timeout`); Island page, Pill group |
-| `notification-replace-banners` | — | declared by the notification module (NOTIFICATIONS.md §9): GNOME's banners become pills, default `true`; off, GNOME shows its own (2026-11-07) |
-| `agent-quiet-focused` | — | declared by the agent module (CODING-AGENTS.md §9): no jump open while the session's terminal is focused, default `true`. Whether Claude Code's hooks are installed lives in `~/.claude/settings.json`, not in a key |
-| `privacy-dot` | — | declared by the privacy module (INDICATORS "Privacy dot", 2026-11-14): `pill` (default) the dot and GNOME's camera, microphone, remote-access icons and recording/sharing buttons hidden; `system` GNOME's alone, no dot; `both` |
+| `clock-`, `dock-`, `weather-defaults-applied` | b | the first enable set, where unset: GNOME's clock (time alone, 24 h); Ubuntu Dock `dash-to-dock` (bottom, auto-hide, not edge to edge, 32 px, primary display, no trash or volumes) (2026-11-04); `org.gnome.GWeather4` `temperature-unit`, `speed-unit` °C, km/h (2026-11-06). Their prefs rows are those apps' own keys |
+| `window-corners` | b | round top corners of windows touching the bar (maximized, tiled, moved up); default `true` (2026-11-04) |
+| `window-corners-radius` | i | logical px, 0–32; default `15` (Adwaita `--window-radius`) |
+| `idle-clock-style`, `idle-weather-refresh`, `idle-weather-automatic`, `idle-mascot-stroll` | — | by those modules: refresh `30m` \| `1h`, default `30m`; automatic default `true`: place from Geoclue, else the city in prefs (2026-11-06); stroll default `true`: Bu's eyes look around (2026-11-14) |
+| `greeting-style`, `-farewell`, `-name`, `-birthday`, `-holidays`; bookkeeping `-intro-shown`, `-boot`, `-session`, `-asleep` | — | by `greeting` (GREETING.md §9) |
+| `expanded-width` | i | logical px; `0` (default) = from the monitor. No height key: height fits content up to width/2, like iOS (2026-11-01) |
+| `progress-folders` | as | download folders besides XDG Downloads, ≤ 10, non-recursive (SPEC §6c) |
+| `keybind-focus` | as | take the keyboard: ring on the centre pill, ←/→, Enter, Esc; default Super+B (SPEC §2c) |
+| `mascot-rest-after` | i | seconds without input before a moving Bu holds still, 10–600, default 60; the kit's; Island → Pill (2026-11-07) |
+| `activity-linger` | s | `5m` \| `10m` \| `20m` \| `30m`, default `5m`: how long a `linger` activity (paused player, agent done or waiting) stays without news, and a permission prompt waits before Deny (SPEC §2, 2026-11-07, Ethan); Island → Pill |
+| `notification-replace-banners` | — | by notification (NOTIFICATIONS.md §9): banners become pills, default `true`; off, GNOME's own (2026-11-07) |
+| `agent-quiet-focused` | — | by agent (CODING-AGENTS.md §9): no jump open while the session's terminal is focused, default `true`. Hooks installed or not: `~/.claude/settings.json` |
+| `privacy-dot` | — | by privacy (INDICATORS "Privacy dot", 2026-11-14): `pill` (default) the dot, GNOME's camera, microphone, remote-access icons and recording/sharing buttons hidden; `system` GNOME's only; `both` |
 | per-module keys | — | declared by the module |
 
 ## Open for later

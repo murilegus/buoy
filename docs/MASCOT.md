@@ -2,52 +2,35 @@
 
 *Decided 2026-11-03.*
 
-Bu, the first syllable of Buoy ("boo"; the name is said "BOO-ee", 2026-11-06), is the
-buoy itself: a small pixel float with a lamp on its head. The lamp shows the pose; the
-buoy light stays the pill's edge dot (SPEC §2a-i, INDICATORS; until 2026-11-08 the lamp
-was the light). Bu adds no new idea.
-
-Bu is not an assistant face. It never talks, never follows the pointer, never glows, and
-never moves while the island is idle (SPEC §0, §8; ARCHITECTURE rule 8). Its job is to
-make state readable at a glance and to give Buoy a recognisable identity.
+Bu, the first syllable of Buoy (said "BOO-ee", 2026-11-06), is the buoy itself: a small pixel
+float with a lamp on its head. The lamp shows the pose; the buoy light stays the pill's edge
+dot (SPEC §2a-i, INDICATORS; 2026-11-08). Bu is not an assistant face: it never talks, follows
+the pointer, glows, or moves while the island is idle (SPEC §0, §8; ARCHITECTURE rule 8).
 
 ![Bu: all 13 poses, dark and light](mascot/sheet.svg)
 
-Two forms, one family:
-
-- **Bu** — the pixel buoy, 13 poses (below). Used by the brand, by agent activities and by
-  the greeting.
-- **Bu's eyes** — only the two eyes, drawn inside the black pill; the idle plan `mascot`
-  (§ Eyes). Same lamp colours, same rules.
+Two forms: **Bu**, the pixel buoy in 13 poses (brand, agents, greeting), and **Bu's eyes**,
+only the eyes inside the black pill, the idle plan `mascot` (§ Eyes). Same lamps, same rules.
 
 ## Where Bu appears
 
-Bu is the only pixel art in Buoy (2026-11-04, Ethan): it is a character, seen seldom and
-on purpose. Data icons — the clock's dayparts, weather, calendar — are vectors, quiet
-and in GNOME's icon language, so a pill that switches between plans never changes style.
+The only pixel art in Buoy (2026-11-04, Ethan); data icons (dayparts, weather, calendar) stay
+GNOME-style vectors. Not in other modules' pills, and never instead of the light.
 
 | Place | What | Since |
 |---|---|---|
-| Brand | extension icon, README, EGO screenshots, prefs About page (drawn from `kit/model/mascot.js`, no image shipped; waves 5 s the first time the page shows, then `idle`; still with GTK animations off; 2026-11-04); empty states — every empty tab, Bu over its line (kit `EmptyState` `pose`, 2026-11-07, Ethan): Home "Nothing going on", Media "Nothing playing", Claude Code, the not-yet-built Timer and Clipboard ("Coming soon", Timer since 2026-11-08) and Calendar's "No calendars" `idle`; Notifications "All caught up" and a picked day with no events in the Calendar tab ("No events", "Nothing else today", 2026-11-08) `sleep`; Transfers "No transfers" `done` | M3 release |
-| Agents | the **leading** of every agent activity (Claude Code, Codex, any D-Bus caller that sends `{mascot}`); the pose follows the agent's lifecycle (§ Agents). The agent's name is always the first word of the text, since Bu does not say which agent it is | M3 "Claude Code: ask + agent activity" (merged 2026-11-07) |
-| Greeting | leading of every greeting (GREETING.md §6): `wave` for 5 s at start, wake, welcome back and leaving; `party` on a birthday or celebration; `done` for a good weekend; `sleep` for good night; `busy` while updating | M3 greeting: first run and What's new (`wave`); the rest M4 greeting |
-| Idle plan `mascot` | Bu's eyes in the idle pill (§ Eyes), on by default (2026-11-14, Ethan; was off); built 2026-11-14 | M4 |
-
-Not: the pills of other modules (app icons and art stay), and not as a
-replacement for the light in every state.
+| Brand | extension icon, README, EGO screenshots, prefs About (drawn from `kit/model/mascot.js`; waves 5 s the first time, then `idle`; still with GTK animations off). Empty states (kit `EmptyState` `pose`, 2026-11-07, Ethan): `idle` — Home "Nothing going on", Media "Nothing playing", Claude Code, Timer and Clipboard "Coming soon", Calendar "No calendars"; `sleep` — Notifications "All caught up", a day with no events ("No events", "Nothing else today"); `done` — Transfers "No transfers" | M3 release |
+| Agents | the **leading** of every agent activity (Claude Code, Codex, a D-Bus caller sending `{mascot}`), pose per § Agents. The agent's name is the first word of the text: Bu does not say which agent | M3 (2026-11-07) |
+| Greeting | leading of every greeting, poses in GREETING.md §6 | M3 first run (`wave`); rest M4 |
+| Idle plan `mascot` | Bu's eyes (§ Eyes), on by default (2026-11-14, Ethan) | M4 |
 
 ## Drawing rules
 
-- **Grid 10 × 10.** Sizes are multiples of 10 so every cell is whole logical px: **20 px**
-  in minimal (cell 2, CONTRACT.md §5.3 leading ≤ 20), **40 px** in compact (cell 4, ≤ 40,
-  2026-11-05), **50 px** in expanded headers (≤ 56), 40 px in Home and prefs. HiDPI multiplies whole px; nothing blurs.
-- **A fixed palette, always on dark** (corrected 2026-11-03 to match the reviewed design:
-  this table had said "foreground at 35 / 55 / 70 %", which drew grey water and a faded
-  stripe). Every cell is a solid colour, no partial opacity, so the edges stay crisp at
-  20 px. Bu sits only on black: inside the always-black pill, and elsewhere (prefs, Home
-  cards, README, EGO) on its own tile, the island's black `#000` (2026-11-11, was `#0b0b0b`) —
-  never on a light background. Cell
-  letters:
+- **Grid 10 × 10**, sizes in multiples of 10 so cells are whole px: **20 px** minimal
+  (CONTRACT.md §5.3 leading ≤ 20), **40 px** compact (≤ 40, 2026-11-05) and in Home and prefs,
+  **50 px** expanded headers (≤ 56). Painted without antialiasing; nothing blurs.
+- **Fixed palette, solid cells, always on black**: in the pill, elsewhere (prefs, Home, README,
+  EGO) on its own `#000` tile (2026-11-11) — never on light.
 
   | Cell | Meaning | Colour |
   |---|---|---|
@@ -60,66 +43,39 @@ replacement for the light in every state.
   | `E` | eye — a hole, the black shows through | transparent |
   | `L` | lamp, 2 × 2 cells (4 × 4 px in compact) | the pose's lamp colour (INDICATORS § Bu's lamp); `foreground` = the body colour |
 
-- **The lamp is 2 × 2 cells** in every pose (2026-11-04, Ethan): at 2 × 1 it was 4 × 2 px in
-  the pill, too small to tell amber from green. It sits straight on the round body where
-  the neck was; the grids below, `kit/model/mascot.js` and every preview in `docs/mascot/`
-  changed together.
-- **The lamp is the pose's.** It shows the pose's own colour, always; the stack's
-  amber/red is the pill's edge dot, drawn on a pill Bu leads as on any other (2026-11-08,
-  Ethan: the lamp is too small to read as the light — before, it took the light's colour
-  and the edge slot was not drawn). Amber and red appear in the lamp only as the `missed`
-  and `ask` poses' own colours.
-- **Saturated lamps** (2026-11-11, design/colours "Minh hoạ"): at 4 × 4 px a pastel reads
-  grey, so each pose keeps its hue at near full saturation, clear of the lights and the privacy
-  dots: `think` is pink (purple is the mic), `error` a lighter grey and never red (red is `ask`).
-- **Motion, only with an activity.** Four poses move: `busy` and `think` loop while their
-  activity is visible; `wave` and `party` play once (~2 s) and settle on `done` / `idle`.
-  Every move is **two frames swapped every 500 ms** — two repaints a second of a 20 px
-  area, no frame clock, no easing. The swap timer lives in `kit/ui/present/motion.js`, exists only while
-  a moving pose is mapped, and is removed on pose change, destroy and disable; the frame
-  holds still while the user is away (Mutter idle monitor, a signal) and when
-  `org.gnome.desktop.interface enable-animations` is off. The lamp never blinks.
-  - **Away** (2026-11-04) is the same as for the eyes (§ Eyes): no input for
-    `mascot-rest-after` seconds (10–600, default 60, Ethan; Island page, Pill group) on the core
-    idle monitor, an UNINHIBITABLE watch, back on the user-active watch. The watches and
-    the settings signal exist only while a moving Bu is mapped; a new value applies at
-    once.
-  - **Held still**, a loop shows its first frame; a once pose shows its first frame and
-    still settles on time (one change, no swaps).
-  - **Rebuilt content carries on** (2026-11-04): a pill's content is rebuilt on every
-    update, light change and hover, so `kit/ui/present/motion.js` keeps when each pose was first shown
-    per activity surface (id + surface, last 32). An update mid-wave continues the wave; a
-    new `Surface` with the same id starts it again.
-- **Stale** is drawn by the renderer as for any stale activity (dimmed, CONTRACT.md §1): the
-  text turns `fg-subtle` (50 %) in CSS and Bu, whose palette is fixed, is drawn at the same
-  50 % opacity (design/colours, 2026-11-11; 40 % before), as the
-  `stale` preview; the `stale` pose is what Bu looks like while dimmed.
+- **Lamp: 2 × 2 cells**, on the body, in every pose (2026-11-04, Ethan). Always **the pose's
+  own colour**; the stack's amber/red is the pill's edge dot (2026-11-08, Ethan). Amber and red
+  appear in the lamp only as `missed` and `ask`. Hues near full saturation, clear of the lights
+  and privacy dots: `think` pink (purple is the mic), `error` a lighter grey, never red (2026-11-11,
+  design/colours "Minh hoạ"). The lamp never blinks.
+- **Motion, only with an activity.** `busy`, `think` loop while visible; `wave`, `party` play
+  once (~2 s). Two frames swapped every 500 ms, no easing. The timer is in
+  `kit/ui/present/motion.js`, only while a moving pose is mapped; removed on pose change,
+  destroy, disable. Held still (a loop on frame 1; a once pose on frame 1, still settling on
+  time) when `enable-animations` is off or the user is away:
+  no input for `mascot-rest-after` s (10–600, default 60; Island page, Pill group; 2026-11-04)
+  on the core idle monitor (UNINHIBITABLE watch, back on the user-active watch; both only while
+  a moving Bu is mapped).
+- **Rebuilt content carries on** (2026-11-04): `motion.js` keeps when each pose was first shown
+  per activity surface (id + surface, last 32), so an update mid-wave continues it; a new
+  `Surface` with the same id restarts it.
+- **Stale** (CONTRACT.md §1): text `fg-subtle`, Bu at 50 % opacity (2026-11-11); the `stale`
+  pose is how Bu looks dimmed.
 
 ## Rendering
 
 *Decided 2026-11-03.*
 
-- `kit/model/mascot.js` holds the grids below as data: pure, no `St`, unit-tested. Pose names
-  are a closed set; an unknown pose falls back to the element's `icon`, or `idle`.
-- `kit/ui/present/motion.js` paints a grid with one `St.DrawingArea` (cairo rectangles) in the palette
-  above. No image files ship in the extension, so HiDPI comes free and there is nothing to
-  keep in sync but this file.
-- `tests/mascot.test.js` parses the grid blocks of **this file** and compares them with
-  `kit/model/mascot.js`, so the doc stays the source of truth. It also checks the Poses table
-  (every pose, its motion), the lamp rule and the frame timing (`frameAt`).
-- Sizes (2026-11-04): 20 px in minimal (and Home's rows, which are minimal views), 40 px
-  in compact (2026-11-05), 50 px in the expanded leading; the cells are painted without antialiasing.
-- The SVGs in `docs/mascot/` are previews for review and the README, made from the same
-  grids and the palette above (regenerated 2026-11-03 when the palette was corrected, and
-  2026-11-04 for the 2 × 2 lamp: `sheet.svg`, the 13 pose files and `hello.svg`; `eyes.svg`
-  has no lamp); they are not loaded at runtime. `tests/mascot.test.js` checks each pose
-  file cell by cell against its grid and lamp colour. The `stale` preview is dimmed to 50 %, as the renderer
-  dims a stale activity.
-  `hello-icon.png` (480 px, `wave.1` on its `#000` tile: the extensions.gnome.org icon, 2026-11-09); `hello.svg` (README, 2026-11-03) waves `wave.1`/`wave.2` for 5 s at 500 ms (3 s until
-  2026-11-04, Ethan), then
-  rests on `idle` (CSS, once per page load; `prefers-reduced-motion` shows `idle` only).
-- Contract: an adapter (or a D-Bus caller) sets `leading: {mascot: '<pose>', icon?}`
-  (CONTRACT.md §3). Data only — no actor, no timer, no size (rules 2, 3, 11).
+- `kit/model/mascot.js`: the grids below as data, pure. Pose names are a closed set; an
+  unknown pose falls back to the element's `icon`, or `idle`. `motion.js` paints a grid on one
+  `St.DrawingArea`. No image files ship.
+- `tests/mascot.test.js` parses this file's grids, the Poses table, the lamp rule and
+  `frameAt`, and compares them with `kit/model/mascot.js` and `docs/mascot/`: **this doc is the
+  source of truth**.
+- `docs/mascot/` (previews, not loaded): `sheet.svg`, 13 pose SVGs (`stale` at 50 %),
+  `eyes.svg`; `hello-icon.png` (480 px `wave.1` on `#000`, the EGO icon, 2026-11-09);
+  `hello.svg` (README) waves 5 s, then `idle` (`prefers-reduced-motion`: `idle` only).
+- Contract: `leading: {mascot: '<pose>', icon?}` (CONTRACT.md §3). Data only (rules 2, 3, 11).
 
 ## Poses
 
@@ -382,23 +338,19 @@ W.WW..WW.W
 
 ## Agents
 
-An agent activity (kind `agent`, M3 with `ask` since 2026-11-07: one module, FEATURES "Claude Code") maps its
-source's events to poses in the adapter — pure, so every mapping is unit-tested. The
-event → pose table for Claude Code's hooks is [CODING-AGENTS.md](CODING-AGENTS.md) §3
-(2026-11-07; it replaced the table that was here): `think` on a prompt, `busy` on tools
-and subagents, `error` on a failure, `ask` on a permission prompt, `turn` when it waits
-for you, `compact` while compacting, `done` (or `party` after > 10 min) when it stops,
-`stale` without news.
-
-Codex (later, CODING-AGENTS.md §10): `notify` (turn complete) → `done`, or `turn` when it waits for input. A D-Bus
-caller may send `{mascot}` directly and skip the adapter.
+An agent activity (kind `agent`, FEATURES "Claude Code", 2026-11-07) maps its source's events
+to poses in the pure, unit-tested adapter. Claude Code's table is
+[CODING-AGENTS.md](CODING-AGENTS.md) §3: `think` on a prompt, `busy` on tools and subagents,
+`error` on a failure, `ask` on a permission prompt, `turn` when it waits for you, `compact`
+while compacting, `done` (or `party` after > 10 min) when it stops, `stale` without news.
+Codex (later, §10 there): `notify` → `done`, or `turn` when it waits for input. A D-Bus caller
+may send `{mascot}` directly.
 
 ## Eyes — idle plan `mascot`
 
-Only the eyes, centred in the 120 × 32 idle pill, in the foreground colour; the light
-stays in its edge slot and the eyes react to it. **Four modes, not thirteen**: idle means
-no activity, so the moving and activity poses (`busy`, `think`, `done`, `party`, `wave`,
-`turn`, `error`, `compact`, `ask` as an activity) never occur here.
+Only the eyes, centred in the 120 × 32 idle pill, in the foreground colour; the light stays in
+its edge slot and the eyes react to it. Four modes; the first row that holds wins, so a light
+always shows through.
 
 ![Bu's eyes: the four idle modes](mascot/eyes.svg)
 
@@ -409,39 +361,26 @@ no activity, so the moving and activity poses (`busy`, `think`, `done`, `party`,
 | `sleep` | daypart `night`; 60 s without input; power profile `power-saver`; `enable-animations` off | two lines 9 × 2.4 at y 16 |
 | `idle` | otherwise | two bars 4.5 × 10, r 2.2, at x 49 and 66; strolls (below) |
 
-- The first row that holds wins: a light always shows through (`waiting`, `missed`), so
-  coming back to the desk finds the eyes looking at what was missed, not asleep.
-- `sleep` replaces open eyes wherever Bu must hold still — nobody at the desk, power
-  saving, animations off — so stillness reads as Bu resting, not as a frozen pill
-  (Ethan, 2026-11-03). `idle-mascot-stroll = false` is the one case of open eyes that
-  never move.
-- A mode changes only on an event (light change, daypart boundary, no input / input
-  again, power profile change, `enable-animations` change), in one frame.
-  `idle-content = mascot` picks the plan; in `auto` it scores 10 like `clock` (ties take
-  turns) when it is in `idle-auto-plans`.
-- **60 s without input** means no keyboard, mouse, touchpad, touch or tablet event (and
-  no lid open, power plug change or resume): the core idle monitor,
-  `global.backend.get_core_idle_monitor()`, the one `ui/messageTray.js` and
-  `ui/screenShield.js` use. The watch is
-  `add_idle_watch_full(60000, cb, Meta.IdleMonitorWatchFlags.UNINHIBITABLE)`: a default
-  watch never fires while an app inhibits idle, so a windowed video would keep Bu
-  strolling all evening (mutter `src/backends/meta-idle-monitor.c`,
-  `update_inhibited_watch`; resets in `src/core/events.c`,
-  `handle_idletime_for_event`). `add_user_active_watch()` brings `idle` back. Both
-  watches exist only while the plan is shown and are removed with it.
-- The power profile is read from the Shell's own toggle (`ui/status/powerProfiles.js`,
-  `PowerProfilesToggle._proxy.ActiveProfile`, and its `g-properties-changed`); no new
-  proxy, no daemon = not saving. `_proxy` is private Shell state: check it on every
-  Shell release.
+- `sleep` stands for every case where Bu must hold still, so stillness reads as rest (Ethan,
+  2026-11-03); `idle-mascot-stroll = false` is the one case of open eyes that never move.
+- A mode changes only on an event, in one frame. `idle-content = mascot` picks the plan; in
+  `auto` it scores 10 like `clock` (ties take turns) when in `idle-auto-plans`.
+- **60 s without input** (keyboard, mouse, touchpad, touch, tablet; lid, plug, resume):
+  `global.backend.get_core_idle_monitor()` as `ui/messageTray.js` uses it,
+  `add_idle_watch_full(60000, cb, Meta.IdleMonitorWatchFlags.UNINHIBITABLE)` — a default watch
+  never fires while an app inhibits idle (mutter `meta-idle-monitor.c`
+  `update_inhibited_watch`); `add_user_active_watch()` brings `idle` back. Both only while the
+  plan is shown.
+- Power profile: the Shell's toggle (`ui/status/powerProfiles.js`
+  `PowerProfilesToggle._proxy.ActiveProfile`, `g-properties-changed`); no daemon = not saving.
+  `_proxy` is private: check it every Shell release.
 
 ### The stroll
 
 *Decided 2026-11-03.*
 
-In mode `idle` only, the eyes follow a fixed script so the pill feels alive. Motion is
-**stepped**, like the pixel Bu: each change is one or a few single frames, never an
-eased slide, so the cost does not grow with the refresh rate. Each beat is one content
-change, then stillness until the next — not a loop (ARCHITECTURE rule 8).
+In mode `idle` only, a fixed script of **stepped** single frames (never an eased slide); each
+beat is one change, then stillness (ARCHITECTURE rule 8).
 
 | # | Beat | Eyes | Frames | Hold |
 |---|---|---|---|---|
@@ -453,42 +392,28 @@ change, then stillness until the next — not a loop (ARCHITECTURE rule 8).
 | 6 | smile | `^ ^`: two arcs, stroke 2.4, round caps, (46.5, 18)–(56, 18) and (63.5, 18)–(73, 18), control y 11.5 | 1 | 1.25 s |
 | 7 | long rest | bars, centred | 1 | 7 s |
 
-- Then beat 1 again. Each hold is jittered uniformly by ±25 %, so it reads as alive but
-  stays predictable and testable. Holds are 2× faster than the first demo (Ethan,
-  2026-11-03).
-- Cost: 16 frames per ~21 s cycle, under 1 frame/s at any refresh rate, each a
-  ~30 × 16 px redraw (an eased 600 ms slide would be ~7 frames/s at 60 Hz, ~16 at
-  144 Hz). For comparison a blinking GTK cursor is ~2 frames/s.
-- The script never uses `missed`, `waiting` or `sleep`: those eyes say something real.
-- It runs only while the mode is `idle`, the pill is idle and mapped, and
-  `idle-mascot-stroll` is true (default). Anything else — a mode change, an activity
-  surfacing, the plan replaced, destroy, disable — removes the beat timer and the
-  pending steps at once; back in `idle`, the script restarts at beat 1.
-- Code (built 2026-11-14): `kit/model/mascot.js` exports `STROLL` (the beats above as
-  data: `{name, eyes, dx, steps, hold}`; `rest` is `still`, no frame), pure
-  `nextBeat(i, rand) → {beat, next, holdMs}`, `beatFrames(beat, fromDx)`, `eyesMode({light,
-  daypart, idleInput, powerSaver, animations})` and `eyesShapes(mode, frame)` (the numbers
-  above about the pill's centre, in px at 1em; drawn ×em, so the eyes grow with the pill).
-  The plan (`modules/mascot/idle.js`) gives `leading: {eyes: mode, stroll}`; the kit puts
-  the light's mode over it (`presentation.js` planIdle). `kit/ui/present/motion.js` `eyes()`
-  draws them on one St.DrawingArea and owns the single `GLib.timeout_add` (steps and beats
-  share it; removed on every stop above). The two idle-monitor watches, the power profile
-  and `enable-animations` are the plan's feed (`modules/mascot/feed.js`): the watches only
-  while the idle pill shows. The idle pill keeps its actors while the plan's data is the
-  same (`island.setIdle`), so the wall clock's minute does not restart the stroll.
-  `tests/mascot.test.js`: script order and wrap-around, hold bounds with `rand` 0 and 1,
-  no `missed`/`waiting`/`sleep` beat, step counts (16 frames a cycle), the shapes, every
-  `eyesMode` row including precedence (amber beats 60 s idle, red beats amber), the plan.
-- **On by default** (Ethan, 2026-11-14; MASCOT and FEATURES said off): `modules-mascot` true
-  and last in `idle-auto-plans`, so Automatic shows the eyes in turn with the clock (both
-  score 10). Turned off from gsettings, picking it in Show or switching its row on turns the
-  module on again (prefs, as for any module that is only a plan).
+- Then beat 1 again; each hold jittered uniformly by ±25 % (Ethan, 2026-11-03). Cost: 16
+  frames per ~21 s cycle, under 1 frame/s, each a ~30 × 16 px redraw.
+- Never uses `missed`, `waiting` or `sleep`: those eyes say something real.
+- Runs only while the mode is `idle`, the pill idle and mapped, and `idle-mascot-stroll` true
+  (default). Anything else removes the timer and pending steps at once; back in `idle` it
+  restarts at beat 1.
+- Code (2026-11-14): `kit/model/mascot.js` `STROLL` (`{name, eyes, dx, steps, hold}`; `rest`
+  is `still`), `nextBeat(i, rand) → {beat, next, holdMs}`, `beatFrames(beat, fromDx)`,
+  `eyesMode({light, daypart, idleInput, powerSaver, animations})`, `eyesShapes(mode, frame)`
+  (px about the centre at 1em, drawn ×em). `modules/mascot/idle.js` gives
+  `leading: {eyes: mode, stroll}`; the kit puts the light's mode over it (`presentation.js`
+  planIdle). `motion.js` `eyes()` draws on one St.DrawingArea with one `GLib.timeout_add`.
+  The watches, power profile and `enable-animations` are `modules/mascot/feed.js`. The idle
+  pill keeps its actors while the plan's data is the same (`island.setIdle`).
+- **On by default** (Ethan, 2026-11-14): `modules-mascot` true and last in `idle-auto-plans`,
+  alternating with the clock. Picking it in Show or switching its row on turns the module on.
 
 ### Expressions
 
-*Decided and built 2026-11-14 (Ethan), FEATURES M4 "Bu's eyes: expressions".* Seven more,
-drawn as in design/mascot "Biểu cảm của mắt" (`docs/design/mascot/render/eyes.js`): rounded bars,
-arcs and polylines only (the spiral is a polyline).
+*Decided and built 2026-11-14 (Ethan), FEATURES M4 "Bu's eyes: expressions".* Drawn as in
+design/mascot "Biểu cảm của mắt" (`docs/design/mascot/render/eyes.js`): rounded bars, arcs and
+polylines only.
 
 | Expression | When | For |
 |---|---|---|
@@ -500,31 +425,20 @@ arcs and polylines only (the spiral is a polyline).
 | `@ @` dizzy | held 1.5 s | until 3 s |
 | `x x` knocked out | held 3 s | until released, then 1 s |
 
-- `- -` is asleep, `_ _` is drowsy.
-- A reaction cuts the stroll at once, whatever beat it is in; after it the stroll restarts at
-  beat 1.
-- A light (`missed`, `waiting`) still wins. Asleep for night, power saving or animations off,
-  or with `idle-mascot-stroll` off: no reaction at all.
-- **Press and hold.** The idle pill opens Home on the press (`kit/ui/pill.js`
-  `button-press-event` → `island._onPillPress`), so there is no hold today. While the eyes show,
-  Home opens on the release instead: released within 0.5 s it is a click and opens Home;
-  held longer it is poking Bu and the release opens nothing. Only in mode `idle`; in any other
-  mode the release opens Home. A trial on the eyes first; then every idle pill (Ethan,
-  2026-11-14). The hold's one timer lives only while held and 1 s after. Released off the
-  pill it is no click, as a St.Button; another grab taking over ends it without one.
-- Code: `kit/model/mascot.js` `EXPRESSIONS`, `eyesShapes` (the expressions whatever the mode;
-  shapes as `bars` (with `lid`), `arcs`, `lines`, `rings`), `eyesRest` (why asleep: still ›
-  saver › away › night, given by the plan as `rest`), `eyesEnter(was, now)`, `ENTER_MS`,
-  `HOLD`, `HOLD_FRAMES`, `holdPlays`, `releaseEyes`; the wink is the smile beat's `alt`, every
-  other cycle (`nextBeat` wraps over two). `kit/ui/present/motion.js` `eyes()` keeps what the
-  last eyes showed (a mode change rebuilds the idle pill) to react, carries a reaction across
-  a rebuild, and runs the hold on its one timer; `eyesHold(actor)` finds it. `kit/ui/island.js`
-  `_onPillPress` holds under `global.stage.grab` (as ui/slider.js) and clicks on the release.
-  Tests in `tests/mascot.test.js` (shapes, reactions, hold, the wink's turn, `rest`).
+- A reaction cuts the stroll; the stroll then restarts at beat 1. A light still wins. Asleep
+  (night, saver, animations off) or `idle-mascot-stroll` off: no reaction.
+- **Press and hold** (2026-11-14, Ethan; eyes first, later every idle pill): in mode `idle`
+  Home opens on the release, not the press (`kit/ui/pill.js` → `island._onPillPress`): within
+  0.5 s a click; longer is poking Bu and opens nothing. Other modes: the release opens Home.
+  One timer, while held and 1 s after. Released off the pill or lost to another grab: no click.
+- Code: `kit/model/mascot.js` `EXPRESSIONS`, `eyesShapes` (`bars` with `lid`, `arcs`,
+  `lines`, `rings`), `eyesRest` (still › saver › away › night, the plan's `rest`),
+  `eyesEnter(was, now)`, `ENTER_MS`, `HOLD`, `HOLD_FRAMES`, `holdPlays`, `releaseEyes`; the wink
+  is the smile beat's `alt` (`nextBeat` wraps over two cycles). `motion.js` `eyes()` carries a
+  reaction across a rebuild and runs the hold; `eyesHold(actor)` finds it. `island.js`
+  `_onPillPress` holds under `global.stage.grab` (as ui/slider.js).
 
 ## Name
 
-**Bu**. A quick web search on 2026-11-03 found no app or GNOME extension mascot called
-Bu; the nearest are Pizza 4P's cheese mascot "BUU" and Gnomelets (pixel pets on the
-GNOME desktop). Not a trademark check — do one before the EGO release. In Vietnamese
-"bu" without tone marks is neutral.
+**Bu**. A web search (2026-11-03) found no app or GNOME mascot called Bu (nearest: Pizza 4P's
+"BUU", Gnomelets). Do a trademark check before the EGO release. "Bu" is neutral in Vietnamese.
