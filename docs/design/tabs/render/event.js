@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon} from '../../render/lib.js';
+import {SCALE as SC, C, icon, t} from '../../render/lib.js';
 
 const [out] = ARGV;
 const IW = 560, IH = 284;
@@ -142,78 +142,78 @@ function page(x, y, ev, scroll = 0) {
 }
 
 const MEETING = {
-    title: 'Họp sprint tuần 47', when: 'Hôm nay, thứ Sáu 20/11 · 15:00 – 15:30',
-    join: 'Tham gia Google Meet', link: 'meet.google.com/abc-defg-hij',
+    title: t('Họp sprint tuần 47', 'Sprint meeting, week 47'), when: t('Hôm nay, thứ Sáu 20/11 · 15:00 – 15:30', 'Today, 20 November · 15:00 – 15:30'),
+    join: t('Tham gia Google Meet', 'Join Google Meet'), link: 'meet.google.com/abc-defg-hij',
     rows: [
-        {icon: 'map-pin', text: 'Tầng 3, phòng A'},
-        {icon: 'persons', text: '3 khách', sub: ['2 đồng ý, 1 chưa trả lời'], people: [
-            ['tram@example.com', 'Người tổ chức', true], ['ethan@example.com', null, true], ['an@example.com', null, false]]},
-        {icon: 'bell', text: '10 phút trước'},
-        {icon: 'calendar', text: 'Công việc'},
+        {icon: 'map-pin', text: t('Tầng 3, phòng A', 'Floor 3, room A')},
+        {icon: 'persons', text: t('3 khách', '3 guests'), sub: [t('2 đồng ý, 1 chưa trả lời', '2 yes, 1 awaiting')], people: [
+            ['tram@example.com', t('Người tổ chức', 'Organizer'), true], ['ethan@example.com', null, true], ['an@example.com', null, false]]},
+        {icon: 'bell', text: t('10 phút trước', '10 minutes before')},
+        {icon: 'calendar', text: t('Công việc', 'Work')},
     ],
 };
 
 // --- 1. a meeting, its top ----------------------------------------------------------------------------
 let y = 40;
-title('1 · Bấm một sự kiện: trang của nó ở cột phải, theo Google Calendar', 16, y - 26);
+title(t('1 · Bấm một sự kiện: trang của nó ở cột phải, theo Google Calendar', '1 · Click an event: its page in the right column, after Google Calendar'), 16, y - 26);
 island(16, y);
 page(16, y, {...MEETING, bar: [0, 120]});
 
 // --- 2. scrolled ---------------------------------------------------------------------------------------
 const X2 = 16 + IW + 32;
-title('2 · Cuộn xuống: khách, nhắc, lịch', X2, y - 26);
+title(t('2 · Cuộn xuống: khách, nhắc, lịch', '2 · Scrolled down: guests, reminder, calendar'), X2, y - 26);
 island(X2, y);
 page(X2, y, {...MEETING, bar: [96, 120]}, 150);
 
 // --- 3. no link, a description ---------------------------------------------------------------------------
 y += IH + 64;
-title('3 · Không có link họp, có mô tả của anh', 16, y - 26);
+title(t('3 · Không có link họp, có mô tả của anh', '3 · No meeting link, your own description'), 16, y - 26);
 island(16, y);
 page(16, y, {
-    title: 'Gặp khách ở văn phòng', when: 'Ngày mai, thứ Bảy 21/11 · 10:00 – 11:00', join: null,
+    title: t('Gặp khách ở văn phòng', 'Client meeting at the office'), when: t('Ngày mai, thứ Bảy 21/11 · 10:00 – 11:00', 'Tomorrow, 21 November · 10:00 – 11:00'), join: null,
     rows: [
-        {icon: 'map-pin', text: 'Văn phòng Quận 1'},
-        {icon: 'text-align-left', text: 'Mang hợp đồng bản in và bảng giá mới.', sub: ['Hỏi lại lịch giao hàng tháng 12.']},
-        {icon: 'bell', text: '30 phút trước'},
-        {icon: 'calendar', text: 'Công việc'},
+        {icon: 'map-pin', text: t('Văn phòng Quận 1', 'District 1 office')},
+        {icon: 'text-align-left', text: t('Mang hợp đồng bản in và bảng giá mới.', 'Bring the printed contract and the new price list.'), sub: [t('Hỏi lại lịch giao hàng tháng 12.', 'Ask again about the December delivery dates.')]},
+        {icon: 'bell', text: t('30 phút trước', '30 minutes before')},
+        {icon: 'calendar', text: t('Công việc', 'Work')},
     ],
 });
 
 // --- notes ---------------------------------------------------------------------------------------------------
 const nl = (lines, x, y0) => lines.forEach((l, i) => note(l, x, y0 + i * 15));
 nl([
-    'Bấm hàng sự kiện (trước đây: mở app lịch; máy không có app thì không làm gì): cột phải thành trang của nó, tháng',
-    'giữ nguyên. ← hay Esc: về danh sách; chọn ngày khác: danh sách ngày đó. Trang dài thì cuộn trong cột.',
+    t('Bấm hàng sự kiện (trước đây: mở app lịch; máy không có app thì không làm gì): cột phải thành trang của nó, tháng', 'Click an event\'s row (before: opened the calendar app; nothing without one): the right column becomes'),
+    t('giữ nguyên. ← hay Esc: về danh sách; chọn ngày khác: danh sách ngày đó. Trang dài thì cuộn trong cột.', 'its page, the month stays. ← or Esc: the list; another day: that day\'s list. A long page scrolls in the column.'),
     '',
-    'Như Google Calendar, mỗi hàng một icon ở cột trái, chỉ hiện khi có:',
-    '· tiêu đề với ô màu của lịch; ngày và giờ ("Cả ngày" cho sự kiện cả ngày)',
-    '· Tham gia (nút chính, kem) và Chép link, link nhỏ ở dưới — như card "Sắp họp"; đã qua thì không có',
-    '· địa điểm · mô tả của anh (tối đa 6 dòng; dòng chỉ chứa link họp thì bỏ, đã có Tham gia)',
-    '· khách: số người, đồng ý / từ chối / chưa trả lời, từng người với dấu ✓ (kem) hay ? (không xanh: bảng màu),',
-    '  người tổ chức',
-    '· nhắc (VALARM) · tên lịch',
+    t('Như Google Calendar, mỗi hàng một icon ở cột trái, chỉ hiện khi có:', 'As Google Calendar, each row an icon in the left column, shown only when there is one:'),
+    t('· tiêu đề với ô màu của lịch; ngày và giờ ("Cả ngày" cho sự kiện cả ngày)', '· title with the calendar\'s colour square; day and time ("All day" for an all-day event)'),
+    t('· Tham gia (nút chính, kem) và Chép link, link nhỏ ở dưới — như card "Sắp họp"; đã qua thì không có', '· Join (main button, cream) and Copy link, the link small below — as the "Meeting in 5 min" card; none once over'),
+    t('· địa điểm · mô tả của anh (tối đa 6 dòng; dòng chỉ chứa link họp thì bỏ, đã có Tham gia)', '· location · your description (at most 6 lines; a line with only the meeting link is dropped, Join has it)'),
+    t('· khách: số người, đồng ý / từ chối / chưa trả lời, từng người với dấu ✓ (kem) hay ? (không xanh: bảng màu),', '· guests: how many, yes / no / awaiting, each person with a ✓ (cream) or ? (no green: the palette),'),
+    t('  người tổ chức', '  the organizer'),
+    t('· nhắc (VALARM) · tên lịch', '· reminder (VALARM) · calendar name'),
 ], X2, y);
 nl([
-    'Khác Google (EDS không có, hay ngoài phạm vi):',
-    '· tên khách: Google chỉ gửi địa chỉ email qua CalDAV, không có tên và ảnh — chữ cái đầu',
-    '· "Join by phone", số PIN, "Take meeting notes": bỏ — khối Google tự thêm vào mô tả cũng bỏ',
-    '· sửa, xoá, "Going? Yes / No / Maybe": không — ghi vào lịch là mục M5',
+    t('Khác Google (EDS không có, hay ngoài phạm vi):', 'Unlike Google (EDS does not have it, or out of scope):'),
+    t('· tên khách: Google chỉ gửi địa chỉ email qua CalDAV, không có tên và ảnh — chữ cái đầu', '· guest names: Google sends only the email address over CalDAV, no name or photo — the initial'),
+    t('· "Join by phone", số PIN, "Take meeting notes": bỏ — khối Google tự thêm vào mô tả cũng bỏ', '· "Join by phone", PIN, "Take meeting notes": left out — the block Google adds to the description too'),
+    t('· sửa, xoá, "Going? Yes / No / Maybe": không — ghi vào lịch là mục M5', '· edit, delete, "Going? Yes / No / Maybe": no — writing to the calendar is an M5 item'),
     '',
-    'Đọc từ EDS khi bấm (như Join), không đọc trước cả danh sách. Lỗi hay lâu hơn 5 s: tiêu đề, giờ, tên lịch.',
+    t('Đọc từ EDS khi bấm (như Join), không đọc trước cả danh sách. Lỗi hay lâu hơn 5 s: tiêu đề, giờ, tên lịch.', 'Read from EDS on click (as Join), not ahead for the whole list. An error or over 5 s: title, time, calendar name.'),
 ], X2, y + 10 * 15 + 24);
 
 // --- 4. the row's dot ---------------------------------------------------------------------------------------
 let ny = y + IH + 50;
-title('4 · Chấm ở mỗi hàng của danh sách mang màu của lịch (Ethan, 2026-11-20)', 16, ny);
+title(t('4 · Chấm ở mỗi hàng của danh sách mang màu của lịch (Ethan, 2026-11-20)', '4 · The dot on each list row takes the calendar\'s colour (Ethan, 2026-11-20)'), 16, ny);
 ny += 22;
 fill(C.FILL1, 16, ny, RW, 32, 10);
 dot(30, ny + 16, 4, WORK);
-text('Họp sprint tuần 47', 44, ny + 8, {wt: 600});
+text(t('Họp sprint tuần 47', 'Sprint meeting, week 47'), 44, ny + 8, {wt: 600});
 text('15:00 – 15:30', 16 + RW - 12, ny + 8, {sz: 9.35, a: C.FG_MUTED, right: true});
 fill(C.FILL1, 16 + RW + 16, ny, RW, 32, 10);
 dot(30 + RW + 16, ny + 16, 4, [.7, .7, .7]);
-text('Họp sprint tuần 47', 44 + RW + 16, ny + 8, {wt: 600});
+text(t('Họp sprint tuần 47', 'Sprint meeting, week 47'), 44 + RW + 16, ny + 8, {wt: 600});
 text('15:00 – 15:30', 16 + RW * 2 + 4, ny + 8, {sz: 9.35, a: C.FG_MUTED, right: true});
-note('màu của lịch, như ô màu trên trang (Google Calendar làm vậy)', 16, ny + 40);
-note('trước đây: xám cho mọi lịch', 16 + RW + 16, ny + 40);
+note(t('màu của lịch, như ô màu trên trang (Google Calendar làm vậy)', 'the calendar\'s colour, as the square on the page (as Google)'), 16, ny + 40);
+note(t('trước đây: xám cho mọi lịch', 'before: grey for every calendar'), 16 + RW + 16, ny + 40);
 surf.writeToPNG(out);

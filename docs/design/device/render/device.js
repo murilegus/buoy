@@ -6,7 +6,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t} from '../../render/lib.js';
 
 const [out, MODE = 'columns'] = ARGV;
 const W1 = C.WHITE, SUB = 9.35, PW = 560, PH = 280, GAP = 40;
@@ -38,7 +38,7 @@ function panel(x, y) {
     fill(C.FILL1, x + 12, y + 12, 268, 32, 16);
     ['house', 'music-note', 'bell', 'calendar'].forEach((n, i) => icon(n, x + 24 + i * 36, y + 20, 16, C.FG_MUTED));
     fill(C.FILL3, x + 160, y + 14, 112, 28, 14);
-    icon('display', x + 170, y + 20, 16); text('Thiết bị', x + 192, y + 19, {sz: SUB, wt: 600});
+    icon('display', x + 170, y + 20, 16); text(t('Thiết bị', 'Devices'), x + 192, y + 19, {sz: SUB, wt: 600});
     fill(C.FILL1, x + PW - 44, y + 12, 32, 32, 16); icon('gear', x + PW - 36, y + 20, 16, C.FG_MUTED);
 }
 // a column per group shown: its title and count; cells 58, r 16, 6 apart; 3 fit at 1920, the
@@ -101,49 +101,49 @@ function page(x, y, head, end, rows, settings) {
 
 if (MODE === 'columns') {
     const LAPTOP = [
-        {title: 'Máy này', rows: [['battery', 'Pin · dùng 11 W', '76%'], ['scales-balanced', 'Chế độ năng lượng', 'Cân bằng']]},
-        {title: 'Không dây', rows: []},
-        {title: 'Đang cắm', rows: [['display', 'ViewSonic 27″', 'Nối'], ['headphones', 'Logi USB Headset', '64%']]},
+        {title: t('Máy này', 'This Computer'), rows: [['battery', t('Pin · dùng 11 W', 'Battery · using 11 W'), '76%'], ['scales-balanced', t('Chế độ năng lượng', 'Power Mode'), t('Cân bằng', 'Balanced')]]},
+        {title: t('Không dây', 'Wireless'), rows: []},
+        {title: t('Đang cắm', 'Plugged In'), rows: [['display', 'ViewSonic 27″', t('Nối', 'Join')], ['headphones', 'Logi USB Headset', '64%']]},
     ];
     const DESKTOP = [
-        {title: 'Máy này', rows: [['battery-full', 'UPS · còn 25 phút', '100%'], ['scales-balanced', 'Chế độ năng lượng', 'Cân bằng']]},
-        {title: 'Không dây', rows: [['keyboard', 'MX Keys', '30%'], ['headphones', 'Galaxy Buds2', '70%']]},
-        {title: 'Đang cắm', rows: [['display', 'Dell U2723QE', 'Nối'], ['display', 'ViewSonic 27″', 'Nối']]},
+        {title: t('Máy này', 'This Computer'), rows: [['battery-full', t('UPS · còn 25 phút', 'UPS · 25 min left'), '100%'], ['scales-balanced', t('Chế độ năng lượng', 'Power Mode'), t('Cân bằng', 'Balanced')]]},
+        {title: t('Không dây', 'Wireless'), rows: [['keyboard', 'MX Keys', '30%'], ['headphones', 'Galaxy Buds2', '70%']]},
+        {title: t('Đang cắm', 'Plugged In'), rows: [['display', 'Dell U2723QE', t('Nối', 'Join')], ['display', 'ViewSonic 27″', t('Nối', 'Join')]]},
     ];
     const MANY = [
-        {title: 'Máy này', rows: [['battery-charging', 'Pin · sạc 31 W', '88%'], ['scales-balanced', 'Chế độ năng lượng', 'Hiệu năng']]},
-        {title: 'Không dây', rows: [['headphones', 'WH-1000XM4', '80%'], ['keyboard', 'MX Keys', '30%'], ['smartphone', 'Điện thoại của Ethan', '54%'], ['headphones', 'Tay cầm Xbox', '45%']]},
-        {title: 'Đang cắm', rows: [['display', 'ViewSonic 27″', 'Nối'], ['display', 'Dell U2723QE', 'Nối'], ['camera', 'Logi C920', ''], ['hard-drive', 'USB 64 GB', '41 GB']]},
+        {title: t('Máy này', 'This Computer'), rows: [['battery-charging', t('Pin · sạc 31 W', 'Battery · charging 31 W'), '88%'], ['scales-balanced', t('Chế độ năng lượng', 'Power Mode'), t('Hiệu năng', 'Performance')]]},
+        {title: t('Không dây', 'Wireless'), rows: [['headphones', 'WH-1000XM4', '80%'], ['keyboard', 'MX Keys', '30%'], ['smartphone', 'Điện thoại của Ethan', '54%'], ['headphones', 'Tay cầm Xbox', '45%']]},
+        {title: t('Đang cắm', 'Plugged In'), rows: [['display', 'ViewSonic 27″', t('Nối', 'Join')], ['display', 'Dell U2723QE', t('Nối', 'Join')], ['camera', 'Logi C920', ''], ['hard-drive', 'USB 64 GB', '41 GB']]},
     ];
-    [[LAPTOP, 'Laptop (máy Ethan bây giờ)'], [DESKTOP, 'Máy bàn: chế độ năng lượng, UPS nếu có'], [MANY, 'Nhiều thiết bị: quá 3 thì "+N"']].forEach(([g, t], i) => {
+    [[LAPTOP, t('Laptop (máy Ethan bây giờ)', 'Laptop (Ethan\'s machine now)')], [DESKTOP, t('Máy bàn: chế độ năng lượng, UPS nếu có', 'Desktop: power mode, UPS if any')], [MANY, t('Nhiều thiết bị: quá 3 thì "+N"', 'Many devices: over 3, "+N"')]].forEach(([g, t], i) => {
         const x = GAP / 2 + i * (PW + GAP);
         text(t, x, 12, {sz: 12, wt: 600});
         columns(x, 40, g);
     });
     const ny = 40 + PH + 12;
-    note('Mỗi nhóm có thiết bị là một cột; nhóm trống ẩn, các cột còn lại chia đều bề ngang. Số lượng cạnh tiêu đề nhóm (0.7em 600, fg-subtle).', GAP / 2, ny);
-    note('Ô 58, bo 16, fill-1, cách 6: icon 16 ở 12, giá trị 600 bên phải, tên 0.85em fg-muted (cắt "…" khi dài). Ở 1920 vừa 3 ô mỗi cột, ở 2560 vừa 4.', GAP / 2, ny + 14);
-    note('Quá số đó: ô cuối là "+N" kèm tên các thiết bị còn lại; bấm mở cả nhóm (ảnh dưới). Máy bàn: chế độ năng lượng, cùng UPS cắm USB nếu có (UPower); không có gì thì nhóm ẩn.', GAP / 2, ny + 28);
-    note('Ô pin: dưới tên là công suất từ UPower (EnergyRate): "dùng 11 W" khi chạy pin, "sạc 31 W" khi sạc; không đọc được thì chỉ "Pin". Máy bàn không có số này (RAPL chỉ root đọc được).', GAP / 2, ny + 56);
-    note('Không dây và ổ USB, webcam trong mẫu đến với các mục của chúng (Bluetooth device, Phone via GSConnect, USB / phone / webcam plugged).', GAP / 2, ny + 42);
+    note(t('Mỗi nhóm có thiết bị là một cột; nhóm trống ẩn, các cột còn lại chia đều bề ngang. Số lượng cạnh tiêu đề nhóm (0.7em 600, fg-subtle).', 'Each group with devices is a column; an empty group hides, the other columns share the width evenly. The count beside the group title (0.7em 600, fg-subtle).'), GAP / 2, ny);
+    note(t('Ô 58, bo 16, fill-1, cách 6: icon 16 ở 12, giá trị 600 bên phải, tên 0.85em fg-muted (cắt "…" khi dài). Ở 1920 vừa 3 ô mỗi cột, ở 2560 vừa 4.', 'Tile 58, radius 16, fill-1, gap 6: icon 16 at 12, value 600 on the right, name 0.85em fg-muted ("…" when long). 1920 fits 3 tiles a column, 2560 fits 4.'), GAP / 2, ny + 14);
+    note(t('Quá số đó: ô cuối là "+N" kèm tên các thiết bị còn lại; bấm mở cả nhóm (ảnh dưới). Máy bàn: chế độ năng lượng, cùng UPS cắm USB nếu có (UPower); không có gì thì nhóm ẩn.', 'Over that: the last tile is "+N" with the other devices\' names; a click opens the whole group (below). Desktop: power mode, and a USB UPS if any (UPower); nothing: the group hides.'), GAP / 2, ny + 28);
+    note(t('Ô pin: dưới tên là công suất từ UPower (EnergyRate): "dùng 11 W" khi chạy pin, "sạc 31 W" khi sạc; không đọc được thì chỉ "Pin". Máy bàn không có số này (RAPL chỉ root đọc được).', 'Battery tile: under the name, the power from UPower (EnergyRate): "using 11 W" on battery, "charging 31 W" when charging; unreadable: just "Battery". A desktop has no such number (only root can read RAPL).'), GAP / 2, ny + 56);
+    note(t('Không dây và ổ USB, webcam trong mẫu đến với các mục của chúng (Bluetooth device, Phone via GSConnect, USB / phone / webcam plugged).', 'Wireless, and the USB drive and webcam in the sample, come with their own items (Bluetooth device, Phone via GSConnect, USB / phone / webcam plugged).'), GAP / 2, ny + 42);
 } else {
     let x = GAP / 2;
-    text('Bấm "+N": cả nhóm thành danh sách', x, 12, {sz: 12, wt: 600});
-    page(x, 40, 'Đang cắm · 4', null, [
-        {ic: 'display', name: 'ViewSonic 27″', detail: '2560 × 1440', value: 'Nối', plain: true},
-        {ic: 'display', name: 'Dell U2723QE', detail: '3840 × 2160', value: 'Nối', plain: true},
+    text(t('Bấm "+N": cả nhóm thành danh sách', 'Click "+N": the whole group as a list'), x, 12, {sz: 12, wt: 600});
+    page(x, 40, t('Đang cắm · 4', 'Plugged In · 4'), null, [
+        {ic: 'display', name: 'ViewSonic 27″', detail: '2560 × 1440', value: t('Nối', 'Join'), plain: true},
+        {ic: 'display', name: 'Dell U2723QE', detail: '3840 × 2160', value: t('Nối', 'Join'), plain: true},
         {ic: 'camera', name: 'Logi C920', plain: true},
-        {ic: 'hard-drive', name: 'USB 64 GB', value: '41 GB trống', plain: true},
+        {ic: 'hard-drive', name: 'USB 64 GB', value: t('41 GB trống', '41 GB free'), plain: true},
     ], null);
     x += PW + GAP;
-    text('Bấm một màn hình: các cách dùng hai màn', x, 12, {sz: 12, wt: 600});
+    text(t('Bấm một màn hình: các cách dùng hai màn', 'Click a display: the ways to use two screens'), x, 12, {sz: 12, wt: 600});
     page(x, 40, 'ViewSonic 27″', '2560 × 1440', [
-        {ic: 'layout-split-columns', name: 'Nối', on: true},
-        {ic: 'copy', name: 'Nhân bản'},
-        {ic: 'display', name: 'Chỉ màn ngoài'},
-    ], 'Cài đặt màn hình');
+        {ic: 'layout-split-columns', name: t('Nối', 'Join'), on: true},
+        {ic: 'copy', name: t('Nhân bản', 'Mirror')},
+        {ic: 'display', name: t('Chỉ màn ngoài', 'External Only')},
+    ], t('Cài đặt màn hình', 'Display Settings'));
     const ny = 40 + PH + 12;
-    note('Trang thay chỗ các cột, ‹ về lại; hàng 36 bo 18 cách 4, như danh sách chế độ năng lượng trong Home. Danh sách dài hơn chỗ thì cuộn.', GAP / 2, ny);
-    note('Pin và chế độ năng lượng mở đúng trang pin của Home (design/home); tai nghe, loa mở Cài đặt → Âm thanh; ổ USB mở trong Files.', GAP / 2, ny + 14);
+    note(t('Trang thay chỗ các cột, ‹ về lại; hàng 36 bo 18 cách 4, như danh sách chế độ năng lượng trong Home. Danh sách dài hơn chỗ thì cuộn.', 'The page takes the columns\' place, ‹ goes back; rows 36, radius 18, gap 4, as the power mode list in Home. A list longer than the room scrolls.'), GAP / 2, ny);
+    note(t('Pin và chế độ năng lượng mở đúng trang pin của Home (design/home); tai nghe, loa mở Cài đặt → Âm thanh; ổ USB mở trong Files.', 'Battery and power mode open Home\'s own battery page (design/home); headphones, speakers open Settings → Sound; a USB drive opens in Files.'), GAP / 2, ny + 14);
 }
 surf.writeToPNG(out);

@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t} from '../../render/lib.js';
 
 const [out] = ARGV;
 const SUB = 9.35, KW = 404;
@@ -83,37 +83,37 @@ const tile = (x, ty, w, ic, val, cap, det = []) => {
 
 // --- 1. in a call -----------------------------------------------------------------------------------
 let y = 40;
-title('1 · Đang gọi: camera và micro cùng bật quá 10 s', 16, y - 26);
-card(16, y, 'g:video', 'Đang gọi · Firefox', '12:34 · Không làm phiền đang bật', [{label: 'Tắt micro', main: true}, {label: 'Cho thông báo'}]);
-callPill(NX, y + 8, 'Đang gọi', '12:34');
-note('Pill: icon camera, "Đang gọi", đồng hồ từ lúc bắt đầu; chấm xanh của camera ở đầu phải như bây giờ.', NX, y + 50);
-note('Tên app: app đang ghi âm (micro của GNOME biết, ví dụ Firefox, Zoom, Slack); không biết: chỉ "Đang gọi".', NX, y + 64);
-note('Card (hover): Tắt micro / Bật micro (kem, như nút micro của Quick Settings); "Cho thông báo" tắt Không làm phiền', NX, y + 86);
-note('cho cuộc gọi này. Không có nút kết thúc cuộc gọi: Buoy không điều khiển được app gọi.', NX, y + 100);
+title(t('1 · Đang gọi: camera và micro cùng bật quá 10 s', '1 · In a call: camera and microphone both on for more than 10 s'), 16, y - 26);
+card(16, y, 'g:video', t('Đang gọi · Firefox', 'In a call · Firefox'), t('12:34 · Không làm phiền đang bật', 'Since 12:34 · Do Not Disturb on'), [{label: t('Tắt micro', 'Mute'), main: true}, {label: t('Cho thông báo', 'Allow Notifications')}]);
+callPill(NX, y + 8, t('Đang gọi', 'In a call'), '12:34');
+note(t('Pill: icon camera, "Đang gọi", đồng hồ từ lúc bắt đầu; chấm xanh của camera ở đầu phải như bây giờ.', 'Pill: camera icon, "In a call", a clock from the start; the camera\'s green dot at the right end as now.'), NX, y + 50);
+note(t('Tên app: app đang ghi âm (micro của GNOME biết, ví dụ Firefox, Zoom, Slack); không biết: chỉ "Đang gọi".', 'App name: the app recording sound (GNOME\'s microphone knows it, e.g. Firefox, Zoom, Slack); unknown: just "In a call".'), NX, y + 64);
+note(t('Card (hover): Tắt micro / Bật micro (kem, như nút micro của Quick Settings); "Cho thông báo" tắt Không làm phiền', 'Card (hover): Mute / Unmute (cream, like Quick Settings\' microphone button); "Allow Notifications" turns Do Not Disturb off'), NX, y + 86);
+note(t('cho cuộc gọi này. Không có nút kết thúc cuộc gọi: Buoy không điều khiển được app gọi.', 'for this call. No end-call button: Buoy cannot control the calling app.'), NX, y + 100);
 
 // --- 2. Do Not Disturb --------------------------------------------------------------------------------
 y += 104 + 60;
-title('2 · Tự bật Không làm phiền', 16, y - 26);
-note('Bắt đầu gọi: bật Không làm phiền của GNOME (cùng nút trong lịch / Quick Settings) nếu đang tắt. Hết gọi (camera hay', 16, y);
-note('micro tắt quá 10 s): tắt lại — chỉ khi chính Buoy bật nó và anh không đổi gì trong lúc gọi. Đang bật sẵn: không đụng tới.', 16, y + 14);
-note('Thông báo trong lúc gọi vẫn vào danh sách, xong cuộc gọi đèn amber báo số bị nhỡ (như Không làm phiền bây giờ).', 16, y + 28);
-note('prefs: "Không làm phiền khi đang gọi" (Modules → Privacy & screen), bật mặc định.', 16, y + 42);
-note('Chỉ micro (ghi âm, ghi chú giọng nói) hay chỉ camera: không phải cuộc gọi, chỉ có chấm như bây giờ.', 16, y + 56);
+title(t('2 · Tự bật Không làm phiền', '2 · Do Not Disturb on by itself'), 16, y - 26);
+note(t('Bắt đầu gọi: bật Không làm phiền của GNOME (cùng nút trong lịch / Quick Settings) nếu đang tắt. Hết gọi (camera hay', 'Call starts: GNOME\'s Do Not Disturb on (the same switch as in the calendar / Quick Settings) if it is off. Call over (camera or'), 16, y);
+note(t('micro tắt quá 10 s): tắt lại — chỉ khi chính Buoy bật nó và anh không đổi gì trong lúc gọi. Đang bật sẵn: không đụng tới.', 'microphone off for more than 10 s): off again — only if Buoy itself turned it on and you changed nothing during the call. Already on: left alone.'), 16, y + 14);
+note(t('Thông báo trong lúc gọi vẫn vào danh sách, xong cuộc gọi đèn amber báo số bị nhỡ (như Không làm phiền bây giờ).', 'Notifications during the call still go to the list; after the call the amber light shows how many were missed (as Do Not Disturb now).'), 16, y + 28);
+note(t('prefs: "Không làm phiền khi đang gọi" (Modules → Privacy & screen), bật mặc định.', 'prefs: "Do Not Disturb in calls" (Modules → Privacy & screen), on by default.'), 16, y + 42);
+note(t('Chỉ micro (ghi âm, ghi chú giọng nói) hay chỉ camera: không phải cuộc gọi, chỉ có chấm như bây giờ.', 'Microphone only (recording, voice notes) or camera only: not a call, just the dot as now.'), 16, y + 56);
 
 // --- 3. Home's tile --------------------------------------------------------------------------------------
 y += 112;
-title('3 · Ô "Đang dùng" ở Home (chỉ khi micro, camera hay màn hình đang được dùng)', 16, y - 26);
-tile(16, y, 128, ['g:microphone', 'g:video'], 'Firefox', 'Micro, camera');
-tile(16 + 136, y, 220, ['g:microphone'], 'Zoom, Slack', 'Micro', ['2 app']);
-tile(16 + 136 + 228, y, 128, ['g:display-pulse'], 'Chia sẻ', 'Màn hình');
-note('Ô đứng đầu phần nhìn nhanh, trước thời tiết, chỉ khi có gì đang dùng (không có: không ô).', NX + 90, y + 6);
-note('Icon: cái đang dùng (micro, camera, màn hình). Số lớn: app đang ghi âm (GNOME biết qua micro);', NX + 90, y + 20);
-note('camera và màn hình GNOME không nói app nào — chỉ "Camera", "Chia sẻ" / "Quay".', NX + 90, y + 34);
-note('Bấm ô: Cài đặt → Quyền riêng tư (micro / camera), hay dừng chia sẻ như nút Stop hiện có.', NX + 90, y + 48);
+title(t('3 · Ô "Đang dùng" ở Home (chỉ khi micro, camera hay màn hình đang được dùng)', '3 · Home\'s "In use" tile (only while the microphone, camera or screen is in use)'), 16, y - 26);
+tile(16, y, 128, ['g:microphone', 'g:video'], 'Firefox', t('Micro, camera', 'Microphone, camera'));
+tile(16 + 136, y, 220, ['g:microphone'], 'Zoom, Slack', t('Micro', 'Microphone'), [t('2 app', '2 apps')]);
+tile(16 + 136 + 228, y, 128, ['g:display-pulse'], t('Chia sẻ', 'Sharing'), t('Màn hình', 'Screen'));
+note(t('Ô đứng đầu phần nhìn nhanh, trước thời tiết, chỉ khi có gì đang dùng (không có: không ô).', 'The tile leads the glance row, before weather, only when something is in use (nothing: no tile).'), NX + 90, y + 6);
+note(t('Icon: cái đang dùng (micro, camera, màn hình). Số lớn: app đang ghi âm (GNOME biết qua micro);', 'Icon: what is in use (microphone, camera, screen). Big value: the app recording sound (GNOME knows it from the microphone);'), NX + 90, y + 20);
+note(t('camera và màn hình GNOME không nói app nào — chỉ "Camera", "Chia sẻ" / "Quay".', 'for camera and screen GNOME does not say which app — just "Camera", "Sharing" / "Recording".'), NX + 90, y + 34);
+note(t('Bấm ô: Cài đặt → Quyền riêng tư (micro / camera), hay dừng chia sẻ như nút Stop hiện có.', 'Click the tile: Settings → Privacy (microphone / camera), or stop sharing like the existing Stop button.'), NX + 90, y + 48);
 
 // --- 4. not here ----------------------------------------------------------------------------------------------
 y += 140;
-title('4 · Ngoài mục này', 16, y - 26);
-note('Buoy không biết app nào dùng camera hay chia sẻ màn hình (Shell.CameraMonitor chỉ đếm camera; handle của Mutter không có tên app).', 16, y);
-note('Không tắt camera từ Buoy (GNOME không có công tắc đó).', 16, y + 14);
+title(t('4 · Ngoài mục này', '4 · Not in this item'), 16, y - 26);
+note(t('Buoy không biết app nào dùng camera hay chia sẻ màn hình (Shell.CameraMonitor chỉ đếm camera; handle của Mutter không có tên app).', 'Buoy does not know which app uses the camera or shares the screen (Shell.CameraMonitor only counts cameras; Mutter\'s handle has no app name).'), 16, y);
+note(t('Không tắt camera từ Buoy (GNOME không có công tắc đó).', 'No turning the camera off from Buoy (GNOME has no such switch).'), 16, y + 14);
 surf.writeToPNG(out);

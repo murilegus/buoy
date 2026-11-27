@@ -3,8 +3,8 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x, colourIcon} from '../../render/lib.js';
-const rows = [[4, 'pad 4 — ô 24 đồng tâm đầu bo, đều 4 mọi phía'], [6, 'pad 6'], [8, 'pad 8'], [10, 'pad 10'], [14, 'pad 14 — hiện tại']];
+import {SCALE as SC, fit, width1x, colourIcon, t} from '../../render/lib.js';
+const rows = [[4, t('pad 4 — ô 24 đồng tâm đầu bo, đều 4 mọi phía', 'pad 4 — box 24 concentric with the round end, 4 all round')], [6, 'pad 6'], [8, 'pad 8'], [10, 'pad 10'], [14, t('pad 14 — hiện tại', 'pad 14 — as now')]];
 const W = 560, ROW = 44, CX = 140, CONTENT = 24 + 6 + 85;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, ROW * rows.length * SC);
 const cr = new cairo.Context(surf);

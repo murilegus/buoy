@@ -4,9 +4,9 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE, fit, colourIcon} from '../../render/lib.js';
+import {SCALE, fit, colourIcon, t} from '../../render/lib.js';
 const FONTS = ['SF Pro Display', 'Ubuntu Sans', 'Noto Sans', 'DejaVu Sans', 'Liberation Sans', 'SF Compact Display'];
-const SIZES = [[11, '11pt (1em)'], [13.75, '11pt × 1.25 (chữ lớn)']];
+const SIZES = [[11, '11pt (1em)'], [13.75, t('11pt × 1.25 (chữ lớn)', '11pt × 1.25 (large text)')]];
 const PT = 96 / 72, EMPX = pt => pt * PT;
 const meas = new cairo.Context(new cairo.ImageSurface(cairo.Format.ARGB32, 4, 4));
 const ML = PangoCairo.create_layout(meas); PangoCairo.context_set_resolution(ML.get_context(), 96);
@@ -49,7 +49,7 @@ if (ARGV[0]) {
     setFont(L, r.fam, r.pt); L.set_text('12:59:59 AM', -1); fit(L, cr, w1); const e = L.get_pixel_extents()[1];
     cr.setSourceRGB(1, 1, 1); cr.moveTo(x0 + r.box + r.gap, py + Math.round((r.h - e.height) / 2)); PangoCairo.show_layout(cr, L);
     const d = Pango.FontDescription.from_string('SF Pro Display'); d.set_size(8 * Pango.SCALE); L.set_font_description(d); L.set_attributes(new Pango.AttrList()); PangoCairo.update_layout(cr, L);
-    L.set_text(`${r.fam}${r.got !== r.fam ? ' → ' + r.got : ''} · ${r.label} · ${r.idle}×${r.h}${r.tabular ? '' : ' · số không đều'}`, -1);
+    L.set_text(`${r.fam}${r.got !== r.fam ? ' → ' + r.got : ''} · ${r.label} · ${r.idle}×${r.h}${r.tabular ? '' : t(' · số không đều', ' · digits not tabular')}`, -1);
     cr.setSourceRGBA(1, 1, 1, .75); cr.moveTo(px + 230, py + r.h / 2 - 6); PangoCairo.show_layout(cr, L);
   });
   s1.writeToPNG(ARGV[0]);

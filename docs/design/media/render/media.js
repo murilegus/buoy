@@ -17,7 +17,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon, drawBu, drawEq, EQ, SAMPLE, COVER} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, drawBu, drawEq, EQ, SAMPLE, COVER, t, LANG} from '../../render/lib.js';
 const [out, MODE = 'options'] = ARGV;
 
 // ---- sizes (design/expanded, design/home) -----------------------------------------------------------
@@ -232,17 +232,19 @@ function m2(x, y, EW, EH, players) {
 if (MODE === 'options') {
     const {w: EW, h: EH} = EXP[1920];
     const surf = canvas(40 + EW + 60 + EW + 40, 40 + 2 * (30 + EH) + 40 + 70);
-    const cols = [[40, 'M1 — một thẻ như thẻ chính của Home (đề xuất)', m1], [40 + EW + 60, 'M2 — không thẻ, ảnh bìa cao bằng thân (như nay)', m2]];
+    const cols = [[40, t('M1 — một thẻ như thẻ chính của Home (đề xuất)', 'M1 — one card like Home\'s main card (proposed)'), m1], [40 + EW + 60, t('M2 — không thẻ, ảnh bìa cao bằng thân (như nay)', 'M2 — no card, cover as tall as the body (as now)'), m2]];
     for (const [cx, title, draw] of cols) {
         text(title, cx, 24, {sz: 12, wt: 700});
         const a = draw(cx, 56, EW, EH, [SAMPLE.app]);
-        text(`Một player: ảnh ${a.art}`, cx, 56 + EH + 8, {sz: 9, a: .75});
+        text(t(`Một player: ảnh ${a.art}`, `One player: cover ${a.art}`), cx, 56 + EH + 8, {sz: 9, a: .75});
         const b = draw(cx, 56 + EH + 50, EW, EH, [SAMPLE.app, 'Firefox']);
-        text(`Hai player: chip ở trên, ảnh ${b.art}`, cx, 56 + 2 * EH + 58, {sz: 9, a: .75});
+        text(t(`Hai player: chip ở trên, ảnh ${b.art}`, `Two players: chips on top, cover ${b.art}`), cx, 56 + 2 * EH + 58, {sz: 9, a: .75});
     }
-    text('Cả hai ở 1920 (560 × 280, thân 212). Nút ↗ mở cửa sổ player; shuffle và repeat là nút bật/tắt không nền; ⏯ kem. ' +
+    text(t('Cả hai ở 1920 (560 × 280, thân 212). Nút ↗ mở cửa sổ player; shuffle và repeat là nút bật/tắt không nền; ⏯ kem. ' +
         'M1 cùng một kiểu với thẻ chính của Home nên pill → Home và pill → tab Media đi tới cùng một dạng (Motion: phần chung).',
-    40, 56 + 2 * EH + 84, {sz: 9, a: .8, maxW: 2 * EW + 60});
+    'Both at 1920 (560 × 280, body 212). The ↗ button opens the player\'s window; shuffle and repeat are on/off buttons with no background; ⏯ cream. ' +
+        'M1 has the same style as Home\'s main card, so pill → Home and pill → Media tab arrive at the same shape (Motion: the shared part).'),
+    40, 56 + 2 * EH + 84, {sz: 9, a: .8, maxW: 2 * EW + 60, wrap: LANG === 'en'});
     surf.writeToPNG(out);
 }
 
@@ -258,7 +260,7 @@ if (MODE === 'anatomy') {
     const A = EXP[1920], B = EXP[2560], D = EXP[3440], sc = .55;
     const y2 = 70 + A.h + 120;
     const surf = canvas(Math.max(40 + A.w + 80, 40 + B.w * sc + 30 + D.w * sc + 40), y2 + D.h * sc + 50);
-    text('1920 (560 × 280): thân 212, thẻ 536 × 212, ảnh 196', 40, 24, {sz: 12, wt: 700});
+    text(t('1920 (560 × 280): thân 212, thẻ 536 × 212, ảnh 196', '1920 (560 × 280): body 212, card 536 × 212, cover 196'), 40, 24, {sz: 12, wt: 700});
     const x = 40, y = 70;
     const g = m1(x, y, A.w, A.h, [SAMPLE.app]);
     const c = g.card;
@@ -268,17 +270,17 @@ if (MODE === 'anatomy') {
     vdim(g.x1 + 6, c.y, c.y + 12, '12', CY);
     vdim(g.x1 + 6, c.y + c.h - 12, c.y + c.h, '12', CY);
     dim(g.mid + 22 - 16, g.mid + 22 + 16, g.ty - 4, '32');
-    dim(c.x + 8, c.x + 8 + g.art, c.y + c.h + 22, `ảnh ${g.art}, bo 8, cách mép 8`);
-    dim(c.x, c.x + c.w, c.y + c.h + 44, `thẻ ${c.w}, fill-1, bo 16`);
-    text('tên 1.27em 700 · nghệ sĩ · app 0.85em fg-muted · album 0.85em fg-subtle · ↗ tròn 32 góc phải', x, c.y + c.h + 54, {sz: 7.5, a: .8});
-    text('thanh cao 4, giờ 0.85em fg-subtle dưới thanh · nút cách nhau 44 (32 + 12), ⏯ kem, ⏮ ⏭ fill-2, shuffle và repeat không nền khi tắt',
+    dim(c.x + 8, c.x + 8 + g.art, c.y + c.h + 22, t(`ảnh ${g.art}, bo 8, cách mép 8`, `cover ${g.art}, radius 8, 8 from the edge`));
+    dim(c.x, c.x + c.w, c.y + c.h + 44, t(`thẻ ${c.w}, fill-1, bo 16`, `card ${c.w}, fill-1, radius 16`));
+    text(t('tên 1.27em 700 · nghệ sĩ · app 0.85em fg-muted · album 0.85em fg-subtle · ↗ tròn 32 góc phải', 'title 1.27em 700 · artist · app 0.85em fg-muted · album 0.85em fg-subtle · ↗ round 32 top right'), x, c.y + c.h + 54, {sz: 7.5, a: .8});
+    text(t('thanh cao 4, giờ 0.85em fg-subtle dưới thanh · nút cách nhau 44 (32 + 12), ⏯ kem, ⏮ ⏭ fill-2, shuffle và repeat không nền khi tắt', 'bar 4 high, time 0.85em fg-subtle under the bar · buttons 44 apart (32 + 12), ⏯ cream, ⏮ ⏭ fill-2, shuffle and repeat no background when off'),
         x, c.y + c.h + 68, {sz: 7.5, a: .8});
-    text('2560 (716 × 344): ảnh 260', 40, y2 - 22, {sz: 10, wt: 700});
+    text(t('2560 (716 × 344): ảnh 260', '2560 (716 × 344): cover 260'), 40, y2 - 22, {sz: 10, wt: 700});
     cr.save(); cr.translate(40, y2); cr.scale(sc, sc); m1(0, 0, B.w, B.h, [SAMPLE.app]); cr.restore();
     const x3 = 40 + B.w * sc + 30;
-    text('3440 (760 × 376): ảnh 292', x3, y2 - 22, {sz: 10, wt: 700});
+    text(t('3440 (760 × 376): ảnh 292', '3440 (760 × 376): cover 292'), x3, y2 - 22, {sz: 10, wt: 700});
     cr.save(); cr.translate(x3, y2); cr.scale(sc, sc); m1(0, 0, D.w, D.h, [SAMPLE.app]); cr.restore();
-    text('Thẻ lấy hết thân (cao − 56 − 12); ảnh = cao thẻ − 16. Cột chữ lấy phần còn lại (300 ở 1920, 408 ở 3440).',
+    text(t('Thẻ lấy hết thân (cao − 56 − 12); ảnh = cao thẻ − 16. Cột chữ lấy phần còn lại (300 ở 1920, 408 ở 3440).', 'The card takes the whole body (height − 56 − 12); cover = card height − 16. The text column takes the rest (300 at 1920, 408 at 3440).'),
         40, y2 + D.h * sc + 16, {sz: 8.5, a: .8});
     surf.writeToPNG(out);
 }
@@ -287,12 +289,12 @@ if (MODE === 'states') {
     const {w: EW, h: EH} = EXP[1920];
     const surf = canvas(40 + EW + 60 + EW + 40, 40 + 3 * (30 + EH + 30) + 30);
     const S = [
-        ['Tạm dừng: ⏯ thành ▶', {paused: true}],
-        ['Không có thời lượng (radio, trực tiếp): thanh rỗng, không kéo được', {live: false, title: 'Radio Mùa Thu', sub: 'VOV3 · Rhythmbox', album: null}],
-        ['Không có ảnh bìa: ô fill-2 với nốt nhạc, cùng cỡ và chỗ', {noArt: true}],
-        ['Trộn bài bật, lặp một bài: nền fill-3, icon trắng', {shuffle: true, repeat: 'one'}],
-        ['Player chỉ có phát/dừng (trang web): các nút khác mờ, không bấm được', {only: true, live: false, title: 'Video không tên', sub: 'Firefox', album: null, noArt: true}],
-        ['Không có gì phát', {empty: true}],
+        [t('Tạm dừng: ⏯ thành ▶', 'Paused: ⏯ becomes ▶'), {paused: true}],
+        [t('Không có thời lượng (radio, trực tiếp): thanh rỗng, không kéo được', 'No length (radio, live): empty bar, cannot be dragged'), {live: false, title: 'Radio Mùa Thu', sub: 'VOV3 · Rhythmbox', album: null}],
+        [t('Không có ảnh bìa: ô fill-2 với nốt nhạc, cùng cỡ và chỗ', 'No cover: a fill-2 square with a note, same size and place'), {noArt: true}],
+        [t('Trộn bài bật, lặp một bài: nền fill-3, icon trắng', 'Shuffle on, repeat one: fill-3 background, white icon'), {shuffle: true, repeat: 'one'}],
+        [t('Player chỉ có phát/dừng (trang web): các nút khác mờ, không bấm được', 'Player with only play/pause (a web page): the other buttons dim, not clickable'), {only: true, live: false, title: 'Video không tên', sub: 'Firefox', album: null, noArt: true}],
+        [t('Không có gì phát', 'Nothing playing'), {empty: true}],
     ];
     S.forEach(([cap, o], i) => {
         const x = 40 + (i % 2) * (EW + 60), y = 40 + Math.floor(i / 2) * (30 + EH + 30) + 30;
@@ -306,12 +308,12 @@ if (MODE === 'players') {
     const {w: EW, h: EH} = EXP[1920];
     const surf = canvas(40 + EW + 60 + EW + 40, 40 + 2 * (30 + EH + 30) + 70);
     const P = [
-        ['Hai player: Spotify đang phát, Firefox đang dừng', [
+        [t('Hai player: Spotify đang phát, Firefox đang dừng', 'Two players: Spotify playing, Firefox paused'), [
             {name: 'Spotify', chosen: true, playing: true}, {name: 'Firefox'}], {}],
-        ['Ba player, hai đang phát; chọn Firefox (mở từ pill của nó)', [
+        [t('Ba player, hai đang phát; chọn Firefox (mở từ pill của nó)', 'Three players, two playing; Firefox chosen (opened from its pill)'), [
             {name: 'Spotify', playing: true}, {name: 'Firefox', chosen: true, playing: true}, {name: 'Rhythmbox'}],
         {title: 'Tiếng Sóng Biển 10 Giờ', sub: 'YouTube · Firefox', album: null}],
-        ['Năm player: không đủ chỗ, chip không chọn chỉ còn logo', [
+        [t('Năm player: không đủ chỗ, chip không chọn chỉ còn logo', 'Five players: not enough room, unchosen chips are logo only'), [
             {name: 'Spotify', chosen: true, playing: true}, {name: 'Firefox', playing: true}, {name: 'Rhythmbox'},
             {name: 'VLC'}, {name: 'Chromium', playing: true}], {}],
     ];
@@ -325,14 +327,14 @@ if (MODE === 'players') {
         chips(x + PAD, y + HEAD, players, EW - 2 * PAD);
     });
     const x = 40 + EW + 60, y = 40 + (30 + EH + 30) + 30;
-    text('Luật', x, y - 4, {sz: 11, wt: 700});
+    text(t('Luật', 'Rules'), x, y - 4, {sz: 11, wt: 700});
     [
-        'Mỗi player một chip, theo thứ tự của stack: đang phát trước, rồi đang dừng.',
-        'Chip: logo app 16, tên app, ba vạch nhỏ khi đang phát (chỉ chạy khi phát và đang hiện).',
-        'Chip đang chọn fill-3, chữ trắng; chip khác fill-2, chữ fg-muted.',
-        'Mở từ pill nào thì chọn player đó; bấm chip để đổi, thẻ fade-out / fade-in, không đổi cỡ.',
-        'Không đủ chỗ: chip không chọn chỉ còn logo (và ba vạch nếu đang phát); chip đang chọn luôn đủ tên.',
-        'Một player: không có hàng chip, thẻ cao hết thân.',
+        t('Mỗi player một chip, theo thứ tự của stack: đang phát trước, rồi đang dừng.', 'One chip per player, in stack order: playing first, then paused.'),
+        t('Chip: logo app 16, tên app, ba vạch nhỏ khi đang phát (chỉ chạy khi phát và đang hiện).', 'Chip: app logo 16, app name, three small bars while playing (moving only while it plays and is shown).'),
+        t('Chip đang chọn fill-3, chữ trắng; chip khác fill-2, chữ fg-muted.', 'The chosen chip fill-3, white text; other chips fill-2, fg-muted text.'),
+        t('Mở từ pill nào thì chọn player đó; bấm chip để đổi, thẻ fade-out / fade-in, không đổi cỡ.', 'The pill it opens from picks that player; click a chip to switch, the card fades out / in, same size.'),
+        t('Không đủ chỗ: chip không chọn chỉ còn logo (và ba vạch nếu đang phát); chip đang chọn luôn đủ tên.', 'No room: unchosen chips are logo only (and bars if playing); the chosen chip always has its full name.'),
+        t('Một player: không có hàng chip, thẻ cao hết thân.', 'One player: no chip row, the card fills the body\'s height.'),
     ].forEach((t, k) => text(`• ${t}`, x, y + 22 + k * 30, {sz: 9, a: .85, maxW: EW}));
     surf.writeToPNG(out);
 }
@@ -355,9 +357,9 @@ if (MODE === 'switch') {
     const W = 600, ROW = 70;
     const surf = canvas(W, 40 + 3 * ROW + 70);
     const A = layout(0), B = layout(1);
-    text('Đổi player (5 player, Spotify → Firefox): như thanh tab', 30, 16, {sz: 11, wt: 700});
+    text(t('Đổi player (5 player, Spotify → Firefox): như thanh tab', 'Switching player (5 players, Spotify → Firefox): like the tab bar'), 30, 16, {sz: 11, wt: 700});
     const ease = t => 1 - (1 - t) * (1 - t) * (1 - t);
-    [[0, 'Lúc bấm'], [.45, 'Giữa chừng (snap)'], [1, 'Xong, khoảng 240 ms']].forEach(([t, cap], f) => {
+    [[0, t('Lúc bấm', 'On click')], [.45, t('Giữa chừng (snap)', 'Halfway (snap)')], [1, t('Xong, khoảng 240 ms', 'Done, about 240 ms')]].forEach(([t, cap], f) => {
         const y = 50 + f * ROW, x0 = 30, e = ease(t);
         text(cap, x0, y - 4, {sz: 8, a: .7});
         fill([0, 0, 0, 1], x0 - 8, y + 10, W - 44, CHIP_H + 16, 24);
@@ -384,8 +386,10 @@ if (MODE === 'switch') {
                 eq(ex, y + 28, (i === 0 && e < .5) || (i === 1 && e >= .5) ? 1 : C.FG_MUTED);
         });
     });
-    text('Nền chọn (fill-3) trượt và đổi rộng bằng snap; chip cũ thu về logo, tên mờ đi; chip mới nở ra, tên hiện dần; ' +
+    text(t('Nền chọn (fill-3) trượt và đổi rộng bằng snap; chip cũ thu về logo, tên mờ đi; chip mới nở ra, tên hiện dần; ' +
         'các chip giữa dời chỗ bằng snap. Thẻ: nội dung cũ mờ đi và lùi 12 px, nội dung mới tới từ 12 px theo hướng đi.',
+    'The chosen fill (fill-3) slides and changes width with snap; the old chip shrinks to its logo, its name fades out; the new chip grows, its name fades in; ' +
+        'the chips between move with snap. Card: the old content fades and moves back 12 px, the new comes in from 12 px in the direction of travel.'),
     30, 50 + 3 * ROW + 6, {sz: 8.5, a: .8, maxW: W - 60, wrap: true});
     surf.writeToPNG(out);
 }
@@ -396,15 +400,15 @@ if (MODE === 'text') {
     const LONG = {title: 'Vì sao tình đầu sao đau đến thế chẳng thể nào quên', sub: 'MIN, Hoàng Dũng, Đen Vâu · Spotify',
         album: 'Gói Con Tim Làm Quà (Bò Sữa Bay Original Soundtrack)'};
     const rows = [
-        ['Trước: tên 1.27em, dòng 0.85em', {...LONG, small: true}], ['Đề xuất: tên 1.64em (cao 32 như ↗), dòng 1em', LONG],
-        ['Trước, chữ ngắn', {small: true}], ['Đề xuất, chữ ngắn', {}],
+        [t('Trước: tên 1.27em, dòng 0.85em', 'Before: title 1.27em, lines 0.85em'), {...LONG, small: true}], [t('Đề xuất: tên 1.64em (cao 32 như ↗), dòng 1em', 'Proposed: title 1.64em (32 high like ↗), lines 1em'), LONG],
+        [t('Trước, chữ ngắn', 'Before, short text'), {small: true}], [t('Đề xuất, chữ ngắn', 'Proposed, short text'), {}],
     ];
     rows.forEach(([cap, o], i) => {
         const x = 40 + (i % 2) * (EW + 60), y = 40 + Math.floor(i / 2) * (30 + EH + 30) + 30;
         text(cap, x, y - 22, {sz: 9.5, wt: 700});
         m1(x, y, EW, EH, [SAMPLE.app], o);
     });
-    text('Dòng dài nào cũng chạy (marquee), không cắt "…": tên bài, "nghệ sĩ · app", album; hai dòng dưới lấy hết bề ngang cột.',
+    text(t('Dòng dài nào cũng chạy (marquee), không cắt "…": tên bài, "nghệ sĩ · app", album; hai dòng dưới lấy hết bề ngang cột.', 'Every long line runs (marquee), never cut with "…": title, "artist · app", album; the two lower lines take the full column width.'),
         40, 40 + 2 * (30 + EH + 30) + 16, {sz: 9, a: .8});
     surf.writeToPNG(out);
 }
@@ -414,13 +418,13 @@ if (MODE === 'eq') {
     // equaliser (design/pill "Equaliser": six bars 2 × 14, the cover's colour) could go.
     const {w: EW, h: EH} = EXP[1920], TT = 34, GY = 64;
     const OPTS = [
-        ['Hiện nay: không có (chip chỉ có từ hai player)', null],
-        ['A — sau tên bài, trước ↗', 'title'],
-        ['B — góc ảnh bìa, trên nền đen mờ', 'cover'],
-        ['C — trong nút phát (như ô ⏸ của compact): nghỉ thì equaliser, rê chuột thì ⏸', 'play'],
-        ['D — cạnh giờ đã chạy, dưới thanh', 'time'],
-        ['E — ô của ↗ (như ô ⏸ của compact): lúc nghỉ thì equaliser', 'open'],
-        ['E — rê chuột vào ô (hay focus bàn phím): nút ↗ hiện lại', 'openHover'],
+        [t('Hiện nay: không có (chip chỉ có từ hai player)', 'Now: none (chips only from two players)'), null],
+        [t('A — sau tên bài, trước ↗', 'A — after the title, before ↗'), 'title'],
+        [t('B — góc ảnh bìa, trên nền đen mờ', 'B — corner of the cover, on dim black'), 'cover'],
+        [t('C — trong nút phát (như ô ⏸ của compact): nghỉ thì equaliser, rê chuột thì ⏸', 'C — in the play button (like compact\'s ⏸ slot): equaliser at rest, ⏸ on hover'), 'play'],
+        [t('D — cạnh giờ đã chạy, dưới thanh', 'D — next to the elapsed time, under the bar'), 'time'],
+        [t('E — ô của ↗ (như ô ⏸ của compact): lúc nghỉ thì equaliser', 'E — the ↗ slot (like compact\'s ⏸ slot): equaliser at rest'), 'open'],
+        [t('E — rê chuột vào ô (hay focus bàn phím): nút ↗ hiện lại', 'E — hover the slot (or keyboard focus): the ↗ button comes back'), 'openHover'],
     ];
     const rows = Math.ceil(OPTS.length / 2);
     const surf = canvas(40 + 2 * EW + 60 + 40, 30 + rows * (TT + EH + GY) + 40);
@@ -453,7 +457,7 @@ if (MODE === 'eq') {
             drawEq(cr, m.tx + e.width + 8, m.by + 8 + e.height / 2 + 1);
         }
     });
-    text('Ở 1920, một player. E: ↗ dưới con trỏ là fill-3, như nút phụ khi rê chuột. Chỗ được chọn là nơi equaliser của pill bay tới khi mở tab.',
+    text(t('Ở 1920, một player. E: ↗ dưới con trỏ là fill-3, như nút phụ khi rê chuột. Chỗ được chọn là nơi equaliser của pill bay tới khi mở tab.', 'At 1920, one player. E: ↗ under the pointer is fill-3, like a secondary button on hover. The chosen place is where the pill\'s equaliser flies to when the tab opens.'),
     40, 30 + rows * (TT + EH + GY) + 4, {sz: 9, a: .8, maxW: 2 * EW + 60});
     surf.writeToPNG(out);
 }

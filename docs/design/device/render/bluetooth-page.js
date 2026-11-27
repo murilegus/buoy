@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t} from '../../render/lib.js';
 
 const [out] = ARGV;
 const SUB = 9.35, PW = 560, PH = 280, GAP = 40;
@@ -45,7 +45,7 @@ function panel(x, y) {
     fill(C.FILL1, x + 12, y + 12, 268, 32, 16);
     ['house', 'music-note', 'bell', 'calendar'].forEach((n, i) => icon(n, x + 24 + i * 36, y + 20, 16, C.FG_MUTED));
     fill(C.FILL3, x + 160, y + 14, 112, 28, 14);
-    icon('display', x + 170, y + 20, 16); text('Thiết bị', x + 192, y + 19, {sz: SUB, wt: 600});
+    icon('display', x + 170, y + 20, 16); text(t('Thiết bị', 'Devices'), x + 192, y + 19, {sz: SUB, wt: 600});
     fill(C.FILL1, x + PW - 44, y + 12, 32, 32, 16); icon('gear', x + PW - 36, y + 20, 16, C.FG_MUTED);
 }
 // the page: ‹, the name, its battery at the end; rows 36, r 18, 4 apart (Home's battery page)
@@ -75,23 +75,23 @@ function page(x, y, name, batt, rows) {
 }
 
 let x = GAP / 2;
-text('Tai nghe Bluetooth đang phát', x, 12, {sz: 12, wt: 600});
+text(t('Tai nghe Bluetooth đang phát', 'Bluetooth headphones, playing'), x, 12, {sz: 12, wt: 600});
 page(x, 40, 'WH-1000XM4', [.8, '80%'], [
-    {ic: 'volume', name: 'Âm lượng', level: [.64, '64%']},
-    {ic: 'headphones', name: 'Tai nghe', value: '88:92:CC:70:9C:22'},
-    {ic: 'bluetooth-slash', name: 'Ngắt kết nối'},
-    {ic: 'gear', name: 'Cài đặt Bluetooth', settings: true},
+    {ic: 'volume', name: t('Âm lượng', 'Volume'), level: [.64, '64%']},
+    {ic: 'headphones', name: t('Tai nghe', 'Headphones'), value: '88:92:CC:70:9C:22'},
+    {ic: 'bluetooth-slash', name: t('Ngắt kết nối', 'Disconnect')},
+    {ic: 'gear', name: t('Cài đặt Bluetooth', 'Bluetooth Settings'), settings: true},
 ]);
 x += PW + GAP;
-text('Chuột Bluetooth', x, 12, {sz: 12, wt: 600});
+text(t('Chuột Bluetooth', 'Bluetooth mouse'), x, 12, {sz: 12, wt: 600});
 page(x, 40, 'MX Master 3S', [.15, '15%'], [
-    {ic: 'mouse', name: 'Chuột', value: 'D4:12:7A:3C:90:11'},
-    {ic: 'bluetooth-slash', name: 'Ngắt kết nối'},
-    {ic: 'gear', name: 'Cài đặt Bluetooth', settings: true},
+    {ic: 'mouse', name: t('Chuột', 'Mouse'), value: 'D4:12:7A:3C:90:11'},
+    {ic: 'bluetooth-slash', name: t('Ngắt kết nối', 'Disconnect')},
+    {ic: 'gear', name: t('Cài đặt Bluetooth', 'Bluetooth Settings'), settings: true},
 ]);
 const ny = 40 + PH + 12;
-note('Đầu trang: tên, và pin ở cuối (hình pin theo mức, rồi số), như độ phân giải ở trang màn hình.', GAP / 2, ny);
-note('Âm lượng: chỉ khi âm thanh đang ra thiết bị này; thanh và số như HUD (tắt tiếng: mờ). Bấm hàng: Cài đặt → Âm thanh. Không kéo ở đây: phím và Quick Settings lo.', GAP / 2, ny + 14);
-note('Ngắt kết nối: như danh sách Bluetooth của Quick Settings (connect_service); ngắt xong trang đóng, về các cột. Cài đặt Bluetooth: mở Cài đặt, island đóng.', GAP / 2, ny + 28);
-note('Thiết bị không có âm thanh (chuột, bàn phím, điện thoại): không có hàng Âm lượng. Hàng loại và địa chỉ (như Cài đặt → Bluetooth): chỉ để xem, không bấm.', GAP / 2, ny + 42);
+note(t('Đầu trang: tên, và pin ở cuối (hình pin theo mức, rồi số), như độ phân giải ở trang màn hình.', 'Page head: the name, and the battery at the end (a battery drawn to its level, then the number), as the resolution on the display page.'), GAP / 2, ny);
+note(t('Âm lượng: chỉ khi âm thanh đang ra thiết bị này; thanh và số như HUD (tắt tiếng: mờ). Bấm hàng: Cài đặt → Âm thanh. Không kéo ở đây: phím và Quick Settings lo.', 'Volume: only while sound goes to this device; a bar and a number as the HUD (muted: dim). Click the row: Settings → Sound. No dragging here: the keys and Quick Settings do that.'), GAP / 2, ny + 14);
+note(t('Ngắt kết nối: như danh sách Bluetooth của Quick Settings (connect_service); ngắt xong trang đóng, về các cột. Cài đặt Bluetooth: mở Cài đặt, island đóng.', 'Disconnect: as Quick Settings\' Bluetooth list (connect_service); once disconnected the page closes, back to the columns. Bluetooth Settings: opens Settings, the island closes.'), GAP / 2, ny + 28);
+note(t('Thiết bị không có âm thanh (chuột, bàn phím, điện thoại): không có hàng Âm lượng. Hàng loại và địa chỉ (như Cài đặt → Bluetooth): chỉ để xem, không bấm.', 'Devices without sound (mouse, keyboard, phone): no Volume row. The kind and address rows (as Settings → Bluetooth): to read only, not clickable.'), GAP / 2, ny + 42);
 surf.writeToPNG(out);

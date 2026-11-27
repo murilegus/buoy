@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon} from '../../render/lib.js';
+import {SCALE as SC, C, icon, t} from '../../render/lib.js';
 const out = ARGV[0];
 const W = 24 + 404 + 40 + 131 * 3 + 16 + 24, H = 170;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
@@ -30,19 +30,19 @@ function shape(x, y, w, h, r) {
 const APPS = {Slack: [.45, .2, .5], Telegram: [.2, .6, .9], Gmail: [.85, .3, .25]};
 const logo = (x, y, s, c) => fill([...c, 1], x, y, s, s, s / 4);
 
-text('Đợt tin khi đang chia sẻ màn hình: một compact', 24, 12, {sz: 9, wt: 700});
+text(t('Đợt tin khi đang chia sẻ màn hình: một compact', 'A burst of messages while sharing the screen: one compact'), 24, 12, {sz: 9, wt: 700});
 const x = 24, y = 40, w = 404;
 shape(x, y, w, 56, 28);
 fill([1, 1, 1, C.FILL2], x + 14, y + 8, 40, 40, 10);   // the leading: the apps' logos stacked
 logo(x + 20, y + 14, 16, APPS.Slack); logo(x + 32, y + 14, 16, APPS.Telegram); logo(x + 26, y + 26, 16, APPS.Gmail);
-text('6 thông báo mới', x + 66, y + 10, {wt: 600});
-text('Slack 3 · Telegram 2 · Gmail 1 · bây giờ', x + 66, y + 30, {sz: SUB, a: C.FG_MUTED});
+text(t('6 thông báo mới', '6 new notifications'), x + 66, y + 10, {wt: 600});
+text(t('Slack 3 · Telegram 2 · Gmail 1 · bây giờ', 'Slack 3 · Telegram 2 · Gmail 1 · now'), x + 66, y + 30, {sz: SUB, a: C.FG_MUTED});
 cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(x + w - 30, y + 28, 16, 0, 2 * Math.PI); cr.fill();
 icon(cr, 'xmark', x + w - 38, y + 20, 16);
-text('5 s, rồi về pill; tin tới thêm chỉ đổi số. × chỉ đóng compact.', x, y + 64, {sz: 8, a: .75});
+text(t('5 s, rồi về pill; tin tới thêm chỉ đổi số. × chỉ đóng compact.', '5 s, then back to the pill; more messages only change the number. × only closes the compact.'), x, y + 64, {sz: 8, a: .75});
 // afterwards: one pill per app, named only
 const px = x + w + 40;
-text('Sau đó: mỗi app một pill, chỉ tên app', px, 12, {sz: 9, wt: 700});
+text(t('Sau đó: mỗi app một pill, chỉ tên app', 'Afterwards: one pill per app, the app name only'), px, 12, {sz: 9, wt: 700});
 // the newest first (PRIORITY); the trailing count from 2 on, as in NOTIFICATIONS §2
 [['Gmail', 1], ['Telegram', 2], ['Slack', 3]].forEach(([a, n], i) => {
     const bx = px + i * (131 + 8);
@@ -51,7 +51,7 @@ text('Sau đó: mỗi app một pill, chỉ tên app', px, 12, {sz: 9, wt: 700})
     text(a, bx + 40, y + 19, {wt: 600});
     if (n > 1) text(String(n), bx + 131 - 20, y + 19, {wt: 600, a: C.FG_MUTED});
 });
-['Không thân, không ảnh, không nút; bấm không mở gì (mở app hay tab sẽ lộ nội dung).',
- 'Cả đợt tính là bị nhỡ: nội dung bị ẩn nên chưa ai đọc; xem lại trong Bị nhỡ sau khi dừng chia sẻ.',
- 'Đèn amber vẫn sáng trong lúc chia sẻ: đèn không lộ gì.'].forEach((l, i) => text(l, 24, 120 + i * 15, {sz: 8, a: .8}));
+[t('Không thân, không ảnh, không nút; bấm không mở gì (mở app hay tab sẽ lộ nội dung).', 'No body, no picture, no buttons; a click opens nothing (opening the app or a tab would show the content).'),
+ t('Cả đợt tính là bị nhỡ: nội dung bị ẩn nên chưa ai đọc; xem lại trong Bị nhỡ sau khi dừng chia sẻ.', 'The whole burst counts as missed: the content was hidden, so nobody has read it; see it again in Missed after sharing stops.'),
+ t('Đèn amber vẫn sáng trong lúc chia sẻ: đèn không lộ gì.', 'The amber light stays on while sharing: a light shows nothing.')].forEach((l, i) => text(l, 24, 120 + i * 15, {sz: 8, a: .8}));
 surf.writeToPNG(out);

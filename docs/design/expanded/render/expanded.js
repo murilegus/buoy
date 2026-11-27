@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, GREY, drawBu, icon, SAMPLE} from '../../render/lib.js';
+import {SCALE as SC, C, GREY, drawBu, icon, SAMPLE, t} from '../../render/lib.js';
 const EW = 560, R = 28, W = 1120, H = 340;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC);
 const cr = new cairo.Context(surf);
@@ -29,7 +29,7 @@ const bu = (x, y, cell) => drawBu(cr, 'wave', x, y, cell);
 // A) Home, 560 × 280: the head 56, then design/home's main card and tiles
 {
   const x = 20, y = 30, h = 280; panel(x, y, EW, h);
-  text('Home (có tab) — 560 × 280 (= rộng/2): phần đầu 56, thẻ chính, hàng ô (design/home)', x, 8, 9, 600, W1, .85);
+  text(t('Home (có tab) — 560 × 280 (= rộng/2): phần đầu 56, thẻ chính, hàng ô (design/home)', 'Home (with tabs) — 560 × 280 (= width/2): head 56, main card, row of tiles (design/home)'), x, 8, 9, 600, W1, .85);
   // tab strip: 32 high at 12 from the top = concentric with r 28 (28 − 12 = 16 = 32/2)
   // the strip as in design/icons: the chosen tab fill-3 24 high at 4, icon 16 + name; the others
   // icon only at fg-muted, 36 each (Gravity UI)
@@ -55,7 +55,7 @@ const bu = (x, y, cell) => drawBu(cr, 'wave', x, y, cell);
     cr.newPath(); if (m) cr.setSourceRGB(...C.CREAM); else cr.setSourceRGBA(1, 1, 1, C.FILL2); cr.arc(bx, by, 16, 0, 2 * Math.PI); cr.fill();
     icon(cr, n, bx - 8, by - 8, 16, m ? C.BLACK : W1);
   });
-  [['bu', '2 / 3', 'Claude Code'], ['calendar', '3:00', 'Design review'], ['arrow-down-to-line', '42%', 'report.pdf'], ['ellipsis-vertical', '+2', 'xem tất cả']].forEach(([ic, v, c], i) => {
+  [['bu', '2 / 3', 'Claude Code'], ['calendar', '3:00', 'Design review'], ['arrow-down-to-line', '42%', 'report.pdf'], ['ellipsis-vertical', '+2', t('xem tất cả', 'See all')]].forEach(([ic, v, c], i) => {
     const tx = cx + i * (tw + 8);
     cr.newPath(); cr.setSourceRGBA(1, 1, 1, C.FILL1); rr(tx, ty, tw, 100, 16); cr.fill();
     if (ic === 'bu') drawBu(cr, 'busy', tx + 12, ty + 12, 2); else icon(cr, ic, tx + 14, ty + 14, 16);
@@ -64,13 +64,13 @@ const bu = (x, y, cell) => drawBu(cr, 'wave', x, y, cell);
 }
 {
   const x = 600, y = 210, h = 88; panel(x, y, 380, h);
-  text('Lời chào (greeting, transient, không tab) — 88, chỉ phần đầu', x, 188, 9, 600, W1, .85);
+  text(t('Lời chào (greeting, transient, không tab) — 88, chỉ phần đầu', 'Greeting (transient, no tabs) — 88, the head only'), x, 188, 9, 600, W1, .85);
   bu(x + 19, y + 19, 5);   // Bu straight on the island's black, no tile (design/colours: Bu only on black)
   text('Good afternoon, Ethan', x + 88, y + 25, 14, 700, W1);
 }
 // notes
-['• Cao = nội dung, luôn thuộc 56 + 16n như compact; mọi tab mở ở cao tối đa', '• Cao tối đa = rộng/2 làm tròn xuống 56 + 16n: 280 · 344 · 376 (1920 · 2560 · 3440)',
- '• Expanded chỉ khi bấm (có tab) hoặc transient; alert và ask ở cỡ compact',
- '• Tab strip 32 ở lề 12 → bo 16 đồng tâm với góc r 28', '• Không tab: leading 56 ở lề 16 → bo 12 đồng tâm với r 28']
+[t('• Cao = nội dung, luôn thuộc 56 + 16n như compact; mọi tab mở ở cao tối đa', '• Height = content, always on 56 + 16n like the compact; every tab opens at the max height'), t('• Cao tối đa = rộng/2 làm tròn xuống 56 + 16n: 280 · 344 · 376 (1920 · 2560 · 3440)', '• Max height = width/2 rounded down to 56 + 16n: 280 · 344 · 376 (1920 · 2560 · 3440)'),
+ t('• Expanded chỉ khi bấm (có tab) hoặc transient; alert và ask ở cỡ compact', '• Expanded only on click (with tabs) or transient; alert and ask at compact size'),
+ t('• Tab strip 32 ở lề 12 → bo 16 đồng tâm với góc r 28', '• Tab strip 32 at margin 12 → radius 16 concentric with corner r 28'), t('• Không tab: leading 56 ở lề 16 → bo 12 đồng tâm với r 28', '• No tabs: leading 56 at padding 16 → radius 12 concentric with r 28')]
   .forEach((t, i) => text(t, 600, 40 + i * 20, 9, 400, W1, .85));
 surf.writeToPNG(ARGV[0]);

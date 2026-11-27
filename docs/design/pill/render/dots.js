@@ -3,11 +3,12 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, fit, width1x, C, colourIcon} from '../../render/lib.js';
+import {SCALE as SC, fit, width1x, C, colourIcon, t} from '../../render/lib.js';
 const [out, guides] = [ARGV[0], ARGV[1] === 'guides'];
 const {AMBER, CAM: GREEN, RED, MIC} = C;   // design/colours
-const rows = [[0, null, null, 'không đèn — pad 8'], [6, AMBER, GREEN, 'chấm 6'], [8, AMBER, GREEN, 'chấm 8'], [10, AMBER, GREEN, 'chấm 10'],
-  [8, RED, MIC, 'chấm 8 — đỏ (ask) · tím (mic)'], [8, AMBER, null, 'chấm 8 — chỉ một đèn']];
+const rows = [[0, null, null, t('không đèn — pad 8', 'no lights — pad 8')], [6, AMBER, GREEN, t('chấm 6', 'dot 6')], [8, AMBER, GREEN, t('chấm 8', 'dot 8')],
+  [10, AMBER, GREEN, t('chấm 10', 'dot 10')], [8, RED, MIC, t('chấm 8 — đỏ (ask) · tím (mic)', 'dot 8 — red (ask) · purple (mic)')],
+  [8, AMBER, null, t('chấm 8 — chỉ một đèn', 'dot 8 — one light only')]];
 const W = 560, ROW = 44, CX = 140, CONTENT = 24 + 6 + 85, PAD = 8, LIT = 28;
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, ROW * rows.length * SC);
 const cr = new cairo.Context(surf);

@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C} from '../../render/lib.js';
+import {SCALE as SC, C, t} from '../../render/lib.js';
 import {eyesShapes} from '../../../../src/buoy@murilegus/lib/kit/model/mascot.js';
 
 const [out, mode = 'expressions'] = ARGV;
@@ -58,24 +58,25 @@ const EYES = {
 
 // [eyes, symbol, name, when]
 const SHEET = [
-    ['idle', '| |', 'đi dạo', 'có sẵn'],
-    ['smile', '^ ^', 'cười', 'có sẵn · nhịp 6'],
-    ['wink', '| ^', 'nháy mắt', 'nhịp 6, xen với cười'],
-    ['content', 'u u', 'hài lòng', 'đèn vàng tắt'],
-    ['startled', 'o o', 'giật mình', 'đang ngủ, có input lại'],
-    ['drowsy', '_ _', 'lim dim', 'ngay trước khi ngủ'],
-    ['sleep', '- -', 'ngủ', 'có sẵn'],
-    ['squeeze', '> <', 'nheo', 'nhấn vào pill'],
-    ['dizzy', '@ @', 'chóng mặt', 'giữ 1.5 s'],
-    ['knocked', 'x x', 'choáng', 'giữ 3 s'],
+    ['idle', '| |', t('đi dạo', 'stroll'), t('có sẵn', 'exists')],
+    ['smile', '^ ^', t('cười', 'smile'), t('có sẵn · nhịp 6', 'exists · beat 6')],
+    ['wink', '| ^', t('nháy mắt', 'wink'), t('nhịp 6, xen với cười', 'beat 6, alternating with smile')],
+    ['content', 'u u', t('hài lòng', 'content'), t('đèn vàng tắt', 'amber light goes off')],
+    ['startled', 'o o', t('giật mình', 'startled'), t('đang ngủ, có input lại', 'asleep, input again')],
+    ['drowsy', '_ _', t('lim dim', 'drowsy'), t('ngay trước khi ngủ', 'just before sleep')],
+    ['sleep', '- -', t('ngủ', 'asleep'), t('có sẵn', 'exists')],
+    ['squeeze', '> <', t('nheo', 'squint'), t('nhấn vào pill', 'press on the pill')],
+    ['dizzy', '@ @', t('chóng mặt', 'dizzy'), t('giữ 1.5 s', 'held 1.5 s')],
+    ['knocked', 'x x', t('choáng', 'knocked out'), t('giữ 3 s', 'held 3 s')],
 ];
 const SEQ = [
-    ['Ngủ — 60 s không dùng máy, hoặc đêm', [
-        ['idle', 'đang đi dạo'], ['drowsy', 'lim dim · 1 s'], ['sleep', 'ngủ · đến khi có input'],
-        ['startled', 'giật mình · 0.6 s'], ['idle', 'đi dạo lại từ nhịp 1']]],
-    ['Giữ chuột trên pill — cắt ngang đi dạo ngay; thả trước 0.5 s là click, mở Home', [
-        ['squeeze', 'nhấn · 0 s'], ['dizzy', 'giữ 1.5 s'], ['knocked', 'giữ 3 s'],
-        ['knocked', 'thả · còn 1 s, không mở Home'], ['idle', 'đi dạo lại từ nhịp 1']]],
+    [t('Ngủ — 60 s không dùng máy, hoặc đêm', 'Sleep — 60 s without using the computer, or at night'), [
+        ['idle', t('đang đi dạo', 'strolling')], ['drowsy', t('lim dim · 1 s', 'drowsy · 1 s')], ['sleep', t('ngủ · đến khi có input', 'asleep · until input')],
+        ['startled', t('giật mình · 0.6 s', 'startled · 0.6 s')], ['idle', t('đi dạo lại từ nhịp 1', 'strolls again from beat 1')]]],
+    [t('Giữ chuột trên pill — cắt ngang đi dạo ngay; thả trước 0.5 s là click, mở Home',
+        'Press and hold on the pill — cuts the stroll at once; released before 0.5 s it is a click, opens Home'), [
+        ['squeeze', t('nhấn · 0 s', 'press · 0 s')], ['dizzy', t('giữ 1.5 s', 'held 1.5 s')], ['knocked', t('giữ 3 s', 'held 3 s')],
+        ['knocked', t('thả · còn 1 s, không mở Home', 'release · 1 s more, no Home')], ['idle', t('đi dạo lại từ nhịp 1', 'strolls again from beat 1')]]],
 ];
 
 const GAP = 18, M = 16;

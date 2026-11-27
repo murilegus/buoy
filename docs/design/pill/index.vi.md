@@ -82,7 +82,7 @@ Pill nằm giữa thanh: **idle** khi không có activity, **minimal** khi có (
     đồng hồ thật.
 
 ![Pill thật trong Shell ảo ở tỷ lệ 1× và 2×](images/shell-scale1-vs-2.vi.png)
-![Pill thật ở tỷ lệ 2×, điểm ảnh thật](images/shell-pill-scale2.vi.png)
+![Pill thật ở tỷ lệ 2×, điểm ảnh thật](images/shell-pill-scale2.png)
 
 ## Font và tỷ lệ màn hình
 

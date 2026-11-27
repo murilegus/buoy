@@ -4,11 +4,11 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t, LANG} from '../../render/lib.js';
 
 const [out] = ARGV;
 const SUB = 9.35, KW = 404;
-const W = 1200, H = 400;
+const W = 1200, H = LANG === 'en' ? 416 : 400; // en: room for 4's second note, cut off at 400
 const surf = new cairo.ImageSurface(cairo.Format.ARGB32, W * SC, H * SC), cr = new cairo.Context(surf);
 cr.scale(SC, SC); cr.setSourceRGB(...C.WALL); cr.paint();
 const L = PangoCairo.create_layout(cr); PangoCairo.context_set_resolution(L.get_context(), 96);
@@ -78,37 +78,37 @@ const PX = 16 + KW + 32;
 
 // --- 1. it asks: a card, then the pill stays ---------------------------------------------------------
 let y = 40;
-title('1 · Cửa sổ ở workspace khác cần chú ý: card như thông báo, rồi pill ở lại', 16, y - 26);
-card(16, y, [BROWSER, 'F'], 'Pull request #284 — GitHub', 'Firefox · Workspace 2 · bây giờ', 'Chuyển tới cửa sổ');
+title(t('1 · Cửa sổ ở workspace khác cần chú ý: card như thông báo, rồi pill ở lại', '1 · A window on another workspace needs attention: the card like a notification, then the pill stays'), 16, y - 26);
+card(16, y, [BROWSER, 'F'], 'Pull request #284 — GitHub', t('Firefox · Workspace 2 · bây giờ', 'Firefox · Workspace 2 · now'), t('Chuyển tới cửa sổ', 'Go to Window'));
 pill(PX, y + 8, (x, yy) => logo(x, yy, 24, BROWSER, 'F'), 'Pull request #284 — GitHub', 2);
-note('pill: logo app, tiêu đề cửa sổ, số workspace của nó ở cuối (ô vuông như hình workspace trong overview);', PX, y + 50);
-note('ở lại tới khi cửa sổ được focus, thôi đòi chú ý hay đóng (như GNOME gỡ thông báo của nó), không tắt sau 8 s.', PX, y + 64);
-note('Bấm pill hay "Chuyển tới cửa sổ": sang workspace đó và focus (Main.activateWindow).', PX, y + 86);
-note('Thay thông báo "“…” is ready" của GNOME (ui/windowAttentionHandler.js): không hiện thêm cái đó.', PX, y + 100);
+note(t('pill: logo app, tiêu đề cửa sổ, số workspace của nó ở cuối (ô vuông như hình workspace trong overview);', 'pill: app logo, window title, its workspace number at the end (a square like a workspace in the overview);'), PX, y + 50);
+note(t('ở lại tới khi cửa sổ được focus, thôi đòi chú ý hay đóng (như GNOME gỡ thông báo của nó), không tắt sau 8 s.', 'stays until the window gets focus, stops asking for attention or closes (as GNOME takes its notification back), not gone after 8 s.'), PX, y + 64);
+note(t('Bấm pill hay "Chuyển tới cửa sổ": sang workspace đó và focus (Main.activateWindow).', 'Click the pill or "Go to Window": moves to that workspace and focuses it (Main.activateWindow).'), PX, y + 86);
+note(t('Thay thông báo "“…” is ready" của GNOME (ui/windowAttentionHandler.js): không hiện thêm cái đó.', 'In place of GNOME\'s "“…” is ready" notification (ui/windowAttentionHandler.js): that one does not show as well.'), PX, y + 100);
 
 // --- 2. on this workspace ---------------------------------------------------------------------------------
 y += 104 + 64;
-title('2 · Cùng workspace, chỉ không có focus', 16, y - 26);
+title(t('2 · Cùng workspace, chỉ không có focus', '2 · Same workspace, just no focus'), 16, y - 26);
 pill(16, y, (x, yy) => logo(x, yy, 24, CHAT, 'S'), 'Slack — Quỳnh Trâm', null);
-note('Cùng workspace: không có ô số; pill và card như trên ("Slack · bây giờ").', 16, y + 44);
-note('Vẫn báo (Ethan, 2026-11-19): cửa sổ không có focus cũng cần anh, dù ở ngay đây.', 16, y + 58);
+note(t('Cùng workspace: không có ô số; pill và card như trên ("Slack · bây giờ").', 'Same workspace: no number square; pill and card as above ("Slack · now").'), 16, y + 44);
+note(t('Vẫn báo (Ethan, 2026-11-19): cửa sổ không có focus cũng cần anh, dù ở ngay đây.', 'Still told (Ethan, 2026-11-19): a window with no focus needs you too, even right here.'), 16, y + 58);
 
 // --- 3. several -------------------------------------------------------------------------------------------
-title('3 · Nhiều cửa sổ', PX, y - 26);
+title(t('3 · Nhiều cửa sổ', '3 · Several windows'), PX, y - 26);
 pill(PX, y, (x, yy) => logo(x, yy, 24, BROWSER, 'F'), 'Pull request #284 — GitHub', 2, '+1');
-note('Một pill mỗi app: cửa sổ mới nhất, "+1" khi app đó còn cửa sổ khác cần chú ý; bấm: cửa sổ mới nhất.', PX, y + 44);
-note('Hai app khác nhau: hai pill (như hai thông báo).', PX, y + 58);
+note(t('Một pill mỗi app: cửa sổ mới nhất, "+1" khi app đó còn cửa sổ khác cần chú ý; bấm: cửa sổ mới nhất.', 'One pill per app: the newest window, "+1" while that app has other windows needing attention; click: the newest window.'), PX, y + 44);
+note(t('Hai app khác nhau: hai pill (như hai thông báo).', 'Two different apps: two pills (like two notifications).'), PX, y + 58);
 
 // --- 4. a terminal's bell ---------------------------------------------------------------------------------
 y += 32 + 100;
-title('4 · Terminal kêu bell (cờ urgent) khi cửa sổ không có focus', 16, y - 26);
+title(t('4 · Terminal kêu bell (cờ urgent) khi cửa sổ không có focus', '4 · A terminal bell (urgent flag) in an unfocused window'), 16, y - 26);
 pill(16, y, (x, yy) => { logo(x, yy, 24, TERM, '>'); }, 'pnpm verify — ~/works/buoy', 3);
-note('Ptyxis, GNOME Terminal bật cờ urgent khi bell kêu ở cửa sổ không có focus: cùng pill (Ethan, 2026-11-19).', 16, y + 44);
-note('Mục "Terminal command finished" sau này nói lệnh nào xong, mất bao lâu, mã thoát; khi đó nó thay pill này.', 16, y + 58);
+note(t('Ptyxis, GNOME Terminal bật cờ urgent khi bell kêu ở cửa sổ không có focus: cùng pill (Ethan, 2026-11-19).', 'Ptyxis, GNOME Terminal set the urgent flag when the bell rings in a window with no focus: the same pill (Ethan, 2026-11-19).'), 16, y + 44);
+note(t('Mục "Terminal command finished" sau này nói lệnh nào xong, mất bao lâu, mã thoát; khi đó nó thay pill này.', 'The later item "Terminal command finished" says which command is done, how long it took, the exit code; then it replaces this pill.'), 16, y + 58);
 
 // --- 5. the priority -------------------------------------------------------------------------------------
-title('5 · Thứ tự', PX, y - 26);
-note('kind attention (50, đã có trong bảng ưu tiên): sau thông báo, cuộc gọi, ask; trước tải về, nhạc.', PX, y);
-note('Không "cần bạn" (không đèn đỏ): nó chờ, không gấp. ×: tắt pill, cửa sổ vẫn đòi chú ý; đòi lại thì pill lại.', PX, y + 14);
-note('Chia sẻ màn hình: chỉ tên app, không tiêu đề cửa sổ (như thông báo).', PX, y + 28);
+title(t('5 · Thứ tự', '5 · Order'), PX, y - 26);
+note(t('kind attention (50, đã có trong bảng ưu tiên): sau thông báo, cuộc gọi, ask; trước tải về, nhạc.', 'kind attention (50, already in the priority table): after notifications, calls, asks; before downloads, music.'), PX, y);
+note(t('Không "cần bạn" (không đèn đỏ): nó chờ, không gấp. ×: tắt pill, cửa sổ vẫn đòi chú ý; đòi lại thì pill lại.', 'Not "needs you" (no red light): it waits, not urgent. ×: closes the pill, the window still asks; asks again, the pill again.'), PX, y + 14);
+note(t('Chia sẻ màn hình: chỉ tên app, không tiêu đề cửa sổ (như thông báo).', 'Sharing the screen: app name only, no window title (like notifications).'), PX, y + 28);
 surf.writeToPNG(out);

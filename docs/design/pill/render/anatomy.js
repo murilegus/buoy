@@ -5,7 +5,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {C, colourIcon} from '../../render/lib.js';
+import {C, colourIcon, t} from '../../render/lib.js';
 const SC = 3, W = 300, H = 150;
 const W1 = [1, 1, 1], CY = [.4, .85, 1], RD = [1, .5, .5];
 let cr, L;
@@ -58,8 +58,8 @@ function vdim(x, a, b, t) { cr.setSourceRGBA(...RD, .9); cr.setLineWidth(.5); cr
 { const {px, py, pw, x0, tw} = P1; box(P1);
   dim(px, x0, py - 4, '8'); dim(x0, x0 + 24, py - 4, '24'); dim(x0 + 24, x0 + 30, py - 4, '6'); dim(x0 + 30, x0 + 115, py - 4, `${tw}`); dim(x0 + 115, px + pw, py - 4, '8');
   dim(px, px + pw, py + 38, '131 = 8 + 115 + 8  (≈ 9em)', W1, true); vdim(px + pw + 6, py, py + 4, '4'); vdim(px + pw + 6, py + 4, py + 28, '24'); vdim(px + pw + 6, py + 28, py + 32, '4');
-  text('← lề ngang 8 (hiện tại 14) →', px + pw + 22, py + 12, 5.5, 400, W1, .8); }
+  text(t('← lề ngang 8 (hiện tại 14) →', '← side padding 8 (now 14) →'), px + pw + 22, py + 12, 5.5, 400, W1, .8); }
 { const {px, py, pw, x0} = P2; box(P2);
-  dim(px, px + 16, py - 4, '16'); dim(px + 16 + 4, x0, py - 4, '8'); dim(x0, x0 + 115, py - 4, 'nội dung 115, không dịch'); dim(px + pw - 16, px + pw, py - 4, '16');
-  dim(px, px + pw, py + 38, '171 = 28 + 115 + 28; chấm 8 ở tâm hình tròn đầu', W1, true); }
+  dim(px, px + 16, py - 4, '16'); dim(px + 16 + 4, x0, py - 4, '8'); dim(x0, x0 + 115, py - 4, t('nội dung 115, không dịch', 'content 115, does not move')); dim(px + pw - 16, px + pw, py - 4, '16');
+  dim(px, px + pw, py + 38, t('171 = 28 + 115 + 28; chấm 8 ở tâm hình tròn đầu', '171 = 28 + 115 + 28; dot 8 at the centre of the end circle'), W1, true); }
 surf.writeToPNG(ARGV[0]);

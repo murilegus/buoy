@@ -6,19 +6,19 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {icon, C, GREY, drawEq, EQ, SAMPLE, COVER} from '../../render/lib.js';
+import {icon, C, GREY, drawEq, EQ, SAMPLE, COVER, t} from '../../render/lib.js';
 
 const SC = 3, R = 28, PAD = 14, CW = 404, H88 = 88, X = 40, GX = 40, TITLE = 30, GAPY = 46;
 const W1 = C.WHITE, G = GREY.MUTED, CY = [.4, .85, 1];
 // the paused bars, as kit/ui/present/motion.js EQ_PAUSED: a near flat line through the middle
 const LOW = [4, 6, 7, 5, 6, 3];
 const ITEMS = [
-    {title: 'Đang phát, lúc nghỉ: equaliser chạy, nền trong suốt', eq: 'play'},
-    {title: 'Rê chuột vào ô: nút ⏸ như các nút chính (dưới con trỏ: fill-inverse-hover)', button: 'pause-fill', fill: [1, 1, 1], pointer: true},
-    {title: 'Đang dừng, lúc nghỉ: equaliser thấp', eq: 'low'},
-    {title: 'Đang dừng, rê chuột vào ô: nút ▶', button: 'play-fill', fill: [1, 1, 1], pointer: true},
-    {title: 'Focus bàn phím: nút như các nút chính (kem, fill-inverse) và vòng focus', button: 'pause-fill', fill: C.CREAM, ring: true},
-    {title: 'Đổi qua lại: mờ chéo tại chỗ, 120 ms, không dời', eq: 'play', button: 'pause-fill', fill: C.CREAM, half: true},
+    {title: t('Đang phát, lúc nghỉ: equaliser chạy, nền trong suốt', 'Playing, at rest: the equaliser moves, no background'), eq: 'play'},
+    {title: t('Rê chuột vào ô: nút ⏸ như các nút chính (dưới con trỏ: fill-inverse-hover)', 'Hover on the slot: the ⏸ button like the main buttons (under the pointer: fill-inverse-hover)'), button: 'pause-fill', fill: [1, 1, 1], pointer: true},
+    {title: t('Đang dừng, lúc nghỉ: equaliser thấp', 'Paused, at rest: the equaliser low'), eq: 'low'},
+    {title: t('Đang dừng, rê chuột vào ô: nút ▶', 'Paused, hover on the slot: the ▶ button'), button: 'play-fill', fill: [1, 1, 1], pointer: true},
+    {title: t('Focus bàn phím: nút như các nút chính (kem, fill-inverse) và vòng focus', 'Keyboard focus: the button like the main buttons (cream, fill-inverse) and the focus ring'), button: 'pause-fill', fill: C.CREAM, ring: true},
+    {title: t('Đổi qua lại: mờ chéo tại chỗ, 120 ms, không dời', 'Switching: a cross-fade in place, 120 ms, nothing moves'), eq: 'play', button: 'pause-fill', fill: C.CREAM, half: true},
 ];
 const COLS = 2, ROWS = Math.ceil(ITEMS.length / COLS);
 const W = X + COLS * CW + (COLS - 1) * GX + X;
@@ -98,9 +98,9 @@ ITEMS.forEach((it, i) => {
     // the slot: 32, its centre on the head's middle (y = 28), 14 from the right edge
     if (i === 0) {
         cr.setSourceRGBA(...CY, .6); cr.setLineWidth(.5); cr.arc(cx, cy, 16, 0, 2 * Math.PI); cr.stroke();
-        text('ô 32, tâm y = 28, cách mép phải 14', cx - 120, y + H88 + 4, 5.5, 600, CY);
+        text(t('ô 32, tâm y = 28, cách mép phải 14', 'slot 32, centre y = 28, 14 from the right edge'), cx - 120, y + H88 + 4, 5.5, 600, CY);
     }
 });
-text('Bấm: dừng hoặc phát. Tên cho trình đọc màn hình: "Pause" khi đang phát, "Play" khi đang dừng. Equaliser bay vào ô này từ đuôi pill (Chuyển động, "Phần chung").',
+text(t('Bấm: dừng hoặc phát. Tên cho trình đọc màn hình: "Pause" khi đang phát, "Play" khi đang dừng. Equaliser bay vào ô này từ đuôi pill (Chuyển động, "Phần chung").', 'Click: pause or play. Name for screen readers: "Pause" while playing, "Play" while paused. The equaliser flies into this slot from the tail of the pill (Motion, "Shared elements").'),
     X, H - 30, 6.5, 400, W1, .75);
 surf.writeToPNG(ARGV[0]);

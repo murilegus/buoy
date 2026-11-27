@@ -7,6 +7,7 @@ import GdkPixbuf from 'gi://GdkPixbuf';
 import GLib from 'gi://GLib';
 
 import {SAMPLE, mainColour, lifted, onBlack} from '../../../../src/buoy@murilegus/lib/kit/model/cover.js';
+import {t} from '../../render/lib.js';
 
 const here = GLib.dir_make_tmp('buoy-eq-XXXXXX');
 const Z = 3;
@@ -65,12 +66,12 @@ cover('mono', c => {
 });
 
 const ROWS = [
-    {cover: 'pink', label: 'Bìa hồng trên nền tối'},
-    {cover: 'sample', label: 'Bìa mẫu cam → tím'},
-    {cover: 'dark', label: 'Bìa tối'},
-    {cover: 'red', label: 'Bìa đỏ'},
-    {cover: 'amber', label: 'Bìa hổ phách'},
-    {cover: 'mono', label: 'Bìa đen trắng'},
+    {cover: 'pink', label: t('Bìa hồng trên nền tối', 'Pink cover on dark')},
+    {cover: 'sample', label: t('Bìa mẫu cam → tím', 'Sample, orange → purple')},
+    {cover: 'dark', label: t('Bìa tối', 'Dark cover')},
+    {cover: 'red', label: t('Bìa đỏ', 'Red cover')},
+    {cover: 'amber', label: t('Bìa hổ phách', 'Amber cover')},
+    {cover: 'mono', label: t('Bìa đen trắng', 'Black and white cover')},
 ];
 const EQ4 = {w: 3, gap: 2, max: 12, h: [0.5, 0.85, 0.65, 0.4]};
 const EQ6 = {w: 2, gap: 2, max: 12, h: [0.45, 0.8, 1, 0.6, 0.85, 0.4]};
@@ -130,10 +131,10 @@ function pill(x, y, name, e, color) {
     eq(x + PILL_W - 8 - eqWidth(e), y + 16, e, color);
 }
 
-text('Hiện tại: 4 thanh 3 px, trắng', LEFT, 28, {bold: true});
-text('6 thanh 2 × 12, màu bìa', LEFT + COL, 28, {bold: true});
-text('6 thanh 2 × 14, màu bìa', LEFT + 2 * COL, 28, {bold: true});
-text('màu lấy được → màu dùng', LEFT + 3 * COL, 28, {bold: true});
+text(t('Hiện tại: 4 thanh 3 px, trắng', 'Now: 4 bars 3 px, white'), LEFT, 28, {bold: true});
+text(t('6 thanh 2 × 12, màu bìa', '6 bars 2 × 12, cover colour'), LEFT + COL, 28, {bold: true});
+text(t('6 thanh 2 × 14, màu bìa', '6 bars 2 × 14, cover colour'), LEFT + 2 * COL, 28, {bold: true});
+text(t('màu lấy được → màu dùng', 'colour found → used'), LEFT + 3 * COL, 28, {bold: true});
 ROWS.forEach((r, j) => {
     const y = TOP + j * ROW;
     const c = colourOf(`${here}/cover-${r.cover}.png`);
@@ -150,20 +151,20 @@ ROWS.forEach((r, j) => {
     cr.setSourceRGB(...c.final.map(v => v / 255));
     round(sx + 22, y + 8, 16, 16, 4);
     cr.fill();
-    text(c.raw ? `${hex(c.raw)} → ${hex(c.final)}` : 'không có màu → trắng', sx + 44, y + 15, {size: 9});
-    text(`${contrast(c.final).toFixed(1)} : 1 trên đen`, sx + 44, y + 27, {size: 9, color: [1, 1, 1, 0.5]});
+    text(c.raw ? `${hex(c.raw)} → ${hex(c.final)}` : t('không có màu → trắng', 'no colour → white'), sx + 44, y + 15, {size: 9});
+    text(t(`${contrast(c.final).toFixed(1)} : 1 trên đen`, `${contrast(c.final).toFixed(1)} : 1 on black`), sx + 44, y + 27, {size: 9, color: [1, 1, 1, 0.5]});
 });
 
 // the two equalisers enlarged, in the first cover's colour
 const zy = TOP + ROWS.length * ROW + 30;
 const first = colourOf(`${here}/cover-${ROWS[0].cover}.png`).final;
-text('Phóng 6 lần:', 16, zy + 46);
+text(t('Phóng 6 lần:', 'Enlarged 6×:'), 16, zy + 46);
 eq(LEFT, zy + 42, EQ4, [255, 255, 255], 6);
-text('4 × 3 × 12, rộng 18 (hiện tại)', LEFT, zy + 100, {size: 10});
+text(t('4 × 3 × 12, rộng 18 (hiện tại)', '4 × 3 × 12, 18 wide (now)'), LEFT, zy + 100, {size: 10});
 eq(LEFT + COL, zy + 42, EQ6, first, 6);
-text('6 × 2 × 12, rộng 22', LEFT + COL, zy + 100, {size: 10});
+text(t('6 × 2 × 12, rộng 22', '6 × 2 × 12, 22 wide'), LEFT + COL, zy + 100, {size: 10});
 eq(LEFT + 2 * COL, zy + 42, EQ6_14, first, 6);
-text('6 × 2 × 14, rộng 22', LEFT + 2 * COL, zy + 100, {size: 10});
+text(t('6 × 2 × 14, rộng 22', '6 × 2 × 14, 22 wide'), LEFT + 2 * COL, zy + 100, {size: 10});
 
 surf.writeToPNG(ARGV[0]);
 for (const r of [...ROWS.map(x => x.cover), 'red'])

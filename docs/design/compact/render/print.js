@@ -3,7 +3,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t} from '../../render/lib.js';
 
 const [out] = ARGV;
 const SUB = 9.35, KW = 404;
@@ -68,43 +68,43 @@ const NX = 16 + KW + 40;
 const P = 'g:printer';
 // --- 1. printing ---------------------------------------------------------------------------------
 let y = 40;
-title('1 · Đang in: pill ở lại tới khi xong', 16, y - 26);
-card(16, y, P, 'Báo cáo quý 3.pdf', 'HP LaserJet M15 · trang 3', [{label: 'Máy in'}]);
-pill(NX, y + 8, P, 'Báo cáo quý 3.pdf', 'trang 3');
+title(t('1 · Đang in: pill ở lại tới khi xong', '1 · Printing: the pill stays until done'), 16, y - 26);
+card(16, y, P, 'Báo cáo quý 3.pdf', t('HP LaserJet M15 · trang 3', 'HP LaserJet M15 · Page 3'), [{label: t('Máy in', 'Printers')}]);
+pill(NX, y + 8, P, 'Báo cáo quý 3.pdf', t('trang 3', 'Page 3'));
 pill(NX + 290, y + 8, P, 'Báo cáo quý 3.pdf', '+1');
-note('Pill: máy in, tên tài liệu, "trang 3" khi CUPS đã báo số trang in xong (không có: không gì). Không có thanh tiến độ:', NX, y + 50);
-note('tín hiệu của CUPS chỉ có số trang đã in, không có tổng. Hai lệnh in: lệnh đang in, "+1".', NX, y + 64);
-note('Hover: card "HP LaserJet M15 · trang 3", nút "Máy in" mở Cài đặt → Máy in (huỷ lệnh in ở đó).', NX, y + 86);
-note('Đang chờ (máy in bận, lệnh trước chưa xong): "đang chờ" thay cho số trang.', NX, y + 100);
+note(t('Pill: máy in, tên tài liệu, "trang 3" khi CUPS đã báo số trang in xong (không có: không gì). Không có thanh tiến độ:', 'Pill: printer, document name, "Page 3" once CUPS has told the pages printed (none: nothing). No progress bar:'), NX, y + 50);
+note(t('tín hiệu của CUPS chỉ có số trang đã in, không có tổng. Hai lệnh in: lệnh đang in, "+1".', 'CUPS\'s signal has only the pages printed, no total. Two print jobs: the one printing, "+1".'), NX, y + 64);
+note(t('Hover: card "HP LaserJet M15 · trang 3", nút "Máy in" mở Cài đặt → Máy in (huỷ lệnh in ở đó).', 'Hover: card "HP LaserJet M15 · Page 3", the "Printers" button opens Settings → Printers (cancel a job there).'), NX, y + 86);
+note(t('Đang chờ (máy in bận, lệnh trước chưa xong): "đang chờ" thay cho số trang.', 'Waiting (printer busy, the job before not done): "Waiting" in place of the page number.'), NX, y + 100);
 
 let x = 16;
 // --- 2. the end -------------------------------------------------------------------------------------
 y += 104 + 60;
-title('2 · Xong, huỷ, lỗi', 16, y - 26);
+title(t('2 · Xong, huỷ, lỗi', '2 · Done, cancelled, failed'), 16, y - 26);
 x = 16;
-x += pill(x, y, P, 'Đã in Báo cáo quý 3.pdf', '3 trang') + 14;
-x += pill(x, y, P, 'Đã huỷ Báo cáo quý 3.pdf') + 14;
-note('Xong: flash 3 s, số trang ở cuối (khi biết). Huỷ: flash 3 s.', 16, y + 40);
-card(16, y + 70, P, 'Không in được Báo cáo quý 3.pdf', 'HP LaserJet M15 · máy in dừng', [{label: 'Máy in', main: true}]);
-note('Lỗi (CUPS: aborted, hay lệnh in bị dừng): card ở lại tới khi bấm, nút "Máy in" (kem); × tắt.', NX, y + 78);
-note('Lệnh in cần mật khẩu (held for authentication): để thông báo của GNOME, vì nó có nút nhập mật khẩu.', NX, y + 92);
+x += pill(x, y, P, t('Đã in Báo cáo quý 3.pdf', 'Printed Báo cáo quý 3.pdf'), t('3 trang', '3 pages')) + 14;
+x += pill(x, y, P, t('Đã huỷ Báo cáo quý 3.pdf', 'Cancelled Báo cáo quý 3.pdf')) + 14;
+note(t('Xong: flash 3 s, số trang ở cuối (khi biết). Huỷ: flash 3 s.', 'Done: a 3 s flash, the page count at the end (when known). Cancelled: a 3 s flash.'), 16, y + 40);
+card(16, y + 70, P, t('Không in được Báo cáo quý 3.pdf', 'Couldn\'t Print Báo cáo quý 3.pdf'), t('HP LaserJet M15 · máy in dừng', 'HP LaserJet M15 · Printer Stopped'), [{label: t('Máy in', 'Printers'), main: true}]);
+note(t('Lỗi (CUPS: aborted, hay lệnh in bị dừng): card ở lại tới khi bấm, nút "Máy in" (kem); × tắt.', 'Failed (CUPS: aborted, or the job stopped): the card stays until clicked, "Printers" button (cream); × closes.'), NX, y + 78);
+note(t('Lệnh in cần mật khẩu (held for authentication): để thông báo của GNOME, vì nó có nút nhập mật khẩu.', 'A job that needs a password (held for authentication): left to GNOME\'s notification, as it has the password button.'), NX, y + 92);
 
 // --- 3. the printer --------------------------------------------------------------------------------
 y += 70 + 104 + 60;
-title('3 · Máy in có vấn đề (printer-state-reasons)', 16, y - 26);
-card(16, y, P, 'Hết giấy', 'HP LaserJet M15 · Báo cáo quý 3.pdf đang chờ', [{label: 'Máy in'}]);
+title(t('3 · Máy in có vấn đề (printer-state-reasons)', '3 · A printer with a problem (printer-state-reasons)'), 16, y - 26);
+card(16, y, P, t('Hết giấy', 'Out of Paper'), t('HP LaserJet M15 · Báo cáo quý 3.pdf đang chờ', 'HP LaserJet M15 · Báo cáo quý 3.pdf waiting'), [{label: t('Máy in', 'Printers')}]);
 x = NX;
-x += pill(x, y + 8, P, 'Sắp hết mực', 'HP LaserJet M15') + 14;
-note('Cần anh (in không tiếp được): hết giấy, kẹt giấy, mở nắp / cửa, hết mực, máy in ngoại tuyến, lỗi máy in —', NX, y + 50);
-note('card rồi pill ở lại tới khi máy in hết lỗi đó. Sắp hết giấy, sắp hết mực: flash 3 s, mỗi lần một.', NX, y + 64);
-note('Chữ như của GNOME (gsd print-notifications, giống system-config-printer).', NX, y + 78);
+x += pill(x, y + 8, P, t('Sắp hết mực', 'Ink Low'), 'HP LaserJet M15') + 14;
+note(t('Cần anh (in không tiếp được): hết giấy, kẹt giấy, mở nắp / cửa, hết mực, máy in ngoại tuyến, lỗi máy in —', 'Needs you (printing cannot go on): out of paper, paper jam, cover / door open, out of ink, printer offline, printer error —'), NX, y + 50);
+note(t('card rồi pill ở lại tới khi máy in hết lỗi đó. Sắp hết giấy, sắp hết mực: flash 3 s, mỗi lần một.', 'card, then the pill stays until the printer clears it. Paper low, ink low: a 3 s flash, one at a time.'), NX, y + 64);
+note(t('Chữ như của GNOME (gsd print-notifications, giống system-config-printer).', 'Words as GNOME\'s (gsd print-notifications, same as system-config-printer).'), NX, y + 78);
 
 // --- 4. GNOME, limits --------------------------------------------------------------------------------
 y += 104 + 60;
-title('4 · Thay GNOME, và giới hạn', 16, y - 26);
-note('Thông báo "Printers" của gsd (Printing, Printing completed, stopped / cancelled / aborted, toner, paper…) không hiện khi Buoy đang nói về nó;', 16, y);
-note('"Printer added", "Printer removed" và lệnh cần mật khẩu vẫn là thông báo của GNOME.', 16, y + 14);
-note('Chỉ có khi gsd đăng ký với CUPS (phiên GNOME, CUPS trên máy này); Buoy chỉ nghe tín hiệu, không đăng ký thêm, không dò.', 16, y + 28);
-note('Tín hiệu không nói lệnh in của ai: máy dùng chung nhiều người thì thấy cả lệnh in của người khác (gsd hỏi CUPS thêm, Buoy không).', 16, y + 42);
-note('Không có máy in nào: module không làm gì. Icon: printer của Gravity.', 16, y + 56);
+title(t('4 · Thay GNOME, và giới hạn', '4 · In place of GNOME, and limits'), 16, y - 26);
+note(t('Thông báo "Printers" của gsd (Printing, Printing completed, stopped / cancelled / aborted, toner, paper…) không hiện khi Buoy đang nói về nó;', 'gsd\'s "Printers" notifications (Printing, Printing completed, stopped / cancelled / aborted, toner, paper…) do not show while Buoy is telling it;'), 16, y);
+note(t('"Printer added", "Printer removed" và lệnh cần mật khẩu vẫn là thông báo của GNOME.', '"Printer added", "Printer removed" and jobs that need a password stay GNOME notifications.'), 16, y + 14);
+note(t('Chỉ có khi gsd đăng ký với CUPS (phiên GNOME, CUPS trên máy này); Buoy chỉ nghe tín hiệu, không đăng ký thêm, không dò.', 'Only when gsd subscribes to CUPS (a GNOME session, CUPS on this computer); Buoy only listens to signals, no subscription of its own, no polling.'), 16, y + 28);
+note(t('Tín hiệu không nói lệnh in của ai: máy dùng chung nhiều người thì thấy cả lệnh in của người khác (gsd hỏi CUPS thêm, Buoy không).', 'The signal does not say whose job it is: on a shared computer you also see other people\'s jobs (gsd asks CUPS more, Buoy does not).'), 16, y + 42);
+note(t('Không có máy in nào: module không làm gì. Icon: printer của Gravity.', 'No printer at all: the module does nothing. Icon: Gravity\'s printer.'), 16, y + 56);
 surf.writeToPNG(out);

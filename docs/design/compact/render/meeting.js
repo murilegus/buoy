@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, icon as gicon, t} from '../../render/lib.js';
 
 const [out] = ARGV;
 const SUB = 9.35, KW = 404;
@@ -68,41 +68,41 @@ const PX = 16 + KW + 32;
 
 // --- 1. five minutes before ---------------------------------------------------------------------------
 let y = 40;
-title('1 · Còn 5 phút: card như thông báo, rồi pill đếm ngược', 16, y - 26);
-card(16, y, 'Họp sprint tuần 47', '15:00 – 15:30 · còn 5 phút', [['video', 'Tham gia Google Meet', true]]);
-pill(PX, y + 8, 'Họp sprint tuần 47', '4:59');
-note('5 phút trước một sự kiện có giờ (không phải cả ngày), từ lịch của GNOME (cùng nguồn với pill nghỉ và tab Lịch).', PX, y + 50);
-note('Pill: tiêu đề, đếm ngược tới giờ bắt đầu ở cuối. Bấm pill: mở card (Tham gia, ×).', PX, y + 64);
-note('"Tham gia Google Meet" (nút chính, kem như câu trả lời của ask): mở link họp, rồi pill tắt.', PX, y + 86);
-note('Link đọc từ EDS chỉ cho sự kiện sắp bắt đầu này: Google Meet, Zoom, Teams, Webex, Jitsi', PX, y + 100);
-note('(trong địa điểm, mô tả, URL của sự kiện).', PX, y + 114);
+title(t('1 · Còn 5 phút: card như thông báo, rồi pill đếm ngược', '1 · 5 min to go: the card like a notification, then the pill counts down'), 16, y - 26);
+card(16, y, t('Họp sprint tuần 47', 'Sprint meeting, week 47'), t('15:00 – 15:30 · còn 5 phút', '15:00 – 15:30 · in 5 min'), [['video', t('Tham gia Google Meet', 'Join Google Meet'), true]]);
+pill(PX, y + 8, t('Họp sprint tuần 47', 'Sprint meeting, week 47'), '4:59');
+note(t('5 phút trước một sự kiện có giờ (không phải cả ngày), từ lịch của GNOME (cùng nguồn với pill nghỉ và tab Lịch).', '5 min before a timed event (not all-day), from GNOME\'s calendar (the same source as the idle pill and the Calendar tab).'), PX, y + 50);
+note(t('Pill: tiêu đề, đếm ngược tới giờ bắt đầu ở cuối. Bấm pill: mở card (Tham gia, ×).', 'Pill: the title, a countdown to the start at the end. Click the pill: opens the card (Join, ×).'), PX, y + 64);
+note(t('"Tham gia Google Meet" (nút chính, kem như câu trả lời của ask): mở link họp, rồi pill tắt.', '"Join Google Meet" (main button, cream like an ask\'s answer): opens the meeting link, then the pill goes.'), PX, y + 86);
+note(t('Link đọc từ EDS chỉ cho sự kiện sắp bắt đầu này: Google Meet, Zoom, Teams, Webex, Jitsi', 'The link is read from EDS only for this event about to start: Google Meet, Zoom, Teams, Webex, Jitsi'), PX, y + 100);
+note(t('(trong địa điểm, mô tả, URL của sự kiện).', '(in the event\'s location, description, URL).'), PX, y + 114);
 
 // --- 2. it starts -------------------------------------------------------------------------------------------
 y += 104 + 72;
-title('2 · Đến giờ: card lần nữa, pill ở lại 10 phút', 16, y - 26);
-card(16, y, 'Họp sprint tuần 47', '15:00 – 15:30 · bây giờ', [['video', 'Tham gia Google Meet', true]]);
-pill(PX, y + 8, 'Họp sprint tuần 47', 'bây giờ', {rgb: C.CAM, a: 1});
-note('Đến giờ: card hiện lại một lần ("bây giờ", màu xanh như cuộc gọi). Pill ở lại tới 10 phút sau giờ bắt đầu,', PX, y + 50);
-note('hoặc tới khi bấm Tham gia hay ×. Hover giữ nó; Esc, ×: tắt, không nhắc lại.', PX, y + 64);
-note('Không "cần bạn" (không đèn đỏ). Thứ tự: kind calendar (25, đã có trong bảng ưu tiên), card như thông báo.', PX, y + 86);
-note('Đã bấm × hay Tham gia thì không hiện lại, kể cả sau khi khoá rồi mở máy.', PX, y + 100);
+title(t('2 · Đến giờ: card lần nữa, pill ở lại 10 phút', '2 · It starts: the card once more, the pill stays 10 min'), 16, y - 26);
+card(16, y, t('Họp sprint tuần 47', 'Sprint meeting, week 47'), t('15:00 – 15:30 · bây giờ', '15:00 – 15:30 · now'), [['video', t('Tham gia Google Meet', 'Join Google Meet'), true]]);
+pill(PX, y + 8, t('Họp sprint tuần 47', 'Sprint meeting, week 47'), t('bây giờ', 'now'), {rgb: C.CAM, a: 1});
+note(t('Đến giờ: card hiện lại một lần ("bây giờ", màu xanh như cuộc gọi). Pill ở lại tới 10 phút sau giờ bắt đầu,', 'At the start: the card shows once more ("now", green like a call). The pill stays until 10 min after the start,'), PX, y + 50);
+note(t('hoặc tới khi bấm Tham gia hay ×. Hover giữ nó; Esc, ×: tắt, không nhắc lại.', 'or until Join or × is clicked. Hover keeps it; Esc, ×: gone, no reminding again.'), PX, y + 64);
+note(t('Không "cần bạn" (không đèn đỏ). Thứ tự: kind calendar (25, đã có trong bảng ưu tiên), card như thông báo.', 'Not "needs you" (no red light). Order: kind calendar (25, already in the priority table), card like a notification.'), PX, y + 86);
+note(t('Đã bấm × hay Tham gia thì không hiện lại, kể cả sau khi khoá rồi mở máy.', 'Once × or Join is clicked it does not show again, even after lock and unlock.'), PX, y + 100);
 
 // --- 3. no link ---------------------------------------------------------------------------------------------
 y += 104 + 72;
-title('3 · Không có link họp', 16, y - 26);
-const h3 = card(16, y, 'Gặp khách ở văn phòng', '15:00 – 16:00 · còn 5 phút · Tầng 3', []);
-note('Không có link: không nút; địa điểm (nếu có) ở cuối dòng phụ. Pill như trên.', 16, y + h3 + 12);
+title(t('3 · Không có link họp', '3 · No meeting link'), 16, y - 26);
+const h3 = card(16, y, t('Gặp khách ở văn phòng', 'Client meeting at the office'), t('15:00 – 16:00 · còn 5 phút · Tầng 3', '15:00 – 16:00 · in 5 min · Floor 3'), []);
+note(t('Không có link: không nút; địa điểm (nếu có) ở cuối dòng phụ. Pill như trên.', 'No link: no button; the location (if any) at the end of the second line. Pill as above.'), 16, y + h3 + 12);
 
-title('4 · Hai sự kiện cùng giờ', PX, y - 26);
-pill(PX, y, 'Họp sprint tuần 47', '4:59');
-pill(PX, y + 40, 'Gặp khách ở văn phòng', '4:59');
-note('Mỗi sự kiện một pill (như hai thông báo).', PX, y + 82);
+title(t('4 · Hai sự kiện cùng giờ', '4 · Two events at the same time'), PX, y - 26);
+pill(PX, y, t('Họp sprint tuần 47', 'Sprint meeting, week 47'), '4:59');
+pill(PX, y + 40, t('Gặp khách ở văn phòng', 'Client meeting at the office'), '4:59');
+note(t('Mỗi sự kiện một pill (như hai thông báo).', 'One pill per event (like two notifications).'), PX, y + 82);
 
 // --- 5. GNOME's reminder ------------------------------------------------------------------------------------
 y += 104 + 40;
-title('5 · Nhắc của GNOME ("Reminders")', 16, y - 26);
-note('Sự kiện Google mặc định có nhắc 10 phút trước; evolution-alarm-notify hiện thông báo "Reminders" lúc đó', 16, y);
-note('(app Evolution Alarm Notify, đã qua card thông báo của Buoy).', 16, y + 14);
-note('Thay (Ethan, 2026-11-20): nhắc của một sự kiện có giờ bắt đầu trong 15 phút tới bị gỡ ngay khi tới — không', 16, y + 36);
-note('banner, không nằm trong danh sách — như "“…” is ready" và "Low Battery". Nhắc sớm hơn (30 phút, 1 ngày) vẫn giữ.', 16, y + 50);
+title(t('5 · Nhắc của GNOME ("Reminders")', '5 · GNOME\'s reminder ("Reminders")'), 16, y - 26);
+note(t('Sự kiện Google mặc định có nhắc 10 phút trước; evolution-alarm-notify hiện thông báo "Reminders" lúc đó', 'Google events have a 10 min reminder by default; evolution-alarm-notify shows a "Reminders" notification then'), 16, y);
+note(t('(app Evolution Alarm Notify, đã qua card thông báo của Buoy).', '(the Evolution Alarm Notify app, already through Buoy\'s notification card).'), 16, y + 14);
+note(t('Thay (Ethan, 2026-11-20): nhắc của một sự kiện có giờ bắt đầu trong 15 phút tới bị gỡ ngay khi tới — không', 'Replaced (Ethan, 2026-11-20): the reminder of a timed event starting in the next 15 min is removed as it comes — no'), 16, y + 36);
+note(t('banner, không nằm trong danh sách — như "“…” is ready" và "Low Battery". Nhắc sớm hơn (30 phút, 1 ngày) vẫn giữ.', 'banner, not in the list — like "“…” is ready" and "Low Battery". Earlier reminders (30 min, 1 day) are kept.'), 16, y + 50);
 surf.writeToPNG(out);

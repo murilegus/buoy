@@ -4,7 +4,7 @@
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 import cairo from 'cairo';
-import {SCALE as SC, C, SAMPLE, icon as gicon} from '../../render/lib.js';
+import {SCALE as SC, C, SAMPLE, icon as gicon, t} from '../../render/lib.js';
 
 const [out] = ARGV;
 const SUB = 9.35, KW = 404;
@@ -77,27 +77,27 @@ const PX = 16 + KW + 32;
 
 // --- 1. an OTP code ---------------------------------------------------------------------------------
 let y = 40;
-title('1 · Mã OTP: mã to, nút Sao chép, 30 giây', 16, y - 26);
+title(t('1 · Mã OTP: mã to, nút Sao chép, 30 giây', '1 · OTP code: a big code, a Copy button, 30 seconds'), 16, y - 26);
 cr.newPath(); rr(16, y, KW, 152, 28); cr.setSourceRGB(0, 0, 0); cr.fill();
 head(16, y, (x, yy) => { fill(C.FILL3, x, yy, 40, 40, 10); icon('comment', x + 10, yy + 10, 20); },
-    'Vietcombank', 'Tin nhắn · Redmi Note 14 · bây giờ');
+    'Vietcombank', t('Tin nhắn · Redmi Note 14 · bây giờ', 'Messages · Redmi Note 14 · now'));
 text('482 913', 30, y + 60, {sz: 22, wt: 700, tnum: true});
 text('0:24', 16 + KW - 14, y + 70, {sz: SUB, a: C.FG_MUTED, right: true, tnum: true});
-buttons(16, y + 108, [['copy', 'Sao chép mã']]);
+buttons(16, y + 108, [['copy', t('Sao chép mã', 'Copy Code')]]);
 pill(PX, y + 8, glyph('key'), '482 913', '0:24');
-pill(PX + 230, y + 8, glyph('copy'), 'Đã chép mã');
-note('pill: chìa khoá + mã, đếm ngược 30 giây rồi tắt, cả khi card còn chờ (tin vẫn trong tab Thông báo)', PX, y + 50);
-note('bấm Sao chép mã: pill thành "Đã chép mã" 3 giây (icon như module copied)', PX, y + 64);
-note('Nhận ra mã: 4–8 chữ số đi cùng chữ OTP, mã, code, xác thực, xác minh, verification, G-…', PX, y + 86);
+pill(PX + 230, y + 8, glyph('copy'), t('Đã chép mã', 'Code Copied'));
+note(t('pill: chìa khoá + mã, đếm ngược 30 giây rồi tắt, cả khi card còn chờ (tin vẫn trong tab Thông báo)', 'pill: key + code, counts down 30 seconds then ends, even while the card still waits (the message stays in the Notifications tab)'), PX, y + 50);
+note(t('bấm Sao chép mã: pill thành "Đã chép mã" 3 giây (icon như module copied)', 'click Copy Code: the pill becomes "Code Copied" for 3 seconds (icon as module copied)'), PX, y + 64);
+note(t('Nhận ra mã: 4–8 chữ số đi cùng chữ OTP, mã, code, xác thực, xác minh, verification, G-…', 'Spotting a code: 4–8 digits with the word OTP, mã, code, xác thực, xác minh, verification, G-…'), PX, y + 86);
 note('("Ma OTP cua Quy khach la 482913", "G-482913 is your Google verification code").', PX, y + 100);
-note('Chia sẻ màn hình: không hiện mã, như mọi thông báo lúc đó (chỉ tên app).', PX, y + 114);
-note('Thay nút "Copy 482913" GSConnect tự thêm (nó chỉ bắt đúng 6 số).', PX, y + 128);
+note(t('Chia sẻ màn hình: không hiện mã, như mọi thông báo lúc đó (chỉ tên app).', 'Screen sharing: no code shown, like every notification then (app name only).'), PX, y + 114);
+note(t('Thay nút "Copy 482913" GSConnect tự thêm (nó chỉ bắt đúng 6 số).', 'Replaces the "Copy 482913" button GSConnect adds (it catches exactly 6 digits only).'), PX, y + 128);
 
 // --- 2. Zalo / Messenger: the sender's picture -----------------------------------------------------
 y += 152 + 60;
-title('2 · Zalo, Messenger: ảnh người gửi', 16, y - 26);
+title(t('2 · Zalo, Messenger: ảnh người gửi', '2 · Zalo, Messenger: the sender\'s photo'), 16, y - 26);
 cr.newPath(); rr(16, y, KW, 136, 28); cr.setSourceRGB(0, 0, 0); cr.fill();
-head(16, y, (x, yy) => { avatar(x, yy, 40, 'QT'); badge(x + 26, yy + 26); }, SAMPLE.person, 'Zalo · Redmi Note 14 · bây giờ');
+head(16, y, (x, yy) => { avatar(x, yy, 40, 'QT'); badge(x + 26, yy + 26); }, SAMPLE.person, t('Zalo · Redmi Note 14 · bây giờ', 'Zalo · Redmi Note 14 · now'));
 text('Tối nay họp lúc 8 giờ nhé, nhớ mang bản vẽ.', 30, y + 64, {sz: SUB, a: .85, max: KW - 28});
 buttons(16, y + 92, [[null, 'Đánh dấu đã đọc']]);
 pill(PX, y + 8, (x, yy) => avatar(x, yy, 24, 'QT'), SAMPLE.person);
@@ -107,25 +107,25 @@ cr.newPath(); rr(gx, y, 340, 56, 28); cr.setSourceRGB(0, 0, 0); cr.fill();
 avatar(gx + 8, y + 8, 40, "TK"); badge(gx + 34, y + 34);
 text('Nhóm Thiết kế', gx + 58, y + 8, {wt: 600});
 text(`${SAMPLE.short}: Tối nay họp lúc 8 giờ nhé`, gx + 58, y + 28, {sz: SUB, a: C.FG_MUTED, max: 260});
-note('Ảnh tròn như card thông báo đã chốt (design/compact): ảnh 40, góc dưới là chấm điện thoại', PX, y + 86);
-note('(GSConnect không gửi logo Zalo khi tin có ảnh: KDE Connect gửi largeIcon, tức ảnh người gửi).', PX, y + 100);
-note('Nhóm: tên nhóm làm tiêu đề, "Trâm: …" ở thân. Nút của app (Đánh dấu đã đọc…) giữ nguyên.', PX, y + 114);
-note('Trả lời ngay trong card: PR 3 (cùng Reply SMS).', PX, y + 128);
+note(t('Ảnh tròn như card thông báo đã chốt (design/compact): ảnh 40, góc dưới là chấm điện thoại', 'A round photo as the decided notification card (design/compact): photo 40, the phone dot in the bottom corner'), PX, y + 86);
+note(t('(GSConnect không gửi logo Zalo khi tin có ảnh: KDE Connect gửi largeIcon, tức ảnh người gửi).', '(GSConnect sends no Zalo logo when the message has a photo: KDE Connect sends largeIcon, the sender\'s photo).'), PX, y + 100);
+note(t('Nhóm: tên nhóm làm tiêu đề, "Trâm: …" ở thân. Nút của app (Đánh dấu đã đọc…) giữ nguyên.', 'Group: the group name as title, "Trâm: …" in the body. The app\'s buttons (Đánh dấu đã đọc…) stay.'), PX, y + 114);
+note(t('Trả lời ngay trong card: PR 3 (cùng Reply SMS).', 'Reply right in the card: PR 3 (with Reply SMS).'), PX, y + 128);
 
 // --- 3. Grab / Be: a ride -----------------------------------------------------------------------------
 y += 136 + 60;
-title('3 · Grab, Be: chuyến xe', 16, y - 26);
+title(t('3 · Grab, Be: chuyến xe', '3 · Grab, Be: the ride'), 16, y - 26);
 cr.newPath(); rr(16, y, KW, 136, 28); cr.setSourceRGB(0, 0, 0); cr.fill();
 head(16, y, (x, yy) => { fill(1, x, yy, 40, 40, 10, [.0, .69, .31]); icon('car', x + 10, yy + 10, 20); },
-    'Tài xế đã đến', 'Grab · Redmi Note 14 · bây giờ');
+    'Tài xế đã đến', t('Grab · Redmi Note 14 · bây giờ', 'Grab · Redmi Note 14 · now'));
 text('Nguyễn Văn An · Honda Vision trắng', 30, y + 64, {sz: SUB, a: .85, max: KW - 160});
 fill(C.FILL3, 16 + KW - 132, y + 58, 118, 28, 8);
 text('59X1-234.56', 16 + KW - 73 - text('59X1-234.56', 0, 0, {wt: 700, measure: true, tnum: true}).width / 2, y + 63, {wt: 700, tnum: true});
 buttons(16, y + 92, [[null, 'Gọi tài xế'], [null, 'Nhắn tin']]);
 pill(PX, y + 8, glyph('car'), 'Tài xế đã đến', '59X1-234.56');
-note('pill: xe + chữ của app (giữ nguyên, Buoy không đoán câu chữ), biển số ở cuối;', PX, y + 50);
-note('ở lại như thông báo thường.', PX, y + 64);
-note('Tin có biển số (59X1-234.56, 30A-123.45) là tin chuyến xe: biển số ra ô riêng. Không có: thông báo thường.', PX, y + 86);
-note('Giới hạn: KDE Connect không gửi thông báo "đang diễn ra" (FLAG_ONGOING_EVENT), nên không có', PX, y + 108);
-note('đếm phút xe tới hay bản đồ, chỉ các tin rời rạc.', PX, y + 122);
+note(t('pill: xe + chữ của app (giữ nguyên, Buoy không đoán câu chữ), biển số ở cuối;', 'pill: car + the app\'s words (kept as is, Buoy does not guess the wording), the plate at the end;'), PX, y + 50);
+note(t('ở lại như thông báo thường.', 'stays as a normal notification.'), PX, y + 64);
+note(t('Tin có biển số (59X1-234.56, 30A-123.45) là tin chuyến xe: biển số ra ô riêng. Không có: thông báo thường.', 'A message with a plate (59X1-234.56, 30A-123.45) is a ride message: the plate gets its own box. None: a normal notification.'), PX, y + 86);
+note(t('Giới hạn: KDE Connect không gửi thông báo "đang diễn ra" (FLAG_ONGOING_EVENT), nên không có', 'Limit: KDE Connect does not send "ongoing" notifications (FLAG_ONGOING_EVENT), so there is no'), PX, y + 108);
+note(t('đếm phút xe tới hay bản đồ, chỉ các tin rời rạc.', 'countdown to the car or map, only separate messages.'), PX, y + 122);
 surf.writeToPNG(out);
