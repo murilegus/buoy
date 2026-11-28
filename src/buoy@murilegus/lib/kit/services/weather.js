@@ -3,7 +3,6 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GWeather from 'gi://GWeather';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {withPlace} from '../model/settings.js';
 import {RETRY_MS, goodFix, keptReading, locateOutcome, nextFix, readInfo, refreshMs, shouldRetry, unitNames, useOwnInfo} from '../model/weather.js';
@@ -502,14 +501,18 @@ function answerWaiters(ask, moved) {
     waiters.forEach(w => w(moved));
 }
 
-// Buoy's settings, to write what prefs' place row reads (the feed has only the plan's
-// values); null if the extension is not found
+// Buoy's settings, to write what prefs' place row reads (the feed has only the plan's values):
+// handed over by the weather module's source, which has them from extension.js — never looked up
+// by URL (ARCHITECTURE rule 7 on EGO review); null while that source is off
+let buoy = null;
+
+/** @param {?object} settings  Buoy's Gio.Settings (the weather source's enable), null on disable */
+export function useSettings(settings) {
+    buoy = settings ?? null;
+}
+
 function buoySettings() {
-    try {
-        return Extension.lookupByURL(import.meta.url)?.getSettings() ?? null;
-    } catch {
-        return null;
-    }
+    return buoy;
 }
 
 // how a locate ended, and when (prefs' place row)
