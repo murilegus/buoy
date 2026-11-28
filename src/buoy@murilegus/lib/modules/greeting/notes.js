@@ -27,4 +27,21 @@ export default /** @type {ReadonlyArray<Readonly<Note>>} */ (Object.freeze([
             'Settings clean up after themselves when closed',
         ],
     }),
+    Object.freeze({
+        version: 3, name: '0.2', date: '2026-11-28',
+        added: [
+            'A new look: sizes follow your text size, one shape for every hover, new icons and motion',
+            'Meetings about to start, with Join',
+            'Timers and Pomodoro, in the pill and their own tab',
+            'Claude Code\'s questions answered right in Buoy',
+            'A terminal command finished in another tab',
+            'Print jobs, VPN and Wi-Fi, chargers and power modes',
+            'Bluetooth devices, headphones, displays, drives and webcams plugged in',
+            'The privacy dot, and "In a call" with Do Not Disturb',
+            'Your phone through GSConnect: calls, messages and codes',
+            'The Device tab, and an event\'s page in the Calendar tab',
+            'Bu says hello with the time and the weather',
+        ],
+        fixed: [],
+    }),
 ]));

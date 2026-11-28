@@ -86,6 +86,7 @@ plugins:
             - Releases: &releases
                 - releases/0.1.md
                 - releases/0.1.1.md
+                - releases/0.2.md
         - locale: vi
           name: Tiếng Việt
           build: true
