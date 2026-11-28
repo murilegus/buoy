@@ -1,7 +1,7 @@
 import GLib from 'gi://GLib';
 
 import {Source} from '../../kit/services/source.js';
-import {WeatherFeed, dropWeather} from '../../kit/services/weather.js';
+import {WeatherFeed, dropWeather, useSettings} from '../../kit/services/weather.js';
 import {keys} from './idle.js';
 
 const ASK = 'idle-weather-locate-now';
@@ -22,6 +22,7 @@ const RETRY_CAP_SECONDS = 120 + 40;
 export class WeatherSource extends Source {
     enable(stack, registry = null, settings = null, opts = {}) {
         super.enable(stack, registry, settings, opts);
+        useSettings(this._settings);    // what prefs' place row reads, written by the feeds
         this._feed = null;
         this._cap = 0;
         this._waitingRetry = false;
@@ -71,6 +72,7 @@ export class WeatherSource extends Source {
         this._waitingRetry = true;      // no waiting for a second ask: the feed goes now
         this._end();
         dropWeather();                  // Buoy's own Info and the last good reading go with Buoy
+        useSettings(null);
         super.disable();
     }
 }

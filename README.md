@@ -32,27 +32,9 @@ happening underneath.
   <img src="docs/screenshots/claude-busy-hover@2x.gif" width="262" height="78" alt="The same pill under the pointer: Bu bigger, &quot;Claude · buoy&quot; and &quot;Running pnpm test&quot;">
 </p>
 
-## What's in 0.1
+## New in 0.2
 
-<p align="center">
-  <img src="docs/screenshots/overview.png" alt="Buoy's pill: the weather when idle, a track playing, the volume, the hover view with the cover and controls, a Claude Code permission prompt with Deny, Allow and Always, Home with Now playing, the weather and Up next, and the Calendar tab">
-</p>
-
-- **In the pill:** music from any player, file copies and browser downloads, volume,
-  brightness and Caps Lock, notifications, and your Claude Code sessions — permission
-  prompts answered right from the pill.
-- **When nothing is going on:** the next event, the weather or the time of day, whichever
-  matters most.
-- **Home** (click the pill): what you missed, what's running, Now playing, the weather and
-  the rest of today; tabs for media, notifications, transfers and the calendar.
-- **The top bar:** the app and the system menu on rounded backgrounds that follow your
-  wallpaper, and rounded corners on maximized windows.
-
-Everything in it: [release notes](https://github.com/murilegus/buoy/releases/latest).
-
-## Coming in 0.2
-
-On `main` now, in the next release:
+Released 28 November 2026; everything in it: [release notes](https://github.com/murilegus/buoy/releases/tag/v0.2).
 
 <p align="center">
   <img src="docs/screenshots/whats-new.png" alt="Buoy 0.2: pills for a meeting about to start, two timers, a terminal command done in 48 s, a VPN on and a print job on page 3; Bu's hello with the time and the weather; a meeting card with Join Google Meet; the Timer tab with its ring; an event's page in the Calendar tab">
@@ -86,11 +68,29 @@ On `main` now, in the next release:
 - **Windows asking for attention** on another workspace stay on the pill until you go there.
 - **Privacy dots** for the microphone, the camera and a shared screen; a screen recording
   in the pill with Stop.
-- **Claude Code** asks its questions in the pill; **Bu's eyes** can rest in the idle pill.
+- **Claude Code** asks its questions in the pill; **Bu's eyes** or the battery can rest in the idle pill.
 - **Bu says hello** when the computer starts or wakes from a long sleep — with the time,
   the weather or an umbrella, holidays like Tết and Mid-Autumn, and your birthday — welcome
   back after a log in, and goodbye when you shut down.
 - **A Devices tab** (this computer, wireless and plugged devices) and a redesigned look throughout.
+
+## What's in 0.1
+
+<p align="center">
+  <img src="docs/screenshots/overview.png" alt="Buoy's pill: the weather when idle, a track playing, the volume, the hover view with the cover and controls, a Claude Code permission prompt with Deny, Allow and Always, Home with Now playing, the weather and Up next, and the Calendar tab">
+</p>
+
+- **In the pill:** music from any player, file copies and browser downloads, volume,
+  brightness and Caps Lock, notifications, and your Claude Code sessions — permission
+  prompts answered right from the pill.
+- **When nothing is going on:** the next event, the weather or the time of day, whichever
+  matters most.
+- **Home** (click the pill): what you missed, what's running, Now playing, the weather and
+  the rest of today; tabs for media, notifications, transfers and the calendar.
+- **The top bar:** the app and the system menu on rounded backgrounds that follow your
+  wallpaper, and rounded corners on maximized windows.
+
+Everything in it: [release notes](https://github.com/murilegus/buoy/releases/tag/v0.1).
 
 ## Requirements
 
@@ -273,7 +273,7 @@ nothing).
   `gnome-extensions info buoy@murilegus` should say `State: ACTIVE`; if it says
   `DISABLED`, run `gnome-extensions enable buoy@murilegus`. Also check that the Extensions
   app's **Use Extensions** switch is on.
-- **"needs GNOME Shell 50"** — `gnome-shell --version` shows yours. Buoy 0.1 is made for 50
+- **"needs GNOME Shell 50"** — `gnome-shell --version` shows yours. Buoy 0.2 is made for 50
   only.
 - **Claude Code sessions don't show** — the switch in Settings → Modules → Claude Code says
   what it found: hooks installed, Claude Code not found, or a `settings.json` that is not
