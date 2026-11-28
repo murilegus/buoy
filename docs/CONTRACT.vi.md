@@ -116,6 +116,7 @@ Giá trị của leading/trailing (chuẩn hoá bởi `kit/model/presentation.js
 | `{ring: {from, until}}` | thời gian còn lại dạng vòng, vẽ lại mỗi giây khi đang hiện (một timer, 2026-11-22) |
 | `{elapsed: ms since epoch}` | đếm lên, `0:42` (quay màn hình, 2026-11-14) |
 | `{icon, backdrop: true}` | icon trên một đĩa tròn fill-2 trong leading 40 của compact (2026-11-14) |
+| `{icon, subtle: true}` | một icon mờ, fg-subtle, cạnh thứ nó bổ nghĩa (chế độ năng lượng của idle plan Pin, 2026-11-27) |
 | **`{mascot: '<pose>', icon?}`** | Bu (2026-11-03): một trong 13 dáng trong `MASCOT.md`; không biết → `icon`, không có thì `idle`. Đèn của Bu hiện màu của dáng; đèn phao vẫn ở đầu trái của pill 1 (INDICATORS). Khung hình, timer đổi khung và màu là của kit |
 
 **Một minimal cho mọi chỗ** (2026-11-05): adapter trả một `leading · text · trailing`, không bao

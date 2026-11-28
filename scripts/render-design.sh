@@ -50,6 +50,7 @@ r $p/side.js $i/side side
 r $p/side.js $i/claude claude
 r $p/bar.js $i/bar-1920 1920
 r $p/bar.js $i/bar-1366 1366
+for m in pill compact; do r $p/idle-power.js $i/idle-power-$m $m; done
 
 # compact (anatomy-compact.js draws the alerts-and-asks images too)
 c=compact/render

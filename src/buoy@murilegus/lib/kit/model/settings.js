@@ -221,7 +221,7 @@ export const CHOICE_LABELS = {
     'greeting-holidays': {auto: 'Local and global', global: 'Global', off: 'Off'},
     'greeting-style': {expanded: 'Expanded', minimal: 'In the pill', off: 'Off'},
     'cluster-contrast': {'auto': 'Automatic', 'dark-text': 'Dark', 'light-text': 'Light'},
-    'idle-content': {'auto': 'Automatic', 'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event', 'mascot': 'Bu\'s Eyes'},
+    'idle-content': {'auto': 'Automatic', 'none': 'Nothing', 'clock': 'Clock', 'weather': 'Weather', 'calendar': 'Next Event', 'power': 'Battery', 'mascot': 'Bu\'s Eyes'},
     'idle-clock-style': {
         'icon-text': 'Icon & text', 'icon-time': 'Icon & time', 'icon': 'Icon', 'text': 'Text', 'time': 'Time',
     },
@@ -447,7 +447,7 @@ export const HIDDEN_MODULES = new Set(['home']);
 // Idle plans, in the Island page's order (ARCHITECTURE rule 9): each one's
 // `idle-<id>-…` keys sit under it there, never on Modules. Prefs cannot import a module,
 // so the list is here.
-export const IDLE_PLANS = ['clock', 'weather', 'calendar', 'mascot'];
+export const IDLE_PLANS = ['clock', 'weather', 'calendar', 'power', 'mascot'];
 
 /**
  * @param {*} list  `idle-auto-plans`
@@ -490,7 +490,10 @@ export function planRows(ids, list) {
 
 // A plan row's line on the Island page when its module's switch is elsewhere (Modules):
 // what it shows, since it has no keys to open to
-export const PLAN_LINES = Object.freeze({calendar: 'Today\'s next event, from your calendars.'});
+export const PLAN_LINES = Object.freeze({
+    calendar: 'Today\'s next event, from your calendars.',
+    power: 'The battery and the power mode; for a minute after you plug in or unplug.',
+});
 
 // The Modules page in groups, by how a module shows (2026-11-06, Ethan: the list grew
 // past reading). Prefs cannot import a module, so the groups are listed here; the test
@@ -545,7 +548,8 @@ export function planPrefs(keys) {
     // its plan's row on the Island page, not on Modules (2026-11-06, Ethan). One that is
     // more (calendar later: an activity, a tab and a plan) keeps its row on Modules.
     const ownKeys = id => names.filter(n => n.startsWith(`${id}-`) && !(n in PLACES));
-    const planOnly = id => IDLE_PLANS.includes(id) && !ownKeys(id).length && !STANDALONE.has(id);
+    const grouped = id => MODULE_GROUPS.some(g => g.modules.includes(id));
+    const planOnly = id => IDLE_PLANS.includes(id) && !ownKeys(id).length && !STANDALONE.has(id) && !grouped(id);
     for (const id of IDLE_PLANS) {
         const enableKey = names.includes(`modules-${id}`) ? `modules-${id}` : null;
         // the row's switch is the plan's place in `idle-auto-plans` (2026-11-08, Ethan); a

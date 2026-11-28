@@ -88,6 +88,37 @@ At the trailing end of the music pill and on the Media tab's chip. Measurements 
 ![The real pill in a nested Shell at 1× and 2× scale](images/shell-scale1-vs-2.en.png)
 ![The real pill at 2× scale, real pixels](images/shell-pill-scale2.png)
 
+## Battery idle plan
+
+*Ethan, 2026-11-27 (M4 item "Idle plan `power`", option A + Y).* GNOME's battery and power mode in
+the idle pill. Read from the same two objects Quick Settings holds, as the Power item does
+(design/compact "Battery and power mode"): no proxy of its own, no polling.
+
+![Battery idle plan: four moments, and the minute after a plug in or an unplug](images/idle-power-pill.en.png)
+
+- **Pill**: Buoy's battery icon, the percentage, the mode a 16 icon at the end in `fg-subtle`. It
+  always fits 131, the idle's room, so switching plans does not jump. Without power-profiles-daemon:
+  no mode icon. A machine without a battery: the plan shows nothing and `auto` passes it by.
+  **Decided** (Ethan, 2026-11-27)
+- **The minute after a plug in or an unplug**: after the Power item's 3 s flash, `auto` holds the
+  pill for this plan until 60 s are up, as "Up next" holds it before an event. Once UPower has its
+  estimate (10–15 s later), the pill says it in full: "72% · full in 1 h 10 min", "64% · 3 h 20 min
+  left". The first estimate is kept for that minute, so the text does not change with every UPower
+  update; after 60 s, back to the percentage. **Decided** (Ethan's idea, 2026-11-14; decided
+  2026-11-27)
+- **`auto`**: the minute after a plug in or an unplug 80 (holds the pill); on battery under 30% 60,
+  on battery 30; charging 25; full or held at a limit 15; no battery, nothing. A low battery (under
+  20%) is already an activity at priority 70 that stays until plugged in, so it needs no score of
+  its own. In the default `idle-auto-plans`, after the weather. **Decided** (2026-11-27)
+
+![The battery plan's compact: with power modes and without](images/idle-power-compact.en.png)
+
+- **Compact** (hover): the head speaks of the battery, "Battery · 82% · charging" over "Full in 42
+  min · Balanced"; the three modes as buttons, laid out as the power-mode compact (design/compact),
+  104 high. A button switches at once, the compact stays, no flash. Without the daemon: the head
+  alone, 56 high. A click on the pill outside the buttons opens Home, as for every idle plan.
+  **Decided** (Ethan, 2026-11-27)
+
 ## Fonts and display scale
 
 - Em only makes text **size** follow the system; it does not change the text's **shape**. At 1em
@@ -197,5 +228,8 @@ Rejected: idle 146 with padding 14; the light growing one end against growing bo
 - `stylesheet.css` — `#panel.buoy` height 40px → 2.75em; pill text 13px → 1em; `.buoy-light`
   7 → 8, at the centre of the end circle; `.buoy-idle-zones` spacing 7 → 6 and `padding-left: 2px`
   dropped from `.buoy-idle`; `.buoy-minimal` spacing 8 → 6, the button keeps 8 after trailing (`margin-left: 2px`); `.buoy-text` bold 600 and tabular figures like `.buoy-idle-text`.
+- `lib/modules/power/idle.js` (pure, `tests/idle-power.test.js`), `feed.js` — the battery idle plan;
+  the `subtle` icon in `lib/kit/model/presentation.js`; an idle compact's buttons go through
+  `lib/kit/services/idle.js` to the feed.
 - SPEC §2 pill structure ("that zone nudges inward" → the pill grows at both ends), §2a-i/ii (lights), §2c
   (at most 2 side pills on the right, side pill 131), the size table §4.

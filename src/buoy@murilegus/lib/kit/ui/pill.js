@@ -662,7 +662,8 @@ export class Pill {
         if (this.activity)
             return this.activity;
         const plan = this.role === 'centre' ? this._island.idle : null;
-        return plan && planCompact(plan) !== null ? plan : null;
+        // a button of the plan's compact goes to its feed (kit/services/idle.js)
+        return plan && planCompact(plan) !== null ? {...plan, onAction: id => this._island.onIdleAction?.(id)} : null;
     }
 
     _hasCompact() {

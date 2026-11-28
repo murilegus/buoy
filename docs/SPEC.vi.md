@@ -184,6 +184,7 @@ Luật:
 | `clock` | một đồng hồ *thứ hai*, khác của cụm: một icon buổi (`kit/model/daypart.js`, §2d; sáu SVG màu ở 20 px — mặt trời trên một cung, màu đào `#FFB889` lúc rạng sáng và chiều tối, vàng `#FFD23F` ban ngày, rồi mặt trăng; `scripts/icons.js` palette A) + giờ in đậm số đều, định dạng của GNOME (`clock-format`, locale, `clock-show-seconds`). `idle-clock-style` (2026-11-08, Ethan): icon + buổi bằng chữ ("Afternoon", mặc định) · icon + giờ · icon · chữ · giờ | `clock` | `GnomeDesktop.WallClock` (như màn hình khoá), chỉ khi pill idle đang hiện |
 | `weather` | icon thời tiết + nhiệt độ ("31°", đơn vị của người dùng, làm tròn như date menu). Compact: "31° · Partly cloudy" trên "Feels like 34° · Wind NE 12 km/h · Humidity 75%", phần nào không biết thì bỏ. Icon màu riêng của Buoy, mỗi điều kiện của GNOME một cái (13, có bản đêm), symbolic làm dự phòng (2026-11-06, Ethan). Nơi, đơn vị, làm mới: bên dưới | `weather` | `WeatherClient` của date menu (`misc/weather.js`), chỉ khi đang hiện: ngay lập tức nếu cũ hơn `idle-weather-refresh` (30 min / 1 h), rồi theo chu kỳ đó |
 | `next-event` (`calendar`) | sự kiện tiếp theo hôm nay: icon, tiêu đề, giờ ở cuối ("3:00 PM", "until 4:00 PM", "all day"; tiêu đề bị cắt bằng dấu …), nở tới giới hạn của minimal. Compact: tiêu đề trên "3:00 PM – 4:00 PM · in 25 min". Sự kiện bắt đầu trong 30 min thắng sự kiện đang diễn ra; rồi tới cả ngày (`idle-calendar-all-day`); không còn gì → chỉ đèn. Không có Join (máy chủ lịch của Shell chỉ gửi id, tiêu đề, giờ) | `calendar` | nguồn sự kiện của date menu; phút của wall clock |
+| `power` | icon pin của Buoy và số %, chế độ năng lượng là icon mờ ở cuối; trong phút sau khi cắm hoặc rút, ước tính đầu tiên nói đủ ("72% · full in 1 h 10 min"). Compact: pin ở trên, ba chế độ năng lượng là nút (design/pill "Idle plan Pin", 2026-11-27, Ethan) | `power` (trong stack của Automatic, sau weather) | proxy UPower và power-profiles của Quick Settings (signal); một timer 60 s mỗi lần cắm |
 | `mascot` | mắt Bu, các chế độ idle · sleep · missed · waiting; khi idle chúng dạo theo bước pixel, một nhịp mỗi vài giây (`idle-mascot-stroll`); ngủ vào ban đêm, sau 60 s không có thao tác, ở chế độ tiết kiệm điện, khi tắt animation (MASCOT.md § Eyes) | `mascot` (bật, cuối stack của Automatic, 2026-11-14, Ethan) | đèn, buổi, idle monitor, power profile; một timer nhịp chỉ khi đang dạo |
 
 **Nơi cho thời tiết** (2026-11-06, Ethan; GNOME Weather không cài sẵn trên Ubuntu, nên client của
@@ -271,6 +272,7 @@ hình đang chia sẻ hay quay; mỗi lúc một chấm, đỏ › xanh lá › 
   | `weather` | giờ đầu tiên của buổi sáng 70 · thay đổi trong giờ tới (mưa, chênh ≥ 5 °C) 75 · còn lại 35 · không có nơi `null` |
   | tin tức (M5) | 40; 55 cho tin < 1 h tuổi từ nguồn đang theo dõi |
   | tỷ giá / chứng khoán (M5) | 30; 70 khi vượt ngưỡng của người dùng |
+  | `power` | phút sau khi cắm hoặc rút **80** (giữ) · dùng pin dưới 30 % 60 · dùng pin 30 · đang sạc 25 · đầy hoặc giữ ở ngưỡng 15 · không có pin `null` |
   | `clock` | 10, luôn có |
   | `mascot` | 10, chỉ khi có trong `idle-auto-plans` |
 
@@ -280,7 +282,7 @@ hình đang chia sẻ hay quay; mỗi lúc một chấm, đỏ › xanh lá › 
 - **Xếp lại** khi một plan báo `changed` và theo một timer của kit, `idle-auto-switch` 5 (mặc
   định)/10/20/30 min, chỉ sống khi idle với `auto`. Giữa các lượt, một lần xếp lại giữ plan đang
   hiện khi nó còn gì để hiện.
-- **Mối quan tâm**: `idle-auto-plans` (as), mặc định `['calendar', 'weather', 'clock', 'mascot']`.
+- **Mối quan tâm**: `idle-auto-plans` (as), mặc định `['calendar', 'weather', 'power', 'clock', 'mascot']`.
   Prefs **Island**: một danh sách sắp xếp lại được, có công tắc, key của mỗi plan nằm dưới nó; plan
   có module đang tắt bị làm mờ ("Turn on in Modules") và không tồn tại (luật 6) — Show đặt vào nó
   thì pill trống, hàng của nó nói vậy. Một module chỉ là một plan (clock, weather) không có công tắc
